@@ -79,8 +79,16 @@ class tracereader_dpacontestv3:
             self.textouts = None
 
         try:
-           self. knownkey = plaintexts = numpy.loadtxt(os.path.join(directory, 'key.txt'), dtype='|S2',  ndmin=2)
+           knownkey = numpy.loadtxt(os.path.join(directory, 'key.txt'), dtype='|S2',  ndmin=2)
         except IOError:
+            knownkey = None
+
+        try:
+            knownkey = knownkey[0]
+            self.knownkey = []
+            for r in knownkey:
+                self.knownkey.append(int(r, 16))
+        except:
             self.knownkey = None
 
     def numPoints(self):

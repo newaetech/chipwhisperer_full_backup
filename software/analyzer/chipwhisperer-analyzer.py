@@ -35,7 +35,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import os.path
 sys.path.append('../common')
-import pysidegraph
+import pyqtgraph as pg
 import tracereader_dpacontestv3
 import attack_dpav1
 
@@ -44,7 +44,6 @@ class DPATab(QWidget):
     def __init__(self, previewtab):
         QWidget.__init__(self)
         layout = QVBoxLayout()
-
         self.dpa = attack_dpav1.attack_DPAAESv1()
 
         setupGB = QGroupBox("Analysis Options")
@@ -73,13 +72,59 @@ class DPATab(QWidget):
         setupLayout.addWidget(self.startPointPrint, 2, 1)
         setupLayout.addWidget(QLabel(" to "), 2, 2)
         setupLayout.addWidget(self.endPointPrint, 2, 3)
+
+        btnAll = QPushButton("All")
+        btnAll.clicked.connect(self.checkAll)
+        btnNone = QPushButton("None")
+        btnNone.clicked.connect(self.checkNone)
+        setupLayout.addWidget(btnAll, 0, 6)
+        setupLayout.addWidget(btnNone,0, 7)
+        self.do = []
+        for i in range(0,16):
+            self.do.append(QCheckBox("%2d"%i))
+            self.do[i].setChecked(True)
+            setupLayout.addWidget(self.do[i], i/4+1, i%4+8)            
         
         layout.addWidget(setupGB)
 
-        self.preview = pysidegraph.pysideGraph("Diff View")
-        layout.addWidget(self.preview.getWidget())
+        self.table = QTableWidget(256, 16)
+
+        layout.addWidget(self.table)
+
+        viewGB = QGroupBox("View Options")
+        viewLayout = QGridLayout()
+        viewGB.setLayout(viewLayout)
+
+        pbRedraw = QPushButton("Redraw")
+        pbRedraw.clicked.connect(self.redrawPushed)
+        viewLayout.addWidget(pbRedraw, 0, 0)
+
+        viewLayout.addWidget(QLabel("Byte: "), 1, 0)
+        self.cbViewByte = QComboBox()
+        viewLayout.addWidget(self.cbViewByte, 1, 1)
+
+        layout.addWidget(viewGB)
+       
+        #Setup trace viewer
+        self.pw = pg.PlotWidget(name="DPA Result View")
+        self.pw.setLabel('top', 'DPA Result View')
+        self.pw.setLabel('bottom', 'Sample Number')
+        self.pw.setLabel('left', 'Difference')
+        vb = self.pw.getPlotItem().getViewBox()
+        vb.setMouseMode(vb.RectMode)
+        
+        layout.addWidget(self.pw)   
+
         self.setLayout(layout)
 
+    def checkAll(self):
+        for i in range(0,16):
+            self.do[i].setChecked(True)
+
+    def checkNone(self):
+        for i in range(0,16):
+            self.do[i].setChecked(False)
+            
     def passTrace(self, trace):
         self.trace = trace
         self.startTracePrint.setMaximum(trace.NumTrace)
@@ -92,8 +137,40 @@ class DPATab(QWidget):
 
     def loadPushed(self):
         return
-    #self.preview
 
+    def updateTable(self):
+        for i in range(0,16):
+            (value, diff) = self.dpa.getByteList(i)
+            for j in range(0,256):
+                self.table.setItem(j,i,QTableWidgetItem("%02x"%value[j]))        
+
+    def redrawPushed(self):
+        #Byte 0
+        bnum = int(self.cbViewByte.currentText())
+        diffs = self.dpa.getDiff(bnum)
+
+        #Do Redraw
+        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(1000)
+        progress.setMinimum(self.startTracePrint.value())
+        progress.setMaximum(self.endTracePrint.value())        
+
+        self.pw.clear()
+       
+        for i in range(0,256):
+            data = self.trace.getTrace(i)
+            #self.pw.plot(diffs[i], pen=(i%8,8))
+
+            if self.trace.knownkey[bnum] != i:
+                self.pw.plot(diffs[i], pen='g')
+                   
+            progress.setValue(i)
+            if progress.wasCanceled():
+                break
+
+        self.pw.plot(diffs[bnum], pen='r')
+            
     def attackPushed(self):
         data = []
         texts = []
@@ -101,11 +178,24 @@ class DPATab(QWidget):
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data.append(self.trace.getTrace(i)[self.startPointPrint.value():self.endPointPrint.value()])
             texts.append(self.trace.getTextin(i))          
+
+        rangeDo = []
+        for i in range(0,len(self.do)):
+            if self.do[i].isChecked():
+                rangeDo.append(i)
+        self.rangeDo = rangeDo
         
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
-        self.dpa.doDPA(0, range(0,16), data, texts, progress)
+        self.dpa.doDPA(0, rangeDo, data, texts, progress)
+
+        self.updateTable()
+
+        self.cbViewByte.clear()
+        for i in range(0,16):
+            if (self.do[i].isChecked()):
+                self.cbViewByte.addItem("%d"%i)
 
 class PreviewTab(QWidget):
     def __init__(self):
@@ -145,8 +235,15 @@ class PreviewTab(QWidget):
         
         layout.addWidget(setupGB)
 
-        self.preview = pysidegraph.pysideGraph("Trace View")
-        layout.addWidget(self.preview.getWidget())
+        #Setup plot widget
+        self.pw = pg.PlotWidget(name="Power Trace View")
+        self.pw.setLabel('top', 'Power Trace View')
+        self.pw.setLabel('bottom', 'Samples')
+        self.pw.setLabel('left', 'Data')
+        vb = self.pw.getPlotItem().getViewBox()
+        vb.setMouseMode(vb.RectMode)
+        
+        layout.addWidget(self.pw)        
         self.setLayout(layout)
 
     def passTrace(self, trace):
@@ -163,18 +260,15 @@ class PreviewTab(QWidget):
         self.trace.loadAllTraces()
 
     def redrawPushed(self):
-        hold=False
-
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
         progress.setMinimum(self.startTracePrint.value())
-        progress.setMaximum(self.endTracePrint.value())
+        progress.setMaximum(self.endTracePrint.value())        
         
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data = self.trace.getTrace(i)
-            self.preview.updateData(data[self.startPointPrint.value():self.endPointPrint.value()], holdOn=hold)
-            hold=True
+            self.pw.plot(data[self.startPointPrint.value():self.endPointPrint.value()], pen=(i%8,8))            
             progress.setValue(i)
             if progress.wasCanceled():
                 break

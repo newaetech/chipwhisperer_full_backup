@@ -27,6 +27,9 @@ class attack_DPAAESv1():
 
         foundkey = []
 
+        #self.all_diffs = numpy.zeros((16,256),dtype=('i2,f8'))
+        self.all_diffs = range(0,16)
+
         if progressBar:
             pbcnt = 0
             progressBar.setMinimum(0)
@@ -62,7 +65,7 @@ class attack_DPAAESv1():
                     
                 if progressBar:
                     progressBar.setValue(pbcnt)
-                    progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+                    #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                     pbcnt = pbcnt + 1
                     if progressBar.wasCanceled():
                         break
@@ -72,19 +75,35 @@ class attack_DPAAESv1():
                 mean0 = mean0 / num0
 
                 #Find the difference between the two means
-                diff = numpy.subtract(mean1, mean0)
+                diffs[key] = numpy.subtract(mean1, mean0)
 
                 #Find the biggest difference for this specific key & store
-                diffs[key] = max(numpy.fabs(diff))
+                #diffs[key] = max(numpy.fabs(diff))
+
+            
+            self.all_diffs[bnum] = diffs
 
             #From all the key candidates, select the largest difference as most likely
-            foundbyte = diffs.index(max(diffs))
-            foundkey.append(foundbyte)
-            print "%2x "%foundbyte,
+            #foundbyte = diffs.index(max(diffs))
+            #foundkey.append(foundbyte)
+#            print "%2x "%foundbyte,
 
-        print ""
-        print foundkey
-        print actualkey
+    def getByteList(self, bnum):
+        #diffsorted = self.all_diffs[bnum]
+        #diffsorted.sort()
+        #diffsorted = diffsorted[::-1]
+        #values = self.all_diffs[bnum].index(diffsorted)
+        #return (values, diffsorted)
 
+        return (range(0,256), 0)
+
+    def getDiff(self, bnum, hyprange=None):
+        if hyprange == None:
+            hyprange = range(0,256)
+        return [self.all_diffs[bnum][i] for i in hyprange];
+        
+        
+
+        
 
 
