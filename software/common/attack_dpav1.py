@@ -62,6 +62,7 @@ class attack_DPAAESv1():
                     
                 if progressBar:
                     progressBar.setValue(pbcnt)
+                    progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                     pbcnt = pbcnt + 1
                     if progressBar.wasCanceled():
                         break

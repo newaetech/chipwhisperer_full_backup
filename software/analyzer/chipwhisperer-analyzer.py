@@ -180,26 +180,42 @@ class PreviewTab(QWidget):
                 break
 
 class MainChip(QMainWindow):
+    MaxRecentFiles = 4
+    
     def __init__(self):
         super(MainChip, self).__init__()        
-        self.trace = tracereader_dpacontestv3.tracereader_dpacontestv3()        
+        self.trace = tracereader_dpacontestv3.tracereader_dpacontestv3()
         self.initUI()
+
+    def createActions(self):
+        self.openAct = QAction(QIcon('open.png'), '&Open Input Files', self,
+                               shortcut=QKeySequence.Open,
+                               statusTip='Open Input Files (waveform, etc)',
+                               triggered=self.open)
+
+        for i in range(MainChip.MaxRecentFiles):
+            self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
+
+    def createMenus(self):
+        self.fileMenu= self.menuBar().addMenu('&File')
+        self.fileMenu.addAction(self.openAct)
+        self.separatorAct = self.fileMenu.addSeparator()
+        for i in range(MainChip.MaxRecentFiles):
+            self.fileMenu.addAction(self.recentFileActs[i])
+            
         
-    def initUI(self):
+    def initUI(self):        
         self.statusBar()
         self.setWindowTitle("Chip Whisperer: Analyzer")
 
-        openFile = QAction(QIcon('open.png'), 'Open Input Files', self)
-        openFile.setShortcut('Ctrl+O')
-        openFile.setStatusTip('Open Input Files (waveform, etc)')
-        openFile.triggered.connect(self.showDialog)
+        self.recentFileActs = []
+        self.createActions()
+        self.createMenus()
 
-        menubar = self.menuBar()
-        fileMenu = menubar.addMenu('&File')
-        fileMenu.addAction(openFile)       
+        self.updateRecentFileActions()
+    
         
-        self.setGeometry(300, 300, 350, 300)
-        self.setWindowTitle('File dialog')
+        #self.setGeometry(300, 300, 350, 300)
         self.show()
 
         #Preview Tab Setup
@@ -216,12 +232,69 @@ class MainChip(QMainWindow):
         self.curTabChange(0)
 
         self.setCentralWidget(self.tw)
+
+    def setCurrentFile(self, fname):
+        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
+        files = settings.value('recentFileList', [])
+
+        try:
+            files.remove(fname)
+        except ValueError:
+            pass
+
+        files.insert(0, fname)
+        del files[MainChip.MaxRecentFiles:]
+
+        settings.setValue('recentFileList', files)
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, MainChip):
+                widget.updateRecentFileActions()
+
+    def updateRecentFileActions(self):
+        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
+        files = settings.value('recentFileList')
+        files_no = 0
+
+        if files:
+            files_no = len(files)
+
+        numRecentFiles = min(files_no, MainChip.MaxRecentFiles)
+
+        for i in range(numRecentFiles):
+            text = "&%d %s" % (i + 1, self.strippedName(files[i]))
+            self.recentFileActs[i].setText(text)
+            self.recentFileActs[i].setData(files[i])
+            self.recentFileActs[i].setVisible(True)
+
+        for j in range(numRecentFiles, MainChip.MaxRecentFiles):
+            self.recentFileActs[j].setVisible(False)
+
+        self.separatorAct.setVisible((numRecentFiles > 0))
+
+    def strippedName(self, fullFileName):
+        (filepath, filename) = os.path.split(fullFileName)
+        (base, toplevel) = os.path.split(filepath)
+        return toplevel + "/" + filename
         
-    def showDialog(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','info.xml')
+        #return QFileInfo(fullFileName).fileName()
+        
+    def loadFile(self, fname):
+#        try:
         self.trace.loadInfo(os.path.dirname(fname))
         self.preview.passTrace(self.trace)
         self.dpa.passTrace(self.trace)
+        self.setCurrentFile(fname)
+        
+    def open(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','info.xml')
+        if fname:
+            self.loadFile(fname)
+
+    def openRecentFile(self):
+        action = self.sender()
+        if action:
+            self.loadFile(action.data())
+        
 
     def curTabChange(self, index):
         for i in range(self.tw.count()):
