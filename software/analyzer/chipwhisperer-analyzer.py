@@ -398,6 +398,15 @@ class MainChip(QMainWindow):
         self.trace = tracereader_dpacontestv3.tracereader_dpacontestv3()
         self.initUI()
 
+        #Settings
+        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
+        self.restoreGeometry(settings.value("geometry"));
+
+    def closeEvent(self, event):
+        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
+        settings.setValue("geometry", self.saveGeometry());
+        QMainWindow.closeEvent(self, event)
+
     def createActions(self):
         self.openAct = QAction(QIcon('open.png'), '&Open Input Files', self,
                                shortcut=QKeySequence.Open,
