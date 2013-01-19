@@ -27,7 +27,6 @@ class attack_DPAAESv1():
 
         foundkey = []
 
-        #self.all_diffs = numpy.zeros((16,256),dtype=('i2,f8'))
         self.all_diffs = range(0,16)
 
         if progressBar:
@@ -88,14 +87,6 @@ class attack_DPAAESv1():
             #foundkey.append(foundbyte)
 #            print "%2x "%foundbyte,
 
-    def getByteList(self, bnum):
-        #diffsorted = self.all_diffs[bnum]
-        #diffsorted.sort()
-        #diffsorted = diffsorted[::-1]
-        #values = self.all_diffs[bnum].index(diffsorted)
-        #return (values, diffsorted)
-
-        return (range(0,256), 0)
 
     def getDiff(self, bnum, hyprange=None):
         if hyprange == None:

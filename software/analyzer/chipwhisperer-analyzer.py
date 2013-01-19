@@ -38,10 +38,11 @@ sys.path.append('../common')
 import pyqtgraph as pg
 import tracereader_dpacontestv3
 import attack_dpav1
+import numpy
 
 
 class DPATab(QWidget):
-    def __init__(self, previewtab):
+    def __init__(self, previewtab, MainWindow=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
         self.dpa = attack_dpav1.attack_DPAAESv1()
@@ -88,34 +89,67 @@ class DPATab(QWidget):
         layout.addWidget(setupGB)
 
         self.table = QTableWidget(256, 16)
-
-        layout.addWidget(self.table)
-
+        self.ResultsTable = QDockWidget("Results Table")
+        self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+        self.ResultsTable.setWidget(self.table)
+        MainWindow.addDockWidget(Qt.RightDockWidgetArea, self.ResultsTable)
+        self.ResultsTable.setVisible(False)
+        
         viewGB = QGroupBox("View Options")
         viewLayout = QGridLayout()
         viewGB.setLayout(viewLayout)
 
-        pbRedraw = QPushButton("Redraw")
-        pbRedraw.clicked.connect(self.redrawPushed)
-        viewLayout.addWidget(pbRedraw, 0, 0)
-
-        viewLayout.addWidget(QLabel("Byte: "), 1, 0)
-        self.cbViewByte = QComboBox()
-        viewLayout.addWidget(self.cbViewByte, 1, 1)
-
         layout.addWidget(viewGB)
        
         #Setup trace viewer
-        self.pw = pg.PlotWidget(name="DPA Result View")
-        self.pw.setLabel('top', 'DPA Result View')
-        self.pw.setLabel('bottom', 'Sample Number')
-        self.pw.setLabel('left', 'Difference')
-        vb = self.pw.getPlotItem().getViewBox()
-        vb.setMouseMode(vb.RectMode)
-        
-        layout.addWidget(self.pw)   
+        self.AnalysisViewDocks = []
+        for bnum in range(0,16):
+            pw = pg.PlotWidget(name="'Analysis Byte %d'%bnum")
+            pw.setTitle('Analysis Byte %d'%bnum)
+            pw.setLabel('bottom', 'Sample Number')
+            pw.setLabel('left', 'Difference')
+            vb = pw.getPlotItem().getViewBox()
+            vb.setMouseMode(vb.RectMode)
+            
+            dock = QDockWidget('B=%d'%bnum, self)
+            dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+            dock.setWidget(pw)
+            self.AnalysisViewDocks.append(dock)
+            MainWindow.addDockWidget(Qt.BottomDockWidgetArea, dock)            
+            if(bnum > 0):
+                MainWindow.tabifyDockWidget(self.AnalysisViewDocks[bnum-1], self.AnalysisViewDocks[bnum])
+            dock.setVisible(False)                
 
+        #This is an abomination I know. But I don't know how to check
+        #for visability (just isVisible() isn't good enough) besides this event,
+        #since need to catch things like tab selection, being dragged into its
+        #own window, etc. Deal with it for now
+        self.AnalysisViewDocks[0].visibilityChanged.connect(self.vchanged0)
+        self.AnalysisViewDocks[1].visibilityChanged.connect(self.vchanged1)
+        self.AnalysisViewDocks[2].visibilityChanged.connect(self.vchanged2)
+        self.AnalysisViewDocks[3].visibilityChanged.connect(self.vchanged3)
+        self.AnalysisViewDocks[4].visibilityChanged.connect(self.vchanged4)
+        self.AnalysisViewDocks[5].visibilityChanged.connect(self.vchanged5)
+        self.AnalysisViewDocks[6].visibilityChanged.connect(self.vchanged6)
+        self.AnalysisViewDocks[7].visibilityChanged.connect(self.vchanged7)
+        self.AnalysisViewDocks[8].visibilityChanged.connect(self.vchanged8)
+        self.AnalysisViewDocks[9].visibilityChanged.connect(self.vchanged9)
+        self.AnalysisViewDocks[10].visibilityChanged.connect(self.vchanged10)
+        self.AnalysisViewDocks[11].visibilityChanged.connect(self.vchanged11)
+        self.AnalysisViewDocks[12].visibilityChanged.connect(self.vchanged12)
+        self.AnalysisViewDocks[13].visibilityChanged.connect(self.vchanged13)
+        self.AnalysisViewDocks[14].visibilityChanged.connect(self.vchanged14)
+        self.AnalysisViewDocks[15].visibilityChanged.connect(self.vchanged15)
+        
+        #layout.addWidget(self.pw)
         self.setLayout(layout)
+
+        self.redrawRequired = []
+        for i in range(0,16):
+            self.redrawRequired.append(True)
+
+    def showAnalysisWidgets(self, visible=True):
+        self.ResultsTable.setVisible(visible)
 
     def checkAll(self):
         for i in range(0,16):
@@ -139,41 +173,119 @@ class DPATab(QWidget):
         return
 
     def updateTable(self):
-        for i in range(0,16):
-            (value, diff) = self.dpa.getByteList(i)
-            for j in range(0,256):
-                self.table.setItem(j,i,QTableWidgetItem("%02x"%value[j]))        
 
-    def redrawPushed(self):
-        #Byte 0
-        bnum = int(self.cbViewByte.currentText())
+        for bnum in range(0,len(self.do)):
+            if self.do[bnum].isChecked():
+                self.table.setColumnHidden(bnum, False)
+                diffs = self.dpa.getDiff(bnum)
+
+                maxes = numpy.zeros(256,dtype=[('hyp','i2'),('point','i4'),('value','f8')] )
+
+                for hyp in range(0, 256):
+                    #Get maximum value for this hypothesis
+                    mvalue = max(numpy.fabs(diffs[hyp]))
+                    mindex = min(numpy.where(numpy.fabs(diffs[hyp]) == mvalue))
+                    maxes[hyp] = (hyp,mindex,mvalue)
+
+                maxes.sort(order='value')
+                maxes = maxes[::-1]
+            
+                for j in range(0,256):
+                    self.table.setItem(j,bnum,QTableWidgetItem("%02x=%f"%(maxes[j]['hyp'],maxes[j]['value'])))
+            else:
+                self.table.setColumnHidden(bnum, True)
+
+        self.ResultsTable.setVisible(True)   
+
+    def vchanged0(self, visible):
+        if (visible):
+            self.redrawOneResult(0)
+    def vchanged1(self, visible):
+        if (visible):
+            self.redrawOneResult(1)
+    def vchanged2(self, visible):
+        if (visible):
+            self.redrawOneResult(2)
+    def vchanged3(self, visible):
+        if (visible):
+            self.redrawOneResult(3)
+    def vchanged4(self, visible):
+        if (visible):
+            self.redrawOneResult(4)
+    def vchanged5(self, visible):
+        if (visible):
+            self.redrawOneResult(5)
+    def vchanged6(self, visible):
+        if (visible):
+            self.redrawOneResult(6)
+    def vchanged7(self, visible):
+        if (visible):
+            self.redrawOneResult(7)
+    def vchanged8(self, visible):
+        if (visible):
+            self.redrawOneResult(8)
+    def vchanged9(self, visible):
+        if (visible):
+            self.redrawOneResult(9)
+    def vchanged10(self, visible):
+        if (visible):
+            self.redrawOneResult(10)
+    def vchanged11(self, visible):
+        if (visible):
+            self.redrawOneResult(11)
+    def vchanged12(self, visible):
+        if (visible):
+            self.redrawOneResult(12)
+    def vchanged13(self, visible):
+        if (visible):
+            self.redrawOneResult(13)
+    def vchanged14(self, visible):
+        if (visible):
+            self.redrawOneResult(14)
+    def vchanged15(self, visible):
+        if (visible):
+            self.redrawOneResult(15)
+
+    def redrawOneResult(self, bnum, highlightByte=True):
+        if (self.redrawRequired[bnum] == False):
+            return
+
+        self.redrawRequired[bnum] = False
+        
         diffs = self.dpa.getDiff(bnum)
-
         #Do Redraw
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
-        progress.setMinimum(self.startTracePrint.value())
-        progress.setMaximum(self.endTracePrint.value())        
+        progress.setMinimum(0)
+        progress.setMaximum(256)        
 
-        self.pw.clear()
+        self.AnalysisViewDocks[bnum].widget().clear
+        self.AnalysisViewDocks[bnum].setVisible(False)
        
         for i in range(0,256):
-            data = self.trace.getTrace(i)
-            #self.pw.plot(diffs[i], pen=(i%8,8))
-
-            if self.trace.knownkey[bnum] != i:
-                self.pw.plot(diffs[i], pen='g')
+            if highlightByte:
+                if self.trace.knownkey[bnum] != i:
+                    self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen='g')
+            else:
+                    self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen=(i%8,8))
                    
             progress.setValue(i)
             if progress.wasCanceled():
                 break
 
-        self.pw.plot(diffs[bnum], pen='r')
+        #Plot the highlighted byte on top
+        if highlightByte:
+            self.AnalysisViewDocks[bnum].widget().plot(diffs[bnum], pen='r')
+            
+        self.AnalysisViewDocks[bnum].setVisible(True)
             
     def attackPushed(self):
         data = []
         texts = []
+
+        for i in range(0, 16):
+            self.redrawRequired[i] = True
 
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data.append(self.trace.getTrace(i)[self.startPointPrint.value():self.endPointPrint.value()])
@@ -192,10 +304,10 @@ class DPATab(QWidget):
 
         self.updateTable()
 
-        self.cbViewByte.clear()
         for i in range(0,16):
             if (self.do[i].isChecked()):
-                self.cbViewByte.addItem("%d"%i)
+                self.AnalysisViewDocks[i].widget().clear()  
+                self.AnalysisViewDocks[i].setVisible(True)                              
 
 class PreviewTab(QWidget):
     def __init__(self):
@@ -265,13 +377,15 @@ class PreviewTab(QWidget):
         progress.setMinimumDuration(1000)
         progress.setMinimum(self.startTracePrint.value())
         progress.setMaximum(self.endTracePrint.value())        
-        
+
+        self.pw.setVisible(False)
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data = self.trace.getTrace(i)
             self.pw.plot(data[self.startPointPrint.value():self.endPointPrint.value()], pen=(i%8,8))            
             progress.setValue(i)
             if progress.wasCanceled():
                 break
+        self.pw.setVisible(True)
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
@@ -316,7 +430,7 @@ class MainChip(QMainWindow):
         self.preview = PreviewTab()
 
         #DPA Tab Setup
-        self.dpa = DPATab(self.preview)
+        self.dpa = DPATab(self.preview, self)
 
         #Tab Widget Setup
         self.tw = QTabWidget()
