@@ -47,6 +47,8 @@ class DPATab(QWidget):
         layout = QVBoxLayout()
         self.dpa = attack_dpav1.attack_DPAAESv1()
 
+        self.redrawInProgress = False
+
         setupGB = QGroupBox("Analysis Options")
         setupLayout = QGridLayout()
         setupGB.setLayout(setupLayout)
@@ -191,10 +193,12 @@ class DPATab(QWidget):
                 maxes = maxes[::-1]
             
                 for j in range(0,256):
-                    self.table.setItem(j,bnum,QTableWidgetItem("%02x=%f"%(maxes[j]['hyp'],maxes[j]['value'])))
+                    self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.1f"%(maxes[j]['hyp'],maxes[j]['value'])))
             else:
                 self.table.setColumnHidden(bnum, True)
 
+        self.table.resizeRowsToContents()
+        self.table.resizeColumnsToContents()
         self.ResultsTable.setVisible(True)   
 
     def vchanged0(self, visible):
@@ -247,10 +251,15 @@ class DPATab(QWidget):
             self.redrawOneResult(15)
 
     def redrawOneResult(self, bnum, highlightByte=True):
+
+        if self.redrawInProgress:
+            return
+        
         if (self.redrawRequired[bnum] == False):
             return
 
         self.redrawRequired[bnum] = False
+        self.redrawInProgress = True
         
         diffs = self.dpa.getDiff(bnum)
         #Do Redraw
@@ -276,9 +285,11 @@ class DPATab(QWidget):
 
         #Plot the highlighted byte on top
         if highlightByte:
-            self.AnalysisViewDocks[bnum].widget().plot(diffs[bnum], pen='r')
+            self.AnalysisViewDocks[bnum].widget().plot(diffs[self.trace.knownkey[bnum]], pen='r')
             
         self.AnalysisViewDocks[bnum].setVisible(True)
+
+        self.redrawInProgress = False
             
     def attackPushed(self):
         data = []
