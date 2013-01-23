@@ -835,8 +835,10 @@ class doAcq(object):
         #Load input, start encryption, get output
         self.textout = self.TargetDoTrace(self.textin, self.key)
 
-        if self.textOutLabel != None:
+        try:
             self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
+        except:
+            print "Response failed?"
 
         #Get ADC reading
         self.scope.ADCcapture(update, N)
