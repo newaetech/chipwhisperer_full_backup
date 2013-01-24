@@ -120,13 +120,11 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1358970029" xil_pn:in_ck="-5067686707168710393" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="1395845753015261399" xil_pn:start_ts="1358969990">
+    <transform xil_pn:end_ts="1359004779" xil_pn:in_ck="-5067686707168710393" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="1395845753015261399" xil_pn:start_ts="1359004761">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.lso"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.ngc"/>
@@ -144,21 +142,19 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1358970042" xil_pn:in_ck="-4451310891946970660" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-7359285127891417713" xil_pn:start_ts="1358970029">
+    <transform xil_pn:end_ts="1359004787" xil_pn:in_ck="-4451310891946970660" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-7359285127891417713" xil_pn:start_ts="1359004779">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.bld"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.ngd"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP_ngdbuild.xrpt"/>
       <outfile xil_pn:name="_ngo"/>
       <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1358970103" xil_pn:in_ck="314177610605569706" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="-5657126474599326901" xil_pn:start_ts="1358970042">
+    <transform xil_pn:end_ts="1359004821" xil_pn:in_ck="314177610605569706" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="-5657126474599326901" xil_pn:start_ts="1359004787">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <status xil_pn:value="OutOfDateForOutputs"/>
       <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.pcf"/>
@@ -171,11 +167,10 @@
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP_usage.xml"/>
       <outfile xil_pn:name="_xmsgs/map.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1358970188" xil_pn:in_ck="6147506910323933123" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="-2362651792651823936" xil_pn:start_ts="1358970103">
+    <transform xil_pn:end_ts="1359004868" xil_pn:in_ck="6147506910323933123" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="-2362651792651823936" xil_pn:start_ts="1359004821">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.ncd"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.pad"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.par"/>
@@ -187,11 +182,9 @@
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP_par.xrpt"/>
       <outfile xil_pn:name="_xmsgs/par.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1358970241" xil_pn:in_ck="-313840905337388255" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="8144905581504103502" xil_pn:start_ts="1358970188">
+    <transform xil_pn:end_ts="1359004913" xil_pn:in_ck="-313840905337388255" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="8144905581504103502" xil_pn:start_ts="1359004868">
       <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.ut"/>
       <outfile xil_pn:name="_xmsgs/bitgen.xmsgs"/>
       <outfile xil_pn:name="chip_sasebo_w_vcp.bgn"/>
@@ -201,10 +194,13 @@
       <outfile xil_pn:name="webtalk.log"/>
       <outfile xil_pn:name="webtalk_pn.xml"/>
     </transform>
-    <transform xil_pn:end_ts="1358970188" xil_pn:in_ck="6571740578845898790" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1358970175">
+    <transform xil_pn:end_ts="1359004976" xil_pn:in_ck="4487791029829878443" xil_pn:name="TRAN_genImpactFile" xil_pn:prop_ck="-7047989797201823252" xil_pn:start_ts="1359004974">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
+    </transform>
+    <transform xil_pn:end_ts="1359004868" xil_pn:in_ck="6571740578845898790" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1359004857">
+      <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.twr"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.twx"/>
       <outfile xil_pn:name="_xmsgs/trce.xmsgs"/>
