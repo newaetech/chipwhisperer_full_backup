@@ -184,7 +184,7 @@ class pysideGraph():
 
 
 class OpenADC_tab(QWidget):
-    def __init__(self):
+    def __init__(self, mw):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
@@ -217,7 +217,7 @@ class OpenADC_tab(QWidget):
             self.ser = None
             self.serialRefresh()            
 
-            self.scope = openadc_qt.OpenADCQt(self, False)
+            self.scope = openadc_qt.OpenADCQt(mw)
             layout.addItem(self.scope.getLayout())
             self.resetButton.clicked.connect(self.scope.reset)
             self.testButton.clicked.connect(self.scope.test)
@@ -271,7 +271,7 @@ class OpenADC_tab(QWidget):
         self.serialList.addItems(serialnames)
 
 class OpenADC_ftdi_tab(QWidget):
-    def __init__(self):
+    def __init__(self, mw):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
@@ -313,7 +313,7 @@ class OpenADC_ftdi_tab(QWidget):
             self.ser = None
             self.serialRefresh()            
 
-            self.scope = openadc_qt.OpenADCQt(self, False)
+            self.scope = openadc_qt.OpenADCQt(mw)
             layout.addItem(self.scope.getLayout())
             self.resetButton.clicked.connect(self.scope.reset)
             self.testButton.clicked.connect(self.scope.test)
@@ -869,10 +869,10 @@ class MainWindow(QMainWindow):
     def captureOne(self):
         da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer, label=self.tw.widget(0).counter, fixedPlain=self.fixedPlainCB.isChecked(), textInLabel=self.tw.widget(0).textInLine, textOutLabel=self.tw.widget(0).textOutLine)
         da.doSingleReading(key=self.key)
-        self.preview.updateData(self.tw.widget(1).scope.datapoints)    
+        #self.preview.updateData(self.tw.widget(1).scope.datapoints)    
 
     def startCapture(self):
-        self.da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer, label=self.tw.widget(0).counter, updateData=self.preview.updateData)
+        self.da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer, label=self.tw.widget(0).counter)#, updateData=self.preview.updateData)
         self.da.setMaxtraces(self.tw.widget(0).numTraces.value())
         self.da.doSingleReading(key=self.key)
         daThread = threading.Thread(target = self.da.doReadings)
@@ -888,10 +888,10 @@ class MainWindow(QMainWindow):
         self.tw.removeTab(1)
 
         if index==0:
-            self.tw.insertTab(1, OpenADC_tab(), "&OpenADC-Serial")
+            self.tw.insertTab(1, OpenADC_tab(self), "&OpenADC-Serial")
 
         elif index==1:
-            self.tw.insertTab(1, OpenADC_ftdi_tab(), "&OpenADC-FTDI")
+            self.tw.insertTab(1, OpenADC_ftdi_tab(self), "&OpenADC-FTDI")
 
         else:
             print "Invalid scope index"          
@@ -986,8 +986,8 @@ class MainWindow(QMainWindow):
         #Update key
         self.keyChanged(0)
 
-        self.preview = pysideGraph("Preview", 0, 100000, -0.5, 0.5)
-        layout.addWidget(self.preview.getWidget())
+        #self.preview = pysideGraph("Preview", 0, 100000, -0.5, 0.5)
+        #layout.addWidget(self.preview.getWidget())
 
 
         self.testcapture = QGroupBox("Test Capture")
