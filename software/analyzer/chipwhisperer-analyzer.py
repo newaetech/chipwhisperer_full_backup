@@ -33,7 +33,7 @@ import attack_dpav1
 import numpy
 
 
-class DPATab(QWidget):
+class PATab(QWidget):
     def __init__(self, previewtab, MainWindow=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
@@ -41,45 +41,68 @@ class DPATab(QWidget):
 
         self.redrawInProgress = False
 
+        ###This GB/Layout contains all the generic analysis options
         setupGB = QGroupBox("Analysis Options")
-        setupLayout = QGridLayout()
+        setupLayout = QVBoxLayout()
         setupGB.setLayout(setupLayout)
 
         pbAttack = QPushButton("Attack!")
         pbAttack.clicked.connect(self.attackPushed)
-        setupLayout.addWidget(pbAttack, 0, 0)
+        setupLayout.addWidget(pbAttack)
 
+        gensettings = QHBoxLayout()
+        setupLayout.addLayout(gensettings)
+
+        ##This layout contains the trace & point selection
+        tracepointLayout = QVBoxLayout()
+        gensettings.addLayout(tracepointLayout)
+
+        #Traces to include in attack
         self.startTracePrint = QSpinBox()        
         self.startTracePrint.setMinimum(0)
         self.endTracePrint = QSpinBox()        
         self.endTracePrint.setMinimum(0)
+        tlayout = QHBoxLayout()
+        tlayout.addWidget(QLabel("Traces: "))
+        tlayout.addWidget(self.startTracePrint)
+        tlayout.addWidget(QLabel(" to "))
+        tlayout.addWidget(self.endTracePrint)
+        tracepointLayout.addLayout(tlayout)
+
+        #Points to include in attack
         self.startPointPrint = QSpinBox()        
         self.startPointPrint.setMinimum(0)
         self.endPointPrint = QSpinBox()        
         self.endPointPrint.setMinimum(0)
+        playout = QHBoxLayout()
+        playout.addWidget(QLabel("Points: "))
+        playout.addWidget(self.startPointPrint)
+        playout.addWidget(QLabel(" to "))
+        playout.addWidget(self.endPointPrint)
+        tracepointLayout.addLayout(playout)
 
-        setupLayout.addWidget(QLabel("Traces: "), 1, 0)
-        setupLayout.addWidget(self.startTracePrint, 1, 1)
-        setupLayout.addWidget(QLabel(" to "), 1, 2)
-        setupLayout.addWidget(self.endTracePrint, 1, 3)
-        
-        setupLayout.addWidget(QLabel("Points: "), 2, 0)
-        setupLayout.addWidget(self.startPointPrint, 2, 1)
-        setupLayout.addWidget(QLabel(" to "), 2, 2)
-        setupLayout.addWidget(self.endPointPrint, 2, 3)
-
+    
+        ##Byte Selection
         btnAll = QPushButton("All")
         btnAll.clicked.connect(self.checkAll)
         btnNone = QPushButton("None")
         btnNone.clicked.connect(self.checkNone)
-        setupLayout.addWidget(btnAll, 0, 6)
-        setupLayout.addWidget(btnNone,0, 7)
+        bselectLayoutPB = QHBoxLayout()
+        bselectLayoutPB.addWidget(btnAll, 0, 6)
+        bselectLayoutPB.addWidget(btnNone,0, 7)
+        bselectLayoutCB = QGridLayout()
         self.do = []
         for i in range(0,16):
             self.do.append(QCheckBox("%2d"%i))
             self.do[i].setChecked(True)
-            setupLayout.addWidget(self.do[i], i/4+1, i%4+8)            
-        
+            bselectLayoutCB.addWidget(self.do[i], i/4, i%4)
+        bselectLayout = QVBoxLayout()
+        bselectLayout.addLayout(bselectLayoutPB)
+        bselectLayout.addLayout(bselectLayoutCB)
+        bselectGB = QGroupBox("Byte Selection")
+        bselectGB.setLayout(bselectLayout)
+        gensettings.addWidget(bselectGB)
+
         layout.addWidget(setupGB)
 
         self.table = QTableWidget(256, 16)
@@ -88,14 +111,75 @@ class DPATab(QWidget):
         self.ResultsTable.setWidget(self.table)
         MainWindow.addDockWidget(Qt.RightDockWidgetArea, self.ResultsTable)
         self.ResultsTable.setVisible(False)
-        
+
+        ###This GB/Layout contains all the View options
         viewGB = QGroupBox("View Options")
         viewLayout = QGridLayout()
         viewGB.setLayout(viewLayout)
 
+        ##Select the byte to highlight
+        hlbGB = QGroupBox("Byte Highlight Option")
+        hlbLayout = QVBoxLayout()
+        hlbGB.setLayout(hlbLayout)
+        
+        #Put the options down in a row
+        hlbOptionsLayout = QHBoxLayout()
+        self.highlightByte_copySB = QSpinBox()
+        self.highlightByte_copySB.setMinimum(1)
+        self.highlightByte_copySB.setMaximum(32)
+        self.highlightByte_levelSB = QSpinBox()
+        self.highlightByte_levelSB.setMinimum(1)
+        self.highlightByte_levelSB.setMaximum(32)
+        highlightByte_copyPB = QPushButton("Copy top")
+        highlightByte_copyPB.clicked.connect(self.highlightsCopyTop)
+        hlbOptionsLayout.addWidget(highlightByte_copyPB)
+        hlbOptionsLayout.addWidget(self.highlightByte_copySB)
+        hlbOptionsLayout.addWidget(QLabel("levels from table."))
+        hlbOptionsLayout.addStretch()
+        
+        highlightByte_copyKeyPB = QPushButton("Copy Key to Level")
+        highlightByte_copyKeyPB.clicked.connect(self.highlightsCopyKey)
+        hlbOptionsLayout.addWidget(highlightByte_copyKeyPB)
+        hlbOptionsLayout.addStretch()
+                
+        hlbOptionsLayout.addWidget(QLabel("Modify Highlight Level:"))
+        hlbOptionsLayout.addWidget(self.highlightByte_levelSB)
+        self.highlightByte_levelSB.valueChanged.connect(self.highlightsLevelChanged)
+
+        hlbOptionsLayout.addStretch()
+
+        highlightByte_clearPB = QPushButton("Clear ALL")
+        highlightByte_clearPB.clicked.connect(self.highlightsClear)
+        hlbOptionsLayout.addWidget(highlightByte_clearPB)
+        
+        
+        #Put the drop-down menus for each byte & labels
+        hlbByteLayout = QGridLayout()
+        self.highlightByte = []
+        for i in range(0, 16):
+            self.highlightByte.append(QComboBox())
+            self.highlightByte[i].addItem(" ")
+            for j in range(0, 255):
+                self.highlightByte[i].addItem("%02x"%j)
+            hlbByteLayout.addWidget(QLabel("%02d"%i), 0, i)
+            hlbByteLayout.addWidget(self.highlightByte[i], 1, i)
+            self.highlightByte[i].currentIndexChanged.connect(self.highlightsBytesChanged)
+
+        hlbLayout.addLayout(hlbByteLayout)
+        hlbLayout.addLayout(hlbOptionsLayout)
+        viewLayout.addWidget(hlbGB, 0, 0)
+
+        self.changingLevels = False
+        self.highlightsClear()
+
         layout.addWidget(viewGB)
+
+        redrawPB = QPushButton("Redraw")
+        redrawPB.clicked.connect(self.redraw)
+
+        layout.addWidget(redrawPB)
        
-        #Setup trace viewer
+        ###Setup trace viewer
         self.AnalysisViewDocks = []
         for bnum in range(0,16):
             pw = pg.PlotWidget(name="'Analysis Byte %d'%bnum")
@@ -166,8 +250,53 @@ class DPATab(QWidget):
     def loadPushed(self):
         return
 
-    def updateTable(self):
+    def redraw(self):
+        for req in self.redrawRequired:
+            req = True
 
+        for i in range(len(self.redrawRequired)):
+            self.redrawOneResult(i)
+
+    def highlightsBytesChanged(self, index=None):
+        if self.changingLevels:
+            return
+        i = 0
+        for b in self.highlightByte:
+            self.highlights[i][self.highlightByte_levelSB.value()-1] = b.currentIndex()-1
+            i = i + 1
+
+        return
+
+    def highlightsLevelChanged(self, index=None):        
+        self.changingLevels = True
+
+        i = 0
+        for b in self.highlightByte:
+            value = self.highlights[i][self.highlightByte_levelSB.value()-1] + 1
+            b.setCurrentIndex(value)
+            i = i + 1
+            
+        self.changingLevels = False
+        return
+
+    def highlightsCopyKey(self):
+        for i in range(0,16):
+            if self.trace:
+                self.highlights[i][self.highlightByte_levelSB.value()-1] = self.trace.knownkey[i];
+        self.highlightsLevelChanged()
+
+    def highlightsCopyTop(self):        
+        return
+
+    def highlightsClear(self):
+        #256 levels, each level has 1 byte
+        #Rem 0 = NO highlight, actual byte to highlight is -1 from value
+        self.changingLevels = False
+        self.highlights = [[-1]*32 for i in range(16)]
+        self.highlightByte_levelSB.setValue(0)
+        self.highlightsBytesChanged(0)
+
+    def updateTable(self):
         for bnum in range(0,len(self.do)):
             if self.do[bnum].isChecked():
                 self.table.setColumnHidden(bnum, False)
@@ -242,12 +371,11 @@ class DPATab(QWidget):
         if (visible):
             self.redrawOneResult(15)
 
-    def redrawOneResult(self, bnum, highlightByte=True):
-
+    def redrawOneResult(self, bnum, highlightByte=True, Force=False):
         if self.redrawInProgress:
             return
         
-        if (self.redrawRequired[bnum] == False):
+        if (self.redrawRequired[bnum] == False) and (Force == False):
             return
 
         self.redrawRequired[bnum] = False
@@ -266,22 +394,31 @@ class DPATab(QWidget):
        
         for i in range(0,256):
             if highlightByte:
-                if self.trace.knownkey[bnum] != i:
+                if i not in self.highlights[bnum]:
                     self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen='g')
-            else:
+            else:               
                     self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen=(i%8,8))
                    
             progress.setValue(i)
             if progress.wasCanceled():
                 break
 
-        #Plot the highlighted byte on top
-        if highlightByte:
-            self.AnalysisViewDocks[bnum].widget().plot(diffs[self.trace.knownkey[bnum]], pen='r')
+        #Plot the highlighted byte(s) on top
+        for i in range(0,256):
+            if highlightByte:
+                if i in self.highlights[bnum]:
+                    penclr = self.whatColour( self.highlights[bnum].index(i) )
+                    self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen=penclr )
             
         self.AnalysisViewDocks[bnum].setVisible(True)
 
         self.redrawInProgress = False
+
+    def whatColour(self, index):
+        if index == 0:
+            return 'r'
+        else:
+            return 'b'
             
     def attackPushed(self):
         data = []
@@ -393,8 +530,12 @@ class PreviewTab(QWidget):
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
     
-    def __init__(self):
-        super(MainChip, self).__init__()        
+    def __init__(self):       
+        super(MainChip, self).__init__()
+
+        pg.setConfigOption('background', 'w')
+        pg.setConfigOption('foreground', 'k')
+        
         self.trace = tracereader_dpacontestv3.tracereader_dpacontestv3()
         self.initUI()
 
@@ -442,13 +583,13 @@ class MainChip(QMainWindow):
         self.preview = PreviewTab()
 
         #DPA Tab Setup
-        self.dpa = DPATab(self.preview, self)
+        self.dpa = PATab(self.preview, self)
 
         #Tab Widget Setup
         self.tw = QTabWidget()
         self.tw.currentChanged.connect(self.curTabChange) 
         self.tw.addTab(self.preview, "&Trace View")
-        self.tw.addTab(self.dpa, "&DPA")
+        self.tw.addTab(self.dpa, "&Power Analysis")
         self.curTabChange(0)
 
         self.setCentralWidget(self.tw)
