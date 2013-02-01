@@ -22,15 +22,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy
+import numpy as np
 import attack_aesmodel as model
 
 class attack_DPAAESv1():
     
     def doDPA(self, targetbit, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw"):
 
-        traces =numpy.array(traces)
-        plaintexts =numpy.array(plaintexts)
+        traces = np.array(traces)
+        plaintexts =np.array(plaintexts)
+        ciphertexts =np.array(ciphertexts)
 
         foundkey = []
 
@@ -47,48 +48,41 @@ class attack_DPAAESv1():
             diffs = [0]*256
 
             #For each 0..0xFF possible value of the key byte
-            for key in range(0, 256):
+            for key in range(0, 256):                
                 #Initialize arrays & variables to zero
-                mean1 = numpy.zeros(len(traces[0,:]))
-                mean0 = numpy.zeros(len(traces[0,:]))
-                num1 = 0
-                num0 = 0
+                sumnum = np.zeros(len(traces[0,:]))
+                sumden1 = np.zeros(len(traces[0,:]))
+                sumden2 = np.zeros(len(traces[0,:]))
 
+                hyp = [0] * len(traces[:,0])
+                #Generate hypotheticals
+                for tnum in range(len(traces[:,0])):
+                    hypint = model.HypHW(plaintexts[tnum], ciphertexts[tnum], key, bnum);
+                    hyp[tnum] = model.getHW(hypint)
+                hyp = np.array(hyp)                    
+
+                meanh = np.mean(hyp, dtype=np.float64)
+
+                #Figure out mean of all points in trace
+                meant = np.mean(traces, axis=0, dtype=np.float64)
+                                   
                 #For each trace, do the following
                 for tnum in range(len(traces[:,0])):
-                    #Generate the output of the SBOX
-                    if modeltype == "hw":
-                        Hyp = model.HypHW(plaintexts[tnum], ciphertexts[tnum], key, bnum);
-                    else:
-                        print "Error"
+                    hdiff = (hyp[tnum] - meanh)
+                    tdiff = traces[tnum,:] - meant
 
-                    #Is target bit 1 or target bit 0?
-                    if (Hyp & (1 << targetbit)) != 0:
-                        #Bit is 1, so add this trace to the 1 partition
-                        mean1 = numpy.add(mean1, traces[tnum,:])
-                        num1 = num1 + 1
-                    else:
-                        #Bit is 0, so add this trace to the 0 partition
-                        mean0 = numpy.add(mean0, traces[tnum,:])
-                        num0 = num0 + 1
-                    
+                    sumnum = sumnum + (hdiff*tdiff)
+                    sumden1 = sumden1 + pow(hdiff, 2)
+                    sumden2 = sumden2 + pow(tdiff, 2)               
+
                 if progressBar:
                     progressBar.setValue(pbcnt)
                     #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                     pbcnt = pbcnt + 1
                     if progressBar.wasCanceled():
                         break
-                        
-                #Average
-                mean1 = mean1 / num1
-                mean0 = mean0 / num0
 
-                #Find the difference between the two means
-                diffs[key] = numpy.subtract(mean1, mean0)
-
-                #Find the biggest difference for this specific key & store
-                #diffs[key] = max(numpy.fabs(diff))
-
+                diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
             
             self.all_diffs[bnum] = diffs
 
@@ -102,9 +96,3 @@ class attack_DPAAESv1():
         if hyprange == None:
             hyprange = range(0,256)
         return [self.all_diffs[bnum][i] for i in hyprange];
-        
-        
-
-        
-
-

@@ -10,7 +10,7 @@
 #    This file is part of chipwhisperer.
 #
 #    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Lesser General Public License as published by
+#    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
@@ -19,7 +19,7 @@
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU Lesser General Public License for more details.
 #
-#    You should have received a copy of the GNU Lesser General Public License
+#    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy
@@ -93,7 +93,12 @@ class tracereader_dpacontestv3:
         return self.traces[n]
 
     def getTextin(self, n):
-        return self.textins[n]
+        tin = self.textins[n]
+        return map(int, tin, [16]*len(tin))
+
+    def getTextout(self, n):
+        tout = self.textouts[n]
+        return map(int, tout, [16]*len(tout))
 
     def getKnownKey(self):
         return self.knownkey

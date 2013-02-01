@@ -10,7 +10,7 @@
 #    This file is part of chipwhisperer.
 #
 #    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Lesser General Public License as published by
+#    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
@@ -19,7 +19,7 @@
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU Lesser General Public License for more details.
 #
-#    You should have received a copy of the GNU Lesser General Public License
+#    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
@@ -30,6 +30,7 @@ sys.path.append('../common')
 import pyqtgraph as pg
 import tracereader_dpacontestv3
 import attack_dpav1
+import attack_cpav1
 import numpy
 
 
@@ -37,7 +38,8 @@ class PATab(QWidget):
     def __init__(self, previewtab, MainWindow=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
-        self.dpa = attack_dpav1.attack_DPAAESv1()
+        #self.dpa = attack_dpav1.attack_DPAAESv1()
+        self.dpa = attack_cpav1.attack_DPAAESv1()
 
         self.redrawInProgress = False
 
@@ -60,27 +62,34 @@ class PATab(QWidget):
         #Traces to include in attack
         self.startTracePrint = QSpinBox()        
         self.startTracePrint.setMinimum(0)
+        self.startTracePrint.setMaximum(1000000)
         self.endTracePrint = QSpinBox()        
         self.endTracePrint.setMinimum(0)
+        self.endTracePrint.setMaximum(1000000)
         tlayout = QHBoxLayout()
         tlayout.addWidget(QLabel("Traces: "))
         tlayout.addWidget(self.startTracePrint)
         tlayout.addWidget(QLabel(" to "))
         tlayout.addWidget(self.endTracePrint)
+        tlayout.addStretch()
         tracepointLayout.addLayout(tlayout)
 
         #Points to include in attack
         self.startPointPrint = QSpinBox()        
         self.startPointPrint.setMinimum(0)
+        self.startPointPrint.setMaximum(1000000)
         self.endPointPrint = QSpinBox()        
         self.endPointPrint.setMinimum(0)
+        self.endPointPrint.setMaximum(1000000)
         playout = QHBoxLayout()
         playout.addWidget(QLabel("Points: "))
         playout.addWidget(self.startPointPrint)
         playout.addWidget(QLabel(" to "))
         playout.addWidget(self.endPointPrint)
+        playout.addStretch()
         tracepointLayout.addLayout(playout)
 
+        tracepointLayout.addStretch()
     
         ##Byte Selection
         btnAll = QPushButton("All")
@@ -102,8 +111,10 @@ class PATab(QWidget):
         bselectGB = QGroupBox("Byte Selection")
         bselectGB.setLayout(bselectLayout)
         gensettings.addWidget(bselectGB)
+        gensettings.addStretch()
 
         layout.addWidget(setupGB)
+        
 
         self.table = QTableWidget(256, 16)
         self.ResultsTable = QDockWidget("Results Table")
@@ -114,9 +125,9 @@ class PATab(QWidget):
 
         ###This GB/Layout contains all the View options
         viewGB = QGroupBox("View Options")
-        viewLayout = QGridLayout()
+        viewLayout = QVBoxLayout()
         viewGB.setLayout(viewLayout)
-
+        
         ##Select the byte to highlight
         hlbGB = QGroupBox("Byte Highlight Option")
         hlbLayout = QVBoxLayout()
@@ -172,12 +183,17 @@ class PATab(QWidget):
         self.changingLevels = False
         self.highlightsClear()
 
-        layout.addWidget(viewGB)
-
+        ##Buttons etc for view
+        viewButtons = QHBoxLayout()
+        viewLayout.addLayout(viewButtons)
+        
         redrawPB = QPushButton("Redraw")
         redrawPB.clicked.connect(self.redraw)
+        viewButtons.addWidget(redrawPB)
 
-        layout.addWidget(redrawPB)
+        viewButtons.addStretch()
+
+        layout.addWidget(viewGB)
        
         ###Setup trace viewer
         self.AnalysisViewDocks = []
@@ -255,7 +271,8 @@ class PATab(QWidget):
             req = True
 
         for i in range(len(self.redrawRequired)):
-            self.redrawOneResult(i)
+            if self.do[i].isChecked():
+                self.redrawOneResult(i)
 
     def highlightsBytesChanged(self, index=None):
         if self.changingLevels:
@@ -422,14 +439,16 @@ class PATab(QWidget):
             
     def attackPushed(self):
         data = []
-        texts = []
+        textins = []
+        textouts = []
 
         for i in range(0, 16):
             self.redrawRequired[i] = True
 
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data.append(self.trace.getTrace(i)[self.startPointPrint.value():self.endPointPrint.value()])
-            texts.append(self.trace.getTextin(i))          
+            textins.append(self.trace.getTextin(i))
+            textouts.append(self.trace.getTextout(i)) 
 
         rangeDo = []
         for i in range(0,len(self.do)):
@@ -440,7 +459,7 @@ class PATab(QWidget):
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
-        self.dpa.doDPA(0, rangeDo, data, texts, progress)
+        self.dpa.doDPA(0, rangeDo, data, textins, textouts, progress)
 
         self.updateTable()
 
@@ -510,6 +529,11 @@ class PreviewTab(QWidget):
 
     def loadPushed(self):
         self.trace.loadAllTraces()
+        #Preview one full trace for now
+        self.pw.setVisible(False)
+        data = self.trace.getTrace(0)
+        self.pw.plot(data, pen='r')        
+        self.pw.setVisible(True)
 
     def redrawPushed(self):
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
@@ -640,7 +664,6 @@ class MainChip(QMainWindow):
         #return QFileInfo(fullFileName).fileName()
         
     def loadFile(self, fname):
-#        try:
         self.trace.loadInfo(os.path.dirname(fname))
         self.preview.passTrace(self.trace)
         self.dpa.passTrace(self.trace)
