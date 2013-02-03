@@ -82,9 +82,10 @@ INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 def HypHW(pt, ct, key, bnum):
     if pt != None:
         return SBOX[pt[bnum] ^ key]
+    elif ct != None:        
+        return INVSBOX[ct[bnum] ^ key]
     else:
-        print "ERROR: HW Model Incomplete"
-        return None
+        raise ValueError("Must specify PT or CT")
 
 def HypHD(pt, ct, key, bnum):
     #Get output

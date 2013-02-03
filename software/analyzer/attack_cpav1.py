@@ -25,9 +25,9 @@
 import numpy as np
 import attack_aesmodel as model
 
-class attack_DPAAESv1():
+class attack_CPAAESv1():
     
-    def doDPA(self, targetbit, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw"):
+    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw", keyround="first"):
 
         traces = np.array(traces)
         plaintexts =np.array(plaintexts)
@@ -55,15 +55,41 @@ class attack_DPAAESv1():
                 sumden2 = np.zeros(len(traces[0,:]))
 
                 hyp = [0] * len(traces[:,0])
+
+                #Formula for CPA & description found in "Power Analysis Attacks"
+                # by Mangard et al, page 124, formula 6.2.                         
+                
                 #Generate hypotheticals
                 for tnum in range(len(traces[:,0])):
-                    hypint = model.HypHW(plaintexts[tnum], ciphertexts[tnum], key, bnum);
+
+                    if len(plaintexts) > 0:
+                        pt = plaintexts[tnum]
+
+                    if len(ciphertexts) > 0:
+                        ct = ciphertexts[tnum]
+
+                    if keyround == "first":
+                        ct = None
+                    elif keyround == "last":
+                        pt = None
+                    else:
+                        raise ValueError("keyround invalid")
+                    
+                    #Generate the output of the SBOX
+                    if modeltype == "hw":
+                        hypint = model.HypHW(pt, ct, key, bnum);
+                    elif modeltype == "hd":
+                        hypint = model.HypHD(None, ct, key, bnum);
+                    else:
+                        raise ValueError("modeltype invalid")
                     hyp[tnum] = model.getHW(hypint)
+                    
                 hyp = np.array(hyp)                    
 
+                #Mean of hypothesis
                 meanh = np.mean(hyp, dtype=np.float64)
 
-                #Figure out mean of all points in trace
+                #Mean of all points in trace
                 meant = np.mean(traces, axis=0, dtype=np.float64)
                                    
                 #For each trace, do the following

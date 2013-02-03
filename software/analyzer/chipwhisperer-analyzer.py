@@ -28,6 +28,7 @@ from PySide.QtGui import *
 import os.path
 sys.path.append('../common')
 import pyqtgraph as pg
+import pyqtgraph.multiprocess as mp
 import tracereader_dpacontestv3
 import attack_dpav1
 import attack_cpav1
@@ -39,7 +40,7 @@ class PATab(QWidget):
         QWidget.__init__(self)
         layout = QVBoxLayout()
         #self.dpa = attack_dpav1.attack_DPAAESv1()
-        self.dpa = attack_cpav1.attack_DPAAESv1()
+        self.dpa = attack_cpav1.attack_CPAAESv1()
 
         self.redrawInProgress = False
 
@@ -162,8 +163,7 @@ class PATab(QWidget):
         highlightByte_clearPB = QPushButton("Clear ALL")
         highlightByte_clearPB.clicked.connect(self.highlightsClear)
         hlbOptionsLayout.addWidget(highlightByte_clearPB)
-        
-        
+                
         #Put the drop-down menus for each byte & labels
         hlbByteLayout = QGridLayout()
         self.highlightByte = []
@@ -236,6 +236,7 @@ class PATab(QWidget):
         self.AnalysisViewDocks[15].visibilityChanged.connect(self.vchanged15)
         
         #layout.addWidget(self.pw)
+        layout.addStretch()
         self.setLayout(layout)
 
         self.redrawRequired = []
@@ -400,24 +401,29 @@ class PATab(QWidget):
         
         diffs = self.dpa.getDiff(bnum)
         #Do Redraw
+        #proc = mp.QtProcess()
+        #rqt = proc._import('PySide.QtGui')        
+        #progress = rqt.QProgressDialog("Redrawing", "Abort", 0, 100)
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(1000)
-        progress.setMinimum(0)
-        progress.setMaximum(256)        
+        progress.setMinimumDuration(1000) #_callSync='off'
+        progress.setMinimum(0) #_callSync='off'
+        progress.setMaximum(256) #_callSync='off'
 
         self.AnalysisViewDocks[bnum].widget().clear
-        self.AnalysisViewDocks[bnum].setVisible(False)
+       #self.AnalysisViewDocks[bnum].setVisible(False)
        
         for i in range(0,256):
+            canceled = progress.wasCanceled() #_callSync='off'
             if highlightByte:
                 if i not in self.highlights[bnum]:
                     self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen='g')
             else:               
                     self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen=(i%8,8))
-                   
-            progress.setValue(i)
-            if progress.wasCanceled():
+            if (i % 32) == 0:
+                progress.setValue(i) #, _callSync='off')
+            #if canceled.hasResult() and canceled.result() is True:
+            if canceled:
                 break
 
         #Plot the highlighted byte(s) on top
@@ -459,7 +465,7 @@ class PATab(QWidget):
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
-        self.dpa.doDPA(0, rangeDo, data, textins, textouts, progress)
+        self.dpa.doDPA(rangeDo, data, textins, textouts, progress)
 
         self.updateTable()
 
@@ -530,10 +536,8 @@ class PreviewTab(QWidget):
     def loadPushed(self):
         self.trace.loadAllTraces()
         #Preview one full trace for now
-        self.pw.setVisible(False)
         data = self.trace.getTrace(0)
         self.pw.plot(data, pen='r')        
-        self.pw.setVisible(True)
 
     def redrawPushed(self):
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
@@ -542,14 +546,14 @@ class PreviewTab(QWidget):
         progress.setMinimum(self.startTracePrint.value())
         progress.setMaximum(self.endTracePrint.value())        
 
-        self.pw.setVisible(False)
+        #self.pw.setVisible(False)
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data = self.trace.getTrace(i)
             self.pw.plot(data[self.startPointPrint.value():self.endPointPrint.value()], pen=(i%8,8))            
             progress.setValue(i)
             if progress.wasCanceled():
                 break
-        self.pw.setVisible(True)
+        #self.pw.setVisible(True)
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4

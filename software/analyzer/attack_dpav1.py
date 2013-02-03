@@ -27,7 +27,7 @@ import attack_aesmodel as model
 
 class attack_DPAAESv1():
     
-    def doDPA(self, targetbit, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw"):
+    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw", keyround="first", targetbit=0):
 
         traces =numpy.array(traces)
         plaintexts =numpy.array(plaintexts)
@@ -56,11 +56,27 @@ class attack_DPAAESv1():
 
                 #For each trace, do the following
                 for tnum in range(len(traces[:,0])):
+                    if len(plaintexts) > 0:
+                        pt = plaintexts[tnum]
+
+                    if len(ciphertexts) > 0:
+                        ct = ciphertexts[tnum]
+
+                    if keyround == "first":
+                        ct = None
+                    elif keyround == "last":
+                        pt = None
+                    else:
+                        raise ValueError("keyround invalid")
+                        
+                    
                     #Generate the output of the SBOX
                     if modeltype == "hw":
-                        Hyp = model.HypHW(plaintexts[tnum], ciphertexts[tnum], key, bnum);
+                        Hyp = model.HypHW(pt, ct, key, bnum);
+                    elif modeltype == "hd":
+                        Hyp = model.HypHD(None, ct, key, bnum);
                     else:
-                        print "Error"
+                        raise ValueError("modeltype invalid")
 
                     #Is target bit 1 or target bit 0?
                     if (Hyp & (1 << targetbit)) != 0:
@@ -95,7 +111,7 @@ class attack_DPAAESv1():
             #From all the key candidates, select the largest difference as most likely
             #foundbyte = diffs.index(max(diffs))
             #foundkey.append(foundbyte)
-#            print "%2x "%foundbyte,
+            #print "%2x "%foundbyte,
 
 
     def getDiff(self, bnum, hyprange=None):
