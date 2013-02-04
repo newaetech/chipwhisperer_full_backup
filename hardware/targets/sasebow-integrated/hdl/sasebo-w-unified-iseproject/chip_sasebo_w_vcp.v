@@ -1,18 +1,12 @@
 /*-------------------------------------------------------------------------
- SASEBO-W VCP smartcard controller with FIFO smartcard writer
+ SASEBO-W With OpenADC - ChipWhisperer Build
  
  Copyright (C) 2012 MORITA TECH CO.,LTD. 
+ Copyright (C) 2013 Colin O'Flynn
  -------------------------------------------------------------------------*/ 
 
 /*-------------------------------------------------------------------------
- SASEBO-W VCP smartcard controller
-
- File name   : chip_sasebo_w_vcp.v
- Version     : 1.2
- Created     : Jun13,2011
- Last update : Jun27,2011
- Desgined by : Toshihiro Katashita
- 
+ Desgined by : Colin O'Flynn, based on work by Toshihiro Katashita
  
  Copyright (C) 2011 AIST
  
@@ -31,8 +25,9 @@
  from the use of this code.
  
  When you publish any results arising from the use of this code, we will
- appreciate it if you can cite our webpage
- (http://staff.aist.go.jp/akashi.satoh/SASEBO/en/index.html).
+ appreciate it if you can cite our webpage:
+ http://staff.aist.go.jp/akashi.satoh/SASEBO/en/index.html for SASEBO-W
+ http://www.chipwhisperer.com for this work
  -------------------------------------------------------------------------*/ 
 
 //================================================ CHIP_SASEBO_W_VCP
@@ -51,7 +46,10 @@ module CHIP_SASEBO_W_VCP
 
    // LED, header pin, push switch, dip switch, clock, and reset
    gpio_trig0, gpio_trig1,
-   led, pushsw, dipsw, clkin, rstnin);
+   led, pushsw, dipsw, clkin, rstnin,
+	
+	flash_DIN, flash_DOUT, flash_CS, flash_CLK
+	);
 
    //------------------------------------------------
    // OpenADC Connections
@@ -102,6 +100,12 @@ module CHIP_SASEBO_W_VCP
    input [3:0]  dipsw;
    input        clkin, rstnin;
    
+	// SPI Flash
+	input        flash_DIN;
+	output       flash_DOUT;
+	output       flash_CS;
+	output       flash_CLK;
+		
    //------------------------------------------------
    wire         clk, rst, clk4x, clk100mhz;
 
@@ -118,6 +122,7 @@ module CHIP_SASEBO_W_VCP
    wire         enable_mask; // SW3:bit1 ON:ECHO disable   OFF:ECHO enable
    wire         enable_ctrl; // SW3:bit2 ON:RTS/CTS enable OFF:RTS/CTS disable
    wire         card_writer_mode; // SW3:bit3 ON:Writer OFF:Normal Operation
+	wire         spi_flash_mode;   // SW4:bit4 ON:SPI Flash OFF:Normal Operation
    
 	//------------------------------------------------
 		
@@ -148,9 +153,10 @@ module CHIP_SASEBO_W_VCP
 	wire reg_stream;
 	wire [5:0] reg_hypaddr;
 	wire [15:0] reg_hyplen;
+	wire disable_openadc;	
 	
 	 openadc_interface openadc_inst(
-    .reset_i(rst), 
+    .reset_i(rst | disable_openadc), 
 	 .clk_adcint(clk100mhz),
 	 .clk_iface(usb_clk), 
 	 .ftdi_data(usb_d),
@@ -193,7 +199,7 @@ module CHIP_SASEBO_W_VCP
     wire scard_docmd, scard_busy, scard_async_datardy, scard_status;
 	 wire [15:0] scard_resp_code;
 
-	 serial_scard_hls_iface scard_inst(.reset_i(reg_rst),
+	 serial_scard_hls_iface scard_inst(.reset_i(reg_rst | disable_openadc),
 													.clk_i(usb_clk),													
 													.scard_io(card_io),
 													.scard_cla(scard_cla),
@@ -212,7 +218,7 @@ module CHIP_SASEBO_W_VCP
 													.busy(scard_busy));	
 
 	reg_smartcards registers_smartcards (
-		.reset_i(reg_rst),
+		.reset_i(reg_rst | disable_openadc),
 		.clk(usb_clk),
 		.reg_address(reg_addr), 
 		.reg_bytecnt(reg_bcnt), 
@@ -243,13 +249,19 @@ module CHIP_SASEBO_W_VCP
 		.scard_docmd(scard_docmd),
 		.scard_busy(scard_busy)
 	);
-	/*
-	`ifdef USE_SCARD
-	 ,.scard_present(card_inserted),
-	 .scard_rst(scardusb_rst),
-	 .scard_io(card_io)
-`endif
-*/
+	
+	//------------------------------------------------
+	// Mode Types
+								
+	assign usb_d[2]  = ( spi_flash_mode ) ? flash_DIN : 1'bZ;
+   assign usb_d[3]  = ( card_writer_mode) ? card_io  : 1'bZ;
+								
+	assign disable_openadc = spi_flash_mode | card_writer_mode;
+	//------------------------------------------------
+	//SPI Flash
+	assign flash_DOUT = (spi_flash_mode) ? usb_d[1] : 1'bZ;
+	assign flash_CLK  = (spi_flash_mode) ? usb_d[0] : 1'bZ;
+	assign flash_CS   = (spi_flash_mode) ? usb_d[3] : 1'bZ;
 	
    //------------------------------------------------
    // FT2232H IF
@@ -266,17 +278,13 @@ module CHIP_SASEBO_W_VCP
 
    //------------------------------------------------
    // Smartcard IF
-`ifdef USE_SCARD
-   
-`else
-	assign card_io = (card_writer_mode)? 1'bz: (txd==1'b0)? 1'b0 : 1'bz;
-`endif
-   	
+	//assign card_io = (card_writer_mode)? 1'bz: (txd==1'b0)? 1'b0 : 1'bz;	
+
    always @(posedge clk) card_oe       <= card_inserted;
    always @(posedge clk) card_power_en <= card_inserted;
    always @(posedge clk) rst_sync      <= rst_async;
    assign rst_async = rst | ~pushsw ;//| (~usb_rtsn & enable_ctrl);
-   assign card_rst = (card_writer_mode)? rst_sync : scardusb_rst;
+   assign card_rst = (card_writer_mode)? ~usb_d[6] : scardusb_rst;
 
 	assign adc_rxd = 1;
 
@@ -287,7 +295,8 @@ module CHIP_SASEBO_W_VCP
    // DIP switch
    assign enable_mask = ~dipsw[0];
    assign enable_ctrl = ~dipsw[1];
-   assign card_writer_mode = ~dipsw[3];
+   assign card_writer_mode = ~dipsw[2];
+	assign spi_flash_mode = (~dipsw[3]) & ~card_writer_mode;
 
    // LED
    //assign led[7] = ~rst_async;
@@ -311,12 +320,14 @@ module CHIP_SASEBO_W_VCP
    // TXD      ->   AUX1     (MOSI)
    // CTS      <-   I/O      (MISO)
    // FPGA CLK ->   CLK      (XTAL1)
-   assign card_aux1 = 1'bz; //(card_writer_mode)? ((usb_txd == 1'b0)? 1'b0: 1'bz): 1'bz;
-   assign card_aux2 = 1'bz; //(card_writer_mode)? ((usb_dtrn == 1'b0)? 1'b0: 1'bz): 1'bz;
+   assign card_aux1 = (card_writer_mode)? usb_d[0] : 1'bz;
+   assign card_aux2 = (card_writer_mode)? usb_d[4] : 1'bz;
    
    // CLOCK
    MK_CLKRST mk_clkrst // 24 MHz (clkin) -> 3.571 MHz (clk)
      (.clkin(clkin), .clkinbufg(clkin_bufg), .rstnin(rstnin), .clk(clk), .clk4x(clk4x), .clk100mhz(clk100mhz), .rst(rst));
+	  
+	//
 	  
 	ODDR2 u0 (.D0(1'b1), .D1(1'b0), .C0(clk), .C1(~clk), .CE(1'b1), .R(1'b0), .S(1'b0), .Q(card_clk));
 endmodule // CHIP_SASEBO_W_VCP
@@ -411,3 +422,7 @@ module MK_RST (locked, clk, rst);
 
    assign rst = ~&cnt;
 endmodule // MK_RST
+
+module via (w, w);
+inout w;
+endmodule

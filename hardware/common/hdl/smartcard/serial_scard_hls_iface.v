@@ -61,7 +61,8 @@ module serial_scard_hls_iface(
 	assign reset = reset_i;	
 	wire [7:0] datafromrx;
 
-	assign scard_io = (tx_out==1'b0)? 1'b0 : 1'bz;
+	assign scard_io = (reset_i) ? 1'bz:
+	                  (tx_out==1'b0)? 1'b0 : 1'bz;
 	always @(posedge clk) rx_in  <= scard_io | ~tx_out;
 
 	wire [7:0] datatotx;
