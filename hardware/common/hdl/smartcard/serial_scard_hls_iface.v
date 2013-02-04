@@ -1,5 +1,5 @@
 `timescale 1ns / 1ps
-`define CHIPSCOPE
+//`define CHIPSCOPE
 /***********************************************************************
 This file is part of the OpenADC Project. See www.newae.com for more details,
 or the codebase at http://www.assembla.com/spaces/openadc .

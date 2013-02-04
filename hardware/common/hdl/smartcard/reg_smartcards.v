@@ -40,7 +40,7 @@ module reg_smartcards(
 	input [5:0]    reg_address,  // Address of register
 	input [15:0]   reg_bytecnt,  // Current byte count
 	input [7:0]    reg_datai,    // Data to write
-	inout  [7:0]   reg_datao,    // Data to read
+	output [7:0]   reg_datao,    // Data to read
 	input [15:0]   reg_size,     // Total size being read/write
 	input          reg_read,     // Read flag
 	input  			reg_write,    // Write flag
@@ -153,8 +153,15 @@ module reg_smartcards(
 	 assign scard_command = scard_command_reg;
 	 assign scard_len_response = scard_len_response_reg;
 	 
-	 //TODO: Stop this from overwriting
-	 assign reg_stream = scard_async_datardy & scard_async_en;
+	 //Stream hacks output for asyncronous mode
+	 assign reg_stream = scard_async_datardy & scard_async_en & ~(reg_read | reg_write | reg_addrvalid);
+	 
+	 reg reg_stream_dly;
+	 reg reg_stream_dly2;
+	 always @(posedge clk) begin
+		reg_stream_dly <= reg_stream;
+		reg_stream_dly2 <= reg_stream_dly;
+	 end
 	  
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
@@ -170,7 +177,18 @@ module reg_smartcards(
 	
 	 reg [7:0] reg_datao_reg;
 	 reg reg_datao_valid_reg;
-	 assign reg_datao = (reg_datao_valid_reg | reg_stream) ? ( (reg_stream) ? scard_async_data : reg_datao_reg) : 8'd0;
+	 
+	 reg [7:0] reg_datao;
+	 
+	 always @(*) begin
+		if ((reg_stream) | (reg_stream_dly) | (reg_stream_dly2)) begin
+			reg_datao <= scard_async_data;
+		end else if (reg_datao_valid_reg == 1'b1) begin
+			reg_datao <= reg_datao_reg;
+		end else begin
+			reg_datao <= 8'd0;
+		end
+	 end
 
 	 always @(posedge clk) begin
 		if (reg_addrvalid) begin
@@ -227,6 +245,7 @@ module reg_smartcards(
 			scard_p2_reg <= 0;
 			scard_len_command_reg <= 0;
 			scard_len_response_reg <= 0;
+			registers_scardctrl <= 0;
 		end else if (reg_write) begin
 			case (reg_address)
 				`SCARDCTRL_ADDR: registers_scardctrl <= reg_datai;
@@ -257,8 +276,8 @@ module reg_smartcards(
 							1: scard_ins_reg <= reg_datai;
 							2: scard_p1_reg <= reg_datai;
 							3: scard_p2_reg <= reg_datai;							
-							4: scard_len_command_reg <= reg_datai;
-							5: scard_len_response_reg <= reg_datai;
+							4: scard_len_command_reg <= reg_datai[5:0];
+							5: scard_len_response_reg <= reg_datai[5:0];
 							default: ;				
 						endcase	
 				end
@@ -289,6 +308,11 @@ module reg_smartcards(
 	 assign cs_data[84:69] = scard_response[127:112];
 	 assign cs_data[85] = scard_busy;
 	 assign cs_data[86] = scard_status;
+	 assign cs_data[94:87] = scard_async_data;
+	 assign cs_data[95] = scard_async_datardy;
+	 assign cs_data[96] = scard_reset;
+	 assign cs_data[97] = reg_stream;
+	 assign cs_data[98] = scard_async_en;
  `endif
  
 endmodule

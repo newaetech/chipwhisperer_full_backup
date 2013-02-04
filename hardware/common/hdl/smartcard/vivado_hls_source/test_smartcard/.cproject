@@ -17,7 +17,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="a.exe" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.debug.900462864" name="Debug" parent="cdt.managedbuild.config.gnu.exe.debug">
+				<configuration artifactName="a.exe" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.debug,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.debug.900462864" name="Debug" parent="cdt.managedbuild.config.gnu.exe.debug">
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.debug.900462864." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.debug.1547587270" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.debug">
 							<targetPlatform binaryParser="org.eclipse.cdt.core.PE;org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.gnu.platform.exe.debug.1944646143" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.debug"/>
@@ -28,12 +28,11 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.717888709" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1572853450" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/systemc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
-									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/smartcard/vivado_hls_source"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
 									<listOptionValue builtIn="false" value="C:/Users/colin/Documents/VivadoHLSProjects"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.564913469" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -42,12 +41,11 @@
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.831236650" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1647783832" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/systemc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
-									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/smartcard/vivado_hls_source"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
 									<listOptionValue builtIn="false" value="C:/Users/colin/Documents/VivadoHLSProjects"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.398381697" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>
@@ -95,7 +93,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="a.exe" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe,org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.release.1257563455" name="Release" parent="cdt.managedbuild.config.gnu.exe.release">
+				<configuration artifactName="a.exe" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.exe" buildProperties="org.eclipse.cdt.build.core.buildType=org.eclipse.cdt.build.core.buildType.release,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.exe" cleanCommand="rm -rf" description="" id="cdt.managedbuild.config.gnu.exe.release.1257563455" name="Release" parent="cdt.managedbuild.config.gnu.exe.release">
 					<folderInfo id="cdt.managedbuild.config.gnu.exe.release.1257563455." name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.exe.release.48835578" name="Linux GCC" superClass="cdt.managedbuild.toolchain.gnu.exe.release">
 							<targetPlatform binaryParser="org.eclipse.cdt.core.PE;org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.gnu.platform.exe.release.22837436" name="Debug Platform" superClass="cdt.managedbuild.target.gnu.platform.exe.release"/>
@@ -106,12 +104,11 @@
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.315141248" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1714173178" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/systemc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
-									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/smartcard/vivado_hls_source"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
 									<listOptionValue builtIn="false" value="C:/Users/colin/Documents/VivadoHLSProjects"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1889991135" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
@@ -120,12 +117,11 @@
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.1589673921" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1766966520" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/systemc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
-									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/smartcard/vivado_hls_source"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
 									<listOptionValue builtIn="false" value="C:/Users/colin/Documents/VivadoHLSProjects"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/ap_sysc"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2012.4/include/etc"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.1106241263" superClass="cdt.managedbuild.tool.gnu.c.compiler.input"/>
 							</tool>

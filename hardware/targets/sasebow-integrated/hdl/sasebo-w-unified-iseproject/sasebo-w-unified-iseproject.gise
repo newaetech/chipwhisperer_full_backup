@@ -122,7 +122,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1359937406" xil_pn:in_ck="7839977773380715979" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="1395845753015261399" xil_pn:start_ts="1359937374">
+    <transform xil_pn:end_ts="1359991388" xil_pn:in_ck="7839977773380715979" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="1395845753015261399" xil_pn:start_ts="1359991361">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -144,7 +144,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1359937417" xil_pn:in_ck="-4451310891946970660" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-7359285127891417713" xil_pn:start_ts="1359937406">
+    <transform xil_pn:end_ts="1359991396" xil_pn:in_ck="-4451310891946970660" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-7359285127891417713" xil_pn:start_ts="1359991388">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.bld"/>
@@ -153,7 +153,7 @@
       <outfile xil_pn:name="_ngo"/>
       <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1359937480" xil_pn:in_ck="314177610605569706" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="-5657126474599326901" xil_pn:start_ts="1359937417">
+    <transform xil_pn:end_ts="1359991442" xil_pn:in_ck="314177610605569706" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="-5657126474599326901" xil_pn:start_ts="1359991396">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -167,7 +167,7 @@
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP_usage.xml"/>
       <outfile xil_pn:name="_xmsgs/map.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1359937563" xil_pn:in_ck="6147506910323933123" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="-2362651792651823936" xil_pn:start_ts="1359937480">
+    <transform xil_pn:end_ts="1359991492" xil_pn:in_ck="6147506910323933123" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="-2362651792651823936" xil_pn:start_ts="1359991442">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -182,9 +182,8 @@
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP_par.xrpt"/>
       <outfile xil_pn:name="_xmsgs/par.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1359937617" xil_pn:in_ck="-313840905337388255" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="8144905581504103502" xil_pn:start_ts="1359937563">
+    <transform xil_pn:end_ts="1359991537" xil_pn:in_ck="-313840905337388255" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="8144905581504103502" xil_pn:start_ts="1359991492">
       <status xil_pn:value="SuccessfullyRun"/>
-      <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.ut"/>
       <outfile xil_pn:name="_xmsgs/bitgen.xmsgs"/>
@@ -203,7 +202,7 @@
       <status xil_pn:value="InputChanged"/>
       <status xil_pn:value="InputRemoved"/>
     </transform>
-    <transform xil_pn:end_ts="1359937563" xil_pn:in_ck="6571740578845898790" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1359937549">
+    <transform xil_pn:end_ts="1359991492" xil_pn:in_ck="6571740578845898790" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1359991480">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="CHIP_SASEBO_W_VCP.twr"/>
