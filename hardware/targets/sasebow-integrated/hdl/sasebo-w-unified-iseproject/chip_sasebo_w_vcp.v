@@ -136,6 +136,19 @@ module CHIP_SASEBO_W_VCP
 	
 	wire scardusb_rst;
 	
+	wire reg_rst;
+	wire [5:0] reg_addr;
+	wire [15:0] reg_bcnt;
+	wire [7:0] reg_datao;
+	wire [7:0] reg_datai;
+	wire [15:0] reg_size;
+	wire reg_read;
+	wire reg_write;
+	wire reg_addrvalid;
+	wire reg_stream;
+	wire [5:0] reg_hypaddr;
+	wire [15:0] reg_hyplen;
+	
 	 openadc_interface openadc_inst(
     .reset_i(rst), 
 	 .clk_adcint(clk100mhz),
@@ -159,10 +172,77 @@ module CHIP_SASEBO_W_VCP
 	 .amp_gain(amp_gain),
 	 .amp_hilo(amp_hilo),
 	 
-	 .reg_datai_i(8'd0),
-	 .reg_stream_i(0),
-	 .reg_hyplen_i(16'd0)	 
+	 
+	 .reg_reset_o(reg_rst),
+	 .reg_address_o(reg_addr),
+	 .reg_bytecnt_o(reg_bcnt),
+	 .reg_datao_o(reg_datao),
+	 .reg_datai_i(reg_datai),
+	 .reg_size_o(reg_size),
+	 .reg_read_o(reg_read),
+	 .reg_write_o(reg_write),
+	 .reg_addrvalid_o(reg_addrvalid),
+	 .reg_stream_i(reg_stream),
+	 .reg_hypaddress_o(reg_hypaddr),
+	 .reg_hyplen_i(reg_hyplen)  
 	 );
+	 	 
+	 wire [7:0] scard_cla, scard_ins, scard_p1, scard_p2, scard_async_data;
+	 wire [4:0] scard_len_command, scard_len_response;
+	 wire [127:0] scard_command, scard_response;
+    wire scard_docmd, scard_busy, scard_async_datardy, scard_status;
+	 wire [15:0] scard_resp_code;
+
+	 serial_scard_hls_iface scard_inst(.reset_i(reg_rst),
+													.clk_i(usb_clk),													
+													.scard_io(card_io),
+													.scard_cla(scard_cla),
+													.scard_ins(scard_ins),
+													.scard_p1(scard_p1),
+													.scard_p2(scard_p2),
+													.scard_len_command(scard_len_command),
+													.scard_command(scard_command),
+													.scard_len_response(scard_len_response),
+													.scard_response(scard_response),
+													.scard_status(scard_status),
+													.scard_resp_code(scard_resp_code),	
+													.async_data(scard_async_data),
+													.async_datardy(scard_async_datardy),
+													.do_cmd(scard_docmd),
+													.busy(scard_busy));	
+
+	reg_smartcards registers_smartcards (
+		.reset_i(reg_rst),
+		.clk(usb_clk),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_stream(reg_stream),
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen),
+	 
+		.scard_cla(scard_cla),
+		.scard_ins(scard_ins),
+		.scard_p1(scard_p1),
+		.scard_p2(scard_p2),
+		.scard_len_command(scard_len_command),
+		.scard_command(scard_command),
+		.scard_len_response(scard_len_response),
+		.scard_response(scard_response),
+		.scard_status(scard_status),
+		.scard_resp_code(scard_resp_code),
+		.scard_async_data(scard_async_data),
+		.scard_async_datardy(scard_async_datardy),							
+		.scard_present(card_inserted),
+		.scard_reset(scardusb_rst),
+		.scard_docmd(scard_docmd),
+		.scard_busy(scard_busy)
+	);
 	/*
 	`ifdef USE_SCARD
 	 ,.scard_present(card_inserted),
