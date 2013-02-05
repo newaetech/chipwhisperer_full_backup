@@ -3,7 +3,7 @@
 # Copyright (C) Colin O'Flynn 2012
 # See www.newae.com for details
 #
-# Released under LGPL License
+# Released under GPL License
 
 import sys
 import os
@@ -140,6 +140,8 @@ class SASEBOW_Integrated():
         else:
             payload = bytearray(range(16));
 
+        #Padding
+        payload += bytearray([0, 0])        
         self.oa.sendMessage(CODE_WRITE, ADDR_PLDADDR, payload, Validate=False)
 
     def APDUSend(self, cla, ins, p1, p2, data):
@@ -153,10 +155,9 @@ class SASEBOW_Integrated():
             print "SASEBOW: USB Data Error, wrong Response Size"
             return 0
 
-        resp = resp[16:18]
-        resp = (resp[0] << 8) | resp[1]
-        print resp
-        return resp
+        status = resp[16:18]
+        status = (status[0] << 8) | status[1]        
+        return status
 
     def APDURecv(self, cla, ins, p1, p2, datalen):
         self.APDUHeader(cla, ins, p1, p2, 0, datalen)
@@ -169,10 +170,12 @@ class SASEBOW_Integrated():
             print "SASEBOW: USB Data Error, wrong Response Size"
             return 0
 
-        resp = bytearray(resp)
-        print "%02x %02x"%(resp[16], resp[17])
-        return resp[0:datalen]        
-                    
+        return bytearray(resp)
+        #status = resp[16:18]
+        #status = (status[0] << 8) | status[1]
+
+        #resp = bytearray(resp)
+        #return resp[0:datalen]       
       
     def setModeEncrypt(self):
         return
@@ -182,7 +185,11 @@ class SASEBOW_Integrated():
 
     def loadEncryptionKey(self, key):
         if key != None:
-            self.APDUSend(0x80, 0x12, 0x00, 0x00, key)
+            resp = self.APDUSend(0x80, 0x12, 0x00, 0x00, key)
+            if resp != 0x9000:
+                print "WARNING: SCard returned 0x%x"%resp
+                return False
+        return True
       
     def loadInput(self, inputtext):
         self.input = inputtext
@@ -191,8 +198,17 @@ class SASEBOW_Integrated():
         return True
 
     def readOutput(self):
-        return self.APDURecv(0x80, 0xC0, 0x00, 0x00, 16)
+        resp = self.APDURecv(0x80, 0xC0, 0x00, 0x00, 16)
+
+        status = resp[16:18]
+        status = (status[0] << 8) | status[1]
+        if status != 0x9000:
+            print "WARNING in readOutput: SCard returned 0x%x"%status
+        return resp[:16]
 
     def go(self):
-        self.APDUSend(0x80, 0x04, 0x04, 0x00, self.input)
-   
+        resp = self.APDUSend(0x80, 0x04, 0x04, 0x00, self.input)
+        if resp != 0x9F10:
+            print "WARNING in go: SCard returned 0x%x"%resp
+            return False
+        return True   

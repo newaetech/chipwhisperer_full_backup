@@ -10,7 +10,7 @@
 #    This file is part of chipwhisperer.
 #
 #    chipwhisperer is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU Lesser General Public License as published by
+#    it under the terms of the GNU General Public License as published by
 #    the Free Software Foundation, either version 3 of the License, or
 #    (at your option) any later version.
 #
@@ -19,7 +19,7 @@
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU Lesser General Public License for more details.
 #
-#    You should have received a copy of the GNU Lesser General Public License
+#    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #
 
@@ -29,11 +29,6 @@ import threading
 import time
 import logging
 import math
-os.environ["QT_API"] = "pyside"
-import matplotlib
-matplotlib.use("Qt4Agg")
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.figure import Figure
 from PySide.QtCore import *
 from PySide.QtGui import *
 import serial
@@ -105,83 +100,10 @@ except ImportError:
     target_sasebow_integrated_str = sys.exc_info()
     print target_sasebow_integrated_str
 
-
-class pysideGraph():
-    def __init__(self, name="", xmin=0, xmax=1, ymin=-1.0, ymax=1.0, xfigsize=600, yfigsize=600):
-        self.gb = QGroupBox("Results Preview")
-        self.fig = Figure(figsize=(xfigsize,yfigsize), dpi=72)
-        self.fig_ax =  self.fig.add_subplot(111)
-        self.fig_ax.plot([0,0])
-        clocklayout = QVBoxLayout()
-        canvas = FigureCanvas(self.fig)
-        layout = QVBoxLayout()
-        layout.addWidget(canvas)
-        settingsLayout = QGridLayout()
-      
-        self.xmin = QSpinBox()
-        self.xmin.setMinimum(xmin)
-        self.xmin.setMaximum(xmax)
-        self.xmax = QSpinBox()
-        self.xmax.setMinimum(xmin)
-        self.xmax.setMaximum(xmax)
-        self.ymin = QDoubleSpinBox()
-        self.ymin.setMinimum(ymin)
-        self.ymin.setMaximum(ymax)
-        self.ymin.setDecimals(5)
-        self.ymax = QDoubleSpinBox()
-        self.ymax.setMinimum(ymin)
-        self.ymax.setMaximum(ymax)
-        self.ymin.setValue(ymin)
-        self.ymax.setValue(ymax)
-        self.xmin.setValue(xmin)
-        self.xmax.setValue(xmax)
-        self.ymax.setDecimals(5)
-
-        self.persistant = QCheckBox("Persistance")
-
-        settingsLayout.addWidget(QLabel("X Limits:"), 0, 0)
-        settingsLayout.addWidget(self.xmin, 0, 1)
-        settingsLayout.addWidget(self.xmax, 0, 2)
-        settingsLayout.addWidget(QLabel("Y Limits:"), 1, 0)
-        settingsLayout.addWidget(self.ymin, 1, 1)
-        settingsLayout.addWidget(self.ymax, 1, 2)
-        settingsLayout.addWidget(self.persistant, 1, 3)
-        layout.addLayout(settingsLayout)       
-        self.gb.setLayout(layout)
-
-        self.xmin.valueChanged.connect(self.updateAxis)
-        self.xmax.valueChanged.connect(self.updateAxis)
-        self.ymin.valueChanged.connect(self.updateAxis)
-        self.ymax.valueChanged.connect(self.updateAxis)
-
-    def getWidget(self):
-        return self.gb
-
-    def updateAxis(self):
-        self.fig_ax.axis([self.xmin.value(), self.xmax.value(), self.ymin.value(), self.ymax.value()])
-        self.redraw()
-
-    def redraw(self):
-        self.fig.canvas.draw()
-            
-    def updateData(self, data=None):
-        if data:
-            if self.persistant.isChecked() == False:
-                self.fig_ax.cla()
-                
-            self.fig_ax.plot(data)
-
-        if self.xmin.value() == self.xmax.value():
-            cursettings = self.fig_ax.axis()
-            self.xmin.setValue(cursettings[0])
-            self.xmax.setValue(cursettings[1])
-            self.ymin.setValue(cursettings[2])
-            self.ymax.setValue(cursettings[3])
-        else:
-            self.updateAxis()
-
-        self.redraw()
-
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    AES = None    
 
 class OpenADC_tab(QWidget):
     def __init__(self, mw):
@@ -747,9 +669,15 @@ class GeneralConfig(QWidget):
         self.textResultsLayout.addWidget(QLabel("Text Out"), 1, 0)
         self.textOutLine.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textOutLine, 1, 1)
-        self.textResults.setLayout(self.textResultsLayout)
-
+        self.textResultsLayout.addWidget(QLabel("Expected"), 2, 0)
+        self.textOutExpected = QLineEdit()
+        self.textOutExpected.setReadOnly(True)        
+        self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
+        self.textResults.setLayout(self.textResultsLayout)       
         layout.addWidget(self.textResults, 5, 0)
+
+        if AES == None:
+            self.textOutExpected.setText("PyCrypto not found")
 
         self.counter = QLabel("Traces = 0")
         self.caplayout.addWidget(self.counter, 0, 2)
@@ -762,7 +690,7 @@ class GeneralConfig(QWidget):
         self.setLayout(layout)
 
 class doAcq(object):
-    def __init__(self, scope, target, writer, label=None, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None):
+    def __init__(self, scope, target, writer, label=None, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
         self.target = target
         self.scope = scope
         self.label = label
@@ -772,11 +700,11 @@ class doAcq(object):
         self.updateData = updateData
         self.textInLabel = textInLabel
         self.textOutLabel = textOutLabel
+        self.textExpectedLabel = textExpectedLabel
 
         self.plain = bytearray(16)
         for i in range(0,16):
-                   self.plain[i] = random.randint(0, 255)
-        
+                   self.plain[i] = random.randint(0, 255)       
 
     def TargetDoTrace(self, plaintext, key=None):
         self.target.loadEncryptionKey(key)      
@@ -797,25 +725,37 @@ class doAcq(object):
 
         return resp
 
-    def doSingleReading(self, update=True, N=None, textIn=None, key=None):
-        self.scope.ADCarm()
-
+    def newPlain(self, textIn=None):       
         if textIn:
             self.textin = textIn
         else:
-            self.textin = bytearray(16)
-            for i in range(0,16):
-                self.textin[i] = random.randint(0, 255)
+            if not self.fixedPlainText:       
+                self.textin = bytearray(16)
+                for i in range(0,16):
+                    self.textin[i] = random.randint(0, 255)
+                    #self.textin[i] = i
+
+        #Do AES if setup
+        if AES and (self.textExpectedLabel != None):
+            if self.key == None:
+                self.textExpectedLabel.setText("")
+            else:
+                cipher = AES.new(str(self.key), AES.MODE_ECB)
+                ct = cipher.encrypt(str(self.textin))
+                if self.textExpectedLabel != None:
+                    ct = bytearray(ct)
+                    self.textExpectedLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(ct[0],ct[1],ct[2],ct[3],ct[4],ct[5],ct[6],ct[7],ct[8],ct[9],ct[10],ct[11],ct[12],ct[13],ct[14],ct[15]))
+
+
+    def doSingleReading(self, update=True, N=None, key=None):
+        self.scope.ADCarm()
 
         if key:
             self.key = key
         else:
-        #    if self.newKeyPerTrace:
-        #        self.key = bytearray(16)
-        #        for i in range(0,16):
-        #            self.key[i] = random.randint(0, 255)
-        #    else:
             self.key = None
+
+        self.newPlain()
         
         ## Start target now
         if self.textInLabel != None:
@@ -835,7 +775,6 @@ class doAcq(object):
         #Get ADC reading
         self.scope.ADCcapture(update, N)
 
-
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
 
@@ -846,13 +785,8 @@ class doAcq(object):
         tw.openFiles()
         tw.addKey(self.key)
 
-        if self.fixedPlainText:
-            plain = self.plain
-        else:
-            plain = None
-
         while (tw.numtrace < self.maxtraces) and self.running:
-            self.doSingleReading(True, None, plain)
+            self.doSingleReading(True, None, None)
             tw.addTrace(self.textin, self.textout, self.scope.datapoints, self.key)
 
             if self.updateData:
@@ -867,12 +801,19 @@ class doAcq(object):
                     
 class MainWindow(QMainWindow):
     def captureOne(self):
-        da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer, label=self.tw.widget(0).counter, fixedPlain=self.fixedPlainCB.isChecked(), textInLabel=self.tw.widget(0).textInLine, textOutLabel=self.tw.widget(0).textOutLine)
+        da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer,
+                  label=self.tw.widget(0).counter, fixedPlain=self.fixedPlainCB.isChecked(),
+                   textInLabel=self.tw.widget(0).textInLine, textOutLabel=self.tw.widget(0).textOutLine,
+                   textExpectedLabel=self.tw.widget(0).textOutExpected)
+        
         da.doSingleReading(key=self.key)
         #self.preview.updateData(self.tw.widget(1).scope.datapoints)    
 
     def startCapture(self):
-        self.da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer, label=self.tw.widget(0).counter)#, updateData=self.preview.updateData)
+        self.da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer,
+                        label=self.tw.widget(0).counter, textInLabel=self.tw.widget(0).textInLine,
+                        textOutLabel=self.tw.widget(0).textOutLine, textExpectedLabel=self.tw.widget(0).textOutExpected)
+                        
         self.da.setMaxtraces(self.tw.widget(0).numTraces.value())
         self.da.doSingleReading(key=self.key)
         daThread = threading.Thread(target = self.da.doReadings)
@@ -885,6 +826,10 @@ class MainWindow(QMainWindow):
             self.da.running = False            
         
     def scopeChanged(self, index):
+
+        if self.tw.widget(1):
+            self.tw.widget(1).scope.closeAndHide()
+        
         self.tw.removeTab(1)
 
         if index==0:
@@ -974,7 +919,7 @@ class MainWindow(QMainWindow):
                            ["Simple Serial", "SmartCard", "SmartCard Serial", "SASEBO-GII", "SASEBOW Serial", "SASEBOW Integrated"], self.targetChanged,
                            ["DPAContestV3"], self.traceChanged)
         self.tw.addTab(self.gctab, "&General")
-        
+                
         #Defaults
         self.scopeChanged(0)
         self.targetChanged(0)
@@ -1000,6 +945,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.testcapture)
 
         self.startCapturePB.clicked.connect(self.captureOne)
+
+        layout.addStretch()
              
         # Set dialog layout
         self.setLayout(layout)       
