@@ -26,8 +26,20 @@ import numpy
 import attack_aesmodel as model
 
 class attack_DPAAESv1():
+    def getOptions(self):
+        #Type, Label/Name, Values
+        return {
+         "Model": {"Type": 'CB', "Opts": ['Hamming Weight', 'Hamming Distance']},
+         "Key Round": {"Type": 'CB', "Opts": ['First', 'Last']},
+         "Target Bit": {"Type": 'SB', "Range": [0,8]}
+        }
     
-    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw", keyround="first", targetbit=0):
+    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="Hamming Weight", keyround="First", targetbit=0, encodedopts=None):
+        #If encoded options present parse them & overwrite
+        if encodedopts != None:
+            modeltype = encodedopts['Model']
+            keyround = encodedopts['Key Round']
+            targetbit = encodedopts['Target Bit']
 
         traces =numpy.array(traces)
         plaintexts =numpy.array(plaintexts)
@@ -74,7 +86,7 @@ class attack_DPAAESv1():
                     if modeltype == "hw":
                         Hyp = model.HypHW(pt, ct, key, bnum);
                     elif modeltype == "hd":
-                        Hyp = model.HypHD(None, ct, key, bnum);
+                        Hyp = model.HypHD(pt, ct, key, bnum);
                     else:
                         raise ValueError("modeltype invalid")
 

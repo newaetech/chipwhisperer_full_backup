@@ -89,9 +89,17 @@ def HypHW(pt, ct, key, bnum):
 
 def HypHD(pt, ct, key, bnum):
     #Get output
-    st10 = ct[INVSHIFT[bnum]]
-    st9 =  INVSBOX[ct[bnum] ^ key]
-    return st9 ^ st10
+    if pt != None:
+        #TODO: This does't work too well, need to fix
+        st2 = SBOX[pt[bnum] ^ key]
+        st1 = pt[bnum]
+        return st1 ^ st2
+    elif ct != None:
+        st10 = ct[INVSHIFT[bnum]]
+        st9 =  INVSBOX[ct[bnum] ^ key]
+        return st9 ^ st10
+    else:
+        raise ValueError("Must specify PT or CT")    
 
 def getHW(var):
     return HW8Bit[var]

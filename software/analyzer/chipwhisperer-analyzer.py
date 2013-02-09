@@ -40,7 +40,8 @@ class PATab(QWidget):
         QWidget.__init__(self)
         layout = QVBoxLayout()
         #self.dpa = attack_dpav1.attack_DPAAESv1()
-        self.dpa = attack_cpav1.attack_CPAAESv1()
+        #self.dpa = attack_cpav1.attack_CPAAESv1()
+        self.dpa = None
 
         self.redrawInProgress = False
 
@@ -91,7 +92,21 @@ class PATab(QWidget):
         tracepointLayout.addLayout(playout)
 
         tracepointLayout.addStretch()
-    
+
+        ##Select Attack Method
+        self.attackMode = QComboBox()        
+        self.attackMode.addItem("Correlation (Simple)")
+        self.attackMode.addItem("Differential (DPA)")
+        tracepointLayout.addWidget(self.attackMode)
+        tracepointLayout.addStretch()
+        
+        self.attackOptsGB = QGroupBox("Attack Options")
+        self.attackLayoutGB = QVBoxLayout()
+        self.attackOptsGB.setLayout(self.attackLayoutGB)
+        tracepointLayout.addWidget(self.attackOptsGB)
+        self.attackMode.currentIndexChanged.connect(self.attackModeChanged)
+        self.attackModeChanged(0)
+
         ##Byte Selection
         btnAll = QPushButton("All")
         btnAll.clicked.connect(self.checkAll)
@@ -105,7 +120,7 @@ class PATab(QWidget):
         for i in range(0,16):
             self.do.append(QCheckBox("%2d"%i))
             self.do[i].setChecked(True)
-            bselectLayoutCB.addWidget(self.do[i], i/4, i%4)
+            bselectLayoutCB.addWidget(self.do[i], i/8, i%8)
         bselectLayout = QVBoxLayout()
         bselectLayout.addLayout(bselectLayoutPB)
         bselectLayout.addLayout(bselectLayoutCB)
@@ -242,6 +257,80 @@ class PATab(QWidget):
         self.redrawRequired = []
         for i in range(0,16):
             self.redrawRequired.append(True)
+
+    def removeAllWidgets(self, layout):
+        child = layout.takeAt(0)
+        while child:
+            if child.layout() != None:
+                sublayout = child.layout()
+                self.removeAllWidgets(sublayout)
+                del sublayout
+            elif child.widget() != None:
+                widget = child.widget()
+                widget.hide()
+                del widget
+            else:                
+                del child
+            child = layout.takeAt(0)      
+
+    def attackModeChanged(self, index):
+        self.removeAllWidgets(self.attackLayoutGB)
+    
+        if index==0:
+            self.dpa = attack_cpav1.attack_CPAAESv1()
+        elif index==1:
+            self.dpa = attack_dpav1.attack_DPAAESv1()
+        else:
+            raise ValueError("Unknown Index value %d"%index)
+
+        opts = self.dpa.getOptions()       
+
+        for opt in opts:
+            optlayout = QHBoxLayout()
+            optlayout.addWidget(QLabel(opt))
+
+            if opts[opt]["Type"] == "CB":
+                cb = QComboBox()
+                for name in opts[opt]["Opts"]:
+                    cb.addItem(name)
+                optlayout.addWidget(cb)
+
+            elif opts[opt]["Type"] == "SB":
+                sb = QSpinBox()
+                sb.setMinimum(opts[opt]["Range"][0])
+                sb.setMaximum(opts[opt]["Range"][1])
+                optlayout.addWidget(sb)
+                
+            self.attackLayoutGB.addLayout(optlayout)
+
+    
+    def getOpts(self, layout=None):
+        if layout == None:
+            layout = self.attackLayoutGB
+
+        opts = {}
+
+        i = 0
+        child = layout.itemAt(i)
+        while child:
+            if child.layout() != None:
+                sublayout = child.layout()
+                opts.update(self.getOpts(sublayout))
+            elif child.widget() != None:
+                widget = child.widget()
+                if type(widget) == type(QLabel()):
+                    name = widget.text()
+                elif type(widget) == type(QComboBox()):
+                    opts[name] = widget.currentText()
+                elif type(widget) == type(QSpinBox()):
+                    opts[name] = widget.value()
+                else:
+                    raise ValueError("Unknown widget type %s"%type(widget))
+                    
+            i = i + 1
+            child = layout.itemAt(i)
+
+        return opts
 
     def showAnalysisWidgets(self, visible=True):
         self.ResultsTable.setVisible(visible)
@@ -441,7 +530,7 @@ class PATab(QWidget):
         if index == 0:
             return 'r'
         else:
-            return 'b'
+            return 'b'       
             
     def attackPushed(self):
         data = []
@@ -465,7 +554,9 @@ class PATab(QWidget):
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
-        self.dpa.doDPA(rangeDo, data, textins, textouts, progress)
+        opts = self.getOpts()
+        #print opts
+        self.dpa.doDPA(rangeDo, data, textins, textouts, progress, encodedopts=opts)
 
         self.updateTable()
 

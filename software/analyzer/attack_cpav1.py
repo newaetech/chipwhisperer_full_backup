@@ -26,9 +26,20 @@ import numpy as np
 import attack_aesmodel as model
 
 class attack_CPAAESv1():
-    
-    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="hw", keyround="first"):
 
+    def getOptions(self):
+        #Type, Label/Name, Values
+        return {
+         "Model": {"Type": 'CB', "Opts": ['Hamming Weight', 'Hamming Distance']},
+         "Key Round": {"Type": 'CB', "Opts": ['First', 'Last']}
+        }   
+    
+    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="Hamming Weight", keyround="First", encodedopts=None):
+        #If encoded options present parse them & overwrite
+        if encodedopts != None:
+            modeltype = encodedopts['Model']
+            keyround = encodedopts['Key Round']
+                                                                   
         traces = np.array(traces)
         plaintexts =np.array(plaintexts)
         ciphertexts =np.array(ciphertexts)
@@ -68,18 +79,18 @@ class attack_CPAAESv1():
                     if len(ciphertexts) > 0:
                         ct = ciphertexts[tnum]
 
-                    if keyround == "first":
+                    if keyround == "First":
                         ct = None
-                    elif keyround == "last":
+                    elif keyround == "Last":
                         pt = None
                     else:
                         raise ValueError("keyround invalid")
                     
                     #Generate the output of the SBOX
-                    if modeltype == "hw":
+                    if modeltype == "Hamming Weight":
                         hypint = model.HypHW(pt, ct, key, bnum);
-                    elif modeltype == "hd":
-                        hypint = model.HypHD(None, ct, key, bnum);
+                    elif modeltype == "Hamming Distance":
+                        hypint = model.HypHD(pt, ct, key, bnum);
                     else:
                         raise ValueError("modeltype invalid")
                     hyp[tnum] = model.getHW(hypint)
