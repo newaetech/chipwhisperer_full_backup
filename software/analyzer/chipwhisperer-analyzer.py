@@ -32,6 +32,7 @@ import pyqtgraph.multiprocess as mp
 import tracereader_dpacontestv3
 import attack_dpav1
 import attack_cpav1
+import attack_bayesiancpa
 import numpy
 
 
@@ -97,6 +98,7 @@ class PATab(QWidget):
         self.attackMode = QComboBox()        
         self.attackMode.addItem("Correlation (Simple)")
         self.attackMode.addItem("Differential (DPA)")
+        self.attackMode.addItem("Correlation (Bayesian)")
         tracepointLayout.addWidget(self.attackMode)
         tracepointLayout.addStretch()
         
@@ -280,6 +282,8 @@ class PATab(QWidget):
             self.dpa = attack_cpav1.attack_CPAAESv1()
         elif index==1:
             self.dpa = attack_dpav1.attack_DPAAESv1()
+        elif index==2:
+            self.dpa = attack_bayesiancpa.attack_BAYCPAAES()
         else:
             raise ValueError("Unknown Index value %d"%index)
 
@@ -413,8 +417,8 @@ class PATab(QWidget):
 
                 for hyp in range(0, 256):
                     #Get maximum value for this hypothesis
-                    mvalue = max(numpy.fabs(diffs[hyp]))
-                    mindex = min(numpy.where(numpy.fabs(diffs[hyp]) == mvalue))
+                    mvalue = numpy.amax(numpy.fabs(diffs[hyp]))
+                    mindex = numpy.amin(numpy.where(numpy.fabs(diffs[hyp]) == mvalue))
                     maxes[hyp] = (hyp,mindex,mvalue)
 
                 maxes.sort(order='value')
