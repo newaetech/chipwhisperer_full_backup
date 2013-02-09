@@ -200,6 +200,15 @@ class PATab(QWidget):
         self.changingLevels = False
         self.highlightsClear()
 
+        ##Table Options
+        tableGB = QGroupBox("Table Options")
+        tableLayout = QVBoxLayout()
+        tableGB.setLayout(tableLayout)
+
+        self.tableOnePtCB = QCheckBox("Point = Max Only")
+        tableLayout.addWidget(self.tableOnePtCB)
+        viewLayout.addWidget(tableGB)
+
         ##Buttons etc for view
         viewButtons = QHBoxLayout()
         viewLayout.addLayout(viewButtons)
@@ -423,9 +432,16 @@ class PATab(QWidget):
 
                 maxes.sort(order='value')
                 maxes = maxes[::-1]
+
+                if self.tableOnePtCB.isChecked():
+                    #All table values are taken from same point MAX is taken from
+                    where = maxes[0]['point']
+                    for j in range(0,256):
+                        maxes[j]['point'] = where
+                        maxes[j]['value'] = diffs[maxes[j]['hyp']][where]
             
                 for j in range(0,256):
-                    self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.1f"%(maxes[j]['hyp'],maxes[j]['value'])))
+                    self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
             else:
                 self.table.setColumnHidden(bnum, True)
 
