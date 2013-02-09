@@ -22,6 +22,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+__author__ = "Colin O'Flynn"
+
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -33,6 +35,7 @@ import tracereader_dpacontestv3
 import attack_dpav1
 import attack_cpav1
 import attack_bayesiancpa
+import attack_cpaiterative
 import numpy
 
 
@@ -98,7 +101,8 @@ class PATab(QWidget):
         self.attackMode = QComboBox()        
         self.attackMode.addItem("Correlation (Simple)")
         self.attackMode.addItem("Differential (DPA)")
-        self.attackMode.addItem("Correlation (Bayesian)")
+        self.attackMode.addItem("Correlation (Bayesian - EXPERIMENTAL)")
+        self.attackMode.addItem("Correlation (Iterative - EXPERIMENTAL)")
         tracepointLayout.addWidget(self.attackMode)
         tracepointLayout.addStretch()
         
@@ -293,6 +297,9 @@ class PATab(QWidget):
             self.dpa = attack_dpav1.attack_DPAAESv1()
         elif index==2:
             self.dpa = attack_bayesiancpa.attack_BAYCPAAES()
+        elif index==3:
+            reload(attack_cpaiterative)
+            self.dpa = attack_cpaiterative.attack_CPAAESit()            
         else:
             raise ValueError("Unknown Index value %d"%index)
 

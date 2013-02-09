@@ -22,6 +22,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+__author__ = "Colin O'Flynn"
+
 import numpy as np
 import attack_aesmodel as model
 
