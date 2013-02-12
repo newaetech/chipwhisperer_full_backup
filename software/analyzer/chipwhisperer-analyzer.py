@@ -35,8 +35,12 @@ import tracereader_dpacontestv3
 import attack_dpav1
 import attack_cpav1
 import attack_bayesiancpa
-import attack_cpaiterative
 import numpy
+
+try:    
+    import attack_cpaiterative
+except:
+    attack_cpaiterative = None
 
 
 class PATab(QWidget):
@@ -298,8 +302,11 @@ class PATab(QWidget):
         elif index==2:
             self.dpa = attack_bayesiancpa.attack_BAYCPAAES()
         elif index==3:
-            reload(attack_cpaiterative)
-            self.dpa = attack_cpaiterative.attack_CPAAESit()            
+            if attack_cpaiterative:
+                reload(attack_cpaiterative)
+                self.dpa = attack_cpaiterative.attack_CPAAESit()
+            else:
+                self.dpa = None
         else:
             raise ValueError("Unknown Index value %d"%index)
 

@@ -47,6 +47,16 @@ SHIFT = []
 
 INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
+def xtime(a):
+    a %= 0x100
+    b = 0
+    if a & 0x80:
+        b = 0x1b
+    a <<= 1
+    a &= 0xff
+    a ^= b
+    return a
+
 def HypHW(pt, ct, key, bnum):
     if pt != None:
         return aes_tables.sbox[pt[bnum] ^ key]
@@ -54,6 +64,11 @@ def HypHW(pt, ct, key, bnum):
         return aes_tables.i_sbox[ct[bnum] ^ key]
     else:
         raise ValueError("Must specify PT or CT")
+
+def HypHWXtime(pt, keyguess, numguess, keyknown, bnumknown):
+    a = aes_tables.sbox[pt[numguess] ^ keyguess]
+    b = aes_tables.sbox[pt[bnumknown] ^ keyknown]   
+    return xtime(a^b)
 
 def HypHD(pt, ct, key, bnum):
     #Get output
