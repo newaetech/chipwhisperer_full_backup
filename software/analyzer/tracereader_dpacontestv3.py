@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy
+import numpy as np
 import os
 import xml.etree.ElementTree as ET
 
@@ -58,20 +58,20 @@ class tracereader_dpacontestv3:
         if (self.NumTrace == None):
             self.loadInfo(directory)
 
-        self.traces = numpy.loadtxt(os.path.join(directory, 'wave.txt'), ndmin=2)
+        self.traces = np.loadtxt(os.path.join(directory, 'wave.txt'), ndmin=2)
 
         try:
-            self.textins = numpy.loadtxt(os.path.join(directory, 'text_in.txt'), dtype='|S2',  ndmin=2)
+            self.textins = np.loadtxt(os.path.join(directory, 'text_in.txt'), dtype='|S2',  ndmin=2)
         except IOError:
             self.textins = None
 
         try:
-            self.textouts = numpy.loadtxt(os.path.join(directory, 'text_out.txt'), dtype='|S2',  ndmin=2)
+            self.textouts = np.loadtxt(os.path.join(directory, 'text_out.txt'), dtype='|S2',  ndmin=2)
         except IOError:
             self.textouts = None
 
         try:
-           knownkey = numpy.loadtxt(os.path.join(directory, 'key.txt'), dtype='|S2',  ndmin=2)
+           knownkey = np.loadtxt(os.path.join(directory, 'key.txt'), dtype='|S2',  ndmin=2)
         except IOError:
             knownkey = None
 
@@ -90,7 +90,13 @@ class tracereader_dpacontestv3:
         return self.NumTrace
 
     def getTrace(self, n):
-        return self.traces[n]
+        data = self.traces[n]
+
+        #Following line will normalize all traces relative to each
+        #other by mean & standard deviation
+        #data = (data - np.mean(data)) / np.std(data)
+        
+        return data
 
     def getTextin(self, n):
         tin = self.textins[n]

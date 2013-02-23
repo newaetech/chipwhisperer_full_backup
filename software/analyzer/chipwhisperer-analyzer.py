@@ -33,9 +33,13 @@ import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
 import tracereader_dpacontestv3
 import attack_dpav1
-import attack_cpav1
+import attack_cpav1_loopy
 import attack_bayesiancpa
-import numpy
+import attack_cpa_dpav2wrapper
+import numpy as np
+
+#For profiling support (not 100% needed)
+import pstats, cProfile
 
 try:    
     import attack_cpaiterative
@@ -50,6 +54,11 @@ class PATab(QWidget):
         #self.dpa = attack_dpav1.attack_DPAAESv1()
         #self.dpa = attack_cpav1.attack_CPAAESv1()
         self.dpa = None
+
+        #Index 0 = ALL bytes
+        #Index 1...16 = Bytes 0...15
+        self.TraceRangeList = [[0]*2]*17
+        self.dontUpdateSB = False
 
         self.redrawInProgress = False
 
@@ -91,11 +100,34 @@ class PATab(QWidget):
         self.endPointPrint = QSpinBox()        
         self.endPointPrint.setMinimum(0)
         self.endPointPrint.setMaximum(1000000)
+        self.endPointPrint.valueChanged.connect(self.pointVChanged)
+        self.startPointPrint.valueChanged.connect(self.pointVChanged)
+        self.pByteSel = QComboBox()
+        self.pByteSel.addItem("All Bytes")
+        #self.pByteSel.addItem("Byte 0")
+        #self.pByteSel.addItem("Byte 1")
+        #self.pByteSel.addItem("Byte 2")
+        #self.pByteSel.addItem("Byte 3")
+        #self.pByteSel.addItem("Byte 4")
+        #self.pByteSel.addItem("Byte 5")
+        #self.pByteSel.addItem("Byte 6")
+        #self.pByteSel.addItem("Byte 7")
+        #self.pByteSel.addItem("Byte 8")
+        #self.pByteSel.addItem("Byte 9")
+        #self.pByteSel.addItem("Byte 10")
+        #self.pByteSel.addItem("Byte 11")
+        #self.pByteSel.addItem("Byte 12")
+        #self.pByteSel.addItem("Byte 13")
+        #self.pByteSel.addItem("Byte 14")
+        #self.pByteSel.addItem("Byte 15")
+        self.pByteSel.currentIndexChanged.connect(self.pointIndexChanged)       
         playout = QHBoxLayout()
         playout.addWidget(QLabel("Points: "))
         playout.addWidget(self.startPointPrint)
         playout.addWidget(QLabel(" to "))
         playout.addWidget(self.endPointPrint)
+        playout.addWidget(self.pByteSel)
+        
         playout.addStretch()
         tracepointLayout.addLayout(playout)
 
@@ -107,6 +139,7 @@ class PATab(QWidget):
         self.attackMode.addItem("Differential (DPA)")
         self.attackMode.addItem("Correlation (Bayesian - EXPERIMENTAL)")
         self.attackMode.addItem("Correlation (Iterative - EXPERIMENTAL)")
+        self.attackMode.addItem("Correlation (DPAv2 C++ Reference Code)")
         tracepointLayout.addWidget(self.attackMode)
         tracepointLayout.addStretch()
         
@@ -137,11 +170,57 @@ class PATab(QWidget):
         bselectGB = QGroupBox("Byte Selection")
         bselectGB.setLayout(bselectLayout)
         gensettings.addWidget(bselectGB)
+
+        ##Advanced Graphing
+        advgpLayout = QVBoxLayout()
+        self.advgpEnabledCB = QCheckBox("Enable")
+        self.advgpEnabledCB.clicked.connect(self.advgpEnabled)
+        advgpLayout.addWidget(self.advgpEnabledCB)
+
+        self.advTraceRange = QSpinBox()
+        self.advTraceRange.setMinimum(0)
+        self.advTraceRange.setMaximum(1000000)
+        self.advTraceRange.setEnabled(False)
+        advTLayout = QHBoxLayout()
+        advTLayout.addWidget(QLabel("Traces/Round"))
+        advTLayout.addWidget(self.advTraceRange)
+        advgpLayout.addLayout(advTLayout)
+        self.advTraceRange.valueChanged.connect(self.advTraceChanged)
+        
+        self.advTraceStep = QSpinBox()
+        self.advTraceStep.setMinimum(1)
+        self.advTraceStep.setMaximum(1000000)
+        self.advTraceStep.setEnabled(False)
+        advTLayout = QHBoxLayout()
+        advTLayout.addWidget(QLabel("Traces/Step"))
+        advTLayout.addWidget(self.advTraceStep)
+        advgpLayout.addLayout(advTLayout)
+        
+        self.advTraceRepeat = QSpinBox()
+        self.advTraceRepeat.setMinimum(1)
+        self.advTraceRepeat.setMaximum(10000)
+        self.advTraceRepeat.setEnabled(False)
+        advTLayout = QHBoxLayout()
+        advTLayout.addWidget(QLabel("Total Rounds"))
+        advTLayout.addWidget(self.advTraceRepeat)
+        advgpLayout.addLayout(advTLayout)
+        
+        advgpGB = QGroupBox("Attack Statistics")
+        advgpGB.setLayout(advgpLayout)
+
+        self.advPB = QPushButton("Go")
+        self.advPB.setEnabled(False)
+        self.advPB.clicked.connect(self.advgpGo)
+        advgpLayout.addWidget(self.advPB)
+
+        gensettings.addWidget(advgpGB)
+
+
         gensettings.addStretch()
 
+    
         layout.addWidget(setupGB)
         
-
         self.table = QTableWidget(256, 16)
         self.ResultsTable = QDockWidget("Results Table")
         self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
@@ -277,6 +356,68 @@ class PATab(QWidget):
         for i in range(0,16):
             self.redrawRequired.append(True)
 
+### Functions dealing with advanced graphing
+    def advTraceChanged(self):
+        maxRounds = int(self.trace.NumTrace / self.advTraceRange.value())
+        self.advTraceRepeat.setMaximum(maxRounds)
+        self.advTraceRepeat.setValue(maxRounds)
+        
+    def advgpEnabled(self):
+        if self.advgpEnabledCB.isChecked():
+            self.startTracePrint.setEnabled(False)
+            self.endTracePrint.setEnabled(False)
+            self.advTraceRange.setEnabled(True)
+            self.advTraceStep.setEnabled(True)
+            self.advTraceRepeat.setEnabled(True)
+            self.advPB.setEnabled(True)
+        else:
+            self.startTracePrint.setEnabled(True)
+            self.endTracePrint.setEnabled(True)
+            self.advTraceRange.setEnabled(False)
+            self.advTraceStep.setEnabled(False)
+            self.advTraceRepeat.setEnabled(False)
+            self.advPB.setEnabled(False)
+
+    def advgpGo(self):
+        traces_per_round = self.advTraceRange.value()
+        traces_per_step = self.advTraceStep.value()
+        total_rounds = self.advTraceRepeat.value()
+        #print "t/round: %d\nt/step: %d\nrounds: %d"%(traces_per_round, traces_per_step, total_rounds)
+
+        pgeStats = np.array([[0.0]*16] * (traces_per_round/traces_per_step), dtype="float")
+
+
+        for rnum in range(0, total_rounds):
+            print "Round %d - Partial Guessing Entropy"%(rnum+1)
+            strace = traces_per_round * rnum
+            cnt = 0
+            for toffset in range(strace, traces_per_round+strace, traces_per_step):
+                #print "Attack %d - %d"%(strace, toffset + traces_per_step)
+                #self.startTracePrint.setValue(toffset)
+                self.startTracePrint.setValue(strace)
+                self.endTracePrint.setValue(toffset+traces_per_step)
+                self.attackPushed()
+
+                print "%5d   "%(toffset+traces_per_step - strace),
+                self.printPGE()
+                
+                pgeStats[cnt] = (pgeStats[cnt]*rnum + self.pge) / (rnum + 1)
+                cnt = cnt + 1
+
+        print "Partial Guessing Entropy - Average of All Rounds"
+        for indx, pgestat in enumerate(pgeStats):
+            print "%5d   "%(indx * traces_per_step + traces_per_step),
+            self.printPGE(pgestat, usefloat=True)
+
+### Functions dealing with Main Analysis Options
+    def pointVChanged(self, newpt):
+        if self.dontUpdateSB == False:
+            self.TraceRangeList[self.pByteSel.currentIndex()] = list([self.startPointPrint.value(), self.endPointPrint.value()])
+
+    def pointIndexChanged(self, newIndx):
+        self.validatePointSB()
+
+### Functions dealing with specific attack options
     def removeAllWidgets(self, layout):
         child = layout.takeAt(0)
         while child:
@@ -296,7 +437,7 @@ class PATab(QWidget):
         self.removeAllWidgets(self.attackLayoutGB)
     
         if index==0:
-            self.dpa = attack_cpav1.attack_CPAAESv1()
+            self.dpa = attack_cpav1_loopy.attack_CPAAESv1()
         elif index==1:
             self.dpa = attack_dpav1.attack_DPAAESv1()
         elif index==2:
@@ -307,6 +448,8 @@ class PATab(QWidget):
                 self.dpa = attack_cpaiterative.attack_CPAAESit()
             else:
                 self.dpa = None
+        elif index==4:
+            self.dpa = attack_cpa_dpav2wrapper.attack_CPAAES_dpav2wrapper()
         else:
             raise ValueError("Unknown Index value %d"%index)
 
@@ -359,6 +502,7 @@ class PATab(QWidget):
 
         return opts
 
+### Analysis Options
     def showAnalysisWidgets(self, visible=True):
         self.ResultsTable.setVisible(visible)
 
@@ -369,6 +513,12 @@ class PATab(QWidget):
     def checkNone(self):
         for i in range(0,16):
             self.do[i].setChecked(False)
+
+    def validatePointSB(self):
+        self.dontUpdateSB = True
+        self.startPointPrint.setValue(self.TraceRangeList[self.pByteSel.currentIndex()][0])
+        self.endPointPrint.setValue(self.TraceRangeList[self.pByteSel.currentIndex()][1])
+        self.dontUpdateSB = False
             
     def passTrace(self, trace):
         self.trace = trace
@@ -376,9 +526,18 @@ class PATab(QWidget):
         self.endTracePrint.setMaximum(trace.NumTrace)
         self.endTracePrint.setValue(trace.NumTrace)
 
+        self.advTraceRange.setMaximum(trace.NumTrace)
+        self.advTraceRange.setValue(trace.NumTrace)
+        self.advTraceStep.setMaximum(trace.NumTrace)
+        
+        for i in xrange(0,17):
+            self.TraceRangeList[i] = [0, trace.NumPoint]
+
         self.startPointPrint.setMaximum(trace.NumPoint)
         self.endPointPrint.setMaximum(trace.NumPoint)
-        self.endPointPrint.setValue(trace.NumPoint)
+        #self.endPointPrint.setValue(trace.NumPoint)
+
+        self.validatePointSB()
 
     def loadPushed(self):
         return
@@ -431,17 +590,19 @@ class PATab(QWidget):
         self.highlightsBytesChanged(0)
 
     def updateTable(self):
+        self.pge = [255]*16
+        
         for bnum in range(0,len(self.do)):
             if self.do[bnum].isChecked():
                 self.table.setColumnHidden(bnum, False)
                 diffs = self.dpa.getDiff(bnum)
 
-                maxes = numpy.zeros(256,dtype=[('hyp','i2'),('point','i4'),('value','f8')] )
+                maxes = np.zeros(256,dtype=[('hyp','i2'),('point','i4'),('value','f8')] )
 
                 for hyp in range(0, 256):
                     #Get maximum value for this hypothesis
-                    mvalue = numpy.amax(numpy.fabs(diffs[hyp]))
-                    mindex = numpy.amin(numpy.where(numpy.fabs(diffs[hyp]) == mvalue))
+                    mvalue = np.amax(np.fabs(diffs[hyp]))
+                    mindex = np.amin(np.where(np.fabs(diffs[hyp]) == mvalue))
                     maxes[hyp] = (hyp,mindex,mvalue)
 
                 maxes.sort(order='value')
@@ -456,12 +617,26 @@ class PATab(QWidget):
             
                 for j in range(0,256):
                     self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
+
+                    if maxes[j]['hyp'] == self.trace.knownkey[bnum]:
+                        self.pge[bnum] = j
             else:
                 self.table.setColumnHidden(bnum, True)
 
         self.table.resizeRowsToContents()
         self.table.resizeColumnsToContents()
-        self.ResultsTable.setVisible(True)   
+        self.ResultsTable.setVisible(True)
+
+    def printPGE(self, stats=None, usefloat=False):
+        if stats == None:
+            stats = self.pge
+            
+        for j in stats:
+            if usefloat:
+                print "%3.2f "%j,
+            else:
+                print "%3d "%j,
+        print ""        
 
     def vchanged0(self, visible):
         if (visible):
@@ -566,13 +741,13 @@ class PATab(QWidget):
         else:
             return 'b'       
             
-    def attackPushed(self):
+    def attackPushed(self, redraw=True):
         data = []
         textins = []
         textouts = []
 
         for i in range(0, 16):
-            self.redrawRequired[i] = True
+            self.redrawRequired[i] = redraw
 
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data.append(self.trace.getTrace(i)[self.startPointPrint.value():self.endPointPrint.value()])
@@ -590,14 +765,27 @@ class PATab(QWidget):
         progress.setMinimumDuration(1000)
         opts = self.getOpts()
         #print opts
-        self.dpa.doDPA(rangeDo, data, textins, textouts, progress, encodedopts=opts)
+
+        #Do the DPA attack
+        #cProfile.runctx('self.dpa.doDPA(rangeDo, data, textins, textouts, progress, encodedopts=opts)', globals(), locals(), 'Profile.prof')
+        #s = pstats.Stats("Profile.prof")
+        #s.strip_dirs().sort_stats("time").print_stats()
+
+        self.dpa.setOptions(opts, rangeDo)
+   
+        self.dpa.addTraces(data, textins, textouts, progress)
 
         self.updateTable()
 
         for i in range(0,16):
             if (self.do[i].isChecked()):
                 self.AnalysisViewDocks[i].widget().clear()  
-                self.AnalysisViewDocks[i].setVisible(True)                              
+                self.AnalysisViewDocks[i].setVisible(True)
+            else:
+                self.AnalysisViewDocks[i].widget().clear()  
+                self.AnalysisViewDocks[i].setVisible(False)
+            self.redrawRequired[i] = True
+
 
 class PreviewTab(QWidget):
     def __init__(self):
@@ -673,7 +861,7 @@ class PreviewTab(QWidget):
 
         #self.pw.setVisible(False)
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
-            data = self.trace.getTrace(i)
+            data = self.trace.getTrace(i)           
             self.pw.plot(data[self.startPointPrint.value():self.endPointPrint.value()], pen=(i%8,8))            
             progress.setValue(i)
             if progress.wasCanceled():
@@ -702,17 +890,34 @@ class MainChip(QMainWindow):
         QMainWindow.closeEvent(self, event)
 
     def createActions(self):
-        self.openAct = QAction(QIcon('open.png'), '&Open Input Files', self,
+        self.importAct = QAction(QIcon('open.png'), '&Import Input Files', self,
+                               statusTip='Import Input Files (waveform, etc)',
+                               triggered=self.importFile)
+
+        self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
                                shortcut=QKeySequence.Open,
-                               statusTip='Open Input Files (waveform, etc)',
-                               triggered=self.open)
+                               statusTip='Open Project File',
+                               triggered=self.openProject)
+
+        self.saveAct = QAction(QIcon('save.png'), '&Save Project', self,
+                               shortcut=QKeySequence.Save,
+                               statusTip='Save current project to Disk',
+                               triggered=self.saveProject)
+
+        self.newAct = QAction(QIcon('new.png'), '&New Project', self,
+                               shortcut=QKeySequence.New,
+                               statusTip='Create new Project',
+                               triggered=self.newProject)
 
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
 
     def createMenus(self):
         self.fileMenu= self.menuBar().addMenu('&File')
+        self.fileMenu.addAction(self.newAct)
         self.fileMenu.addAction(self.openAct)
+        self.fileMenu.addAction(self.saveAct)
+        self.fileMenu.addAction(self.importAct)
         self.separatorAct = self.fileMenu.addSeparator()
         for i in range(MainChip.MaxRecentFiles):
             self.fileMenu.addAction(self.recentFileActs[i])
@@ -797,8 +1002,17 @@ class MainChip(QMainWindow):
         self.preview.passTrace(self.trace)
         self.dpa.passTrace(self.trace)
         self.setCurrentFile(fname)
+
+    def openProject(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
+
+    def saveProject(self):
+        print "save?"
+
+    def newProject(self):
+        print "new"
         
-    def open(self):
+    def importFile(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','info.xml')
         if fname:
             self.loadFile(fname)
@@ -806,8 +1020,7 @@ class MainChip(QMainWindow):
     def openRecentFile(self):
         action = self.sender()
         if action:
-            self.loadFile(action.data())
-        
+            self.loadFile(action.data())        
 
     def curTabChange(self, index):
         for i in range(self.tw.count()):

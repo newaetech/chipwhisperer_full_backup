@@ -101,6 +101,15 @@ except ImportError:
     print target_sasebow_integrated_str
 
 try:
+    import usb
+except ImportError:
+    usb = None
+    usb_str = sys.exc_info()
+    print usb_str
+    print "usb import failed. Install pyusb from http://pyusb.sourceforge.net for EZUSB Support"
+
+
+try:
     from Crypto.Cipher import AES
 except ImportError:
     AES = None    
@@ -284,6 +293,119 @@ class OpenADC_ftdi_tab(QWidget):
         for i in range(0, 255):
             self.serialList.removeItem(i)
         self.serialList.addItems(serialnames)
+
+class OpenADC_ztex_tab(QWidget):
+    def __init__(self, mw):
+        QWidget.__init__(self)
+        layout = QVBoxLayout()
+
+        if (openadc_qt == None) or (usb == None):
+            if openadc_qt == None:
+                layout.addWidget(QLabel("OpenADC Import Failed"))
+
+            if usb == None:
+                layout.addWidget(QLabel("pyusb Import Failed"))
+                
+            self.ser = None
+        else:                        
+            self.connectButton = QPushButton("Connect")
+            self.disconnectButton = QPushButton("Disconnect")
+            self.disconnectButton.setEnabled(False)
+            self.resetButton = QPushButton("Reset")
+            self.resetButton.setEnabled(False)
+            
+            self.connectButton.clicked.connect(self.con)
+            self.disconnectButton.clicked.connect(self.dis)
+            self.testButton = QPushButton("Speed Test")
+            self.testButton.setEnabled(False)
+
+            connection = QGroupBox("Connection")
+            connlayout = QGridLayout()
+            connection.setLayout(connlayout)
+            connlayout.addWidget(self.connectButton, 0, 2)
+            connlayout.addWidget(self.disconnectButton, 0, 3)
+            connlayout.addWidget(self.resetButton, 0, 4)
+            connlayout.addWidget(self.testButton, 0, 5)
+            layout.addWidget(connection)
+
+            self.ser = None
+
+            self.scope = openadc_qt.OpenADCQt(mw)
+            layout.addItem(self.scope.getLayout())
+            self.resetButton.clicked.connect(self.scope.reset)
+            self.testButton.clicked.connect(self.scope.test)
+
+        self.setLayout(layout)
+
+    def __del__(self):
+        if self.ser != None:
+            self.ser.close()
+
+    def con(self):
+        if self.ser == None:
+            dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
+
+            if dev is None:
+                QMessageBox.warning(None, "FX2 Port", "Could not open USB Device")            
+                return False
+
+            dev.set_configuration()
+
+            self.dev = dev
+            self.writeEP = 0x06
+            self.readEP = 0x82
+            self.interface = 0
+            self.ser = self
+
+        self.scope.ADCconnect(self.ser)
+        self.connectButton.setEnabled(False)
+        self.disconnectButton.setEnabled(True)
+        self.resetButton.setEnabled(True)
+        self.refreshButton.setEnabled(False)
+        self.testButton.setEnabled(True)
+
+    def dis(self):
+        if self.ser != None:
+            self.ser.close()
+            self.ser = None
+            self.scope.setEnabled(False)
+            self.disconnectButton.setEnabled(False)
+            self.resetButton.setEnabled(False)
+            self.connectButton.setEnabled(True)
+            self.testButton.setEnabled(False)
+        
+
+    def read(self, N=0, debug=False):
+        data = self.dev.read(self.readEP, N, self.interface, 500)
+        data = bytearray(data)
+        if debug:
+            print "RX: ",
+            for b in data:
+                print "%02x "%b,
+            print ""
+        return data
+
+    def write(self, data, debug=False):
+        data = bytearray(data)
+        if debug:
+            print "TX: ",
+            for b in data:
+                print "%02x "%b,
+            print ""
+        self.dev.write(self.writeEP, data, self.interface, 500)
+            
+    def getTextName(self):
+        try:
+            return self.ser.name
+        except:
+            return "None?"
+
+    def disconnect(self):
+        self.setDisabled(False)
+
+    def update(self):
+        print "update"
+
 
 class Smartcard_tab(QWidget):
     def __init__(self):
@@ -711,7 +833,10 @@ class doAcq(object):
         self.target.loadInput(plaintext)
         self.target.go()
 
+        #print "DEBUG: Target go()"
+
         resp = self.target.readOutput()
+        #print "DEBUG: Target readOutput()"
 
         #print "pt:",
         #for i in plaintext:
@@ -748,7 +873,10 @@ class doAcq(object):
 
 
     def doSingleReading(self, update=True, N=None, key=None):
+        print "A",
         self.scope.ADCarm()
+
+        #print "DEBUG: Scope ADCarm()"
 
         if key:
             self.key = key
@@ -756,7 +884,8 @@ class doAcq(object):
             self.key = None
 
         self.newPlain()
-        
+
+        print "B",
         ## Start target now
         if self.textInLabel != None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
@@ -764,6 +893,7 @@ class doAcq(object):
         #Set mode
         self.target.setModeEncrypt()
 
+        print "C",
         #Load input, start encryption, get output
         self.textout = self.TargetDoTrace(self.textin, self.key)
 
@@ -772,8 +902,11 @@ class doAcq(object):
         except:
             print "Response failed?"
 
+        #print "DEBUG: Scope ADCcapure() calling"
         #Get ADC reading
+        print "D",
         self.scope.ADCcapture(update, N)
+        
 
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
@@ -786,14 +919,18 @@ class doAcq(object):
         tw.addKey(self.key)
 
         while (tw.numtrace < self.maxtraces) and self.running:
-            self.doSingleReading(True, None, None)
+            print "1..",
+            self.doSingleReading(False, None, None)
+            print "2..",
             tw.addTrace(self.textin, self.textout, self.scope.datapoints, self.key)
+            print "3..",
 
             if self.updateData:
                 self.updateData(self.scope.datapoints)
 
             if self.label != None:
                 self.label.setText("Traces = %d"%tw.numtrace)
+            print "4"
 
         tw.closeAll()
 
@@ -815,7 +952,7 @@ class MainWindow(QMainWindow):
                         textOutLabel=self.tw.widget(0).textOutLine, textExpectedLabel=self.tw.widget(0).textOutExpected)
                         
         self.da.setMaxtraces(self.tw.widget(0).numTraces.value())
-        self.da.doSingleReading(key=self.key)
+        self.da.doSingleReading(False, key=self.key)
         daThread = threading.Thread(target = self.da.doReadings)
 
         # Start the stream
@@ -837,6 +974,9 @@ class MainWindow(QMainWindow):
 
         elif index==1:
             self.tw.insertTab(1, OpenADC_ftdi_tab(self), "&OpenADC-FTDI")
+
+        elif index==2:
+            self.tw.insertTab(1, OpenADC_ztex_tab(self), "&OpenADC-EZUSB(ZTEX)")
 
         else:
             print "Invalid scope index"          
@@ -915,7 +1055,7 @@ class MainWindow(QMainWindow):
 
         self.tw = QTabWidget()
         self.tw.currentChanged.connect(self.curTabChange)        
-        self.gctab = GeneralConfig(self, ["OpenADC-Serial", "OpenADC-FTDI"], self.scopeChanged,
+        self.gctab = GeneralConfig(self, ["OpenADC-Serial", "OpenADC-FTDI", "OpenADC-EZUSB(ZTEX)"], self.scopeChanged,
                            ["Simple Serial", "SmartCard", "SmartCard Serial", "SASEBO-GII", "SASEBOW Serial", "SASEBOW Integrated"], self.targetChanged,
                            ["DPAContestV3"], self.traceChanged)
         self.tw.addTab(self.gctab, "&General")
