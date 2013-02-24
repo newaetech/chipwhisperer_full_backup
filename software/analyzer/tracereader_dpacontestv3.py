@@ -34,6 +34,7 @@ class tracereader_dpacontestv3:
         self.textouts = None
         self.knownkey = None
         self.directory = None
+        self.tracedtype = np.int16
 
     def loadInfo(self, directory=None):
         if directory == None:

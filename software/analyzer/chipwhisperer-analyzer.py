@@ -32,6 +32,7 @@ sys.path.append('../common')
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
 import tracereader_dpacontestv3
+import tracereader_native
 import attack_dpav1
 import attack_cpav1_loopy
 import attack_bayesiancpa
@@ -796,13 +797,13 @@ class PreviewTab(QWidget):
         setupLayout = QGridLayout()
         setupGB.setLayout(setupLayout)
 
-        pbLoad = QPushButton("Load All")
-        pbLoad.clicked.connect(self.loadPushed)
-        setupLayout.addWidget(pbLoad, 0, 0)
-
         pbRedraw = QPushButton("Redraw")
         pbRedraw.clicked.connect(self.redrawPushed)
-        setupLayout.addWidget(pbRedraw, 0, 1)
+        setupLayout.addWidget(pbRedraw, 0, 0)
+
+        pbClear = QPushButton("Clear All")
+        pbClear.clicked.connect(self.clearPushed)
+        setupLayout.addWidget(pbClear, 0, 0)
 
         self.startTracePrint = QSpinBox()        
         self.startTracePrint.setMinimum(0)
@@ -846,11 +847,9 @@ class PreviewTab(QWidget):
         self.endPointPrint.setMaximum(trace.NumPoint)
         self.endPointPrint.setValue(trace.NumPoint)
 
-    def loadPushed(self):
-        self.trace.loadAllTraces()
-        #Preview one full trace for now
+        self.pw.clear()
         data = self.trace.getTrace(0)
-        self.pw.plot(data, pen='r')        
+        self.pw.plot(data, pen='r')     
 
     def redrawPushed(self):
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
@@ -868,16 +867,62 @@ class PreviewTab(QWidget):
                 break
         #self.pw.setVisible(True)
 
+    def clearPushed(self):
+        self.pw.clear()
+
+class CWProject(object):   
+    def __init__(self):
+        self.folderlocation = None
+        self.traceslocation = None
+        self.statslocation = None
+        self.projectLoaded = False
+        self.traces = tracereader_native.tracereader_native()
+        self.fname = None
+
+    def setFilename(self, fname):
+        self.fname = fname
+        self.folderlocation = os.path.dirname(fname) + "/" + os.path.splitext(os.path.basename(fname))[0] + "_data"
+        self.traceslocation = self.folderlocation + "/traces"
+        self.statslocation  = self.folderlocation + "/stats"
+
+        #Create any directories if they don't exist
+        if os.path.exists(self.folderlocation) == False:
+            os.mkdir(self.folderlocation)
+
+        if os.path.exists(self.traceslocation) == False:
+            os.mkdir(self.traceslocation)
+
+        if os.path.exists(self.statslocation) == False:
+            os.mkdir(self.statslocation)
+
+    def saveProject(self, fname=None):
+        if fname:
+            self.setFilename(fname)
+        else:
+            fname = self.fname
+
+        if self.traces.tracesSaved == False:
+            self.traces.saveAllTraces(self.traceslocation)
+
+        file = open(fname, "w")
+        file.write("ChipWhisperer Project File\n")
+        file.close()        
+
+    def saveTraces(self):
+        self.traces.saveAllTraces(self.traceslocation)        
+        
+    def loadProject(self, fname):
+        self.setFilename(fname)
+        self.traces.loadAllTraces(self.traceslocation)
+
+
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
     
     def __init__(self):       
         super(MainChip, self).__init__()
-
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        
-        self.trace = tracereader_dpacontestv3.tracereader_dpacontestv3()
         self.initUI()
 
         #Settings
@@ -922,7 +967,6 @@ class MainChip(QMainWindow):
         for i in range(MainChip.MaxRecentFiles):
             self.fileMenu.addAction(self.recentFileActs[i])
             
-        
     def initUI(self):        
         self.statusBar()
         self.setWindowTitle("Chip Whisperer: Analyzer")
@@ -932,7 +976,6 @@ class MainChip(QMainWindow):
         self.createMenus()
 
         self.updateRecentFileActions()
-    
         
         #self.setGeometry(300, 300, 350, 300)
         self.show()
@@ -997,30 +1040,49 @@ class MainChip(QMainWindow):
         
         #return QFileInfo(fullFileName).fileName()
         
-    def loadFile(self, fname):
-        self.trace.loadInfo(os.path.dirname(fname))
-        self.preview.passTrace(self.trace)
-        self.dpa.passTrace(self.trace)
-        self.setCurrentFile(fname)
-
-    def openProject(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
-
-    def saveProject(self):
-        print "save?"
-
-    def newProject(self):
-        print "new"
-        
     def importFile(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','info.xml')
         if fname:
-            self.loadFile(fname)
+            trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()
+            trimport.loadInfo(os.path.dirname(fname))
 
+            msg = QMessageBox()
+            msg.setText("Import Information")
+            msg.setInformativeText("Import %d traces (could take a while)?"%trimport.numTraces())
+            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Ok)
+            ret = msg.exec_()
+
+            if ret == QMessageBox.Ok:
+                trimport.loadAllTraces()
+                self.cwp.traces.copyTo(trimport)
+                self.preview.passTrace(self.cwp.traces)
+                self.dpa.passTrace(self.cwp.traces)
+
+    def openProject(self, fname=None):
+        self.cwp = CWProject()
+
+        if fname == None:
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
+        self.setCurrentFile(fname)
+        self.cwp.loadProject(fname)
+
+        self.preview.passTrace(self.cwp.traces)
+        self.dpa.passTrace(self.cwp.traces)
+
+    def saveProject(self):
+        self.cwp.saveProject()
+        self.setCurrentFile(self.cwp.fname)
+
+    def newProject(self):
+        self.cwp = CWProject()
+        fname, _ = QFileDialog.getSaveFileName(self, 'New Project File', '.', '*.cwp')
+        self.cwp.setFilename(fname)
+                
     def openRecentFile(self):
         action = self.sender()
         if action:
-            self.loadFile(action.data())        
+            self.openProject(action.data())        
 
     def curTabChange(self, index):
         for i in range(self.tw.count()):
@@ -1028,8 +1090,7 @@ class MainChip(QMainWindow):
                 self.tw.widget(i).setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
             else:
                 self.tw.widget(i).setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
-                                                   
-        
+                                                       
 def main():
     
     app = QApplication(sys.argv)

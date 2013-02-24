@@ -27,18 +27,28 @@ import attack_aesmodel as model
 
 class attack_CPAAESv1():
 
+    def __init__(self):
+        self.setOptions(None, range(0,16))
+
     def getOptions(self):
         #Type, Label/Name, Values
         return {
          "Model": {"Type": 'CB', "Opts": ['Hamming Weight', 'Hamming Distance']},
          "Key Round": {"Type": 'CB', "Opts": ['First', 'Last']}
-        }   
-    
-    def doDPA(self, brange, traces, plaintexts, ciphertexts, progressBar=None, modeltype="Hamming Weight", keyround="First", encodedopts=None):
-        #If encoded options present parse them & overwrite
+        }
+
+    def setOptions(self, encodedopts, brange):
+        self.modeltype="Hamming Weight"
+        self.keyround="First"
+        self.brange=brange
         if encodedopts != None:
-            modeltype = encodedopts['Model']
-            keyround = encodedopts['Key Round']
+            self.modeltype = encodedopts['Model']
+            self.keyround = encodedopts['Key Round']
+    
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None):
+        keyround=self.keyround
+        modeltype=self.modeltype
+        brange=self.brange
                                                                    
         traces = np.array(traces)
         plaintexts =np.array(plaintexts)
@@ -109,8 +119,8 @@ class attack_CPAAESv1():
                     tdiff = traces[tnum,:] - meant
 
                     sumnum = sumnum + (hdiff*tdiff)
-                    sumden1 = sumden1 + pow(hdiff, 2)
-                    sumden2 = sumden2 + pow(tdiff, 2)               
+                    sumden1 = sumden1 + hdiff*hdiff 
+                    sumden2 = sumden2 + tdiff*tdiff             
 
                 if progressBar:
                     progressBar.setValue(pbcnt)
