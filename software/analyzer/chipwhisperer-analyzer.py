@@ -711,14 +711,16 @@ class PATab(QWidget):
 
         self.AnalysisViewDocks[bnum].widget().clear
        #self.AnalysisViewDocks[bnum].setVisible(False)
+
+        prange = range(self.pstart[bnum], self.pend[bnum])
        
         for i in range(0,256):
             canceled = progress.wasCanceled() #_callSync='off'
             if highlightByte:
                 if i not in self.highlights[bnum]:
-                    self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen='g')
+                    self.AnalysisViewDocks[bnum].widget().plot(prange, diffs[i], pen='g')
             else:               
-                    self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen=(i%8,8))
+                    self.AnalysisViewDocks[bnum].widget().plot(prange, diffs[i], pen=(i%8,8))
             if (i % 32) == 0:
                 progress.setValue(i) #, _callSync='off')
             #if canceled.hasResult() and canceled.result() is True:
@@ -730,7 +732,7 @@ class PATab(QWidget):
             if highlightByte:
                 if i in self.highlights[bnum]:
                     penclr = self.whatColour( self.highlights[bnum].index(i) )
-                    self.AnalysisViewDocks[bnum].widget().plot(diffs[i], pen=penclr )
+                    self.AnalysisViewDocks[bnum].widget().plot(prange, diffs[i], pen=penclr )
             
         self.AnalysisViewDocks[bnum].setVisible(True)
 
@@ -749,6 +751,9 @@ class PATab(QWidget):
 
         for i in range(0, 16):
             self.redrawRequired[i] = redraw
+
+        self.pend = [self.endPointPrint.value()]*16
+        self.pstart = [self.startPointPrint.value()]*16
 
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data.append(self.trace.getTrace(i)[self.startPointPrint.value():self.endPointPrint.value()])
@@ -787,7 +792,6 @@ class PATab(QWidget):
                 self.AnalysisViewDocks[i].setVisible(False)
             self.redrawRequired[i] = True
 
-
 class PreviewTab(QWidget):
     def __init__(self):
         QWidget.__init__(self)
@@ -803,7 +807,7 @@ class PreviewTab(QWidget):
 
         pbClear = QPushButton("Clear All")
         pbClear.clicked.connect(self.clearPushed)
-        setupLayout.addWidget(pbClear, 0, 0)
+        setupLayout.addWidget(pbClear, 0, 1)
 
         self.startTracePrint = QSpinBox()        
         self.startTracePrint.setMinimum(0)
@@ -860,8 +864,10 @@ class PreviewTab(QWidget):
 
         #self.pw.setVisible(False)
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
-            data = self.trace.getTrace(i)           
-            self.pw.plot(data[self.startPointPrint.value():self.endPointPrint.value()], pen=(i%8,8))            
+            data = self.trace.getTrace(i)
+            sp = self.startPointPrint.value()
+            ep = self.endPointPrint.value()
+            self.pw.plot(range(sp,ep),data[sp:ep], pen=(i%8,8))            
             progress.setValue(i)
             if progress.wasCanceled():
                 break
@@ -869,6 +875,19 @@ class PreviewTab(QWidget):
 
     def clearPushed(self):
         self.pw.clear()
+
+class PreprocessTab(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        layout = QVBoxLayout()
+
+        setupGB = QGroupBox("Statistics")
+        setupLayout = QGridLayout()
+        setupGB.setLayout(setupLayout)
+
+        layout.addWidget(setupGB)
+        
+        self.setLayout(layout)
 
 class CWProject(object):   
     def __init__(self):
