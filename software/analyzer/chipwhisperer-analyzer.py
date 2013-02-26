@@ -416,11 +416,22 @@ class PATab(QWidget):
 
                 if  self.advPB.isChecked() == False:
                     break
+                
+            if  self.advPB.isChecked() == False:
+                break
 
+        f = open('pge.txt', 'w')
         print "Partial Guessing Entropy - Average of All Rounds"
         for indx, pgestat in enumerate(pgeStats):
-            print "%5d   "%(indx * traces_per_step + traces_per_step),
+            step = indx * traces_per_step + traces_per_step
+            print "%5d   "%step,
             self.printPGE(pgestat, usefloat=True)
+
+            f.write("%5d   "%step)
+            for j in pgestat:
+                f.write("%3.2f "%j)
+            f.write("\n");
+        f.close()
 
         self.advPB.setChecked(False)
 
