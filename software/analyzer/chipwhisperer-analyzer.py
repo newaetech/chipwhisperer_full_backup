@@ -36,7 +36,7 @@ import tracereader_native
 import attack_dpav1
 import attack_cpav1_loopy
 import attack_bayesiancpa
-import attack_cpa_dpav2wrapper
+#import attack_cpa_dpav2wrapper
 import numpy as np
 from scipy import signal
 
