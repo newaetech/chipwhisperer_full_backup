@@ -38,6 +38,7 @@ import attack_cpav1_loopy
 import attack_bayesiancpa
 import attack_cpa_dpav2wrapper
 import numpy as np
+from scipy import signal
 
 #For profiling support (not 100% needed)
 import pstats, cProfile
@@ -55,6 +56,7 @@ class PATab(QWidget):
         #self.dpa = attack_dpav1.attack_DPAAESv1()
         #self.dpa = attack_cpav1.attack_CPAAESv1()
         self.dpa = None
+        self.preprocess = MainWindow.preprocess
 
         #Index 0 = ALL bytes
         #Index 1...16 = Bytes 0...15
@@ -105,22 +107,22 @@ class PATab(QWidget):
         self.startPointPrint.valueChanged.connect(self.pointVChanged)
         self.pByteSel = QComboBox()
         self.pByteSel.addItem("All Bytes")
-        #self.pByteSel.addItem("Byte 0")
-        #self.pByteSel.addItem("Byte 1")
-        #self.pByteSel.addItem("Byte 2")
-        #self.pByteSel.addItem("Byte 3")
-        #self.pByteSel.addItem("Byte 4")
-        #self.pByteSel.addItem("Byte 5")
-        #self.pByteSel.addItem("Byte 6")
-        #self.pByteSel.addItem("Byte 7")
-        #self.pByteSel.addItem("Byte 8")
-        #self.pByteSel.addItem("Byte 9")
-        #self.pByteSel.addItem("Byte 10")
-        #self.pByteSel.addItem("Byte 11")
-        #self.pByteSel.addItem("Byte 12")
-        #self.pByteSel.addItem("Byte 13")
-        #self.pByteSel.addItem("Byte 14")
-        #self.pByteSel.addItem("Byte 15")
+        self.pByteSel.addItem("Byte 0")
+        self.pByteSel.addItem("Byte 1")
+        self.pByteSel.addItem("Byte 2")
+        self.pByteSel.addItem("Byte 3")
+        self.pByteSel.addItem("Byte 4")
+        self.pByteSel.addItem("Byte 5")
+        self.pByteSel.addItem("Byte 6")
+        self.pByteSel.addItem("Byte 7")
+        self.pByteSel.addItem("Byte 8")
+        self.pByteSel.addItem("Byte 9")
+        self.pByteSel.addItem("Byte 10")
+        self.pByteSel.addItem("Byte 11")
+        self.pByteSel.addItem("Byte 12")
+        self.pByteSel.addItem("Byte 13")
+        self.pByteSel.addItem("Byte 14")
+        self.pByteSel.addItem("Byte 15")
         self.pByteSel.currentIndexChanged.connect(self.pointIndexChanged)       
         playout = QHBoxLayout()
         playout.addWidget(QLabel("Points: "))
@@ -211,6 +213,7 @@ class PATab(QWidget):
 
         self.advPB = QPushButton("Go")
         self.advPB.setEnabled(False)
+        self.advPB.setCheckable(True)
         self.advPB.clicked.connect(self.advgpGo)
         advgpLayout.addWidget(self.advPB)
 
@@ -357,6 +360,12 @@ class PATab(QWidget):
         for i in range(0,16):
             self.redrawRequired.append(True)
 
+    def returnSettings(self):
+        return
+
+    def loadSettings(self, settings):
+        return
+
 ### Functions dealing with advanced graphing
     def advTraceChanged(self):
         maxRounds = int(self.trace.NumTrace / self.advTraceRange.value())
@@ -405,10 +414,15 @@ class PATab(QWidget):
                 pgeStats[cnt] = (pgeStats[cnt]*rnum + self.pge) / (rnum + 1)
                 cnt = cnt + 1
 
+                if  self.advPB.isChecked() == False:
+                    break
+
         print "Partial Guessing Entropy - Average of All Rounds"
         for indx, pgestat in enumerate(pgeStats):
             print "%5d   "%(indx * traces_per_step + traces_per_step),
             self.printPGE(pgestat, usefloat=True)
+
+        self.advPB.setChecked(False)
 
 ### Functions dealing with Main Analysis Options
     def pointVChanged(self, newpt):
@@ -756,7 +770,9 @@ class PATab(QWidget):
         self.pstart = [self.startPointPrint.value()]*16
 
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
-            data.append(self.trace.getTrace(i)[self.startPointPrint.value():self.endPointPrint.value()])
+            d = self.trace.getTrace(i)
+            d = self.preprocess.processOneTrace(d)
+            data.append(d[self.startPointPrint.value():self.endPointPrint.value()])
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
 
@@ -792,23 +808,79 @@ class PATab(QWidget):
                 self.AnalysisViewDocks[i].setVisible(False)
             self.redrawRequired[i] = True
 
-class PreviewTab(QWidget):
+class Preprocess(QWidget):
     def __init__(self):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
-        setupGB = QGroupBox("Load Options")
-        setupLayout = QGridLayout()
+        ppGB = QGroupBox("Preprocessing Options")
+        ppLayout = QVBoxLayout()
+        ppGB.setLayout(ppLayout)
+
+        self.ppEnabled = QCheckBox("Enable Preprocessing")
+        ppLayout.addWidget(self.ppEnabled)
+
+        h = QHBoxLayout()
+        self.dsEnabled = QCheckBox("Downsampling Enabled")
+        h.addWidget(self.dsEnabled)
+        self.dsRate = QSpinBox()
+        self.dsRate.setMinimum(1)
+        h.addWidget(QLabel("Downsample Rate:"))
+        h.addWidget(self.dsRate)
+        self.dsFilter = QCheckBox("Use Filter for downsample")
+        h.addWidget(self.dsFilter)
+        h.addStretch()
+        ppLayout.addLayout(h)
+
+        h = QHBoxLayout()
+        self.normEnabled = QCheckBox("Normalize Traces by Mean and Std-Dev")
+        h.addWidget(self.normEnabled)
+        ppLayout.addLayout(h)
+
+        layout.addWidget(ppGB)
+        self.setLayout(layout)
+
+    def processOneTrace(self, inptrace):
+        if self.ppEnabled.isChecked() == False:
+            return inptrace
+
+        trace = inptrace
+
+        if self.dsEnabled.isChecked():
+            if self.dsFilter.isChecked():
+                trace = signal.decimate(trace, self.dsRate.value())
+            else:
+                trace = trace[range(0, len(trace), self.dsRate.value())]
+                
+            trace = np.concatenate((trace, np.zeros(len(inptrace)-len(trace))))
+
+        if self.normEnabled.isChecked():
+            trace = (trace - np.mean(trace)) / np.std(trace)
+
+        return trace        
+
+class PreviewTab(QWidget):
+    def __init__(self, ppWidget=None):
+        QWidget.__init__(self)
+        layout = QVBoxLayout()
+
+        setupGB = QGroupBox("View Options")
+        setupLayout = QVBoxLayout()
         setupGB.setLayout(setupLayout)
 
+        hl = QHBoxLayout()
         pbRedraw = QPushButton("Redraw")
         pbRedraw.clicked.connect(self.redrawPushed)
-        setupLayout.addWidget(pbRedraw, 0, 0)
+        hl.addWidget(pbRedraw)
 
         pbClear = QPushButton("Clear All")
         pbClear.clicked.connect(self.clearPushed)
-        setupLayout.addWidget(pbClear, 0, 1)
+        hl.addWidget(pbClear)
+        hl.addStretch()
+        #setupLayout.addLayout(hl)
+        
 
+        #hl = QHBoxLayout()
         self.startTracePrint = QSpinBox()        
         self.startTracePrint.setMinimum(0)
         self.endTracePrint = QSpinBox()        
@@ -818,17 +890,29 @@ class PreviewTab(QWidget):
         self.endPointPrint = QSpinBox()        
         self.endPointPrint.setMinimum(0)
 
-        setupLayout.addWidget(QLabel("Traces: "), 1, 0)
-        setupLayout.addWidget(self.startTracePrint, 1, 1)
-        setupLayout.addWidget(QLabel(" to "), 1, 2)
-        setupLayout.addWidget(self.endTracePrint, 1, 3)
-        
-        setupLayout.addWidget(QLabel("Points: "), 2, 0)
-        setupLayout.addWidget(self.startPointPrint, 2, 1)
-        setupLayout.addWidget(QLabel(" to "), 2, 2)
-        setupLayout.addWidget(self.endPointPrint, 2, 3)
+        hl.addWidget(QLabel("Traces: "))
+        hl.addWidget(self.startTracePrint)
+        hl.addWidget(QLabel(" to "))
+        hl.addWidget(self.endTracePrint)
+        hl.addStretch()
+        #setupLayout.addLayout(hl)
+
+        #hl = QHBoxLayout()
+        hl.addWidget(QLabel("Points: "))
+        hl.addWidget(self.startPointPrint, )
+        hl.addWidget(QLabel(" to "))
+        hl.addWidget(self.endPointPrint)
+        hl.addStretch()
+        setupLayout.addLayout(hl)
         
         layout.addWidget(setupGB)
+
+        #Preprocessing Stuff
+        if ppWidget:
+            self.pp = ppWidget
+            layout.addWidget(ppWidget)
+        else:
+            self.pp = None
 
         #Setup plot widget
         self.pw = pg.PlotWidget(name="Power Trace View")
@@ -853,6 +937,8 @@ class PreviewTab(QWidget):
 
         self.pw.clear()
         data = self.trace.getTrace(0)
+        if self.pp:
+            data = self.pp.processOneTrace(data)
         self.pw.plot(data, pen='r')     
 
     def redrawPushed(self):
@@ -865,6 +951,8 @@ class PreviewTab(QWidget):
         #self.pw.setVisible(False)
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             data = self.trace.getTrace(i)
+            if self.pp:
+                data = self.pp.processOneTrace(data)
             sp = self.startPointPrint.value()
             ep = self.endPointPrint.value()
             self.pw.plot(range(sp,ep),data[sp:ep], pen=(i%8,8))            
@@ -875,19 +963,6 @@ class PreviewTab(QWidget):
 
     def clearPushed(self):
         self.pw.clear()
-
-class PreprocessTab(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-        layout = QVBoxLayout()
-
-        setupGB = QGroupBox("Statistics")
-        setupLayout = QGridLayout()
-        setupGB.setLayout(setupLayout)
-
-        layout.addWidget(setupGB)
-        
-        self.setLayout(layout)
 
 class CWProject(object):   
     def __init__(self):
@@ -990,6 +1065,8 @@ class MainChip(QMainWindow):
         self.statusBar()
         self.setWindowTitle("Chip Whisperer: Analyzer")
 
+        self.setWindowIcon(QIcon("../common/cwicon.png"))
+
         self.recentFileActs = []
         self.createActions()
         self.createMenus()
@@ -999,8 +1076,11 @@ class MainChip(QMainWindow):
         #self.setGeometry(300, 300, 350, 300)
         self.show()
 
+        #Preprocess Settings
+        self.preprocess = Preprocess()
+
         #Preview Tab Setup
-        self.preview = PreviewTab()
+        self.preview = PreviewTab(self.preprocess)
 
         #DPA Tab Setup
         self.dpa = PATab(self.preview, self)
