@@ -48,7 +48,7 @@ from cwanalyzer_common import noProject
 from cwanalyzer_patab import PATab
 from cwanalyzer_importdpav3 import ImportDPAv3
 from cwanalyzer_traces import traceItem
-from cwanalyzer_traces import ManageTraces
+from cwanalyzer_traces import ManageTracesDialog
 
 class Preprocess(QWidget):
     def __init__(self):
@@ -215,6 +215,7 @@ class CWProject(object):
         self.projectLoaded = False
         self.traces = tracereader_native.tracereader_native()
         self.manageTraces = parent.manageTraces
+        self.traces = self.manageTraces.iface
         self.fname = None
 
         self.projName = "default"
@@ -236,6 +237,12 @@ class CWProject(object):
         if os.path.exists(self.statslocation) == False:
             os.mkdir(self.statslocation)
 
+    def checkProject(self):
+        if self.fname == None:
+            return
+
+        self.manageTraces.checkProject()
+
     def saveProject(self, fname=None):
         if fname:
             self.setFilename(fname)
@@ -254,26 +261,17 @@ class CWProject(object):
         #Save trace manager stuff
         self.manageTraces.saveProject(config, fname)
 
-        #if self.traces.tracesSaved == False:
-        #    self.traces.saveAllTraces(self.traceslocation)
-
         with open(fname, 'wb') as configfile:
             config.write(configfile)  
-
-    def saveTraces(self):
-        self.traces.saveAllTraces(self.traceslocation)        
         
     def loadProject(self, fname):
         self.setFilename(fname)
 
         config = ConfigParser.RawConfigParser()
         config.read(self.fname)
-        
-        self.manageTraces.loadProject(self.fname)
-        
-        #self.traces.loadAllTraces(self.traceslocation)
 
         #Open project file & read in everything
+        self.manageTraces.loadProject(self.fname)
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
@@ -336,7 +334,7 @@ class MainChip(QMainWindow):
         self.setWindowTitle("Chip Whisperer: Analyzer")
         self.setWindowIcon(QIcon("../common/cwicon.png"))
 
-        self.manageTraces = ManageTraces(self)
+        self.manageTraces = ManageTracesDialog(self)
 
         self.recentFileActs = []
         self.createActions()
@@ -409,13 +407,13 @@ class MainChip(QMainWindow):
         #return QFileInfo(fullFileName).fileName()
 
     def openProject(self, fname=None):
+        self.closeCurrentProject()
         self.cwp = CWProject(self)
 
         if fname == None:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
         self.setCurrentFile(fname)
         self.cwp.loadProject(fname)
-
         self.preview.passTrace(self.cwp.traces)
         self.dpa.passTrace(self.cwp.traces)
 
@@ -424,6 +422,7 @@ class MainChip(QMainWindow):
         self.setCurrentFile(self.cwp.fname)
 
     def newProject(self):
+        self.closeCurrentProject()
         self.cwp = CWProject(self)
         fname, _ = QFileDialog.getSaveFileName(self, 'New Project File', '.', '*.cwp')
         self.cwp.setFilename(fname)
@@ -439,6 +438,10 @@ class MainChip(QMainWindow):
                 self.tw.widget(i).setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
             else:
                 self.tw.widget(i).setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
+
+    def closeCurrentProject(self):
+        if self.cwp:
+            self.cwp.checkProject()
                                                        
 def main():
     

@@ -37,14 +37,19 @@ import re
 import numpy as np
 from scipy import signal
 
+#For copying files when adding existing traces
+import shutil
+import glob
+
 #For profiling support (not 100% needed)
 import pstats, cProfile
 
+#Reading trace config files
 import ConfigParser
 
+#General global settings/config
 from cwanalyzer_common import CW_VERSION
 from cwanalyzer_common import GlobalSettings
-from cwanalyzer_common import noProject
 
 class traceItem():
     def __init__(self, configfile=None):
@@ -61,6 +66,8 @@ class traceItem():
         self.yscale = 1
         self.yunits = "digits"
         self.notes = ""
+
+        self.trace = None
 
         self.configfile = None
 
@@ -110,12 +117,112 @@ class traceItem():
         config.write(configfile)
         configfile.flush()
         configfile.close()
+
+    def checkTraceItem(self, itemname, localitem, changedlist):
+        if localitem != self.__dict__[itemname]:                      
+            changedlist.append(itemname)
+            return True
+        return False        
+
+    def checkTrace(self, configfile = None):
+        if configfile == None:
+            configfile = self.configfile
+
+        config = ConfigParser.RawConfigParser()
+        config.read(configfile)
         
-class ManageTraces(QDialog):
+        sname = "Trace Config"
+
+        numTraces = config.getint(sname, 'NumTraces')
+        date = config.get(sname, 'Date')
+        prefix = config.get(sname, 'Prefix')
+        points = config.getint(sname, 'Points')
+        targetHW = config.get(sname, 'TargetHW')
+        targetSW = config.get(sname, 'TargetSW')
+        scope = config.get(sname, 'ScopeName')
+        samplerate = config.get(sname, 'ScopeSampleRate')
+        yscale = config.getfloat(sname, 'ScopeYScale')
+        yunits = config.get(sname, 'ScopeYUnits')
+        notes = config.get(sname, 'Notes')
+
+        #Compare memory to sections
+        changed = False
+        changedName = []
+        changed = changed or self.checkTraceItem("numTraces", numTraces, changedName)
+        changed = changed or self.checkTraceItem("date", date, changedName)
+        changed = changed or self.checkTraceItem("prefix", prefix, changedName)
+        changed = changed or self.checkTraceItem("points", points, changedName)
+        changed = changed or self.checkTraceItem("targetHW", targetHW, changedName)
+        changed = changed or self.checkTraceItem("targetSW", targetSW, changedName)
+        changed = changed or self.checkTraceItem("scope", scope, changedName)
+        changed = changed or self.checkTraceItem("samplerate", samplerate, changedName)
+        changed = changed or self.checkTraceItem("yscale", yscale, changedName)
+        changed = changed or self.checkTraceItem("yunits", yunits, changedName)
+        changed = changed or self.checkTraceItem("notes", notes, changedName)
+
+        #print changed
+        #print changedName
+
+        #TODO: Actually save or anything else
+        
+        return changed
+
+class ManageTraces():
+    def __init__(self, parent):
+        self.dlg = parent
+        self.NumTrace = 0
+        self.NumPoint = 0
+        self.knownkey = []
+
+    def findMappedTrace(self, n):
+        for t in self.dlg.traceList:
+            if t.mappedRange:
+                if n >= t.mappedRange[0] or n <= t.mappedRange[1]:
+                    return t
+        raise ValueError("n = %d not in mapped range"%n)
+
+    def getTrace(self, n):
+        t = self.findMappedTrace(n)
+        return t.trace.getTrace(n - t.mappedRange[0])
+    
+    def getTextin(self, n):
+        t = self.findMappedTrace(n)
+        return t.trace.getTextin(n - t.mappedRange[0])
+
+    def getTextout(self, n):
+        t = self.findMappedTrace(n)
+        return t.trace.getTextout(n - t.mappedRange[0])
+
+    def getKnownKey(self):
+        #For now all traces need to have same key
+        return self.knownkey
+
+    def UpdateTraces(self):
+        #Find total (last mapped range)
+        num = []
+        pts = []
+
+        for t in self.dlg.traceList:
+            if t.mappedRange:
+                num.append(t.mappedRange[1])
+                pts.append(t.points)
+
+        try:
+            self.NumTrace = max(num)
+            self.NumPoint = max(pts)
+        except:
+            self.NumTrace = 0
+            self.NumPoint = 0
+        
+class ManageTracesDialog(QDialog):
     secName = "Trace Management"
     def __init__(self, parent=None):
-        super(ManageTraces, self).__init__(parent)
+        super(ManageTracesDialog, self).__init__(parent)
         self.parent = parent
+
+        #This module is interface for others
+        self.iface = ManageTraces(self)
+        
         layout = QVBoxLayout()
 
         self.table = QTableWidget(0, 11)
@@ -123,15 +230,19 @@ class ManageTraces(QDialog):
        
         layout.addWidget(self.table)
 
-        temp = QPushButton("Add Blank")
-        temp.clicked.connect(self.addRow)
-        layout.addWidget(temp)
+        #temp = QPushButton("Add Blank")
+        #temp.clicked.connect(self.addRow)
+        #layout.addWidget(temp)
 
         importDPAv3 = QPushButton("Import DPAv3")
         importDPAv3.clicked.connect(self.importDPAv3)
         layout.addWidget(importDPAv3)
 
-        importExisting = QPushButton("Add Existing")
+        copyExisting = QPushButton("Copy Existing and Add")
+        copyExisting.clicked.connect(self.copyExisting)
+        layout.addWidget(copyExisting)
+
+        importExisting = QPushButton("Add Reference to Existing")
         importExisting.clicked.connect(self.importExisting)
         layout.addWidget(importExisting)
 
@@ -142,9 +253,16 @@ class ManageTraces(QDialog):
 
         self.newProject()
 
-    def newProject(self):
+    def newProject(self):        
         self.traceList = []
         return
+
+    def checkProject(self, ask=True):
+        #Check trace attributes
+        for i in range(0, self.table.rowCount()):
+            self.traceList[i].checkTrace()
+
+        #Check out config
 
     def saveProject(self, config, configfilename):
         config.add_section(self.secName)
@@ -221,10 +339,18 @@ class ManageTraces(QDialog):
                 self.traceList[i].mappedRange = [startTrace, startTrace+tlen]
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d"%(startTrace, startTrace+tlen)))
                 startTrace = startTrace + tlen + 1
+
+                if self.traceList[i].trace == None:
+                    self.traceList[i].trace = tracereader_native.tracereader_native()
+                    path = os.path.split(self.traceList[i].configfile)[0]
+                    self.traceList[i].trace.loadAllTraces(path, self.traceList[i].prefix)
+                
             else:
                 self.traceList[i].enabled = False
                 self.traceList[i].mappedRange = None
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
+
+        self.iface.UpdateTraces()
         
     def importDPAv3(self):
         imp = ImportDPAv3(self)
@@ -241,5 +367,53 @@ class ManageTraces(QDialog):
             #Add to file list
             ti = traceItem()
             ti.loadTrace(fname)
+            self.traceList.append(ti)
+            self.addRow(ti)
+
+    def copyExisting(self, fname=None):
+        if fname == None:
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file',GlobalSettings.value("trace_last_file"),'*.cfg')
+            if fname:
+                GlobalSettings.setValue("trace_last_file", fname)
+
+        if fname:
+            #Get our project directory
+            targetdir = self.parent.cwp.traceslocation + "/"
+            cfgname = os.path.split(fname)[1]
+            srcdir = os.path.split(fname)[0] + "/"            
+            newcfgname = targetdir + cfgname
+
+            #Get prefix from config file
+            config = ConfigParser.RawConfigParser()
+            config.read(fname)
+            prefix = config.get("Trace Config", "prefix")
+            newprefix = prefix
+
+            #Check if we'll be overwriting things
+            newprefix = prefix
+            while(os.path.exists(newcfgname)):
+                npstripped = newprefix.rstrip("_")
+                newprefix = QInputDialog.getText(self, "Enter New Prefix", "Project already contains trace with\nprefix %s. Please enter new prefix:"%npstripped, text=npstripped)
+                if newprefix[1] == True:
+                    newcfgname = targetdir + cfgname.replace(prefix.rstrip("_"), newprefix[0])
+                    newprefix = newprefix[0] + "_"
+                else:
+                    return
+                
+            #Change prefix in config file & write new one
+            config.set("Trace Config", "prefix", newprefix)
+            configfile = open(newcfgname, 'wb')
+            config.write(configfile)        
+            configfile.close()
+            
+            #Copy anything with same prefix, changing as 
+            for filename in glob.glob(os.path.join(srcdir, '%s*'%prefix)):
+                if os.path.isfile(filename):
+                    targetfile = os.path.split(filename)[1].replace(prefix, newprefix)
+                    shutil.copy(filename, targetdir + targetfile)
+            
+            #Add new trace to file list
+            ti = traceItem()
+            ti.loadTrace(newcfgname)
             self.traceList.append(ti)
             self.addRow(ti)
