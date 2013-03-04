@@ -76,11 +76,11 @@ class tracereader_native:
         self.tracesSaved = True
         return
 
-    def saveAllTraces(self, directory):
-        np.save(directory + "/traces_", self.traces)
-        np.save(directory + "/textin", self.textins)
-        np.save(directory + "/textout", self.textouts)
-        np.save(directory + "/knownkey", self.knownkey)
+    def saveAllTraces(self, directory, prefix=""):
+        np.save(directory + "/%straces.npy"%prefix, self.traces)
+        np.save(directory + "/%stextin.npy"%prefix, self.textins)
+        np.save(directory + "/%stextout.npy"%prefix, self.textouts)
+        np.save(directory + "/%sknownkey.npy"%prefix, self.knownkey)
         self.tracesSaved = True
 
     def numPoints(self):

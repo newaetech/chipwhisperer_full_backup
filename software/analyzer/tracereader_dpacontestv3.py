@@ -44,11 +44,12 @@ class tracereader_dpacontestv3:
             
         tree = ET.parse(os.path.join(directory, 'info.xml'))
         root = tree.getroot()
+        self.xmlroot = root
         NumTrace = int(root.findall('NumTrace')[0].text)
         NumPoint = int(root.findall('NumPoint')[0].text)
 
         self.NumTrace = NumTrace
-        self.NumPoint = NumPoint
+        self.NumPoint = NumPoint        
         
     def loadAllTraces(self, directory=None):
         if directory == None:

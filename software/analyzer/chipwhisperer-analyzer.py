@@ -37,17 +37,31 @@ import attack_dpav1
 import attack_cpav1_loopy
 import attack_bayesiancpa
 #import attack_cpa_dpav2wrapper
+import re
 import numpy as np
 from scipy import signal
 
 #For profiling support (not 100% needed)
 import pstats, cProfile
 
+import ConfigParser
+
 try:    
     import attack_cpaiterative
 except:
     attack_cpaiterative = None
 
+
+CW_VERSION = "0.001BETA"
+GlobalSettings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
+
+
+def noProject():
+    msg = QMessageBox()
+    msg.setText("No Project Open")
+    msg.setInformativeText("Project must be open for this function. Open existing or create new")
+    msg.setStandardButtons(QMessageBox.Ok)
+    msg.exec_()
 
 class PATab(QWidget):
     def __init__(self, previewtab, MainWindow=None):
@@ -403,7 +417,7 @@ class PATab(QWidget):
             cnt = 0
             for toffset in range(strace, traces_per_round+strace, traces_per_step):
                 #print "Attack %d - %d"%(strace, toffset + traces_per_step)
-                #self.startTracePrint.setValue(toffset)
+                #self.startTracePrint.setValue(toffset)                
                 self.startTracePrint.setValue(strace)
                 self.endTracePrint.setValue(toffset+traces_per_step)
                 self.attackPushed()
@@ -420,7 +434,7 @@ class PATab(QWidget):
             if  self.advPB.isChecked() == False:
                 break
 
-        f = open('pge.txt', 'w')
+        f = open('pge2.txt', 'w')
         print "Partial Guessing Entropy - Average of All Rounds"
         for indx, pgestat in enumerate(pgeStats):
             step = indx * traces_per_step + traces_per_step
@@ -548,20 +562,21 @@ class PATab(QWidget):
             
     def passTrace(self, trace):
         self.trace = trace
-        self.startTracePrint.setMaximum(trace.NumTrace)
-        self.endTracePrint.setMaximum(trace.NumTrace)
-        self.endTracePrint.setValue(trace.NumTrace)
+        if trace.NumTrace:
+            self.startTracePrint.setMaximum(trace.NumTrace)
+            self.endTracePrint.setMaximum(trace.NumTrace)
+            self.endTracePrint.setValue(trace.NumTrace)
 
-        self.advTraceRange.setMaximum(trace.NumTrace)
-        self.advTraceRange.setValue(trace.NumTrace)
-        self.advTraceStep.setMaximum(trace.NumTrace)
+            self.advTraceRange.setMaximum(trace.NumTrace)
+            self.advTraceRange.setValue(trace.NumTrace)
+            self.advTraceStep.setMaximum(trace.NumTrace)
         
-        for i in xrange(0,17):
-            self.TraceRangeList[i] = [0, trace.NumPoint]
+            for i in xrange(0,17):
+                self.TraceRangeList[i] = [0, trace.NumPoint]
 
-        self.startPointPrint.setMaximum(trace.NumPoint)
-        self.endPointPrint.setMaximum(trace.NumPoint)
-        #self.endPointPrint.setValue(trace.NumPoint)
+            self.startPointPrint.setMaximum(trace.NumPoint)
+            self.endPointPrint.setMaximum(trace.NumPoint)
+            #self.endPointPrint.setValue(trace.NumPoint)
 
         self.validatePointSB()
 
@@ -783,7 +798,7 @@ class PATab(QWidget):
         for i in range(self.startTracePrint.value(), self.endTracePrint.value()):
             d = self.trace.getTrace(i)
             d = self.preprocess.processOneTrace(d)
-            data.append(d[self.startPointPrint.value():self.endPointPrint.value()])
+            data.append(d[self.TraceRangeList[0][0]:self.TraceRangeList[0][1]])
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
 
@@ -806,7 +821,7 @@ class PATab(QWidget):
 
         self.dpa.setOptions(opts, rangeDo)
    
-        self.dpa.addTraces(data, textins, textouts, progress)
+        self.dpa.addTraces(data, textins, textouts, progress, pointRange=self.TraceRangeList[1:17])
 
         self.updateTable()
 
@@ -938,19 +953,20 @@ class PreviewTab(QWidget):
 
     def passTrace(self, trace):
         self.trace = trace
-        self.startTracePrint.setMaximum(trace.NumTrace)
-        self.endTracePrint.setMaximum(trace.NumTrace)
-        self.endTracePrint.setValue(trace.NumTrace)
+        if trace.NumTrace:
+            self.startTracePrint.setMaximum(trace.NumTrace)
+            self.endTracePrint.setMaximum(trace.NumTrace)
+            self.endTracePrint.setValue(trace.NumTrace)
 
-        self.startPointPrint.setMaximum(trace.NumPoint)
-        self.endPointPrint.setMaximum(trace.NumPoint)
-        self.endPointPrint.setValue(trace.NumPoint)
+            self.startPointPrint.setMaximum(trace.NumPoint)
+            self.endPointPrint.setMaximum(trace.NumPoint)
+            self.endPointPrint.setValue(trace.NumPoint)
 
-        self.pw.clear()
-        data = self.trace.getTrace(0)
-        if self.pp:
-            data = self.pp.processOneTrace(data)
-        self.pw.plot(data, pen='r')     
+            self.pw.clear()
+            data = self.trace.getTrace(0)
+            if self.pp:
+                data = self.pp.processOneTrace(data)
+            self.pw.plot(data, pen='r')     
 
     def redrawPushed(self):
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
@@ -976,13 +992,17 @@ class PreviewTab(QWidget):
         self.pw.clear()
 
 class CWProject(object):   
-    def __init__(self):
+    def __init__(self, parent=None):
         self.folderlocation = None
         self.traceslocation = None
         self.statslocation = None
         self.projectLoaded = False
         self.traces = tracereader_native.tracereader_native()
+        self.manageTraces = parent.manageTraces
         self.fname = None
+
+        self.projName = "default"
+        self.projDesc = "A ChipWhisperer Project"
 
     def setFilename(self, fname):
         self.fname = fname
@@ -1006,43 +1026,440 @@ class CWProject(object):
         else:
             fname = self.fname
 
-        if self.traces.tracesSaved == False:
-            self.traces.saveAllTraces(self.traceslocation)
+        config = ConfigParser.RawConfigParser()
 
-        file = open(fname, "w")
-        file.write("ChipWhisperer Project File\n")
-        file.close()        
+        config.add_section('ChipWhisperer')
+        config.set('ChipWhisperer', 'version', CW_VERSION)
+
+        config.add_section('Project')
+        config.set('Project', 'name', self.projName)
+        config.set('Project', 'description', self.projDesc)
+
+        #Save trace manager stuff
+        self.manageTraces.saveProject(config, fname)
+
+        #if self.traces.tracesSaved == False:
+        #    self.traces.saveAllTraces(self.traceslocation)
+
+        with open(fname, 'wb') as configfile:
+            config.write(configfile)  
 
     def saveTraces(self):
         self.traces.saveAllTraces(self.traceslocation)        
         
     def loadProject(self, fname):
         self.setFilename(fname)
-        self.traces.loadAllTraces(self.traceslocation)
 
+        config = ConfigParser.RawConfigParser()
+        config.read(self.fname)
+        
+        self.manageTraces.loadProject(self.fname)
+        
+        #self.traces.loadAllTraces(self.traceslocation)
+
+        #Open project file & read in everything
+        
+
+class traceItem():
+    def __init__(self, configfile=None):
+        self.enabled = False
+        self.mappedRange = None
+        self.numTraces = 0
+        self.date = ""
+        self.prefix = ""
+        self.points = 0
+        self.targetHW = ""
+        self.targetSW = ""
+        self.scope = ""
+        self.samplerate = 0
+        self.yscale = 1
+        self.yunits = "digits"
+        self.notes = ""
+
+        self.configfile = None
+
+    def loadTrace(self, configfile=None):
+
+        if configfile:
+            self.configfile = configfile
+
+        config = ConfigParser.RawConfigParser()
+        config.read(self.configfile)
+        
+        sname = "Trace Config"
+        
+        self.numTraces = config.getint(sname, 'NumTraces')
+        self.date = config.get(sname, 'Date')
+        self.prefix = config.get(sname, 'Prefix')
+        self.points = config.getint(sname, 'Points')
+        self.targetHW = config.get(sname, 'TargetHW')
+        self.targetSW = config.get(sname, 'TargetSW')
+        self.scope = config.get(sname, 'ScopeName')
+        self.samplerate = config.get(sname, 'ScopeSampleRate')
+        self.yscale = config.getfloat(sname, 'ScopeYScale')
+        self.yunits = config.get(sname, 'ScopeYUnits')
+        self.notes = config.get(sname, 'Notes')
+
+    def saveTrace(self, configfile = None):
+        if configfile:
+            self.configfile = configfile
+
+        config = ConfigParser.RawConfigParser()
+        sname = "Trace Config"
+        
+        config.add_section(sname)
+        config.set(sname, 'NumTraces', self.numTraces)
+        config.set(sname, 'Date', self.date)
+        config.set(sname, 'Prefix', self.prefix)
+        config.set(sname, 'Points', self.points)
+        config.set(sname, 'TargetHW', self.targetHW)
+        config.set(sname, 'TargetSW', self.targetSW)
+        config.set(sname, 'ScopeName', self.scope)
+        config.set(sname, 'ScopeSampleRate', self.samplerate)
+        config.set(sname, 'ScopeYScale', self.yscale)
+        config.set(sname, 'ScopeYUnits', self.yunits)
+        config.set(sname, 'Notes', self.notes)
+
+        configfile = open(self.configfile, 'wb')
+        config.write(configfile)
+        configfile.flush()
+        configfile.close()
+
+class ImportDPAv3(QDialog):   
+    def __init__(self, parent=None):
+        super(ImportDPAv3, self).__init__(parent)
+        self.parent = parent
+        
+        self.setWindowTitle("DPA Contest v3 Trace Format Importer")
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        ### Selection of info.xml to import
+
+        fileL = QHBoxLayout()
+        fileL.addWidget(QLabel("info.xml file:"))
+        self.fileLE = QLineEdit()
+        #self.fileLE.setEnabled(False)
+        fileL.addWidget(self.fileLE)
+        filePB = QPushButton("Select info.xml")
+        filePB.clicked.connect(self.selectInfo)
+        fileL.addWidget(filePB)
+
+        setupGB = QGroupBox("File Selection")
+        setupGB.setLayout(fileL)
+        layout.addWidget(setupGB)
+
+        ### Settings found in info.xml, can be changed by user
+
+        self.LETraces = QLineEdit()
+        self.LETraces.setEnabled(False)
+
+        self.LEPoints = QLineEdit()
+        self.LEPoints.setEnabled(False)
+
+        self.LEScope = QLineEdit()
+        self.LETargetHW = QLineEdit()
+        self.LETargetSW = QLineEdit()
+        self.LEDate = QLineEdit()
+
+        self.LENotes = QLineEdit()
+
+        settingsL = QGridLayout()
+        settingsL.addWidget(QLabel("Traces:"), 0, 0)
+        settingsL.addWidget(self.LETraces, 0, 1)
+
+        settingsL.addWidget(QLabel("Points:"), 0, 2)
+        settingsL.addWidget(self.LEPoints, 0, 3)
+
+        settingsL.addWidget(QLabel("Date:"), 1, 0)
+        settingsL.addWidget(self.LEDate, 1, 1)
+
+        settingsL.addWidget(QLabel("TargetHW:"), 2, 0)
+        settingsL.addWidget(self.LETargetHW, 2, 1)
+
+        settingsL.addWidget(QLabel("TargetSW:"), 2, 2)
+        settingsL.addWidget(self.LETargetSW, 2, 3)
+
+        settingsL.addWidget(QLabel("ScopeName:"), 3, 0)
+        settingsL.addWidget(self.LEScope, 3, 1)
+
+        settingsL.addWidget(QLabel("Notes:"), 4, 0)
+        settingsL.addWidget(self.LENotes, 4, 1)
+
+        settingsGB = QGroupBox("Imported Parameters")
+        settingsGB.setLayout(settingsL)
+        layout.addWidget(settingsGB)
+
+
+        ### Import Options
+        importL = QGridLayout()
+
+        importL.addWidget(QLabel("Target Dir:"), 0, 0)
+        targetDirLE = QLineEdit()
+        targetDirLE.setText("./traces/")
+        targetDirLE.setEnabled(False)
+        importL.addWidget(targetDirLE, 0, 1)
+
+        self.prefixDirLE = QLineEdit()
+        self.prefixDirLE.setText("001")
+        importL.addWidget(QLabel("Prefix:"), 0, 2)
+        importL.addWidget(self.prefixDirLE, 0, 3)
+        
+        importPB = QPushButton("Run Import")
+        importPB.clicked.connect(self.doImport)
+        importL.addWidget(importPB, 4, 0)
+
+        importGB = QGroupBox("Import Options")
+        importGB.setLayout(importL)
+        layout.addWidget(importGB)
+
+    def getTraceCfgFile(self):
+        return self.parent.parent.cwp.traceslocation + "/" + "config_" + self.prefixDirLE.text() + ".cfg"
+       
+    def selectInfo(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',GlobalSettings.value("dpav3_last_file"),'info.xml')
+        if fname:
+            GlobalSettings.setValue("dpav3_last_file", fname)
+            trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()
+            trimport.loadInfo(os.path.dirname(fname))
+            self.trimport = trimport
+
+            self.fileLE.setText(fname)
+
+            self.LEPoints.setText("%d"%trimport.NumPoint)
+            self.LETraces.setText("%d"%trimport.NumTrace)
+
+            self.LEScope.setText(trimport.xmlroot.findall('Instrument')[0].text)
+            self.LEDate.setText(trimport.xmlroot.findall('Date')[0].text)
+            self.LETargetHW.setText(trimport.xmlroot.findall('Module')[0].text)
+            self.LETargetSW.setText(trimport.xmlroot.findall('Cipher')[0].text)
+
+            #May not have notes
+            try:
+                self.LENotes.setText(trimport.xmlroot.findall('Notes')[0].text)
+            except:
+                pass
+
+            #You really need a project file open, but let user experiment without it...
+            if self.parent.parent.cwp:
+                self.validatePrefix()
+
+    def validatePrefix(self, change=True):              
+        tracedir = self.parent.parent.cwp.traceslocation
+        configOK = False
+
+        while configOK == False:
+            if os.path.exists(self.getTraceCfgFile()):
+                if change:
+                    try:
+                        cur = int(self.prefixDirLE.text())
+                        cur = cur + 1
+                        self.prefixDirLE.setText("%03d"%cur)
+                    except:
+                        change = False
+                        
+                if change == False:
+                        msg = QMessageBox()
+                        msg.setText("Settings Error")
+                        msg.setInformativeText("Prefix already in use, try another prefix")
+                        msg.setStandardButtons(QMessageBox.Ok)
+                        msg.exec_()
+                        return False
+            else:
+                configOK = True
+
+        return True
+
+    def doImport(self):
+        if self.parent.parent.cwp == None:
+            noProject()
+            return
+
+        if self.validatePrefix(False) == False:
+            return
+        
+        ti = traceItem()
+        ti.numTraces = int(self.LETraces.text())
+        ti.points = int(self.LEPoints.text())
+        ti.date = self.LEDate.text()
+        ti.scope = self.LEScope.text()
+        ti.targetHW = self.LETargetHW.text()
+        ti.targetSW = self.LETargetSW.text()
+        ti.notes = self.LENotes.text()
+
+        msg = QMessageBox()
+        msg.setText("Message from ChipWhisperer")
+        msg.setInformativeText("Importing, could take a while. This message dissappears when done")
+        msg.setStandardButtons(0)
+        msg.show()
+        self.trimport.loadAllTraces()
+    
+        tmp = tracereader_native.tracereader_native()
+        tmp.copyTo(self.trimport)
+        msg.close()
+
+        #Save file automatically
+        tmp.saveAllTraces(self.parent.parent.cwp.traceslocation + "/", prefix=self.prefixDirLE.text() + "_")
+
+        ti.prefix = self.prefixDirLE.text() + "_"
+        
+        ti.saveTrace(self.getTraceCfgFile())     
+        self.close()
+
+class ManageTraces(QDialog):
+    secName = "Trace Management"
+    def __init__(self, parent=None):
+        super(ManageTraces, self).__init__(parent)
+        self.parent = parent
+        layout = QVBoxLayout()
+
+        self.table = QTableWidget(0, 11)
+        self.table.setHorizontalHeaderLabels(["Enabled", "Mapped Range", "Trace Num", "Points", "Date Captured", "File", "Target HW", "Target SW", "Scope", "Sample Rate", "Notes"])
+       
+        layout.addWidget(self.table)
+
+        temp = QPushButton("Add Blank")
+        temp.clicked.connect(self.addRow)
+        layout.addWidget(temp)
+
+        importDPAv3 = QPushButton("Import DPAv3")
+        importDPAv3.clicked.connect(self.importDPAv3)
+        layout.addWidget(importDPAv3)
+
+        importExisting = QPushButton("Add Existing")
+        importExisting.clicked.connect(self.importExisting)
+        layout.addWidget(importExisting)
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+        self.setWindowTitle("Trace Management")
+
+        self.newProject()
+
+    def newProject(self):
+        self.traceList = []
+        return
+
+    def saveProject(self, config, configfilename):
+        config.add_section(self.secName)
+        for indx, t in enumerate(self.traceList):
+            config.set(self.secName, 'tracefile%d'%indx, os.path.relpath(t.configfile, os.path.split(configfilename)[0]))
+            config.set(self.secName, 'enabled%d'%indx, str(t.enabled))
+
+    def loadProject(self, configfilename):
+        config = ConfigParser.RawConfigParser()
+        config.read(configfilename)
+        alltraces = config.items(self.secName)
+
+        self.newProject()
+
+        fdir = os.path.split(configfilename)[0] + "/"
+
+        for t in alltraces:
+            if t[0].startswith("tracefile"):
+                fname = fdir + t[1]
+                print "Opening %s"%fname
+                ti = traceItem()
+                ti.loadTrace(fname)
+                self.traceList.append(ti)
+                self.addRow(ti)
+
+            if t[0].startswith("enabled"):
+                tnum = re.findall(r'[0-9]+', t[0])
+                self.table.cellWidget(int(tnum[0]), self.findCol("Enabled")).setChecked(t[1] == "True")
+
+    def findCol(self, name):
+        """ Function is a hack/cheat to deal with movable headers if they become enabled """
+        cols = self.table.columnCount()
+
+        for i in range(0, cols):
+            if self.table.horizontalHeaderItem(i).text() == name:
+                return i
+
+        raise ValueError("findCol argument not in table: %s"%name)
+
+        
+    def addRow(self, trace=None, location=None):
+        if location == None:
+            location = self.table.rowCount()
+            
+        self.table.insertRow(location)
+        row = self.table.rowCount()-1
+        cb = QCheckBox()
+        cb.clicked.connect(self.validateTable)
+        self.table.setCellWidget(row, self.findCol("Enabled"), cb)
+
+        if trace:
+            temp = QTableWidgetItem("%d"%trace.numTraces)
+            temp.setFlags(temp.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, self.findCol("Trace Num"), temp)
+            self.table.setItem(row, self.findCol("Date Captured"), QTableWidgetItem("%s"%trace.date))
+            self.table.setItem(row, self.findCol("File"), QTableWidgetItem("%s"%trace.configfile))
+            temp = QTableWidgetItem("%d"%trace.points)
+            temp.setFlags(temp.flags() & ~Qt.ItemIsEditable)
+            self.table.setItem(row, self.findCol("Points"), temp)
+            self.table.setItem(row, self.findCol("Target HW"), QTableWidgetItem("%s"%trace.targetHW))
+            self.table.setItem(row, self.findCol("Target SW"), QTableWidgetItem("%s"%trace.targetSW))
+            self.table.setItem(row, self.findCol("Scope"), QTableWidgetItem("%s"%trace.scope))
+            self.table.setItem(row, self.findCol("Sample Rate"), QTableWidgetItem("%s"%trace.samplerate))
+            self.table.setItem(row, self.findCol("Notes"), QTableWidgetItem("%s"%trace.notes))
+
+        self.validateTable()
+
+    def validateTable(self):
+        startTrace = 0
+        for i in range(0, self.table.rowCount()):
+            if self.table.cellWidget(i, self.findCol("Enabled")).isChecked():
+                self.traceList[i].enabled = True
+                tlen = self.traceList[i].numTraces
+                self.traceList[i].mappedRange = [startTrace, startTrace+tlen]
+                self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d"%(startTrace, startTrace+tlen)))
+                startTrace = startTrace + tlen + 1
+            else:
+                self.traceList[i].enabled = False
+                self.traceList[i].mappedRange = None
+                self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
+        
+    def importDPAv3(self):
+        imp = ImportDPAv3(self)
+        imp.exec_()
+        self.importExisting(imp.getTraceCfgFile())
+
+    def importExisting(self, fname=None):
+        if fname == None:
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file',GlobalSettings.value("trace_last_file"),'*.cfg')
+            if fname:
+                GlobalSettings.setValue("trace_last_file", fname)
+
+        if fname:
+            #Add to file list
+            ti = traceItem()
+            ti.loadTrace(fname)
+            self.traceList.append(ti)
+            self.addRow(ti)
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
     
     def __init__(self):       
         super(MainChip, self).__init__()
+        self.cwp = None
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.initUI()
 
         #Settings
-        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
-        self.restoreGeometry(settings.value("geometry"));
-
+        self.restoreGeometry(GlobalSettings.value("geometry"));
+        
     def closeEvent(self, event):
-        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
-        settings.setValue("geometry", self.saveGeometry());
+        GlobalSettings.setValue("geometry", self.saveGeometry());
         QMainWindow.closeEvent(self, event)
 
     def createActions(self):
-        self.importAct = QAction(QIcon('open.png'), '&Import Input Files', self,
-                               statusTip='Import Input Files (waveform, etc)',
-                               triggered=self.importFile)
+#        self.importAct = QAction(QIcon('open.png'), '&Import Input Files', self,
+#                               statusTip='Import Input Files (waveform, etc)',
+#                               triggered=self.importFile)
 
         self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
                                shortcut=QKeySequence.Open,
@@ -1062,21 +1479,28 @@ class MainChip(QMainWindow):
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
 
+        self.traceManageAct = QAction('&Manage', self, statusTip='Add/Remove Traces from Project', triggered=self.manageTraces.show)
+
     def createMenus(self):
-        self.fileMenu= self.menuBar().addMenu('&File')
+        self.fileMenu= self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.newAct)
         self.fileMenu.addAction(self.openAct)
         self.fileMenu.addAction(self.saveAct)
-        self.fileMenu.addAction(self.importAct)
+#        self.fileMenu.addAction(self.importAct)
         self.separatorAct = self.fileMenu.addSeparator()
         for i in range(MainChip.MaxRecentFiles):
             self.fileMenu.addAction(self.recentFileActs[i])
+
+        self.tracesMenu= self.menuBar().addMenu("&Traces")
+        self.tracesMenu.addAction(self.traceManageAct)
+        
             
     def initUI(self):        
         self.statusBar()
         self.setWindowTitle("Chip Whisperer: Analyzer")
-
         self.setWindowIcon(QIcon("../common/cwicon.png"))
+
+        self.manageTraces = ManageTraces(self)
 
         self.recentFileActs = []
         self.createActions()
@@ -1106,8 +1530,7 @@ class MainChip(QMainWindow):
         self.setCentralWidget(self.tw)
 
     def setCurrentFile(self, fname):
-        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
-        files = settings.value('recentFileList', [])
+        files = GlobalSettings.value('recentFileList', [])
 
         try:
             files.remove(fname)
@@ -1117,14 +1540,13 @@ class MainChip(QMainWindow):
         files.insert(0, fname)
         del files[MainChip.MaxRecentFiles:]
 
-        settings.setValue('recentFileList', files)
+        GlobalSettings.setValue('recentFileList', files)
         for widget in QApplication.topLevelWidgets():
             if isinstance(widget, MainChip):
                 widget.updateRecentFileActions()
 
     def updateRecentFileActions(self):
-        settings = QSettings('ChipWhisperer', 'chipwhisperer-analyzer')
-        files = settings.value('recentFileList')
+        files = GlobalSettings.value('recentFileList')
         files_no = 0
 
         if files:
@@ -1149,28 +1571,9 @@ class MainChip(QMainWindow):
         return toplevel + "/" + filename
         
         #return QFileInfo(fullFileName).fileName()
-        
-    def importFile(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','info.xml')
-        if fname:
-            trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()
-            trimport.loadInfo(os.path.dirname(fname))
-
-            msg = QMessageBox()
-            msg.setText("Import Information")
-            msg.setInformativeText("Import %d traces (could take a while)?"%trimport.numTraces())
-            msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-            msg.setDefaultButton(QMessageBox.Ok)
-            ret = msg.exec_()
-
-            if ret == QMessageBox.Ok:
-                trimport.loadAllTraces()
-                self.cwp.traces.copyTo(trimport)
-                self.preview.passTrace(self.cwp.traces)
-                self.dpa.passTrace(self.cwp.traces)
 
     def openProject(self, fname=None):
-        self.cwp = CWProject()
+        self.cwp = CWProject(self)
 
         if fname == None:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
@@ -1185,7 +1588,7 @@ class MainChip(QMainWindow):
         self.setCurrentFile(self.cwp.fname)
 
     def newProject(self):
-        self.cwp = CWProject()
+        self.cwp = CWProject(self)
         fname, _ = QFileDialog.getSaveFileName(self, 'New Project File', '.', '*.cwp')
         self.cwp.setFilename(fname)
                 

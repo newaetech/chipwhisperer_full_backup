@@ -45,12 +45,12 @@ class attack_CPAAESv1():
             self.modeltype = encodedopts['Model']
             self.keyround = encodedopts['Key Round']
     
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
                                                                    
-        traces = np.array(traces)
+        traces_all = np.array(traces)
         plaintexts =np.array(plaintexts)
         ciphertexts =np.array(ciphertexts)
 
@@ -63,10 +63,22 @@ class attack_CPAAESv1():
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256)
 
+        numtraces = len(traces_all[:,0])
+
         #For all bytes of key
         for bnum in brange:
 
             diffs = [0]*256
+
+            if pointRange == None:
+                traces = traces_all
+                padbefore = 0
+                padafter = 0
+            else:
+                traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
+                padbefore = pointRange[bnum][0]
+                padafter = len(traces_all[0,:]) - pointRange[bnum][1]
+                #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
 
             #For each 0..0xFF possible value of the key byte
             for key in range(0, 256):                
@@ -75,13 +87,13 @@ class attack_CPAAESv1():
                 sumden1 = np.zeros(len(traces[0,:]))
                 sumden2 = np.zeros(len(traces[0,:]))
 
-                hyp = [0] * len(traces[:,0])
+                hyp = [0] * numtraces
 
                 #Formula for CPA & description found in "Power Analysis Attacks"
                 # by Mangard et al, page 124, formula 6.2.                         
                 
                 #Generate hypotheticals
-                for tnum in range(len(traces[:,0])):
+                for tnum in range(numtraces):
 
                     if len(plaintexts) > 0:
                         pt = plaintexts[tnum]
@@ -114,7 +126,7 @@ class attack_CPAAESv1():
                 meant = np.mean(traces, axis=0, dtype=np.float64)
                                    
                 #For each trace, do the following
-                for tnum in range(len(traces[:,0])):
+                for tnum in range(numtraces):
                     hdiff = (hyp[tnum] - meanh)
                     tdiff = traces[tnum,:] - meant
 
@@ -130,6 +142,12 @@ class attack_CPAAESv1():
                         break
 
                 diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+
+                if padafter > 0:
+                    diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
+
+                if padbefore > 0:
+                    diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
             
             self.all_diffs[bnum] = diffs
 
