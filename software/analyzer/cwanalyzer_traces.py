@@ -172,7 +172,7 @@ class ManageTraces():
         self.dlg = parent
         self.NumTrace = 0
         self.NumPoint = 0
-        self.knownkey = []
+        self.knownkey = None
 
     def findMappedTrace(self, n):
         for t in self.dlg.traceList:
@@ -206,6 +206,9 @@ class ManageTraces():
             if t.mappedRange:
                 num.append(t.mappedRange[1])
                 pts.append(t.points)
+
+                if self.knownkey == None:
+                    self.knownkey = t.trace.knownkey
 
         try:
             self.NumTrace = max(num)
@@ -254,7 +257,7 @@ class ManageTracesDialog(QDialog):
         self.newProject()
 
     def newProject(self):        
-        self.traceList = []
+        self.traceList = []    
         return
 
     def checkProject(self, ask=True):

@@ -63,11 +63,11 @@ class tracereader_native:
         self.tracesSaved = False
         
         
-    def loadAllTraces(self, directory=None):
-        self.traces = np.load(directory + "/traces_" + ".npy")
-        self.textins = np.load(directory + "/textin" + ".npy")
-        self.textouts = np.load(directory + "/textout" + ".npy")
-        self.knownkey = np.load(directory + "/knownkey" + ".npy")
+    def loadAllTraces(self, directory=None, prefix=""):
+        self.traces = np.load(directory + "/%straces.npy"%prefix)
+        self.textins = np.load(directory + "/%stextin.npy"%prefix)
+        self.textouts = np.load(directory + "/%stextout.npy"%prefix)
+        self.knownkey = np.load(directory + "/%sknownkey.npy"%prefix)
 
         self.NumTrace = self.traces.shape[0]
         self.NumPoint = self.traces.shape[1]
