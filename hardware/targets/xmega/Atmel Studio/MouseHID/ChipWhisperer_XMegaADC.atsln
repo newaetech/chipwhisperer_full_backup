@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Atmel Studio Solution File, Format Version 11.00
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "XPlainA3BU", "MouseHID\XPlainA3BU.cproj", "{8411B877-5862-4315-9493-2F086AE5EB7F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|AVR = Debug|AVR
+		Release|AVR = Release|AVR
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8411B877-5862-4315-9493-2F086AE5EB7F}.Debug|AVR.ActiveCfg = Debug|AVR
+		{8411B877-5862-4315-9493-2F086AE5EB7F}.Debug|AVR.Build.0 = Debug|AVR
+		{8411B877-5862-4315-9493-2F086AE5EB7F}.Release|AVR.ActiveCfg = Release|AVR
+		{8411B877-5862-4315-9493-2F086AE5EB7F}.Release|AVR.Build.0 = Release|AVR
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
