@@ -730,8 +730,15 @@ class GeneralConfig(QWidget):
         layout = QGridLayout()
 
         self.scopetype = QComboBox()
-        for scope in scopelist:
-            self.scopetype.addItem(scope)
+        if OpenADC_tab:
+            self.scopetype.addItem("OpenADC-Serial", OpenADC_tab(parent))
+
+        if OpenADC_ftdi_tab:
+            self.scopetype.addItem("OpenADC-FTDI", OpenADC_ftdi_tab(parent))
+
+        if OpenADC_ztex_tab:
+            self.scopetype.addItem("OpenADC-OpenADC-EZUSB(ZTEX)", OpenADC_ztex_tab(parent))
+            
         self.scopetype.currentIndexChanged.connect(scopecb)
         
         self.targettype = QComboBox()
