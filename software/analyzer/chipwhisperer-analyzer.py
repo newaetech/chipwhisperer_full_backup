@@ -29,13 +29,23 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import os.path
 sys.path.append('../common')
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
+
+try:
+    import pyqtgraph as pg
+    import pyqtgraph.multiprocess as mp
+except ImportError:
+    print "ERROR: PyQtGraph is required for this program"
+    sys.exit()
+    
 import tracereader_dpacontestv3
 import tracereader_native
 import re
-import numpy as np
-from scipy import signal
+
+try:
+    import numpy as np
+    from scipy import signal
+except ImportError:
+    print "ERROR: numpy & scipy are required for this program"
 
 #For profiling support (not 100% needed)
 import pstats, cProfile

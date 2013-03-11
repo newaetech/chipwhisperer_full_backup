@@ -35,22 +35,20 @@ import tracereader_dpacontestv3
 import tracereader_native
 import attack_dpav1
 import attack_cpav1_loopy
-import attack_bayesiancpa
-#import attack_cpa_dpav2wrapper
 import re
 import numpy as np
 from scipy import signal
 
-#For profiling support (not 100% needed)
-import pstats, cProfile
-
 import ConfigParser
 
-try:    
-    import attack_cpaiterative
-except:
-    attack_cpaiterative = None
+#For profiling support (not needed normally)
+import pstats, cProfile
 
+
+#Experimental modules - may fail or not exist yet
+#import attack_cpaiterative
+import attack_bayesiancpa
+#import attack_cpa_dpav2wrapper
 
 from cwanalyzer_common import CW_VERSION
 from cwanalyzer_common import GlobalSettings
@@ -144,12 +142,35 @@ class PATab(QWidget):
         tracepointLayout.addStretch()
 
         ##Select Attack Method
-        self.attackMode = QComboBox()        
-        self.attackMode.addItem("Correlation (Simple)")
-        self.attackMode.addItem("Differential (DPA)")
-        self.attackMode.addItem("Correlation (Bayesian - EXPERIMENTAL)")
-        self.attackMode.addItem("Correlation (Iterative - EXPERIMENTAL)")
-        self.attackMode.addItem("Correlation (DPAv2 C++ Reference Code)")
+        self.attackMode = QComboBox()
+
+        try:
+            self.attackMode.addItem("Correlation (Simple)", attack_cpav1_loopy.attack_CPAAESv1)
+        except:
+            print "Attack mode Correation (Simple) disabled due error"
+            
+        try:
+            self.attackMode.addItem("Differential (DPA)", attack_dpav1.attack_DPAAESv1)
+        except:
+            print "Attack mode Differential disabled due to error"
+
+        try:
+            self.attackMode.addItem("Correlation (Bayesian - EXPERIMENTAL)", attack_bayesiancpa.attack_BAYCPAAES)
+        except:
+            #Don't warn if experimental modes don't load
+            pass
+
+        try:
+            self.attackMode.addItem("Correlation (Iterative - EXPERIMENTAL)", attack_cpaiterative.attack_CPAAESit)
+        except:
+            #don't warn if experimental modes don't load
+            pass
+
+        try:
+            self.attackMode.addItem("Correlation (DPAv2 C++ Reference Code - UNFINISHED)", attack_cpa_dpav2wrapper.attack_CPAAES_dpav2wrapper)
+        except:
+            #don't warn if experimental modes don't load
+            pass
         tracepointLayout.addWidget(self.attackMode)
         tracepointLayout.addStretch()
         
