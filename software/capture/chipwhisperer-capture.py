@@ -31,7 +31,12 @@ import logging
 import math
 from PySide.QtCore import *
 from PySide.QtGui import *
-import serial
+
+try:
+    import serial
+except ImportError:
+    serial = None
+    
 import random
 
 sys.path.append('../../openadc/controlsw/python/common')
@@ -409,7 +414,7 @@ class OpenADC_ztex_tab(QWidget):
 
 class Smartcard_tab(QWidget):
     def __init__(self):
-        QWidget.__init__(self)
+        QWidget.__init__(self, mw=None)
         layout = QVBoxLayout()
 
         if target_smartcard == None:
@@ -422,7 +427,7 @@ class Smartcard_tab(QWidget):
         self.setLayout(layout)
 
 class SimpleSerial_tab(QWidget):
-    def __init__(self):
+    def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
@@ -469,7 +474,7 @@ class SimpleSerial_tab(QWidget):
         self.serialList.addItems(serialnames)
 
 class SASEBOW_tab(QWidget):
-    def __init__(self):
+    def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
@@ -540,7 +545,7 @@ class SASEBOW_tab(QWidget):
         self.serialList.addItems(serialnames)
 
 class SASEBOW_integrated_tab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
         self.parent = parent
@@ -613,7 +618,7 @@ class SASEBOW_integrated_tab(QWidget):
         self.target.disconnect()
 
 class SASEBOGII_tab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
         self.parent = parent
@@ -646,7 +651,7 @@ class SASEBOGII_tab(QWidget):
         self.target.disconnect()
 
 class SmartcardSerial_tab(QWidget):
-    def __init__(self):
+    def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
@@ -718,39 +723,85 @@ class SmartcardSerial_tab(QWidget):
 
 
 class DPAV3_tab(QWidget):
-    def __init__(self):
+    def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
         self.writer = writer_dpav3.dpav3()
         self.setLayout(layout)
 
 class GeneralConfig(QWidget):
-    def __init__(self, parent, scopelist, scopecb, targetlist, targetcb, tracelist, tracecb):
+    def __init__(self, parent, scopecb, targetcb, tracecb):
         QWidget.__init__(self)
         layout = QGridLayout()
 
+        ## Scope Types
         self.scopetype = QComboBox()
-        if OpenADC_tab:
-            self.scopetype.addItem("OpenADC-Serial", OpenADC_tab(parent))
+        if (openadc_qt == None):
+            print "Scope type OpenADC-* disabled due to missing module: openadc_qt"
+        else:
+            if serial == None:
+                print "Scope type OpenADC-Serial disabled due to missing module: PySerial"
+            else:
+                self.scopetype.addItem("OpenADC-Serial", OpenADC_tab)
 
-        if OpenADC_ftdi_tab:
-            self.scopetype.addItem("OpenADC-FTDI", OpenADC_ftdi_tab(parent))
+            if  ft == None:
+                print "Scope type OpenADC-FTDI disabled due to missing module: ftd2xx" 
+            else:
+                self.scopetype.addItem("OpenADC-FTDI", OpenADC_ftdi_tab)
 
-        if OpenADC_ztex_tab:
-            self.scopetype.addItem("OpenADC-OpenADC-EZUSB(ZTEX)", OpenADC_ztex_tab(parent))
+            if usb == None:
+                print "Scope type OpenADC-EZUSB(ZTEX) disabled due to missing module: PyUSB (http://pyusb.sourceforge.net)"
+            else:
+                self.scopetype.addItem("OpenADC-EZUSB(ZTEX)", OpenADC_ztex_tab)
             
         self.scopetype.currentIndexChanged.connect(scopecb)
-        
+
+
+        ## Target Types
         self.targettype = QComboBox()
-        for target in targetlist:
-            self.targettype.addItem(target)
-        self.targettype.currentIndexChanged.connect(targetcb)
+
+        if serial == None:
+            print "Target type Simple Serial disabled due to missing module: PySerial"
+        else:
+            self.targettype.addItem("Simple Serial", SimpleSerial_tab)
+
+        if target_smartcard == None:
+            print "Target type SmartCard Reader disabled due to missing module: target_smartcard"
+        else:
+            self.targettype.addItem("PS/SC SmartCard Reader", Smartcard_tab)
+
+        if target_smartcardserial == None:
+            print "Target type Serial Smartcard Reader disabled due to missing module: target_smartcardserial"
+        else:
+            self.targettype.addItem("Serial SmartCard Reader", SmartcardSerial_tab)
+
+        if target_sasebogii == None:
+            print "Target type SASEBO-GII disabled due to missing module: target_sasebogii"
+        else:
+            self.targettype.addItem("SASEBO-GII", SASEBOGII_tab)
+
+        if target_sasebow_integrated == None:
+            print "Target Type SASEBO-W Integrated disabled due to missing module: target_sasebow_integrated"
+        else:
+            self.targettype.addItem("SASEBOW (ChipWhisperer Firmware)", SASEBOW_tab)
+            
+        if target_sasebow == None:
+            print "Target Type SASEBO-W disabled due to missing module: target_sasebow"
+        else:
+            self.targettype.addItem("SASEBOW (Original Serial-USB)", SASEBOW_integrated_tab)
         
+        
+        self.targettype.currentIndexChanged.connect(targetcb)
+
+        ## Trace Format Types
         self.tracetype = QComboBox()
-        for tracewr in tracelist:            
-            self.tracetype.addItem(tracewr)
+
+        if DPAV3_tab:
+            self.tracetype.addItem("DPAv3 ASCII Format", DPAV3_tab)
+            
         self.tracetype.currentIndexChanged.connect(tracecb)
 
+        ## Other Stuff
         layout.addWidget(QLabel("Scope:"), 1, 0)
         layout.addWidget(self.scopetype, 1, 1)
         layout.addWidget(QLabel("Target:"), 2, 0)
@@ -975,51 +1026,17 @@ class MainWindow(QMainWindow):
             self.tw.widget(1).scope.closeAndHide()
         
         self.tw.removeTab(1)
-
-        if index==0:
-            self.tw.insertTab(1, OpenADC_tab(self), "&OpenADC-Serial")
-
-        elif index==1:
-            self.tw.insertTab(1, OpenADC_ftdi_tab(self), "&OpenADC-FTDI")
-
-        elif index==2:
-            self.tw.insertTab(1, OpenADC_ztex_tab(self), "&OpenADC-EZUSB(ZTEX)")
-
-        else:
-            print "Invalid scope index"          
-           
+        self.tw.insertTab(1, self.gctab.scopetype.itemData(index)(self) , self.gctab.scopetype.itemText(index))
+     
 
     def targetChanged(self, index):
         self.tw.removeTab(2)
-
-        if index==0:
-            self.tw.insertTab(2, SimpleSerial_tab(), "&Simple Serial")
-
-        elif index==1:
-            self.tw.insertTab(2, Smartcard_tab(), "&SmartCard Reader")
-
-        elif index==2:
-            self.tw.insertTab(2, SmartcardSerial_tab(), "&SmartCard Serial Reader")
-
-        elif index==3:
-            self.tw.insertTab(2, SASEBOGII_tab(self), "&SASEBO-GII")
-
-        elif index==4:
-            self.tw.insertTab(2, SASEBOW_tab(), "&SASEBOW")
-
-        elif index==5:
-            self.tw.insertTab(2, SASEBOW_integrated_tab(self), "&SASEBOW_Integrated")
-            
-        else:
-            print "Invalid target index"     
+        self.tw.insertTab(2, self.gctab.targettype.itemData(index)(self), self.gctab.targettype.itemText(index))
+  
 
     def traceChanged(self, index):
         self.tw.removeTab(3)
-
-        if index==0:
-            self.tw.addTab(DPAV3_tab(), "&DPAContestV3")
-        else:
-            print "Invalid trace index"
+        self.tw.insertTab(3, self.gctab.tracetype.itemData(index)(self), self.gctab.tracetype.itemText(index))
 
     def keyChanged(self, arg):
         if self.tw.widget(0).keyCB.isChecked() == True:
@@ -1062,9 +1079,7 @@ class MainWindow(QMainWindow):
 
         self.tw = QTabWidget()
         self.tw.currentChanged.connect(self.curTabChange)        
-        self.gctab = GeneralConfig(self, ["OpenADC-Serial", "OpenADC-FTDI", "OpenADC-EZUSB(ZTEX)"], self.scopeChanged,
-                           ["Simple Serial", "SmartCard", "SmartCard Serial", "SASEBO-GII", "SASEBOW Serial", "SASEBOW Integrated"], self.targetChanged,
-                           ["DPAContestV3"], self.traceChanged)
+        self.gctab = GeneralConfig(self, self.scopeChanged, self.targetChanged, self.traceChanged)
         self.tw.addTab(self.gctab, "&General")
                 
         #Defaults
