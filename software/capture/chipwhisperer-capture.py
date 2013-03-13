@@ -764,7 +764,7 @@ class GeneralConfig(QWidget):
             self.targettype.addItem("Serial SmartCard Reader", SmartcardSerial_tab)
 
         if target_sasebogii == None:
-            print "Target type SASEBO-GII disabled due to missing module: target_sasebogii"
+            print "Target type SASEBO-GII disabled due to missing module: ftd2xx (Download from https://pypi.python.org/pypi/ftd2xx)"
         else:
             self.targettype.addItem("SASEBO-GII", SASEBOGII_tab)
 
