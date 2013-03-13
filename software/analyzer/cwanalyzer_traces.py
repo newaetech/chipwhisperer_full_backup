@@ -216,6 +216,9 @@ class ManageTraces():
         except:
             self.NumTrace = 0
             self.NumPoint = 0
+
+from cwanalyzer_importdpav3 import ImportDPAv3
+
         
 class ManageTracesDialog(QDialog):
     secName = "Trace Management"

@@ -42,6 +42,8 @@ import pstats, cProfile
 
 import ConfigParser
 
+from cwanalyzer_traces import traceItem
+
 from cwanalyzer_common import CW_VERSION
 from cwanalyzer_common import GlobalSettings
 from cwanalyzer_common import noProject

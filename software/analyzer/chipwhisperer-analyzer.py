@@ -56,8 +56,7 @@ from cwanalyzer_common import CW_VERSION
 from cwanalyzer_common import GlobalSettings
 from cwanalyzer_common import noProject
 from cwanalyzer_patab import PATab
-from cwanalyzer_importdpav3 import ImportDPAv3
-from cwanalyzer_traces import traceItem
+
 from cwanalyzer_traces import ManageTracesDialog
 
 class Preprocess(QWidget):
@@ -424,6 +423,9 @@ class MainChip(QMainWindow):
             fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
         self.setCurrentFile(fname)
         self.cwp.loadProject(fname)
+
+        #TODO: improve?
+        self.manageTraces.validateTable()
         self.preview.passTrace(self.cwp.traces)
         self.dpa.passTrace(self.cwp.traces)
 
