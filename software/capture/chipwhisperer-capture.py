@@ -47,72 +47,60 @@ try:
 except ImportError:
     ft = None
     ft_str = sys.exc_info()
-    print ft_str
     
 try:
     import openadc_qt
 except ImportError:
     openadc_qt = None
     openadc_qt_str = sys.exc_info()
-    print openadc_qt_str
 
 try:
     import target_smartcard
 except ImportError:
     target_smartcard = None
     target_smartcard_str = sys.exc_info()
-    print target_smartcard_str
 
 try:
     import target_simpleserial
 except ImportError:
     target_simpleserial = None
     target_simpleserial_str = sys.exc_info()
-    print target_simpleserial_str
 
 try:
     import target_sasebogii
 except ImportError:
     target_sasebogii = None
     target_sasebogii_str = sys.exc_info()
-    print target_sasebogii_str
 
 try:
     import target_smartcardserial
 except ImportError:
     target_smartcardserial = None
     target_smartcardserial_str = sys.exc_info()
-    print target_smartcardserial_sasebow_str
-
+    
 try:
     import target_sasebow
 except ImportError:
     target_sasebow = None
     target_sasebow_str = sys.exc_info()
-    print target_sasebow_str
 
 try:
     import writer_dpav3
 except ImportError:
     writer_dpav3 = None
     writer_dpav3_str = sys.exc_info()
-    print writer_dpav3_str
 
 try:
     import target_sasebow_integrated
 except ImportError:
     target_sasebow_integrated = None
     target_sasebow_integrated_str = sys.exc_info()
-    print target_sasebow_integrated_str
 
 try:
     import usb
 except ImportError:
     usb = None
     usb_str = sys.exc_info()
-    print usb_str
-    print "usb import failed. Install pyusb from http://pyusb.sourceforge.net for EZUSB Support"
-
 
 try:
     from Crypto.Cipher import AES
