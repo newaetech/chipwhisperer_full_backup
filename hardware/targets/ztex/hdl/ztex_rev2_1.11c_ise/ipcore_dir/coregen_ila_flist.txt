@@ -1,0 +1,19 @@
+# Output products list for <coregen_ila>
+_xmsgs\pn_parser.xmsgs
+coregen_ila.asy
+coregen_ila.cdc
+coregen_ila.constraints\coregen_ila.ucf
+coregen_ila.constraints\coregen_ila.xdc
+coregen_ila.gise
+coregen_ila.ncf
+coregen_ila.ngc
+coregen_ila.sym
+coregen_ila.ucf
+coregen_ila.vhd
+coregen_ila.vho
+coregen_ila.xco
+coregen_ila.xdc
+coregen_ila.xise
+coregen_ila_flist.txt
+coregen_ila_readme.txt
+coregen_ila_xmdf.tcl

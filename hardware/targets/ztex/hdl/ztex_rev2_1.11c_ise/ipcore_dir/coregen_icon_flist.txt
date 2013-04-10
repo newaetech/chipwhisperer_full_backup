@@ -1,0 +1,17 @@
+# Output products list for <coregen_icon>
+_xmsgs\pn_parser.xmsgs
+coregen_icon.asy
+coregen_icon.constraints\coregen_icon.ucf
+coregen_icon.constraints\coregen_icon.xdc
+coregen_icon.gise
+coregen_icon.ngc
+coregen_icon.sym
+coregen_icon.ucf
+coregen_icon.vhd
+coregen_icon.vho
+coregen_icon.xco
+coregen_icon.xdc
+coregen_icon.xise
+coregen_icon_flist.txt
+coregen_icon_readme.txt
+coregen_icon_xmdf.tcl

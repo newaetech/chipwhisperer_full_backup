@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<symbol version="7" name="coregen_ila">
+    <symboltype>BLOCK</symboltype>
+    <timestamp>2013-1-29T1:30:39</timestamp>
+    <pin polarity="Input" x="0" y="80" name="control[35:0]" />
+    <pin polarity="Input" x="0" y="112" name="clk" />
+    <pin polarity="Input" x="0" y="176" name="trig0[127:0]" />
+    <graph>
+        <text style="fontsize:40;fontname:Arial" x="32" y="32">coregen_ila</text>
+        <rect width="256" x="32" y="32" height="672" />
+        <line x2="32" y1="80" y2="80" style="linewidth:W" x1="0" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="36" y="80" type="pin control[35:0]" />
+        <line x2="32" y1="112" y2="112" x1="0" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="36" y="112" type="pin clk" />
+        <line x2="32" y1="176" y2="176" style="linewidth:W" x1="0" />
+        <attrtext style="fontsize:24;fontname:Arial" attrname="PinName" x="36" y="176" type="pin trig0[127:0]" />
+    </graph>
+</symbol>
