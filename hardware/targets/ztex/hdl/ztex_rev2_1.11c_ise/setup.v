@@ -10,6 +10,8 @@
 	`define MAX_SAMPLES 24573
 	`define FAST_FTDI
 	`define NOBUFG_ADCCLK
+	`define CLOCK_ADVANCED
+	`define SYSTEM_CLK 30000000
 `endif
 
 //`define USE_DDR

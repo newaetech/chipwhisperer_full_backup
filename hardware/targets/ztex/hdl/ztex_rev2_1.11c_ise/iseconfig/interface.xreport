@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <report-views version="2.0" >
  <header>
-  <DateModified>2013-04-10T19:35:15</DateModified>
+  <DateModified>2013-04-12T18:35:13</DateModified>
   <ModuleName>interface</ModuleName>
   <SummaryTimeStamp>2013-01-30T15:25:40</SummaryTimeStamp>
   <SavedFilePath>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/targets/ztex/hdl/ztex_rev2_1.11c_ise/iseconfig/interface.xreport</SavedFilePath>

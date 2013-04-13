@@ -58,7 +58,7 @@ module interface(
 	 input         DUT_CLK_i,
 	 input         DUT_trigger_i,
 	 output        amp_gain,
-	 output        amp_hilo
+	 output        amp_hilo,
 	 
 	 inout 			target_io4, // Normally trigger
 	 inout			target_io3, // Normally Spare/Extra comms
@@ -67,7 +67,7 @@ module interface(
 	 inout			target_hs1, // Clock from victim device
 	 output			target_hs1_dir, //HIGH = Output
 	 inout			target_hs2, // Clock to victim device
-	 output			target_hs2_dir, //HIGH = Output
+	 output			target_hs2_dir //HIGH = Output
 	 
 `ifdef OPT_DDR
  /* To avoid modifying UCF file we keep these even in FIFO mode */
@@ -88,16 +88,16 @@ module interface(
 `endif
     );
 	 
-	 target_hs1_dir = 1'b0;
-	 target_hs2_dir = 1'b1;
-	 target_hs1 = 1'bZ;
+	 assign target_hs1_dir = 1'b0;
+	 assign target_hs2_dir = 1'b1;
+	 assign target_hs1 = 1'bZ;
 	 
 	 //TODO: FIX THESE
-	 target_hs2 = 1'b0;
-	 target_io1 = 1'bZ;
-	 target_io2 = 1'bZ;
-	 target_io3 = 1'bZ;
-	 target_io4 = 1'bZ;
+	 assign target_hs2 = 1'b0;
+	 assign target_io1 = 1'bZ;
+	 assign target_io2 = 1'bZ;
+	 assign target_io3 = 1'bZ;
+	 assign target_io4 = 1'bZ;
 	 
 	 /* Notes on the FX2 Interface:
 	   EP2 is IN (input from FPGA to computer)
@@ -153,7 +153,8 @@ module interface(
 		.ADC_OR(ADC_OR),
 		.ADC_clk(ADC_clk_int),
 		.ADC_clk_feedback(ADC_clk_int),
-		.DUT_CLK_i(DUT_CLK_i),
+		//.DUT_CLK_i(DUT_CLK_i),
+		.DUT_CLK_i(target_hs1),
 		.DUT_trigger_i(DUT_trigger_i),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
