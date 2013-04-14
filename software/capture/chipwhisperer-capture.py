@@ -97,6 +97,12 @@ except ImportError:
     target_sasebow_integrated_str = sys.exc_info()
 
 try:
+    import target_chipwhisperer_integrated
+except ImportError:
+    target_chipwhisperer_integrated = None
+    target_chipwhisperer_integrated_str = sys.exc_info()
+
+try:
     import usb
 except ImportError:
     usb = None
@@ -401,8 +407,8 @@ class OpenADC_ztex_tab(QWidget):
 
 
 class Smartcard_tab(QWidget):
-    def __init__(self):
-        QWidget.__init__(self, mw=None)
+    def __init__(self, mw=None):
+        QWidget.__init__(self, mw)
         layout = QVBoxLayout()
 
         if target_smartcard == None:
@@ -536,7 +542,7 @@ class SASEBOW_integrated_tab(QWidget):
     def __init__(self, mw=None):
         QWidget.__init__(self)
         layout = QVBoxLayout()
-        self.parent = parent
+        self.parent = mw
 
         if target_sasebow_integrated == None:
             layout.addWidget(QLabel("SASEBO-W Integrated Import Failed"))
@@ -597,6 +603,75 @@ class SASEBOW_integrated_tab(QWidget):
     def res(self):
         self.target.reset()
         self.ATRlabel.setText(self.target.getATR())
+                    
+    def dis(self):
+        self.disconnectButton.setEnabled(False)
+        self.connectButton.setEnabled(True)
+        self.resetButton.setEnabled(False)
+        self.statusButton.setEnabled(False)
+        self.target.disconnect()
+
+
+class CHIPWHISPERER_integrated_tab(QWidget):
+    def __init__(self, mw=None):
+        QWidget.__init__(self)
+        layout = QVBoxLayout()
+        self.parent = mw
+
+        if target_chipwhisperer_integrated == None:
+            layout.addWidget(QLabel("ChipWhisperer Integrated Import Failed"))
+            layout.addWidget(QLabel(str(target_chipwhisperer_integrated_str)))
+            self.target = None
+        else:            
+            self.serialList = QComboBox()
+            self.connectButton = QPushButton("Connect")
+            self.disconnectButton = QPushButton("Disconnect")
+            self.resetButton = QPushButton("Reset")
+            self.statusButton = QPushButton("Updated Status")           
+            self.Statuslabel = QLineEdit("Status = ?")
+            self.Statuslabel.setReadOnly(True)
+
+            self.connectButton.clicked.connect(self.con)
+            self.disconnectButton.clicked.connect(self.dis)
+            self.resetButton.clicked.connect(self.res)
+            self.statusButton.clicked.connect(self.update)
+            
+            connection = QGroupBox("Connection")
+            connlayout = QGridLayout()
+            connection.setLayout(connlayout)
+            connlayout.addWidget(self.connectButton, 1, 0)
+            connlayout.addWidget(self.disconnectButton, 1, 1)
+            connlayout.addWidget(self.resetButton, 1, 2)
+            connlayout.addWidget(self.statusButton, 1, 3)
+            layout.addWidget(connection)
+            layout.addWidget(self.Statuslabel)
+
+            self.disconnectButton.setEnabled(False)
+            self.resetButton.setEnabled(False)
+            self.statusButton.setEnabled(False)
+
+            self.target = target_chipwhisperer_integrated.CWSimpleSerial_Integrated()
+        self.setLayout(layout)
+
+    def __del__(self):
+        if self.target != None:
+            self.dis()
+
+    def update(self):
+        self.Statuslabel.setText("don't look at me")
+
+    def con(self):
+        try:
+            self.target.connect(self.parent.tw.widget(1).scope.sc)
+            self.disconnectButton.setEnabled(True)
+            self.connectButton.setEnabled(False)
+            self.resetButton.setEnabled(True)
+            self.statusButton.setEnabled(True)
+        except:
+            print "Unexpected error:", sys.exc_info()
+
+    def res(self):
+        self.target.reset()
                     
     def dis(self):
         self.disconnectButton.setEnabled(False)
@@ -771,12 +846,17 @@ class GeneralConfig(QWidget):
         if target_sasebow_integrated == None:
             print "Target Type SASEBO-W Integrated disabled due to missing module: target_sasebow_integrated"
         else:
-            self.targettype.addItem("SASEBOW (ChipWhisperer Firmware)", SASEBOW_tab)
-            
+            self.targettype.addItem("SASEBOW (ChipWhisperer Firmware)", SASEBOW_integrated_tab)
+
+        if target_chipwhisperer_integrated == None:
+            print "Target Type SASEBO-W Integrated disabled due to missing module: target_chipwhisperer_integrated"
+        else:
+            self.targettype.addItem("ChipWhisperer Rev2 Attached", CHIPWHISPERER_integrated_tab)
+
         if target_sasebow == None:
             print "Target Type SASEBO-W disabled due to missing module: target_sasebow"
         else:
-            self.targettype.addItem("SASEBOW (Original Serial-USB)", SASEBOW_integrated_tab)
+            self.targettype.addItem("SASEBOW (Original Serial-USB)", SASEBOW_tab)
         
         
         self.targettype.currentIndexChanged.connect(targetcb)
@@ -919,7 +999,6 @@ class doAcq(object):
 
 
     def doSingleReading(self, update=True, N=None, key=None):
-        print "A",
         self.scope.ADCarm()
 
         #print "DEBUG: Scope ADCarm()"
@@ -931,7 +1010,6 @@ class doAcq(object):
 
         self.newPlain()
 
-        print "B",
         ## Start target now
         if self.textInLabel != None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
@@ -939,7 +1017,6 @@ class doAcq(object):
         #Set mode
         self.target.setModeEncrypt()
 
-        print "C",
         #Load input, start encryption, get output
         self.textout = self.TargetDoTrace(self.textin, self.key)
 
@@ -950,7 +1027,7 @@ class doAcq(object):
 
         #print "DEBUG: Scope ADCcapure() calling"
         #Get ADC reading
-        print "D",
+        time.sleep(0.01)
         self.scope.ADCcapture(update, N)
         
 
@@ -966,7 +1043,7 @@ class doAcq(object):
 
         while (tw.numtrace < self.maxtraces) and self.running:
             print "1..",
-            self.doSingleReading(False, None, None)
+            self.doSingleReading(True, None, None)
             print "2..",
             tw.addTrace(self.textin, self.textout, self.scope.datapoints, self.key)
             print "3..",
@@ -993,6 +1070,14 @@ class MainWindow(QMainWindow):
         #self.preview.updateData(self.tw.widget(1).scope.datapoints)    
 
     def startCapture(self):
+
+        while 1:
+            self.captureOne()
+            time.sleep(0.01)
+            QApplication.processEvents()
+            
+        return
+        
         self.da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer,
                         label=self.tw.widget(0).counter, textInLabel=self.tw.widget(0).textInLine,
                         textOutLabel=self.tw.widget(0).textOutLine, textExpectedLabel=self.tw.widget(0).textOutExpected)
