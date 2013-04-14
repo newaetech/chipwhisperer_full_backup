@@ -17,14 +17,14 @@
   <files>
     <file xil_pn:name="ztex_cw_interface.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="3"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="10"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="14"/>
     </file>
     <file xil_pn:name="ztex_1_11.ucf" xil_pn:type="FILE_UCF">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../../../../../openadc/hdl/hdl/openadc_interface.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="5"/>
-      <association xil_pn:name="Implementation" xil_pn:seqID="9"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="12"/>
     </file>
     <file xil_pn:name="../../../../../openadc/hdl/hdl/reg_main.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="6"/>
@@ -70,6 +70,22 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="47"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="5"/>
     </file>
+    <file xil_pn:name="fifo_target_tx.xco" xil_pn:type="FILE_COREGEN">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="96"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="9"/>
+    </file>
+    <file xil_pn:name="../../../../common/hdl/serialtarget/reg_serialtarget.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="104"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="13"/>
+    </file>
+    <file xil_pn:name="../../../../common/hdl/serialtarget/targ_async_receiver.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="105"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="11"/>
+    </file>
+    <file xil_pn:name="../../../../common/hdl/serialtarget/targ_async_transmitter.v" xil_pn:type="FILE_VERILOG">
+      <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="106"/>
+      <association xil_pn:name="Implementation" xil_pn:seqID="10"/>
+    </file>
     <file xil_pn:name="ipcore_dir/fifoonly_adcfifo.xise" xil_pn:type="FILE_COREGENISE">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
@@ -77,6 +93,9 @@
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="ipcore_dir/coregen_ila.xise" xil_pn:type="FILE_COREGENISE">
+      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
+    </file>
+    <file xil_pn:name="fifo_target_tx.xise" xil_pn:type="FILE_COREGENISE">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
   </files>

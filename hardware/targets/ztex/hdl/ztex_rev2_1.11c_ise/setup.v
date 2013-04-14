@@ -12,6 +12,9 @@
 	`define NOBUFG_ADCCLK
 	`define CLOCK_ADVANCED
 	`define SYSTEM_CLK 30000000
+	
+	`define TARG_UART_BAUD 38400
+	
 `endif
 
 //`define USE_DDR

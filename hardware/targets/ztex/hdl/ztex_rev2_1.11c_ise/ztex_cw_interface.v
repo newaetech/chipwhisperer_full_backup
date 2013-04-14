@@ -62,8 +62,8 @@ module interface(
 	 
 	 inout 			target_io4, // Normally trigger
 	 inout			target_io3, // Normally Spare/Extra comms
-	 inout			target_io2, // Normallu TXD
-	 inout			target_io1, // Normally RXD
+	 inout			target_io2, // Normally RXD
+	 inout			target_io1, // Normally TXD
 	 inout			target_hs1, // Clock from victim device
 	 output			target_hs1_dir, //HIGH = Output
 	 inout			target_hs2, // Clock to victim device
@@ -92,10 +92,10 @@ module interface(
 	 assign target_hs2_dir = 1'b1;
 	 assign target_hs1 = 1'bZ;
 	 
-	 //TODO: FIX THESE
+	 //TODO: FIX THESE IF NEEDED
 	 assign target_hs2 = 1'b0;
-	 assign target_io1 = 1'bZ;
 	 assign target_io2 = 1'bZ;
+	 //assign target_io1 = 1'bZ;
 	 assign target_io3 = 1'bZ;
 	 assign target_io4 = 1'bZ;
 	 
@@ -142,6 +142,19 @@ module interface(
 	.O(ifclk_buf),
 	.I(ifclk) );
 
+	wire reg_rst;
+	wire [5:0] reg_addr;
+	wire [15:0] reg_bcnt;
+	wire [7:0] reg_datao;
+	wire [7:0] reg_datai;
+	wire [15:0] reg_size;
+	wire reg_read;
+	wire reg_write;
+	wire reg_addrvalid;
+	wire reg_stream;
+	wire [5:0] reg_hypaddr;
+	wire [15:0] reg_hyplen;
+
 	openadc_interface oadc(
 		.reset_i(reset_i),
 		.clk_adcint(ifclk_buf),
@@ -167,9 +180,18 @@ module interface(
 		.ftdi_oen(sloe_int),	
 		.ftdi_siwua(),
 		
-		.reg_stream_i(1'b0),
-		.reg_datai_i(8'd0),
-		.reg_hyplen_i(16'd0)	
+		.reg_reset_o(reg_rst),
+		.reg_address_o(reg_addr),
+		.reg_bytecnt_o(reg_bcnt),
+		.reg_datao_o(reg_datao),
+		.reg_datai_i(reg_datai),
+		.reg_size_o(reg_size),
+		.reg_read_o(reg_read),
+		.reg_write_o(reg_write),
+		.reg_addrvalid_o(reg_addrvalid),
+		.reg_stream_i(reg_stream),
+		.reg_hypaddress_o(reg_hypaddr),
+		.reg_hyplen_i(reg_hyplen) 
 	/*
 		,.LPDDR_A(LPDDR_A),
 		.LPDDR_BA(LPDDR_BA),
@@ -186,8 +208,25 @@ module interface(
 		.LPDDR_WE_n(LPDDR_WE_n),
 		.LPDDR_RZQ(LPDDR_RZQ)	
 	*/
-	);		 		
+	);
 	
+	reg_serialtarget registers_serialtarget(
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_stream(reg_stream),
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen),
+		.target_tx(target_io1),
+		.target_rx(target_io2)					              
+   );
 	
 	`ifdef CHIPSCOPE
    wire [127:0] cs_data;   
