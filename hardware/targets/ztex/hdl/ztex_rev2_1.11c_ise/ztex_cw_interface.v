@@ -45,12 +45,12 @@ module interface(
 	 input			flagb,
 	 inout [7:0]   fd,
 		 
-    output        GPIO_LED1,
-    output        GPIO_LED2,
-    output        GPIO_LED3,
-    output        GPIO_LED4,
-	 output			GPIO_LED5,
-	 output			GPIO_LED6,
+    output        GPIO_LED1, //STATUS
+    output        GPIO_LED2, //USB Activity
+    output        GPIO_LED3, //Capture Running
+    output        GPIO_LED4, //Armed
+	 output			GPIO_LED5, //Target Clock OK
+	 output			GPIO_LED6, //Target Activity
 	  
 	 input [9:0]   ADC_Data,
 	 input         ADC_OR,
@@ -99,6 +99,24 @@ module interface(
 	 assign target_io3 = 1'bZ;
 	 assign target_io4 = 1'bZ;
 	 
+	 wire led_hbeat;
+	 assign GPIO_LED1 = led_hbeat;
+	 assign GPIO_LED5 = 1'b0;
+	 assign GPIO_LED6 = ~target_io2 | ~target_io1;
+	 assign GPIO_LED2 = ~slrd | ~slwr;
+	 
+	 //LED_cap is too slow to see, we extend it here
+	 wire led_cap;
+	 reg  led_capture;
+	 assign GPIO_LED3 = led_capture;
+	 always @(posedge led_hbeat or posedge led_cap) begin
+		if (led_cap == 1'b1) begin
+			led_capture <= 1'b1;
+		end else begin
+			led_capture <= 1'b0;
+		end
+	 end
+	 
 	 /* Notes on the FX2 Interface:
 	   EP2 is IN (input from FPGA to computer)
 		EP6 is OUT (output from computer to FPGA)
@@ -112,20 +130,14 @@ module interface(
 	wire ifclk_buf;
 	wire ADC_clk_int;
 	assign ADC_clk = ADC_clk_int;
-	assign GPIO_LED1 = ~reset_i;	
 	reg sloe_int_last;	
 	assign pktend = ~(sloe_int_last & ~sloe_int);	
 	always @(posedge ifclk_buf) begin
 		sloe_int_last <= sloe_int;
 	end
 	
-	assign sloe = sloe_int;
-	
-	assign GPIO_LED5 = 1'b1;
-	assign GPIO_LED6 = 1'b1;
-	
-	assign fifoadr0 = 1'b0;
-		
+	assign sloe = sloe_int;	
+	assign fifoadr0 = 1'b0;	
 	/*
 	EP2: ADR1=0
 	EP6: ADR1=1
@@ -154,21 +166,26 @@ module interface(
 	wire reg_stream;
 	wire [5:0] reg_hypaddr;
 	wire [15:0] reg_hyplen;
+	
+	wire ext_trigger;
+	
+	//assign ext_trigger = DUT_trigger_i;
+	assign ext_trigger = target_io4;
 
 	openadc_interface oadc(
 		.reset_i(reset_i),
 		.clk_adcint(ifclk_buf),
 		.clk_iface(ifclk_buf),
-		.LED_hbeat(GPIO_LED2),
-		.LED_armed(GPIO_LED3),
-		.LED_capture(GPIO_LED4),
+		.LED_hbeat(led_hbeat),
+		.LED_armed(GPIO_LED4),
+		.LED_capture(led_cap),
 		.ADC_Data(ADC_Data),
 		.ADC_OR(ADC_OR),
 		.ADC_clk(ADC_clk_int),
 		.ADC_clk_feedback(ADC_clk_int),
 		//.DUT_CLK_i(DUT_CLK_i),
 		.DUT_CLK_i(target_hs1),
-		.DUT_trigger_i(DUT_trigger_i),
+		.DUT_trigger_i(ext_trigger),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
 				

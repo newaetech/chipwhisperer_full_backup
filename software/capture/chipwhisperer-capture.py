@@ -1001,8 +1001,6 @@ class doAcq(object):
     def doSingleReading(self, update=True, N=None, key=None):
         self.scope.ADCarm()
 
-        #print "DEBUG: Scope ADCarm()"
-
         if key:
             self.key = key
         else:
@@ -1025,9 +1023,7 @@ class doAcq(object):
         except:
             print "Response failed?"
 
-        #print "DEBUG: Scope ADCcapure() calling"
         #Get ADC reading
-        time.sleep(0.01)
         self.scope.ADCcapture(update, N)
         
 
@@ -1042,18 +1038,14 @@ class doAcq(object):
         tw.addKey(self.key)
 
         while (tw.numtrace < self.maxtraces) and self.running:
-            print "1..",
             self.doSingleReading(True, None, None)
-            print "2..",
             tw.addTrace(self.textin, self.textout, self.scope.datapoints, self.key)
-            print "3..",
-
+  
             if self.updateData:
                 self.updateData(self.scope.datapoints)
 
             if self.label != None:
                 self.label.setText("Traces = %d"%tw.numtrace)
-            print "4"
 
         tw.closeAll()
 
@@ -1071,12 +1063,13 @@ class MainWindow(QMainWindow):
 
     def startCapture(self):
 
-        while 1:
-            self.captureOne()
-            time.sleep(0.01)
-            QApplication.processEvents()
-            
-        return
+        #Following is debug code
+        #while 1:
+        #    self.captureOne()
+        #    time.sleep(0.01)
+        #    QApplication.processEvents()
+        #    
+        #return
         
         self.da = doAcq(self.tw.widget(1).scope, self.tw.widget(2).target, self.tw.widget(3).writer,
                         label=self.tw.widget(0).counter, textInLabel=self.tw.widget(0).textInLine,
