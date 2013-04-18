@@ -802,6 +802,11 @@ class GeneralConfig(QWidget):
         if (openadc_qt == None):
             print "Scope type OpenADC-* disabled due to missing module: openadc_qt"
         else:
+            if usb == None:
+                print "Scope type OpenADC-EZUSB(ZTEX) disabled due to missing module: PyUSB (http://pyusb.sourceforge.net)"
+            else:
+                self.scopetype.addItem("OpenADC-EZUSB(ZTEX)", OpenADC_ztex_tab)
+
             if serial == None:
                 print "Scope type OpenADC-Serial disabled due to missing module: PySerial"
             else:
@@ -811,17 +816,17 @@ class GeneralConfig(QWidget):
                 print "Scope type OpenADC-FTDI disabled due to missing module: ftd2xx" 
             else:
                 self.scopetype.addItem("OpenADC-FTDI", OpenADC_ftdi_tab)
-
-            if usb == None:
-                print "Scope type OpenADC-EZUSB(ZTEX) disabled due to missing module: PyUSB (http://pyusb.sourceforge.net)"
-            else:
-                self.scopetype.addItem("OpenADC-EZUSB(ZTEX)", OpenADC_ztex_tab)
             
         self.scopetype.currentIndexChanged.connect(scopecb)
 
 
         ## Target Types
         self.targettype = QComboBox()
+
+        if target_chipwhisperer_integrated == None:
+            print "Target Type ChipWhisperer Rev2 Attached disabled due to missing module: target_chipwhisperer_integrated"
+        else:
+            self.targettype.addItem("ChipWhisperer Rev2 Attached", CHIPWHISPERER_integrated_tab)
 
         if serial == None:
             print "Target type Simple Serial disabled due to missing module: PySerial"
@@ -847,11 +852,6 @@ class GeneralConfig(QWidget):
             print "Target Type SASEBO-W Integrated disabled due to missing module: target_sasebow_integrated"
         else:
             self.targettype.addItem("SASEBOW (ChipWhisperer Firmware)", SASEBOW_integrated_tab)
-
-        if target_chipwhisperer_integrated == None:
-            print "Target Type SASEBO-W Integrated disabled due to missing module: target_chipwhisperer_integrated"
-        else:
-            self.targettype.addItem("ChipWhisperer Rev2 Attached", CHIPWHISPERER_integrated_tab)
 
         if target_sasebow == None:
             print "Target Type SASEBO-W disabled due to missing module: target_sasebow"
