@@ -424,8 +424,11 @@ class MainChip(QMainWindow):
         self.setCurrentFile(fname)
         self.cwp.loadProject(fname)
 
-        #TODO: improve?
         self.manageTraces.validateTable()
+        self.updatePreview()
+
+    def updatePreview(self):
+        #
         self.preview.passTrace(self.cwp.traces)
         self.dpa.passTrace(self.cwp.traces)
 

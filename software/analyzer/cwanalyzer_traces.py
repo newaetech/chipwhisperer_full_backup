@@ -259,6 +259,9 @@ class ManageTracesDialog(QDialog):
 
         self.newProject()
 
+    def updatePreview(self):
+        self.parent.updatePreview()
+
     def newProject(self):        
         self.traceList = []    
         return
@@ -357,11 +360,13 @@ class ManageTracesDialog(QDialog):
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
 
         self.iface.UpdateTraces()
+        self.updatePreview()
         
     def importDPAv3(self):
         imp = ImportDPAv3(self)
         imp.exec_()
         self.importExisting(imp.getTraceCfgFile())
+        self.updatePreview()
 
     def importExisting(self, fname=None):
         if fname == None:
@@ -375,6 +380,7 @@ class ManageTracesDialog(QDialog):
             ti.loadTrace(fname)
             self.traceList.append(ti)
             self.addRow(ti)
+            self.updatePreview()
 
     def copyExisting(self, fname=None):
         if fname == None:
@@ -423,3 +429,5 @@ class ManageTracesDialog(QDialog):
             ti.loadTrace(newcfgname)
             self.traceList.append(ti)
             self.addRow(ti)
+
+            self.updatePreview()
