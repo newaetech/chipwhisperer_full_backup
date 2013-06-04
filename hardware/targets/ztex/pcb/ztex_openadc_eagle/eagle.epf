@@ -363,10 +363,10 @@ UsedLibrary="C:/E/eagle/element14-libs/Texas Instruments/Texas Instruments_By_el
 
 [Win_1]
 Type="Control Panel"
-Loc="-942 197 -343 596"
+Loc="0 197 599 596"
 State=1
 Number=0
 
 [Desktop]
-Screen="3520 1080"
+Screen="1600 900"
 Window="Win_1"
