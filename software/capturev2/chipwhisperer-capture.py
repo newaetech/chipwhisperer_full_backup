@@ -24,11 +24,18 @@
 #=================================================
 
 import sys
+import random
 from PySide.QtCore import *
 from PySide.QtGui import *
 import os.path
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
+
+try:
+    import writer_dpav3
+except ImportError:
+    writer_dpav3 = None
+    writer_dpav3_str = sys.exc_info()
 
 try:
     import pyqtgraph as pg
@@ -59,6 +66,11 @@ try:
     import serial
 except ImportError:
     serial = None
+
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    AES = None    
 
 try:
     import target_chipwhisperer_integrated
@@ -129,7 +141,14 @@ class PreviewTab(QWidget):
         self.setLayout(layout)
 
     def passTrace(self, trace):
-        return   
+        #if self.persistant.isChecked():
+        #    if self.autocolour.isChecked():
+        #        nc = (self.colour.value() + 1) % 8
+        #        self.colour.setValue(nc)            
+        #else:
+        #    self.pw.clear()
+        self.pw.clear()
+        self.pw.plot(trace)#, pen=(self.colour.value(),8)) 
 
     def redrawPushed(self):
         return
@@ -325,10 +344,13 @@ class OpenADCInterface_ZTEX(QWidget):
 
 class OpenADCInterface(QObject):
     connectStatus = Signal(bool)
+    dataUpdated = Signal(list)
+    
     def __init__(self, parent=None):
         super(OpenADCInterface, self).__init__(parent)
-        self.qtadc = openadc_qt.OpenADCQt(setupLayout=False)
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
         self.qtadc.setupWidgets()
+        self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.datapoints = self.qtadc.datapoints
 
         #Specific Connection Items
@@ -417,6 +439,8 @@ class OpenADCInterface(QObject):
         self.scopetype.setEnabled(True)
         self.connectStatus.emit(False)
 
+    def doDataUpdated(self,  l):
+        self.dataUpdated.emit(l)
 
     def arm(self):
         self.qtadc.ADCarm()
@@ -594,10 +618,11 @@ class MainWindow(QMainWindow):
         self.mw.setLayout(layout)
         self.setCentralWidget(self.mw)
 
+        self.channelDocks = [PreviewTab()]
 
         dock = QDockWidget("Channel 1", self)
         dock.setAllowedAreas(Qt.RightDockWidgetArea)
-        dock.setWidget(PreviewTab())
+        dock.setWidget(self.channelDocks[0])
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
         self.configdock = QDockWidget("Config Options", self)
@@ -605,6 +630,8 @@ class MainWindow(QMainWindow):
         self.addDockWidget(Qt.RightDockWidgetArea, self.configdock)
 
         self.addToolbars()
+        
+        self.writer = writer_dpav3.dpav3()
 
     def initSettings(self):
         #ChipWhisperer-Capture Settings
@@ -614,6 +641,7 @@ class MainWindow(QMainWindow):
         #OpenADC Settings
         self.scope = OpenADCInterface()
         self.scope.loadSettings(self.settings)
+        self.scope.dataUpdated.connect(self.newScopeData)
 
         self.target = TargetInterface()
         self.target.setOpenADC(self.scope)
@@ -621,6 +649,9 @@ class MainWindow(QMainWindow):
         self.settings.widgetChanged.connect(self.setConfigWidget)
 
         self.cbTargetChanged(0)
+
+    def newScopeData(self,  data=None):
+        self.channelDocks[0].passTrace(data)
 
     def setConfigWidget(self, widget):
         self.configdock.setWidget(widget)
@@ -644,7 +675,7 @@ class MainWindow(QMainWindow):
         self.CaptureToolbar.setEnabled(status)
 
     def capture1(self):
-        ac = acquisitionController(self.scope, self.target, self.writer)
+        ac = acquisitionController(self.scope, self.target.driver.target, self.writer)
         ac.doSingleReading()
 
     def captureM(self):

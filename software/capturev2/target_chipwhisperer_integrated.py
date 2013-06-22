@@ -95,6 +95,8 @@ class QtInterface():
             self.statusButton.setEnabled(True)
         except:
             print "Unexpected error:", sys.exc_info()
+        else:
+            print "Target Connected OK"
 
     def res(self):
         self.target.reset()
@@ -260,15 +262,8 @@ class CWSimpleSerialQT(CWSimpleSerial, QWidget):
     def __init__(self):
         super(CWSimpleSerialQT, self).__init__()
 
-        self.lowlevel = CWSimpleSerial()
-
         layout = QVBoxLayout()
         self.setLayout(layout)
 
         layout.addWidget(QLabel("Test"))
         
-    def reset(self):
-        self.lowlevel.reset()
-        
-    def con(self,  oa):
-        self.lowlevel.con(oa)
