@@ -78,6 +78,48 @@ except ImportError:
     target_chipwhisperer_integrated = None
     target_chipwhisperer_integrated_str = sys.exc_info()
 
+class ColorDialog(QDialog):
+    def __init__(self, color,  auto):
+        super(ColorDialog, self).__init__()
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+                
+        self.cbAuto = QCheckBox("Auto-Increment Persistant Colours")
+        self.cbAuto.setChecked(auto)
+        
+        layout.addWidget(self.cbAuto)
+        
+        clayout = QHBoxLayout()
+        self.cbColor = QComboBox()
+        self.cbColor.addItem("Red",  0)
+        self.cbColor.addItem("Yellow",  1)
+        self.cbColor.addItem("Chartreuse",  2)
+        self.cbColor.addItem("Green",  3)
+        self.cbColor.addItem("Cyan",  4)
+        self.cbColor.addItem("Blue",  5)
+        self.cbColor.addItem("Purple",  6)
+        self.cbColor.addItem("Magenta",  7)          
+        self.cbColor.currentIndexChanged.connect(self.currentIndexChanged)
+        self.cbColor.setCurrentIndex(color)
+        
+        clayout.addWidget(QLabel("Color: "))
+        clayout.addWidget(self.cbColor)
+        clayout.addStretch()
+        self.color = color        
+        
+        layout.addLayout(clayout)
+        
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+        layout.addWidget(buttonBox)
+        
+    def currentIndexChanged(self, indx):
+        self.color = self.cbColor.itemData(indx)
+        
+    def getValues(self):
+        return (self.color,  self.cbAuto.isChecked())
+
 class PreviewTab(QWidget):
     def __init__(self):
         pg.setConfigOption('background', 'w')
@@ -137,18 +179,77 @@ class PreviewTab(QWidget):
         vb = self.pw.getPlotItem().getViewBox()
         vb.setMouseMode(vb.RectMode)
         
+        ###Toolbar
+        xLockedAction = QAction(QIcon('images/xlock.png'), 'Lock X Axis', self)
+        xLockedAction.setCheckable(True)
+        xLockedAction.triggered[bool].connect(self.xLocked)
+
+        yLockedAction = QAction(QIcon('images/ylock.png'), 'Lock Y Axis', self)
+        yLockedAction.setCheckable(True)
+        xLockedAction.triggered[bool].connect(self.yLocked)
+
+        yAutoScale = QAction(QIcon('images/yauto.png'), 'Autoscale Y Axis', self)
+        yAutoScale.triggered[bool].connect(self.yAutoScale)
+        xAutoScale = QAction(QIcon('images/xauto.png'), 'Autoscale X Axis', self)
+        xAutoScale.triggered[bool].connect(self.xAutoScale)
+        
+        persistance = QAction(QIcon('images/persistance.png'), 'Enable Persistance',  self)
+        persistance.setCheckable(True)
+        persistance.triggered[bool].connect(self.setPersistance)
+        
+        setColour = QAction(QIcon('images/wavecol.png'),  'Set Colour',  self)
+        setColour.triggered[bool].connect(self.setColour)
+        
+        self.GraphToolbar = QToolBar('Graph Tools')
+        self.GraphToolbar.addAction(xLockedAction)
+        self.GraphToolbar.addAction(yLockedAction)
+        self.GraphToolbar.addAction(xAutoScale)
+        self.GraphToolbar.addAction(yAutoScale)
+        self.GraphToolbar.addAction(persistance)
+        self.GraphToolbar.addAction(setColour)
+        layout.addWidget(self.GraphToolbar)
+        
         layout.addWidget(self.pw)        
         self.setLayout(layout)
+        
+        self.persistant = False
+        self.color = 0
+        self.autocolor = True
+
+    def setPersistance(self, enabled):
+        self.persistant = enabled
+        
+    def setColour(self, enabled):
+        cd = ColorDialog(self.color, self.autocolor)
+        if cd.exec_():        
+            data = cd.getValues()
+            self.color = data[0]
+            self.acolor = data[0]
+            self.autocolor = data[1]
+        
+    def yAutoScale(self, enabled):
+        pass
+        
+    def xAutoScale(self, enabled):
+        pass
+        
+    def yLocked(self, enabled):
+        pass
+        
+    def xLocked(self, enabled):
+        pass
 
     def passTrace(self, trace):
-        #if self.persistant.isChecked():
-        #    if self.autocolour.isChecked():
-        #        nc = (self.colour.value() + 1) % 8
-        #        self.colour.setValue(nc)            
-        #else:
-        #    self.pw.clear()
-        self.pw.clear()
-        self.pw.plot(trace)#, pen=(self.colour.value(),8)) 
+        if self.persistant:
+            if self.autocolor:
+                nc = (self.acolor + 1) % 8
+                self.acolor = nc
+            else:
+                self.acolor = self.color
+        else:
+            self.acolor = self.color
+            self.pw.clear()
+        self.pw.plot(trace, pen=(self.acolor,8)) 
 
     def redrawPushed(self):
         return
@@ -162,8 +263,6 @@ class SettingsTree(QTreeWidget):
         super(SettingsTree, self).__init__(parent)
 
         self.widgetList = []
-
-        #self.setItemDelegate(VariantDelegate(self))
 
         self.setHeaderLabels(["Setting", "Summary"])
         self.header().setResizeMode(0, QHeaderView.Stretch)
@@ -683,6 +782,7 @@ class MainWindow(QMainWindow):
 
     def addGraphTools(self):
         xLockedAction = QAction(QIcon('images/xlock.png'), 'Lock all X Axis', self)
+        xLockedAction.setCheckable(True)
         #xLockedAction.triggered.connect(self.xLocked)
         yAutoScale = QAction(QIcon('images/yauto.png'), 'Autoscale Y Axis', self)
         xAutoScale = QAction(QIcon('images/xauto.png'), 'Autoscale X Axis', self)
