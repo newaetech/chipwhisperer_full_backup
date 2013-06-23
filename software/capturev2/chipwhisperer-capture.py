@@ -517,12 +517,11 @@ class OpenADCInterface(QObject):
         self.scopeWidget.setCurrentIndex(indx)        
 
     def loadSettings(self, settings):
-        oaset = settings.addGroup("OpenADC")
+        oaset = settings.addGroup("OpenADC", self.qtconnect)
         settings.addGroupItem(oaset, "Gain", self.qtadc.gainWidget)
         settings.addGroupItem(oaset, "Trigger", self.qtadc.triggerWidget)
         settings.addGroupItem(oaset, "Samples", self.qtadc.samplesWidget)
         settings.addGroupItem(oaset, "Clock", self.qtadc.clockWidget)
-        settings.addGroupItem(oaset, "Connection", self.qtconnect)
 
     def con(self):
         if self.scopeWidget.currentWidget().con():
@@ -757,7 +756,6 @@ class MainWindow(QMainWindow):
 
     def addToolbars(self):
         self.addCaptureTools()
-        self.addGraphTools()
 
     def addCaptureTools(self):
         capture1 = QAction(QIcon('images/play1.png'), 'Capture 1', self)
@@ -779,18 +777,6 @@ class MainWindow(QMainWindow):
 
     def captureM(self):
         print "capture M"
-
-    def addGraphTools(self):
-        xLockedAction = QAction(QIcon('images/xlock.png'), 'Lock all X Axis', self)
-        xLockedAction.setCheckable(True)
-        #xLockedAction.triggered.connect(self.xLocked)
-        yAutoScale = QAction(QIcon('images/yauto.png'), 'Autoscale Y Axis', self)
-        xAutoScale = QAction(QIcon('images/xauto.png'), 'Autoscale X Axis', self)
-        
-        self.GraphToolbar = self.addToolBar('Graph Tools')
-        self.GraphToolbar.addAction(xLockedAction)
-        self.GraphToolbar.addAction(xAutoScale)
-        self.GraphToolbar.addAction(yAutoScale)
 
     def generalConfig(self):
 

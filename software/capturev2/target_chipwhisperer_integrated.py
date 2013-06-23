@@ -157,6 +157,7 @@ class CWSimpleSerial(object):
         print resp
 
     def write(self, string):
+        self.setDebugInfo(string)
         for s in string:
             d = bytearray(s)
             #print "%x"%d[0]
@@ -201,6 +202,7 @@ class CWSimpleSerial(object):
 
     def readPayload(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_PLDADDR, Validate=False, maxResp=18)
+        self.setDebugInfo(lastResponse=resp)
         return bytearray(resp)
         
     def dis(self):
@@ -265,5 +267,73 @@ class CWSimpleSerialQT(CWSimpleSerial, QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        layout.addWidget(QLabel("Test"))
+        #Serial Settings (not changable right now)
+        gbSerial = QGroupBox("Serial Settings")
+        gbSerialLayout = QVBoxLayout()
+        gbSerial.setLayout(gbSerialLayout)
+        
+        bl = QHBoxLayout()
+        bl.addWidget(QLabel("Baud:"))
+        self.baud = QComboBox()
+        self.baud.addItem("38400",  38400)
+        bl.addWidget(self.baud)
+        bl.addStretch()
+        bl.addWidget(QLabel("Start Bits:"))
+        self.start = QComboBox()
+        self.start.addItem("1",  1)
+        bl.addWidget(self.start)
+        bl.addStretch()
+        bl.addWidget(QLabel("Stop Bits:"))
+        self.stop = QComboBox()
+        self.stop.addItem("1", 1)
+        bl.addWidget(self.stop)
+        bl.addStretch()
+            
+        gbSerialLayout.addLayout(bl)
+        layout.addWidget(gbSerial)
+        
+        #Protocol Setup
+        cbProtocol = QGroupBox("Protocol Settings")
+        cbProtocolLayout = QVBoxLayout()
+        cbProtocol.setLayout(cbProtocolLayout)
+        
+        cbProtocolLayout.addWidget(QLabel("Set Key:       kXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
+        cbProtocolLayout.addWidget(QLabel( "Do Encryption: pXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
+        cbProtocolLayout.addWidget(QLabel( "Response:      rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
+        
+        layout.addWidget(cbProtocol)
+        
+        #Debug Stuff
+        cbDebug = QGroupBox("Debug Information")
+        cbDebugLayout = QGridLayout()
+        cbDebug.setLayout(cbDebugLayout)
+        
+        self.txDebugASCII = QLabel()
+        self.txDebugHEX = QLabel()
+        self.rxDebugASCII = QLabel()
+        self.rxDebugHEX = QLabel()
+        
+        cbDebugLayout.addWidget(QLabel("Last TX(ASCII)"), 1, 1)
+        cbDebugLayout.addWidget(self.txDebugASCII, 1,  2)
+        cbDebugLayout.addWidget(self.txDebugHEX, 2,  2)
+        cbDebugLayout.addWidget(QLabel("Last RX"), 3, 1)
+        cbDebugLayout.addWidget(self.rxDebugASCII, 3,  2)
+        cbDebugLayout.addWidget(self.rxDebugHEX, 4,  2)
+        
+        layout.addWidget(cbDebug)
+        
+    def setDebugInfo(self,  lastSent=None,  lastResponse=None):
+        if lastSent:
+            self.txDebugASCII.setText(lastSent)
+            str = ""
+            for s in lastSent:                
+                str = str + "%02x "%ord(s)
+            self.txDebugHEX.setText(str)
+        if lastResponse:
+            self.rxDebugASCII.setText(lastResponse)
+            str = ""
+            for s in lastSent:                
+                str = str + "%02x "%ord(s)
+            self.txDebugHEX.setText(str)
+        
         
