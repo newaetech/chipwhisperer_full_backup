@@ -158,16 +158,19 @@ module interface(
 	wire [5:0] reg_addr;
 	wire [15:0] reg_bcnt;
 	wire [7:0] reg_datao;
-	wire [7:0] reg_datai;
+	wire [7:0] reg_datai_serialtarg;
+	wire [7:0] reg_datai_triggerio;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
 	wire reg_addrvalid;
 	wire reg_stream;
 	wire [5:0] reg_hypaddr;
-	wire [15:0] reg_hyplen;
+	wire [15:0] reg_hyplen_serialtarg;
+	wire [15:0] reg_hyplen_triggerio;
 	
 	wire ext_trigger;
+	wire adv_trigger;
 	
 	//assign ext_trigger = DUT_trigger_i;
 	assign ext_trigger = target_io4;
@@ -185,7 +188,7 @@ module interface(
 		.ADC_clk_feedback(ADC_clk_int),
 		//.DUT_CLK_i(DUT_CLK_i),
 		.DUT_CLK_i(target_hs1),
-		.DUT_trigger_i(ext_trigger),
+		.DUT_trigger_i(ext_trigger | adv_trigger),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
 				
@@ -201,14 +204,14 @@ module interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i(reg_datai),
+		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(reg_stream),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen) 
+		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio) 
 	/*
 		,.LPDDR_A(LPDDR_A),
 		.LPDDR_BA(LPDDR_BA),
@@ -232,7 +235,7 @@ module interface(
 		.clk(ifclk_buf),
 		.reg_address(reg_addr), 
 		.reg_bytecnt(reg_bcnt), 
-		.reg_datao(reg_datai), 
+		.reg_datao(reg_datai_serialtarg), 
 		.reg_datai(reg_datao), 
 		.reg_size(reg_size), 
 		.reg_read(reg_read), 
@@ -240,10 +243,27 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_stream(reg_stream),
 		.reg_hypaddress(reg_hypaddr), 
-		.reg_hyplen(reg_hyplen),
+		.reg_hyplen(reg_hyplen_serialtarg),
 		.target_tx(target_io1),
 		.target_rx(target_io2)					              
    );
+	
+	reg_triggerio reg_triggerio(
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_triggersys), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_triggerio),
+		.io_line(target_io1 & target_io2),
+		.trig_out(adv_trigger)
+	);
 	
 	`ifdef CHIPSCOPE
    wire [127:0] cs_data;   

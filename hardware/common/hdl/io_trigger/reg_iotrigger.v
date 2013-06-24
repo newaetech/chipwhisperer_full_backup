@@ -87,7 +87,7 @@ module reg_triggerio(
 	
 	 reg [7:0] reg_datao_reg;
 	 reg reg_datao_valid_reg;
-	 reg [7:0] reg_datao;
+	 assign reg_datao = reg_datao_reg;
 	 
 	 reg [31:0] clkdiv_reg;
 	 reg [31:0] prog_reg;
@@ -121,12 +121,25 @@ module reg_triggerio(
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
-				`IOTRIGCLKDDIV_ADDR: begin reg_datao <= clkdiv_reg[reg_bytecnt*8 +: 8]; end
-				`IOTRIGPROG_ADDR: begin reg_datao <= prog_reg[reg_bytecnt*8 +: 8];	end
-				default: begin reg_datao <= 0; end
+				`IOTRIGCLKDDIV_ADDR: begin reg_datao_reg <= clkdiv_reg[reg_bytecnt*8 +: 8]; end
+				`IOTRIGPROG_ADDR: begin reg_datao_reg <= prog_reg[reg_bytecnt*8 +: 8];	end
+				default: begin reg_datao_reg <= 0; end
 			endcase
 		end
 	 end
+	 
+	 always @(posedge clk) begin
+		if (reset) begin
+			clkdiv_reg <= 0;
+			prog_reg <= 0;
+		end else if (reg_write) begin
+			case (reg_address)
+				`IOTRIGCLKDDIV_ADDR: clkdiv_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
+				`IOTRIGPROG_ADDR: prog_reg[reg_bytecnt*8 +: 8] <= reg_datai;
+				default: ;
+			endcase
+		end
+	 end	 	 
 						  
 	 reg prog_done;
 	 always @(posedge clk)
@@ -153,7 +166,7 @@ module reg_triggerio(
 	 
 	trigger_system io_trigsys (
 		.clk(clk), 
-		.rst(reset_i), 
+		.rst(rst_core | reset), 
 		.mon_line(io_line), 
 		.trig_out(trig_out), 
 		.clkdivider(clkdiv), 
@@ -164,7 +177,16 @@ module reg_triggerio(
 	);
 	 
  `ifdef CHIPSCOPE
-	 assign cs_data[5:0] = 0;
+	 assign cs_data[17:0] = prog_data;
+	 assign cs_data[23:18] = prog_addr;
+	 assign cs_data[24] = prog_wr;
+	 assign cs_data[25] = prog_en;
+	 assign cs_data[26] = clkdiv;
+	 assign cs_data[27] = io_line;
+	 assign cs_data[28] = trig_out;
+	 assign cs_data[46:29] = clkdiv;
+	 assign cs_data[47] = rst_core;
+	 
  `endif
  
 endmodule

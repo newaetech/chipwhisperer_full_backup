@@ -102,7 +102,7 @@ module reg_serialtarget(
 	
 	 reg [7:0] reg_datao_reg;
 	 reg reg_datao_valid_reg;
-	 reg [7:0] reg_datao;
+	 assign reg_datao = reg_datao_reg;
 	 
 	 always @(posedge clk) begin
 		if (reg_addrvalid) begin
@@ -120,9 +120,9 @@ module reg_serialtarget(
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
-				`TARGSERIALDATA_ADDR: begin reg_datao <= rxfifo_data; end
-				`TARGSERIALLEN_ADDR: begin reg_datao <= fifo_count[reg_bytecnt*8 +: 8];	end
-				default: begin reg_datao <= 0; end
+				`TARGSERIALDATA_ADDR: begin reg_datao_reg <= rxfifo_data; end
+				`TARGSERIALLEN_ADDR: begin reg_datao_reg <= fifo_count[reg_bytecnt*8 +: 8];	end
+				default: begin reg_datao_reg <= 0; end
 			endcase
 		end
 	 end

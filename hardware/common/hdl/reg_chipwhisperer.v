@@ -70,7 +70,36 @@ module reg_chipwhisperer(
    );  
 `endif
         	  
-    //Register definitions
+ /*  0xXX - External Clock Source (One Byte)
+	 
+	   [  X  X  X  X  X  S  S  S ]
+	     
+		  S S S = 000 Front Panel Channel A
+					 001 Front Panel Channel B
+					 010 Front Panel PLL Input
+		          011 Rear TargetIO - Input
+					 100 Rear TargetIO - Output
+					 
+				
+   
+     0xXX - Trigger Source (One Byte)
+	 
+	   [  X  X  X  X  S  S  S  S ]
+	     
+		  S S S S = 0000 Front Panel Channel A
+		            0001 Front Panel Channel B
+					   0010 Rear TargetIO - Line 1
+						0011 Rear TargetIO - Line 2
+						0100 Rear TargetIO - Line 3
+						0101 Rear TargetIO - Line 4
+						
+	  0xXX - Select Trigger Module
+	  
+	   [ X  X  X  X  X  M  M  M ]
+		  M M M = 000 Normal Edge-Mode Trigger
+		          001 Advanced IO Pattern Trigger
+					 010 Advanced Correlator Trigger						
+ */
     reg [7:0]  registers_cwextclk;	
   	 	 
 	 reg [15:0] reg_hyplen_reg;

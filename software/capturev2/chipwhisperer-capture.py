@@ -668,7 +668,7 @@ class TargetInterface(QObject):
 
     def OpenADCConnectChanged(self, status):
         if status == False:
-            self.dis()
+            self.driver.dis()
         #else:
         #    self.setOpenADC(oadc)
 

@@ -43,7 +43,9 @@ module trigger_system#(
 	/* High for one cycle when trigger sequence met */
    output trig_out,
 	
-	/* freq = clk / (2*(clkdivider-1)) */
+	/* freq = clk / (2*(clkdivider-1)) . Therefor:
+	   clkdivider = (clk / (2 * desired_freq)) + 1
+	*/
 	input [17:0] clkdivider,
 	
 	/* Programming of trigger data*/
@@ -150,10 +152,9 @@ module trigger_system#(
 		.clk2xdiv_setting(clkdivider),
 		.clk2xdiv(clk2xdiv),
 		.clkdiv(clkdiv));
-	
-/*	
+	/*
 		wire [35:0] control;
-		wire [31:0] cs;
+		wire [127:0] cs;
 			
 		assign cs[5:0] = stateaddr;
 		assign cs[6] = io_line;
@@ -161,17 +162,16 @@ module trigger_system#(
 		assign cs[25:8] = statedata;
 		assign cs[31:26] = currentstate_cnt[5:0];
 	
-chipscope_ila ila (
+coregen_ila ila (
     .CONTROL(control), // INOUT BUS [35:0]
     .CLK(clk), // IN
     .TRIG0(cs) // IN BUS [31:0]
 );
 
-chipscope_icon icon (
+coregen_icon icon (
     .CONTROL0(control) // INOUT BUS [35:0]
 );
 */
-
 endmodule
 
 

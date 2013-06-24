@@ -152,7 +152,7 @@ class CWSimpleSerial(object):
         self.write("p12121212121212121212121212121212\n")
         #Give time for response
         time.sleep(0.05)
-        
+                
         resp = self.read(num=33)
         print resp
 
@@ -166,9 +166,7 @@ class CWSimpleSerial(object):
     def bytesReadWaiting(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_LEN, Validate=False, maxResp=2)
         resp = resp[1]
-
-        #print "%d waiting"%resp
-        
+        #print "%d waiting"%resp       
         return resp
 
     def read(self, num=0, timeout=100):
@@ -224,7 +222,7 @@ class CWSimpleSerial(object):
         if key != None:            
             cmd = "k"
             for b in key:
-                cmd = cmd + "%2x"%b
+                cmd = cmd + "%02x"%b
             cmd = cmd + "\n"
             self.write(cmd)
       
@@ -236,6 +234,8 @@ class CWSimpleSerial(object):
 
     def readOutput(self):
         response = str(self.read(num=33))
+
+        self.setDebugInfo(lastResponse=response)
 
         if len(response) < 33:
             print "WARNING: Response (len=%d) too short!"%len(response)
@@ -256,7 +256,7 @@ class CWSimpleSerial(object):
         self.flush()
         cmd = "p"
         for b in self.input:
-            cmd = cmd + "%2x"%b
+            cmd = cmd + "%02x"%b
         cmd = cmd + "\n"
         self.write(cmd)
 
@@ -332,8 +332,8 @@ class CWSimpleSerialQT(CWSimpleSerial, QWidget):
         if lastResponse:
             self.rxDebugASCII.setText(lastResponse)
             str = ""
-            for s in lastSent:                
+            for s in lastResponse:                
                 str = str + "%02x "%ord(s)
-            self.txDebugHEX.setText(str)
+            self.rxDebugHEX.setText(str)
         
         
