@@ -77,7 +77,7 @@ try:
 except ImportError:
     target_chipwhisperer_integrated = None
     target_chipwhisperer_integrated_str = sys.exc_info()
-
+    
 class ColorDialog(QDialog):
     def __init__(self, color,  auto):
         super(ColorDialog, self).__init__()
@@ -740,7 +740,7 @@ class MainWindow(QMainWindow):
         self.scope = OpenADCInterface()
         self.scope.loadSettings(self.settings)
         self.scope.dataUpdated.connect(self.newScopeData)
-
+        
         self.target = TargetInterface()
         self.target.setOpenADC(self.scope)
 

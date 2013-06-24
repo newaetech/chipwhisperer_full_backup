@@ -16,6 +16,12 @@ import serial
 from PySide.QtCore import *
 from PySide.QtGui import *
 
+try:
+    import target_chipwhisperer_extra
+except ImportError:
+    target_chipwhisperer_extra = None
+    target_chipwhisperer_extra_str = sys.exc_info()
+
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -24,12 +30,13 @@ ADDR_LEN        = 34
 ADDR_BAUD       = 35
 
 class QtInterface():
-    def __init__(self):
+    def __init__(self):                
         self.widget = QWidget()
         layout = QVBoxLayout()
 
         self.cwSmartcard = CWSmartCardQT()
         self.cwSimpleSerial = CWSimpleSerialQT()
+        self.CWExtra = target_chipwhisperer_extra.QtInterface()
 
         self.modeCB = QComboBox()
         self.modeCB.addItem("Simple Serial",  self.cwSimpleSerial)
@@ -72,6 +79,8 @@ class QtInterface():
         self.targset = settings.addGroup("CW Target", self.widget)
         settings.addGroupItem(self.targset, "Smart Card", self.cwSmartcard)
         settings.addGroupItem(self.targset, "SimpleSerial", self.cwSimpleSerial)
+        
+        self.CWExtra.loadSettings(settings)
 
     def modeChanged(self,  indx):
         self.target = self.modeCB.itemData(indx)
@@ -85,9 +94,10 @@ class QtInterface():
 
     def setOpenADC(self, oadc):
         self.oadc = oadc.qtadc
-
+        
     def con(self):
         try:
+            self.CWExtra.setOpenADC(self.oadc.sc)
             self.target.con(self.oadc.sc)
             self.disconnectButton.setEnabled(True)
             self.connectButton.setEnabled(False)
