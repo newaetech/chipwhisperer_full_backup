@@ -23,13 +23,22 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+
 import sys
+
+try:
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+except ImportError:
+    print "ERROR: PySide is required for this program"
+    sys.exit()
+    
 import random
-from PySide.QtCore import *
-from PySide.QtGui import *
 import os.path
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
+
+from ExtendedParameter import ExtendedParameter
 
 try:
     import writer_dpav3
@@ -329,46 +338,23 @@ class CWSettings(QObject):
         if itmWidget != None:
             self.widgetChanged.emit(itmWidget)
             
-class OpenADCInterface_ZTEX(QWidget):
+class OpenADCInterface_ZTEX(QWidget):    
     def __init__(self,oadcInstance):
         QWidget.__init__(self)
         
-        layout = QVBoxLayout()
-
-        if (openadc_qt == None) or (usb == None):
-            if openadc_qt == None:
-                layout.addWidget(QLabel("OpenADC Import Failed"))
-
-            if usb == None:
-                layout.addWidget(QLabel("pyusb Import Failed"))
-                
+        ztexParams = [                  
+                      #No Parameters for ZTEX
+                  ]           
+       
+        if (openadc_qt == None) or (usb == None):               
             self.ser = None
-        else:
-            oadc = QWidget()
-            oadclayout = QVBoxLayout()
-            self.resetButton = QPushButton("Reset")
-            self.resetButton.setEnabled(False)
-            
-            self.testButton = QPushButton("Speed Test")
-            self.testButton.setEnabled(False)
-
-            connection = QGroupBox("Connection")
-            connlayout = QGridLayout()
-            connection.setLayout(connlayout)
-            connlayout.addWidget(self.resetButton, 0, 4)
-            connlayout.addWidget(self.testButton, 0, 5)
-            oadclayout.addWidget(connection)
-
+        else:            
             self.ser = None
-
             self.scope = oadcInstance
-            self.resetButton.clicked.connect(self.scope.reset)
-            self.testButton.clicked.connect(self.scope.test)
-
-            oadc.setLayout(oadclayout)
-            layout.addWidget(oadc)
-
-        self.setLayout(layout)
+            self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
+            ExtendedParameter.setupExtended(self.params)    
+            
+        
 
     def __del__(self):
         if self.ser != None:
@@ -402,17 +388,12 @@ class OpenADCInterface_ZTEX(QWidget):
             QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
             return False
         
-        self.resetButton.setEnabled(True)
-        self.testButton.setEnabled(True)
         return True
 
     def dis(self):
         if self.ser != None:
             self.ser.close()
             self.ser = None
-            self.scope.setEnabled(False)
-            self.resetButton.setEnabled(False)
-            self.testButton.setEnabled(False)
         
 
     def read(self, N=0, debug=False):
@@ -446,98 +427,38 @@ class OpenADCInterface_ZTEX(QWidget):
 class OpenADCInterface(QObject):
     connectStatus = Signal(bool)
     dataUpdated = Signal(list)
-    
-    def __init__(self, parent=None):
+    paramListUpdated = Signal(list)    
+
+    def __init__(self, parent=None):          
         super(OpenADCInterface, self).__init__(parent)
         self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
-        self.qtadc.setupParameterTree()
+        self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.datapoints = self.qtadc.datapoints
+        self.scopetype = None
+        
+        scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":OpenADCInterface_ZTEX(self.qtadc),
+                                                                     "Serial Port (LX9)":None,
+                                                                     "FTDI (SASEBO-W)":None}, 'value':'ChipWhisperer Rev2', 'set':self.setCurrentScope}
+                      ]
+        
+        self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
+        ExtendedParameter.setupExtended(self.params)
+        
 
-        #Specific Connection Items
-        ###ZTEX Widget
-        self.ztex_widget = OpenADCInterface_ZTEX(self.qtadc)
-
-        ###Serial Widget
-        self.serial_widget = QWidget()
-        serialwid = QVBoxLayout()
-        self.serial_widget.setLayout(serialwid)
-        serialwid.addWidget(QLabel("Serial Incomplete"))
-
-        ###FTDI Widget
-        self.ftdi_widget = QWidget()
-        ftwid = QVBoxLayout()
-        self.ftdi_widget.setLayout(ftwid)
-        ftwid.addWidget(QLabel("FTDI Incomplete"))
-
-        #Generic OpenADC Connection
-        self.qtconnect = QWidget()
-        qtcon = QVBoxLayout()
-        self.qtconnect.setLayout(qtcon)
-
-        disabled = ""
-
-        # Scope Types
-        self.scopetype = QComboBox()
-        self.scopeWidget = QStackedWidget()
-        if usb == None:
-            disabled = disabled + "Scope type OpenADC-EZUSB(ZTEX) disabled due to missing module: PyUSB (http://pyusb.sourceforge.net)\n"
-        else:
-            self.scopetype.addItem("OpenADC-EZUSB (ChipWhisperer Rev2)")
-            self.scopeWidget.addWidget(self.ztex_widget)
-
-        if serial == None:
-            disabled = disabled +  "Scope type OpenADC-Serial disabled due to missing module: PySerial\n"
-        else:
-            self.scopetype.addItem("OpenADC-Serial (LX9 Microboard)")
-            self.scopeWidget.addWidget(self.serial_widget)
-
-        if  ft == None:
-            disabled = disabled +  "Scope type OpenADC-FTDI disabled due to missing module: ftd2xx\n" 
-        else:
-            self.scopetype.addItem("OpenADC-FTDI (SASEBO-W)")
-            self.scopeWidget.addWidget(self.ftdi_widget)
-            
-        self.scopetype.currentIndexChanged.connect(self.scopecbChanged)
-
-        self.conPB = QPushButton("Connect")
-        self.disPB = QPushButton("Disconnect")
-        self.conPB.clicked.connect(self.con)
-        self.disPB.clicked.connect(self.dis)
-
-        qtconMode = QHBoxLayout()
-        qtconMode.addWidget(QLabel("Connection Mode:"))
-        qtconMode.addWidget(self.scopetype)
-        qtconMode.addWidget(self.conPB)
-        qtconMode.addWidget(self.disPB)
-        qtconMode.addStretch()
-
-        qtcon.addLayout(qtconMode)
-        qtcon.addWidget(self.scopeWidget)
-
-    def scopecbChanged(self, indx):
-        self.scopeWidget.setCurrentIndex(indx)        
-
-    def loadSettings(self, settings):
-        oaset = settings.addGroup("OpenADC", self.qtconnect)
-        #settings.addGroupItem(oaset, "Gain", self.qtadc.gainWidget)
-        #settings.addGroupItem(oaset, "Trigger", self.qtadc.triggerWidget)
-        #settings.addGroupItem(oaset, "Samples", self.qtadc.samplesWidget)
-        #settings.addGroupItem(oaset, "Clock", self.qtadc.clockWidget)
-
+    def setCurrentScope(self, scope):        
+        self.scopetype = scope
+        self.paramListUpdated.emit(self.paramList())
+   
     def con(self):
-        if self.scopeWidget.currentWidget().con():
-            self.conPB.setEnabled(False)
-            self.disPB.setEnabled(True)
-            self.scopetype.setEnabled(False)        
+        if self.scopetype is not None:
+            self.scopetype.con()  
             self.connectStatus.emit(True)
 
     def dis(self):
-        self.scopeWidget.currentWidget().dis()
-        self.conPB.setEnabled(True)
-        self.disPB.setEnabled(False)
-        self.scopetype.setEnabled(True)
-        self.connectStatus.emit(False)
+        if self.scopetype is not None:
+            self.scopetype.dis()  
+            self.connectStatus.emit(True)
 
     def doDataUpdated(self,  l):
         self.dataUpdated.emit(l)
@@ -547,6 +468,14 @@ class OpenADCInterface(QObject):
 
     def capture(self, update=True, NumberPoints=None):
         self.qtadc.capture(update, NumberPoints)    
+        
+    def paramList(self):
+        p = []
+        p.append(self.params)
+        if self.scopetype is not None:
+            p.append(self.scopetype.params)
+        p.append(self.qtadc.params)               
+        return p
 
 
 class acquisitionController(object):
@@ -567,6 +496,9 @@ class acquisitionController(object):
                    self.plain[i] = random.randint(0, 255)       
 
     def TargetDoTrace(self, plaintext, key=None):
+        if self.target is None:
+            return
+        
         self.target.loadEncryptionKey(key)      
         self.target.loadInput(plaintext)
         self.target.go()
@@ -588,7 +520,8 @@ class acquisitionController(object):
 
         return resp
 
-    def newPlain(self, textIn=None):       
+    def newPlain(self, textIn=None):     
+          
         if textIn:
             self.textin = textIn
         else:
@@ -624,11 +557,13 @@ class acquisitionController(object):
         if self.textInLabel != None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
 
-        #Set mode
-        self.target.setModeEncrypt()
+        
+        if self.target is not None:
+            #Set mode
+            self.target.setModeEncrypt()
 
-        #Load input, start encryption, get output
-        self.textout = self.TargetDoTrace(self.textin, self.key)
+            #Load input, start encryption, get output
+            self.textout = self.TargetDoTrace(self.textin, self.key)
 
         try:
             self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
@@ -686,19 +621,28 @@ class TargetInterface(QObject):
             self.driver.setOpenADC(self.oadc)
         except:
             pass
-
-    def loadSettings(self, settings):
-        if self.driver:
-            self.driver.loadSettings(settings)   
          
 class MainWindow(QMainWindow):
     MaxRecentFiles = 4
-
+    
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+    
+        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface()}
+        valid_targets = {"None":None}
+        valid_traces = {"None":None, "ChipWhisperer Format":2}    
+        
+        self.cwParams = [
+                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
+                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"]},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"]},
+                ]
         
         self.da = None
         self.key = None
+        
+        self.scope = None
+        self.target = None
        
         self.statusBar()
         self.setWindowTitle("Chip Whisperer Capture V2")
@@ -707,11 +651,7 @@ class MainWindow(QMainWindow):
         # Create layout and add widgets
         self.mw = QWidget()
         
-        layout = QVBoxLayout()
-
-        self.settings = CWSettings()
-        layout.addWidget(self.settings.getWidget())
-        self.initSettings()
+        layout = QVBoxLayout()       
 
         #layout.addStretch()
              
@@ -727,27 +667,58 @@ class MainWindow(QMainWindow):
         dock.setWidget(self.channelDocks[0])
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
-        self.configdock = QDockWidget("Config Options", self)
-        self.configdock.setAllowedAreas(Qt.RightDockWidgetArea|Qt.BottomDockWidgetArea)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.configdock)
         self.addSettingsDock()
 
         self.addToolbars()
         
         self.writer = writer_dpav3.dpav3()
         
-    def addSettingsDock(self):
-        self.p = Parameter.create(name='Generic Settings', type='group')
-        #self.p.sigTreeStateChanged.connect(self.change)
-        self.paramTree = ParameterTree()
-        self.paramTree.setParameters(self.p, showTop=True)
-        #self.p.addChildren(self.scope.qtadc.p)
-        self.paramTree.addParameters(self.scope.qtadc.p)
+    def addSettingsDock(self):      
+        self.setupParametersTree()
         
-        self.paramDock = QDockWidget("Settings")
+        self.settingsLayout = QVBoxLayout()
+        self.settingsLayout.addWidget(self.paramTree)
+        
+        dockWid = QWidget()
+        dockWid.setLayout(self.settingsLayout)
+                
+        self.paramDock = QDockWidget("General Settings")
         self.paramDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.paramDock.setWidget(self.paramTree)
+        self.paramDock.setWidget(dockWid)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.paramDock)
+        
+        self.scopeDock = QDockWidget("Scope Settings")
+        #self.settingsLayout.addWidget(self.scopeParamTree)
+        self.scopeDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+        self.scopeDock.setWidget(self.scopeParamTree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.scopeDock)
+
+    def setupParametersTree(self):
+        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
+        ExtendedParameter.setupExtended(self.params)
+        self.paramTree = ParameterTree()
+        self.paramTree.setParameters(self.params, showTop=False)
+        
+        self.scopeParamTree = ParameterTree()
+        
+        #self.paramTree.addParameters(self.scope.qtadc.params)
+        
+    def reloadParamList(self, lst=None):
+        self.paramTree.clear()        
+        for p in self.paramList():
+            self.paramTree.addParameters(p)       
+        
+        for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)
+        
+    def paramList(self):
+        p = []
+        p.append(self.params)
+        #for a in self.scope.paramList():
+        #    p.append(a)
+        #p.append(self.target.paramList())
+        #p.append(self.writer.paramList())        
+        return p
+        
 
     def initSettings(self):
         #ChipWhisperer-Capture Settings
@@ -756,7 +727,7 @@ class MainWindow(QMainWindow):
 
         #OpenADC Settings
         self.scope = OpenADCInterface()
-        self.scope.loadSettings(self.settings)
+        #self.scope.loadSettings(self.settings)
         self.scope.dataUpdated.connect(self.newScopeData)
         self.scope.connectStatus.connect(self.connected)
         
@@ -784,7 +755,9 @@ class MainWindow(QMainWindow):
         
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon('images/status_disconnected.png'),  'Status: Disconnected',  self)
+        self.captureStatusActionDis.triggered.connect(self.doCon)
         self.captureStatusActionCon = QAction(QIcon('images/status_connected.png'),  'Status: Connected',  self)
+        self.captureStatusActionDis.triggered.connect(self.doDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')
@@ -802,8 +775,23 @@ class MainWindow(QMainWindow):
             self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
 
+    def doCon(self):
+        if self.scope is not None:
+            self.scope.con()
+        
+        if self.target is not None:
+            self.target.con()
+    
+    def doDis(self):
+        self.scope.dis()
+        self.target.dis()
+
     def capture1(self):
-        ac = acquisitionController(self.scope, self.target.driver.target, self.writer)
+        if self.target:
+            target = self.target.driver.target
+        else:
+            target = None
+        ac = acquisitionController(self.scope, target, self.writer)
         ac.doSingleReading()
 
     def captureM(self):
@@ -840,7 +828,14 @@ class MainWindow(QMainWindow):
     def cbTargetChanged(self, indx):        
         newtarget = self.cbTarget.itemData(indx)
         self.target.setDriver(newtarget)
-        self.target.loadSettings(self.settings)  
+        #self.target.loadSettings(self.settings)  
+        
+    def scopeChanged(self, newscope):
+        self.scope = newscope
+        if self.scope is not None:
+            self.scope.paramListUpdated.connect(self.reloadParamList)
+            
+        self.reloadParamList()
 
     def closeEvent(self, event):
         return
