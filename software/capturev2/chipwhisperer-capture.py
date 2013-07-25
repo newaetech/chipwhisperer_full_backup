@@ -37,6 +37,7 @@ import random
 import os.path
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
+imagePath = '../common/images/'
 
 from ExtendedParameter import ExtendedParameter
 
@@ -87,256 +88,10 @@ try:
     import target_chipwhisperer_integrated
 except ImportError:
     target_chipwhisperer_integrated = None
-    target_chipwhisperer_integrated_str = sys.exc_info()
-    
-class ColorDialog(QDialog):
-    def __init__(self, color,  auto):
-        super(ColorDialog, self).__init__()
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-                
-        self.cbAuto = QCheckBox("Auto-Increment Persistant Colours")
-        self.cbAuto.setChecked(auto)
-        
-        layout.addWidget(self.cbAuto)
-        
-        clayout = QHBoxLayout()
-        self.cbColor = QComboBox()
-        self.cbColor.addItem("Red",  0)
-        self.cbColor.addItem("Yellow",  1)
-        self.cbColor.addItem("Chartreuse",  2)
-        self.cbColor.addItem("Green",  3)
-        self.cbColor.addItem("Cyan",  4)
-        self.cbColor.addItem("Blue",  5)
-        self.cbColor.addItem("Purple",  6)
-        self.cbColor.addItem("Magenta",  7)          
-        self.cbColor.currentIndexChanged.connect(self.currentIndexChanged)
-        self.cbColor.setCurrentIndex(color)
-        
-        clayout.addWidget(QLabel("Color: "))
-        clayout.addWidget(self.cbColor)
-        clayout.addStretch()
-        self.color = color        
-        
-        layout.addLayout(clayout)
-        
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-        layout.addWidget(buttonBox)
-        
-    def currentIndexChanged(self, indx):
-        self.color = self.cbColor.itemData(indx)
-        
-    def getValues(self):
-        return (self.color,  self.cbAuto.isChecked())
+    target_chipwhisperer_integrated_str = sys.exc_info()    
 
-class PreviewTab(QWidget):
-    def __init__(self):
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
+from projectwindow import MainChip
 
-        QWidget.__init__(self)
-        layout = QVBoxLayout()
-
-        setupGB = QGroupBox("View Options")
-        setupLayout = QVBoxLayout()
-        setupGB.setLayout(setupLayout)
-
-        hl = QHBoxLayout()
-        pbRedraw = QPushButton("Redraw")
-        pbRedraw.clicked.connect(self.redrawPushed)
-        hl.addWidget(pbRedraw)
-
-        pbClear = QPushButton("Clear All")
-        pbClear.clicked.connect(self.clearPushed)
-        hl.addWidget(pbClear)
-        hl.addStretch()
-        #setupLayout.addLayout(hl)
-        
-
-        #hl = QHBoxLayout()
-        self.startTracePrint = QSpinBox()        
-        self.startTracePrint.setMinimum(0)
-        self.endTracePrint = QSpinBox()        
-        self.endTracePrint.setMinimum(0)
-        self.startPointPrint = QSpinBox()        
-        self.startPointPrint.setMinimum(0)
-        self.endPointPrint = QSpinBox()        
-        self.endPointPrint.setMinimum(0)
-
-        hl.addWidget(QLabel("Traces: "))
-        hl.addWidget(self.startTracePrint)
-        hl.addWidget(QLabel(" to "))
-        hl.addWidget(self.endTracePrint)
-        hl.addStretch()
-        #setupLayout.addLayout(hl)
-
-        #hl = QHBoxLayout()
-        hl.addWidget(QLabel("Points: "))
-        hl.addWidget(self.startPointPrint, )
-        hl.addWidget(QLabel(" to "))
-        hl.addWidget(self.endPointPrint)
-        hl.addStretch()
-        setupLayout.addLayout(hl)
-        
-        layout.addWidget(setupGB)
-
-        #Setup plot widget
-        self.pw = pg.PlotWidget(name="Power Trace View")
-        self.pw.setLabel('top', 'Power Trace View')
-        self.pw.setLabel('bottom', 'Samples')
-        self.pw.setLabel('left', 'Data')
-        vb = self.pw.getPlotItem().getViewBox()
-        vb.setMouseMode(vb.RectMode)
-        
-        ###Toolbar
-        xLockedAction = QAction(QIcon('images/xlock.png'), 'Lock X Axis', self)
-        xLockedAction.setCheckable(True)
-        xLockedAction.triggered[bool].connect(self.xLocked)
-
-        yLockedAction = QAction(QIcon('images/ylock.png'), 'Lock Y Axis', self)
-        yLockedAction.setCheckable(True)
-        xLockedAction.triggered[bool].connect(self.yLocked)
-
-        yAutoScale = QAction(QIcon('images/yauto.png'), 'Autoscale Y Axis', self)
-        yAutoScale.triggered[bool].connect(self.yAutoScale)
-        xAutoScale = QAction(QIcon('images/xauto.png'), 'Autoscale X Axis', self)
-        xAutoScale.triggered[bool].connect(self.xAutoScale)
-        
-        persistance = QAction(QIcon('images/persistance.png'), 'Enable Persistance',  self)
-        persistance.setCheckable(True)
-        persistance.triggered[bool].connect(self.setPersistance)
-        
-        setColour = QAction(QIcon('images/wavecol.png'),  'Set Colour',  self)
-        setColour.triggered[bool].connect(self.setColour)
-        
-        self.GraphToolbar = QToolBar('Graph Tools')
-        self.GraphToolbar.addAction(xLockedAction)
-        self.GraphToolbar.addAction(yLockedAction)
-        self.GraphToolbar.addAction(xAutoScale)
-        self.GraphToolbar.addAction(yAutoScale)
-        self.GraphToolbar.addAction(persistance)
-        self.GraphToolbar.addAction(setColour)
-        layout.addWidget(self.GraphToolbar)
-        
-        layout.addWidget(self.pw)        
-        self.setLayout(layout)
-        
-        self.persistant = False
-        self.color = 0
-        self.autocolor = True
-
-    def setPersistance(self, enabled):
-        self.persistant = enabled
-        
-    def setColour(self, enabled):
-        cd = ColorDialog(self.color, self.autocolor)
-        if cd.exec_():        
-            data = cd.getValues()
-            self.color = data[0]
-            self.acolor = data[0]
-            self.autocolor = data[1]
-        
-    def yAutoScale(self, enabled):
-        pass
-        
-    def xAutoScale(self, enabled):
-        pass
-        
-    def yLocked(self, enabled):
-        pass
-        
-    def xLocked(self, enabled):
-        pass
-
-    def passTrace(self, trace):
-        if self.persistant:
-            if self.autocolor:
-                nc = (self.acolor + 1) % 8
-                self.acolor = nc
-            else:
-                self.acolor = self.color
-        else:
-            self.acolor = self.color
-            self.pw.clear()
-        self.pw.plot(trace, pen=(self.acolor,8)) 
-
-    def redrawPushed(self):
-        return
-
-    def clearPushed(self):
-        self.pw.clear()
-    
-
-class SettingsTree(QTreeWidget):
-    def __init__(self, parent=None):
-        super(SettingsTree, self).__init__(parent)
-
-        self.widgetList = []
-
-        self.setHeaderLabels(["Setting", "Summary"])
-        self.header().setResizeMode(0, QHeaderView.Stretch)
-        self.header().setResizeMode(1, QHeaderView.Stretch)
-
-        self.groupIcon = QIcon()
-        self.groupIcon.addPixmap(self.style().standardPixmap(QStyle.SP_DirClosedIcon),
-                QIcon.Normal, QIcon.Off)
-        self.groupIcon.addPixmap(self.style().standardPixmap(QStyle.SP_DirOpenIcon),
-                QIcon.Normal, QIcon.On)
-        self.keyIcon = QIcon()
-        self.keyIcon.addPixmap(self.style().standardPixmap(QStyle.SP_FileIcon))
-
-    def addItem(self, text, parent, index=0, widget=None):
-        after = None
-
-        if index != 0:
-            after = self.childAt(parent, index - 1)
-
-        if parent is not None:
-            item = QTreeWidgetItem(parent, after)
-        else:
-            item = QTreeWidgetItem(self, after)
-
-        item.setText(0, text)
-        item.setFlags(item.flags()) # | Qt.ItemIsEditable
-
-        item.setData(0, Qt.UserRole, widget)
-        return item
-
-class CWSettings(QObject):
-
-    widgetChanged = Signal(QWidget)
-    
-    def __init__(self, parent=None):
-        super(CWSettings, self).__init__()
-        self.st = SettingsTree(parent)
-        self.st.itemSelectionChanged.connect(self.itemChanged)
-        self.widgetList = []
-
-    def getWidget(self):
-        return self.st
-
-    def addGroup(self, groupname, widget=None):
-        #Some error, cannot set the data to a widget, or the
-        #system crashes. Instead use a reference & keep a list
-        #of all widgets.
-        self.widgetList.append(widget)
-        return self.st.addItem(groupname, None, widget=(len(self.widgetList)-1))
-
-    def addGroupItem(self, group, itemname, itemwidget=None):
-        #Some error, cannot set the data to a widget, or the
-        #system crashes. Instead use a reference & keep a list
-        #of all widgets.
-        self.widgetList.append(itemwidget)
-        return self.st.addItem(itemname, parent=group, widget=(len(self.widgetList)-1))
-
-    def itemChanged(self):
-        itm = self.st.currentItem()
-        itmWidget = itm.data(0, Qt.UserRole)
-        itmWidget=self.widgetList[itmWidget]
-        if itmWidget != None:
-            self.widgetChanged.emit(itmWidget)
             
 class OpenADCInterface_ZTEX(QWidget):    
     def __init__(self,oadcInstance):
@@ -622,20 +377,20 @@ class TargetInterface(QObject):
         except:
             pass
          
-class MainWindow(QMainWindow):
+class MainWindow(MainChip):
     MaxRecentFiles = 4
     
-    def __init__(self, parent=None):
-        super(MainWindow, self).__init__(parent)
+    def __init__(self):
+        super(MainWindow, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
     
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface()}
         valid_targets = {"None":None}
-        valid_traces = {"None":None, "ChipWhisperer Format":2}    
+        valid_traces = {"None":None, "DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
                 {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"]},
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"]},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"], 'set':self.traceChanged},
                 ]
         
         self.da = None
@@ -643,55 +398,19 @@ class MainWindow(QMainWindow):
         
         self.scope = None
         self.target = None
-       
-        self.statusBar()
-        self.setWindowTitle("Chip Whisperer Capture V2")
-        self.setWindowIcon(QIcon("../common/cwicon.png"))
-
-        # Create layout and add widgets
-        self.mw = QWidget()
-        
-        layout = QVBoxLayout()       
-
-        #layout.addStretch()
-             
-        # Set dialog layout
-        self.setLayout(layout)       
-        self.mw.setLayout(layout)
-        self.setCentralWidget(self.mw)
-
-        self.channelDocks = [PreviewTab()]
-
-        dock = QDockWidget("Channel 1", self)
-        dock.setAllowedAreas(Qt.RightDockWidgetArea)
-        dock.setWidget(self.channelDocks[0])
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
-
-        self.addSettingsDock()
 
         self.addToolbars()
+        self.addSettingsDocks()
+        self.addWaveforms()
         
-        self.writer = writer_dpav3.dpav3()
+    def addWaveforms(self):
+        self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")       
         
-    def addSettingsDock(self):      
-        self.setupParametersTree()
-        
-        self.settingsLayout = QVBoxLayout()
-        self.settingsLayout.addWidget(self.paramTree)
-        
-        dockWid = QWidget()
-        dockWid.setLayout(self.settingsLayout)
-                
-        self.paramDock = QDockWidget("General Settings")
-        self.paramDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.paramDock.setWidget(dockWid)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.paramDock)
-        
-        self.scopeDock = QDockWidget("Scope Settings")
-        #self.settingsLayout.addWidget(self.scopeParamTree)
-        self.scopeDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.scopeDock.setWidget(self.scopeParamTree)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.scopeDock)
+    def addSettingsDocks(self):      
+        self.setupParametersTree()        
+        self.settingsNormalDock = self.addSettings(self.paramTree, "General Settings")
+        self.settingsScopeDock = self.addSettings(self.scopeParamTree, "Scope Settings")
+        self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
@@ -700,25 +419,22 @@ class MainWindow(QMainWindow):
         self.paramTree.setParameters(self.params, showTop=False)
         
         self.scopeParamTree = ParameterTree()
-        
-        #self.paramTree.addParameters(self.scope.qtadc.params)
+        self.targetParamTree = ParameterTree()
         
     def reloadParamList(self, lst=None):
-        self.paramTree.clear()        
-        for p in self.paramList():
-            self.paramTree.addParameters(p)       
-        
-        for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)
+        self.paramTree.clear()
+        self.scopeParamTree.clear()
+        self.targetParamTree.clear()        
+        for p in self.paramList(): self.paramTree.addParameters(p)
+        if self.scope is not None:     
+            for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)            
+        if self.target is not None:
+            for p in self.target.paramList(): self.targetParamTree.addParameters(p)
         
     def paramList(self):
         p = []
-        p.append(self.params)
-        #for a in self.scope.paramList():
-        #    p.append(a)
-        #p.append(self.target.paramList())
-        #p.append(self.writer.paramList())        
-        return p
-        
+        p.append(self.params)     
+        return p        
 
     def initSettings(self):
         #ChipWhisperer-Capture Settings
@@ -748,15 +464,15 @@ class MainWindow(QMainWindow):
         self.addCaptureTools()
 
     def addCaptureTools(self):
-        capture1 = QAction(QIcon('images/play1.png'), 'Capture 1', self)
+        capture1 = QAction(QIcon(imagePath+'play1.png'), 'Capture 1', self)
         capture1.triggered.connect(self.capture1)
-        captureM = QAction(QIcon('images/playM.png'), 'Capture Multi', self)
+        captureM = QAction(QIcon(imagePath+'playM.png'), 'Capture Multi', self)
         captureM.triggered.connect(self.captureM)
         
         self.captureStatus = QToolButton()
-        self.captureStatusActionDis = QAction(QIcon('images/status_disconnected.png'),  'Status: Disconnected',  self)
+        self.captureStatusActionDis = QAction(QIcon(imagePath+'status_disconnected.png'),  'Status: Disconnected',  self)
         self.captureStatusActionDis.triggered.connect(self.doCon)
-        self.captureStatusActionCon = QAction(QIcon('images/status_connected.png'),  'Status: Connected',  self)
+        self.captureStatusActionCon = QAction(QIcon(imagePath+'status_connected.png'),  'Status: Connected',  self)
         self.captureStatusActionDis.triggered.connect(self.doDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
@@ -796,45 +512,21 @@ class MainWindow(QMainWindow):
 
     def captureM(self):
         print "capture M"
-
-    def generalConfig(self):
-
-        tc = QWidget()
-        layout = QVBoxLayout()
-        tc.setLayout(layout)
-
-        slay = QHBoxLayout()
-        slay.addWidget(QLabel("Scope Type:"))
-        cbScope = QComboBox()
-        cbScope.addItem("OpenADC (Bare)")
-        cbScope.addItem("ChipWhisperer Rev2")
-        slay.addWidget(cbScope)
-        slay.addStretch()
-        layout.addLayout(slay)
-
-        tlay = QHBoxLayout()
-        tlay.addWidget(QLabel("Target Type:"))
-        self.cbTarget = QComboBox()
-        if target_chipwhisperer_integrated:
-            self.cbTarget.addItem("CW-Integrated", target_chipwhisperer_integrated)           
-        self.cbTarget.addItem("SimpleSerial")
-        self.cbTarget.currentIndexChanged.connect(self.cbTargetChanged)
-        tlay.addWidget(self.cbTarget)        
-        tlay.addStretch()
-        layout.addLayout(tlay)
-
-        return tc
-
-    def cbTargetChanged(self, indx):        
-        newtarget = self.cbTarget.itemData(indx)
-        self.target.setDriver(newtarget)
-        #self.target.loadSettings(self.settings)  
         
     def scopeChanged(self, newscope):
         self.scope = newscope
         if self.scope is not None:
-            self.scope.paramListUpdated.connect(self.reloadParamList)
-            
+            self.scope.paramListUpdated.connect(self.reloadParamList)            
+        self.reloadParamList()
+        
+    def traceChanged(self, newtrace):
+        self.trace = newtrace
+        #TODO: Reload?
+        
+    def targetChanged(self, newtarget):
+        self.target = newtarget
+        if self.target is not None:
+            self.target.paramListUpdated.connect(self.reloadParamList)
         self.reloadParamList()
 
     def closeEvent(self, event):
@@ -844,6 +536,9 @@ if __name__ == '__main__':
     
     # Create the Qt Application
     app = QApplication(sys.argv)
+    app.setOrganizationName("ChipWhisperer")
+    app.setApplicationName("Capture V2")
+    
     # Create and show the form
     window = MainWindow()
     window.show()
