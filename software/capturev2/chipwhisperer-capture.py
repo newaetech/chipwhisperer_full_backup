@@ -40,6 +40,8 @@ except ImportError:
 try:
     import pyqtgraph as pg
     import pyqtgraph.multiprocess as mp
+    import pyqtgraph.parametertree.parameterTypes as pTypes
+    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
@@ -394,7 +396,7 @@ class OpenADCInterface_ZTEX(QWidget):
             self.ser = self
 
         try:
-            self.scope.ADCconnect(self.ser)
+            self.scope.con(self.ser)
         except:
             exctype, value = sys.exc_info()[:2]
             QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
@@ -448,7 +450,7 @@ class OpenADCInterface(QObject):
     def __init__(self, parent=None):
         super(OpenADCInterface, self).__init__(parent)
         self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
-        self.qtadc.setupWidgets()
+        self.qtadc.setupParameterTree()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.datapoints = self.qtadc.datapoints
 
@@ -518,10 +520,10 @@ class OpenADCInterface(QObject):
 
     def loadSettings(self, settings):
         oaset = settings.addGroup("OpenADC", self.qtconnect)
-        settings.addGroupItem(oaset, "Gain", self.qtadc.gainWidget)
-        settings.addGroupItem(oaset, "Trigger", self.qtadc.triggerWidget)
-        settings.addGroupItem(oaset, "Samples", self.qtadc.samplesWidget)
-        settings.addGroupItem(oaset, "Clock", self.qtadc.clockWidget)
+        #settings.addGroupItem(oaset, "Gain", self.qtadc.gainWidget)
+        #settings.addGroupItem(oaset, "Trigger", self.qtadc.triggerWidget)
+        #settings.addGroupItem(oaset, "Samples", self.qtadc.samplesWidget)
+        #settings.addGroupItem(oaset, "Clock", self.qtadc.clockWidget)
 
     def con(self):
         if self.scopeWidget.currentWidget().con():
@@ -541,10 +543,10 @@ class OpenADCInterface(QObject):
         self.dataUpdated.emit(l)
 
     def arm(self):
-        self.qtadc.ADCarm()
+        self.qtadc.arm()
 
     def capture(self, update=True, NumberPoints=None):
-        self.qtadc.ADCcapture(update, NumberPoints)    
+        self.qtadc.capture(update, NumberPoints)    
 
 
 class acquisitionController(object):
@@ -689,15 +691,17 @@ class TargetInterface(QObject):
         if self.driver:
             self.driver.loadSettings(settings)   
          
-class MainWindow(QMainWindow):           
+class MainWindow(QMainWindow):
+    MaxRecentFiles = 4
+
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
-
+        
         self.da = None
         self.key = None
        
         self.statusBar()
-        self.setWindowTitle("Chip Whisperer: Capturev2")
+        self.setWindowTitle("Chip Whisperer Capture V2")
         self.setWindowIcon(QIcon("../common/cwicon.png"))
 
         # Create layout and add widgets
@@ -726,10 +730,24 @@ class MainWindow(QMainWindow):
         self.configdock = QDockWidget("Config Options", self)
         self.configdock.setAllowedAreas(Qt.RightDockWidgetArea|Qt.BottomDockWidgetArea)
         self.addDockWidget(Qt.RightDockWidgetArea, self.configdock)
+        self.addSettingsDock()
 
         self.addToolbars()
         
         self.writer = writer_dpav3.dpav3()
+        
+    def addSettingsDock(self):
+        self.p = Parameter.create(name='Generic Settings', type='group')
+        #self.p.sigTreeStateChanged.connect(self.change)
+        self.paramTree = ParameterTree()
+        self.paramTree.setParameters(self.p, showTop=True)
+        #self.p.addChildren(self.scope.qtadc.p)
+        self.paramTree.addParameters(self.scope.qtadc.p)
+        
+        self.paramDock = QDockWidget("Settings")
+        self.paramDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+        self.paramDock.setWidget(self.paramTree)
+        self.addDockWidget(Qt.LeftDockWidgetArea, self.paramDock)
 
     def initSettings(self):
         #ChipWhisperer-Capture Settings
@@ -740,6 +758,7 @@ class MainWindow(QMainWindow):
         self.scope = OpenADCInterface()
         self.scope.loadSettings(self.settings)
         self.scope.dataUpdated.connect(self.newScopeData)
+        self.scope.connectStatus.connect(self.connected)
         
         self.target = TargetInterface()
         self.target.setOpenADC(self.scope)
@@ -763,13 +782,25 @@ class MainWindow(QMainWindow):
         captureM = QAction(QIcon('images/playM.png'), 'Capture Multi', self)
         captureM.triggered.connect(self.captureM)
         
+        self.captureStatus = QToolButton()
+        self.captureStatusActionDis = QAction(QIcon('images/status_disconnected.png'),  'Status: Disconnected',  self)
+        self.captureStatusActionCon = QAction(QIcon('images/status_connected.png'),  'Status: Connected',  self)
+        self.captureStatus.setDefaultAction(self.captureStatusActionDis)
+
         self.CaptureToolbar = self.addToolBar('Capture Tools')
         self.CaptureToolbar.addAction(capture1)
         self.CaptureToolbar.addAction(captureM)
+        self.CaptureToolbar.addWidget(self.captureStatus)
         #self.CaptureToolbar.setEnabled(False)
 
     def connected(self, status=True, text=None):
-        self.CaptureToolbar.setEnabled(status)
+        #self.CaptureToolbar.setEnabled(status)
+        
+        if status:
+            self.captureStatus.setDefaultAction(self.captureStatusActionCon)
+        else:
+            self.captureStatus.setDefaultAction(self.captureStatusActionDis)
+
 
     def capture1(self):
         ac = acquisitionController(self.scope, self.target.driver.target, self.writer)

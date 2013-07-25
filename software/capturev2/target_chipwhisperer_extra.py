@@ -46,8 +46,8 @@ class QtInterface(QWidget):
         self.cwEXTRA = CWExtraSettingsQT()
 
     def setOpenADC(self, oa):
-        self.cwADV.con(oa)
-        self.cwEXTRA.con(oa)
+        self.cwADV.setOpenADC(oa)
+        self.cwEXTRA.setOpenADC(oa)
 
     def testPattern(self):
         desired_freq = 38400 * 3
@@ -70,6 +70,9 @@ class CWExtraSettings(object):
     MODE_OR = 0x00
     MODE_AND = 0x01
     
+    MODULE_BASIC = 0x00
+    MODULE_ADVPATTERN = 0x01
+    
     def __init__(self):
         super(CWExtraSettings, self).__init__()
         self.oa = None
@@ -84,15 +87,32 @@ class CWExtraSettings(object):
         
     def getPins(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=1)
-        pins = resp[0] & 0x3F;
-        mode = resp[0] >> 6;
+        pins = resp[0] & 0x3F
+        mode = resp[0] >> 6
         return(pins, mode)
         
+    def setModule(self,  module):        
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)        
+        resp[0] = resp[0] & 0xF8
+        resp[0] = resp[0] | module      
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)        
+        
+    def setTrigOut(self, enabled):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)        
+        resp[0] = resp[0] & 0xE7    
+        if enabled:
+            resp[0] = resp[0] | 0x08
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp) 
+
 class CWExtraSettingsQT(CWExtraSettings,  QWidget):        
     def __init__(self):
         super(CWExtraSettingsQT,  self).__init__()
         adviolayout = QVBoxLayout()
         self.setLayout(adviolayout)
+
+        proutlayout = QVBoxLayout()
+        pinsource = QGroupBox("Pin Routing")
+        pinsource.setLayout(proutlayout)
 
         pins = QHBoxLayout()
         self.pinFPA = QCheckBox('Front Panel A')
@@ -116,7 +136,7 @@ class CWExtraSettingsQT(CWExtraSettings,  QWidget):
         self.pinIO3.clicked.connect(self.pinsModeChanged)
         self.pinIO4.clicked.connect(self.pinsModeChanged)
         
-        adviolayout.addLayout(pins)         
+        proutlayout.addLayout(pins)         
         
         pinmode = QHBoxLayout()
         self.CBMode = QComboBox()
@@ -124,8 +144,38 @@ class CWExtraSettingsQT(CWExtraSettings,  QWidget):
         self.CBMode.addItem("AND",  self.MODE_AND)
         pinmode.addWidget(QLabel("Collection Mode:"))
         pinmode.addWidget(self.CBMode)
+        pinmode.addStretch()
         self.CBMode.currentIndexChanged.connect(self.pinsModeChanged)     
-        adviolayout.addLayout(pinmode)
+        proutlayout.addLayout(pinmode)
+        
+        adviolayout.addWidget(pinsource)
+        
+        tmlayout = QHBoxLayout()
+        trigmodule = QGroupBox("Trigger Module in Use")
+        trigmodule.setLayout(tmlayout)
+        
+        self.CBModule = QComboBox()
+        self.CBModule.addItem("Basic (Edge/Level)",  self.MODULE_BASIC)
+        self.CBModule.addItem("IO Pattern Match", self.MODULE_ADVPATTERN)
+        self.CBModule.currentIndexChanged.connect(self.triggerModuleChanged)   
+        
+        self.CBOutput = QCheckBox("TrigOut on FPA")
+        self.CBOutput.stateChanged.connect(self.trigOutChanged)
+        
+        tmlayout.addWidget(QLabel("Trigger Module:"))        
+        tmlayout.addWidget(self.CBModule)
+        tmlayout.addWidget(self.CBOutput)
+        tmlayout.addStretch()
+        
+        adviolayout.addWidget(trigmodule)
+        
+        #test = QPushButton("Read (Debug)")
+        #adviolayout.addWidget(test)
+        #test.clicked.connect(self.readPinsToDialog)
+        
+    def triggerModuleChanged(self, indx=0):
+        module = self.CBMode.itemData(self.CBModule.currentIndex())
+        self.setModule(module)
 
     def pinsModeChanged(self,  indx=0):
         mode = self.CBMode.itemData(self.CBMode.currentIndex())
@@ -140,7 +190,10 @@ class CWExtraSettingsQT(CWExtraSettings,  QWidget):
         
         self.setPins(pins,  mode)
 
-    def getPins(self):
+    def trigOutChanged(self, status):
+        self.setTrigOut(status)
+
+    def readPinsToDialog(self):
         (pins, mode) = self.getPins()
         
         self.pinFPA.setChecked(pins & self.PIN_FPA)
@@ -152,10 +205,11 @@ class CWExtraSettingsQT(CWExtraSettings,  QWidget):
         
         #This will force callback to pinsModeChanged so needs to
         #be last thing
-        self.CBMode.setIndex(self.CBMode.findData(mode))
+        self.CBMode.setCurrentIndex(self.CBMode.findData(mode))
 
     def setOpenADC(self, oa):
         self.con(oa)
+        self.readPinsToDialog()
 
 def strToPattern(string, startbits=1, stopbits=1):
     totalpat = []
@@ -164,8 +218,11 @@ def strToPattern(string, startbits=1, stopbits=1):
         #Start bits
         for i in range(0, startbits):
             totalpat.append(0)
-            
-        for i in range(7, -1, -1):
+         
+        #Following for MSB first:   
+        #for i in range(7, -1, -1):
+        #Serial protocols LSB first:
+        for i in range(0,  8):
             bit = (bp >> i) & 0x01
             totalpat.append(bit)
 
