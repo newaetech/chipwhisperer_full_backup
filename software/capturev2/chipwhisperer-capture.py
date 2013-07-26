@@ -39,6 +39,7 @@ sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
 imagePath = '../common/images/'
 
+
 from ExtendedParameter import ExtendedParameter
 
 try:
@@ -52,9 +53,12 @@ try:
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+    print pg.systemInfo()
+    
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
+
 
 try:
     import openadc_qt
@@ -85,10 +89,16 @@ except ImportError:
     AES = None    
 
 try:
-    import target_chipwhisperer_integrated
+    import target_simpleserial
 except ImportError:
-    target_chipwhisperer_integrated = None
-    target_chipwhisperer_integrated_str = sys.exc_info()    
+    target_simpleserial = None
+    target_simpleserial_str = sys.exc_info()
+    
+try:
+    import target_smartcard
+except ImportError:
+    target_smartcard = None
+    target_smartcard_str = sys.exc_info()
 
 import target_chipwhisperer_extra
 
@@ -372,15 +382,28 @@ class acquisitionController(object):
         self.running = False      
 
 class TargetInterface(QObject):
-
+    paramListUpdated = Signal(list)
+    
     def __init__(self, parent=None):
         super(TargetInterface, self).__init__(parent)
+        valid_targets = {"None":None}
+        
+        if target_simpleserial is not None:
+            valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial()
+            
+        if target_smartcard is not None:
+            valid_targets["SmartCard"] = target_smartcard.SmartCard()
+        
+        self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
     def OpenADCConnectChanged(self, status):
-        if status == False:
-            self.driver.dis()
-        #else:
-        #    self.setOpenADC(oadc)
+        try:    
+            if status == False:
+                self.driver.dis()
+            else:
+                self.setOpenADC(oadc)
+        except:
+            pass
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
@@ -389,11 +412,23 @@ class TargetInterface(QObject):
         oadc.connectStatus.connect(self.OpenADCConnectChanged)
 
     def setDriver(self, driver):
-        self.driver = driver.QtInterface()
+        self.driver = driver
         try:
             self.driver.setOpenADC(self.oadc)
         except:
-            pass
+            pass        
+        
+        if self.driver is None:
+            self.paramListUpdated.emit(None)
+        else:
+            self.driver.paramListUpdated.connect(self.paramListUpdated.emit)
+            self.paramListUpdated.emit(self.driver.paramList())
+            
+    def paramList(self):
+        if self.driver is None:
+            return [None]
+        else:
+            return self.driver.paramList()
          
 class MainWindow(MainChip):
     MaxRecentFiles = 4
@@ -401,22 +436,22 @@ class MainWindow(MainChip):
     def __init__(self):
         super(MainWindow, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
     
-        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface()}
-        valid_targets = {"None":None}
+        self.scope = None        
+        self.writer = None
+        self.target = TargetInterface()        
+        self.target.paramListUpdated.connect(self.reloadTargetParamList)
+    
+        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface()}        
         valid_traces = {"None":None, "DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
-                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"]},
+                self.target.toplevel_param,
                 {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"], 'set':self.traceChanged},
                 ]
         
         self.da = None
         self.key = None
-        
-        self.scope = None
-        self.target = None
-        self.writer = None
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -440,15 +475,23 @@ class MainWindow(MainChip):
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
         
-    def reloadParamList(self, lst=None):
-        self.paramTree.clear()
-        self.scopeParamTree.clear()
-        self.targetParamTree.clear()        
-        for p in self.paramList(): self.paramTree.addParameters(p)
+    def reloadScopeParamList(self, lst=None):
+        self.scopeParamTree.clear() 
         if self.scope is not None:     
-            for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)            
-        if self.target is not None:
-            for p in self.target.paramList(): self.targetParamTree.addParameters(p)
+            for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)        
+        
+    def reloadTargetParamList(self, list=None):
+        self.targetParamTree.clear() 
+        for p in self.target.paramList():
+            if p is not None:
+                self.targetParamTree.addParameters(p)
+        
+    def reloadParamList(self, lst=None):
+        self.paramTree.clear()                             
+        for p in self.paramList(): self.paramTree.addParameters(p)
+        self.reloadScopeParamList(lst)
+           
+        
         
     def paramList(self):
         p = []
@@ -529,12 +572,6 @@ class MainWindow(MainChip):
     def traceChanged(self, newtrace):
         self.trace = newtrace
         #TODO: Reload?
-        
-    def targetChanged(self, newtarget):
-        self.target = newtarget
-        if self.target is not None:
-            self.target.paramListUpdated.connect(self.reloadParamList)
-        self.reloadParamList()
 
     def closeEvent(self, event):
         return
