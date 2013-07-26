@@ -90,6 +90,8 @@ except ImportError:
     target_chipwhisperer_integrated = None
     target_chipwhisperer_integrated_str = sys.exc_info()    
 
+import target_chipwhisperer_extra
+
 from projectwindow import MainChip
 
             
@@ -101,14 +103,20 @@ class OpenADCInterface_ZTEX(QWidget):
                       #No Parameters for ZTEX
                   ]           
        
-        if (openadc_qt == None) or (usb == None):               
+        if (openadc_qt is None) or (usb is None):               
             self.ser = None
+            return
         else:            
             self.ser = None
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params)    
             
+            
+        if target_chipwhisperer_extra is not None:
+            self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
+        else:
+            self.cwAdvancedSettings = None
         
 
     def __del__(self):
@@ -143,6 +151,9 @@ class OpenADCInterface_ZTEX(QWidget):
             QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
             return False
         
+        if self.cwAdvancedSettings:
+            self.cwAdvancedSettings.setOpenADC(self.scope)
+        
         return True
 
     def dis(self):
@@ -175,9 +186,12 @@ class OpenADCInterface_ZTEX(QWidget):
             return self.ser.name
         except:
             return "None?"
-
-    def update(self):
-        print "update"
+        
+    def paramList(self):
+        p = [self.params]        
+        if self.cwAdvancedSettings is not None:
+            for a in self.cwAdvancedSettings.paramList(): p.append(a)            
+        return p
 
 class OpenADCInterface(QObject):
     connectStatus = Signal(bool)
@@ -192,18 +206,22 @@ class OpenADCInterface(QObject):
         self.datapoints = self.qtadc.datapoints
         self.scopetype = None
         
-        scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":OpenADCInterface_ZTEX(self.qtadc),
+        cwrev2 = OpenADCInterface_ZTEX(self.qtadc)
+        self.setCurrentScope(cwrev2, False)
+        
+        scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
                                                                      "Serial Port (LX9)":None,
-                                                                     "FTDI (SASEBO-W)":None}, 'value':'ChipWhisperer Rev2', 'set':self.setCurrentScope}
+                                                                     "FTDI (SASEBO-W)":None}, 'value':cwrev2, 'set':self.setCurrentScope}
                       ]
         
         self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params)
         
 
-    def setCurrentScope(self, scope):        
+    def setCurrentScope(self, scope, update=True):        
         self.scopetype = scope
-        self.paramListUpdated.emit(self.paramList())
+        if update:
+            self.paramListUpdated.emit(self.paramList())
    
     def con(self):
         if self.scopetype is not None:
@@ -226,10 +244,10 @@ class OpenADCInterface(QObject):
         
     def paramList(self):
         p = []
+        p.append(self.qtadc.params)
         p.append(self.params)
         if self.scopetype is not None:
-            p.append(self.scopetype.params)
-        p.append(self.qtadc.params)               
+            for a in self.scopetype.paramList(): p.append(a)                 
         return p
 
 
@@ -398,6 +416,7 @@ class MainWindow(MainChip):
         
         self.scope = None
         self.target = None
+        self.writer = None
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -436,26 +455,8 @@ class MainWindow(MainChip):
         p.append(self.params)     
         return p        
 
-    def initSettings(self):
-        #ChipWhisperer-Capture Settings
-        self.genConfig = self.generalConfig()
-        gg = self.settings.addGroup("General Settings", self.genConfig)          
-
-        #OpenADC Settings
-        self.scope = OpenADCInterface()
-        #self.scope.loadSettings(self.settings)
-        self.scope.dataUpdated.connect(self.newScopeData)
-        self.scope.connectStatus.connect(self.connected)
-        
-        self.target = TargetInterface()
-        self.target.setOpenADC(self.scope)
-
-        self.settings.widgetChanged.connect(self.setConfigWidget)
-
-        self.cbTargetChanged(0)
-
     def newScopeData(self,  data=None):
-        self.channelDocks[0].passTrace(data)
+        self.waveformDock.widget().passTrace(data)
 
     def setConfigWidget(self, widget):
         self.configdock.setWidget(widget)
@@ -499,8 +500,11 @@ class MainWindow(MainChip):
             self.target.con()
     
     def doDis(self):
-        self.scope.dis()
-        self.target.dis()
+        if self.target is not None:
+            self.scope.dis()
+            
+        if self.target is not None:
+            self.target.dis()
 
     def capture1(self):
         if self.target:
@@ -518,6 +522,9 @@ class MainWindow(MainChip):
         if self.scope is not None:
             self.scope.paramListUpdated.connect(self.reloadParamList)            
         self.reloadParamList()
+        
+        self.scope.dataUpdated.connect(self.newScopeData)
+        self.scope.connectStatus.connect(self.connected)
         
     def traceChanged(self, newtrace):
         self.trace = newtrace

@@ -6,15 +6,19 @@
 # Released under GPL License
 
 import sys
-import os
-import threading
-import time
-import logging
-import math
-import serial
+from functools import partial
 
 from PySide.QtCore import *
 from PySide.QtGui import *
+
+try:
+    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+except ImportError:
+    print "ERROR: PyQtGraph is required for this program"
+    sys.exit()
+    
+sys.path.append('../common')
+from ExtendedParameter import ExtendedParameter
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -30,35 +34,33 @@ ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
 
-class QtInterface(QWidget):
+class QtInterface:
+    paramListUpdated = Signal(list)
+     
     def __init__(self):
-        QWidget.__init__(self)
-        layout = QVBoxLayout()
-    
-        self.tb = QToolBox()
-        layout.addWidget(self.tb)
-
-        genconfig = QWidget()
-        genlayout = QVBoxLayout()
-        genconfig.setLayout(genlayout)
-
-        self.cwADV = CWAdvTriggerQT()
-        self.cwEXTRA = CWExtraSettingsQT()
+        #self.cwADV = CWAdvTrigger()
+        self.cwEXTRA = CWExtraSettings()        
+        self.cwExtraParams = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
+        ExtendedParameter.setupExtended(self.cwExtraParams)
 
     def setOpenADC(self, oa):
-        self.cwADV.setOpenADC(oa)
-        self.cwEXTRA.setOpenADC(oa)
+        #self.cwADV.setOpenADC(oa)
+        self.cwEXTRA.con(oa.sc)
+        self.cwExtraParams.getAllParameters()
 
-    def testPattern(self):
-        desired_freq = 38400 * 3
-        clk = 30E6
-        clkdivider = (clk / (2 * desired_freq)) + 1        
-        self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
+    def paramList(self):
+        p = []
+        p.append(self.cwExtraParams)            
+        return p
 
-    def loadSettings(self, settings):
-        self.targset = settings.addGroup("CW Capture", self)
-        settings.addGroupItem(self.targset, "Advanced IO Match", self.cwADV)
-        settings.addGroupItem(self.targset, "Trigger Settings", self.cwEXTRA)
+    #def testPattern(self):
+    #    desired_freq = 38400 * 3
+    #    clk = 30E6
+    #    clkdivider = (clk / (2 * desired_freq)) + 1        
+    #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
+
+    
+    
 
 class CWExtraSettings(object):
     PIN_FPA = 0x01
@@ -77,8 +79,49 @@ class CWExtraSettings(object):
         super(CWExtraSettings, self).__init__()
         self.oa = None
     
+        self.name = "CW Extra Settings"        
+        self.param = [{'name': 'CW Extra Settings', 'type': 'group', 'children': [
+                {'name': 'Trigger Pins', 'type':'group', 'children':[
+                    {'name': 'Front Panel A', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
+                    {'name': 'Front Panel B', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)},
+                    {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
+                    {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
+                    {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
+                    {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
+                    {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'value':"OR", 'get':self.getPinMode, 'set':self.setPinMode }                                      
+                    ]},
+                {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN}, 'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule},
+                {'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut},
+                ]}]
+    
     def con(self, oa):
         self.oa = oa
+           
+    def setPin(self, enabled, pin):
+        current = self.getPins()
+        
+        pincur = current[0] & ~(pin)
+        if enabled:
+            pincur = pincur | pin
+            
+        self.setPins(pincur, current[1])
+        
+            
+    def getPin(self, pin):
+        current = self.getPins()        
+        current = current[0] & pin
+        if current == 0:
+            return False
+        else:
+            return True
+    
+    def setPinMode(self, mode):
+        current = self.getPins()
+        self.setPins(current[0], mode)
+    
+    def getPinMode(self):
+        current = self.getPins()
+        return current[1]
            
     def setPins(self, pins, mode):
         d = bytearray()        
@@ -95,7 +138,11 @@ class CWExtraSettings(object):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)        
         resp[0] = resp[0] & 0xF8
         resp[0] = resp[0] | module      
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)        
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+        
+    def getModule(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        return resp[0] 
         
     def setTrigOut(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)        
@@ -103,113 +150,6 @@ class CWExtraSettings(object):
         if enabled:
             resp[0] = resp[0] | 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp) 
-
-class CWExtraSettingsQT(CWExtraSettings,  QWidget):        
-    def __init__(self):
-        super(CWExtraSettingsQT,  self).__init__()
-        adviolayout = QVBoxLayout()
-        self.setLayout(adviolayout)
-
-        proutlayout = QVBoxLayout()
-        pinsource = QGroupBox("Pin Routing")
-        pinsource.setLayout(proutlayout)
-
-        pins = QHBoxLayout()
-        self.pinFPA = QCheckBox('Front Panel A')
-        self.pinFPB = QCheckBox('Front Panel B')
-        self.pinIO1 = QCheckBox('Target IO1')
-        self.pinIO2 = QCheckBox('Target IO2')
-        self.pinIO3 = QCheckBox('Target IO3')
-        self.pinIO4 = QCheckBox('Target IO4')
-        
-        pins.addWidget(self.pinFPA)
-        pins.addWidget(self.pinFPB)
-        pins.addWidget(self.pinIO1)
-        pins.addWidget(self.pinIO2)
-        pins.addWidget(self.pinIO3)
-        pins.addWidget(self.pinIO4)
-        
-        self.pinFPA.clicked.connect(self.pinsModeChanged)
-        self.pinFPB.clicked.connect(self.pinsModeChanged)
-        self.pinIO1.clicked.connect(self.pinsModeChanged)
-        self.pinIO2.clicked.connect(self.pinsModeChanged)
-        self.pinIO3.clicked.connect(self.pinsModeChanged)
-        self.pinIO4.clicked.connect(self.pinsModeChanged)
-        
-        proutlayout.addLayout(pins)         
-        
-        pinmode = QHBoxLayout()
-        self.CBMode = QComboBox()
-        self.CBMode.addItem("OR", self.MODE_OR)
-        self.CBMode.addItem("AND",  self.MODE_AND)
-        pinmode.addWidget(QLabel("Collection Mode:"))
-        pinmode.addWidget(self.CBMode)
-        pinmode.addStretch()
-        self.CBMode.currentIndexChanged.connect(self.pinsModeChanged)     
-        proutlayout.addLayout(pinmode)
-        
-        adviolayout.addWidget(pinsource)
-        
-        tmlayout = QHBoxLayout()
-        trigmodule = QGroupBox("Trigger Module in Use")
-        trigmodule.setLayout(tmlayout)
-        
-        self.CBModule = QComboBox()
-        self.CBModule.addItem("Basic (Edge/Level)",  self.MODULE_BASIC)
-        self.CBModule.addItem("IO Pattern Match", self.MODULE_ADVPATTERN)
-        self.CBModule.currentIndexChanged.connect(self.triggerModuleChanged)   
-        
-        self.CBOutput = QCheckBox("TrigOut on FPA")
-        self.CBOutput.stateChanged.connect(self.trigOutChanged)
-        
-        tmlayout.addWidget(QLabel("Trigger Module:"))        
-        tmlayout.addWidget(self.CBModule)
-        tmlayout.addWidget(self.CBOutput)
-        tmlayout.addStretch()
-        
-        adviolayout.addWidget(trigmodule)
-        
-        #test = QPushButton("Read (Debug)")
-        #adviolayout.addWidget(test)
-        #test.clicked.connect(self.readPinsToDialog)
-        
-    def triggerModuleChanged(self, indx=0):
-        module = self.CBMode.itemData(self.CBModule.currentIndex())
-        self.setModule(module)
-
-    def pinsModeChanged(self,  indx=0):
-        mode = self.CBMode.itemData(self.CBMode.currentIndex())
-        pins = 0
-        
-        if self.pinFPA.isChecked(): pins |= self.PIN_FPA
-        if self.pinFPB.isChecked(): pins |= self.PIN_FPB
-        if self.pinIO1.isChecked(): pins |= self.PIN_RTIO1   
-        if self.pinIO2.isChecked(): pins |= self.PIN_RTIO2 
-        if self.pinIO3.isChecked(): pins |= self.PIN_RTIO3 
-        if self.pinIO4.isChecked(): pins |= self.PIN_RTIO4 
-        
-        self.setPins(pins,  mode)
-
-    def trigOutChanged(self, status):
-        self.setTrigOut(status)
-
-    def readPinsToDialog(self):
-        (pins, mode) = self.getPins()
-        
-        self.pinFPA.setChecked(pins & self.PIN_FPA)
-        self.pinFPB.setChecked(pins & self.PIN_FPB)
-        self.pinIO1.setChecked(pins & self.PIN_RTIO1)
-        self.pinIO2.setChecked(pins & self.PIN_RTIO2)
-        self.pinIO3.setChecked(pins & self.PIN_RTIO3)
-        self.pinIO4.setChecked(pins & self.PIN_RTIO4)
-        
-        #This will force callback to pinsModeChanged so needs to
-        #be last thing
-        self.CBMode.setCurrentIndex(self.CBMode.findData(mode))
-
-    def setOpenADC(self, oa):
-        self.con(oa)
-        self.readPinsToDialog()
 
 def strToPattern(string, startbits=1, stopbits=1):
     totalpat = []
