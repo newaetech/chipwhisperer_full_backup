@@ -35,6 +35,8 @@ except ImportError:
     
 import random
 import os.path
+import shlex
+from subprocess import Popen, PIPE
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
 imagePath = '../common/images/'
@@ -53,7 +55,7 @@ try:
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    print pg.systemInfo()
+    #print pg.systemInfo()
     
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
@@ -391,8 +393,8 @@ class TargetInterface(QObject):
         if target_simpleserial is not None:
             valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial()
             
-        #if target_smartcard is not None:
-        #    valid_targets["SmartCard"] = target_smartcard.SmartCard()
+        if target_smartcard is not None:
+            valid_targets["SmartCard"] = target_smartcard.SmartCard()
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
@@ -429,12 +431,86 @@ class TargetInterface(QObject):
             return [None]
         else:
             return self.driver.paramList()
-         
+
+class FWLoaderConfig(QDialog):   
+    def __init__(self, parent=None, console=None):
+        super(FWLoaderConfig, self).__init__(parent)
+        
+        self.console = console
+        
+        self.setWindowTitle("ChipWhisperer Firmware Loader Configuration")
+        
+        layout = QVBoxLayout()
+        
+        layoutFWLoader = QHBoxLayout()
+        self.fwLocation = QLineEdit()
+        fwButton = QPushButton("Find")
+        fwButton.clicked.connect(self.findFWLoader)
+        layoutFWLoader.addWidget(QLabel("FWLoader Location"))
+        layoutFWLoader.addWidget(self.fwLocation)
+        layoutFWLoader.addWidget(fwButton)        
+        layout.addLayout(layoutFWLoader) 
+ 
+        layoutBit = QHBoxLayout()
+        self.bitLocation = QLineEdit()
+        bitButton = QPushButton("Find")
+        bitButton.clicked.connect(self.findBitstream)
+        layoutBit.addWidget(QLabel("FPGA Bitstream Location"))
+        layoutBit.addWidget(self.bitLocation)
+        layoutBit.addWidget(bitButton)        
+        layout.addLayout(layoutBit) 
+        
+        layoutFW = QHBoxLayout()
+        self.firmwareLocation = QLineEdit()
+        firmwareButton = QPushButton("Find")
+        firmwareButton.clicked.connect(self.findFirmware)
+        layoutFW.addWidget(QLabel("Firmware Location"))
+        layoutFW.addWidget(self.firmwareLocation)
+        layoutFW.addWidget(firmwareButton)        
+        layout.addLayout(layoutFW)      
+
+        # Set dialog layout
+        self.setLayout(layout)
+       
+    def findFWLoader(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FWLoader','.','FWLoader.jar')        
+        if fname is not None:
+            self.fwLocation.setText(fname)
+            
+    def findBitstream(self):   
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream','.','*.bit')        
+        if fname is not None:
+            self.bitLocation.setText(fname)
+            
+    def findFirmware(self):   
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware','.','*.ihx')        
+        if fname is not None:
+            self.firmwareLocation.setText(fname)
+            
+    def loadFirmware(self):               
+        cmd = "java -cp %s FWLoader -c -f -uu %s"%(self.fwLocation.text(), self.firmwareLocation.text())
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        exit_code = process.wait()     
+        if self.console:
+            self.console.append(stdout)
+            self.console.append(stderr)
+    
+    def loadFPGA(self):        
+        cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitstreamLocation.text())
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        exit_code = process.wait()        
+        if self.console:
+            self.console.append(stdout)
+            self.console.append(stderr)        
+
 class MainWindow(MainChip):
     MaxRecentFiles = 4
     
     def __init__(self):
         super(MainWindow, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
+        self.console = self.addConsole()
     
         self.scope = None        
         self.writer = None
@@ -456,6 +532,31 @@ class MainWindow(MainChip):
         self.addToolbars()
         self.addSettingsDocks()
         self.addWaveforms()
+        self.addToolMenu()
+              
+
+    def FWLoaderConfig(self):
+        self.CWFirmwareConfig.show()
+    
+    def FWLoaderGo(self):
+        self.CWFirmwareConfig.loadFirmware()
+
+    def addToolMenu(self):        
+        self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
+        
+        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,                               
+                               statusTip='Configure ChipWhisperer FW Paths',
+                               triggered=self.FWLoaderConfig)
+
+        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,                               
+                               statusTip='Download Firmware+FPGA To Hardware',
+                               triggered=self.FWLoaderGo)
+
+        self.toolMenu= self.menuBar().addMenu("&Tools")
+        self.toolMenu.addAction(self.CWFirmwareConfigAct)
+        self.toolMenu.addAction(self.CWFirmwareGoAct)
+        self.toolMenu.addSeparator()
+
         
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")       
@@ -538,6 +639,7 @@ class MainWindow(MainChip):
             self.scope.con()
         
         if self.target is not None:
+            self.target.setOpenADC(self.scope.qtadc.ser)            
             self.target.con()
     
     def doDis(self):

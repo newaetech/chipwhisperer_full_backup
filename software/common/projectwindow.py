@@ -42,6 +42,7 @@ except ImportError:
 
 from graphwidget import GraphWidget
 
+
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
 
@@ -64,13 +65,16 @@ class MainChip(QMainWindow):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.initUI()
+        
+        fake = QWidget()
+        self.setCentralWidget(fake)
 
         #Settings
         settings = QSettings()
         self.restoreGeometry(settings.value("geometry"))
         self.restoreState(settings.value("state"))
         
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea):                
+    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea):                
         #Configure dock
         dock = QDockWidget(name)
         dock.setAllowedAreas(allowedAreas)
@@ -83,12 +87,16 @@ class MainChip(QMainWindow):
         return dock
     
     def addSettings(self, tree, name):
-        return self.addDock(tree, name=name)        
+        return self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)        
     
     def addTraceDock(self, name):
         gw = GraphWidget(self.imagepath)
         return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
         
+    def addConsole(self, name="Debug Logging"):
+        console = QTextBrowser()
+        self.addDock(console, name, area=Qt.BottomDockWidgetArea) 
+        return console       
         
     def closeEvent(self, event):
         settings = QSettings()
