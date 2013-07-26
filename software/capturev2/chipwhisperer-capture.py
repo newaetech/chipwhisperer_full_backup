@@ -120,7 +120,7 @@ class OpenADCInterface_ZTEX(QWidget):
             self.ser = None
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
-            ExtendedParameter.setupExtended(self.params)    
+            ExtendedParameter.setupExtended(self.params)  
             
             
         if target_chipwhisperer_extra is not None:
@@ -387,12 +387,12 @@ class TargetInterface(QObject):
     def __init__(self, parent=None):
         super(TargetInterface, self).__init__(parent)
         valid_targets = {"None":None}
-        
+                
         if target_simpleserial is not None:
             valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial()
             
-        if target_smartcard is not None:
-            valid_targets["SmartCard"] = target_smartcard.SmartCard()
+        #if target_smartcard is not None:
+        #    valid_targets["SmartCard"] = target_smartcard.SmartCard()
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
@@ -488,9 +488,7 @@ class MainWindow(MainChip):
         
     def reloadParamList(self, lst=None):
         self.paramTree.clear()                             
-        for p in self.paramList(): self.paramTree.addParameters(p)
-        self.reloadScopeParamList(lst)
-           
+        for p in self.paramList(): self.paramTree.addParameters(p)           
         
         
     def paramList(self):
@@ -560,11 +558,11 @@ class MainWindow(MainChip):
     def captureM(self):
         print "capture M"
         
-    def scopeChanged(self, newscope):
+    def scopeChanged(self, newscope):        
         self.scope = newscope
         if self.scope is not None:
-            self.scope.paramListUpdated.connect(self.reloadParamList)            
-        self.reloadParamList()
+            self.scope.paramListUpdated.connect(self.reloadScopeParamList)                     
+        self.reloadScopeParamList()
         
         self.scope.dataUpdated.connect(self.newScopeData)
         self.scope.connectStatus.connect(self.connected)

@@ -53,7 +53,7 @@ class SimpleSerial_ChipWhisperer(QObject):
         super(SimpleSerial_ChipWhisperer, self).__init__()
         ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params)        
+        ExtendedParameter.setupExtended(self.params)   
 
     def setBaud(self, baud):
         return
