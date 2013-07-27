@@ -39,6 +39,7 @@ import shlex
 from subprocess import Popen, PIPE
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
+sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 
@@ -104,7 +105,9 @@ except ImportError:
 
 import target_chipwhisperer_extra
 
-from projectwindow import MainChip
+from MainChip import MainChip
+from ProjectFormat import ProjectFormat
+from TraceFormatNative import TraceFormatNative
 
             
 class OpenADCInterface_ZTEX(QWidget):    
@@ -158,6 +161,7 @@ class OpenADCInterface_ZTEX(QWidget):
 
         try:
             self.scope.con(self.ser)
+            print "Connecting"
         except:
             exctype, value = sys.exc_info()[:2]
             QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
@@ -255,19 +259,25 @@ class OpenADCInterface(QObject):
         self.qtadc.capture(update, NumberPoints)    
         
     def paramList(self):
-        p = []
-        p.append(self.qtadc.params)
+        p = []       
         p.append(self.params)
+        #TODO: sometimes this needs to be appended first? Seems wrong...
+        p.append(self.qtadc.params)        
         if self.scopetype is not None:
             for a in self.scopetype.paramList(): p.append(a)                 
         return p
 
 
-class acquisitionController(object):
-    def __init__(self, scope, target, writer, label=None, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
+class acquisitionController(QObject):
+    traceDone = Signal(int)
+    captureDone = Signal(bool)
+    
+    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
+        super(acquisitionController, self).__init__()
+        
         self.target = target
         self.scope = scope
-        self.label = label
+        self.writer = writer
         self.running = False
         self.fixedPlainText = fixedPlain
         self.maxtraces = 1
@@ -353,7 +363,7 @@ class acquisitionController(object):
         try:
             self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
         except:
-            print "Response failed?"
+            pass
 
         #Get ADC reading
         self.scope.capture(update, N)
@@ -364,54 +374,61 @@ class acquisitionController(object):
 
     def doReadings(self):
         self.running = True
+        
+        if self.writer is not None:
+            self.writer.openFiles()
+            self.writer.Key(self.key)
 
-        tw = writer_dpav3.dpav3()
-        tw.openFiles()
-        tw.addKey(self.key)
+        nt = 0
 
-        while (tw.numtrace < self.maxtraces) and self.running:
+        while (nt < self.maxtraces) and self.running:
             self.doSingleReading(True, None, None)
-            tw.addTrace(self.textin, self.textout, self.scope.datapoints, self.key)
+            if self.writer is not None:
+                self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
   
             if self.updateData:
                 self.updateData(self.scope.datapoints)
 
-            if self.label != None:
-                self.label.setText("Traces = %d"%tw.numtrace)
+            nt = nt + 1
+            self.traceDone.emit(nt)
+            
 
-        tw.closeAll()
-
+        if self.writer is not None:
+            self.writer.closeAll()
+        
+        self.captureDone.emit(self.running)
+        
         self.running = False      
 
 class TargetInterface(QObject):
     paramListUpdated = Signal(list)
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, log=None):
         super(TargetInterface, self).__init__(parent)
         valid_targets = {"None":None}
+        self.driver = None
+        self.log=log
                 
         if target_simpleserial is not None:
-            valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial()
+            valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial(self.log)
             
         if target_smartcard is not None:
             valid_targets["SmartCard"] = target_smartcard.SmartCard()
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
-    def OpenADCConnectChanged(self, status):
-        try:    
-            if status == False:
-                self.driver.dis()
-            else:
-                self.setOpenADC(oadc)
-        except:
-            pass
-
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
-        self.oadc = oadc
-        #print self.OpenADCConnectChanged
-        oadc.connectStatus.connect(self.OpenADCConnectChanged)
+        self.oadc = oadc.scope.sc
+        self.driver.setOpenADC(self.oadc)
+        
+    def con(self):
+        if self.driver is not None:
+            self.driver.con()
+        
+    def dis(self):
+        if self.driver is not None:
+            self.driver.dis()
 
     def setDriver(self, driver):
         self.driver = driver
@@ -471,21 +488,58 @@ class FWLoaderConfig(QDialog):
 
         # Set dialog layout
         self.setLayout(layout)
+        
+        settings = QSettings()
+        self.fwLocation.setText(settings.value("fwloader-location"))
+        self.bitLocation.setText(settings.value("bitstream-location"))
+        self.firmwareLocation.setText(settings.value("firmware-location"))
        
     def findFWLoader(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FWLoader','.','FWLoader.jar')        
         if fname is not None:
             self.fwLocation.setText(fname)
+            QSettings().setValue("fwloader-location", fname)
             
     def findBitstream(self):   
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream','.','*.bit')        
         if fname is not None:
             self.bitLocation.setText(fname)
+            QSettings().setValue("bitstream-location", fname)
             
     def findFirmware(self):   
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware','.','*.ihx')        
         if fname is not None:
             self.firmwareLocation.setText(fname)
+            QSettings().setValue("firmware-location", fname)
+           
+    def getStatus(self):
+        #Check Status
+        cmd = "java -cp %s FWLoader -c -i"%(self.fwLocation.text())
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
+        stdout, stderr = process.communicate()
+        process.wait()
+        
+        if "devices" in stderr:
+            if self.console:
+                self.console.append(stderr)
+        return stdout
+            
+    def loadRequired(self, forceFirmware=False):
+        stdout = self.getStatus()
+               
+        if "OpenADC" not in stdout or forceFirmware:        
+            #Load firmware
+            self.loadFirmware()
+            stdout = self.getStatus()
+        else:
+            if self.console:
+                self.console.append("Skipped firmware download")    
+        
+        if "FPGA configured" not in stdout:
+            self.loadFPGA()                 
+        else:
+            if self.console:
+                self.console.append("Skipped FPGA download")     
             
     def loadFirmware(self):               
         cmd = "java -cp %s FWLoader -c -f -uu %s"%(self.fwLocation.text(), self.firmwareLocation.text())
@@ -497,7 +551,7 @@ class FWLoaderConfig(QDialog):
             self.console.append(stderr)
     
     def loadFPGA(self):        
-        cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitstreamLocation.text())
+        cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         exit_code = process.wait()        
@@ -505,20 +559,21 @@ class FWLoaderConfig(QDialog):
             self.console.append(stdout)
             self.console.append(stderr)        
 
+
+
 class MainWindow(MainChip):
-    MaxRecentFiles = 4
-    
+    MaxRecentFiles = 4    
     def __init__(self):
         super(MainWindow, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
         self.console = self.addConsole()
     
         self.scope = None        
-        self.writer = None
-        self.target = TargetInterface()        
+        self.trace = None
+        self.target = TargetInterface(log=self.console)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface()}        
-        valid_traces = {"None":None, "DPA Contest v3": writer_dpav3.dpav3()}    
+        valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative}#"DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
@@ -533,13 +588,18 @@ class MainWindow(MainChip):
         self.addSettingsDocks()
         self.addWaveforms()
         self.addToolMenu()
-              
+        
+        self.restoreDockGeometry()
+        self.newProject()   
+        
+        self.newFile.connect(self.newProject)
+        self.saveFile.connect(self.saveProject)          
 
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
     
     def FWLoaderGo(self):
-        self.CWFirmwareConfig.loadFirmware()
+        self.CWFirmwareConfig.loadRequired()
 
     def addToolMenu(self):        
         self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
@@ -551,8 +611,7 @@ class MainWindow(MainChip):
         self.CWFirmwareGoAct = QAction('Download CW Firmware', self,                               
                                statusTip='Download Firmware+FPGA To Hardware',
                                triggered=self.FWLoaderGo)
-
-        self.toolMenu= self.menuBar().addMenu("&Tools")
+        
         self.toolMenu.addAction(self.CWFirmwareConfigAct)
         self.toolMenu.addAction(self.CWFirmwareGoAct)
         self.toolMenu.addSeparator()
@@ -575,7 +634,7 @@ class MainWindow(MainChip):
         
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
-        
+                
     def reloadScopeParamList(self, lst=None):
         self.scopeParamTree.clear() 
         if self.scope is not None:     
@@ -614,16 +673,18 @@ class MainWindow(MainChip):
         
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(imagePath+'status_disconnected.png'),  'Status: Disconnected',  self)
-        self.captureStatusActionDis.triggered.connect(self.doCon)
+        self.captureStatusActionDis.triggered.connect(self.doConDis)
         self.captureStatusActionCon = QAction(QIcon(imagePath+'status_connected.png'),  'Status: Connected',  self)
-        self.captureStatusActionDis.triggered.connect(self.doDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')
+        self.CaptureToolbar.setObjectName('Capture Tools')
         self.CaptureToolbar.addAction(capture1)
         self.CaptureToolbar.addAction(captureM)
         self.CaptureToolbar.addWidget(self.captureStatus)
         #self.CaptureToolbar.setEnabled(False)
+        
+        
 
     def connected(self, status=True, text=None):
         #self.CaptureToolbar.setEnabled(status)
@@ -634,31 +695,43 @@ class MainWindow(MainChip):
             self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
 
-    def doCon(self):
-        if self.scope is not None:
-            self.scope.con()
-        
-        if self.target is not None:
-            self.target.setOpenADC(self.scope.qtadc.ser)            
-            self.target.con()
-    
-    def doDis(self):
-        if self.target is not None:
-            self.scope.dis()
+    def doConDis(self):        
+        if self.captureStatus.defaultAction() == self.captureStatusActionDis:      
+            if self.scope is not None:
+                self.scope.con()
             
-        if self.target is not None:
+            if self.scope is not None:
+                self.target.setOpenADC(self.scope.qtadc.ser)            
+            self.target.con()
+        else:
+            if self.scope is not None:
+                self.scope.dis()
+            
             self.target.dis()
 
     def capture1(self):
-        if self.target:
-            target = self.target.driver.target
+        if self.target.driver:
+            target = self.target.driver
         else:
             target = None
-        ac = acquisitionController(self.scope, target, self.writer)
+        ac = acquisitionController(self.scope, target, None)
         ac.doSingleReading()
 
+    def printTraceNum(self, num):
+        self.statusBar().showMessage("Trace %d done"%num)
+        
+
     def captureM(self):
-        print "capture M"
+        if self.target.driver:
+            target = self.target.driver
+        else:
+            target = None
+        ac = acquisitionController(self.scope, target, self.trace)
+        ac.traceDone.connect(self.printTraceNum)
+        ac.setMaxtraces(100)
+        
+        ac.doReadings()       
+        
         
     def scopeChanged(self, newscope):        
         self.scope = newscope
@@ -672,9 +745,27 @@ class MainWindow(MainChip):
     def traceChanged(self, newtrace):
         self.trace = newtrace
         #TODO: Reload?
-
-    def closeEvent(self, event):
-        return
+  
+    def newProject(self):        
+        self.proj = ProjectFormat()
+        self.proj.setProgramName("ChipWhisperer-Capture")
+        self.proj.setProgramVersion("2.00")
+        self.proj.addParamTree(self)
+        self.proj.addParamTree(self.scope)
+        self.proj.addParamTree(self.target)        
+        self.setCurrentFile(None)
+  
+    def saveProject(self):
+        if self.proj.hasFilename() == False:
+            fname, _ = QFileDialog.getSaveFileName(self, 'Save New File','.','*.cwp')
+            
+            if fname is None:
+                return
+            
+            self.proj.setFilename(fname)
+            self.setCurrentFile(fname)
+            
+        self.proj.save()
   
 if __name__ == '__main__':
     

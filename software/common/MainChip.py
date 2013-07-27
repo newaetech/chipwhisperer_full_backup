@@ -42,6 +42,8 @@ except ImportError:
 
 from GraphWidget import GraphWidget
 
+sys.path.append("traces")
+from TraceManager import TraceManagerDialog
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
@@ -60,6 +62,8 @@ class MainChip(QMainWindow):
     def __init__(self, name="Demo", imagepath="images/"):       
         super(MainChip, self).__init__()
         
+        self.manageTraces = TraceManagerDialog()
+        
         self.imagepath = imagepath
         self.name = name        
         pg.setConfigOption('background', 'w')
@@ -68,6 +72,7 @@ class MainChip(QMainWindow):
         
         fake = QWidget()
         self.setCentralWidget(fake)
+        
 
 
     def restoreDockGeometry(self):
@@ -88,6 +93,7 @@ class MainChip(QMainWindow):
         
         #Add to "Windows" menu
         self.windowMenu.addAction(dock.toggleViewAction())
+        self.enforceMenuOrder()
         
         return dock
     
@@ -109,6 +115,8 @@ class MainChip(QMainWindow):
         settings.setValue("state", self.saveState())
         QMainWindow.closeEvent(self, event)
 
+    
+
     def createFileActions(self):
         self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
                                shortcut=QKeySequence.Open,
@@ -128,6 +136,8 @@ class MainChip(QMainWindow):
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
 
+    def jerkface(self):
+        QMessageBox.question(self, 'Just Kidding', "Just kidding, this doesn't exist yet. Well good luck then, I better be going.", QMessageBox.No, QMessageBox.No)
 
     def createMenus(self):
         self.fileMenu= self.menuBar().addMenu("&File")
@@ -137,10 +147,26 @@ class MainChip(QMainWindow):
 #        self.fileMenu.addAction(self.importAct)
         self.separatorAct = self.fileMenu.addSeparator()
         for i in range(MainChip.MaxRecentFiles):
-            self.fileMenu.addAction(self.recentFileActs[i])        
+            self.fileMenu.addAction(self.recentFileActs[i])       
+        
+        self.projectMenu = self.menuBar().addMenu("&Project")
+        self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.manageTraces.show)
+        self.projectMenu.addAction(self.traceManageAct)
             
-        self.windowMenu = self.menuBar().addMenu("&Windows")
+        self.toolMenu= self.menuBar().addMenu("&Tools")
             
+        self.windowMenu = self.menuBar().addMenu("&Windows")        
+                
+        self.helpMenu = self.menuBar().addMenu("&Help")
+        self.helpManualAct = QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.jerkface)
+        self.helpMenu.addAction(self.helpManualAct)
+            
+    def enforceMenuOrder(self):
+        self.fakeAction = QAction('Does Nothing', self, visible=False)        
+        self.projectMenu.addAction(self.fakeAction)
+        self.toolMenu.addAction(self.fakeAction)
+        self.windowMenu.addAction(self.fakeAction)
+        self.helpMenu.addAction(self.fakeAction)
             
     def initUI(self):        
         self.statusBar()
@@ -160,6 +186,10 @@ class MainChip(QMainWindow):
 
 
     def setCurrentFile(self, fname):
+        
+        if fname is None:
+            return
+        
         settings = QSettings()
         files = settings.value('recentFileList', [])
 

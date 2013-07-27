@@ -74,8 +74,8 @@ class SimpleSerial_ChipWhisperer(QObject):
     def paramList(self):
         return [self.params]
     
-    def setOpenADC(self):
-        return
+    def setOpenADC(self, oa):
+        self.oa = oa
 
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         if self.debugLog is not None:
@@ -110,24 +110,36 @@ class SimpleSerial_ChipWhisperer(QObject):
             else:
                 time.sleep(0.01)
                 timeout = timeout - 1
-            waiting = self.bytesReadWaiting()
+            waiting = self.inWaiting()
+            
+        if timeout <= 0:
+            self.log("CW Serial timed out")
 
         #TODO: fix removing garbage at front
-        result = data[1:len(data)]
-        self.debugInfo(lastRx=result.decode("utf-8"))
+        result = data[1:(len(data)+1)]        
+        result = result.decode("utf-8")
+        self.debugInfo(lastRx=result)
         return result
 
     def flush(self):
-        waiting = self.bytesReadWaiting()
+        waiting = self.inWaiting()
         while waiting > 0:
             self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, Validate=False, maxResp=1)
-            waiting = self.bytesReadWaiting()  
+            waiting = self.inWaiting()  
+            
+    def flushInput(self):
+        self.flush()
+            
+    def close(self):
+        pass
        
 class SimpleSerial(QObject):   
     paramListUpdated = Signal(list) 
      
-    def __init__(self):
+    def __init__(self, console=None):
         super(SimpleSerial, self).__init__()
+        
+        self.console = console
         
         self.ser = None
         ssParams = [{'name':'connection', 'type':'list', 'values':{"System Serial Port":SimpleSerial_serial(), "ChipWhisperer":SimpleSerial_ChipWhisperer()}, 'value':"System Serial Port", 'set':self.setConnection}]        
@@ -136,6 +148,13 @@ class SimpleSerial(QObject):
 
     def __del__(self):
         self.close()
+    
+    def log(self, msg):
+        if self.console is not None:
+            self.console.append(msg)
+        else:
+            print msg
+        
     
     def setOpenADC(self, oadc):
         try:
@@ -196,11 +215,11 @@ class SimpleSerial(QObject):
         response = self.ser.read(33)
 
         if len(response) < 33:
-            print "WARNING: Response too short!"
+            self.log("WARNING: Response too short (len=%d): %s"%(len(response), response))
             return None
 
         if response[0] != 'r':
-            print "Sync Error"
+            self.log("Sync Error: %s"%response)
             return None
 
         data = bytearray(16)
