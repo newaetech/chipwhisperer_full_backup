@@ -40,7 +40,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from graphwidget import GraphWidget
+from GraphWidget import GraphWidget
 
 
 class MainChip(QMainWindow):
@@ -69,6 +69,10 @@ class MainChip(QMainWindow):
         fake = QWidget()
         self.setCentralWidget(fake)
 
+
+    def restoreDockGeometry(self):
+        """Needs to be called AFTER doing user-land setup"""
+        
         #Settings
         settings = QSettings()
         self.restoreGeometry(settings.value("geometry"))
@@ -79,6 +83,7 @@ class MainChip(QMainWindow):
         dock = QDockWidget(name)
         dock.setAllowedAreas(allowedAreas)
         dock.setWidget(dockWidget)
+        dock.setObjectName(name)
         self.addDockWidget(area, dock)
         
         #Add to "Windows" menu
