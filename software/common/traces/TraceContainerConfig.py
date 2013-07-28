@@ -47,7 +47,7 @@ import pstats, cProfile
 #Reading trace config files
 import ConfigParser
 
-class TraceContainerConfig():
+class TraceContainerConfig(object):
     def __init__(self, configfile=None):
         self.enabled = False
         self.mappedRange = None

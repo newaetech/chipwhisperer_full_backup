@@ -33,6 +33,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
+from datetime import datetime
 import random
 import os.path
 import shlex
@@ -111,12 +112,14 @@ from TraceFormatNative import TraceFormatNative
 
             
 class OpenADCInterface_ZTEX(QWidget):    
-    def __init__(self,oadcInstance):
+    def __init__(self,oadcInstance,console=None):
         QWidget.__init__(self)
         
         ztexParams = [                  
                       #No Parameters for ZTEX
                   ]           
+       
+        self.console = console
        
         if (openadc_qt is None) or (usb is None):               
             self.ser = None
@@ -214,15 +217,15 @@ class OpenADCInterface(QObject):
     dataUpdated = Signal(list)
     paramListUpdated = Signal(list)    
 
-    def __init__(self, parent=None):          
+    def __init__(self, parent=None, console=None):          
         super(OpenADCInterface, self).__init__(parent)
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, console=console)
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
-        self.datapoints = self.qtadc.datapoints
         self.scopetype = None
+        self.datapoints = []
         
-        cwrev2 = OpenADCInterface_ZTEX(self.qtadc)
+        cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console)
         self.setCurrentScope(cwrev2, False)
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
@@ -250,6 +253,7 @@ class OpenADCInterface(QObject):
             self.connectStatus.emit(True)
 
     def doDataUpdated(self,  l):
+        self.datapoints = l
         self.dataUpdated.emit(l)
 
     def arm(self):
@@ -272,9 +276,10 @@ class acquisitionController(QObject):
     traceDone = Signal(int)
     captureDone = Signal(bool)
     
-    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
+    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None, key=None):
         super(acquisitionController, self).__init__()
         
+        self.key = key
         self.target = target
         self.scope = scope
         self.writer = writer
@@ -372,12 +377,12 @@ class acquisitionController(QObject):
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
 
-    def doReadings(self):
+    def doReadings(self, addToList=None):
         self.running = True
         
         if self.writer is not None:
-            self.writer.openFiles()
-            self.writer.Key(self.key)
+            self.writer.prepareDisk()
+            self.writer.setKnownKey(self.key)
 
         nt = 0
 
@@ -395,6 +400,9 @@ class acquisitionController(QObject):
 
         if self.writer is not None:
             self.writer.closeAll()
+        
+        if addToList is not None:
+            addToList.append(self.writer)
         
         self.captureDone.emit(self.running)
         
@@ -569,16 +577,22 @@ class MainWindow(MainChip):
     
         self.scope = None        
         self.trace = None
+        self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
         self.target = TargetInterface(log=self.console)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
-        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface()}        
+        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(console=self.console)}        
         valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative}#"DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
                 self.target.toplevel_param,
                 {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"], 'set':self.traceChanged},
+                
+                {'name':'Key Settings', 'type':'group', 'children':[
+                        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
+                        {'name':'Send Key to Target', 'type':'bool', 'value':True},
+                    ]},                
                 ]
         
         self.da = None
@@ -595,6 +609,12 @@ class MainWindow(MainChip):
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)          
 
+    def setKey(self, key):
+        self.textkey = key       
+        self.key = bytearray()
+        for s in key.split():
+            self.key.append(int(s, 16))
+        
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
     
@@ -713,8 +733,8 @@ class MainWindow(MainChip):
         if self.target.driver:
             target = self.target.driver
         else:
-            target = None
-        ac = acquisitionController(self.scope, target, None)
+            target = None            
+        ac = acquisitionController(self.scope, target, None, key=self.key)
         ac.doSingleReading()
 
     def printTraceNum(self, num):
@@ -726,12 +746,21 @@ class MainWindow(MainChip):
             target = self.target.driver
         else:
             target = None
-        ac = acquisitionController(self.scope, target, self.trace)
+            
+        #Load trace writer
+        if self.trace is not None:
+            writer = self.trace()
+            starttime = datetime.now()             
+            writer.config.prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S_')
+            writer.config.configfile = self.proj.datadirectory + "traces/config_" + writer.config.prefix + ".cfg" 
+            writer.config.date = starttime.strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            writer = None
+                    
+        ac = acquisitionController(self.scope, target, writer, key=self.key)
         ac.traceDone.connect(self.printTraceNum)
-        ac.setMaxtraces(100)
-        
-        ac.doReadings()       
-        
+        ac.setMaxtraces(100)        
+        ac.doReadings(addToList=self.manageTraces)
         
     def scopeChanged(self, newscope):        
         self.scope = newscope
@@ -752,7 +781,8 @@ class MainWindow(MainChip):
         self.proj.setProgramVersion("2.00")
         self.proj.addParamTree(self)
         self.proj.addParamTree(self.scope)
-        self.proj.addParamTree(self.target)        
+        self.proj.addParamTree(self.target)      
+        self.proj.setTraceManager(self.manageTraces)  
         self.setCurrentFile(None)
   
     def saveProject(self):

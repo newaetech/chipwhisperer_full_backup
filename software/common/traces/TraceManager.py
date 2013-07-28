@@ -138,7 +138,8 @@ class TraceManagerDialog(QDialog):
         self.newProject()
 
     def updatePreview(self):
-        self.parent.updatePreview()
+        if self.parent is not None:
+            self.parent.updatePreview()
 
     def newProject(self):        
         self.traceList = []    
@@ -152,10 +153,9 @@ class TraceManagerDialog(QDialog):
         #Check out config
 
     def saveProject(self, config, configfilename):
-        config.add_section(self.secName)
         for indx, t in enumerate(self.traceList):
-            config.set(self.secName, 'tracefile%d'%indx, os.path.relpath(t.configfile, os.path.split(configfilename)[0]))
-            config.set(self.secName, 'enabled%d'%indx, str(t.enabled))
+            config[self.secName]['tracefile%d'%indx] = os.path.relpath(t.config.configfile, os.path.split(configfilename)[0])
+            config[self.secName]['enabled%d'%indx] = str(t.config.enabled)
 
     def loadProject(self, configfilename):
         config = ConfigParser.RawConfigParser()
@@ -170,8 +170,8 @@ class TraceManagerDialog(QDialog):
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
                 print "Opening %s"%fname
-                ti = TraceContainerConfig()
-                ti.loadTrace(fname)
+                ti = TraceContainer()
+                ti.config.loadTrace(fname)
                 self.traceList.append(ti)
                 self.addRow(ti)
 
@@ -201,19 +201,19 @@ class TraceManagerDialog(QDialog):
         self.table.setCellWidget(row, self.findCol("Enabled"), cb)
 
         if trace:
-            temp = QTableWidgetItem("%d"%trace.numTraces)
+            temp = QTableWidgetItem("%d"%trace.config.numTraces)
             temp.setFlags(temp.flags() & ~Qt.ItemIsEditable)
             self.table.setItem(row, self.findCol("Trace Num"), temp)
-            self.table.setItem(row, self.findCol("Date Captured"), QTableWidgetItem("%s"%trace.date))
-            self.table.setItem(row, self.findCol("File"), QTableWidgetItem("%s"%trace.configfile))
-            temp = QTableWidgetItem("%d"%trace.points)
+            self.table.setItem(row, self.findCol("Date Captured"), QTableWidgetItem("%s"%trace.config.date))
+            self.table.setItem(row, self.findCol("File"), QTableWidgetItem("%s"%trace.config.configfile))
+            temp = QTableWidgetItem("%d"%trace.config.points)
             temp.setFlags(temp.flags() & ~Qt.ItemIsEditable)
             self.table.setItem(row, self.findCol("Points"), temp)
-            self.table.setItem(row, self.findCol("Target HW"), QTableWidgetItem("%s"%trace.targetHW))
-            self.table.setItem(row, self.findCol("Target SW"), QTableWidgetItem("%s"%trace.targetSW))
-            self.table.setItem(row, self.findCol("Scope"), QTableWidgetItem("%s"%trace.scope))
-            self.table.setItem(row, self.findCol("Sample Rate"), QTableWidgetItem("%s"%trace.samplerate))
-            self.table.setItem(row, self.findCol("Notes"), QTableWidgetItem("%s"%trace.notes))
+            self.table.setItem(row, self.findCol("Target HW"), QTableWidgetItem("%s"%trace.config.targetHW))
+            self.table.setItem(row, self.findCol("Target SW"), QTableWidgetItem("%s"%trace.config.targetSW))
+            self.table.setItem(row, self.findCol("Scope"), QTableWidgetItem("%s"%trace.config.scope))
+            self.table.setItem(row, self.findCol("Sample Rate"), QTableWidgetItem("%s"%trace.config.samplerate))
+            self.table.setItem(row, self.findCol("Notes"), QTableWidgetItem("%s"%trace.config.notes))
 
         self.validateTable()
 
@@ -237,13 +237,18 @@ class TraceManagerDialog(QDialog):
                 self.traceList[i].mappedRange = None
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
 
-        self.iface.UpdateTraces()
+        self.iface.UpdateTraces()    
         self.updatePreview()
         
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)
         imp.exec_()
         self.importExisting(imp.getTraceCfgFile())
+        self.updatePreview()
+        
+    def append(self, ti):
+        self.traceList.append(ti)
+        self.addRow(ti)
         self.updatePreview()
 
     def importExisting(self, fname=None):
@@ -256,9 +261,7 @@ class TraceManagerDialog(QDialog):
             #Add to file list
             ti = TraceContainer()
             ti.config.loadTrace(fname)
-            self.traceList.append(ti)
-            self.addRow(ti)
-            self.updatePreview()
+            self.append(ti)
 
     def copyExisting(self, fname=None):
         if fname == None:
@@ -303,9 +306,6 @@ class TraceManagerDialog(QDialog):
                     shutil.copy(filename, targetdir + targetfile)
             
             #Add new trace to file list
-            ti = TraceContainerConfig()
-            ti.loadTrace(newcfgname)
-            self.traceList.append(ti)
-            self.addRow(ti)
-
-            self.updatePreview()
+            ti = TraceContainer()
+            ti.config.loadTrace(newcfgname)
+            self.append(ti)

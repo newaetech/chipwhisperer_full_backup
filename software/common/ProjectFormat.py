@@ -72,16 +72,21 @@ class ProjectFormat(QObject):
     def __init__(self):
         super(ProjectFormat, self).__init__()
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
-        self.paramListList = []
-        self.waveList = []
-        self.filename = None
+        self.paramListList = []        
+        self.filename = "untitled.cwp"
+        self.directory = "."
+        self.datadirectory = "default-data-dir/"
         self.config = ConfigObj()
+        self.traceManager = None
         
     def hasFilename(self):
-        if self.filename is None:
+        if self.filename == "untitled.cwp":
             return False
         else:
             return True
+    
+    def setTraceManager(self, manager):
+        self.traceManager = manager
     
     def setProgramName(self, name):
         self.settingsDict['Program Name']=name
@@ -101,12 +106,13 @@ class ProjectFormat(QObject):
     def addParamTree(self, pt):
         self.paramListList.append(pt)
         
-    def addWave(self, wave):
+    def addWave(self, configfile):
         return       
         
     def setFilename(self, f):
         self.filename = f
-        self.config.filename = f
+        self.config.filename = f        
+        self.datadirectory = os.path.basename(self.filename) + "/"
         
     def saveparam(self, p):
         #delete_objects_from_dict(p)
@@ -122,8 +128,11 @@ class ProjectFormat(QObject):
             return
 
         #Waveform list is Universal across ALL types
-        if 'Waveform List' not in self.config:
-            self.config['Waveform List'] = {}
+        if 'Trace Management' not in self.config:
+            self.config['Trace Management'] = {}
+            
+        if self.traceManager:
+            self.traceManager.saveProject(self.config, self.filename)
             
         #self.config['Waveform List'] = self.config['Waveform List'] + self.waveList
 
@@ -139,7 +148,6 @@ class ProjectFormat(QObject):
                     if a is not None:
                         self.saveparam( a.saveState() )
         
-
                 
         self.config.write()        
     

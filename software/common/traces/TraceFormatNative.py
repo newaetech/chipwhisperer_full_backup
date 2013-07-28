@@ -75,3 +75,8 @@ class TraceFormatNative(TraceContainer):
         np.save(directory + "/%stextout.npy"%prefix, self.textouts)
         np.save(directory + "/%sknownkey.npy"%prefix, self.knownkey)
         self.setDirty(False)
+        
+    def closeAll(self):
+        self.config.saveTrace()
+        self.saveAllTraces( os.path.dirname(self.config.configfile), prefix=self.config.prefix)
+        
