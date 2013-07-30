@@ -132,15 +132,18 @@ class GraphWidget(QWidget):
         self.pw.setLabel('left', 'Data')
         vb = self.pw.getPlotItem().getViewBox()
         vb.setMouseMode(vb.RectMode)
+        vb.sigStateChanged.connect(self.VBStateChanged)
         
         ###Toolbar
         xLockedAction = QAction(QIcon(self.imagepath+'xlock.png'), 'Lock X Axis', self)
         xLockedAction.setCheckable(True)
         xLockedAction.triggered[bool].connect(self.xLocked)
+        self.XLockedAction = xLockedAction
 
         yLockedAction = QAction(QIcon(self.imagepath+'ylock.png'), 'Lock Y Axis', self)
         yLockedAction.setCheckable(True)
-        xLockedAction.triggered[bool].connect(self.yLocked)
+        yLockedAction.triggered[bool].connect(self.yLocked)
+        self.YLockedAction = yLockedAction
 
         yAutoScale = QAction(QIcon(self.imagepath+'yauto.png'), 'Autoscale Y Axis', self)
         yAutoScale.triggered[bool].connect(self.yAutoScale)
@@ -181,18 +184,37 @@ class GraphWidget(QWidget):
             self.acolor = data[0]
             self.autocolor = data[1]
         
-    def yAutoScale(self, enabled):
-        pass
+    def VBStateChanged(self, obj):
+        arStatus = self.pw.getPlotItem().getViewBox().autoRangeEnabled()
         
+        #X Axis
+        if arStatus[0]:
+            self.XLockedAction.setChecked(False)
+        else:
+            self.XLockedAction.setChecked(True)            
+            
+        #Y Axis
+        if arStatus[1]:
+            self.YLockedAction.setChecked(False)
+        else:
+            self.YLockedAction.setChecked(True)           
+          
     def xAutoScale(self, enabled):
-        pass
+        vb = self.pw.getPlotItem().getViewBox()
+        bounds = vb.childrenBoundingRect(None)
+        vb.setXRange(bounds.left(), bounds.right())
         
-    def yLocked(self, enabled):
-        pass
+    def yAutoScale(self, enabled):
+        vb = self.pw.getPlotItem().getViewBox()
+        bounds = vb.childrenBoundingRect(None)
+        vb.setYRange(bounds.top(), bounds.bottom())
         
     def xLocked(self, enabled):
-        pass
-
+        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.XAxis, ~enabled)
+        
+    def yLocked(self, enabled):
+        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
+        
     def passTrace(self, trace):
         if self.persistant:
             if self.autocolor:

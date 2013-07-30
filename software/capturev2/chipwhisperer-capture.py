@@ -276,10 +276,9 @@ class acquisitionController(QObject):
     traceDone = Signal(int)
     captureDone = Signal(bool)
     
-    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None, key=None):
+    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
         super(acquisitionController, self).__init__()
-        
-        self.key = key
+
         self.target = target
         self.scope = scope
         self.writer = writer
@@ -346,11 +345,7 @@ class acquisitionController(QObject):
     def doSingleReading(self, update=True, N=None, key=None):
         self.scope.arm()
 
-        if key:
-            self.key = key
-        else:
-            self.key = None
-
+        self.key = key
         self.newPlain()
 
         ## Start target now
@@ -377,8 +372,10 @@ class acquisitionController(QObject):
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
 
-    def doReadings(self, addToList=None):
+    def doReadings(self, addToList=None, key=None):
         self.running = True
+        
+        self.key = key
         
         if self.writer is not None:
             self.writer.prepareDisk()
@@ -596,7 +593,6 @@ class MainWindow(MainChip):
                 ]
         
         self.da = None
-        self.key = None
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -734,7 +730,7 @@ class MainWindow(MainChip):
             target = self.target.driver
         else:
             target = None            
-        ac = acquisitionController(self.scope, target, None, key=self.key)
+        ac = acquisitionController(self.scope, target, None)
         ac.doSingleReading()
 
     def printTraceNum(self, num):
@@ -757,10 +753,10 @@ class MainWindow(MainChip):
         else:
             writer = None
                     
-        ac = acquisitionController(self.scope, target, writer, key=self.key)
+        ac = acquisitionController(self.scope, target, writer)
         ac.traceDone.connect(self.printTraceNum)
         ac.setMaxtraces(100)        
-        ac.doReadings(addToList=self.manageTraces)
+        ac.doReadings(addToList=self.manageTraces, key=self.key)
         
     def scopeChanged(self, newscope):        
         self.scope = newscope
