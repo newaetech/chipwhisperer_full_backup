@@ -88,7 +88,8 @@ class TraceContainer(object):
             if dtype is None:
                 dtype = np.double            
             self.tracedtype = dtype    
-            self.traces = np.zeros((self.tracehint, len(trace)), dtype=dtype)                   
+            self.traces = np.zeros((self.tracehint, len(trace)), dtype=dtype)           
+            self.traces[self._numTraces][:] = trace        
         else:
             #Check can fit this
             if self.traces.shape[0] <= self._numTraces:
