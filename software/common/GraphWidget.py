@@ -92,44 +92,6 @@ class GraphWidget(QWidget):
         QWidget.__init__(self)
         layout = QVBoxLayout()
 
-        setupGB = QGroupBox("View Options")
-        setupLayout = QVBoxLayout()
-        setupGB.setLayout(setupLayout)
-
-        hl = QHBoxLayout()
-        pbRedraw = QPushButton("Redraw")
-        pbRedraw.clicked.connect(self.redrawPushed)
-        hl.addWidget(pbRedraw)
-
-        pbClear = QPushButton("Clear All")
-        pbClear.clicked.connect(self.clearPushed)
-        hl.addWidget(pbClear)
-        hl.addStretch()
-    
-        self.startTracePrint = QSpinBox()        
-        self.startTracePrint.setMinimum(0)
-        self.endTracePrint = QSpinBox()        
-        self.endTracePrint.setMinimum(0)
-        self.startPointPrint = QSpinBox()        
-        self.startPointPrint.setMinimum(0)
-        self.endPointPrint = QSpinBox()        
-        self.endPointPrint.setMinimum(0)
-
-        hl.addWidget(QLabel("Traces: "))
-        hl.addWidget(self.startTracePrint)
-        hl.addWidget(QLabel(" to "))
-        hl.addWidget(self.endTracePrint)
-        hl.addStretch()
-
-        hl.addWidget(QLabel("Points: "))
-        hl.addWidget(self.startPointPrint, )
-        hl.addWidget(QLabel(" to "))
-        hl.addWidget(self.endPointPrint)
-        hl.addStretch()
-        setupLayout.addLayout(hl)
-        
-        layout.addWidget(setupGB)
-
         self.pw = pg.PlotWidget(name="Power Trace View")
         self.pw.setLabel('top', 'Power Trace View')
         self.pw.setLabel('bottom', 'Samples')
@@ -154,7 +116,7 @@ class GraphWidget(QWidget):
         xAutoScale = QAction(QIcon(self.imagepath+'xauto.png'), 'Autoscale X Axis', self)
         xAutoScale.triggered[bool].connect(self.xAutoScale)
         
-        yDefault = QAction('Default Y Axis', self)
+        yDefault = QAction(QIcon(self.imagepath+'ydefault.png'), 'Default Y Axis', self)
         yDefault.triggered.connect(self.YDefault)
         
         persistance = QAction(QIcon(self.imagepath+'persistance.png'), 'Enable Persistance',  self)
@@ -164,6 +126,9 @@ class GraphWidget(QWidget):
         setColour = QAction(QIcon(self.imagepath+'wavecol.png'),  'Set Colour',  self)
         setColour.triggered[bool].connect(self.setColour)
         
+        clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
+        clear.triggered.connect(self.clearPushed)
+        
         self.GraphToolbar = QToolBar('Graph Tools')
         self.GraphToolbar.addAction(xLockedAction)
         self.GraphToolbar.addAction(yLockedAction)
@@ -172,6 +137,7 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(yDefault)
         self.GraphToolbar.addAction(persistance)
         self.GraphToolbar.addAction(setColour)
+        self.GraphToolbar.addAction(clear)
         layout.addWidget(self.GraphToolbar)
         
         layout.addWidget(self.pw)        
@@ -262,8 +228,6 @@ class GraphWidget(QWidget):
             self.pw.clear()
         self.pw.plot(trace, pen=(self.acolor,8)) 
 
-    def redrawPushed(self):
-        return
 
     def clearPushed(self):
         """Clear display"""
