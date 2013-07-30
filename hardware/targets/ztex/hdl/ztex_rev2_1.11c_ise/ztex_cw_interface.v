@@ -56,7 +56,7 @@ module interface(
 	 input         ADC_OR,
 	 output        ADC_clk,
 	 input         DUT_CLK_i,
-	 input         DUT_trigger_i,
+	 inout         DUT_trigger_i,
 	 output        amp_gain,
 	 output        amp_hilo,
 	 
@@ -102,21 +102,17 @@ module interface(
 	 wire led_hbeat;
 	 assign GPIO_LED1 = led_hbeat;
 	 assign GPIO_LED5 = 1'b0;
-	 assign GPIO_LED6 = ~target_io2 | ~target_io1;
-	 assign GPIO_LED2 = ~slrd | ~slwr;
+	 //assign GPIO_LED6 = ~target_io2 | ~target_io1;
+	 //assign GPIO_LED2 = ~slrd | ~slwr;
 	 
-	 //LED_cap is too slow to see, we extend it here
+	 wire ifclk_buf;
 	 wire led_cap;
-	 reg  led_capture;
-	 assign GPIO_LED3 = led_capture;
-	 always @(posedge led_hbeat or posedge led_cap) begin
-		if (led_cap == 1'b1) begin
-			led_capture <= 1'b1;
-		end else begin
-			led_capture <= 1'b0;
-		end
-	 end
 	 
+	 led_extend capextend(ifclk_buf, led_cap, GPIO_LED3);		
+	 led_extend usbextend(ifclk_buf, ~slrd | ~slwr, GPIO_LED2); 
+	 led_extend tarextend(ifclk_buf, ~target_io2 | ~target_io1, GPIO_LED6);
+	 
+
 	 /* Notes on the FX2 Interface:
 	   EP2 is IN (input from FPGA to computer)
 		EP6 is OUT (output from computer to FPGA)
@@ -127,7 +123,6 @@ module interface(
 	 */
 	
 	wire sloe_int;
-	wire ifclk_buf;
 	wire ADC_clk_int;
 	assign ADC_clk = ADC_clk_int;
 	reg sloe_int_last;	
@@ -283,7 +278,7 @@ module interface(
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_cw),
 		.trigger_fpa_i(DUT_trigger_i),
-		.trigger_fpb_i(1'b0),
+		//.trigger_fpb_i(),
 		.trigger_io1_i(target_io1),
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
@@ -317,5 +312,26 @@ module interface(
   assign cs_data[14] = flaga;
   assign cs_data[15] = flagb; 
   `endif
+	
+endmodule
+
+module led_extend(
+	input clk,
+	input ledin,
+	output ledout
+	);
+	
+	reg [17:0] ledcnt;
+   always @(posedge clk) begin	
+		if (ledin == 1)
+			ledcnt <= 0;
+		if (ledcnt != 18'h20000)
+			ledcnt <= ledcnt + 1;
+	end	 
+	assign ledout = ~ledcnt[17];
+	
+	initial begin
+		ledcnt <= 18'h20000;
+	end
 	
 endmodule

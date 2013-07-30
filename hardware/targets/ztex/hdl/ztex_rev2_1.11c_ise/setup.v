@@ -15,6 +15,9 @@
 	
 	`define TARG_UART_BAUD 38400
 	
+	`define HW_TYPE 3
+	`define HW_VER 0
+	
 `endif
 
 //`define USE_DDR

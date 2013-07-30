@@ -7,6 +7,12 @@ TIMESPEC "TS_IFCLK" = PERIOD "IFCLK" 20 ns HIGH 50 %;
 NET "IFCLK"  LOC = "J14" | IOSTANDARD = LVCMOS33 ;
 NET "ifclk" CLOCK_DEDICATED_ROUTE = FALSE;
 
+#Note: ISE generates a too-string constraint... this signal is only good up to 100 MHz due
+#to ADC requirements. But if the input is 100 MHz, this signal would be at 400 MHz. The
+#user knows they can't use the 4x clock then so we don't need such a high constraint...
+NET "oadc/genclocks/ADC_clk_times4" TNM_NET = "ADC_clk_times4";
+TIMESPEC "TS_ADC_clk_times4" = PERIOD "ADC_clk_times4" 10 ns HIGH 50%;
+
 NET "target_hs1" CLOCK_DEDICATED_ROUTE = FALSE;
 NET "target_hs2" CLOCK_DEDICATED_ROUTE = FALSE;
 
