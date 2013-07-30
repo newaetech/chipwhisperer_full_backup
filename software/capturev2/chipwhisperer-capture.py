@@ -634,7 +634,11 @@ class MainWindow(MainChip):
 
         
     def addWaveforms(self):
-        self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")       
+        self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
+        
+        #TODO: FIX THIS HACK
+        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
+        self.waveformDock.widget().YDefault()       
         
     def addSettingsDocks(self):      
         self.setupParametersTree()        
