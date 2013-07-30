@@ -48,6 +48,18 @@ import pstats, cProfile
 import ConfigParser
 
 class TraceContainerConfig(object):
+    """
+    This class holds configuration data for a TraceContainer class. This is split into a seperate class
+    partially for historical reasons, since the old code had this as a seperate class.
+    
+    This class is responsible for reading/writing the .cfg file associated with any traces. Even if we are
+    using non-native trace format, the traces will STILL have a ChipWhisperer-specific .cfg file written
+    with them.
+    
+    This choice means you aren't forced to import traces into ChipWhisperer-only format, and can for example
+    you may wish to keep them in some MATLAB workspace format instead.
+    """   
+    
     def __init__(self, configfile=None):
         self.enabled = False
         self.mappedRange = None

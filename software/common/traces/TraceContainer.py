@@ -34,6 +34,14 @@ from TraceContainerConfig import TraceContainerConfig
 import pstats, cProfile
 
 class TraceContainer(object):
+    """
+    TraceContainer holds traces for the system to operate on. This can include both reading in traces for analysis, and
+    writing traces to disk.
+    
+    This class is normally used as a base class for some specific format. For example the 'TraceFormatNative' class
+    adds functions for reading/storing data in the 'native' ChipWhisperer format.
+    """
+    
     def __init__(self):
         self.textins = []
         self.textouts = []

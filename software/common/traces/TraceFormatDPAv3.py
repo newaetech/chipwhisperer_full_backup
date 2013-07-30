@@ -188,6 +188,13 @@ class ImportDPAv3Dialog(QDialog):
         return True
 
     def doImport(self):
+        """
+        Import traces from DPAv3 Contest Format into internal native ChipWhisperer format.
+        
+        NOTE: This won't actually be required in the future... for now you have to convert
+        into the CW format, but the idea is you can just read them from disk in the DPAv3 format.
+        """
+        
         if self.parent.parent.cwp == None:
             print "No project open for import? Hmm..."
             return

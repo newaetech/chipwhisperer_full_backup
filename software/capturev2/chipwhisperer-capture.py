@@ -145,14 +145,14 @@ class OpenADCInterface_ZTEX(QWidget):
         if self.ser == None:
             try:
                 dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
-            except:
+            except IOError, e:
                 exctype, value = sys.exc_info()[:2]
                 QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
-                return False
+                raise IOError(e)
 
             if dev is None:
                 QMessageBox.warning(None, "FX2 Port", "Could not open USB Device")            
-                return False
+                raise IOError("Could not open USB Device")
 
             dev.set_configuration()            
 
@@ -164,16 +164,16 @@ class OpenADCInterface_ZTEX(QWidget):
 
         try:
             self.scope.con(self.ser)
-            print "Connecting"
-        except:
+            self.console.append("OpenADC Found, Connecting")
+        except IOError,e:
             exctype, value = sys.exc_info()[:2]
+            self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
+            self.console.append("Did you download firmware/FPGA data to ChipWhisperer?")
             QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
-            return False
+            raise IOError(e)           
         
         if self.cwAdvancedSettings:
             self.cwAdvancedSettings.setOpenADC(self.scope)
-        
-        return True
 
     def dis(self):
         if self.ser != None:
@@ -589,10 +589,15 @@ class MainWindow(MainChip):
                 {'name':'Key Settings', 'type':'group', 'children':[
                         {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
                         {'name':'Send Key to Target', 'type':'bool', 'value':True},
-                    ]},                
+                    ]},   
+                         
+                {'name':'Acquisition Settings', 'type':'group', 'children':[
+                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E6), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
+                    ]}             
                 ]
         
         self.da = None
+        self.numTraces = 100
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -603,7 +608,13 @@ class MainWindow(MainChip):
         self.newProject()   
         
         self.newFile.connect(self.newProject)
-        self.saveFile.connect(self.saveProject)          
+        self.saveFile.connect(self.saveProject)    
+        
+    def getNumTraces(self):
+        return self.numTraces
+        
+    def setNumTraces(self, t):
+        self.numTraces = t      
 
     def setKey(self, key):
         self.textkey = key       
@@ -637,6 +648,7 @@ class MainWindow(MainChip):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
         
         #TODO: FIX THIS HACK
+        #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
         self.waveformDock.widget().YDefault()       
         
@@ -718,11 +730,16 @@ class MainWindow(MainChip):
     def doConDis(self):        
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:      
             if self.scope is not None:
-                self.scope.con()
-            
-            if self.scope is not None:
-                self.target.setOpenADC(self.scope.qtadc.ser)            
-            self.target.con()
+                try:
+                    self.scope.con()
+                    if self.scope is not None:
+                        self.target.setOpenADC(self.scope.qtadc.ser)        
+                    self.target.con()
+                except IOError:
+                    exctype, value = sys.exc_info()[:2]
+                    self.console.append("Connect Error: %s"%(str(value)))
+                    #QMessageBox.warning(None, "Connect Error", str(exctype) + str(value))  
+                    
         else:
             if self.scope is not None:
                 self.scope.dis()

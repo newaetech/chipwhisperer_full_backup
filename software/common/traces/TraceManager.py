@@ -48,6 +48,10 @@ import pstats, cProfile
 import ConfigParser
 
 class TraceManager():
+    """
+    When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
+    block of traces. This class is used to handle the remapping.
+    """
     def __init__(self, parent):
         self.dlg = parent
         self.NumTrace = 0
@@ -99,6 +103,7 @@ class TraceManager():
 
         
 class TraceManagerDialog(QDialog):
+    """Manages traces associated with some project"""
     secName = "Trace Management"
     def __init__(self, parent=None):
         super(TraceManagerDialog, self).__init__(parent)
