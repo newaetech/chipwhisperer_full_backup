@@ -1,8 +1,0 @@
-INTSTYLE=ise
-INFILE=C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\targets\ztex\hdl\ztex_rev2_1.11c_ise\interface.ncd
-OUTFILE=C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\targets\ztex\hdl\ztex_rev2_1.11c_ise\interface.bit
-FAMILY=Spartan6
-PART=xc6slx25-3ftg256
-WORKINGDIR=C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\targets\ztex\hdl\ztex_rev2_1.11c_ise
-LICENSE=WebPack
-USER_INFO=210696955_1777488603_210550451_547
