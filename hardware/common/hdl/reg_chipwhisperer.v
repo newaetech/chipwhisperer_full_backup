@@ -51,8 +51,8 @@ module reg_chipwhisperer(
 	output  [15:0] reg_hyplen,
 			
 	/* Extern Trigger Connections */
-	input				trigger_fpa_i,
-	input				trigger_fpb_i,
+	inout				trigger_fpa_i,
+	inout				trigger_fpb_i,
 	input				trigger_io1_i,
 	input				trigger_io2_i,
 	input				trigger_io3_i,
@@ -101,10 +101,13 @@ module reg_chipwhisperer(
 						
 	  0xXX - Trigger Module Enabled
 	  
-	   [ X  X  X  X  X  M  M  M ]
+	   [ X  X  X  FB FA M  M  M ]
 		  M M M = 000 Normal Edge-Mode Trigger
 		          001 Advanced IO Pattern Trigger
 					 010 Advanced Correlator Trigger						
+					 
+		  FA = Output trigger to Front Panel A
+		  FB = Output trigger to Front Panel B
  */
     
 	 reg [7:0] registers_cwextclk;
@@ -115,12 +118,12 @@ module reg_chipwhisperer(
 	 wire trigger_or;
 	 wire trigger_ext;
 	 
-	 assign trigger_and = (registers_cwtrigsrc[0] & trigger_fpa_i) &
-								 (registers_cwtrigsrc[1] & trigger_fpb_i) &
-								 (registers_cwtrigsrc[2] & trigger_io1_i) &
-								 (registers_cwtrigsrc[3] & trigger_io2_i) &
-								 (registers_cwtrigsrc[4] & trigger_io3_i) &
-								 (registers_cwtrigsrc[5] & trigger_io4_i);
+	 assign trigger_and = ((registers_cwtrigsrc[0] & trigger_fpa_i) | ~registers_cwtrigsrc[0]) &
+								 ((registers_cwtrigsrc[1] & trigger_fpb_i) | ~registers_cwtrigsrc[1]) &
+								 ((registers_cwtrigsrc[2] & trigger_io1_i) | ~registers_cwtrigsrc[2]) &
+								 ((registers_cwtrigsrc[3] & trigger_io2_i) | ~registers_cwtrigsrc[3]) &
+								 ((registers_cwtrigsrc[4] & trigger_io3_i) | ~registers_cwtrigsrc[4]) &
+								 ((registers_cwtrigsrc[5] & trigger_io4_i) | ~registers_cwtrigsrc[5]);
 								 
 	 assign trigger_or  = (registers_cwtrigsrc[0] & trigger_fpa_i) |
 								 (registers_cwtrigsrc[1] & trigger_fpb_i) |
@@ -131,14 +134,17 @@ module reg_chipwhisperer(
 								 
 	 assign trigger_ext =  (registers_cwtrigsrc[7:6] == 2'b00) ? trigger_or :
 								  (registers_cwtrigsrc[7:6] == 2'b01) ? trigger_and : 1'b0;
-								  
-	 wire trigger;	 
+	
+	 wire trigger;	 		  
 	 assign trigger = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
 						   (registers_cwtrigmod[2:0] == 3'b001) ? trigger_advio_i : 1'b0;
 							
 	 assign trigger_ext_o = trigger_ext;
 	 
 	 assign trigger_o = trigger;
+	 
+	 assign trigger_fpa_i =  (registers_cwtrigmod[3] == 1'b1) ? trigger : 1'bZ;
+	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? trigger : 1'bZ;	 
 	 
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
