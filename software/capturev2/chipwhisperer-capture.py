@@ -501,19 +501,20 @@ class FWLoaderConfig(QDialog):
        
     def findFWLoader(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FWLoader','.','FWLoader.jar')        
-        if fname is not None:
+        if fname:
             self.fwLocation.setText(fname)
             QSettings().setValue("fwloader-location", fname)
             
     def findBitstream(self):   
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream','.','*.bit')        
-        if fname is not None:
+        if fname:
             self.bitLocation.setText(fname)
             QSettings().setValue("bitstream-location", fname)
             
     def findFirmware(self):   
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware','.','*.ihx')        
-        if fname is not None:
+        if fname:
+            print fname
             self.firmwareLocation.setText(fname)
             QSettings().setValue("firmware-location", fname)
            
