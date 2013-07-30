@@ -813,6 +813,8 @@ class MainWindow(MainChip):
             self.setCurrentFile(fname)
             
         self.proj.save()
+        self.dirty = False
+        self.updateTitleBar()
   
 if __name__ == '__main__':
     

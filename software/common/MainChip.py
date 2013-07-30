@@ -66,13 +66,17 @@ class MainChip(QMainWindow):
         
         self.imagepath = imagepath
         self.name = name        
+        self.filename = None
+        self.dirty = True
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.initUI()
         
+        #Fake widget for dock
+        #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
+        #with size policy or min/max sizes has worked.
         fake = QWidget()
         self.setCentralWidget(fake)
-        
 
 
     def restoreDockGeometry(self):
@@ -83,7 +87,8 @@ class MainChip(QMainWindow):
         self.restoreGeometry(settings.value("geometry"))
         self.restoreState(settings.value("state"))
         
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea):                
+    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea):
+        """Add a widget (dockwidget) as a dock to the main window, and add it to the Windows menu"""                
         #Configure dock
         dock = QDockWidget(name)
         dock.setAllowedAreas(allowedAreas)
@@ -98,13 +103,16 @@ class MainChip(QMainWindow):
         return dock
     
     def addSettings(self, tree, name):
+        """Add a settings dock - same as addDock but defaults to left-hand side"""
         return self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)        
     
     def addTraceDock(self, name):
+        """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
         gw = GraphWidget(self.imagepath)
         return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
         
     def addConsole(self, name="Debug Logging"):
+        """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
         self.addDock(console, name, area=Qt.BottomDockWidgetArea) 
         return console       
@@ -113,9 +121,11 @@ class MainChip(QMainWindow):
         settings = QSettings()
         settings.setValue("geometry", self.saveGeometry())
         settings.setValue("state", self.saveState())
-        QMainWindow.closeEvent(self, event)
-
-    
+        
+        if self.okToContinue():
+            QMainWindow.closeEvent(self, event)
+        else:
+            event.ignore()
 
     def createFileActions(self):
         self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
@@ -182,17 +192,26 @@ class MainChip(QMainWindow):
         self.show()
         
     def updateTitleBar(self):
-        return
+        if self.filename is not None:
+            fname = os.path.basename(self.filename)
+        else:
+            fname = "Untitled"
+        
+        self.setWindowTitle("%s - %s[*]" %(self.name, fname))
+        self.setWindowModified(self.dirty)
 
 
     def setCurrentFile(self, fname):
+        self.filename = fname
+        
+        self.updateTitleBar()
         
         if fname is None:
             return
         
         settings = QSettings()
         files = settings.value('recentFileList', [])
-
+        
         try:
             files.remove(fname)
         except ValueError:
@@ -257,6 +276,14 @@ class MainChip(QMainWindow):
         if action:
             self.openFile.emit(action.data())      
 
+    def okToContinue(self):
+        if self.dirty:
+            reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
+            if reply == QMessageBox.Cancel:
+                return False
+            elif reply == QMessageBox.Yes:
+                self.saveProject()
+        return True
                                                        
 def main():    
     app = QApplication(sys.argv)
