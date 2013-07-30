@@ -273,7 +273,7 @@ class OpenADCInterface(QObject):
 
 
 class acquisitionController(QObject):
-    traceDone = Signal(int)
+    traceDone = Signal(int, list)
     captureDone = Signal(bool)
     
     def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
@@ -387,12 +387,10 @@ class acquisitionController(QObject):
             self.doSingleReading(True, None, None)
             if self.writer is not None:
                 self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
-  
-            if self.updateData:
-                self.updateData(self.scope.datapoints)
 
             nt = nt + 1
-            self.traceDone.emit(nt)
+            self.traceDone.emit(nt, self.scope.datapoints)
+            QCoreApplication.processEvents()
             
 
         if self.writer is not None:
@@ -755,8 +753,9 @@ class MainWindow(MainChip):
         ac = acquisitionController(self.scope, target, None)
         ac.doSingleReading()
 
-    def printTraceNum(self, num):
+    def printTraceNum(self, num, data):
         self.statusBar().showMessage("Trace %d done"%num)
+        self.newScopeData(data)
         
 
     def captureM(self):
@@ -777,7 +776,7 @@ class MainWindow(MainChip):
                     
         ac = acquisitionController(self.scope, target, writer)
         ac.traceDone.connect(self.printTraceNum)
-        ac.setMaxtraces(100)        
+        ac.setMaxtraces(self.numTraces)        
         ac.doReadings(addToList=self.manageTraces, key=self.key)
         
     def scopeChanged(self, newscope):        
