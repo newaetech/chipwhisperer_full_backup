@@ -80,6 +80,10 @@ class ColorDialog(QDialog):
         return (self.color,  self.cbAuto.isChecked())
 
 class GraphWidget(QWidget):
+    """
+    This GraphWidget holds a pyqtgraph PlotWidget, and adds a toolbar for the user to control it.
+    """    
+    
     def __init__(self, imagepath='images/'):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
@@ -87,44 +91,6 @@ class GraphWidget(QWidget):
 
         QWidget.__init__(self)
         layout = QVBoxLayout()
-
-        setupGB = QGroupBox("View Options")
-        setupLayout = QVBoxLayout()
-        setupGB.setLayout(setupLayout)
-
-        hl = QHBoxLayout()
-        pbRedraw = QPushButton("Redraw")
-        pbRedraw.clicked.connect(self.redrawPushed)
-        hl.addWidget(pbRedraw)
-
-        pbClear = QPushButton("Clear All")
-        pbClear.clicked.connect(self.clearPushed)
-        hl.addWidget(pbClear)
-        hl.addStretch()
-    
-        self.startTracePrint = QSpinBox()        
-        self.startTracePrint.setMinimum(0)
-        self.endTracePrint = QSpinBox()        
-        self.endTracePrint.setMinimum(0)
-        self.startPointPrint = QSpinBox()        
-        self.startPointPrint.setMinimum(0)
-        self.endPointPrint = QSpinBox()        
-        self.endPointPrint.setMinimum(0)
-
-        hl.addWidget(QLabel("Traces: "))
-        hl.addWidget(self.startTracePrint)
-        hl.addWidget(QLabel(" to "))
-        hl.addWidget(self.endTracePrint)
-        hl.addStretch()
-
-        hl.addWidget(QLabel("Points: "))
-        hl.addWidget(self.startPointPrint, )
-        hl.addWidget(QLabel(" to "))
-        hl.addWidget(self.endPointPrint)
-        hl.addStretch()
-        setupLayout.addLayout(hl)
-        
-        layout.addWidget(setupGB)
 
         self.pw = pg.PlotWidget(name="Power Trace View")
         self.pw.setLabel('top', 'Power Trace View')
@@ -150,6 +116,9 @@ class GraphWidget(QWidget):
         xAutoScale = QAction(QIcon(self.imagepath+'xauto.png'), 'Autoscale X Axis', self)
         xAutoScale.triggered[bool].connect(self.xAutoScale)
         
+        yDefault = QAction(QIcon(self.imagepath+'ydefault.png'), 'Default Y Axis', self)
+        yDefault.triggered.connect(self.YDefault)
+        
         persistance = QAction(QIcon(self.imagepath+'persistance.png'), 'Enable Persistance',  self)
         persistance.setCheckable(True)
         persistance.triggered[bool].connect(self.setPersistance)
@@ -157,13 +126,18 @@ class GraphWidget(QWidget):
         setColour = QAction(QIcon(self.imagepath+'wavecol.png'),  'Set Colour',  self)
         setColour.triggered[bool].connect(self.setColour)
         
+        clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
+        clear.triggered.connect(self.clearPushed)
+        
         self.GraphToolbar = QToolBar('Graph Tools')
         self.GraphToolbar.addAction(xLockedAction)
         self.GraphToolbar.addAction(yLockedAction)
         self.GraphToolbar.addAction(xAutoScale)
         self.GraphToolbar.addAction(yAutoScale)
+        self.GraphToolbar.addAction(yDefault)
         self.GraphToolbar.addAction(persistance)
         self.GraphToolbar.addAction(setColour)
+        self.GraphToolbar.addAction(clear)
         layout.addWidget(self.GraphToolbar)
         
         layout.addWidget(self.pw)        
@@ -172,11 +146,14 @@ class GraphWidget(QWidget):
         self.persistant = False
         self.color = 0
         self.autocolor = True
+        self.defaultYRange = None
 
     def setPersistance(self, enabled):
+        """Enable Persistance mode, which means display NOT cleared before new traces added"""
         self.persistant = enabled
         
     def setColour(self, enabled):
+        """Prompt user to set colours"""
         cd = ColorDialog(self.color, self.autocolor)
         if cd.exec_():        
             data = cd.getValues()
@@ -185,6 +162,7 @@ class GraphWidget(QWidget):
             self.autocolor = data[1]
         
     def VBStateChanged(self, obj):
+        """Called when ViewBox state changes, used to sync X/Y AutoScale buttons"""
         arStatus = self.pw.getPlotItem().getViewBox().autoRangeEnabled()
         
         #X Axis
@@ -197,25 +175,48 @@ class GraphWidget(QWidget):
         if arStatus[1]:
             self.YLockedAction.setChecked(False)
         else:
-            self.YLockedAction.setChecked(True)           
+            self.YLockedAction.setChecked(True)   
+            
+    def YDefault(self, extraarg=None):
+        """Copy default Y range axis to active view"""
+        if self.defaultYRange is not None:
+            self.setYRange(self.defaultYRange[0], self.defaultYRange[1])
+          
+    def setDefaultYRange(self, lower, upper):
+        """Set default Y-Axis range, for when user clicks default button"""
+        self.defaultYRange = [lower, upper]
+          
+    def setXRange(self, lower, upper):
+        """Set the X Axis to extend from lower to upper"""
+        self.pw.getPlotItem().getViewBox().setXRange(lower, upper)
+        
+    def setYRange(self, lower, upper):
+        """Set the Y Axis to extend from lower to upper"""
+        self.pw.getPlotItem().getViewBox().setYRange(lower, upper)
           
     def xAutoScale(self, enabled):
+        """Auto-fit X axis to data"""
         vb = self.pw.getPlotItem().getViewBox()
         bounds = vb.childrenBoundingRect(None)
+        print bounds
         vb.setXRange(bounds.left(), bounds.right())
         
     def yAutoScale(self, enabled):
+        """Auto-fit Y axis to data"""
         vb = self.pw.getPlotItem().getViewBox()
         bounds = vb.childrenBoundingRect(None)
         vb.setYRange(bounds.top(), bounds.bottom())
         
     def xLocked(self, enabled):
+        """Lock X axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.XAxis, ~enabled)
         
     def yLocked(self, enabled):
+        """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
         
     def passTrace(self, trace):
+        """Plot a new trace"""
         if self.persistant:
             if self.autocolor:
                 nc = (self.acolor + 1) % 8
@@ -227,8 +228,7 @@ class GraphWidget(QWidget):
             self.pw.clear()
         self.pw.plot(trace, pen=(self.acolor,8)) 
 
-    def redrawPushed(self):
-        return
 
     def clearPushed(self):
+        """Clear display"""
         self.pw.clear()
