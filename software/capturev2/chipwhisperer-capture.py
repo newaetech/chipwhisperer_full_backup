@@ -734,6 +734,7 @@ class MainWindow(MainChip):
                     if self.scope is not None:
                         self.target.setOpenADC(self.scope.qtadc.ser)        
                     self.target.con()
+                    self.statusBar().showMessage("Connected to Target")
                 except IOError:
                     exctype, value = sys.exc_info()[:2]
                     self.console.append("Connect Error: %s"%(str(value)))
@@ -752,6 +753,7 @@ class MainWindow(MainChip):
             target = None            
         ac = acquisitionController(self.scope, target, None)
         ac.doSingleReading()
+        self.statusBar().showMessage("One Capture Complete")
 
     def printTraceNum(self, num, data):
         self.statusBar().showMessage("Trace %d done"%num)
@@ -776,8 +778,10 @@ class MainWindow(MainChip):
                     
         ac = acquisitionController(self.scope, target, writer)
         ac.traceDone.connect(self.printTraceNum)
-        ac.setMaxtraces(self.numTraces)        
+        tn = self.numTraces
+        ac.setMaxtraces(tn)        
         ac.doReadings(addToList=self.manageTraces, key=self.key)
+        self.statusBar().showMessage("%d Captures Completed"%tn)
         
     def scopeChanged(self, newscope):        
         self.scope = newscope
@@ -815,6 +819,7 @@ class MainWindow(MainChip):
         self.proj.save()
         self.dirty = False
         self.updateTitleBar()
+        self.statusBar().showMessage("Project Saved")
   
 if __name__ == '__main__':
     
