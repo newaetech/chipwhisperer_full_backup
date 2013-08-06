@@ -404,6 +404,7 @@ class acquisitionController(QObject):
         self.running = False      
 
 class TargetInterface(QObject):
+    """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
     paramListUpdated = Signal(list)
     
     def __init__(self, parent=None, log=None):
@@ -517,6 +518,7 @@ class FWLoaderConfig(QDialog):
             QSettings().setValue("firmware-location", fname)
            
     def getStatus(self):
+        """Get the output of the FWLoader command with the -i (info) option"""
         #Check Status
         cmd = "java -cp %s FWLoader -c -i"%(self.fwLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
@@ -529,6 +531,7 @@ class FWLoaderConfig(QDialog):
         return stdout
             
     def loadRequired(self, forceFirmware=False):
+        """Load firmware file or FPGA file only as required, skip otherwise"""
         stdout = self.getStatus()
                
         if "OpenADC" not in stdout or forceFirmware:        
@@ -546,6 +549,7 @@ class FWLoaderConfig(QDialog):
                 self.console.append("Skipped FPGA download")     
             
     def loadFirmware(self):               
+        """Load the USB microcontroller firmware file setup in the dialog"""
         cmd = "java -cp %s FWLoader -c -f -uu %s"%(self.fwLocation.text(), self.firmwareLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
@@ -554,7 +558,8 @@ class FWLoaderConfig(QDialog):
             self.console.append(stdout)
             self.console.append(stderr)
     
-    def loadFPGA(self):        
+    def loadFPGA(self):
+        """Load the FPGA bitfile set up in the dialog"""        
         cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
