@@ -45,6 +45,7 @@ imagePath = '../common/images/'
 
 
 from ExtendedParameter import ExtendedParameter
+from AttackCPA import AttackCPA
 
 try:
     import writer_dpav3
@@ -71,13 +72,11 @@ except ImportError:
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from TraceFormatNative import TraceFormatNative
-
 class MainWindow(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
         super(MainWindow, self).__init__(name="ChipWhisperer Analyzer V2", imagepath=imagePath)
-        self.console = self.addConsole()
-    
+        self.console = self.addConsole()   
         
         self.cwParams = [
                 {'name':'Traces', 'type':'group', 'children':[
@@ -91,7 +90,7 @@ class MainWindow(MainChip):
                     ]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':{'CPA':'cpa?'}, 'value':'CPA'},                                          
+                    {'name':'Module', 'type':'list', 'values':{'CPA':AttackCPA()}, 'value':'CPA', 'set':self.setAttack},                                          
                     ]},
                          
                 {'name':'Post-Processing', 'type':'group'},
@@ -108,11 +107,12 @@ class MainWindow(MainChip):
                     ]},
                                    
                 ]
+    
         
         self.da = None
         self.numTraces = 100
 
-        #self.addToolbars()
+        self.addToolbars()
         self.addSettingsDocks()
         self.addWaveforms()
         
@@ -124,13 +124,40 @@ class MainWindow(MainChip):
         self.openFile.connect(self.openProject)
 
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
+        self.setAttack(AttackCPA())
+        
+    def addToolbars(self):
+        attack = QAction(QIcon(imagePath+'attack.png'), 'Start Attack', self)
+        attack.triggered.connect(self.doAttack)
+
+        self.AttackToolbar = self.addToolBar('Attack Tools')
+        self.AttackToolbar.setObjectName('Attack Tools')
+        self.AttackToolbar.addAction(attack)        
+        
+    def setAttack(self, attack):
+        self.attack = attack
+        self.reloadAttackParamList()
+        
+    def doAttack(self):
+        self.console.append("Attack Started")
+        if self.attack is not None:
+            self.attack.setTraceManager(self.manageTraces.iface)
+            self.attack.doAttack()
+        
+    def reloadAttackParamList(self, list=None):
+        self.attackParamTree.clear() 
+        for p in self.attack.paramList():
+            if p is not None:
+                self.attackParamTree.addParameters(p)
         
     def tracesChanged(self):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
+
         
     def plotInputTrace(self):
-        params = self.inputTraceSettingParams()
+        
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
+        params = self.inputTraceSettingParams()
         self.waveformDock.widget().clearPushed()
         self.waveformDock.widget().setPersistance(True)
         
@@ -202,13 +229,23 @@ class MainWindow(MainChip):
         
     def addSettingsDocks(self):      
         self.setupParametersTree()        
-        self.settingsNormalDock = self.addSettings(self.paramTree, "General Settings")
+        self.settingsNormalDock = self.addSettings(self.paramTree, "General")
+        self.settingsPreprocessingDock = self.addSettings(self.preprocessingParamTree, "Preprocessing")
+        self.settingsAttackDock = self.addSettings(self.attackParamTree, "Attack")
+        self.settingsPostProcessingDock = self.addSettings(self.postprocessingParamTree, "Postprocessing")
+        self.settingsResultsDock = self.addSettings(self.resultsParamTree, "Results")
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
         ExtendedParameter.setupExtended(self.params)
         self.paramTree = ParameterTree()
         self.paramTree.setParameters(self.params, showTop=False)
+        
+        self.preprocessingParamTree = ParameterTree()
+        self.attackParamTree = ParameterTree()
+        self.postprocessingParamTree = ParameterTree()
+        self.resultsParamTree = ParameterTree()
+        
         
     def reloadParamList(self, lst=None):
         self.paramTree.clear()                             
