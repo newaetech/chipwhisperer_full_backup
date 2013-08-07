@@ -72,6 +72,8 @@ class TraceContainer(object):
         self.pointhint = points
 
     def numTraces(self):
+        if self.config.numTraces != self._numTraces:
+            self._numTraces = max(self.config.numTraces, self._numTraces)
         return self._numTraces
 
     def addTrace(self, trace, textin, textout, key, dtype=np.double):
@@ -79,9 +81,9 @@ class TraceContainer(object):
         self.addTextin(textin)
         self.addTextout(textout)
         
-    def syncDataToConfig(self):
+    def writeDataToConfig(self):
         self.config.numTraces = self.numTraces()
-        self.config.points = self.numPoints()        
+        self.config.points = self.numPoints()      
 
     def addWave(self, trace, dtype=None):                
         if self.traces is None:
@@ -104,7 +106,7 @@ class TraceContainer(object):
             
         self._numTraces += 1
         self.setDirty(True)
-        self.syncDataToConfig()
+        self.writeDataToConfig()
 
     def setKnownKey(self, key):
         self.knownkey = key
@@ -142,19 +144,19 @@ class TraceContainer(object):
     
     def loadAllTraces(self, directory=None, prefix=""):
         """Placeholder for load command. May not actually read everything into memory depending on format."""
-        pass
+        raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
     
     def saveAllTraces(self, directory, prefix=""):
         """Placeholder for save command."""
-        pass
+        raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
     
     def copyTo(self, srcTraces=None, srcFormat=None):
         """Placeholder for copy/import command. Different from load as copies data INTO this classes format, possibly from another format"""
-        pass
+        raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
     
     def closeAll(self):
         """Writer is done, can close/save any files."""               
-        pass
+        raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
         
         
 if __name__ == "__main__":

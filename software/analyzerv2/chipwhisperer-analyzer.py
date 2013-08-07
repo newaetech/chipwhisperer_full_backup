@@ -79,7 +79,34 @@ class MainWindow(MainChip):
         self.console = self.addConsole()
     
         
-        self.cwParams = [            
+        self.cwParams = [
+                {'name':'Traces', 'type':'group', 'children':[
+                    {'name':'Points', 'type':'int', 'value':0, 'readonly':True},
+                    {'name':'Traces', 'type':'int', 'value':0, 'readonly':True}
+                    ]},
+                    
+                {'name':'Pre-Processing', 'type':'group', 'children':[
+                    {'name':'Enabled', 'type':'bool', 'value':False},
+                    {'name':'Steps', 'type':'int', 'limits':(0,10), 'value':0}
+                    ]},
+                         
+                {'name':'Attack', 'type':'group', 'children':[
+                    {'name':'Module', 'type':'list', 'values':{'CPA':'cpa?'}, 'value':'CPA'},                                          
+                    ]},
+                         
+                {'name':'Post-Processing', 'type':'group'},
+                
+                {'name':'Result Collection', 'type':'group', 'children':[
+                    {'name':'Input Trace Plot', 'type':'group', 'children':[
+                        {'name':'Enabled', 'type':'bool', 'value':True},
+                        {'name':'Starting Trace', 'type':'int', 'limits':(0,0), 'value':0},
+                        {'name':'Ending Trace', 'type':'int', 'limits':(0,0), 'value':0},
+                        {'name':'Starting Point', 'type':'int', 'limits':(0,0), 'value':0},
+                        {'name':'Ending Point', 'type':'int', 'limits':(0,0), 'value':0},
+                        {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
+                        ]}                                                     
+                    ]},
+                                   
                 ]
         
         self.da = None
@@ -94,8 +121,79 @@ class MainWindow(MainChip):
         
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
+        self.openFile.connect(self.openProject)
 
+        self.manageTraces.tracesChanged.connect(self.tracesChanged)
         
+    def tracesChanged(self):
+        self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
+        
+    def plotInputTrace(self):
+        params = self.inputTraceSettingParams()
+        #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
+        self.waveformDock.widget().clearPushed()
+        self.waveformDock.widget().setPersistance(True)
+        
+        tstart = params[0].value()
+        tend = params[1].value()
+        pstart = params[2].value()
+        pend = params[3].value()
+        
+        for tnum in range(tstart, tend):
+            trace = self.manageTraces.iface.getTrace(tnum)           
+            self.waveformDock.widget().passTrace(trace[pstart:pend])
+        
+    def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
+        """When traces is loaded, set plot limits to show entire thing"""
+        if defpoint == -1:
+            defpoint = points
+            
+        params = self.inputTraceSettingParams()
+        if traces is not None:
+            params[0].setLimits((0, traces))
+            params[1].setLimits((0, traces))
+            params[0].setValue(0)
+            #TODO: Bug in pyqtgraph maybe - if call with just deftrace & 
+            #setLimits was called with (0,0), the setValue(1) is ignored which is OK,
+            #but then calling setLimits with higher value followed by setValue still
+            #has no effect??
+            #WORKAROUND: use min(traces,deftrace) to ensure don't set value beyond limit for now
+            params[1].setValue(min(traces, deftrace))
+            
+        
+        if points is not None:
+            params[2].setLimits((0, points))
+            params[3].setLimits((0, points))
+            params[2].setValue(0)
+            params[3].setValue(defpoint)
+        
+        
+    def inputTraceSettingParams(self):
+        """Find parameters dealing with input trace plotting"""
+        tracestart = None
+        traceend = None
+        pointstart = None
+        pointend = None
+        
+        for p in self.params.children():
+            if p.name() == 'Result Collection':
+                for t in p.children():
+                    if t.name() == 'Input Trace Plot':
+                        for q in t.children():
+                            if q.name() == 'Starting Trace':
+                                tracestart = q
+                                
+                            if q.name() == 'Ending Trace':
+                                traceend = q
+                                
+                            if q.name() == 'Starting Point':
+                                pointstart = q
+                                
+                            if q.name() == 'Ending Point':
+                                pointend = q
+                                
+        return (tracestart, traceend, pointstart, pointend)
+
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Waveform Display")        #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
@@ -121,6 +219,19 @@ class MainWindow(MainChip):
         p = []
         p.append(self.params)     
         return p        
+    
+    def openProject(self, fname):
+        self.proj = ProjectFormat()
+        self.proj.setProgramName("ChipWhisperer-Analyzer")
+        self.proj.setProgramVersion("2.00")
+        self.proj.setTraceManager(self.manageTraces)  
+        self.setCurrentFile(fname)
+        self.proj.setFilename(fname)
+        self.proj.load()
+         
+        
+        #Open project file & read in everything
+        self.proj.traceManager.loadProject(fname)
 
   
     def newProject(self):        

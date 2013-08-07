@@ -131,17 +131,17 @@ class MainChip(QMainWindow):
         self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
                                shortcut=QKeySequence.Open,
                                statusTip='Open Project File',
-                               triggered=self.openProject)
+                               triggered=self._openProject)
 
         self.saveAct = QAction(QIcon('save.png'), '&Save Project', self,
                                shortcut=QKeySequence.Save,
                                statusTip='Save current project to Disk',
-                               triggered=self.saveProject)
+                               triggered=self._saveProject)
 
         self.newAct = QAction(QIcon('new.png'), '&New Project', self,
                                shortcut=QKeySequence.New,
                                statusTip='Create new Project',
-                               triggered=self.newProject)
+                               triggered=self._newProject)
 
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
@@ -254,7 +254,7 @@ class MainChip(QMainWindow):
         
         #return QFileInfo(fullFileName).fileName()
                 
-    def openProject(self, fname=None):
+    def _openProject(self, fname=None):
         #TODO: close etc
         
         if fname is None:
@@ -265,10 +265,10 @@ class MainChip(QMainWindow):
             self.setCurrentFile(fname)
        
                 
-    def newProject(self):
+    def _newProject(self):
         self.newFile.emit()
 
-    def saveProject(self):
+    def _saveProject(self):
         self.saveFile.emit()
                 
     def openRecentFile(self):
