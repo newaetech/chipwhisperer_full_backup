@@ -570,10 +570,10 @@ class FWLoaderConfig(QDialog):
 
 
 
-class MainWindow(MainChip):
+class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(MainWindow, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
+        super(ChipWhispererCapture, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
         self.console = self.addConsole()
     
         self.scope = None        
@@ -834,7 +834,7 @@ if __name__ == '__main__':
     app.setApplicationName("Capture V2")
     
     # Create and show the form
-    window = MainWindow()
+    window = ChipWhispererCapture()
     window.show()
    
     # Run the main Qt loop
