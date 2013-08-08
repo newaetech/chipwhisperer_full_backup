@@ -53,8 +53,7 @@ try:
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    #print pg.systemInfo()
-    
+    #print pg.systemInfo()    
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
@@ -199,12 +198,28 @@ class AttackCPA_SimpleLoop(QObject):
         if hyprange == None:
             hyprange = range(0,256)
         return [self.all_diffs[bnum][i] for i in hyprange];
+    
+    def getStatistics(self):
+        t = [0]*16
+        for i in self.brange:
+            t[i] = self.getDiff(i)
+        return t
 
+
+#TODO: AttackCPA should be broken into a seperate function
 
 class AttackCPA(QObject):
     """Correlation Power Analysis Attack"""
+        
     paramListUpdated = Signal(list)
+    
+    #statsUpdated called new data is available
     statsUpdated = Signal()
+    
+    #attack done called once entire attack is complete, stats are available. Note that the
+    #statsUpdated() signal is not called even though new data is available, which avoids
+    #double-processing data
+    attackDone = Signal()
     
     def __init__(self, parent=None, log=None):
         super(AttackCPA, self).__init__(parent)
@@ -290,12 +305,14 @@ class AttackCPA(QObject):
         
         #TODO:  pointRange=self.TraceRangeList[1:17]
         self.attack.addTraces(data, textins, textouts, progress)
+        
+        self.attackDone.emit()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass
     
     def getStatistics(self):
-        pass
+        return self.attack.getStatistics()
             
     def paramList(self):
         return [self.params]

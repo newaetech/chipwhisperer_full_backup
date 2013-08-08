@@ -45,7 +45,6 @@ imagePath = '../common/images/'
 
 
 from ExtendedParameter import ExtendedParameter
-from AttackCPA import AttackCPA
 
 try:
     import writer_dpav3
@@ -72,11 +71,17 @@ except ImportError:
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from TraceFormatNative import TraceFormatNative
+from AttackCPA import AttackCPA
+from ResultsPlotting import ResultsPlotting
+
+
 class MainWindow(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
         super(MainWindow, self).__init__(name="ChipWhisperer Analyzer V2", imagepath=imagePath)
         self.console = self.addConsole()   
+        
+        self.results = ResultsPlotting()
         
         self.cwParams = [
                 {'name':'Traces', 'type':'group', 'children':[
@@ -115,6 +120,10 @@ class MainWindow(MainChip):
         self.addToolbars()
         self.addSettingsDocks()
         self.addWaveforms()
+        for d in self.results.dockList():
+            self.addDockWidget(Qt.RightDockWidgetArea, d)
+            self.addWindowMenuAction(d.toggleViewAction(), "Results")
+            self.enforceMenuOrder()
         
         self.restoreDockGeometry()
         self.newProject()   
@@ -137,6 +146,7 @@ class MainWindow(MainChip):
     def setAttack(self, attack):
         self.attack = attack
         self.reloadAttackParamList()
+        self.results.setAttack(self.attack)
         
     def doAttack(self):
         self.console.append("Attack Started")

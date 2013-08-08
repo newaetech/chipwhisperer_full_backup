@@ -71,6 +71,7 @@ class MainChip(QMainWindow):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.initUI()
+        self.lastMenuActionSection = None
         
         #Fake widget for dock
         #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
@@ -87,6 +88,15 @@ class MainChip(QMainWindow):
         self.restoreGeometry(settings.value("geometry"))
         self.restoreState(settings.value("state"))
         
+    def addWindowMenuAction(self, action, section):
+        
+        #TODO: Should this be done with submenus?
+        if section != self.lastMenuActionSection:
+            self.windowMenu.addSeparator()
+        
+        self.lastMenuActionSection = section                
+        self.windowMenu.addAction(action)
+        
     def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea):
         """Add a widget (dockwidget) as a dock to the main window, and add it to the Windows menu"""                
         #Configure dock
@@ -97,7 +107,7 @@ class MainChip(QMainWindow):
         self.addDockWidget(area, dock)
         
         #Add to "Windows" menu
-        self.windowMenu.addAction(dock.toggleViewAction())
+        self.addWindowMenuAction(dock.toggleViewAction(), None)
         self.enforceMenuOrder()
         
         return dock
