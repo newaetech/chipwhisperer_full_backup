@@ -799,21 +799,14 @@ class ChipWhispererCapture(MainChip):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
                 
-    def reloadScopeParamList(self, lst=None):
-        self.scopeParamTree.clear() 
-        if self.scope is not None:     
-            for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)        
+    def reloadScopeParamList(self, lst=None): 
+        ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)              
         
-    def reloadTargetParamList(self, list=None):
-        self.targetParamTree.clear() 
-        for p in self.target.paramList():
-            if p is not None:
-                self.targetParamTree.addParameters(p)
+    def reloadTargetParamList(self, lst=None):
+        ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
         
     def reloadParamList(self, lst=None):
-        self.paramTree.clear()                             
-        for p in self.paramList(): self.paramTree.addParameters(p)           
-        
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
         
     def paramList(self):
         p = []
@@ -961,8 +954,12 @@ def makeApplication():
     app.setApplicationName("Capture V2")
     return app
   
+import gc
+  
 if __name__ == '__main__':
     app = makeApplication()
+    
+    gc.disable()
     
     # Create and show the form
     window = ChipWhispererCapture()
