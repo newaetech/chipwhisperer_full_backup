@@ -52,6 +52,7 @@ class TraceManager():
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
     block of traces. This class is used to handle the remapping.
     """
+    
     def __init__(self, parent):
         self.dlg = parent
         self.NumTrace = 0
@@ -67,15 +68,15 @@ class TraceManager():
 
     def getTrace(self, n):
         t = self.findMappedTrace(n)
-        return t.trace.getTrace(n - t.mappedRange[0])
+        return t.getTrace(n - t.mappedRange[0])
     
     def getTextin(self, n):
         t = self.findMappedTrace(n)
-        return t.trace.getTextin(n - t.mappedRange[0])
+        return t.getTextin(n - t.mappedRange[0])
 
     def getTextout(self, n):
         t = self.findMappedTrace(n)
-        return t.trace.getTextout(n - t.mappedRange[0])
+        return t.getTextout(n - t.mappedRange[0])
 
     def getKnownKey(self):
         #For now all traces need to have same key
@@ -87,23 +88,27 @@ class TraceManager():
         pts = []
 
         for t in self.dlg.traceList:
-            if t.mappedRange:
+            if t.mappedRange is not None:
                 num.append(t.mappedRange[1])
-                pts.append(t.points)
+                pts.append(t.config.points)
 
                 if self.knownkey == None:
-                    self.knownkey = t.trace.knownkey
+                    self.knownkey = t.getKnownKey()
 
-        try:
-            self.NumTrace = max(num)
-            self.NumPoint = max(pts)
-        except:
+        if not num:
             self.NumTrace = 0
+        else:
+            self.NumTrace = max(num)
+            
+        if not pts:
             self.NumPoint = 0
-
+        else:
+            self.NumPoint = max(pts)
         
 class TraceManagerDialog(QDialog):
     """Manages traces associated with some project"""
+    tracesChanged = Signal()
+    
     secName = "Trace Management"
     def __init__(self, parent=None):
         super(TraceManagerDialog, self).__init__(parent)
@@ -175,7 +180,7 @@ class TraceManagerDialog(QDialog):
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
                 print "Opening %s"%fname
-                ti = TraceContainer()
+                ti = TraceFormatNative()
                 ti.config.loadTrace(fname)
                 self.traceList.append(ti)
                 self.addRow(ti)
@@ -227,15 +232,14 @@ class TraceManagerDialog(QDialog):
         for i in range(0, self.table.rowCount()):
             if self.table.cellWidget(i, self.findCol("Enabled")).isChecked():
                 self.traceList[i].enabled = True
-                tlen = self.traceList[i].numTraces
+                tlen = self.traceList[i].numTraces()
                 self.traceList[i].mappedRange = [startTrace, startTrace+tlen]
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d"%(startTrace, startTrace+tlen)))
                 startTrace = startTrace + tlen + 1
 
-                if self.traceList[i].trace == None:
-                    self.traceList[i].trace = TraceFormatNative()
-                    path = os.path.split(self.traceList[i].configfile)[0]
-                    self.traceList[i].trace.loadAllTraces(path, self.traceList[i].prefix)
+                if self.traceList[i].traces is None:
+                    path = os.path.split(self.traceList[i].config.configfile)[0]
+                    self.traceList[i].loadAllTraces(path, self.traceList[i].config.prefix)                   
                 
             else:
                 self.traceList[i].enabled = False
@@ -244,6 +248,7 @@ class TraceManagerDialog(QDialog):
 
         self.iface.UpdateTraces()    
         self.updatePreview()
+        self.tracesChanged.emit()
         
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)
@@ -264,7 +269,7 @@ class TraceManagerDialog(QDialog):
 
         if fname:
             #Add to file list
-            ti = TraceContainer()
+            ti = TraceFormatNative()
             ti.config.loadTrace(fname)
             self.append(ti)
 
@@ -311,6 +316,6 @@ class TraceManagerDialog(QDialog):
                     shutil.copy(filename, targetdir + targetfile)
             
             #Add new trace to file list
-            ti = TraceContainer()
+            ti = TraceFormatNative()
             ti.config.loadTrace(newcfgname)
             self.append(ti)

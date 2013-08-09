@@ -145,6 +145,7 @@ class GraphWidget(QWidget):
         
         self.persistant = False
         self.color = 0
+        self.acolor = 0
         self.autocolor = True
         self.defaultYRange = None
 

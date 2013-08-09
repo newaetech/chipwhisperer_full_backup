@@ -99,10 +99,10 @@ except ImportError:
     target_simpleserial_str = sys.exc_info()
     
 try:
-    import target_smartcard
+    import target_SmartCardDPAv4
 except ImportError:
-    target_smartcard = None
-    target_smartcard_str = sys.exc_info()
+    target_SmartCardDPAv4 = None
+    target_SmartCardDPAv4 = sys.exc_info()
 
 import target_chipwhisperer_extra
 
@@ -110,10 +110,112 @@ from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from TraceFormatNative import TraceFormatNative
 
+class OpenADCInterface_FTDI(QWidget):    
+    paramListUpdated = Signal(list) 
+    
+    def __init__(self,oadcInstance,console=None,showScriptParameter=None):
+        QWidget.__init__(self)
+        self.showScriptParameter = showScriptParameter
+        
+        ftdiParams = [                  
+                      {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
+                      {'name':'Serial Number', 'type':'list', 'values':[], 'value':None, 'set':self.setSerialNumber},
+                  ]           
+       
+        self.console = console
+        self.serialNumber = None
+       
+        if (openadc_qt is None) or (ft is None):               
+            self.ser = None
+            return
+        else:            
+            self.ser = None
+            self.scope = oadcInstance
+            self.params = Parameter.create(name='OpenADC-FTDI', type='group', children=ftdiParams)
+            ExtendedParameter.setupExtended(self.params, self)  
+            
+        #if target_chipwhisperer_extra is not None:
+        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
+        #else:
+        #    self.cwAdvancedSettings = None
+        
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
+
+    def setSerialNumber(self, snum):
+        self.serialNumber = snum
+
+    def __del__(self):
+        if self.ser != None:
+            self.ser.close()
+
+    def con(self):
+        if self.ser == None:
+            try:
+                self.ser = ft.openEx(str(self.serialNumber), ft.ftd2xx.OPEN_BY_SERIAL_NUMBER)
+                self.ser.setBitMode(0x00, 0x40)
+                self.ser.setTimeouts(500, 500)
+                self.ser.setLatencyTimer(2)
+            except ft.ftd2xx.DeviceError, e:
+                self.ser = None
+                raise IOError("Could not open %s"%self.serialNumber)
+            
+        try:
+            self.scope.con(self.ser)
+            self.console.append("OpenADC Found, Connecting")
+        except IOError,e:
+            exctype, value = sys.exc_info()[:2]
+            self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
+            QMessageBox.warning(None, "FTDI Port", str(exctype) + str(value))
+            raise IOError(e) 
+        
+        #if self.cwAdvancedSettings:
+        #    self.cwAdvancedSettings.setOpenADC(self.scope)
+
+    def dis(self):
+        if self.ser != None:
+            self.ser.close()
+            self.ser = None
+        
+
+    def serialRefresh(self):
+        serialnames = ft.listDevices()
+        if serialnames == None:
+            serialnames = [" "]
+
+        for p in self.params.children():
+            if p.name() == 'Serial Number':
+                p.setLimits(serialnames)
+                p.setValue(serialnames[0])
+
+        self.paramListUpdated.emit(self.paramList())
+
+    def read(self, N=0, debug=False):
+        pass
+
+    def write(self, data, debug=False):
+        pass
+            
+    def getTextName(self):
+        try:
+            return self.ser.name
+        except:
+            return "None?"
+        
+    def paramList(self):
+        p = [self.params]        
+        #if self.cwAdvancedSettings is not None:
+        #    for a in self.cwAdvancedSettings.paramList(): p.append(a)            
+        return p
+
             
 class OpenADCInterface_ZTEX(QWidget):    
-    def __init__(self,oadcInstance,console=None):
+    paramListUpdated = Signal(list) 
+    
+    def __init__(self,oadcInstance,console=None,showScriptParameter=None):
         QWidget.__init__(self)
+        self.showScriptParameter = showScriptParameter
         
         ztexParams = [                  
                       #No Parameters for ZTEX
@@ -128,7 +230,7 @@ class OpenADCInterface_ZTEX(QWidget):
             self.ser = None
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
-            ExtendedParameter.setupExtended(self.params)  
+            ExtendedParameter.setupExtended(self.params, self)  
             
             
         if target_chipwhisperer_extra is not None:
@@ -136,6 +238,9 @@ class OpenADCInterface_ZTEX(QWidget):
         else:
             self.cwAdvancedSettings = None
         
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
 
     def __del__(self):
         if self.ser != None:
@@ -217,25 +322,39 @@ class OpenADCInterface(QObject):
     dataUpdated = Signal(list)
     paramListUpdated = Signal(list)    
 
-    def __init__(self, parent=None, console=None):          
+    def __init__(self, parent=None, console=None, showScriptParameter=None):          
         super(OpenADCInterface, self).__init__(parent)
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, console=console)
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, console=console, showScriptParameter=showScriptParameter)
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
         self.datapoints = []
         
-        cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console)
+        cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        ftdi = OpenADCInterface_FTDI(self.qtadc, console=console, showScriptParameter=showScriptParameter)
         self.setCurrentScope(cwrev2, False)
+        
+        ftdi.paramListUpdated.connect(self.emitParamListUpdated)
+        cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
+        
+        defscope = ftdi
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
                                                                      "Serial Port (LX9)":None,
-                                                                     "FTDI (SASEBO-W)":None}, 'value':cwrev2, 'set':self.setCurrentScope}
+                                                                     "FTDI (SASEBO-W)":ftdi}, 'value':defscope, 'set':self.setCurrentScope}
                       ]
         
         self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.showScriptParameter = showScriptParameter
+        self.setCurrentScope(defscope)
         
+    def emitParamListUpdated(self):
+        self.paramListUpdated.emit(self.paramList())
+        
+    def paramTreeChanged(self, param, changes):        
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
 
     def setCurrentScope(self, scope, update=True):        
         self.scopetype = scope
@@ -265,10 +384,10 @@ class OpenADCInterface(QObject):
     def paramList(self):
         p = []       
         p.append(self.params)
-        #TODO: sometimes this needs to be appended first? Seems wrong...
-        p.append(self.qtadc.params)        
+        #TODO: sometimes this needs to be appended first? Seems wrong...                    
+        p.append(self.qtadc.params)   
         if self.scopetype is not None:
-            for a in self.scopetype.paramList(): p.append(a)                 
+            for a in self.scopetype.paramList(): p.append(a)         
         return p
 
 
@@ -292,7 +411,7 @@ class acquisitionController(QObject):
 
         self.plain = bytearray(16)
         for i in range(0,16):
-                   self.plain[i] = random.randint(0, 255)       
+            self.plain[i] = random.randint(0, 255)       
 
     def TargetDoTrace(self, plaintext, key=None):
         if self.target is None:
@@ -404,21 +523,27 @@ class acquisitionController(QObject):
         self.running = False      
 
 class TargetInterface(QObject):
+    """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
     paramListUpdated = Signal(list)
     
-    def __init__(self, parent=None, log=None):
+    def __init__(self, parent=None, log=None,showScriptParameter=None):
         super(TargetInterface, self).__init__(parent)
         valid_targets = {"None":None}
         self.driver = None
         self.log=log
+        self.showScriptParameter = showScriptParameter
                 
         if target_simpleserial is not None:
-            valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial(self.log)
+            valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
             
-        if target_smartcard is not None:
-            valid_targets["SmartCard"] = target_smartcard.SmartCard()
+        if target_SmartCardDPAv4 is not None:
+            valid_targets["SmartCard DPAContestv4"] = target_SmartCardDPAv4.SmartCardDPAv4()
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
+
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
@@ -517,6 +642,7 @@ class FWLoaderConfig(QDialog):
             QSettings().setValue("firmware-location", fname)
            
     def getStatus(self):
+        """Get the output of the FWLoader command with the -i (info) option"""
         #Check Status
         cmd = "java -cp %s FWLoader -c -i"%(self.fwLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
@@ -529,6 +655,7 @@ class FWLoaderConfig(QDialog):
         return stdout
             
     def loadRequired(self, forceFirmware=False):
+        """Load firmware file or FPGA file only as required, skip otherwise"""
         stdout = self.getStatus()
                
         if "OpenADC" not in stdout or forceFirmware:        
@@ -546,6 +673,7 @@ class FWLoaderConfig(QDialog):
                 self.console.append("Skipped FPGA download")     
             
     def loadFirmware(self):               
+        """Load the USB microcontroller firmware file setup in the dialog"""
         cmd = "java -cp %s FWLoader -c -f -uu %s"%(self.fwLocation.text(), self.firmwareLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
@@ -554,7 +682,8 @@ class FWLoaderConfig(QDialog):
             self.console.append(stdout)
             self.console.append(stderr)
     
-    def loadFPGA(self):        
+    def loadFPGA(self):
+        """Load the FPGA bitfile set up in the dialog"""        
         cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitLocation.text())
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
@@ -565,19 +694,19 @@ class FWLoaderConfig(QDialog):
 
 
 
-class MainWindow(MainChip):
+class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(MainWindow, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
+        super(ChipWhispererCapture, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
         self.console = self.addConsole()
     
         self.scope = None        
         self.trace = None
         self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
-        self.target = TargetInterface(log=self.console)        
+        self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
-        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(console=self.console)}        
+        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(console=self.console, showScriptParameter=self.showScriptParameter)}        
         valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative}#"DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.cwParams = [
@@ -659,33 +788,30 @@ class MainWindow(MainChip):
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
         self.paramTree = ParameterTree()
         self.paramTree.setParameters(self.params, showTop=False)
         
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
                 
-    def reloadScopeParamList(self, lst=None):
-        self.scopeParamTree.clear() 
-        if self.scope is not None:     
-            for p in self.scope.paramList(): self.scopeParamTree.addParameters(p)        
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
+                
+    def reloadScopeParamList(self, lst=None): 
+        ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)              
         
-    def reloadTargetParamList(self, list=None):
-        self.targetParamTree.clear() 
-        for p in self.target.paramList():
-            if p is not None:
-                self.targetParamTree.addParameters(p)
+    def reloadTargetParamList(self, lst=None):
+        ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
         
     def reloadParamList(self, lst=None):
-        self.paramTree.clear()                             
-        for p in self.paramList(): self.paramTree.addParameters(p)           
-        
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
         
     def paramList(self):
         p = []
         p.append(self.params)     
-        return p        
+        return p   
 
     def newScopeData(self,  data=None):
         self.waveformDock.widget().passTrace(data)
@@ -734,6 +860,7 @@ class MainWindow(MainChip):
                     if self.scope is not None:
                         self.target.setOpenADC(self.scope.qtadc.ser)        
                     self.target.con()
+                    self.statusBar().showMessage("Connected to Target")
                 except IOError:
                     exctype, value = sys.exc_info()[:2]
                     self.console.append("Connect Error: %s"%(str(value)))
@@ -752,6 +879,7 @@ class MainWindow(MainChip):
             target = None            
         ac = acquisitionController(self.scope, target, None)
         ac.doSingleReading()
+        self.statusBar().showMessage("One Capture Complete")
 
     def printTraceNum(self, num, data):
         self.statusBar().showMessage("Trace %d done"%num)
@@ -776,8 +904,10 @@ class MainWindow(MainChip):
                     
         ac = acquisitionController(self.scope, target, writer)
         ac.traceDone.connect(self.printTraceNum)
-        ac.setMaxtraces(self.numTraces)        
+        tn = self.numTraces
+        ac.setMaxtraces(tn)        
         ac.doReadings(addToList=self.manageTraces, key=self.key)
+        self.statusBar().showMessage("%d Captures Completed"%tn)
         
     def scopeChanged(self, newscope):        
         self.scope = newscope
@@ -813,16 +943,26 @@ class MainWindow(MainChip):
             self.setCurrentFile(fname)
             
         self.proj.save()
+        self.dirty = False
+        self.updateTitleBar()
+        self.statusBar().showMessage("Project Saved")
   
-if __name__ == '__main__':
-    
+def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Capture V2")
+    return app
+  
+import gc
+  
+if __name__ == '__main__':
+    app = makeApplication()
+    
+    gc.disable()
     
     # Create and show the form
-    window = MainWindow()
+    window = ChipWhispererCapture()
     window.show()
    
     # Run the main Qt loop

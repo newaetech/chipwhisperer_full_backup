@@ -114,6 +114,12 @@ class ProjectFormat(QObject):
         self.config.filename = f        
         self.datadirectory = os.path.basename(self.filename) + "/"
         
+    def load(self, f=None):
+        if f is not None:
+            self.setFilename(f)
+            
+        #TODO: readings????
+        
     def saveparam(self, p):
         #delete_objects_from_dict(p)
         
