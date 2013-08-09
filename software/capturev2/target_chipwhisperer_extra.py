@@ -37,11 +37,16 @@ ADDR_TRIGMOD = 40
 class QtInterface:
     paramListUpdated = Signal(list)
      
-    def __init__(self):
+    def __init__(self, showScriptParameter=None):
         #self.cwADV = CWAdvTrigger()
         self.cwEXTRA = CWExtraSettings()        
         self.cwExtraParams = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
-        ExtendedParameter.setupExtended(self.cwExtraParams)
+        ExtendedParameter.setupExtended(self.cwExtraParams, self)
+        self.showScriptParameter = showScriptParameter
+        
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)

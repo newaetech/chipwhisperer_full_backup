@@ -72,12 +72,15 @@ class MainChip(QMainWindow):
         pg.setConfigOption('foreground', 'k')
         self.initUI()
         self.lastMenuActionSection = None
+        self.paramTrees = []
         
         #Fake widget for dock
         #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
         #with size policy or min/max sizes has worked.
         fake = QWidget()
         self.setCentralWidget(fake)
+        
+        self.paramScripting = self.addConsole("Script Commands", visible=False)
 
 
     def restoreDockGeometry(self):
@@ -97,7 +100,7 @@ class MainChip(QMainWindow):
         self.lastMenuActionSection = section                
         self.windowMenu.addAction(action)
         
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea):
+    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea, visible=True):
         """Add a widget (dockwidget) as a dock to the main window, and add it to the Windows menu"""                
         #Configure dock
         dock = QDockWidget(name)
@@ -105,6 +108,9 @@ class MainChip(QMainWindow):
         dock.setWidget(dockWidget)
         dock.setObjectName(name)
         self.addDockWidget(area, dock)
+        
+        if visible == False:
+            dock.toggleViewAction()
         
         #Add to "Windows" menu
         self.addWindowMenuAction(dock.toggleViewAction(), None)
@@ -114,6 +120,7 @@ class MainChip(QMainWindow):
     
     def addSettings(self, tree, name):
         """Add a settings dock - same as addDock but defaults to left-hand side"""
+        self.paramTrees.append(tree)
         return self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)        
     
     def addTraceDock(self, name):
@@ -121,10 +128,10 @@ class MainChip(QMainWindow):
         gw = GraphWidget(self.imagepath)
         return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
         
-    def addConsole(self, name="Debug Logging"):
+    def addConsole(self, name="Debug Logging", visible=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
-        self.addDock(console, name, area=Qt.BottomDockWidgetArea) 
+        self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible) 
         return console       
         
     def closeEvent(self, event):
@@ -294,6 +301,81 @@ class MainChip(QMainWindow):
             elif reply == QMessageBox.Yes:
                 self.saveProject()
         return True
+           
+    def _setParameter_children(self, top, path, value):
+        """Descends down a given path, looking for value to set"""
+        print top.name()
+        if top.name() == path[0]:
+            if len(path) > 1:
+                for c in top.children():
+                    self._setParameter_children(c, path[1:], value)
+            else:
+                #Check if this is a dictionary/list
+                if "values" in top.opts:
+                    value = top.opts["values"][value]               
+                
+                top.setValue(value)
+                raise ValueError()
+           
+    def setParameter(self, parameter):
+        """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
+        path = parameter[:-1]
+        value = parameter[-1]
+        
+        try:
+            for t in self.paramTrees:
+                for i in range(0, t.invisibleRootItem().childCount()):
+                    self._setParameter_children(t.invisibleRootItem().child(i).param, path, value)
+            
+            print "Parameter not found: %s"%str(parameter)
+        except ValueError:
+            #A little klunky: we use exceptions to tell us the system DID work as intended
+            pass               
+          
+        #User might be calling these in a row, need to process all events
+        QCoreApplication.processEvents()
+            
+    def showScriptParameter(self, param,  changes, topParam):
+        """
+        This function is used to tell the user what they should pass to setParameter
+        in order to recreate a system. This will automatically be called if the module
+        has done the following:
+        
+        * When calling ExtendedParameter.setupParameter(), have passed a reference to 'self' like this:
+          
+            ExtendedParameter.setupExtended(self.params, self)
+              
+        * Have a function called paramTreeChanged in the class which calls showScriptParameter (this function).
+          Typically done like the following, where self.showScriptParameter is setup in the __init__() call. You
+          might need to pass the reference to this instance down to lower modules.
+          
+            def paramTreeChanged(self, param, changes):
+                if self.showScriptParameter is not None:
+                    self.showScriptParameter(param, changes, self.params)                
+        
+        """
+        for param, change, data in changes:
+            ppath = topParam.childPath(param)
+            if ppath is None:
+                name = [param.name()]
+            else:
+                ppath.insert(0, topParam.name())
+                name = ppath
+
+            #Don't pollute script output with readonly things
+            if param.opts["readonly"] == True:
+                continue
+            
+            if "values" in param.opts:
+                for k, v in param.opts["values"].iteritems():
+                    if v == data:
+                        name.append(k)
+            else:
+                name.append(data)   
+            
+           
+            self.paramScripting.append(str(name))
+           
                                                        
 def main():    
     app = QApplication(sys.argv)

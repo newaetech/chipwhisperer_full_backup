@@ -58,12 +58,17 @@ class SimpleSerial_ChipWhisperer(QObject):
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
     
-    def __init__(self):
+    def __init__(self, showScriptParameter=None):
         super(SimpleSerial_ChipWhisperer, self).__init__()
         ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.showScriptParameter = showScriptParameter
         self.debugLog = None   
+
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
 
     def setBaud(self, baud):
         return
@@ -136,18 +141,23 @@ class SimpleSerial_ChipWhisperer(QObject):
 class SimpleSerial(QObject):   
     paramListUpdated = Signal(list) 
      
-    def __init__(self, console=None):
+    def __init__(self, console=None, showScriptParameter=None):
         super(SimpleSerial, self).__init__()
         
         self.console = console
         
         self.ser = None
-        ssParams = [{'name':'connection', 'type':'list', 'values':{"System Serial Port":SimpleSerial_serial(), "ChipWhisperer":SimpleSerial_ChipWhisperer()}, 'value':"System Serial Port", 'set':self.setConnection}]        
+        ssParams = [{'name':'connection', 'type':'list', 'values':{"System Serial Port":SimpleSerial_serial(), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.showScriptParameter = showScriptParameter
 
     def __del__(self):
         self.close()
+    
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
     
     def log(self, msg):
         if self.console is not None:
