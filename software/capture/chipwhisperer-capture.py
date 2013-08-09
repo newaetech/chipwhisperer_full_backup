@@ -103,6 +103,12 @@ except ImportError:
     target_chipwhisperer_integrated_str = sys.exc_info()
 
 try:
+    import scope_chipwhisperer_extra
+except ImportError:
+    scope_chipwhisperer_extra = None
+    scope_chipwhisperer_extra_str = sys.exc_info()
+
+try:
     import usb
 except ImportError:
     usb = None
@@ -296,6 +302,7 @@ class OpenADC_ftdi_tab(QWidget):
 class OpenADC_ztex_tab(QWidget):
     def __init__(self, mw):
         QWidget.__init__(self)
+        
         layout = QVBoxLayout()
 
         if (openadc_qt == None) or (usb == None):
@@ -306,7 +313,10 @@ class OpenADC_ztex_tab(QWidget):
                 layout.addWidget(QLabel("pyusb Import Failed"))
                 
             self.ser = None
-        else:                        
+        else:
+            oadc = QWidget()
+            oadclayout = QVBoxLayout()
+            
             self.connectButton = QPushButton("Connect")
             self.disconnectButton = QPushButton("Disconnect")
             self.disconnectButton.setEnabled(False)
@@ -325,14 +335,21 @@ class OpenADC_ztex_tab(QWidget):
             connlayout.addWidget(self.disconnectButton, 0, 3)
             connlayout.addWidget(self.resetButton, 0, 4)
             connlayout.addWidget(self.testButton, 0, 5)
-            layout.addWidget(connection)
+            oadclayout.addWidget(connection)
 
             self.ser = None
 
             self.scope = openadc_qt.OpenADCQt(mw)
-            layout.addItem(self.scope.getLayout())
+            self.cwextra = scope_chipwhisperer_extra.CWExtraQT()
+            oadclayout.addItem(self.scope.getLayout())
             self.resetButton.clicked.connect(self.scope.reset)
             self.testButton.clicked.connect(self.scope.test)
+
+            oadc.setLayout(oadclayout)
+            tw = QTabWidget()      
+            tw.addTab(oadc, "&OpenADC")
+            tw.addTab(self.cwextra, "&ChipWhisperer Extra")
+            layout.addWidget(tw)
 
         self.setLayout(layout)
 
@@ -348,7 +365,7 @@ class OpenADC_ztex_tab(QWidget):
                 QMessageBox.warning(None, "FX2 Port", "Could not open USB Device")            
                 return False
 
-            dev.set_configuration()
+            dev.set_configuration()            
 
             self.dev = dev
             self.writeEP = 0x06
@@ -357,6 +374,7 @@ class OpenADC_ztex_tab(QWidget):
             self.ser = self
 
         self.scope.ADCconnect(self.ser)
+        self.cwextra.con(self.scope.sc)
         self.connectButton.setEnabled(False)
         self.disconnectButton.setEnabled(True)
         self.resetButton.setEnabled(True)
@@ -622,63 +640,11 @@ class CHIPWHISPERER_integrated_tab(QWidget):
             layout.addWidget(QLabel("ChipWhisperer Integrated Import Failed"))
             layout.addWidget(QLabel(str(target_chipwhisperer_integrated_str)))
             self.target = None
-        else:            
-            self.serialList = QComboBox()
-            self.connectButton = QPushButton("Connect")
-            self.disconnectButton = QPushButton("Disconnect")
-            self.resetButton = QPushButton("Reset")
-            self.statusButton = QPushButton("Updated Status")           
-            self.Statuslabel = QLineEdit("Status = ?")
-            self.Statuslabel.setReadOnly(True)
-
-            self.connectButton.clicked.connect(self.con)
-            self.disconnectButton.clicked.connect(self.dis)
-            self.resetButton.clicked.connect(self.res)
-            self.statusButton.clicked.connect(self.update)
-            
-            connection = QGroupBox("Connection")
-            connlayout = QGridLayout()
-            connection.setLayout(connlayout)
-            connlayout.addWidget(self.connectButton, 1, 0)
-            connlayout.addWidget(self.disconnectButton, 1, 1)
-            connlayout.addWidget(self.resetButton, 1, 2)
-            connlayout.addWidget(self.statusButton, 1, 3)
-            layout.addWidget(connection)
-            layout.addWidget(self.Statuslabel)
-
-            self.disconnectButton.setEnabled(False)
-            self.resetButton.setEnabled(False)
-            self.statusButton.setEnabled(False)
-
-            self.target = target_chipwhisperer_integrated.CWSimpleSerial_Integrated()
+        else:
+            self.CWQt = target_chipwhisperer_integrated.CWQt(mw)
+            layout.addWidget(self.CWQt)
+            self.target = self.CWQt.target
         self.setLayout(layout)
-
-    def __del__(self):
-        if self.target != None:
-            self.dis()
-
-    def update(self):
-        self.Statuslabel.setText("don't look at me")
-
-    def con(self):
-        try:
-            self.target.connect(self.parent.tw.widget(1).scope.sc)
-            self.disconnectButton.setEnabled(True)
-            self.connectButton.setEnabled(False)
-            self.resetButton.setEnabled(True)
-            self.statusButton.setEnabled(True)
-        except:
-            print "Unexpected error:", sys.exc_info()
-
-    def res(self):
-        self.target.reset()
-                    
-    def dis(self):
-        self.disconnectButton.setEnabled(False)
-        self.connectButton.setEnabled(True)
-        self.resetButton.setEnabled(False)
-        self.statusButton.setEnabled(False)
-        self.target.disconnect()
 
 class SASEBOGII_tab(QWidget):
     def __init__(self, mw=None):
