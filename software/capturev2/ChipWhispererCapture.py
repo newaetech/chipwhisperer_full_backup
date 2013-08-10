@@ -119,7 +119,7 @@ class OpenADCInterface_FTDI(QWidget):
         
         ftdiParams = [                  
                       {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-                      {'name':'Serial Number', 'type':'list', 'values':[], 'value':None, 'set':self.setSerialNumber},
+                      {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
                   ]           
        
         self.console = console
@@ -139,9 +139,9 @@ class OpenADCInterface_FTDI(QWidget):
         #else:
         #    self.cwAdvancedSettings = None
         
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+    #def paramTreeChanged(self, param, changes):        
+    #    if self.showScriptParameter is not None:
+    #        self.showScriptParameter(param, changes, self.params)
 
     def setSerialNumber(self, snum):
         self.serialNumber = snum
@@ -153,17 +153,18 @@ class OpenADCInterface_FTDI(QWidget):
     def con(self):
         if self.ser == None:
             try:
-                self.ser = ft.openEx(str(self.serialNumber), ft.ftd2xx.OPEN_BY_SERIAL_NUMBER)
-                self.ser.setBitMode(0x00, 0x40)
-                self.ser.setTimeouts(500, 500)
-                self.ser.setLatencyTimer(2)
+                self.dev = ft.openEx(str(self.serialNumber), ft.ftd2xx.OPEN_BY_SERIAL_NUMBER)
+                self.dev.setBitMode(0x00, 0x40)
+                self.dev.setTimeouts(500, 500)
+                self.dev.setLatencyTimer(2)                
+                self.ser = self
             except ft.ftd2xx.DeviceError, e:
                 self.ser = None
                 raise IOError("Could not open %s"%self.serialNumber)
             
         try:
             self.scope.con(self.ser)
-            self.console.append("OpenADC Found, Connecting")
+            self.console.append("OpenADC Found, Connecting")            
         except IOError,e:
             exctype, value = sys.exc_info()[:2]
             self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
@@ -192,10 +193,10 @@ class OpenADCInterface_FTDI(QWidget):
         self.paramListUpdated.emit(self.paramList())
 
     def read(self, N=0, debug=False):
-        pass
+        return bytearray(self.dev.read(N))
 
     def write(self, data, debug=False):
-        pass
+        return self.dev.write(data)
             
     def getTextName(self):
         try:
@@ -238,9 +239,9 @@ class OpenADCInterface_ZTEX(QWidget):
         else:
             self.cwAdvancedSettings = None
         
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+    #def paramTreeChanged(self, param, changes):
+    #    if self.showScriptParameter is not None:
+    #        self.showScriptParameter(param, changes, self.params)
 
     def __del__(self):
         if self.ser != None:
@@ -337,7 +338,7 @@ class OpenADCInterface(QObject):
         ftdi.paramListUpdated.connect(self.emitParamListUpdated)
         cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
         
-        defscope = ftdi
+        defscope = cwrev2
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
                                                                      "Serial Port (LX9)":None,
@@ -352,9 +353,9 @@ class OpenADCInterface(QObject):
     def emitParamListUpdated(self):
         self.paramListUpdated.emit(self.paramList())
         
-    def paramTreeChanged(self, param, changes):        
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+    #def paramTreeChanged(self, param, changes):        
+    #    if self.showScriptParameter is not None:
+    #        self.showScriptParameter(param, changes, self.params)
 
     def setCurrentScope(self, scope, update=True):        
         self.scopetype = scope
@@ -537,13 +538,13 @@ class TargetInterface(QObject):
             valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
             
         if target_SmartCardDPAv4 is not None:
-            valid_targets["SmartCard DPAContestv4"] = target_SmartCardDPAv4.SmartCardDPAv4()
+            valid_targets["SmartCard DPAContestv4"] = target_SmartCardDPAv4.SmartCardDPAv4(showScriptParameter=showScriptParameter)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+    #def paramTreeChanged(self, param, changes):
+    #    if self.showScriptParameter is not None:
+    #        self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
@@ -795,9 +796,9 @@ class ChipWhispererCapture(MainChip):
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
                 
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+    #def paramTreeChanged(self, param, changes):
+    #    if self.showScriptParameter is not None:
+    #        self.showScriptParameter(param, changes, self.params)
                 
     def reloadScopeParamList(self, lst=None): 
         ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)              
@@ -858,9 +859,12 @@ class ChipWhispererCapture(MainChip):
                 try:
                     self.scope.con()
                     if self.scope is not None:
-                        self.target.setOpenADC(self.scope.qtadc.ser)        
+                        try:
+                            self.target.setOpenADC(self.scope.qtadc.ser)
+                        except:
+                            pass        
                     self.target.con()
-                    self.statusBar().showMessage("Connected to Target")
+                    self.statusBar().showMessage("Connected :)")
                 except IOError:
                     exctype, value = sys.exc_info()[:2]
                     self.console.append("Connect Error: %s"%(str(value)))

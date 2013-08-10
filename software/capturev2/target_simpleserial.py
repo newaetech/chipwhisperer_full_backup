@@ -155,10 +155,6 @@ class SimpleSerial(QObject):
     def __del__(self):
         self.close()
     
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
-    
     def log(self, msg):
         if self.console is not None:
             self.console.append(msg)
