@@ -213,7 +213,8 @@ endmodule
 
 module state_ram#(
 	parameter address_width=6,
-	parameter mem_elements=64
+	parameter mem_elements=64,
+	parameter data_width=18 //Check datasheet for acceptable values
 	)(
 	input clk,
 	input [data_width-1:0] din,
@@ -221,8 +222,6 @@ module state_ram#(
 	input we,
 	output [data_width-1:0] dout
 	);
-
-	parameter data_width=18; //DO NOT modify data width
 
 reg [data_width-1:0] mem[mem_elements-1:0];
 

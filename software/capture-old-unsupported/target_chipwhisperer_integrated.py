@@ -13,6 +13,9 @@ import logging
 import math
 import serial
 
+from PySide.QtCore import *
+from PySide.QtGui import *
+
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -20,17 +23,94 @@ ADDR_DATA       = 33
 ADDR_LEN        = 34
 ADDR_BAUD       = 35
 
-class CWSimpleSerial_Integrated():
+class CWQt(QWidget):
+    def __init__(self, mw=None):
+        QWidget.__init__(self)
+        layout = QVBoxLayout()
+        self.parent = mw
     
+        self.connectButton = QPushButton("Connect")
+        self.disconnectButton = QPushButton("Disconnect")
+        self.resetButton = QPushButton("Reset")
+        self.statusButton = QPushButton("Updated Status")           
+        self.Statuslabel = QLineEdit("Status = ?")
+        self.Statuslabel.setReadOnly(True)
+
+        self.connectButton.clicked.connect(self.con)
+        self.disconnectButton.clicked.connect(self.dis)
+        self.resetButton.clicked.connect(self.res)
+        self.statusButton.clicked.connect(self.update)
+            
+        connection = QGroupBox("Connection")
+        connlayout = QGridLayout()
+        connection.setLayout(connlayout)
+        connlayout.addWidget(self.connectButton, 1, 0)
+        connlayout.addWidget(self.disconnectButton, 1, 1)
+        connlayout.addWidget(self.resetButton, 1, 2)
+        connlayout.addWidget(self.statusButton, 1, 3)
+        layout.addWidget(connection)
+        layout.addWidget(self.Statuslabel)
+
+        self.disconnectButton.setEnabled(False)
+        self.resetButton.setEnabled(False)
+        self.statusButton.setEnabled(False)
+
+        self.target = CWSimpleSerial()
+
+
+        self.tb = QToolBox()
+        layout.addWidget(self.tb)
+
+        genconfig = QWidget()
+        genlayout = QGridLayout()
+        genconfig.setLayout(genlayout)
+        self.tb.addItem(genconfig, "General Configuration")
+
+        self.setLayout(layout)
+
+    def __del__(self):
+        if self.target != None:
+            self.dis()
+
+    def update(self):
+        self.Statuslabel.setText("don't look at me")
+
+    def con(self):
+        try:
+            self.target.connect(self.parent.tw.widget(1).scope.sc)
+            self.disconnectButton.setEnabled(True)
+            self.connectButton.setEnabled(False)
+            self.resetButton.setEnabled(True)
+            self.statusButton.setEnabled(True)
+        except:
+            print "Unexpected error:", sys.exc_info()
+
+    def res(self):
+        self.target.reset()
+                    
+    def dis(self):
+        self.disconnectButton.setEnabled(False)
+        self.connectButton.setEnabled(True)
+        self.resetButton.setEnabled(False)
+        self.statusButton.setEnabled(False)
+        self.target.disconnect()
+
+class CWSmartcard():
+    def __init__(self):
+        self.oa = None
+    
+    def connect(self, oa):
+        self.oa = oa 
+
+class CWSimpleSerial():    
     def __init__(self):
         self.oa = None
 
-    def __del__(self):
-        self.close()
-    
-    def connect(self, oa):
+    def reset(self):
+        return
+        
+    def connect(self, oa):        
         self.oa = oa
-
         #data = bytearray([0x62])
         #self.oa.sendMessage(CODE_WRITE, ADDR_DATA, data, Validate=False)
 
