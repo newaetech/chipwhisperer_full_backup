@@ -172,15 +172,16 @@ module reg_serialtarget(
 	reg tx_start;
 	reg fifo_go;
 	
+	wire [7:0] tx_data;
+	wire       tx_empty;
+	wire       tx_busy;
+	wire		  txfifo_empty;
+	
 	always @(posedge clk) begin
 		tx_start <= ~tx_busy & ~txfifo_empty & ~tx_start;
 		fifo_go <= tx_start;
 	end
  
-	wire [7:0] tx_data;
-	wire       tx_empty;
-	wire       tx_busy;
-	wire		  txfifo_empty;
 	targ_async_transmitter targ_tx(.clk(clk), .TxD_start(tx_start), .TxD_data(tx_data), .TxD(target_tx), .TxD_busy(tx_busy));
 	fifo_target_tx tx_fifo (
     .clk(clk),

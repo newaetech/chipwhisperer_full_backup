@@ -61,9 +61,9 @@ module interface(
 	 output        amp_hilo,
 	 
 	 inout 			target_io4, // Normally trigger
-	 inout			target_io3, // Normally Spare/Extra comms
+	 inout			target_io3, // Normally Spare / SmartCard Comms
 	 inout			target_io2, // Normally RXD
-	 inout			target_io1, // Normally TXD
+	 inout			target_io1, // Normally TXD / SmartCard Reset
 	 inout			target_hs1, // Clock from victim device
 	 output			target_hs1_dir, //HIGH = Output
 	 inout			target_hs2, // Clock to victim device
@@ -96,7 +96,7 @@ module interface(
 	 assign target_hs2 = 1'b0;
 	 assign target_io2 = 1'bZ;
 	 //assign target_io1 = 1'bZ;
-	 assign target_io3 = 1'bZ;
+	 //assign target_io3 = 1'bZ;
 	 assign target_io4 = 1'bZ;
 	 
 	 wire led_hbeat;
@@ -156,15 +156,20 @@ module interface(
 	wire [7:0] reg_datai_serialtarg;
 	wire [7:0] reg_datai_triggerio;
 	wire [7:0] reg_datai_cw;
+	//wire [7:0] reg_datai_scard;
+	wire [7:0] reg_datai_usi;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
 	wire reg_addrvalid;
-	wire reg_stream;
+	wire reg_stream_serial;
+	//wire reg_stream_scard;
 	wire [5:0] reg_hypaddr;
 	wire [15:0] reg_hyplen_serialtarg;
 	wire [15:0] reg_hyplen_triggerio;
 	wire [15:0] reg_hyplen_cw;
+	//wire [15:0] reg_hyplen_scard;
+	wire [15:0] reg_hyplen_usi;
 	
 	wire ext_trigger;
 	wire adv_trigger;
@@ -201,14 +206,14 @@ module interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw),
+		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi), //reg_datai_scard
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
-		.reg_stream_i(reg_stream),
+		.reg_stream_i(reg_stream_serial), //reg_stream_scard
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw) 
+		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi)  //reg_hyplen_scard
 	/*
 		,.LPDDR_A(LPDDR_A),
 		.LPDDR_BA(LPDDR_BA),
@@ -227,6 +232,11 @@ module interface(
 	*/
 	);
 	
+	//wire target_tx, smartcard_rst;
+	
+	//The following assumes target_tx idles high
+	assign target_io1 = target_tx; // & ~smartcard_rst;
+	
 	reg_serialtarget registers_serialtarget(
 		.reset_i(reg_rst),
 		.clk(ifclk_buf),
@@ -238,10 +248,10 @@ module interface(
 		.reg_read(reg_read), 
 		.reg_write(reg_write), 
 		.reg_addrvalid(reg_addrvalid), 
-		.reg_stream(reg_stream),
+		.reg_stream(reg_stream_serial),
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_serialtarg),
-		.target_tx(target_io1),
+		.target_tx(target_tx),
 		.target_rx(target_io2)					              
    );
 	
@@ -287,7 +297,83 @@ module interface(
 		.trigger_advio_i(adv_trigger),
 		.trigger_o(ext_trigger)
 	);
+		
+	/*
+	 wire [7:0] scard_cla, scard_ins, scard_p1, scard_p2, scard_async_data;
+	 wire [4:0] scard_len_command, scard_len_response;
+	 wire [127:0] scard_command, scard_response;
+    wire scard_docmd, scard_busy, scard_async_datardy, scard_status;
+	 wire [15:0] scard_resp_code;
+
+	 serial_scard_hls_iface scard_inst(.reset_i(reg_rst),
+													.clk_i(ifclk_buf),													
+													.scard_io(target_io3),
+													.scard_cla(scard_cla),
+													.scard_ins(scard_ins),
+													.scard_p1(scard_p1),
+													.scard_p2(scard_p2),
+													.scard_len_command(scard_len_command),
+													.scard_command(scard_command),
+													.scard_len_response(scard_len_response),
+													.scard_response(scard_response),
+													.scard_status(scard_status),
+													.scard_resp_code(scard_resp_code),	
+													.async_data(scard_async_data),
+													.async_datardy(scard_async_datardy),
+													.do_cmd(scard_docmd),
+													.busy(scard_busy));	
+
+	reg_smartcards registers_smartcards (
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_scard), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_stream(reg_stream_scard),
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_scard),
+	 
+		.scard_cla(scard_cla),
+		.scard_ins(scard_ins),
+		.scard_p1(scard_p1),
+		.scard_p2(scard_p2),
+		.scard_len_command(scard_len_command),
+		.scard_command(scard_command),
+		.scard_len_response(scard_len_response),
+		.scard_response(scard_response),
+		.scard_status(scard_status),
+		.scard_resp_code(scard_resp_code),
+		.scard_async_data(scard_async_data),
+		.scard_async_datardy(scard_async_datardy),							
+		.scard_present(card_inserted),
+		.scard_reset(smartcard_rst),
+		.scard_docmd(scard_docmd),
+		.scard_busy(scard_busy)
+	);
+	*/
 	
+	reg_usi registers_usi (
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_usi), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_usi),
+		.usi_out(target_io3),
+		.usi_in(target_io3)
+	);
+		
 	`ifdef CHIPSCOPE
    wire [127:0] cs_data;   
    wire [35:0]  chipscope_control;
