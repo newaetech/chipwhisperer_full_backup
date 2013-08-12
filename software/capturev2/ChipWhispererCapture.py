@@ -40,7 +40,6 @@ import shlex
 from subprocess import Popen, PIPE
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 
@@ -93,22 +92,22 @@ except ImportError:
     AES = None    
 
 try:
-    import target_simpleserial
+    import targets.SimpleSerial as target_SimpleSerial
 except ImportError:
-    target_simpleserial = None
-    target_simpleserial_str = sys.exc_info()
+    target_SimpleSerial = None
+    target_SimpleSerial_str = sys.exc_info()
     
 try:
-    import target_SmartCardDPAv4
+    import targets.SmartCard as target_SmartCard
 except ImportError:
-    target_SmartCardDPAv4 = None
-    target_SmartCardDPAv4 = sys.exc_info()
+    target_SmartCard = None
+    target_SmartCard_str = sys.exc_info()
 
 import target_chipwhisperer_extra
 
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
-from TraceFormatNative import TraceFormatNative
+from traces.TraceFormatNative import TraceFormatNative
 
 class OpenADCInterface_FTDI(QWidget):    
     paramListUpdated = Signal(list) 
@@ -534,11 +533,11 @@ class TargetInterface(QObject):
         self.log=log
         self.showScriptParameter = showScriptParameter
                 
-        if target_simpleserial is not None:
-            valid_targets["SimpleSerial"] = target_simpleserial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
+        if target_SimpleSerial is not None:
+            valid_targets["Simple Serial"] = target_SimpleSerial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
             
-        if target_SmartCardDPAv4 is not None:
-            valid_targets["SmartCard DPAContestv4"] = target_SmartCardDPAv4.SmartCardDPAv4(showScriptParameter=showScriptParameter)
+        if target_SmartCard is not None:
+            valid_targets["Smart Card"] = target_SmartCard.SmartCard(showScriptParameter=showScriptParameter)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 

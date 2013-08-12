@@ -44,7 +44,7 @@ from GraphWidget import GraphWidget
 import PythonConsole
 
 sys.path.append("traces")
-from TraceManager import TraceManagerDialog
+from traces.TraceManager import TraceManagerDialog
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
