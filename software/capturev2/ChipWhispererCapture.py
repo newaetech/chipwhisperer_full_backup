@@ -113,7 +113,8 @@ class acquisitionController(QObject):
         if self.target is None:
             return
         
-        self.target.loadEncryptionKey(key)      
+        if key is not None:
+            self.target.loadEncryptionKey(key)      
         self.target.loadInput(plaintext)
         self.target.go()
 
@@ -175,10 +176,10 @@ class acquisitionController(QObject):
             #Load input, start encryption, get output
             self.textout = self.TargetDoTrace(self.textin, self.key)
 
-        try:
-            self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
-        except:
-            pass
+        #try:        
+        self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
+        #except:
+        #    pass
 
         #Get ADC reading
         self.scope.capture(update, N)
@@ -389,6 +390,25 @@ class FWLoaderConfig(QDialog):
             self.console.append(stderr)        
 
 
+class EncryptionStatusMonitor(QDialog):
+    def __init__(self, parent):
+        super(EncryptionStatusMonitor, self).__init__(parent)
+        self.textResultsLayout = QGridLayout()
+        self.textInLine = QLineEdit()
+        self.textOutLine = QLineEdit()
+        self.textResultsLayout.addWidget(QLabel("Text In "), 0, 0)
+        self.textInLine.setReadOnly(True)
+        self.textResultsLayout.addWidget(self.textInLine, 0, 1)
+        self.textResultsLayout.addWidget(QLabel("Text Out"), 1, 0)
+        self.textOutLine.setReadOnly(True)
+        self.textResultsLayout.addWidget(self.textOutLine, 1, 1)
+        self.textResultsLayout.addWidget(QLabel("Expected"), 2, 0)
+        self.textOutExpected = QLineEdit()
+        self.textOutExpected.setReadOnly(True)        
+        self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
+        self.setLayout(self.textResultsLayout)  
+        self.hide()
+               
 
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
@@ -405,6 +425,8 @@ class ChipWhispererCapture(MainChip):
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(console=self.console, showScriptParameter=self.showScriptParameter)}        
         valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative}#"DPA Contest v3": writer_dpav3.dpav3()}    
         
+        self.esm = EncryptionStatusMonitor(self)
+        
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
                 self.target.toplevel_param,
@@ -417,6 +439,7 @@ class ChipWhispererCapture(MainChip):
                          
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E6), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
+                        {'name':'Open Monitor', 'type':'action', 'action':self.esm.show}
                     ]}             
                 ]
         
@@ -576,8 +599,8 @@ class ChipWhispererCapture(MainChip):
             target = self.target.driver
         else:
             target = None            
-        ac = acquisitionController(self.scope, target, None)
-        ac.doSingleReading()
+        ac = acquisitionController(self.scope, target, None, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
+        ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
 
     def printTraceNum(self, num, data):
@@ -601,7 +624,7 @@ class ChipWhispererCapture(MainChip):
         else:
             writer = None
                     
-        ac = acquisitionController(self.scope, target, writer)
+        ac = acquisitionController(self.scope, target, writer, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
         ac.traceDone.connect(self.printTraceNum)
         tn = self.numTraces
         ac.setMaxtraces(tn)        
