@@ -69,7 +69,10 @@ class ResultsPlotting(QObject):
         #self.params = Parameter.create(name='Results', type='group', children=resultsParams)
         #ExtendedParameter.setupExtended(self.params)
         
+        #ResultsTable manages class
         self.table = ResultsTable()        
+        
+        
         self.graphoutput = ResultsPlotData(imagePath)
         self.GraphOutputDock = QDockWidget("Output vs Point Plot")
         self.GraphOutputDock.setObjectName("Output vs Point Plot")
@@ -86,6 +89,7 @@ class ResultsPlotting(QObject):
         return [self.table.ResultsTable, self.GraphOutputDock]
     
     def setAttack(self, attack):
+        """Pass the attack to all plotting devices. They pull stats from the attack directly, and listen to attackDone/statusUpdated signals."""
         self.attack = attack
         self.table.setAttack(attack)        
         self.attack.attackDone.connect(self.attackDone)
@@ -93,9 +97,8 @@ class ResultsPlotting(QObject):
         
         self.graphoutput.setAttack(attack)
         
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager
-        
+    def setTraceManager(self, tmanager):        
+        self.trace = tmanager        
         self.graphoutput.setKnownKey(self.trace.getKnownKey())
         
     def attackDone(self):
@@ -201,7 +204,6 @@ class ResultsPlotData(GraphWidget):
             #Store min/max
             self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
             self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
-        
         
         
     def redrawPlot(self):

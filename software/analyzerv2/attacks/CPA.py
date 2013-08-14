@@ -223,6 +223,12 @@ class CPA(QObject):
     def __init__(self, parent=None, log=None):
         super(CPA, self).__init__(parent)
 
+        self.parent = parent
+
+        self.allPointsSame = True
+        self.startPoint = 0
+        self.endPoint = 0
+
         self.log=log        
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
@@ -234,17 +240,112 @@ class CPA(QObject):
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
                          self.getByteList()                                                 
-                        }
+                        },
+                        
+  #                    {'name':'Point Setup', 'type':'group', 'children':
+  #                      self.getPointList()
+  #                     },                        
                       ]
 
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params)
+        
+        self.setupPointsParam()
+
 
     def getByteList(self):
         init = [dict(name='Byte %d'%bnum, type='bool', value=True, bytenum=bnum) for bnum in range(0,16)]
         init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
         init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
         return init
+    
+    def getPointRange(self, num):
+        pass
+    
+    def copyPointsFromOutput(self, bnum=None):
+        if self.parent is not None:
+            xran = self.parent.results.graphoutput.xRange()        
+            self.setPointRange(xran[0],xran[1], bnum)
+    
+    def copyPointsFromTrace(self, bnum=None):
+        if self.parent is not None:
+            xran = self.parent.waveformDock.widget().xRange()        
+            self.setPointRange(xran[0],xran[1], bnum)
+    
+    def setTraceLimits(self, traces, points):
+        print points
+        self.setPointRange(0, points, setlimits=True)
+    
+    def setPointRange(self, start, end, bnum=None, setlimits=False):
+        
+        self.startPoint = start
+        self.endPoint = end
+        
+        (startparam, endparam) = self.findPointParam(self.pointsParams, bnum)
+        if startparam is not None:
+            if setlimits:
+                startparam.setLimits((start, end))
+                startparam.setDefault(start)
+            startparam.setValue(start)
+            
+        if endparam is not None:
+            if setlimits:
+                endparam.setLimits((start, end))
+                endparam.setDefault(end)
+            endparam.setValue(end)
+            
+        self.paramListUpdated.emit(None)
+    
+    def findPointParam(self, paramtree, bnum=None):
+        """Find parameters dealing with input trace plotting"""
+        pointstart = None
+        pointend = None
+        
+        for t in paramtree.children():
+            if bnum is None:
+                if t.name() == 'Starting Point':
+                    pointstart = t
+                    
+                if t.name() == 'Ending Point':
+                    pointend = t
+            else:
+                if t.name() == 'Byte %d'%bnum:
+                    for q in t.children():                                    
+                        if q.name() == 'Starting Point':
+                            pointstart = q
+                            
+                        if q.name() == 'Ending Point':
+                            pointend = q
+                                
+        return (pointstart, pointend)
+    
+    def setAllPointsSame(self, val):
+        self.allPointsSame = val
+        self.setupPointsParam()
+        self.paramListUpdated.emit(None)        
+    
+    def setupPointsParam(self):
+        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
+        ExtendedParameter.setupExtended(self.pointsParams)       
+    
+    def getPointList(self):        
+        if self.allPointsSame == False:
+            init = [{'name':'Byte %d'%bnum, 'type':'group', 'children': [
+                        {'name':'Starting Point', 'type':'int', 'value':self.startPoint, 'limits':(self.startPoint,self.endPoint)},
+                        {'name':'Ending Point', 'type':'int', 'value':self.endPoint, 'limits':(self.startPoint,self.endPoint)},
+                        {'name':'Copy from Output Graph', 'type':'action', 'action':partial(self.copyPointsFromOutput, bnum)},
+                        {'name':'Copy from Trace Graph', 'type':'action', 'action':partial(self.copyPointsFromTrace, bnum)},         
+                        ]} for bnum in range(0, 16)]
+        else:
+            init = [{'name':'Starting Point', 'type':'int', 'value':self.startPoint, 'limits':(self.startPoint,self.endPoint)},
+                    {'name':'Ending Point', 'type':'int', 'value':self.endPoint, 'limits':(self.startPoint,self.endPoint)},
+                    {'name':'Copy from Output Graph', 'type':'action', 'action':self.copyPointsFromOutput},
+                    {'name':'Copy from Trace Graph', 'type':'action', 'action':self.copyPointsFromTrace},         
+                    ]
+            
+        init.insert(0,{'name':'Points Same across Subkeys', 'type':'bool', 'value':self.allPointsSame, 'set':self.setAllPointsSame})            
+        return init
+
 
     def bytesEnabled(self):
         blist = []
@@ -314,4 +415,4 @@ class CPA(QObject):
         return self.attack.getStatistics()
             
     def paramList(self):
-        return [self.params]
+        return [self.params, self.pointsParams]

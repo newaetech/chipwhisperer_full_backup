@@ -97,7 +97,7 @@ class MainWindow(MainChip):
                     ]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':{'CPA':CPA()}, 'value':'CPA', 'set':self.setAttack},                                          
+                    {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self)}, 'value':'CPA', 'set':self.setAttack},                                          
                     ]},
                          
                 {'name':'Post-Processing', 'type':'group'},
@@ -118,6 +118,9 @@ class MainWindow(MainChip):
         
         self.da = None
         self.numTraces = 100
+        
+        self.traceLimits = 0
+        self.pointLimits = 0
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -143,7 +146,7 @@ class MainWindow(MainChip):
         self.openFile.connect(self.openProject)
 
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
-        self.setAttack(CPA())
+        self.setAttack(CPA(self))
         
     def addToolbars(self):
         attack = QAction(QIcon(imagePath+'attack.png'), 'Start Attack', self)
@@ -157,6 +160,8 @@ class MainWindow(MainChip):
         self.attack = attack
         self.reloadAttackParamList()
         self.results.setAttack(self.attack)
+        self.attack.paramListUpdated.connect(self.reloadAttackParamList)
+        self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
         
     def doAttack(self):
         self.console.append("Attack Started")
@@ -169,17 +174,13 @@ class MainWindow(MainChip):
             self.attack.doAttack()
         
     def reloadAttackParamList(self, list=None):
-        self.attackParamTree.clear() 
-        for p in self.attack.paramList():
-            if p is not None:
-                self.attackParamTree.addParameters(p)
+        ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
         
     def tracesChanged(self):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
 
         
     def plotInputTrace(self):
-        
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         params = self.inputTraceSettingParams()
         self.waveformDock.widget().clearPushed()
@@ -193,12 +194,19 @@ class MainWindow(MainChip):
         for tnum in range(tstart, tend):
             trace = self.manageTraces.iface.getTrace(tnum)           
             self.waveformDock.widget().passTrace(trace[pstart:pend])
+
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
-        """When traces is loaded, set plot limits to show entire thing"""
+        """When traces is loaded, Tell everything default point/trace range"""
         if defpoint == -1:
             defpoint = points
             
+        #Set parameters for attack
+        self.traceLimits = traces
+        self.pointLimits = points
+        self.attack.setTraceLimits(traces, points)
+            
+        #Set local parameters for trace viewer
         params = self.inputTraceSettingParams()
         if traces is not None:
             params[0].setLimits((0, traces))

@@ -84,6 +84,9 @@ class GraphWidget(QWidget):
     This GraphWidget holds a pyqtgraph PlotWidget, and adds a toolbar for the user to control it.
     """    
     
+    xRangeChanged = Signal(int, int)
+    
+    
     def __init__(self, imagepath='images/'):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
@@ -99,6 +102,7 @@ class GraphWidget(QWidget):
         vb = self.pw.getPlotItem().getViewBox()
         vb.setMouseMode(vb.RectMode)
         vb.sigStateChanged.connect(self.VBStateChanged)
+        vb.sigXRangeChanged.connect(self.VBXRangeChanged)
         
         ###Toolbar
         xLockedAction = QAction(QIcon(self.imagepath+'xlock.png'), 'Lock X Axis', self)
@@ -176,7 +180,13 @@ class GraphWidget(QWidget):
         if arStatus[1]:
             self.YLockedAction.setChecked(False)
         else:
-            self.YLockedAction.setChecked(True)   
+            self.YLockedAction.setChecked(True) 
+            
+    def VBXRangeChanged(self, vb, range):
+        self.xRangeChanged.emit(range[0], range[1])
+        
+    def xRange(self):
+        return self.pw.getPlotItem().getViewBox().viewRange()[0]
             
     def YDefault(self, extraarg=None):
         """Copy default Y range axis to active view"""
