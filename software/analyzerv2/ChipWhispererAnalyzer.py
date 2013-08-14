@@ -178,6 +178,7 @@ class MainWindow(MainChip):
         
     def tracesChanged(self):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
+        self.plotInputTrace()
 
         
     def plotInputTrace(self):

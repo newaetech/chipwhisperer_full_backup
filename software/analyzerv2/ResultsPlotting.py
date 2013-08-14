@@ -174,7 +174,7 @@ class ResultsPlotData(GraphWidget):
         
         for i in range(0, self.numKeys):
             if self.knownkey is not None:
-                self.highlights.append([self.knownkey[0]])
+                self.highlights.append([self.knownkey[i]])
             else:
                 self.highlights.append([None])
  
@@ -220,7 +220,6 @@ class ResultsPlotData(GraphWidget):
         self.setupHighlights()
         #prange = range(self.pstart[bnum], self.pend[bnum])
         
-        prange = range(0, 1500)
         
         #self.backgroundplot(prange, None)
         
@@ -231,6 +230,9 @@ class ResultsPlotData(GraphWidget):
                     
                     maxlimit = np.amax(diffs, 0)
                     minlimit = np.amin(diffs, 0)
+                    
+                    prange = self.attack.getPointRange(bnum)
+                    prange = range(prange[0], prange[1])                    
                     self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
                     self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')                   
                     
@@ -250,6 +252,9 @@ class ResultsPlotData(GraphWidget):
                 if self.highlightTop:
                     #Plot the highlighted byte(s) on top
                     for bnum in range(0, self.numKeys):
+                        prange = self.attack.getPointRange(bnum)
+                        prange = range(prange[0], prange[1])  
+                    
                         if self.enabledbytes[bnum]:
                             diffs = data[bnum]
                             
