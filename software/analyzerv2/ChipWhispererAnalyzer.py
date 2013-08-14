@@ -122,12 +122,20 @@ class MainWindow(MainChip):
         self.addToolbars()
         self.addSettingsDocks()
         self.addWaveforms()
+        
         for d in self.results.dockList():
             self.addDockWidget(Qt.RightDockWidgetArea, d)
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
             self.enforceMenuOrder()
         
         self.restoreDockGeometry()
+        
+        #Generate correct tab order now that we've restored
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsPreprocessingDock)
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsAttackDock)
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsPostProcessingDock)
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsResultsDock)
+        
         self.newProject()   
         
         self.newFile.connect(self.newProject)
@@ -144,12 +152,7 @@ class MainWindow(MainChip):
         self.AttackToolbar = self.addToolBar('Attack Tools')
         self.AttackToolbar.setObjectName('Attack Tools')
         self.AttackToolbar.addAction(attack)        
-        
-    def addResultsPlotDock(self, name):
-        """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
-        gw = ResultsPlotData(self.imagepath)
-        return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
-        
+
     def setAttack(self, attack):
         self.attack = attack
         self.reloadAttackParamList()
@@ -157,6 +160,10 @@ class MainWindow(MainChip):
         
     def doAttack(self):
         self.console.append("Attack Started")
+        
+        if self.results is not None:
+            self.results.setTraceManager(self.manageTraces.iface)
+        
         if self.attack is not None:
             self.attack.setTraceManager(self.manageTraces.iface)
             self.attack.doAttack()
@@ -243,8 +250,7 @@ class MainWindow(MainChip):
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
         self.waveformDock.widget().YDefault() 
-        
-        self.resultsGraph = self.addResultsPlotDock("Results Plotting")      
+ 
         
     def addSettingsDocks(self):      
         self.setupParametersTree()        
@@ -253,6 +259,7 @@ class MainWindow(MainChip):
         self.settingsAttackDock = self.addSettings(self.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.postprocessingParamTree, "Postprocessing")
         self.settingsResultsDock = self.addSettings(self.resultsParamTree, "Results")
+        
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
@@ -265,10 +272,14 @@ class MainWindow(MainChip):
         self.postprocessingParamTree = ParameterTree()
         self.resultsParamTree = ParameterTree()
         
+        self.results.paramListUpdated.connect(self.reloadParamListResults)
+        self.reloadParamListResults()
         
-    def reloadParamList(self, lst=None):
-        self.paramTree.clear()                             
-        for p in self.paramList(): self.paramTree.addParameters(p)           
+    def reloadParamListResults(self, lst=None):
+        ExtendedParameter.reloadParams(self.results.paramList(), self.resultsParamTree)
+        
+    def reloadParamList(self, lst=None):        
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)      
         
         
     def paramList(self):

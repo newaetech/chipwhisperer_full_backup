@@ -123,7 +123,8 @@ class MainChip(QMainWindow):
     def addSettings(self, tree, name):
         """Add a settings dock - same as addDock but defaults to left-hand side"""
         self.paramTrees.append(tree)
-        return self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)        
+        dock = self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)
+        return dock        
     
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
@@ -140,6 +141,9 @@ class MainChip(QMainWindow):
         wid = PythonConsole.QPythonConsole(self, locals())
         self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
         return wid   
+        
+    def clearAllSettings(self):
+        QSettings.remove("")
         
     def closeEvent(self, event):
         settings = QSettings()

@@ -61,35 +61,29 @@ class ResultsPlotting(QObject):
     def __init__(self):
         super(ResultsPlotting, self).__init__()
 
-        #TODO: Could probably have moved parameters into actual classes?
-        resultsParams = [{'name':'Ranked Table', 'type':'group', 'children':[
-                         {'name':'Show', 'type':'bool', 'value':False, 'set':self.tableShow},
-                         {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.tableSetAbs},
-                         {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.tableSetSingle}
-                        ]},
-                      ]
+       
+        #No generic ones
+        #resultsParams = [
+        #              ]
 
-        self.params = Parameter.create(name='Results', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params)
+        #self.params = Parameter.create(name='Results', type='group', children=resultsParams)
+        #ExtendedParameter.setupExtended(self.params)
         
-        self.table = ResultsTable()
+        self.table = ResultsTable()        
+        self.graphoutput = ResultsPlotData(imagePath)
+        self.GraphOutputDock = QDockWidget("Output vs Point Plot")
+        self.GraphOutputDock.setObjectName("Output vs Point Plot")
+        self.GraphOutputDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+        self.GraphOutputDock.setWidget(self.graphoutput)
+        self.graphoutput.setDock(self.GraphOutputDock)
+
         
     def paramList(self):
-        p = []
-        p.append(self.params)     
+        p = [self.table.params, self.graphoutput.params] 
         return p            
-
-    def tableShow(self, enabled):
-        pass
-    
-    def tableSetAbs(self, enabled):
-        self.table.setAbsoluteMode(enabled)
-
-    def tableSetSingle(self, enabled):
-        self.table.setSingleMode(enabled)
-        
+            
     def dockList(self):
-        return [self.table.ResultsTable]
+        return [self.table.ResultsTable, self.GraphOutputDock]
     
     def setAttack(self, attack):
         self.attack = attack
@@ -97,11 +91,20 @@ class ResultsPlotting(QObject):
         self.attack.attackDone.connect(self.attackDone)
         self.attack.statsUpdated.connect(self.attackStatsUpdated)
         
+        self.graphoutput.setAttack(attack)
+        
+    def setTraceManager(self, tmanager):
+        self.trace = tmanager
+        
+        self.graphoutput.setKnownKey(self.trace.getKnownKey())
+        
     def attackDone(self):
+        self.attackStatsUpdated()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
         self.table.updateTable()
     
     def attackStatsUpdated(self):
+        #self.graphoutput.
         pass
         
 class ResultsPlotData(GraphWidget):
@@ -110,25 +113,154 @@ class ResultsPlotData(GraphWidget):
     correlation over all data points, or the most likely correlation over number of traces
     """
      
-    def __init__(self, imagepath):
+    showDockSignal = Signal(bool)
+     
+    def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
         super(ResultsPlotData, self).__init__(imagepath)
         
+        self.numKeys = subkeys
+        self.numPerms = permPerSubkey
+        self.knownkey = None
+        self.enabledbytes = [False]*subkeys
         
         self.byteNumAct = []
-        for i in range(0,32):
+        for i in range(0,self.numKeys):
             self.byteNumAct.append(QAction('%d'%i, self))
-            self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, num=i))
+            self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
             self.byteNumAct[i].setCheckable(True)
                 
         self.bselection = QToolBar()
         
-        for i in range(0, 16):
+        for i in range(0, self.numKeys):
             self.bselection.addAction(self.byteNumAct[i])
         self.layout().addWidget(self.bselection)
-
+        
+        self.highlightTop = True
+        
+        resultsParams = [{'name':'Show', 'type':'bool', 'value':False, 'set':self.showDockSignal.emit},                       
+                      ]
+        
+        self.params = Parameter.create(name='Plot of Output vs Time', type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params)
+        
+    def paramList(self):
+        return [self.params]
+   
+    def setDock(self, dock):
+        self.dock = dock
+        self.showDockSignal.connect(dock.setVisible)      
+        dock.visibilityChanged.connect(self.visibleChanged) 
+   
+    def visibleChanged(self):
+        #TODO: Update the status of the parameter tree with this
+        visible = self.dock.isVisible()
+        pass
+   
+    def setKnownKey(self, knownkey):
+        self.knownkey = knownkey
    
     def setBytePlot(self, num, sel):
-        print num
+        self.enabledbytes[num] = sel
+        self.redrawPlot()
+   
+    def setAttack(self, attack):
+        self.attack = attack
+        
+    def setupHighlights(self):
+        self.highlights = []
+        
+        for i in range(0, self.numKeys):
+            if self.knownkey is not None:
+                self.highlights.append([self.knownkey[0]])
+            else:
+                self.highlights.append([None])
+ 
+    def highlightColour(self, index):
+        if index == 0:
+            return 'r'
+        else:
+            return 'b'
+        
+    def backgroundplot(self, prange, data, pen=None, highres=False):
+        datalen =  max(prange)-min(prange)+1
+        if data is None:
+            #Setup call 
+            if highres is False:
+                if pen is None:
+                    #No pen specified - init call
+                    self.backgroundplotMax = np.empty((datalen,1))
+                    self.backgroundplotMax[:] = np.NAN
+                    self.backgroundplotMin = np.empty((datalen,1))
+                    self.backgroundplotMin[:] = np.NAN
+                else:
+                    print "Plotting"
+                    self.pw.plot(prange, self.backgroundplotMax, pen)
+                    self.pw.plot(prange, self.backgroundplotMin, pen)
+                    
+        else:
+            #Store min/max
+            self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
+            self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
+        
+        
+        
+    def redrawPlot(self):
+        data = self.attack.getStatistics()
+       
+        #Do Redraw
+        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(1000) #_callSync='off'
+        progress.setMinimum(0) #_callSync='off'
+        progress.setMaximum(256) #_callSync='off'
+        
+        self.clearPushed()
+        self.setupHighlights()
+        #prange = range(self.pstart[bnum], self.pend[bnum])
+        
+        prange = range(0, 1500)
+        
+        #self.backgroundplot(prange, None)
+        
+        try:
+            for bnum in range(0, self.numKeys):
+                if self.enabledbytes[bnum]:
+                    diffs = data[bnum]
+                    
+                    maxlimit = np.amax(diffs, 0)
+                    minlimit = np.amin(diffs, 0)
+                    self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
+                    self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')                   
+                    
+                    #for i in range(0,self.numPerms):
+                    #    canceled = progress.wasCanceled() #_callSync='off'
+                    #    if self.highlightTop:
+                    #        if i not in self.highlights[bnum]:
+                    #            self.backgroundplot(prange, diffs[i])
+                    #    else:               
+                    #            self.pw.plot(prange, diffs[i], pen=(i%8,8))
+                    #    if (i % 32) == 0:
+                    #        progress.setValue(i)
+                    #    if canceled:
+                    #        raise StopIteration
+                        
+                        
+                if self.highlightTop:
+                    #Plot the highlighted byte(s) on top
+                    for bnum in range(0, self.numKeys):
+                        if self.enabledbytes[bnum]:
+                            diffs = data[bnum]
+                            
+                            for i in range(0,256):   
+                                if i in self.highlights[bnum]:
+                                    penclr = self.highlightColour( self.highlights[bnum].index(i) )
+                                    self.pw.plot(prange, diffs[i], pen=penclr )
+                                        
+                                #if canceled:
+                                #    raise StopIteration
+        except StopIteration:
+            pass
+        
    
 class ResultsTable(QObject):
     """Table of results, showing all guesses based on sorting output of attack"""
@@ -141,6 +273,7 @@ class ResultsTable(QObject):
         self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.ResultsTable.setWidget(self.table)       
         self.ResultsTable.setVisible(False)
+        self.ResultsTable.visibilityChanged.connect(self.visibleChanged)
         
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -148,6 +281,22 @@ class ResultsTable(QObject):
         self.useAbs = useAbs
         self.knownkey = None
         self.useSingle = False
+        
+        resultsParams = [
+                         {'name':'Show', 'type':'bool', 'value':False, 'set':self.ResultsTable.setVisible},
+                         {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
+                         {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode}
+                      ]
+
+        self.params = Parameter.create(name='Ranked Table', type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params)
+        
+    def paramList(self):
+        return [self.params]
+        
+    def visibleChanged(self):
+        #TODO: Update the status of the parameter tree with this
+        visible = self.ResultsTable.isVisible()
         
     def setBytesEnabled(self, enabledbytes):
         self.enabledBytes = enabledbytes
