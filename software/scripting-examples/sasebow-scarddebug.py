@@ -35,8 +35,7 @@
 import sys
 sys.path.append("../capturev2")
 
-#Import the ChipWhispererCapture module
-import ChipWhispererCapture as cwc
+import time
 
 #Check for PySide
 try:
@@ -46,7 +45,10 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-import thread
+#Import the ChipWhispererCapture module
+import ChipWhispererCapture as cwc
+import target_chipwhisperer_extra as cwe 
+
 
 exitWhenDone=False
 
@@ -67,11 +69,11 @@ class userScript(QObject):
         print "***** Starting User Script *****"
        
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['Generic Settings', 'Target Module', 'SmartCard DPAContestv4'])
-        cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'FTDI (SASEBO-W)'])
-        cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
+        #cap.setParameter(['Generic Settings', 'Target Module', 'SmartCard DPAContestv4'])
+        cap.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
+        cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-Connected'])
+        #cap.setParameter(['OpenADC Interface', 'connection', 'FTDI (SASEBO-W)'])
+        #cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
 
         #NOTE: You MUST add this call to pe() to process events. This is done automatically
         #for setParameter() calls, but everything else REQUIRES this
@@ -79,18 +81,29 @@ class userScript(QObject):
 
         cap.doConDis()
         pe()
+                      
+        print "Loading CW-Extra Module"
+        usi = cwe.CWUniversalSerial()
+        usi.con(cap.scope.qtadc.sc)
         
-        print "Doing Reset"
-        cap.target.driver.ser.reset()
+        usi.setBaud(9600)
+        usi.setParity("even")        
+        usi.setStopbits(2)
+        usi.write([0x80,0x04, 0x04, 0x00, 0x10, None, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01])
         
-        print "Sending APDU"        
-        result = cap.target.driver.ser.APDUSendReceive(0x80, 0xC0, 0x00, 0x00, [0]*16)
-        print result
+        time.sleep(0.05)
+        
+        usi.read(16, startonly=True)
+        usi.write([0x80,0xC0, 0x00, 0x00, 0x10])
+        p = bytearray(usi.read(16, waitonly=True))
+        for t in p:
+            print "%2x "%t,
 
+        
+        
         #End commands here
         print "***** Ending User Script *****"
         
-
 
 #Make the application
 app = cwc.makeApplication()

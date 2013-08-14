@@ -71,9 +71,11 @@ except ImportError:
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from TraceFormatNative import TraceFormatNative
-from AttackCPA import AttackCPA
+from attacks.CPA import CPA
 from ResultsPlotting import ResultsPlotting
 
+#TEMP
+from ResultsPlotting import ResultsPlotData
 
 class MainWindow(MainChip):
     MaxRecentFiles = 4    
@@ -95,7 +97,7 @@ class MainWindow(MainChip):
                     ]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':{'CPA':AttackCPA()}, 'value':'CPA', 'set':self.setAttack},                                          
+                    {'name':'Module', 'type':'list', 'values':{'CPA':CPA()}, 'value':'CPA', 'set':self.setAttack},                                          
                     ]},
                          
                 {'name':'Post-Processing', 'type':'group'},
@@ -133,7 +135,7 @@ class MainWindow(MainChip):
         self.openFile.connect(self.openProject)
 
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
-        self.setAttack(AttackCPA())
+        self.setAttack(CPA())
         
     def addToolbars(self):
         attack = QAction(QIcon(imagePath+'attack.png'), 'Start Attack', self)
@@ -142,6 +144,11 @@ class MainWindow(MainChip):
         self.AttackToolbar = self.addToolBar('Attack Tools')
         self.AttackToolbar.setObjectName('Attack Tools')
         self.AttackToolbar.addAction(attack)        
+        
+    def addResultsPlotDock(self, name):
+        """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
+        gw = ResultsPlotData(self.imagepath)
+        return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
         
     def setAttack(self, attack):
         self.attack = attack
@@ -235,7 +242,9 @@ class MainWindow(MainChip):
         self.waveformDock = self.addTraceDock("Waveform Display")        #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()       
+        self.waveformDock.widget().YDefault() 
+        
+        self.resultsGraph = self.addResultsPlotDock("Results Plotting")      
         
     def addSettingsDocks(self):      
         self.setupParametersTree()        

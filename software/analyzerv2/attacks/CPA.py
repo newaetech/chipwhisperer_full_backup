@@ -58,7 +58,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-import ModelAES128_8bit
+import attacks.models.AES128_8bit
 
 from functools import partial
 
@@ -206,9 +206,8 @@ class AttackCPA_SimpleLoop(QObject):
         return t
 
 
-#TODO: AttackCPA should be broken into a seperate function
-
-class AttackCPA(QObject):
+#TODO: This should be broken into a separate function I think
+class CPA(QObject):
     """Correlation Power Analysis Attack"""
         
     paramListUpdated = Signal(list)
@@ -222,11 +221,11 @@ class AttackCPA(QObject):
     attackDone = Signal()
     
     def __init__(self, parent=None, log=None):
-        super(AttackCPA, self).__init__(parent)
+        super(CPA, self).__init__(parent)
 
         self.log=log        
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':ModelAES128_8bit}, 'value':'AES-128'},
+                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
                         {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
                         {'name':'Power Model', 'type':'list', 'values':['HW-VCC', 'HW-GND', 'HD-VCC', 'HD-GND'], 'value':'HW-VCC'},
                         ]},
@@ -294,7 +293,7 @@ class AttackCPA(QObject):
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
                                  
-        self.attack = AttackCPA_SimpleLoop(ModelAES128_8bit)
+        self.attack = AttackCPA_SimpleLoop(attacks.models.AES128_8bit)
         self.attack.setByteList(self.bytesEnabled())
         self.attack.setKeyround("first")
         self.attack.setModeltype("Hamming Weight")

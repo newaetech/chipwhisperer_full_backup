@@ -36,6 +36,10 @@ sys.path.append('../../openadc/controlsw/python/common')
 sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
+from GraphWidget import GraphWidget
+
+from functools import partial
+
 import numpy as np
 
 try:
@@ -100,15 +104,31 @@ class ResultsPlotting(QObject):
     def attackStatsUpdated(self):
         pass
         
-class ResultsPlotData(QObject):
+class ResultsPlotData(GraphWidget):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
      
-    def __init__(self):
-        super(ResultsPlotData, self).__init__()
+    def __init__(self, imagepath):
+        super(ResultsPlotData, self).__init__(imagepath)
+        
+        
+        self.byteNumAct = []
+        for i in range(0,32):
+            self.byteNumAct.append(QAction('%d'%i, self))
+            self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, num=i))
+            self.byteNumAct[i].setCheckable(True)
+                
+        self.bselection = QToolBar()
+        
+        for i in range(0, 16):
+            self.bselection.addAction(self.byteNumAct[i])
+        self.layout().addWidget(self.bselection)
 
+   
+    def setBytePlot(self, num, sel):
+        print num
    
 class ResultsTable(QObject):
     """Table of results, showing all guesses based on sorting output of attack"""
