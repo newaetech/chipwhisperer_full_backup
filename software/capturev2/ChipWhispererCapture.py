@@ -80,13 +80,20 @@ try:
 except ImportError:
     target_SmartCard = None
     target_SmartCard_str = sys.exc_info()
+    
+try:
+    import targets.SASEBOGII as target_SASEBOGII
+except ImportError:
+    target_SASEBOGII = None
+    target_SASEBOGII_str = sys.exc_info()
 
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from traces.TraceFormatNative import TraceFormatNative
+from traces.TraceFormatDPAv3 import TraceFormatDPAv3
 
 class acquisitionController(QObject):
-    traceDone = Signal(int, list)
+    traceDone = Signal(int, list, int)
     captureDone = Signal(bool)
     
     def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
@@ -103,9 +110,9 @@ class acquisitionController(QObject):
         self.textOutLabel = textOutLabel
         self.textExpectedLabel = textExpectedLabel
 
-        self.plain = bytearray(16)
+        self.textin = bytearray(16)
         for i in range(0,16):
-            self.plain[i] = random.randint(0, 255)       
+            self.textin[i] = i #random.randint(0, 255)       
 
     def TargetDoTrace(self, plaintext, key=None):
         if self.target is None:
@@ -143,7 +150,6 @@ class acquisitionController(QObject):
                 for i in range(0,16):
                     self.textin[i] = random.randint(0, 255)
                     #self.textin[i] = i
-
         #Do AES if setup
         if AES and (self.textExpectedLabel != None):
             if self.key == None:
@@ -168,19 +174,27 @@ class acquisitionController(QObject):
 
         
         if self.target is not None:
+            
+            #Init
+            self.target.init()
+            
             #Set mode
             self.target.setModeEncrypt()
 
-            #Load input, start encryption, get output
-            self.textout = self.TargetDoTrace(self.textin, self.key)
+            #self.target.loadEncryptionKey(self.key)   
 
-        #try:        
-        self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
-        #except:
-        #    pass
+            #Load input, start encryption, get output
+            self.textout = self.TargetDoTrace(self.textin, None)
+
+            if self.textout is not None:
+                if len(self.textout) >= 16:    
+                    self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
 
         #Get ADC reading
-        self.scope.capture(update, N)
+        if self.scope.capture(update, N) == True:
+            print "timeout"
+            return False        
+        return True
         
 
     def setMaxtraces(self, maxtraces):
@@ -198,20 +212,25 @@ class acquisitionController(QObject):
         nt = 0
 
         while (nt < self.maxtraces) and self.running:
-            self.doSingleReading(True, None, None)
-            if self.writer is not None:
-                self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
-
-            nt = nt + 1
-            self.traceDone.emit(nt, self.scope.datapoints)
+            if self.doSingleReading(True, None, None) == True:
+                if self.writer is not None:
+                    self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
+    
+                nt = nt + 1
+                self.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
             QCoreApplication.processEvents()
             
 
         if self.writer is not None:
-            self.writer.closeAll()
+            try:
+                self.writer.saveAllTraces()
+                self.writer.closeAll()
+            except TypeError:
+                pass
         
         if addToList is not None:
-            addToList.append(self.writer)
+            if self.writer is not None:
+                addToList.append(self.writer)
         
         self.captureDone.emit(self.running)
         
@@ -233,6 +252,9 @@ class TargetInterface(QObject):
             
         if target_SmartCard is not None:
             valid_targets["Smart Card"] = target_SmartCard.SmartCard(showScriptParameter=showScriptParameter)
+            
+        if target_SASEBOGII is not None:
+            valid_targets["SASEBO GII"] = target_SASEBOGII.SaseboGII(self.log, showScriptParameter=showScriptParameter)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
@@ -420,10 +442,12 @@ class ChipWhispererCapture(MainChip):
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
-        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(console=self.console, showScriptParameter=self.showScriptParameter)}        
-        valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative}#"DPA Contest v3": writer_dpav3.dpav3()}    
+        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}        
+        valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative, "DPAContestv3":TraceFormatDPAv3}#"DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.esm = EncryptionStatusMonitor(self)
+        
+       
         
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
@@ -437,7 +461,8 @@ class ChipWhispererCapture(MainChip):
                          
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E6), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
-                        {'name':'Open Monitor', 'type':'action', 'action':self.esm.show}
+                        {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
+                        {'name':'Fixed Plaintest', 'type':'bool', 'value':False, 'set':self.setFixedPlain }
                     ]}             
                 ]
         
@@ -453,7 +478,12 @@ class ChipWhispererCapture(MainChip):
         self.newProject()   
         
         self.newFile.connect(self.newProject)
-        self.saveFile.connect(self.saveProject)    
+        self.saveFile.connect(self.saveProject)   
+        
+        self.fixedPlain = False 
+     
+    def setFixedPlain(self, x):
+        self.fixedPlain = x
         
     def getNumTraces(self):
         return self.numTraces
@@ -530,8 +560,8 @@ class ChipWhispererCapture(MainChip):
         p.append(self.params)     
         return p   
 
-    def newScopeData(self,  data=None):
-        self.waveformDock.widget().passTrace(data)
+    def newScopeData(self,  data=None, offset=0):
+        self.waveformDock.widget().passTrace(data, offset)
 
     def setConfigWidget(self, widget):
         self.configdock.setWidget(widget)
@@ -596,15 +626,15 @@ class ChipWhispererCapture(MainChip):
         if self.target.driver:
             target = self.target.driver
         else:
-            target = None            
-        ac = acquisitionController(self.scope, target, None, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
+            target = None
+                     
+        ac = acquisitionController(self.scope, target, writer=None, fixedPlain=self.fixedPlain, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
         ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
 
-    def printTraceNum(self, num, data):
+    def printTraceNum(self, num, data, offset=0):
         self.statusBar().showMessage("Trace %d done"%num)
-        self.newScopeData(data)
-        
+        #self.newScopeData(data, offset)        
 
     def captureM(self):
         if self.target.driver:
@@ -628,6 +658,8 @@ class ChipWhispererCapture(MainChip):
         ac.setMaxtraces(tn)        
         ac.doReadings(addToList=self.manageTraces, key=self.key)
         self.statusBar().showMessage("%d Captures Completed"%tn)
+        
+        return writer
         
     def scopeChanged(self, newscope):        
         self.scope = newscope

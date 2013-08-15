@@ -47,11 +47,10 @@ class ChipWhispererExtra(QObject):
     def __init__(self, showScriptParameter=None):
         #self.cwADV = CWAdvTrigger()
         self.cwEXTRA = CWExtraSettings()        
-        self.cwExtraParams = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
-        ExtendedParameter.setupExtended(self.cwExtraParams, self)
+        self.params = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
+        ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         
-        self.cwUSI = CWUniversalSerial()
         
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
@@ -60,13 +59,11 @@ class ChipWhispererExtra(QObject):
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)
         self.cwEXTRA.con(oa.sc)
-        self.cwExtraParams.getAllParameters()
+        self.params.getAllParameters()
         
-        self.cwUSI.con(oa.sc)
-
     def paramList(self):
         p = []
-        p.append(self.cwExtraParams)            
+        p.append(self.params)            
         return p
 
     #def testPattern(self):
@@ -91,6 +88,12 @@ class CWExtraSettings(object):
     MODULE_BASIC = 0x00
     MODULE_ADVPATTERN = 0x01
     
+    CLOCK_FPA = 0x00
+    CLOCK_FPB = 0x01
+    CLOCK_PLL = 0x02
+    CLOCK_RTIOIN = 0x03
+    CLOCK_RTIOOUT = 0x04
+    
     def __init__(self):
         super(CWExtraSettings, self).__init__()
         self.oa = None
@@ -108,10 +111,26 @@ class CWExtraSettings(object):
                     ]},
                 {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN}, 'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule},
                 {'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut},
+                
+                {'name':'Clock Source', 'type':'list', 'values':{'Front Panel A':self.CLOCK_FPA, 
+                                                                 'Front Panel B':self.CLOCK_FPB,
+                                                                 'PLL Input':self.CLOCK_PLL,
+                                                                 'Target IO-IN':self.CLOCK_RTIOIN,
+                                                                 'Target IO-OUT':self.CLOCK_RTIOOUT}, 'set':self.setClockSource, 'get':self.clockSource},
+                
+                
                 ]}]
     
     def con(self, oa):
         self.oa = oa
+           
+    def setClockSource(self, source):
+        data = [source]
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+        
+    def clockSource(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        return resp[0] & 0x07
            
     def setPin(self, enabled, pin):
         current = self.getPins()

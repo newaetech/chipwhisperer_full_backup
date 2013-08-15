@@ -226,7 +226,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
         
-    def passTrace(self, trace):
+    def passTrace(self, trace, startoffset=0):
         """Plot a new trace"""
         if self.persistant:
             if self.autocolor:
@@ -237,7 +237,10 @@ class GraphWidget(QWidget):
         else:
             self.acolor = self.color
             self.pw.clear()
-        self.pw.plot(trace, pen=(self.acolor,8)) 
+            
+        xaxis = range(startoffset, len(trace)+startoffset)
+            
+        self.pw.plot(xaxis, trace, pen=(self.acolor,8)) 
 
 
     def clearPushed(self):

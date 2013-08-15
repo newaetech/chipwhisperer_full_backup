@@ -274,11 +274,12 @@ class OpenADCInterface_ZTEX(QWidget):
 
 class OpenADCInterface(QObject):
     connectStatus = Signal(bool)
-    dataUpdated = Signal(list)
+    dataUpdated = Signal(list, int)
     paramListUpdated = Signal(list)    
 
     def __init__(self, parent=None, console=None, showScriptParameter=None):          
         super(OpenADCInterface, self).__init__(parent)
+        self.parent = parent
         self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, console=console, showScriptParameter=showScriptParameter)
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
@@ -298,13 +299,28 @@ class OpenADCInterface(QObject):
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
                                                                      "Serial Port (LX9)":None,
-                                                                     "FTDI (SASEBO-W)":ftdi}, 'value':defscope, 'set':self.setCurrentScope}
+                                                                     "FTDI (SASEBO-W)":ftdi}, 'value':defscope, 'set':self.setCurrentScope},
+                       {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
         
         self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
+        
+        self.refreshTimer = QTimer()  
+        self.refreshTimer.timeout.connect(self.dcmTimeout)
+        self.refreshTimer.setInterval(1000)
+        
+    def dcmTimeout(self):
+        if self.parent:
+            self.parent.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
+        
+    def setAutorefreshDCM(self, enabled):
+        if enabled:
+            self.refreshTimer.start()
+        else:
+            self.refreshTimer.stop()
         
     def emitParamListUpdated(self):
         self.paramListUpdated.emit(self.paramList())
@@ -321,10 +337,11 @@ class OpenADCInterface(QObject):
     def con(self):
         if self.scopetype is not None:
             self.scopetype.con()  
+            self.refreshTimer.start()
             
             if "ChipWhisper" in self.qtadc.sc.hwInfo.versions()[2]:            
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra()
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter)
                 self.advancedSettings.setOpenADC(self.qtadc)
                 
                 self.paramListUpdated.emit(None)
@@ -335,17 +352,20 @@ class OpenADCInterface(QObject):
     def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()  
+            self.refreshTimer.stop()
             self.connectStatus.emit(True)
 
-    def doDataUpdated(self,  l):
+    def doDataUpdated(self,  l, offset=0):
         self.datapoints = l
-        self.dataUpdated.emit(l)
+        self.offset = offset
+        if len(l) > 0:
+            self.dataUpdated.emit(l, offset)
 
     def arm(self):
         self.qtadc.arm()
 
     def capture(self, update=True, NumberPoints=None):
-        self.qtadc.capture(update, NumberPoints)    
+        return self.qtadc.capture(update, NumberPoints)    
         
     def paramList(self):
         p = []       

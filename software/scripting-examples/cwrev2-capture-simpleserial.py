@@ -48,6 +48,8 @@ except ImportError:
 
 import thread
 
+import scipy.io as sio
+
 exitWhenDone=False
 
 def pe():
@@ -67,10 +69,10 @@ class userScript(QObject):
         print "***** Starting User Script *****"
        
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['Generic Settings', 'Target Module', 'SimpleSerial'])
+        cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
         cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer'])
-        
+
         #Load FW (must be configured in GUI first)
         cap.FWLoaderGo()
                 
@@ -79,8 +81,40 @@ class userScript(QObject):
         pe()
 
         cap.doConDis()
+        
+        pe()
+        
+        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
+                      ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
+                      ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
+                      ['OpenADC', 'Trigger Setup', 'Offset', 1500],
+                      ['OpenADC', 'Gain Setting', 'Setting', 45],
+                      ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
+                      #Final step: make DCMs relock in case they are lost
+                      ['OpenADC', 'Clock Setup', 'Relock DCMs', None],
+                      ]
+        
+        #Download all hardware setup parameters
+        for cmd in lstexample: cap.setParameter(cmd)
+        
+        #Let's only do a few traces
+        cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 75])
+                      
+        #Throw away first few
+        cap.capture1()
+        pe()
+        cap.capture1()
+        pe()
+        
+        #Start capture process
+        writer = cap.captureM()
+        
+        #Save files to MATLAB arrays instead
+        sio.savemat('sca_data.mat', {'powertrace':writer.traces, 'textin':writer.textins, 'textout':writer.textouts, 'knownkey':writer.knownkey})
 
-        #End commands here
         print "***** Ending User Script *****"
         
 

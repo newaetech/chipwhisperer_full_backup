@@ -18,7 +18,7 @@ class dpav3():
 
         os.mkdir(directory)
 
-    def openFiles(self):
+    def prepareDisk(self):
         self.startTime = gmtime()
         self.setDirectory("capture-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
         
