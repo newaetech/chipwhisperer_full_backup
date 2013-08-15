@@ -429,8 +429,8 @@ class ChipWhispererCapture(MainChip):
     
         self.scope = None        
         self.trace = None
-        #self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
-        self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
+        self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
+        #self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
