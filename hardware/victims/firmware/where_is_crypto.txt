@@ -1,0 +1,12 @@
+Due to some uncertaintity about distributing the crypto SW itself, I've decided to just leave the folders empty.
+You've got to go to the avr-crypto-lib page & get these files into the 'aes' folder:
+
+crypto\avr-crypto-lib\aes\aes.h
+crypto\avr-crypto-lib\aes\aes_enc.c
+crypto\avr-crypto-lib\aes\aes_enc.h
+crypto\avr-crypto-lib\aes\aes_enc-asm.S
+crypto\avr-crypto-lib\aes\aes_keyschedule.c
+crypto\avr-crypto-lib\aes\aes_keyschedule.h
+...bunch more files...
+crypto\avr-crypto-lib\aes\gf256mul.h
+crypto\avr-crypto-lib\aes\gf256mul.S
