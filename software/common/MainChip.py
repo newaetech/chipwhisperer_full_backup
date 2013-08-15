@@ -313,26 +313,32 @@ class MainChip(QMainWindow):
                 self.saveProject()
         return True
            
-    def _setParameter_children(self, top, path, value):
+    def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
-        print top.name()
+        #print top.name()
         if top.name() == path[0]:
             if len(path) > 1:
                 for c in top.children():
-                    self._setParameter_children(c, path[1:], value)
+                    self._setParameter_children(c, path[1:], value, echo)
             else:
                 #Check if this is a dictionary/list
                 if "values" in top.opts:
-                    value = top.opts["values"][value]   
+                    try:
+                        value = top.opts["values"][value]
+                    except TypeError:
+                        pass   
                     
-                if "action" in top.opts:
+                if echo == False:
+                    top.opts["echooff"] = True
+                    
+                if top.opts["type"] == "action":
                     top.activate()           
                 else:
                     top.setValue(value)
                     
                 raise ValueError()
            
-    def setParameter(self, parameter):
+    def setParameter(self, parameter, echo=False):
         """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
         path = parameter[:-1]
         value = parameter[-1]
@@ -340,7 +346,7 @@ class MainChip(QMainWindow):
         try:
             for t in self.paramTrees:
                 for i in range(0, t.invisibleRootItem().childCount()):
-                    self._setParameter_children(t.invisibleRootItem().child(i).param, path, value)
+                    self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
             
             print "Parameter not found: %s"%str(parameter)
         except ValueError:
@@ -379,11 +385,16 @@ class MainChip(QMainWindow):
 
             #Don't pollute script output with readonly things
             if param.opts["readonly"] == True:
-                continue                        
+                continue            
+            
+            if "echooff" in param.opts:
+                if param.opts["echooff"] == True:
+                    param.opts["echooff"] = False
+                    continue             
             
             if "values" in param.opts:            
                 if not hasattr(param.opts["values"], 'iteritems'):
-                    name.append(None)
+                    name.append(data)
                 else:    
                     for k, v in param.opts["values"].iteritems():
                         if v == data:

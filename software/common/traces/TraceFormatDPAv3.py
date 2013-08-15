@@ -36,11 +36,114 @@ import tracereader_native
 import re
 import numpy as np
 from scipy import signal
+from time import gmtime, strftime
 
 #For profiling support (not 100% needed)
 import pstats, cProfile
 
 from TraceContainer import TraceContainer
+
+class TraceFormatDPAv3(TraceContainer):
+    def __init__(self):
+        super(TraceFormatDPAv3, self).__init__()
+        self.dir = "."
+
+    def setDirectory(self, directory):
+        self.dir = directory;
+
+        os.mkdir(directory)
+
+    def prepareDisk(self):
+        self.startTime = gmtime()
+        self.setDirectory("capture-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
+        
+        if os.path.exists(self.dir + "text_in.txt"):
+            print "Textin File exists!"
+            return
+
+        if os.path.exists(self.dir + "text_out.txt"):
+            print "Textout File exists!"
+            return
+
+        if os.path.exists(self.dir + "wave.txt"):
+            print "Wave File exists!"
+            return
+
+        if os.path.exists(self.dir + "key.txt"):
+            print "Key file exists!"
+            return
+        
+        self.inf = open(self.dir + "text_in.txt", "w")
+        self.outf = open(self.dir + "text_out.txt", "w")
+        self.wavef = open(self.dir + "wave.txt", "w")
+        self.keyf = open(self.dir + "key.txt", "w")
+        
+    def numPoints(self):
+        return self._numPoints
+        
+    def addTrace(self, wave, textin, textout, key=None, dtype=np.double):
+        self.wavelen = len(wave)
+        self._numTraces = self._numTraces + 1
+        self._numPoints = len(wave)
+
+        for i in textin:
+            self.inf.write('%2X '%i)
+        self.inf.write('\n')
+
+        for i in textout:
+            self.outf.write('%2X '%i)
+        self.outf.write('\n')
+
+        for i in wave:
+            iint = i * float(2**16)
+            self.wavef.write('%d '%int(iint))
+        self.wavef.write('\n')
+
+        if key:
+            for i in key:
+                self.keyf.write('%2X '%i)
+            self.keyf.write('\n')
+        
+    def copyTo(self, srcTraces=None):
+        pass        
+        
+    def loadAllTraces(self, directory=None, prefix=""):
+        pass
+
+    def writeInfo(self):
+        infofile = open(self.dir + "info.xml", "w")
+
+        infofile.write('<?xml version="1.0" encoding="utf-8"?>\n')
+        infofile.write('<WaveformInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">\n')
+        infofile.write('  <Date>%s</Date>'%strftime("%d/%m%Y %H:%M:%S", self.startTime))
+        infofile.write('  <Operator>Smooth</Operator>\n')
+        infofile.write('  <WaveType>PowerTrace</WaveType>\n')
+        infofile.write('  <WaveFormat>System.Single[]</WaveFormat>\n')
+        infofile.write('  <Instrument>Something</Instrument>\n')
+        infofile.write('  <Module>AES</Module>\n')
+        infofile.write('  <Cipher>AES</Cipher>\n')
+        infofile.write('  <KeyLength>128</KeyLength>\n')
+        infofile.write('  <TextWidth>128</TextWidth>\n')
+        infofile.write('  <NumTrace>%d</NumTrace>\n'%self._numTraces)
+        infofile.write('  <NumPoint>%d</NumPoint>\n'%self._numPoints)
+        infofile.write('</WaveformInfo>\n')
+        infofile.close()
+
+    def writeSettings(self, settings):
+        settingsfile = open(self.dir + "settings.txt", "w")
+        settingsfile.write("OpenADC Capture Settings:\n")
+        for s in settings:
+            settingsfile.write("%s\n"%s)       
+        settingsfile.close()
+
+    def saveAllTraces(self):
+        self.writeInfo()
+        
+    def closeAll(self):
+        self.inf.close()
+        self.outf.close()
+        self.wavef.close()
+        self.keyf.close()
 
 class ImportDPAv3Dialog(QDialog):   
     def __init__(self, parent=None):
