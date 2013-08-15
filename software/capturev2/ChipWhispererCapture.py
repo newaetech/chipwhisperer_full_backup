@@ -81,8 +81,6 @@ except ImportError:
     target_SmartCard = None
     target_SmartCard_str = sys.exc_info()
 
-import target_chipwhisperer_extra
-
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from traces.TraceFormatNative import TraceFormatNative
