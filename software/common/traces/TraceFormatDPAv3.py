@@ -140,6 +140,7 @@ class TraceFormatDPAv3(TraceContainer):
         self.writeInfo()
         
     def closeAll(self):
+        self.saveAllTraces()
         self.inf.close()
         self.outf.close()
         self.wavef.close()

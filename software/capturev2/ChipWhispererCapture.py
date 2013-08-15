@@ -117,11 +117,15 @@ class acquisitionController(QObject):
     def TargetDoTrace(self, plaintext, key=None):
         if self.target is None:
             return
-        
-        if key is not None:
-            self.target.loadEncryptionKey(key)      
+           
+        #Set mode
+        self.target.setModeEncrypt()
+        self.target.loadEncryptionKey(key)  
         self.target.loadInput(plaintext)
         self.target.go()
+        
+        while self.target.isDone() == False:
+            continue
 
         #print "DEBUG: Target go()"
 
@@ -173,18 +177,9 @@ class acquisitionController(QObject):
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
 
         
-        if self.target is not None:
-            
-            #Init
-            self.target.init()
-            
-            #Set mode
-            self.target.setModeEncrypt()
-
-            #self.target.loadEncryptionKey(self.key)   
-
+        if self.target is not None:            
             #Load input, start encryption, get output
-            self.textout = self.TargetDoTrace(self.textin, None)
+            self.textout = self.TargetDoTrace(self.textin, key)
 
             if self.textout is not None:
                 if len(self.textout) >= 16:    
@@ -212,7 +207,7 @@ class acquisitionController(QObject):
         nt = 0
 
         while (nt < self.maxtraces) and self.running:
-            if self.doSingleReading(True, None, None) == True:
+            if self.doSingleReading(True, None, key=self.key) == True:
                 if self.writer is not None:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
     
@@ -222,11 +217,7 @@ class acquisitionController(QObject):
             
 
         if self.writer is not None:
-            try:
-                self.writer.saveAllTraces()
-                self.writer.closeAll()
-            except TypeError:
-                pass
+            self.writer.closeAll()
         
         if addToList is not None:
             if self.writer is not None:
@@ -438,7 +429,8 @@ class ChipWhispererCapture(MainChip):
     
         self.scope = None        
         self.trace = None
-        self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
+        #self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
+        self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     

@@ -85,8 +85,12 @@ class SaseboGII(QObject):
         except ft.ftd2xx.DeviceError, e:
             self.sasebo = None
             return False
-
+        
         self.sasebo.setTimeouts(1000, 1000)
+        
+        #Init
+        self.init()
+        
         return True
 
     def disconnect(self):
