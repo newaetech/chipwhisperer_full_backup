@@ -7,18 +7,24 @@
 
 import sys
 from functools import partial
+import time
 
 from PySide.QtCore import *
 from PySide.QtGui import *
 
 try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+    from pyqtgraph.parametertree import Parameter
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
     
-sys.path.append('../common')
+sys.path.append('../../common')
+sys.path.append('../.')
 from ExtendedParameter import ExtendedParameter
+
+from utils.SerialProtocols import strToBits as strToBits
+from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+from targets.ChipWhispererTargets import CWUniversalSerial as CWUniversalSerial
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -34,7 +40,8 @@ ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
 
-class QtInterface:
+
+class ChipWhispererExtra(QObject):
     paramListUpdated = Signal(list)
      
     def __init__(self, showScriptParameter=None):
@@ -44,6 +51,8 @@ class QtInterface:
         ExtendedParameter.setupExtended(self.cwExtraParams, self)
         self.showScriptParameter = showScriptParameter
         
+        self.cwUSI = CWUniversalSerial()
+        
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
@@ -52,6 +61,8 @@ class QtInterface:
         #self.cwADV.setOpenADC(oa)
         self.cwEXTRA.con(oa.sc)
         self.cwExtraParams.getAllParameters()
+        
+        self.cwUSI.con(oa.sc)
 
     def paramList(self):
         p = []
@@ -154,66 +165,7 @@ class CWExtraSettings(object):
         resp[0] = resp[0] & 0xE7    
         if enabled:
             resp[0] = resp[0] | 0x08
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp) 
-
-def strToPattern(string, startbits=1, stopbits=1):
-    totalpat = []
-    for s in string:
-        bp = ord(s)
-        #Start bits
-        for i in range(0, startbits):
-            totalpat.append(0)
-         
-        #Following for MSB first:   
-        #for i in range(7, -1, -1):
-        #Serial protocols LSB first:
-        for i in range(0,  8):
-            bit = (bp >> i) & 0x01
-            totalpat.append(bit)
-
-        #Stop bits
-        for i in range(0, stopbits):
-            totalpat.append(1)
-
-    return bitsToPattern(totalpat)
-
-def processBit(state, cnt, first=False, last=False, var=1, osRate=3):
-    cnt = osRate * cnt
-    low = cnt - var
-    high = cnt + var
-
-    if low < 1:
-        low = 1
-
-    if high > 509:
-        high = 509
-
-    if first:
-        high = 'wait'
-
-    if last:
-        high = 'now'    
-
-    return [state, low, high]    
-
-def bitsToPattern(bits):
-    pattern = []
-    lastbit = 2
-    bitcnt = 0
-    first = True
-    for b in bits:
-        if b == lastbit:
-            bitcnt = bitcnt + 1
-        else:
-            if bitcnt > 0:
-                #print "%d %d"%(lastbit, bitcnt)
-                pattern.append(processBit(lastbit, bitcnt, first=first))
-            lastbit = b
-            bitcnt = 1
-
-        first = False
-    pattern.append(processBit(lastbit, bitcnt, last=True))
-    return pattern
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)      
    
 class CWAdvTrigger(object):
     def __init__(self):
@@ -291,25 +243,46 @@ class CWAdvTrigger(object):
         d.append(high & 0xff)
         d.append((0x01 & (high >> 8)) | (state << 1))
         d.append(addr)        
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGIOPROG, d)          
-      
-    
-class CWAdvTriggerQT(CWAdvTrigger,  QWidget):        
-    def __init__(self):
-        super(CWAdvTriggerQT,  self).__init__()
-        adviolayout = QVBoxLayout()
-        self.setLayout(adviolayout)
-
-        pbTest = QPushButton("Test Pattern")
-        pbTest.clicked.connect(self.testPattern)
-        adviolayout.addWidget(pbTest)        
-
-    def setOpenADC(self, oa):
-        self.con(oa)
-
-    def testPattern(self):
-        desired_freq = 38400 * 3
-        clk = 30E6
-        clkdivider = (clk / (2 * desired_freq)) + 1        
-        self.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGIOPROG, d)  
         
+    def processBit(self, state, cnt, first=False, last=False, var=1, osRate=3):
+        cnt = osRate * cnt
+        low = cnt - var
+        high = cnt + var
+    
+        if low < 1:
+            low = 1
+    
+        if high > 509:
+            high = 509
+    
+        if first:
+            high = 'wait'
+    
+        if last:
+            high = 'now'    
+    
+        return [state, low, high]    
+    
+    def bitsToPattern(self, bits):
+        pattern = []
+        lastbit = 2
+        bitcnt = 0
+        first = True
+        for b in bits:
+            if b == lastbit:
+                bitcnt = bitcnt + 1
+            else:
+                if bitcnt > 0:
+                    #print "%d %d"%(lastbit, bitcnt)
+                    pattern.append(self.processBit(lastbit, bitcnt, first=first))
+                lastbit = b
+                bitcnt = 1
+    
+            first = False
+        pattern.append(self.processBit(lastbit, bitcnt, last=True))
+        return pattern
+    
+    def strToPattern(self, string, startbits=1, stopbits=1):
+        totalpat = self.strToBits(string, startbits, stopbits)
+        return self.bitsToPattern(totalpat)

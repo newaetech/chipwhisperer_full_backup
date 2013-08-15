@@ -71,9 +71,11 @@ except ImportError:
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
 from TraceFormatNative import TraceFormatNative
-from AttackCPA import AttackCPA
+from attacks.CPA import CPA
 from ResultsPlotting import ResultsPlotting
 
+#TEMP
+from ResultsPlotting import ResultsPlotData
 
 class MainWindow(MainChip):
     MaxRecentFiles = 4    
@@ -95,7 +97,7 @@ class MainWindow(MainChip):
                     ]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':{'CPA':AttackCPA()}, 'value':'CPA', 'set':self.setAttack},                                          
+                    {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self)}, 'value':'CPA', 'set':self.setAttack},                                          
                     ]},
                          
                 {'name':'Post-Processing', 'type':'group'},
@@ -116,16 +118,27 @@ class MainWindow(MainChip):
         
         self.da = None
         self.numTraces = 100
+        
+        self.traceLimits = 0
+        self.pointLimits = 0
 
         self.addToolbars()
         self.addSettingsDocks()
         self.addWaveforms()
+        
         for d in self.results.dockList():
             self.addDockWidget(Qt.RightDockWidgetArea, d)
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
             self.enforceMenuOrder()
         
         self.restoreDockGeometry()
+        
+        #Generate correct tab order now that we've restored
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsPreprocessingDock)
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsAttackDock)
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsPostProcessingDock)
+        self.tabifyDockWidget(self.settingsNormalDock, self.settingsResultsDock)
+        
         self.newProject()   
         
         self.newFile.connect(self.newProject)
@@ -133,7 +146,7 @@ class MainWindow(MainChip):
         self.openFile.connect(self.openProject)
 
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
-        self.setAttack(AttackCPA())
+        self.setAttack(CPA(self))
         
     def addToolbars(self):
         attack = QAction(QIcon(imagePath+'attack.png'), 'Start Attack', self)
@@ -142,30 +155,33 @@ class MainWindow(MainChip):
         self.AttackToolbar = self.addToolBar('Attack Tools')
         self.AttackToolbar.setObjectName('Attack Tools')
         self.AttackToolbar.addAction(attack)        
-        
+
     def setAttack(self, attack):
         self.attack = attack
         self.reloadAttackParamList()
         self.results.setAttack(self.attack)
+        self.attack.paramListUpdated.connect(self.reloadAttackParamList)
+        self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
         
     def doAttack(self):
         self.console.append("Attack Started")
+        
+        if self.results is not None:
+            self.results.setTraceManager(self.manageTraces.iface)
+        
         if self.attack is not None:
             self.attack.setTraceManager(self.manageTraces.iface)
             self.attack.doAttack()
         
     def reloadAttackParamList(self, list=None):
-        self.attackParamTree.clear() 
-        for p in self.attack.paramList():
-            if p is not None:
-                self.attackParamTree.addParameters(p)
+        ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
         
     def tracesChanged(self):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
+        self.plotInputTrace()
 
         
     def plotInputTrace(self):
-        
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         params = self.inputTraceSettingParams()
         self.waveformDock.widget().clearPushed()
@@ -179,12 +195,19 @@ class MainWindow(MainChip):
         for tnum in range(tstart, tend):
             trace = self.manageTraces.iface.getTrace(tnum)           
             self.waveformDock.widget().passTrace(trace[pstart:pend])
+
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
-        """When traces is loaded, set plot limits to show entire thing"""
+        """When traces is loaded, Tell everything default point/trace range"""
         if defpoint == -1:
             defpoint = points
             
+        #Set parameters for attack
+        self.traceLimits = traces
+        self.pointLimits = points
+        self.attack.setTraceLimits(traces, points)
+            
+        #Set local parameters for trace viewer
         params = self.inputTraceSettingParams()
         if traces is not None:
             params[0].setLimits((0, traces))
@@ -235,7 +258,8 @@ class MainWindow(MainChip):
         self.waveformDock = self.addTraceDock("Waveform Display")        #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()       
+        self.waveformDock.widget().YDefault() 
+ 
         
     def addSettingsDocks(self):      
         self.setupParametersTree()        
@@ -244,6 +268,7 @@ class MainWindow(MainChip):
         self.settingsAttackDock = self.addSettings(self.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.postprocessingParamTree, "Postprocessing")
         self.settingsResultsDock = self.addSettings(self.resultsParamTree, "Results")
+        
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
@@ -256,10 +281,14 @@ class MainWindow(MainChip):
         self.postprocessingParamTree = ParameterTree()
         self.resultsParamTree = ParameterTree()
         
+        self.results.paramListUpdated.connect(self.reloadParamListResults)
+        self.reloadParamListResults()
         
-    def reloadParamList(self, lst=None):
-        self.paramTree.clear()                             
-        for p in self.paramList(): self.paramTree.addParameters(p)           
+    def reloadParamListResults(self, lst=None):
+        ExtendedParameter.reloadParams(self.results.paramList(), self.resultsParamTree)
+        
+    def reloadParamList(self, lst=None):        
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)      
         
         
     def paramList(self):

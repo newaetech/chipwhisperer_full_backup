@@ -43,12 +43,6 @@ import numpy as np
 from ExtendedParameter import ExtendedParameter
 
 try:
-    import writer_dpav3
-except ImportError:
-    writer_dpav3 = None
-    writer_dpav3_str = sys.exc_info()
-
-try:
     import pyqtgraph as pg
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
@@ -58,7 +52,8 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-import ModelAES128_8bit
+import attacks.models.AES128_8bit
+from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
 
@@ -206,27 +201,17 @@ class AttackCPA_SimpleLoop(QObject):
         return t
 
 
-#TODO: AttackCPA should be broken into a seperate function
-
-class AttackCPA(QObject):
+#TODO: This should be broken into a separate function I think
+class CPA(AttackBaseClass):
     """Correlation Power Analysis Attack"""
-        
-    paramListUpdated = Signal(list)
-    
-    #statsUpdated called new data is available
-    statsUpdated = Signal()
-    
-    #attack done called once entire attack is complete, stats are available. Note that the
-    #statsUpdated() signal is not called even though new data is available, which avoids
-    #double-processing data
-    attackDone = Signal()
-    
+            
     def __init__(self, parent=None, log=None):
-        super(AttackCPA, self).__init__(parent)
-
-        self.log=log        
+        super(CPA, self).__init__(parent)
+        self.log=log  
+        
+    def setupParameters(self):      
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':ModelAES128_8bit}, 'value':'AES-128'},
+                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
                         {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
                         {'name':'Power Model', 'type':'list', 'values':['HW-VCC', 'HW-GND', 'HD-VCC', 'HD-GND'], 'value':'HW-VCC'},
                         ]},
@@ -235,53 +220,17 @@ class AttackCPA(QObject):
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
                          self.getByteList()                                                 
-                        }
+                        },                    
                       ]
-
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params)
-
-    def getByteList(self):
-        init = [dict(name='Byte %d'%bnum, type='bool', value=True, bytenum=bnum) for bnum in range(0,16)]
-        init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
-        init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
-        return init
-
-    def bytesEnabled(self):
-        blist = []
-        for t in self.bytesParameters():
-            if t.value() == True:
-                blist.append(t.opts['bytenum'])
-        return blist
-
-    def allBytesOn(self):
-        for t in self.bytesParameters():
-            t.setValue(True)
-    
-    def allBytesOff(self):
-        for t in self.bytesParameters():
-            t.setValue(False)
-
-    def bytesParameters(self):
-        blist = []
-        for p in self.params.children():
-            if p.name() == 'Attacked Bytes':
-                for t in p.children():
-                    if t.name().startswith('Byte'):
-                        blist.append(t)
-
-        return blist
-    
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager
-    
-    def doAttack(self):
-        startingTrace = 0
-        startingPoint = 0
-        endingTrace = 100
-        endingPoint = 1500
-        
+            
+    def doAttack(self):        
         #TODO: support start/end point different per byte
+        (startingPoint, endingPoint) = self.getPointRange(None)
+        (startingTrace, endingTrace) = self.getTraceRange()
+        
+        #print "%d-%d"%(startingPoint, endingPoint)
         
         data = []
         textins = []
@@ -290,11 +239,12 @@ class AttackCPA(QObject):
         for i in range(startingTrace, endingTrace):
             d = self.trace.getTrace(i)
             #d = self.preprocess.processOneTrace(d)
+            
             data.append(d[startingPoint:endingPoint])
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
                                  
-        self.attack = AttackCPA_SimpleLoop(ModelAES128_8bit)
+        self.attack = AttackCPA_SimpleLoop(attacks.models.AES128_8bit)
         self.attack.setByteList(self.bytesEnabled())
         self.attack.setKeyround("first")
         self.attack.setModeltype("Hamming Weight")
@@ -315,4 +265,4 @@ class AttackCPA(QObject):
         return self.attack.getStatistics()
             
     def paramList(self):
-        return [self.params]
+        return [self.params, self.pointsParams]

@@ -40,7 +40,7 @@ sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
 from ExtendedParameter import ExtendedParameter
     
-class SmartCard_ChipWhisperer(QObject):
+class SmartCard_ChipWhisperer_oldModule(QObject):
     paramListUpdated = Signal(list) 
     
     CODE_READ       = 0x80
@@ -110,6 +110,7 @@ class SmartCard_ChipWhisperer(QObject):
 
         #Get ATR
         data = self.readAll()
+
         stratr = "ATR = "
         for p in data:
             stratr = stratr + "%2X "%p
@@ -230,7 +231,7 @@ class SmartCard_ChipWhisperer(QObject):
         #return resp[0:datalen]       
  
     def APDUSendReceive(self, cla, ins, p1, p2, data):
-        self.APDUHeader(cla, ins, p1, p2, len(data), 0)
+        self.APDUHeader(cla, ins, p1, p2, len(data), len(data))
         self.APDUPayloadGo(data)
         
         self.waitDone()
@@ -249,6 +250,197 @@ class SmartCard_ChipWhisperer(QObject):
         
     def flush(self):
         self.oa.flushInput()
+        
+class SmartCard_ChipWhisperer_simpleSerial(QObject):
+    paramListUpdated = Signal(list) 
+    
+    CODE_READ       = 0x80
+    CODE_WRITE      = 0xC0
+
+    ADDR_DATA       = 41
+    ADDR_LEN        = 42
+    ADDR_BAUD       = 43
+    
+    def __init__(self, showScriptParameter=None):
+        super(SmartCard_ChipWhisperer_simpleSerial, self).__init__()
+        ssParams = [{'name':'baud', 'type':'list', 'values':['9600'], 'value':'9600', 'get':self.baud, 'set':self.setBaud}]
+        self.params = Parameter.create(name='SmartCard Settings', type='group', children=ssParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.showScriptParameter = showScriptParameter
+        self.debugLog = None   
+
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
+
+    def setBaud(self, baud):
+        return
+    
+    def baud(self):
+        return 9600
+
+    def paramList(self):
+        return [self.params]
+    
+    def setOpenADC(self, oa):
+        self.oa = oa
+
+
+    def write(self, data):
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_DATA, data, Validate=False)
+            
+    def inWaiting(self):
+        resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_LEN, Validate=False, maxResp=2)
+        resp = resp[1]
+        #print "%d waiting"%resp       
+        return resp 
+
+    def read(self, num=0, timeout=100):
+        waiting = self.inWaiting()
+        data = bytearray()
+
+        #TODO: why is this needed? Some garbage at front...
+        num = num + 1
+
+        while (len(data) < num) and (timeout > 1):
+            if waiting > 0:
+                resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, Validate=False, maxResp=1)
+                if resp:
+                    data.append(resp[0])
+            else:
+                time.sleep(0.01)
+                timeout = timeout - 1
+            waiting = self.inWaiting()
+            
+        if timeout <= 0:
+            self.log("CW Serial timed out")
+
+        #TODO: fix removing garbage at front
+        result = data[1:(len(data)+1)]        
+        result = result.decode("utf-8")
+        return result
+
+    def flush(self):
+        waiting = self.inWaiting()
+        while waiting > 0:
+            self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, Validate=False, maxResp=1)
+            waiting = self.inWaiting()  
+            
+    def flushInput(self):
+        self.flush()
+            
+    def close(self):
+        pass
+        
+
+    def reset(self):
+        pass
+#         #Flush
+#         #self.readAll()
+# 
+#         #Toggle Reset
+#         cmd = bytearray(1)
+#         #Reset active, pass-through on
+#         cmd[0] = self.FLAG_PASSTHRU | self.FLAG_RESET;        
+#         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, cmd, Validate=False)
+#         time.sleep(0.1)
+# 
+#         self.oa.flushInput()
+#         
+#         #Reset inactive, pass-through on
+#         cmd[0] = self.FLAG_PASSTHRU;
+#         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, cmd, Validate=False)
+# 
+#         #Wait for card to settle
+#         time.sleep(0.2)            
+# 
+#         #Get ATR
+#         data = self.readAll()
+# 
+#         stratr = "ATR = "
+#         for p in data:
+#             stratr = stratr + "%2X "%p
+# 
+#         #Disable pass-through
+#         cmd[0] = 0x00;
+#         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, cmd, Validate=False)            
+# 
+#         print stratr
+#         self.stratr = stratr
+#         return stratr  
+      
+        
+    def init(self):
+        self.reset()
+
+    def getATR(self):
+        return self.stratr
+
+    def APDUWrite(self, cla, ins, p1, p2, cmd_datalen, rsp_datalen, payload):
+        header = bytearray()
+        header.append(0)
+        header.append(cla)
+        header.append(ins)
+        header.append(p1)
+        header.append(p2)
+        header.append(cmd_datalen)
+        if payload is not None:
+            for p in payload:
+                header.append(p)
+        #header.append(rsp_datalen)   
+        self.write(header)     
+        return True
+
+
+    def APDUSend(self, cla, ins, p1, p2, data):
+        self.APDUWrite(cla, ins, p1, p2, len(data), 0, data)
+        
+        #self.waitDone()
+        #resp = self.readPayload()
+
+        #if len(resp) != 18:
+        #    print "SASEBOW: USB Data Error, wrong Response Size"
+        #    return 0
+
+        #status = resp[16:18]
+        #status = (status[0] << 8) | status[1]        
+        #return status
+
+    def APDURecv(self, cla, ins, p1, p2, datalen):
+        self.APDUWrite(cla, ins, p1, p2, 0, datalen, None)
+        #self.APDUPayloadGo(None)
+
+        #self.waitDone()
+        #resp = self.readPayload()
+
+        #if len(resp) != 18:
+        #    print "SASEBOW: USB Data Error, wrong Response Size"
+        #    return 0
+
+        #return bytearray(resp)
+        #status = resp[16:18]
+        #status = (status[0] << 8) | status[1]
+
+        #resp = bytearray(resp)
+        #return resp[0:datalen]       
+ 
+    def APDUSendReceive(self, cla, ins, p1, p2, data):
+        self.APDUWrite(cla, ins, p1, p2, len(data), len(data), data)
+        
+        #self.waitDone()
+        #resp = self.readPayload()
+
+        #if len(resp) != 18:
+        #    print "SASEBOW: USB Data Error, wrong Response Size"
+        #    return 0
+
+        #for p in resp:
+        #    print "%2x "%p,
+
+        #status = resp[16:18]
+        #status = (status[0] << 8) | status[1]        
+        #return status
+
        
 class SmartCardDPAv4(QObject):   
     paramListUpdated = Signal(list) 
@@ -259,7 +451,7 @@ class SmartCardDPAv4(QObject):
         self.console = console
         
         self.ser = None
-        ssParams = [{'name':'connection', 'type':'list', 'values':{"None":None, "ChipWhisperer":SmartCard_ChipWhisperer(showScriptParameter)}, 'value':"ChipWhisperer", 'set':self.setConnection}]        
+        ssParams = [{'name':'connection', 'type':'list', 'values':{"None":None, "ChipWhisperer":SmartCard_ChipWhisperer_simpleSerial(showScriptParameter)}, 'value':"ChipWhisperer", 'set':self.setConnection}]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
@@ -324,10 +516,8 @@ class SmartCardDPAv4(QObject):
         return True
 
     def readOutput(self):        
-        return
+        return ""
 
     def go(self):
-        (data, resp) = self.ser.APDUSendReceive(0x80, 0xC0, 0x00, 0x00, self.input)
-        print data
-        print resp     
+        self.ser.APDUSendReceive(0x80, 0xC0, 0x00, 0x00, self.input)             
 

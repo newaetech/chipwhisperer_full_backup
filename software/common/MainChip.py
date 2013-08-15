@@ -41,9 +41,10 @@ except ImportError:
     sys.exit()
 
 from GraphWidget import GraphWidget
+import PythonConsole
 
 sys.path.append("traces")
-from TraceManager import TraceManagerDialog
+from traces.TraceManager import TraceManagerDialog
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
@@ -81,6 +82,7 @@ class MainChip(QMainWindow):
         self.setCentralWidget(fake)
         
         self.paramScripting = self.addConsole("Script Commands", visible=False)
+        self.addPythonConsole()
 
 
     def restoreDockGeometry(self):
@@ -121,7 +123,8 @@ class MainChip(QMainWindow):
     def addSettings(self, tree, name):
         """Add a settings dock - same as addDock but defaults to left-hand side"""
         self.paramTrees.append(tree)
-        return self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)        
+        dock = self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)
+        return dock        
     
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
@@ -132,7 +135,15 @@ class MainChip(QMainWindow):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
         self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible) 
-        return console       
+        return console    
+    
+    def addPythonConsole(self, name="Python Console", visible=False):
+        wid = PythonConsole.QPythonConsole(self, locals())
+        self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
+        return wid   
+        
+    def clearAllSettings(self):
+        QSettings.remove("")
         
     def closeEvent(self, event):
         settings = QSettings()
@@ -312,9 +323,13 @@ class MainChip(QMainWindow):
             else:
                 #Check if this is a dictionary/list
                 if "values" in top.opts:
-                    value = top.opts["values"][value]               
-                
-                top.setValue(value)
+                    value = top.opts["values"][value]   
+                    
+                if "action" in top.opts:
+                    top.activate()           
+                else:
+                    top.setValue(value)
+                    
                 raise ValueError()
            
     def setParameter(self, parameter):
@@ -364,12 +379,17 @@ class MainChip(QMainWindow):
 
             #Don't pollute script output with readonly things
             if param.opts["readonly"] == True:
-                continue
+                continue                        
             
-            if "values" in param.opts:
-                for k, v in param.opts["values"].iteritems():
-                    if v == data:
-                        name.append(k)
+            if "values" in param.opts:            
+                if not hasattr(param.opts["values"], 'iteritems'):
+                    name.append(None)
+                else:    
+                    for k, v in param.opts["values"].iteritems():
+                        if v == data:
+                            name.append(k)
+
+                    
             else:
                 name.append(data)   
             
