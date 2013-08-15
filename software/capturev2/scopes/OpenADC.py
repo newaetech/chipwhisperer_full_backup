@@ -64,6 +64,7 @@ except ImportError:
 
 try:
     import serial
+    import scan
 except ImportError:
     serial = None
 
@@ -169,6 +170,95 @@ class OpenADCInterface_FTDI(QWidget):
         #    for a in self.cwAdvancedSettings.paramList(): p.append(a)            
         return p
 
+class OpenADCInterface_Serial(QWidget):    
+    paramListUpdated = Signal(list) 
+    
+    def __init__(self,oadcInstance,console=None,showScriptParameter=None):
+        QWidget.__init__(self)
+        self.showScriptParameter = showScriptParameter
+        
+        ftdiParams = [                  
+                      {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
+                      {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
+                  ]           
+       
+        self.console = console
+        self.ser = None
+       
+        if (openadc_qt is None) or (serial is None):               
+            self.ser = None
+            return
+        else:            
+            self.ser = None
+            self.scope = oadcInstance
+            self.params = Parameter.create(name='OpenADC-Serial', type='group', children=ftdiParams)
+            ExtendedParameter.setupExtended(self.params, self)  
+            
+    def setPortName(self, snum):
+        self.portName = snum
+
+    def __del__(self):
+        if self.ser != None:
+            self.ser.close()
+
+    def con(self):
+        if self.ser == None:
+            self.ser = serial.Serial()
+            self.ser.port     = self.portName
+            self.ser.baudrate = 512000;
+            self.ser.timeout  = 2     # 2 second timeout
+
+
+            attempts = 4
+            while attempts > 0:
+                try:
+                    self.ser.open()
+                    attempts = 0
+                except serial.SerialException, e:
+                    attempts = attempts - 1
+                    self.ser = None
+                    if attempts == 0:
+                        raise IOError("Could not open %s"%self.ser.name)
+            
+        try:
+            self.scope.con(self.ser)
+            self.console.append("OpenADC Found, Connecting")            
+        except IOError,e:
+            exctype, value = sys.exc_info()[:2]
+            self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
+            QMessageBox.warning(None, "Serial Port", str(exctype) + str(value))
+            raise IOError(e) 
+        
+
+    def dis(self):
+        if self.ser != None:
+            self.ser.close()
+            self.ser = None
+        
+
+    def serialRefresh(self):
+        serialnames = scan.scan()
+        if serialnames == None:
+            serialnames = [" "]
+            
+        for p in self.params.children():
+            if p.name() == 'Port':
+                p.setLimits(serialnames)
+                p.setValue(serialnames[0])
+
+        self.paramListUpdated.emit(self.paramList())
+            
+    def getTextName(self):
+        try:
+            return self.ser.name
+        except:
+            return "None?"
+        
+    def paramList(self):
+        p = [self.params]            
+        return p
+
+      
             
 class OpenADCInterface_ZTEX(QWidget):    
     paramListUpdated = Signal(list) 
@@ -288,17 +378,19 @@ class OpenADCInterface(QObject):
         
         cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console, showScriptParameter=showScriptParameter)
         ftdi = OpenADCInterface_FTDI(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        cwser = OpenADCInterface_Serial(self.qtadc, console=console, showScriptParameter=showScriptParameter)
         self.setCurrentScope(cwrev2, False)
         
         ftdi.paramListUpdated.connect(self.emitParamListUpdated)
         cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
+        cwser.paramListUpdated.connect(self.emitParamListUpdated)
         
         defscope = cwrev2
         
         self.advancedSettings = None
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
-                                                                     "Serial Port (LX9)":None,
+                                                                     "Serial Port (LX9)":cwser,
                                                                      "FTDI (SASEBO-W)":ftdi}, 'value':defscope, 'set':self.setCurrentScope},
                        {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
