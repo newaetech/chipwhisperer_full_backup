@@ -118,9 +118,6 @@ class acquisitionController(QObject):
         if self.target is None:
             return
            
-        #Set mode
-        self.target.setModeEncrypt()
-        self.target.loadEncryptionKey(key)  
         self.target.loadInput(plaintext)
         self.target.go()
         
@@ -167,14 +164,20 @@ class acquisitionController(QObject):
 
 
     def doSingleReading(self, update=True, N=None, key=None):
-        self.scope.arm()
-
+       
         self.key = key
         self.newPlain()
 
         ## Start target now
         if self.textInLabel != None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
+
+        #Set mode
+        if self.target is not None:
+            self.target.setModeEncrypt()
+            self.target.loadEncryptionKey(key)  
+        
+        self.scope.arm()
 
         
         if self.target is not None:            

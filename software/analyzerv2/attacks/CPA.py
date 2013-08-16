@@ -40,6 +40,7 @@ sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 import numpy as np
+import scipy as sp
 from ExtendedParameter import ExtendedParameter
 
 try:
@@ -207,7 +208,10 @@ class CPA(AttackBaseClass):
             
     def __init__(self, parent=None, log=None):
         super(CPA, self).__init__(parent)
-        self.log=log  
+        self.log=log 
+        
+        self.ccEnabled = False
+        self.ccRange = (5000,6000) 
         
     def setupParameters(self):      
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
@@ -236,11 +240,30 @@ class CPA(AttackBaseClass):
         textins = []
         textouts = []
         
+        
+        ###TESTING FOR CORRELATION PREPROCESSING (to be added)
+        if self.ccEnabled:
+            reftrace = self.trace.getTrace(startingTrace)[self.ccRange[0]:self.ccRange[1]]
+            cross = sp.signal.fftconvolve(reftrace, self.trace.getTrace(startingTrace), mode='valid')
+            refmaxloc = np.argmax(cross[self.ccRange[0]:self.ccRange[1]])
+        
         for i in range(startingTrace, endingTrace):
             d = self.trace.getTrace(i)
             #d = self.preprocess.processOneTrace(d)
             
-            data.append(d[startingPoint:endingPoint])
+            ###TESTING FOR CORRELATION PREPROCESSING (to be added)
+            if self.ccEnabled:
+                cross = sp.signal.fftconvolve(reftrace, d[startingPoint:endingPoint], mode='valid')
+                newmaxloc = np.argmax(cross[self.ccRange[0]:self.ccRange[1]])
+                diff = newmaxloc-refmaxloc
+                if diff < 0:
+                    d = np.append(np.zeros(-diff), d[:diff])
+                elif diff > 0:
+                    d = np.append(d[diff:], np.zeros(diff))
+            else:
+                d = d[startingPoint:endingPoint]
+            
+            data.append(d)
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
                                  

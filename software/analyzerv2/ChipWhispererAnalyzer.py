@@ -43,6 +43,9 @@ sys.path.append('../../openadc/controlsw/python/common')
 sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
+import scipy
+import numpy as np
+
 
 from ExtendedParameter import ExtendedParameter
 
@@ -192,8 +195,22 @@ class MainWindow(MainChip):
         pstart = params[2].value()
         pend = params[3].value()
         
+         ###TESTING FOR CORRELATION PREPROCESSING (to be added)
+        #cross = scipy.signal.fftconvolve(self.manageTraces.iface.getTrace(0)[5000:6000], self.manageTraces.iface.getTrace(0), mode='valid')
+        #refmaxloc = np.argmax(cross[5000:6000])
+        
         for tnum in range(tstart, tend):
-            trace = self.manageTraces.iface.getTrace(tnum)           
+            trace = self.manageTraces.iface.getTrace(tnum)
+            
+            ###TESTING FOR CORRELATION PREPROCESSING (to be added)
+            #cross = scipy.signal.fftconvolve(self.manageTraces.iface.getTrace(0)[5000:6000], trace, mode='valid')
+            #newmaxloc = np.argmax(cross[5000:6000])
+            #diff = newmaxloc-refmaxloc
+            #if diff < 0:
+            #    trace = np.append(np.zeros(-diff), trace[:diff])
+            #elif diff > 0:
+            #    trace = np.append(trace[diff:], np.zeros(diff))
+            #           
             self.waveformDock.widget().passTrace(trace[pstart:pend])
 
         

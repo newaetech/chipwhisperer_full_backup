@@ -303,5 +303,5 @@ class CWAdvTrigger(object):
         return pattern
     
     def strToPattern(self, string, startbits=1, stopbits=1):
-        totalpat = self.strToBits(string, startbits, stopbits)
+        totalpat = strToBits(string, startbits, stopbits)
         return self.bitsToPattern(totalpat)
