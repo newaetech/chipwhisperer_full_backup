@@ -184,7 +184,7 @@ module reg_usi(
 		[   TX States MSB (4 bits) | RX States MSB (4 bits)  ]	 
 	   [ X  X  X  RS RD TS TD I ]
 	     
-		  I = (bit 0) Idle State of RX/RX (default = 1)
+		  I = (bit 0) Idle State of TX/RX (default = 1)
 		  TD = TX Done
 		  TS = TX Start. Set high & clear once TD goes high
 		  RD = RX Done

@@ -145,14 +145,16 @@ module CHIP_SASEBO_W_VCP
 	wire [5:0] reg_addr;
 	wire [15:0] reg_bcnt;
 	wire [7:0] reg_datao;
-	wire [7:0] reg_datai;
+	wire [7:0] reg_datai_usi;
+	wire [7:0] reg_datai_scardother;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
 	wire reg_addrvalid;
 	wire reg_stream;
 	wire [5:0] reg_hypaddr;
-	wire [15:0] reg_hyplen;
+	wire [15:0] reg_hyplen_usi;
+	wire [15:0] reg_hyplen_scardother;
 	wire disable_openadc;	
 	
 	 openadc_interface openadc_inst(
@@ -183,16 +185,16 @@ module CHIP_SASEBO_W_VCP
 	 .reg_address_o(reg_addr),
 	 .reg_bytecnt_o(reg_bcnt),
 	 .reg_datao_o(reg_datao),
-	 .reg_datai_i(reg_datai),
+	 .reg_datai_i(reg_datai_usi|reg_datai_scardother),
 	 .reg_size_o(reg_size),
 	 .reg_read_o(reg_read),
 	 .reg_write_o(reg_write),
 	 .reg_addrvalid_o(reg_addrvalid),
 	 .reg_stream_i(reg_stream),
 	 .reg_hypaddress_o(reg_hypaddr),
-	 .reg_hyplen_i(reg_hyplen)  
+	 .reg_hyplen_i(reg_hyplen_usi|reg_hyplen_scardother)  
 	 );
-	 	 
+/*	 	 
 	 wire [7:0] scard_cla, scard_ins, scard_p1, scard_p2, scard_async_data;
 	 wire [4:0] scard_len_command, scard_len_response;
 	 wire [127:0] scard_command, scard_response;
@@ -249,6 +251,54 @@ module CHIP_SASEBO_W_VCP
 		.scard_docmd(scard_docmd),
 		.scard_busy(scard_busy)
 	);
+	*/
+	
+	wire usi_out;
+	wire usi_in;
+	
+	reg_usi registers_usi (
+		.reset_i(reg_rst | disable_openadc),
+		.clk(usb_clk),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_usi), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_stream(reg_stream),
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_usi),
+		
+		.usi_out(usi_out),
+		.usi_in(usi_in)		
+	);
+	
+		reg_scardother registers_scardother (
+		.reset_i(reg_rst | disable_openadc),
+		.clk(usb_clk),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_scardother), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_scardother),
+		
+		.scard_rst(scardusb_rst),
+		.scard_inserted(card_inserted)		
+	);
+
+	
+	//Convert to single-bit IO
+	assign card_io = (reg_rst | disable_openadc) ? 1'bz:
+	                  (usi_out==1'b0)? 1'b0 : 1'bz;							
+	assign usi_in  = card_io | ~usi_out;	
+	
 	
 	//------------------------------------------------
 	// Mode Types

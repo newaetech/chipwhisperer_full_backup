@@ -61,9 +61,12 @@ fifoonly_adcfifo your_instance_name (
   .din(din), // input [31 : 0] din
   .wr_en(wr_en), // input wr_en
   .rd_en(rd_en), // input rd_en
-  .dout(dout), // output [7 : 0] dout
+  .prog_full_thresh(prog_full_thresh), // input [13 : 0] prog_full_thresh
+  .dout(dout), // output [127 : 0] dout
   .full(full), // output full
-  .empty(empty) // output empty
+  .empty(empty), // output empty
+  .rd_data_count(rd_data_count), // output [12 : 0] rd_data_count
+  .prog_full(prog_full) // output prog_full
 );
 // INST_TAG_END ------ End INSTANTIATION Template ---------
 

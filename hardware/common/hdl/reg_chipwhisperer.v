@@ -49,8 +49,17 @@ module reg_chipwhisperer(
 	
 	input [5:0]    reg_hypaddress,
 	output  [15:0] reg_hyplen,
+	
+	/* External Clock */
+	input				extclk_fpa_i,
+	input				extclk_fpb_i,
+	input				extclk_pll_i,
+	input				extclk_rearin_i,
+	input				extclk_rearout_i,
+	output			extclk_o,
 			
 	/* Extern Trigger Connections */
+	input 			adc_sample_clk,
 	inout				trigger_fpa_i,
 	inout				trigger_fpb_i,
 	input				trigger_io1_i,
@@ -114,18 +123,31 @@ module reg_chipwhisperer(
 	 reg [7:0] registers_cwtrigsrc;
 	 reg [7:0] registers_cwtrigmod;
   	 
+	
+	//Do to no assumed phase relationship we use regular old fabric for switching
+	assign extclk_o =   (registers_cwextclk[2:0] == 3'b000) ? extclk_fpa_i : 
+							  (registers_cwextclk[2:0] == 3'b001) ? extclk_fpb_i : 
+							  (registers_cwextclk[2:0] == 3'b010) ? extclk_pll_i : 
+							  (registers_cwextclk[2:0] == 3'b011) ? extclk_rearin_i : 
+							  (registers_cwextclk[2:0] == 3'b100) ? extclk_rearout_i : 
+							  1'b0;
+							  
+	
+	 
 	 wire trigger_and;
 	 wire trigger_or;
 	 wire trigger_ext;
 	 
-	 assign trigger_and = ((registers_cwtrigsrc[0] & trigger_fpa_i) | ~registers_cwtrigsrc[0]) &
+	 wire trigger_fpa;
+	 
+	 assign trigger_and = ((registers_cwtrigsrc[0] & trigger_fpa) | ~registers_cwtrigsrc[0]) &
 								 ((registers_cwtrigsrc[1] & trigger_fpb_i) | ~registers_cwtrigsrc[1]) &
 								 ((registers_cwtrigsrc[2] & trigger_io1_i) | ~registers_cwtrigsrc[2]) &
 								 ((registers_cwtrigsrc[3] & trigger_io2_i) | ~registers_cwtrigsrc[3]) &
 								 ((registers_cwtrigsrc[4] & trigger_io3_i) | ~registers_cwtrigsrc[4]) &
 								 ((registers_cwtrigsrc[5] & trigger_io4_i) | ~registers_cwtrigsrc[5]);
 								 
-	 assign trigger_or  = (registers_cwtrigsrc[0] & trigger_fpa_i) |
+	 assign trigger_or  = (registers_cwtrigsrc[0] & trigger_fpa) |
 								 (registers_cwtrigsrc[1] & trigger_fpb_i) |
 								 (registers_cwtrigsrc[2] & trigger_io1_i) |
 								 (registers_cwtrigsrc[3] & trigger_io2_i) |
@@ -145,6 +167,37 @@ module reg_chipwhisperer(
 	 
 	 assign trigger_fpa_i =  (registers_cwtrigmod[3] == 1'b1) ? trigger : 1'bZ;
 	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? trigger : 1'bZ;	 
+	 
+	 
+   IODELAY2 #(
+			.COUNTER_WRAPAROUND("WRAPAROUND"), // "STAY_AT_LIMIT" or "WRAPAROUND"
+			.DATA_RATE("SDR"), // "SDR" or "DDR"
+			.DELAY_SRC("IDATAIN"), // "IO", "ODATAIN" or "IDATAIN"
+			.IDELAY2_VALUE(0), // Delay value when IDELAY_MODE="PCI" (0-255)
+			.IDELAY_MODE("NORMAL"), // "NORMAL" or "PCI"
+			.IDELAY_TYPE("DEFAULT"), // "FIXED", "DEFAULT", "VARIABLE_FROM_ZERO", "VARIABLE_FROM_HALF_MAX"
+			.IDELAY_VALUE(20), // Amount of taps for fixed input delay (0-255)
+			.ODELAY_VALUE(0), // Amount of taps fixed output delay (0-255)
+			.SERDES_MODE("NONE"), // "NONE", "MASTER" or "SLAVE"
+			.SIM_TAPDELAY_VALUE(75) // Per tap delay used for simulation in ps
+			)
+		IODELAY2_inst (
+			.BUSY(), // 1-bit output: Busy output after CAL
+			.DATAOUT(), // 1-bit output: Delayed data output to ISERDES/input register
+			.DATAOUT2(trigger_fpa), // 1-bit output: Delayed data output to general FPGA fabric
+			.DOUT(), // 1-bit output: Delayed data output
+			.TOUT(), // 1-bit output: Delayed 3-state output
+			.CAL(~reset_i), // 1-bit input: Initiate calibration input
+			.CE(1'b0), // 1-bit input: Enable INC input
+			.CLK(), // 1-bit input: Clock input
+			.IDATAIN(trigger_fpa_i), // 1-bit input: Data input (connect to top-level port or I/O buffer)
+			.INC(INC), // 1-bit input: Increment / decrement input
+			.IOCLK0(adc_sample_clk), // 1-bit input: Input from the I/O clock network
+			.IOCLK1(), // 1-bit input: Input from the I/O clock network
+			.ODATAIN(), // 1-bit input: Output data input from output register or OSERDES2.
+			.RST(reset_i), // 1-bit input: Reset to zero or 1/2 of total delay period
+			.T() // 1-bit input: 3-state input signal
+		);
 	 
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;

@@ -88,7 +88,7 @@ module usitx#(
 	
 	wire addrmatch;
 	
-	assign addrmatch = (stateaddr_reg == num_states) ? 1 : 0;
+	assign addrmatch = (stateaddr_reg == num_states) ? 1'b1 : 1'b0;
 	
 	always @(posedge clk)
 		if (oneshot_run & clkdiv)
@@ -192,8 +192,22 @@ module usirx#(
 	end
 	
 	//Indicates wire is NOT in idle state, used for marking start
-	wire not_idle;
-	assign not_idle = (data == idle) ? 0 : 1;
+	reg not_idle4;
+	
+	reg [2:0] idlecnt;
+	always @(posedge clk)
+		if (data != idle)
+			idlecnt <= idlecnt + 1;
+		else
+			idlecnt <= 0;
+			
+	always @(posedge clk)
+		if (idlecnt == 3'b111)
+			not_idle4 <= 1;
+		else
+			not_idle4 <= 0;
+	
+	//assign not_idle = ~data;//(data == idle) ? 1'b0 : 1'b1;
 	
 	//We don't sample the wire, rather we consider if it's been more '1' than '0' in the previous
 	//sample-clock time.
@@ -242,7 +256,7 @@ module usirx#(
 			
 	//If we are 'armed', user requests run, and line is not idle we start
 	always @(posedge clk)
-			if (run & oneshot_run_arm & not_idle)
+			if (run & oneshot_run_arm & not_idle4)
 				oneshot_run <= 1;
 			else
 				oneshot_run <= 0;

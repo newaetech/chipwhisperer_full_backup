@@ -12,9 +12,14 @@
 	`define UART_BAUD 512000
 	`define MAX_SAMPLES 49149
 	`define USE_SCARD
-	
+	`define CLOCK_ADVANCED
 	//Don't use ADC clock buffer
 	`define NOBUFG_ADCCLK
+	`define SYSTEM_CLK 60000000
+	
+	`define HW_TYPE 2
+	`define HW_VER 0
+	
 `endif
 
 //Baud rate of the UART

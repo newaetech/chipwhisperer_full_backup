@@ -88,6 +88,8 @@ module interface(
 `endif
     );
 	 
+	 wire adc_sample_clk;
+	 
 	 assign target_hs1_dir = 1'b0;
 	 assign target_hs2_dir = 1'b1;
 	 assign target_hs1 = 1'bZ;
@@ -174,6 +176,8 @@ module interface(
 	wire ext_trigger;
 	wire adv_trigger;
 	
+	wire extclk_mux;
+	
 	//assign ext_trigger = DUT_trigger_i;
 	//assign ext_trigger = target_io4;
 
@@ -181,6 +185,7 @@ module interface(
 		.reset_i(reset_i),
 		.clk_adcint(ifclk_buf),
 		.clk_iface(ifclk_buf),
+		.clk_adcsample(adc_sample_clk),
 		.LED_hbeat(led_hbeat),
 		.LED_armed(GPIO_LED4),
 		.LED_capture(led_cap),
@@ -189,7 +194,7 @@ module interface(
 		.ADC_clk(ADC_clk_int),
 		.ADC_clk_feedback(ADC_clk_int),
 		//.DUT_CLK_i(DUT_CLK_i),
-		.DUT_CLK_i(target_hs1),
+		.DUT_CLK_i(extclk_mux),
 		.DUT_trigger_i(ext_trigger),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
@@ -287,6 +292,13 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_cw),
+		.extclk_fpa_i(DUT_CLK_i),
+		.extclk_fpb_i(1'b0),
+		.extclk_pll_i(1'b0),
+		.extclk_rearin_i(target_hs1),
+		.extclk_rearout_i(target_hs2),
+		.extclk_o(extclk_mux),
+		.adc_sample_clk(adc_sample_clk),
 		.trigger_fpa_i(DUT_trigger_i),
 		//.trigger_fpb_i(),
 		.trigger_io1_i(target_io1),
@@ -357,6 +369,8 @@ module interface(
 	);
 	*/
 	
+	wire usi_out, usi_in;
+	
 	reg_usi registers_usi (
 		.reset_i(reg_rst),
 		.clk(ifclk_buf),
@@ -370,9 +384,14 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_usi),
-		.usi_out(target_io3),
-		.usi_in(target_io3)
+		.usi_out(usi_out),
+		.usi_in(usi_in)
 	);
+	
+	assign target_io3 = (reg_rst) ? 1'bz:
+	                  (usi_out==1'b0)? 1'b0 : 1'bz;							
+	assign usi_in  = target_io3 | ~usi_out;	
+	
 		
 	`ifdef CHIPSCOPE
    wire [127:0] cs_data;   
