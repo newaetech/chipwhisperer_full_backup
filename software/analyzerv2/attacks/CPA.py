@@ -58,6 +58,122 @@ from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
 
+class AttackCPA_SciPyCorrelation(QObject):
+    """
+    Instead uses correlation functions provided by SciPy.
+    WARNING: DOES NOT WORK RIGHT NOW.
+    """
+
+    def __init__(self, model):
+        super(AttackCPA_SciPyCorrelation, self).__init__()
+        self.model = model
+
+    def setByteList(self, brange):
+        self.brange = brange
+
+    def setKeyround(self, keyround):
+        self.keyround = keyround
+    
+    def setModeltype(self, modeltype):
+        self.modeltype = modeltype
+    
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+        keyround=self.keyround
+        modeltype=self.modeltype
+        brange=self.brange
+                                                                   
+        traces_all = np.array(traces)
+        plaintexts =np.array(plaintexts)
+        ciphertexts =np.array(ciphertexts)
+
+        foundkey = []
+
+        self.all_diffs = range(0,16)
+
+        if progressBar:
+            pbcnt = 0
+            progressBar.setMinimum(0)
+            progressBar.setMaximum(len(brange) * 256)
+
+        numtraces = len(traces_all[:,0])
+        numpoints =  len(traces_all[0,:])
+
+        #For all bytes of key
+        for bnum in brange:
+
+            diffs = [0]*256
+
+            if pointRange == None:
+                traces = traces_all
+                padbefore = 0
+                padafter = 0
+            else:
+                traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
+                padbefore = pointRange[bnum][0]
+                padafter = len(traces_all[0,:]) - pointRange[bnum][1]
+                #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+
+            #For each 0..0xFF possible value of the key byte
+            for key in range(0, 256):               
+
+                hyp = np.empty((numtraces, 1))
+                
+                
+                #Generate hypotheticals
+                for tnum in range(numtraces):
+
+                    if len(plaintexts) > 0:
+                        pt = plaintexts[tnum]
+
+                    if len(ciphertexts) > 0:
+                        ct = ciphertexts[tnum]
+
+                    if keyround == "first":
+                        ct = None
+                    elif keyround == "last":
+                        pt = None
+                    else:
+                        raise ValueError("keyround invalid")
+                    
+                    #Generate the output of the SBOX
+                    if modeltype == "Hamming Weight":
+                        hypint = self.model.HypHW(pt, ct, key, bnum);
+                    elif modeltype == "Hamming Distance":
+                        hypint = self.model.HypHD(pt, ct, key, bnum);
+                    else:
+                        raise ValueError("modeltype invalid")
+                    hyp[tnum, 0] = self.model.getHW(hypint)       
+
+                if progressBar:
+                    progressBar.setValue(pbcnt)
+                    #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+                    pbcnt = pbcnt + 1
+                    if progressBar.wasCanceled():
+                        break
+
+                diffs[key] = sp.signal.correlate(traces, hyp, 'valid')[0,:]
+                
+                  
+            
+            self.all_diffs[bnum] = diffs
+
+            #From all the key candidates, select the largest difference as most likely
+            #foundbyte = diffs.index(max(diffs))
+            #foundkey.append(foundbyte)
+#            print "%2x "%foundbyte,
+
+
+    def getDiff(self, bnum, hyprange=None):
+        if hyprange == None:
+            hyprange = range(0,256)
+        return [self.all_diffs[bnum][i] for i in hyprange];
+    
+    def getStatistics(self):
+        t = [0]*16
+        for i in self.brange:
+            t[i] = self.getDiff(i)
+        return t
+
 class AttackCPA_SimpleLoop(QObject):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
@@ -211,7 +327,8 @@ class CPA(AttackBaseClass):
         self.log=log 
         
         self.ccEnabled = False
-        self.ccRange = (5000,6000) 
+        self.ccRange = (10500,11100)
+        #5000, 6000 
         
     def setupParameters(self):      
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
@@ -244,7 +361,8 @@ class CPA(AttackBaseClass):
         ###TESTING FOR CORRELATION PREPROCESSING (to be added)
         if self.ccEnabled:
             reftrace = self.trace.getTrace(startingTrace)[self.ccRange[0]:self.ccRange[1]]
-            cross = sp.signal.fftconvolve(reftrace, self.trace.getTrace(startingTrace), mode='valid')
+            #TODO: fftconvolve
+            cross = sp.signal.correlate(reftrace, self.trace.getTrace(startingTrace), mode='valid')
             refmaxloc = np.argmax(cross[self.ccRange[0]:self.ccRange[1]])
         
         for i in range(startingTrace, endingTrace):
@@ -253,21 +371,26 @@ class CPA(AttackBaseClass):
             
             ###TESTING FOR CORRELATION PREPROCESSING (to be added)
             if self.ccEnabled:
-                cross = sp.signal.fftconvolve(reftrace, d[startingPoint:endingPoint], mode='valid')
+                #TODO: fftconvolve
+                cross = sp.signal.correlate(reftrace, d, mode='valid')
                 newmaxloc = np.argmax(cross[self.ccRange[0]:self.ccRange[1]])
                 diff = newmaxloc-refmaxloc
                 if diff < 0:
                     d = np.append(np.zeros(-diff), d[:diff])
                 elif diff > 0:
                     d = np.append(d[diff:], np.zeros(diff))
-            else:
-                d = d[startingPoint:endingPoint]
+                    
+            
+            
+            d = d[startingPoint:endingPoint]
             
             data.append(d)
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
                                  
         self.attack = AttackCPA_SimpleLoop(attacks.models.AES128_8bit)
+        #Following attack DOES NOT WORK
+        #self.attack = AttackCPA_SciPyCorrelation(attacks.models.AES128_8bit)
         self.attack.setByteList(self.bytesEnabled())
         self.attack.setKeyround("first")
         self.attack.setModeltype("Hamming Weight")

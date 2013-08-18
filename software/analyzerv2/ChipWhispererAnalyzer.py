@@ -46,6 +46,7 @@ imagePath = '../common/images/'
 import scipy
 import numpy as np
 
+from functools import partial
 
 from ExtendedParameter import ExtendedParameter
 
@@ -76,6 +77,7 @@ from ProjectFormat import ProjectFormat
 from TraceFormatNative import TraceFormatNative
 from attacks.CPA import CPA
 from ResultsPlotting import ResultsPlotting
+import preprocessing.Preprocessing as Preprocessing
 
 #TEMP
 from ResultsPlotting import ResultsPlotData
@@ -95,8 +97,10 @@ class MainWindow(MainChip):
                     ]},
                     
                 {'name':'Pre-Processing', 'type':'group', 'children':[
-                    {'name':'Enabled', 'type':'bool', 'value':False},
-                    {'name':'Steps', 'type':'int', 'limits':(0,10), 'value':0}
+                    #{'name':'All Enabled', 'type':'bool', 'value':False},
+                    {'name':'Module #1', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 0)},
+                    {'name':'Module #2', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 1)},
+                    {'name':'Module #3', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 2)},
                     ]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
@@ -109,6 +113,7 @@ class MainWindow(MainChip):
                     {'name':'Input Trace Plot', 'type':'group', 'children':[
                         {'name':'Enabled', 'type':'bool', 'value':True},
                         {'name':'Starting Trace', 'type':'int', 'limits':(0,0), 'value':0},
+                        {'name':'Redraw after Each (slower)', 'type':'bool', 'value':True, 'set':self.setPlotInputEach},
                         {'name':'Ending Trace', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Starting Point', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Ending Point', 'type':'int', 'limits':(0,0), 'value':0},
@@ -118,6 +123,8 @@ class MainWindow(MainChip):
                                    
                 ]
     
+        
+        self.plotInputEach = False
         
         self.da = None
         self.numTraces = 100
@@ -151,13 +158,33 @@ class MainWindow(MainChip):
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
         self.setAttack(CPA(self))
         
+        self.preprocessingList = [None]*3
+        self.setupPreprocessorChain()
+        
+    def setPlotInputEach(self, enabled):
+        self.plotInputEach = enabled
+        
     def addToolbars(self):
         attack = QAction(QIcon(imagePath+'attack.png'), 'Start Attack', self)
         attack.triggered.connect(self.doAttack)
 
         self.AttackToolbar = self.addToolBar('Attack Tools')
         self.AttackToolbar.setObjectName('Attack Tools')
-        self.AttackToolbar.addAction(attack)        
+        self.AttackToolbar.addAction(attack)  
+        
+    def setPreprocessing(self, num, module):
+        self.preprocessingList[num] = module
+        module.paramListUpdated.connect(self.reloadParamListPreprocessing)
+        self.reloadParamListPreprocessing() 
+        self.setupPreprocessorChain()   
+
+    def reloadParamListPreprocessing(self, list=None):        
+        plist = []
+        for p in self.preprocessingList:
+            if p:
+                for item in p.paramList():
+                    plist.append(item)
+        ExtendedParameter.reloadParams(plist, self.preprocessingParamTree)
 
     def setAttack(self, attack):
         self.attack = attack
@@ -170,11 +197,13 @@ class MainWindow(MainChip):
         self.console.append("Attack Started")
         
         if self.results is not None:
-            self.results.setTraceManager(self.manageTraces.iface)
+            self.results.setTraceManager(self.traces)
         
         if self.attack is not None:
-            self.attack.setTraceManager(self.manageTraces.iface)
+            self.attack.setTraceManager(self.traces)
             self.attack.doAttack()
+            
+        self.console.append("Attack Done")
         
     def reloadAttackParamList(self, list=None):
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
@@ -183,6 +212,15 @@ class MainWindow(MainChip):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
         self.plotInputTrace()
 
+    def setupPreprocessorChain(self):
+        self.lastoutput = self.manageTraces.iface
+        for t in self.preprocessingList:
+            if t:
+                t.setTraceManager(self.lastoutput)
+                t.init()
+                self.lastoutput = t           
+        self.traces = self.lastoutput
+
         
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
@@ -190,28 +228,23 @@ class MainWindow(MainChip):
         self.waveformDock.widget().clearPushed()
         self.waveformDock.widget().setPersistance(True)
         
+        self.setupPreprocessorChain()
+        
         tstart = params[0].value()
         tend = params[1].value()
         pstart = params[2].value()
         pend = params[3].value()
         
-         ###TESTING FOR CORRELATION PREPROCESSING (to be added)
-        #cross = scipy.signal.fftconvolve(self.manageTraces.iface.getTrace(0)[5000:6000], self.manageTraces.iface.getTrace(0), mode='valid')
-        #refmaxloc = np.argmax(cross[5000:6000])
-        
         for tnum in range(tstart, tend):
-            trace = self.manageTraces.iface.getTrace(tnum)
+            trace = self.traces.getTrace(tnum)
             
-            ###TESTING FOR CORRELATION PREPROCESSING (to be added)
-            #cross = scipy.signal.fftconvolve(self.manageTraces.iface.getTrace(0)[5000:6000], trace, mode='valid')
-            #newmaxloc = np.argmax(cross[5000:6000])
-            #diff = newmaxloc-refmaxloc
-            #if diff < 0:
-            #    trace = np.append(np.zeros(-diff), trace[:diff])
-            #elif diff > 0:
-            #    trace = np.append(trace[diff:], np.zeros(diff))
-            #           
+            if trace is None:
+                continue
+                                  
             self.waveformDock.widget().passTrace(trace[pstart:pend])
+            
+            if self.plotInputEach:
+                QCoreApplication.processEvents()
 
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
