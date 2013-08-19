@@ -112,8 +112,8 @@ class MainWindow(MainChip):
                 {'name':'Result Collection', 'type':'group', 'children':[
                     {'name':'Input Trace Plot', 'type':'group', 'children':[
                         {'name':'Enabled', 'type':'bool', 'value':True},
-                        {'name':'Starting Trace', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Redraw after Each (slower)', 'type':'bool', 'value':True, 'set':self.setPlotInputEach},
+                        {'name':'Starting Trace', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Ending Trace', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Starting Point', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Ending Point', 'type':'int', 'limits':(0,0), 'value':0},
