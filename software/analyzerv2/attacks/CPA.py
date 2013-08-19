@@ -493,8 +493,6 @@ class CPA(AttackBaseClass):
         super(CPA, self).__init__(parent)
         self.log=log 
         
-        self.ccEnabled = False
-        self.ccRange = (10500,11100)
         #5000, 6000 
         
     def setupParameters(self):      
@@ -524,30 +522,11 @@ class CPA(AttackBaseClass):
         textins = []
         textouts = []
         
-        
-        ###TESTING FOR CORRELATION PREPROCESSING (to be added)
-        if self.ccEnabled:
-            reftrace = self.trace.getTrace(startingTrace)[self.ccRange[0]:self.ccRange[1]]
-            #TODO: fftconvolve
-            cross = sp.signal.correlate(reftrace, self.trace.getTrace(startingTrace), mode='valid')
-            refmaxloc = np.argmax(cross[self.ccRange[0]:self.ccRange[1]])
-        
         for i in range(startingTrace, endingTrace):
             d = self.trace.getTrace(i)
-            #d = self.preprocess.processOneTrace(d)
             
-            ###TESTING FOR CORRELATION PREPROCESSING (to be added)
-            if self.ccEnabled:
-                #TODO: fftconvolve
-                cross = sp.signal.correlate(reftrace, d, mode='valid')
-                newmaxloc = np.argmax(cross[self.ccRange[0]:self.ccRange[1]])
-                diff = newmaxloc-refmaxloc
-                if diff < 0:
-                    d = np.append(np.zeros(-diff), d[:diff])
-                elif diff > 0:
-                    d = np.append(d[diff:], np.zeros(diff))
-                    
-            
+            if d is None:
+                continue
             
             d = d[startingPoint:endingPoint]
             

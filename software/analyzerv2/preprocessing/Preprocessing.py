@@ -72,10 +72,12 @@ except ImportError:
     AES = None    
 
 from preprocessing.CrossCorrelationResync import CrossCorrelationResync
+from preprocessing.PeakDetectResync import PeakDetectResync
 
 def listAll(parent):
     valid_targets = {"Disabled":0}
     valid_targets["Cross Correlation Resync"] = CrossCorrelationResync(parent)
+    valid_targets["Peak Detect Resync"] = PeakDetectResync(parent)
     return valid_targets
 
 class Preprocessing(QObject):
@@ -93,6 +95,7 @@ class Preprocessing(QObject):
                 
         #if preprocessing_CrossCorrResync is not None:
         valid_targets["Cross Correlation Resync"] = CrossCorrelationResync(parent)
+        valid_targets["Peak Detect Resync"] = PeakDetectResync(parent)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 

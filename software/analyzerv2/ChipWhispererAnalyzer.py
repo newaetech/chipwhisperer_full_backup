@@ -235,17 +235,22 @@ class MainWindow(MainChip):
         pstart = params[2].value()
         pend = params[3].value()
         
+        ttotal = 0
+        
         for tnum in range(tstart, tend):
             trace = self.traces.getTrace(tnum)
             
             if trace is None:
                 continue
-                                  
+                  
+            ttotal += 1                
             self.waveformDock.widget().passTrace(trace[pstart:pend])
             
             if self.plotInputEach:
                 QCoreApplication.processEvents()
 
+        
+        print ttotal
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         """When traces is loaded, Tell everything default point/trace range"""
