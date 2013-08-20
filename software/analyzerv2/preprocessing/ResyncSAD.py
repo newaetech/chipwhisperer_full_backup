@@ -54,35 +54,44 @@ from functools import partial
 import scipy as sp
 import numpy as np
         
-class CrossCorrelationResync(QObject):
+class ResyncSAD(QObject):
     """
-    Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
-    correlation over all data points, or the most likely correlation over number of traces
+    Resync by minimizing the SAD.
     """
     paramListUpdated = Signal(list)
      
     def __init__(self, parent):
-        super(CrossCorrelationResync, self).__init__()
+        super(ResyncSAD, self).__init__()
                 
         self.enabled = True
         self.rtrace = 0
-        self.debugReturnCorr = False
+        self.debugReturnSad = False
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
                          {'name':'Ref Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd},            
-                         {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}         
+                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd},  
+                         {'name':'Input Window Start', 'type':'int', 'set':self.setWindowStart},
+                         {'name':'Input Window End', 'type':'int', 'set':self.setWindowEnd},          
+                         {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}         
                       ]
         
-        self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
+        self.params = Parameter.create(name='Minimize Sum of Absolute Difference', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params)
         self.parent = parent
         self.setTraceManager(parent.manageTraces.iface)
         self.ccStart = 0
-        self.ccEnd = 0
+        self.ccEnd = 1
+        self.wdStart = 0
+        self.wdEnd = 1
         
     def paramList(self):
         return [self.params]
+    
+    def setWindowStart(self, start):
+        self.wdStart = start
+        
+    def setWindowEnd(self, end):
+        self.wdEnd = end
     
     def setRefPointStart(self, start):
         self.ccStart = start
@@ -93,21 +102,23 @@ class CrossCorrelationResync(QObject):
     def setEnabled(self, enabled):
         self.enabled = enabled
    
-    def setOutputCorr(self, enabled):
-        self.debugReturnCorr = enabled
+    def setOutputSad(self, enabled):
+        self.debugReturnSad = enabled
    
     def getTrace(self, n):
         if self.enabled:
-            #TODO: fftconvolve
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
-            cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
-            if self.debugReturnCorr:
-                return cross
-            newmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-            maxval = max(cross[self.ccStart:self.ccEnd])
-            if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
+            sad = self.findSAD(trace)
+            if self.debugReturnSad:
+                return sad
+            newmaxloc = np.argmin(sad)
+            maxval = min(sad)
+            #if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
+            #    return None
+            
+            if maxval > self.maxthreshold:
                 return None
             
             diff = newmaxloc-self.refmaxloc
@@ -138,10 +149,26 @@ class CrossCorrelationResync(QObject):
     def setRefTrace(self, tnum):
         self.rtrace = tnum
         
+    def findSAD(self, inputtrace):
+        reflen = self.ccEnd-self.ccStart
+        sadlen = self.wdEnd-self.wdStart
+        
+        sadarray = np.empty(sadlen)
+        
+        for ptstart in range(self.wdStart, self.wdEnd):    
+            #Find SAD        
+            sadarray[ptstart-self.wdStart] = np.sum(np.abs(inputtrace[ptstart:(ptstart+reflen)] - self.reftrace))
+            
+        return sadarray
+        
     def calcRefTrace(self, tnum):
+        
+        #If not enabled stop
+        if self.enabled == False:
+            return
+        
         self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
-        self.reftrace = self.reftrace[::-1]
-        #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
-        self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-        self.refmaxsize = max(cross[self.ccStart:self.ccEnd])
+        sad = self.findSAD(self.trace.getTrace(tnum))
+        self.refmaxloc = np.argmin(sad)
+        self.refmaxsize = min(sad)
+        self.maxthreshold = np.mean(sad)

@@ -125,7 +125,6 @@ class AttackBaseClass(QObject):
             (startparam, endparam) = self.findPointParam(self.pointsParams)
         
         val = (startparam.value(), endparam.value())
-        print val
         return val
     
     def copyPointsFromOutput(self, bnum=None):

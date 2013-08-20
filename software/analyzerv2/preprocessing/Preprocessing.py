@@ -71,48 +71,13 @@ try:
 except ImportError:
     AES = None    
 
-from preprocessing.CrossCorrelationResync import CrossCorrelationResync
-from preprocessing.PeakDetectResync import PeakDetectResync
+from preprocessing.ResyncCrossCorrelation import ResyncCrossCorrelation
+from preprocessing.ResyncPeakDetect import ResyncPeakDetect
+from preprocessing.ResyncSAD import ResyncSAD
 
 def listAll(parent):
     valid_targets = {"Disabled":0}
-    valid_targets["Cross Correlation Resync"] = CrossCorrelationResync(parent)
-    valid_targets["Peak Detect Resync"] = PeakDetectResync(parent)
+    valid_targets["Cross Correlation Resync"] = ResyncCrossCorrelation(parent)
+    valid_targets["Peak Detect Resync"] = ResyncPeakDetect(parent)
+    valid_targets["Minimize Sum-of-Error"] = ResyncSAD(parent)
     return valid_targets
-
-class Preprocessing(QObject):
-    """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
-    paramListUpdated = Signal(list)
-    
-    def __init__(self, parent=None, log=None,showScriptParameter=None):
-        super(Preprocessing, self).__init__(parent)
-        valid_targets = {"None":None}
-        self.parent = parent
-        self.driver = None
-        self.log=log
-        self.showScriptParameter = showScriptParameter
-        self.enabled = False
-                
-        #if preprocessing_CrossCorrResync is not None:
-        valid_targets["Cross Correlation Resync"] = CrossCorrelationResync(parent)
-        valid_targets["Peak Detect Resync"] = PeakDetectResync(parent)
-        
-        self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
-
-    def setEnabled(self, status):
-        self.enabled = status
-   
-    def setDriver(self, driver):
-        self.driver = driver
-      
-        if self.driver is None:
-            self.paramListUpdated.emit(None)
-        else:
-            self.driver.paramListUpdated.connect(self.paramListUpdated.emit)
-            self.paramListUpdated.emit(self.driver.paramList())
-            
-    def paramList(self):
-        if self.driver is None:
-            return [None]
-        else:
-            return self.driver.paramList()

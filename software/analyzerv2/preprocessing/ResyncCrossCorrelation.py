@@ -54,14 +54,15 @@ from functools import partial
 import scipy as sp
 import numpy as np
         
-class PeakDetectResync(QObject):
+class ResyncCrossCorrelation(QObject):
     """
-    Use maximum point in trace to resync
+    Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
+    correlation over all data points, or the most likely correlation over number of traces
     """
     paramListUpdated = Signal(list)
      
     def __init__(self, parent):
-        super(PeakDetectResync, self).__init__()
+        super(ResyncCrossCorrelation, self).__init__()
                 
         self.enabled = True
         self.rtrace = 0
@@ -69,10 +70,11 @@ class PeakDetectResync(QObject):
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
                          {'name':'Ref Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd}       
+                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd},            
+                         {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}         
                       ]
         
-        self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
+        self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params)
         self.parent = parent
         self.setTraceManager(parent.manageTraces.iface)
@@ -100,9 +102,12 @@ class PeakDetectResync(QObject):
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
-            newmaxloc = np.argmin(trace[self.ccStart:self.ccEnd])
-            maxval = min(trace[self.ccStart:self.ccEnd])
-            if (maxval > self.refmaxsize * 1.1) | (maxval < self.refmaxsize * 0.9):
+            cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
+            if self.debugReturnCorr:
+                return cross
+            newmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
+            maxval = max(cross[self.ccStart:self.ccEnd])
+            if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
                 return None
             
             diff = newmaxloc-self.refmaxloc
@@ -134,6 +139,9 @@ class PeakDetectResync(QObject):
         self.rtrace = tnum
         
     def calcRefTrace(self, tnum):
-        reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
-        self.refmaxloc = np.argmin(reftrace)
-        self.refmaxsize = min(reftrace)
+        self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
+        self.reftrace = self.reftrace[::-1]
+        #TODO: fftconvolve
+        cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
+        self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
+        self.refmaxsize = max(cross[self.ccStart:self.ccEnd])
