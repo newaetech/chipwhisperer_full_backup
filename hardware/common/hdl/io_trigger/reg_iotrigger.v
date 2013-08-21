@@ -50,7 +50,7 @@ module reg_triggerio(
 	output [15:0]  reg_hyplen,
 	
 	input				io_line,
-	output			trig_out									              
+	output reg		trig_out									              
    );
 	 
 	 wire	  reset;
@@ -163,12 +163,28 @@ module reg_triggerio(
 		else
 			prog_dowrnext <= 0;
 			
+	//Stretch trig_out for slower ADC clocks if needed (stretches for 127 cycles)
+	wire trig_out_int;
+	reg [6:0] trig_cnt;
+	always @(posedge clk)
+		if (trig_out_int) begin
+			trig_cnt <= 7'd1;
+			trig_out <= 1;
+		end else
+			if (trig_cnt != 7'd0) begin
+				trig_cnt <= trig_cnt + 7'd1;			
+				trig_out <= 1'b1;
+			end else
+				trig_out <= 1'b0;
+			
+			
+			
 	 
 	trigger_system io_trigsys (
 		.clk(clk), 
 		.rst(rst_core | reset), 
 		.mon_line(io_line), 
-		.trig_out(trig_out), 
+		.trig_out(trig_out_int), 
 		.clkdivider(clkdiv), 
 		.state_prog_en(prog_en), 
 		.state_prog_addr(prog_addr), 
