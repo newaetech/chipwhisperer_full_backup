@@ -1,5 +1,5 @@
 [Eagle]
-Version="06 04 00"
+Version="06 05 00"
 Platform="Windows"
 Serial="68285913F5-LS-WLM-1CS"
 Globals="Globals"
@@ -7,6 +7,25 @@ Desktop="Desktop"
 
 [Globals]
 AutoSaveProject=1
+UsedLibrary="c:/e/eagle/libraries/1284p.lbr"
+UsedLibrary="c:/e/eagle/libraries/National_DP83848.lbr"
+UsedLibrary="c:/e/eagle/libraries/Peripherals.lbr"
+UsedLibrary="c:/e/eagle/libraries/SparkFun.lbr"
+UsedLibrary="c:/e/eagle/libraries/adafruit.lbr"
+UsedLibrary="c:/e/eagle/libraries/at91sam7Xxxx-au.lbr"
+UsedLibrary="c:/e/eagle/libraries/at91sam7sxxx-au.lbr"
+UsedLibrary="c:/e/eagle/libraries/atmega8.lbr"
+UsedLibrary="c:/e/eagle/libraries/atmel_prototype_header.lbr"
+UsedLibrary="c:/e/eagle/libraries/avr-6.lbr"
+UsedLibrary="c:/e/eagle/libraries/butterfly9.lbr"
+UsedLibrary="c:/e/eagle/libraries/con-elco-colin.lbr"
+UsedLibrary="c:/e/eagle/libraries/customs.lbr"
+UsedLibrary="c:/e/eagle/libraries/dlp_designs.lbr"
+UsedLibrary="c:/e/eagle/libraries/dp_devices.lbr"
+UsedLibrary="c:/e/eagle/libraries/minicircuits.lbr"
+UsedLibrary="c:/e/eagle/libraries/smartwed.lbr"
+UsedLibrary="c:/e/eagle/libraries/xilinx_devices.lbr"
+UsedLibrary="c:/e/eagle/libraries/xmega_a3.lbr"
 UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/19inch.lbr"
 UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/40xx.lbr"
 UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/41xx.lbr"
@@ -340,33 +359,14 @@ UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/xilinx-xc9.lbr"
 UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/xilinx-xcv.lbr"
 UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/zetex.lbr"
 UsedLibrary="C:/Program Files (x86)/EAGLE-6.4.0/lbr/zilog.lbr"
-UsedLibrary="c:/e/eagle/libraries/1284p.lbr"
-UsedLibrary="c:/e/eagle/libraries/National_DP83848.lbr"
-UsedLibrary="c:/e/eagle/libraries/Peripherals.lbr"
-UsedLibrary="c:/e/eagle/libraries/SparkFun.lbr"
-UsedLibrary="c:/e/eagle/libraries/adafruit.lbr"
-UsedLibrary="c:/e/eagle/libraries/at91sam7Xxxx-au.lbr"
-UsedLibrary="c:/e/eagle/libraries/at91sam7sxxx-au.lbr"
-UsedLibrary="c:/e/eagle/libraries/atmega8.lbr"
-UsedLibrary="c:/e/eagle/libraries/atmel_prototype_header.lbr"
-UsedLibrary="c:/e/eagle/libraries/avr-6.lbr"
-UsedLibrary="c:/e/eagle/libraries/butterfly9.lbr"
-UsedLibrary="c:/e/eagle/libraries/con-elco-colin.lbr"
-UsedLibrary="c:/e/eagle/libraries/customs.lbr"
-UsedLibrary="c:/e/eagle/libraries/dlp_designs.lbr"
-UsedLibrary="c:/e/eagle/libraries/dp_devices.lbr"
-UsedLibrary="c:/e/eagle/libraries/minicircuits.lbr"
-UsedLibrary="c:/e/eagle/libraries/smartwed.lbr"
-UsedLibrary="c:/e/eagle/libraries/xilinx_devices.lbr"
-UsedLibrary="c:/e/eagle/libraries/xmega_a3.lbr"
 
 [Win_1]
 Type="Schematic Editor"
-Loc="860 152 1592 822"
+Loc="-1368 146 -636 816"
 State=2
 Number=1
 File="adapter-pcb.sch"
-View="29.972 14.732 122.428 74.168"
+View="1.92858 0.593009 132.343 112.403"
 WireWidths=" 0 0.3048 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0.4064 0.1524"
 PadDiameters=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
 PadDrills=" 0.5 0.6 0.7 0.9 1 1.1 1.2 1.3 1.4 1.5 1.6 2 2.2 2.8 3.2 0.8"
@@ -405,16 +405,72 @@ ArcDirection=0
 AddLevel=2
 PadsSameType=0
 Layer=91
-Views=" 1: 29.972 14.732 122.428 74.168"
+Views=" 1: 1.92858 0.593009 132.343 112.403"
 Sheet=1
 
 [Win_2]
+Type="CAM Processor"
+Loc="-890 312 -291 747"
+State=2
+Number=3
+File="adapter-pcb.brd"
+Job="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/capture/chipwhisperer-rev2/cwrev2_eagleproj/ztex_openadc_job.cam"
+
+[Win_3]
+Type="Board Editor"
+Loc="-1050 153 -205 875"
+State=2
+Number=2
+File="adapter-pcb.brd"
+View="6.31738 -2.23694 35.6175 26.1397"
+WireWidths=" 0 0.254 0.3048 0.6096 0.8128 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0.4064 1.016"
+PadDiameters=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
+PadDrills=" 0.5 0.6 0.7 0.9 1 1.1 1.2 1.3 1.4 1.5 1.6 2 2.2 2.8 3.2 0.8"
+ViaDiameters=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
+ViaDrills=" 0.5 0.7 0.8 0.9 1 1.1 1.2 1.3 1.4 1.5 1.6 2 2.2 2.8 3.2 0.6"
+HoleDrills=" 0.5 0.7 0.8 0.9 1 1.1 1.2 1.3 1.4 1.5 1.6 2 2.2 2.8 3.2 0.6"
+TextSizes=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.9304 2.1844 2.54 3.81 5.08 6.4516 1.778"
+PolygonSpacings=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 5.08 6.4516 1.27"
+PolygonIsolates=" 0.254 0.3048 0.4064 0.6096 0.8128 1.016 1.27 1.4224 1.6764 1.778 1.9304 2.1844 2.54 3.81 6.4516 0"
+MiterRadiuss=" 0.254 0.3175 0.635 1.27 2.54 1 2 2.5 5 7.5 10 0"
+DimensionWidths=" 0 0.127 0.254 0.1 0.26 0.13"
+DimensionExtWidths=" 0.127 0.254 0.1 0.13 0.26 0"
+DimensionExtLengths=" 1.27 2.54 1 2 3 0"
+DimensionExtOffsets=" 1.27 2.54 1 2 3 0"
+SmdSizes=" 0.3048 0.1524 0.4064 0.2032 0.6096 0.3048 0.8128 0.4064 1.016 0.508 1.27 0.6604 1.4224 0.7112 1.6764 0.8128 1.778 0.9144 1.9304 0.9652 2.1844 1.0668 2.54 1.27 3.81 1.9304 5.08 2.54 6.4516 3.2512 1.27 0.635"
+WireBend=1
+WireBendSet=0
+WireCap=1
+MiterStyle=0
+PadShape=0
+ViaShape=0
+PolygonPour=0
+PolygonRank=1
+PolygonThermals=1
+PolygonOrphans=0
+TextRatio=8
+DimensionUnit=1
+DimensionPrecision=2
+DimensionShowUnit=0
+PinDirection=3
+PinFunction=0
+PinLength=2
+PinVisible=3
+SwapLevel=0
+ArcDirection=0
+AddLevel=2
+PadsSameType=0
+Layer=16
+
+[Win_4]
 Type="Control Panel"
-Loc="492 231 1091 630"
+Loc="-1160 161 -537 796"
 State=2
 Number=0
 
 [Desktop]
-Screen="1600 900"
+Screen="3520 1080"
 Window="Win_1"
 Window="Win_2"
+Window="Win_3"
+Window="Win_4"

@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.4">
+<eagle version="6.5.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.025" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.025" altunitdist="inch" altunit="inch"/>
+<grid distance="0.025" unitdist="inch" unit="mm" style="lines" multiple="1" display="no" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -1725,6 +1725,9 @@ design rules under a new name.</description>
 <via x="27.94" y="17.78" extent="1-16" drill="0.6" shape="octagon"/>
 <via x="22.86" y="17.78" extent="1-16" drill="0.6" shape="octagon"/>
 <via x="17.78" y="17.78" extent="1-16" drill="0.6" shape="octagon"/>
+<wire x1="15.24" y1="20" x2="17.465" y2="20" width="1.016" layer="16"/>
+<wire x1="17.465" y1="20" x2="17.78" y2="19.685" width="1.016" layer="16"/>
+<wire x1="17.78" y1="19.685" x2="17.78" y2="17.78" width="1.016" layer="16"/>
 </signal>
 <signal name="N$1">
 <contactref element="U$1" pad="1"/>
@@ -1869,18 +1872,6 @@ design rules under a new name.</description>
 <wire x1="30.48" y1="10.16" x2="29.21" y2="11.43" width="0.4064" layer="1"/>
 <wire x1="29.21" y1="11.43" x2="29.21" y2="13.97" width="0.4064" layer="1"/>
 <wire x1="29.21" y1="13.97" x2="27.94" y2="15.24" width="0.4064" layer="1"/>
-</signal>
-<signal name="N$5">
-<wire x1="10.16" y1="20.955" x2="18.415" y2="20.955" width="1.27" layer="16"/>
-</signal>
-<signal name="N$6">
-<wire x1="31.115" y1="20.955" x2="38.735" y2="20.955" width="1.27" layer="16"/>
-</signal>
-<signal name="N$7">
-<wire x1="32.385" y1="21.59" x2="38.1" y2="21.59" width="1.27" layer="16"/>
-</signal>
-<signal name="N$8">
-<wire x1="10.16" y1="21.59" x2="16.51" y2="21.59" width="1.27" layer="16"/>
 </signal>
 </signals>
 </board>
