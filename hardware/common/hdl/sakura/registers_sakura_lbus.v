@@ -1,5 +1,5 @@
 `include "includes.v"
-`define CHIPSCOPE
+//`define CHIPSCOPE
 
 /***********************************************************************
 This file is part of the OpenADC Project. See www.newae.com for more details,
