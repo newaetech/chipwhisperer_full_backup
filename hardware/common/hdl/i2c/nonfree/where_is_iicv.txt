@@ -1,0 +1,4 @@
+iic.v is a commercial I2C Core. It's available from  http://skytek.x10.mx for $8. 
+
+If you want to design an Open-Source I2C core please do so - the interface is described on http://skytek.x10.mx, then I can
+include your version in this code-base instead.
