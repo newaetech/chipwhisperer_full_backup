@@ -86,6 +86,12 @@ try:
 except ImportError:
     target_SASEBOGII = None
     target_SASEBOGII_str = sys.exc_info()
+    
+try:
+    import targets.SAKURAG as target_SAKURAG
+except ImportError:
+    target_SAKURAG = None
+    target_SAKURAG_str = sys.exc_info()
 
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
@@ -249,6 +255,9 @@ class TargetInterface(QObject):
             
         if target_SASEBOGII is not None:
             valid_targets["SASEBO GII"] = target_SASEBOGII.SaseboGII(self.log, showScriptParameter=showScriptParameter)
+            
+        if target_SAKURAG is not None:
+            valid_targets["SAKURA G"] = target_SAKURAG.SakuraG(self.log, showScriptParameter=showScriptParameter)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
