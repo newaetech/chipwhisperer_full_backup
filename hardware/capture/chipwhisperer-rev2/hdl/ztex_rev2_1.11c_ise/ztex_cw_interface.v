@@ -69,6 +69,11 @@ module interface(
 	 inout			target_hs2, // Clock to victim device
 	 output			target_hs2_dir //HIGH = Output
 	 
+	 ,inout			pll_scl,
+	 inout			pll_sda,
+	 input			pll_clk0,
+	 input			pll_clk1
+	 
 `ifdef OPT_DDR
  /* To avoid modifying UCF file we keep these even in FIFO mode */
 	 ,output [12:0] LPDDR_A,
@@ -158,6 +163,7 @@ module interface(
 	wire [7:0] reg_datai_serialtarg;
 	wire [7:0] reg_datai_triggerio;
 	wire [7:0] reg_datai_cw;
+	wire [7:0] reg_datai_i2c;
 	//wire [7:0] reg_datai_scard;
 	wire [7:0] reg_datai_usi;
 	wire [15:0] reg_size;
@@ -172,6 +178,7 @@ module interface(
 	wire [15:0] reg_hyplen_cw;
 	//wire [15:0] reg_hyplen_scard;
 	wire [15:0] reg_hyplen_usi;
+	wire [15:0] reg_hyplen_i2c;
 	
 	wire ext_trigger;
 	wire adv_trigger;
@@ -211,14 +218,14 @@ module interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi), //reg_datai_scard
+		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi | reg_datai_i2c), //reg_datai_scard
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(reg_stream_serial), //reg_stream_scard
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi)  //reg_hyplen_scard
+		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi | reg_hyplen_i2c)  //reg_hyplen_scard
 	/*
 		,.LPDDR_A(LPDDR_A),
 		.LPDDR_BA(LPDDR_BA),
@@ -294,7 +301,7 @@ module interface(
 		.reg_hyplen(reg_hyplen_cw),
 		.extclk_fpa_i(DUT_CLK_i),
 		.extclk_fpb_i(1'b0),
-		.extclk_pll_i(1'b0),
+		.extclk_pll_i(pll_clk0),
 		.extclk_rearin_i(target_hs1),
 		.extclk_rearout_i(target_hs2),
 		.extclk_o(extclk_mux),
@@ -386,6 +393,23 @@ module interface(
 		.reg_hyplen(reg_hyplen_usi),
 		.usi_out(usi_out),
 		.usi_in(usi_in)
+	);
+	
+	reg_i2c registers_i2c (
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_i2c), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_i2c),
+		.scl(pll_scl),
+		.sda(pll_sda)
 	);
 	
 	assign target_io3 = (reg_rst) ? 1'bz:
