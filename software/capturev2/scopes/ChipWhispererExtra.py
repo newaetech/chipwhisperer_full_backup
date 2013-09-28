@@ -40,6 +40,9 @@ ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
 
+ADDR_I2CSTATUS = 47
+ADDR_I2CDATA = 48
+
 
 class ChipWhispererExtra(QObject):
     paramListUpdated = Signal(list)
@@ -302,6 +305,203 @@ class CWAdvTrigger(object):
         pattern.append(self.processBit(lastbit, bitcnt, last=True))
         return pattern
     
-    def strToPattern(self, string, startbits=1, stopbits=1):
-        totalpat = strToBits(string, startbits, stopbits)
+    def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
+        totalpat = strToBits(string, startbits, stopbits, parity)
         return self.bitsToPattern(totalpat)
+
+class CWPLLDriver(object):
+    def __init__(self):
+        super(CWPLLDriver, self).__init__()
+        self.oa = None
+    
+    def con(self, oa):
+        self.oa = oa
+        
+    def isPresent(self):
+        """Check for CDCE906 PLL Chip"""
+        try:
+            result = self.readByte(0x00)
+        except IOError:
+            return False        
+        if result & 0x0F != 0x01:
+            return False        
+        return True
+       
+    def setupPLL(self, N, M, bypass=False, highspeed=True, num=1):
+        """
+        Setup PLL1.
+         * For M & N:
+            M =< N. 
+            VCOF = (Fin * N) / M
+            VCOF must be in range 80-300MHz.
+            
+         * For highspeed:
+           Set to 'True' if VCO freq in range 180-300 MHz. Set low if in range 80-200 MHz
+        """
+        
+        if num != 1:
+            raise ValueError("Only PLL1 Config Supported")
+        
+        self.writeByte(0x01, M & 0xFF)
+        self.writeByte(0x02, N & 0xFF)
+        
+        b = self.readByte(0x03)
+        b &= (1<<6)|(1<<5)
+        if bypass:
+            b |= 1<<7
+        
+        b |= (M >> 8)
+        b |= ((N >> 8) & 0x0F) << 1
+        
+        self.writeByte(0x03, b)
+        
+        b = self.readByte(0x06)
+        b &= ~(1<<7)
+        if highspeed:
+            b |= 1<<7        
+    
+        self.writeByte(0x06, b)
+    
+    def setupDivider(self, setting, clksrc, divnum=2):
+        """
+        setting = Divide VCOF from PLL by this value
+        
+        clksrc = 0 means PLL Bypass
+        clksrc = 1 means PLL1
+        clksrc = 2 means PLL2 w/ SCC etc... not supported
+        
+        divnum is divider number (0-5)        
+        """
+        
+        if divnum > 5:
+            raise ValueError("Invalid Divider Number (0-5 allowed): %d"%divnum)
+        
+        divreg = 13 + divnum
+        
+        if (setting < 1) | (setting > 127):
+            raise ValueError("Invalid Divider Setting (1-127 allowed): %d"%setting)
+        
+        self.writeByte(divreg, setting)
+        
+        if divnum == 0:
+            divreg = 9
+            divbits = 5
+        elif divnum == 1:
+            divreg = 10
+            divbits = 5
+        elif divnum == 2:
+            divreg = 11
+            divbits = 0
+        elif divnum == 3:
+            divreg = 11
+            divbits = 3
+        elif divnum == 4:
+            divreg = 12
+            divbits = 0
+        else:
+            divreg = 12
+            divbits = 3
+        
+        bold = self.readByte(divreg)
+        b = bold & ~(0x07<<divbits)
+        b |= (clksrc & 0x07) << divbits
+                        
+        if bold != b:
+            self.writeByte(divreg, b)
+            
+    def setupOutput(self, outnum, inv=False, enabled=True, divsource=2, slewrate=3):
+        """
+        outnum is output number, 0-5
+        inv = invert output?
+        enable = enable output?
+        divsource = divider source, 0-5
+        """
+        outreg = 19 + outnum
+        
+        data = 0
+        
+        if enabled:
+            data |= 1<<3
+            
+        if inv:
+            data |= 1<<6
+            
+        if divsource > 5:
+            raise ValueError("Invalid Divider Source Number (0-5 allowed): %d"%divsource)
+            
+        data |= divsource
+        data |= (slewrate & 0x03) << 4
+        
+        self.writeByte(outreg, data)
+        
+        
+    def setupClockSource(self, diff=True, useIN0=False, useIN1=False):        
+        if diff == False:
+            #Select which single-ended input to use
+            if (useIN0 ^ useIN1) == False:
+                raise ValueError("Only one of useIN0 or useIN1 can be True")
+                           
+            bold = self.readByte(10)
+            b = bold & ~(1<<4)
+            if useIN1:
+                b |= 1<<4
+                
+            if b != bold:
+                self.writeByte(10, b) 
+                #print "%x, %x"%(b, self.readByte(10))  
+    
+        bold = self.readByte(11)
+        bnew = bold & ~((1<<6) | (1<<7))
+        if diff:
+            bnew |= 1<<7
+        else:
+            bnew |= 1<<6
+        
+        if bnew != bold:
+            self.writeByte(11, bnew)
+        
+        print "%x, %x"%(bnew, self.readByte(11))  
+        
+            
+       
+    def readByte(self, regaddr, slaveaddr=0x69):
+        d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x04, 0x80 | 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
+        if stat[0] & 0x01:
+            raise IOError("No ACK from Slave in I2C")
+
+        stat = self.oa.sendMessage(CODE_READ, ADDR_I2CDATA, Validate=False, maxResp=1)
+        return stat[0]     
+        
+    def writeByte(self, regaddr, data, slaveaddr=0x69):        
+        d = bytearray([data])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CDATA, d, Validate=False)
+        
+        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x04, 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
+        if stat[0] & 0x01:
+            raise IOError("No ACK from Slave in I2C")
+
+   
