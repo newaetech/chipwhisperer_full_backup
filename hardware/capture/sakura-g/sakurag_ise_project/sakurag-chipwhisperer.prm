@@ -1,0 +1,17 @@
+PROMGEN: Xilinx Prom Generator P.49d
+Copyright (c) 1995-2012 Xilinx, Inc.  All rights reserved.
+
+promgen -w -p mcs -c FF -o C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\sakura-g\sakurag_ise_project//sakurag-chipwhisperer -s 4096 -u 0000 C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/capture/sakura-g/sakurag_ise_project/chipwhisperer-sakurag/chip_sakurag.bit -spi 
+
+PROM C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\sakura-g\sakurag_ise_project\sakurag-chipwhisperer.prm map: Tue Oct 01 15:55:21 2013
+
+Calculating PROM checksum with fill value ff
+
+Format        Mcs86 (32-bit)
+Size          4096K
+PROM start    0000:0000
+PROM end      003f:ffff
+PROM checksum 3ac39938
+
+        Addr1        Addr2                     Date File(s)
+    0000:0000    0005:3393     Oct 01 15:36:03 2013 C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/capture/sakura-g/sakurag_ise_project/chipwhisperer-sakurag/chip_sakurag.bit

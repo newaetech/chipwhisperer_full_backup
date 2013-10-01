@@ -97,6 +97,7 @@ module CHIP_SAKURAG
 	wire [5:0] reg_hypaddr;
 	wire [15:0] reg_hyplen_fpgaic;
 	wire disable_openadc;	
+	wire lbus_clkint;
 
 	assign disable_openadc = 1'b0;
 
@@ -117,7 +118,7 @@ module CHIP_SAKURAG
 	 .ADC_Data(ADC_Data),
 	 .ADC_OR(ADC_OR),
 	 .ADC_clk(ADC_clk),
-	 .DUT_CLK_i(DUT_CLK_i),
+	 .DUT_CLK_i(lbus_clkint),
 	 .DUT_trigger_i(DUT_trigger_i),
 	 .amp_gain(amp_gain),
 	 .amp_hilo(amp_hilo),
@@ -155,14 +156,31 @@ module CHIP_SAKURAG
 		.lbus_wrn(lbus_wrn),
 		.lbus_rdn(lbus_rdn),
 		.lbus_clkn(lbus_clkn),
-		.lbus_rstn(lbus_rstn)		
+		.lbus_rstn(lbus_rstn),
+		.lbus_clkint(lbus_clkint)
 	);
 	
 	//SPI Flash
 	assign flash_DOUT = (spi_flash_mode) ? usb_d[1] : 1'bZ;
 	assign flash_CLK  = (spi_flash_mode) ? usb_d[0] : 1'bZ;
 	assign flash_CS   = (spi_flash_mode) ? usb_d[3] : 1'bZ;
+	/*
 	
+	wire [35:0] cs_data;   
+   wire [35:0]  chipscope_control;
+   chipscope_icon icon (
+    .CONTROL0(chipscope_control) // INOUT BUS [35:0]
+   ); 
+
+   chipscope_ila ila (
+    .CONTROL(chipscope_control), // INOUT BUS [35:0]
+    .CLK(usb_clk), // IN
+    .TRIG0(cs_data) // IN BUS [127:0]
+   ); 
+	
+	assign cs_data[0] = DUT_trigger_i;
+	assign cs_data[1] = DUT_CLK_i;
+	*/
 
 	//Reset USB only on switch push
 	assign usb_rstn = 1'b1; //rstnin;

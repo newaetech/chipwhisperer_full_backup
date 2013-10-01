@@ -85,7 +85,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1380318616" xil_pn:in_ck="3088671287583220158" xil_pn:name="TRAN_regenerateCores" xil_pn:prop_ck="-2052044918844625210" xil_pn:start_ts="1380318615">
+    <transform xil_pn:end_ts="1380568591" xil_pn:in_ck="3088671287583220158" xil_pn:name="TRAN_regenerateCores" xil_pn:prop_ck="-2052044918844625210" xil_pn:start_ts="1380568591">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="../../../../common/hdl/sakura/coregen/syncfifo_8x31.ngc"/>
@@ -113,7 +113,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1380324159" xil_pn:in_ck="-9148481190986886026" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="6868465104578785748" xil_pn:start_ts="1380324137">
+    <transform xil_pn:end_ts="1380652442" xil_pn:in_ck="-1693688362337571235" xil_pn:name="TRANEXT_xstsynthesize_spartan6" xil_pn:prop_ck="6868465104578785748" xil_pn:start_ts="1380652421">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -131,12 +131,13 @@
       <outfile xil_pn:name="webtalk_pn.xml"/>
       <outfile xil_pn:name="xst"/>
     </transform>
-    <transform xil_pn:end_ts="1379428071" xil_pn:in_ck="8056014117690604591" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="8836576822130448979" xil_pn:start_ts="1379428071">
+    <transform xil_pn:end_ts="1380652442" xil_pn:in_ck="8056014117690604591" xil_pn:name="TRAN_compileBCD2" xil_pn:prop_ck="8836576822130448979" xil_pn:start_ts="1380652442">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1380324167" xil_pn:in_ck="5502387883117850620" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-4081876409237549273" xil_pn:start_ts="1380324159">
+    <transform xil_pn:end_ts="1380652449" xil_pn:in_ck="5502387883117850620" xil_pn:name="TRANEXT_ngdbuild_FPGA" xil_pn:prop_ck="-4081876409237549273" xil_pn:start_ts="1380652442">
       <status xil_pn:value="SuccessfullyRun"/>
+      <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="CHIP_SAKURAG.bld"/>
       <outfile xil_pn:name="CHIP_SAKURAG.ngd"/>
@@ -144,12 +145,10 @@
       <outfile xil_pn:name="_ngo"/>
       <outfile xil_pn:name="_xmsgs/ngdbuild.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1380324198" xil_pn:in_ck="-1536869652298431609" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="-3038358747526061968" xil_pn:start_ts="1380324167">
+    <transform xil_pn:end_ts="1380652475" xil_pn:in_ck="-1536869652298431609" xil_pn:name="TRANEXT_map_spartan6" xil_pn:prop_ck="-3038358747526061968" xil_pn:start_ts="1380652449">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="CHIP_SAKURAG.pcf"/>
       <outfile xil_pn:name="CHIP_SAKURAG_map.map"/>
       <outfile xil_pn:name="CHIP_SAKURAG_map.mrp"/>
@@ -160,7 +159,7 @@
       <outfile xil_pn:name="CHIP_SAKURAG_usage.xml"/>
       <outfile xil_pn:name="_xmsgs/map.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1380324227" xil_pn:in_ck="-2589612855674850016" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="93661965788626211" xil_pn:start_ts="1380324198">
+    <transform xil_pn:end_ts="1380652550" xil_pn:in_ck="-2589612855674850016" xil_pn:name="TRANEXT_par_spartan6" xil_pn:prop_ck="93661965788626211" xil_pn:start_ts="1380652475">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -175,7 +174,7 @@
       <outfile xil_pn:name="CHIP_SAKURAG_par.xrpt"/>
       <outfile xil_pn:name="_xmsgs/par.xmsgs"/>
     </transform>
-    <transform xil_pn:end_ts="1380324261" xil_pn:in_ck="-7919715708273431852" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="5341574683187206424" xil_pn:start_ts="1380324227">
+    <transform xil_pn:end_ts="1380652571" xil_pn:in_ck="-7919715708273431852" xil_pn:name="TRANEXT_bitFile_spartan6" xil_pn:prop_ck="5341574683187206424" xil_pn:start_ts="1380652550">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>
@@ -193,14 +192,16 @@
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="InputRemoved"/>
     </transform>
     <transform xil_pn:end_ts="1380319444" xil_pn:in_ck="5084351861782468094" xil_pn:name="TRAN_analyzeDesignUsingChipscope" xil_pn:prop_ck="-4081876409237549273" xil_pn:start_ts="1380319444">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <status xil_pn:value="OutOfDateForInputs"/>
       <status xil_pn:value="InputChanged"/>
+      <status xil_pn:value="InputRemoved"/>
     </transform>
-    <transform xil_pn:end_ts="1380324227" xil_pn:in_ck="7724178826413693187" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1380324219">
+    <transform xil_pn:end_ts="1380652550" xil_pn:in_ck="7724178826413693187" xil_pn:name="TRAN_postRouteTrce" xil_pn:prop_ck="445577401284416184" xil_pn:start_ts="1380652543">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="WarningsGenerated"/>
       <status xil_pn:value="ReadyToRun"/>

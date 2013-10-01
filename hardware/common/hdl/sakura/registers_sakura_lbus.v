@@ -59,7 +59,8 @@ module reg_sakura_lbus(
    output reg         lbus_wrn,  // input data
    output reg         lbus_rdn,  // Assert output data
    output wire	       lbus_clkn, // Clock
-	output wire        lbus_rstn // Reset			              
+	output wire        lbus_rstn, // Reset			              
+	output wire 		 lbus_clkint
     );
 	 
 	wire rdfifo_en;
@@ -101,8 +102,6 @@ module reg_sakura_lbus(
 	 wire [7:0] sakura_status_read;	 
 	 wire lbus_rst;
 
-	 assign lbus_clk = lbus_clkn;
-	 assign lbus_clkn = clk;
 	 assign lbus_rstn = ~lbus_rst;
 	 assign lbus_rst = reset | sakura_status_write[0];
 	 assign sakura_status_read[7:3] = sakura_status_write[7:3];
@@ -245,7 +244,14 @@ module reg_sakura_lbus(
      if (lbus_wrn0) lbus_di_a <= lbus_a;
      else           lbus_di_a <= lbus_di;
 
-			
+
+   MK_CLKRST mk_clkrst  (.clkin(clk), .rst(reset), .clk(lbus_clk));
+   
+   ODDR2 u0 (.D0(1'b0), .D1(1'b1), .C0(lbus_clk), .C1(~lbus_clk),
+             .Q(lbus_clkn),    .CE(1'b1), .R(1'b0), .S(1'b0));
+				 
+	assign lbus_clkint = lbus_clk;
+
  `ifdef CHIPSCOPE
 	 assign cs_data[15:0] = lbus_di_a;
 	 assign cs_data[31:16] = lbus_do;
@@ -264,5 +270,39 @@ module reg_sakura_lbus(
  `endif
  
 endmodule
+
+`define CLOCK_DIVIDE 16
+
+//================================================ MK_CLKRST
+module MK_CLKRST (clkin, rst, clk);
+   //synthesis attribute keep_hierarchy of MK_CLKRST is no;
+   
+   //------------------------------------------------
+   input  clkin, rst;
+   output clk;
+   
+   //------------------------------------------------
+   wire   rst_dll;
+   wire   refclk;
+   wire   clk1x, clk1x_dcm, clkdv_dcm, locked;
+
+   //------------------------------------------------ dll reset
+   assign rst_dll = rst;
+
+   DCM_SP #(.CLKIN_PERIOD(20.833),  // Source clock: 48 MHz
+	         .CLKIN_DIVIDE_BY_2("TRUE"),
+            .CLKDV_DIVIDE(`CLOCK_DIVIDE), // 48 / 16 / 2  = 1.5 MHz
+            .CLK_FEEDBACK("1X"))
+   u11 (.CLKIN(clkin), .CLKFB(clk1x), .RST(rst_dll),
+        .PSEN(1'b0), .PSINCDEC (1'b0), .PSCLK(1'b0), .DSSEN(1'b0),
+        .CLK0(clk1x_dcm),     .CLKDV(clkdv_dcm),
+        .CLK90(), .CLK180(), .CLK270(),
+        .CLK2X(), .CLK2X180(), .CLKFX(), .CLKFX180(),
+        .STATUS(), .LOCKED(locked), .PSDONE());
+   
+   BUFG  u12 (.I(clk1x_dcm), .O(clk1x));
+   BUFG  u13 (.I(clkdv_dcm), .O(clk));
+endmodule // MK_CLKRST
+
 
 `undef CHIPSCOPE
