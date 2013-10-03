@@ -457,6 +457,7 @@ class OpenADCInterface(QObject):
         self.qtadc.arm()
 
     def capture(self, update=True, NumberPoints=None):
+        """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
         return self.qtadc.capture(update, NumberPoints)    
         
     def paramList(self):

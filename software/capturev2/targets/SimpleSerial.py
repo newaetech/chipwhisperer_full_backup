@@ -28,6 +28,8 @@ import serial
 from PySide.QtCore import *
 from PySide.QtGui import *
 
+from TargetTemplate import TargetTemplate
+
 import time
 
 try:
@@ -48,23 +50,19 @@ class SimpleSerial_serial(QObject):
         super(SimpleSerial_serial, self).__init__()
         
 
-class SimpleSerial_ChipWhisperer(QObject):
-    paramListUpdated = Signal(list) 
-    
+class SimpleSerial_ChipWhisperer(TargetTemplate):    
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
 
     ADDR_DATA       = 33
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
-    
-    def __init__(self, showScriptParameter=None):
-        super(SimpleSerial_ChipWhisperer, self).__init__()
-        ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
+
+    def setupParameters(self):
+        ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]        
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
-        self.debugLog = None   
+        ExtendedParameter.setupExtended(self.params, self)      
+            
 
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
@@ -83,8 +81,9 @@ class SimpleSerial_ChipWhisperer(QObject):
         self.oa = oa
 
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
-        if self.debugLog is not None:
-            self.debugLog(lastTx, lastRx)
+        #if self.debugLog is not None:
+        #    self.debugLog(lastTx, lastRx)
+        pass
 
     def write(self, string):
         for s in string:
@@ -138,30 +137,15 @@ class SimpleSerial_ChipWhisperer(QObject):
     def close(self):
         pass
        
-class SimpleSerial(QObject):   
-    paramListUpdated = Signal(list) 
-     
-    def __init__(self, console=None, showScriptParameter=None):
-        super(SimpleSerial, self).__init__()
-        
-        self.console = console
-        
-        self.ser = None
-        ssParams = [{'name':'connection', 'type':'list', 'values':{"System Serial Port":SimpleSerial_serial(), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
+class SimpleSerial(TargetTemplate):   
+    paramListUpdated = Signal(list)     
+
+    def setupParameters(self):
+        ssParams = [{'name':'connection', 'type':'list', 'values':{"System Serial Port":SimpleSerial_serial(), "ChipWhisperer":SimpleSerial_ChipWhisperer(self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
-
-    def __del__(self):
-        self.close()
-    
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
-        
-    
+        self.ser = None   
+      
     def setOpenADC(self, oadc):
         try:
             self.ser.setOpenADC(oadc)

@@ -81,7 +81,8 @@ class SaseboGII(QObject):
 
     def con(self):   
         try:
-            self.sasebo = ft.openEx("FTSZ1IONB")
+#            self.sasebo = ft.openEx("FTSZ1IONB")
+            self.sasebo = ft.openEx("FTWQ8BMIA")
         except ft.ftd2xx.DeviceError, e:
             self.sasebo = None
             return False
@@ -159,6 +160,11 @@ class SaseboGII(QObject):
         #Select AES output
         self.write(0x0008, 0x00, 0x01)
         self.write(0x000A, 0x00, 0x00)
+        
+        self.write(0x0002, 0x00, 0x02)
+        
+        while self.isDone() == False:
+            continue
 
     def setModeEncrypt(self):
         self.write(0x000C, 0x00, 0x00)

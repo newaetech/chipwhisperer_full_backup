@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import sys
-import serial
+import time
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -38,12 +38,10 @@ sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
 from ExtendedParameter import ExtendedParameter
 
-import ChipWhispererTargets
+from TargetTemplate import TargetTemplate
 
                
-class SakuraG(QObject):   
-    paramListUpdated = Signal(list) 
-
+class SakuraG(TargetTemplate):   
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
         
@@ -54,26 +52,13 @@ class SakuraG(QObject):
     FLAG_WRFULL = 0x02
     FLAG_RDEMPTY = 0x04
      
-    def __init__(self, console=None, showScriptParameter=None):
-        super(SakuraG, self).__init__()
-        
-        self.console = console
-        self.showScriptParameter = showScriptParameter
-        ssParams = []        
+    def setupParameters(self): 
+        ssParams = [{'name':'Reset FPGA', 'type':'action', 'action':self.reset}]   
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
-        
+        ExtendedParameter.setupExtended(self.params, self)      
         self.oa = None
-
-    def __del__(self):
-        self.close()
-        
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
-            
+        self.fixedStart = True
+                    
     def setOpenADC(self, oadc):
         self.oa = oadc
         
@@ -82,13 +67,11 @@ class SakuraG(QObject):
         self.paramListUpdated.emit(self.paramList)
         self.protocol.setReaderHardware(self.driver)
         
-    def paramList(self):
-        p = [self.params]
-        return p
-    
-    def dis(self):
-        self.close()
-
+    def reset(self):
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
+        time.sleep(0.05)
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
+        
     def con(self):   
         if self.oa is None:
             print "No OpenADC?"
@@ -115,7 +98,11 @@ class SakuraG(QObject):
         return b[0]
 
     def writeMsg(self, msg):
-        for b in msg:        
+                
+        for b in msg:
+            #while (self.readStatus() & self.FLAG_WRFULL) == self.FLAG_WRFULL:
+            #    pass
+                    
             self.oa.sendMessage(self.CODE_WRITE, self.ADDR_FIFO, [b], Validate=False)
 
     def readMsg(self, nbytes):
@@ -124,7 +111,8 @@ class SakuraG(QObject):
         
         for i in range(0, nbytes):
             if self.readStatus() & self.FLAG_RDEMPTY:
-                print "empty???"
+                pass
+            
             b = self.oa.sendMessage(self.CODE_READ, self.ADDR_FIFO, Validate=False)
             msg.append(b[0])
             
@@ -194,10 +182,17 @@ class SakuraG(QObject):
     def setModeDecrypt(self):
         self.write(0x000C, 0x00, 0x01)
 
+    def checkEncryptionKey(self, key):
+        #SAKURA-G AES Example has fixed first 9 bytes
+        if self.fixedStart:
+            for i in range(0,9):
+                key[i] = i                
+        return key 
+
     def loadEncryptionKey(self, key):
         """Encryption key is bytearray"""
 
-        if key:     
+        if key:                
             self.write(0x0100, key[0], key[1])
             self.write(0x0102, key[2], key[3])
             self.write(0x0104, key[4], key[5])
@@ -207,9 +202,10 @@ class SakuraG(QObject):
             self.write(0x010C, key[12], key[13])
             self.write(0x010E, key[14], key[15])
 
-        #I don't know what this is but we need it? Not documented?
+        #Generate key schedule
         self.write(0x0002, 0x00, 0x02)
 
+        #Wait for done
         while self.isDone() == False:
             continue
 

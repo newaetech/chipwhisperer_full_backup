@@ -95,8 +95,8 @@ except ImportError:
 
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
-from traces.TraceFormatNative import TraceFormatNative
-from traces.TraceFormatDPAv3 import TraceFormatDPAv3
+from traces.TraceContainerNative import TraceContainerNative
+from traces.TraceContainerDPAv3 import TraceContainerDPAv3
 
 class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
@@ -174,6 +174,12 @@ class acquisitionController(QObject):
         self.key = key
         self.newPlain()
 
+        #self.target.init()
+
+        #self.target.read(0xFFFC)
+        #self.textin = [0x45, 0xE7 ,0xF9 ,0x71 ,0x0F ,0xFF ,0xB4 ,0x23 ,0xD0 ,0x98 ,0x60 ,0xF3 ,0x94 ,0xBC ,0x51 ,0x10]
+        #self.key = range(0,16)
+
         ## Start target now
         if self.textInLabel != None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
@@ -181,7 +187,7 @@ class acquisitionController(QObject):
         #Set mode
         if self.target is not None:
             self.target.setModeEncrypt()
-            self.target.loadEncryptionKey(key)  
+            self.target.loadEncryptionKey(self.key)  
         
         self.scope.arm()
 
@@ -195,11 +201,15 @@ class acquisitionController(QObject):
                     self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
 
         #Get ADC reading
-        if self.scope.capture(update, N) == True:
-            print "timeout"
-            return False        
-        return True
+        try:
+            if self.scope.capture(update, N) == True:
+                print "Timeout"
+                return False       
+        except IOError,e:
+            print "IOError: %s"%str(e)
+            return False
         
+        return True
 
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
@@ -447,7 +457,7 @@ class ChipWhispererCapture(MainChip):
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}        
-        valid_traces = {"None":None, "ChipWhisperer/Native":TraceFormatNative, "DPAContestv3":TraceFormatDPAv3}#"DPA Contest v3": writer_dpav3.dpav3()}    
+        valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}#"DPA Contest v3": writer_dpav3.dpav3()}    
         
         self.esm = EncryptionStatusMonitor(self)
         
@@ -495,11 +505,18 @@ class ChipWhispererCapture(MainChip):
     def setNumTraces(self, t):
         self.numTraces = t      
 
-    def setKey(self, key):
-        self.textkey = key       
-        self.key = bytearray()
-        for s in key.split():
-            self.key.append(int(s, 16))
+    def setKey(self, key, binary=False, updateParamList=False):
+        
+        if binary:
+            self.textkey = ''
+            for s in key:
+                self.textkey += '%02x '%s
+            self.key = bytearray(key)
+        else:        
+            self.textkey = key       
+            self.key = bytearray()
+            for s in key.split():
+                self.key.append(int(s, 16))
         
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
@@ -632,6 +649,10 @@ class ChipWhispererCapture(MainChip):
         else:
             target = None
                      
+        #Check key with target
+        if target:
+            self.setKey(target.checkEncryptionKey(self.key), True, True)
+                     
         ac = acquisitionController(self.scope, target, writer=None, fixedPlain=self.fixedPlain, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
         ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
@@ -646,13 +667,18 @@ class ChipWhispererCapture(MainChip):
         else:
             target = None
             
+        #Check key with target
+        if target:
+            self.setKey(target.checkEncryptionKey(self.key), True, True)
+            
         #Load trace writer
         if self.trace is not None:
             writer = self.trace()
-            starttime = datetime.now()             
-            writer.config.prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S_')
-            writer.config.configfile = self.proj.datadirectory + "traces/config_" + writer.config.prefix + ".cfg" 
-            writer.config.date = starttime.strftime('%Y-%m-%d %H:%M:%S')
+            starttime = datetime.now()            
+            prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S_') 
+            writer.config.setAttr("prefix", prefix)
+            writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
+            writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
         else:
             writer = None
                     
