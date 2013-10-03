@@ -108,6 +108,10 @@ class AttackBaseClass(QObject):
         ExtendedParameter.setupExtended(self.params)
         
 
+    def processKnownKey(self, inpkey):
+        """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
+        return inpkey
+
     def getByteList(self):
         init = [dict(name='Byte %d'%bnum, type='bool', value=True, bytenum=bnum) for bnum in range(0,self.numsubkeys)]
         init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})

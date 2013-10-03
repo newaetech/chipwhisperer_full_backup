@@ -57,9 +57,99 @@ except ImportError:
     sys.exit()
 
 import attacks.models.AES128_8bit
+import attacks.models.AES_RoundKeys
 from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
+
+def CPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+     #For all bytes of key
+
+    diffs = [0]*256
+
+    if pointRange == None:
+        traces = traces_all
+        padbefore = 0
+        padafter = 0
+    else:
+        traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
+        padbefore = pointRange[bnum][0]
+        padafter = len(traces_all[0,:]) - pointRange[bnum][1]
+        #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+
+    #For each 0..0xFF possible value of the key byte
+    for key in range(0, 256):                
+        #Initialize arrays & variables to zero
+        sumnum = np.zeros(len(traces[0,:]))
+        sumden1 = np.zeros(len(traces[0,:]))
+        sumden2 = np.zeros(len(traces[0,:]))
+
+        hyp = [0] * numtraces
+
+        #Formula for CPA & description found in "Power Analysis Attacks"
+        # by Mangard et al, page 124, formula 6.2.     
+        #
+        # This has been modified to reduce computational requirements such that adding a new waveform
+        # doesn't require you to recalculate everything
+        
+        #Generate hypotheticals
+        for tnum in range(numtraces):
+
+            if len(plaintexts) > 0:
+                pt = plaintexts[tnum]
+
+            if len(ciphertexts) > 0:
+                ct = ciphertexts[tnum]
+
+            if keyround == "first":
+                ct = None
+            elif keyround == "last":
+                pt = None
+            else:
+                raise ValueError("keyround invalid")
+            
+            #Generate the output of the SBOX
+            if modeltype == "Hamming Weight":
+                hypint = model.HypHW(pt, ct, key, bnum);
+            elif modeltype == "Hamming Distance":
+                hypint = model.HypHD(pt, ct, key, bnum);
+            else:
+                raise ValueError("modeltype invalid")
+            hyp[tnum] = model.getHW(hypint)
+            
+        hyp = np.array(hyp)                    
+
+        #Mean of hypothesis
+        meanh = np.mean(hyp, dtype=np.float64)
+
+        #Mean of all points in trace
+        meant = np.mean(traces, axis=0, dtype=np.float64)                           
+            
+        sumt = np.sum(traces, axis=0)
+        sumh = np.sum(hyp, axis=0)
+        sumht = np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
+
+        sumnum =  sumht - meant*sumh - meanh*sumt + (numtraces * meanh * meant)
+
+        sumden1 = np.sum(np.multiply(hyp, hyp),axis=0) - (2*meanh*sumh) + (numtraces*meanh*meanh)
+        sumden2 = np.sum(np.multiply(traces,traces),axis=0) - (2*meant*sumt) + (numtraces*meant*meant)
+
+        if progressBar:
+            progressBar.setValue(pbcnt)
+            #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+            pbcnt = pbcnt + 1
+            if progressBar.wasCanceled():
+                break
+
+        diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+
+        if padafter > 0:
+            diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
+
+        if padbefore > 0:
+            diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
+    
+    return (diffs, pbcnt)
 
 def CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
      #For all bytes of key
@@ -200,6 +290,8 @@ class AttackCPA_SimpleLoop(QObject):
         #self.all_diffs, pb = zip(*r)
         #pbcnt = 0
         for bnum in brange:
+            #CPAMemoryOneSubkey
+            #CPASimpleOneSubkey
             (self.all_diffs[bnum], pbcnt) = CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
 
     def getDiff(self, bnum, hyprange=None):
@@ -505,13 +597,11 @@ class CPA(AttackBaseClass):
         super(CPA, self).__init__(parent)
         self.log=log 
         
-        #5000, 6000 
-        
     def setupParameters(self):      
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
-                        {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
-                        {'name':'Power Model', 'type':'list', 'values':['HW-VCC', 'HW-GND', 'HD-VCC', 'HD-GND'], 'value':'HW-VCC'},
+                        {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first', 'set':self.setRound},
+                        {'name':'Power Model', 'type':'list', 'values':{'HW-VCC':('Hamming Weight', 'VCC'), 'HW-GND':('Hamming Weight', 'GND'), 'HD-VCC':('Hamming Distance', 'VCC'), 'HD-GND':('Hamming Distance', 'GND')}, 'value':('Hamming Weight', 'VCC'), 'set':self.setModel},
                         ]},
                        {'name':'Take Absolute', 'type':'bool', 'value':True},
                        
@@ -522,6 +612,25 @@ class CPA(AttackBaseClass):
                       ]
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params)
+        
+        self.setRound('first')
+        self.setModel(("Hamming Weight", "VCC"))
+            
+    def setRound(self, rnd):
+        self.attackRound = rnd
+        
+    def setModel(self, model):
+        self.attackModel = model[0]
+        self.attackModelVccGnd = model[1]
+        
+    def processKnownKey(self, inpkey):
+        if inpkey is None:
+            return None
+        
+        if self.attackRound == 'last':
+            return attacks.models.AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
+        else:
+            return inpkey
             
     def doAttack(self):        
         #TODO: support start/end point different per byte
@@ -553,12 +662,10 @@ class CPA(AttackBaseClass):
         
         #Following attack DOES NOT WORK
         #self.attack = AttackCPA_SciPyCorrelation(attacks.models.AES128_8bit)
-        self.attack.setByteList(self.bytesEnabled())
-        #self.attack.setKeyround("first")
-        #self.attack.setModeltype("Hamming Weight")
         
-        self.attack.setKeyround("last")
-        self.attack.setModeltype("Hamming Distance")
+        self.attack.setByteList(self.bytesEnabled())
+        self.attack.setKeyround(self.attackRound)
+        self.attack.setModeltype(self.attackModel)
         
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)

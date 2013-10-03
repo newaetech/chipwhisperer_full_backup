@@ -172,9 +172,11 @@ class ResultsPlotData(GraphWidget):
     def setupHighlights(self):
         self.highlights = []
         
+        highlights = self.knownkey
+        
         for i in range(0, self.numKeys):
-            if self.knownkey is not None:
-                self.highlights.append([self.knownkey[i]])
+            if highlights is not None:
+                self.highlights.append([highlights[i]])
             else:
                 self.highlights.append([None])
  
@@ -358,8 +360,10 @@ class ResultsTable(QObject):
                 for j in range(0,self.numPerms):
                     self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
 
-                    if self.knownkey is not None:
-                        if maxes[j]['hyp'] == self.knownkey[bnum]:
+                    highlights = self.knownkey
+
+                    if highlights is not None:
+                        if maxes[j]['hyp'] == highlights[bnum]:
                             self.pge[bnum] = j
                             itm = self.table.item(j, bnum)
                             itm.setForeground(QBrush(Qt.red))
