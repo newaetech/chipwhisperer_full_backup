@@ -32,8 +32,8 @@ sys.path.append('../common')
 
 from TraceContainer import TraceContainer
 from TraceContainerConfig import TraceContainerConfig
-from TraceFormatNative import TraceFormatNative
-from TraceFormatDPAv3 import ImportDPAv3Dialog
+from TraceContainerNative import TraceContainerNative
+from TraceContainerDPAv3 import ImportDPAv3Dialog
 
 import re
 
@@ -90,7 +90,7 @@ class TraceManager():
         for t in self.dlg.traceList:
             if t.mappedRange is not None:
                 num.append(t.mappedRange[1])
-                pts.append(t.config.points)
+                pts.append(int(t.config.attr("numPoints")))
 
                 if self.knownkey == None:
                     self.knownkey = t.getKnownKey()
@@ -119,8 +119,14 @@ class TraceManagerDialog(QDialog):
         
         layout = QVBoxLayout()
 
-        self.table = QTableWidget(0, 11)
-        self.table.setHorizontalHeaderLabels(["Enabled", "Mapped Range", "Trace Num", "Points", "Date Captured", "File", "Target HW", "Target SW", "Scope", "Sample Rate", "Notes"])
+        #Get labels in use
+        exampleConfig = TraceContainerConfig()
+        attrs = exampleConfig.attrHeaderValues()      
+        attrHeaders = [i["header"] for i in attrs]
+        attrHeaders.insert(0, "Mapped Range")
+        attrHeaders.insert(0, "Enabled")        
+        self.table = QTableWidget(0, len(attrHeaders))     
+        self.table.setHorizontalHeaderLabels(attrHeaders)
        
         layout.addWidget(self.table)
 
@@ -164,7 +170,7 @@ class TraceManagerDialog(QDialog):
 
     def saveProject(self, config, configfilename):
         for indx, t in enumerate(self.traceList):
-            config[self.secName]['tracefile%d'%indx] = os.path.relpath(t.config.configfile, os.path.split(configfilename)[0])
+            config[self.secName]['tracefile%d'%indx] = os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0])
             config[self.secName]['enabled%d'%indx] = str(t.config.enabled)
 
     def loadProject(self, configfilename):
@@ -180,7 +186,7 @@ class TraceManagerDialog(QDialog):
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
                 print "Opening %s"%fname
-                ti = TraceFormatNative()
+                ti = TraceContainerNative()
                 ti.config.loadTrace(fname)
                 self.traceList.append(ti)
                 self.addRow(ti)
@@ -211,19 +217,23 @@ class TraceManagerDialog(QDialog):
         self.table.setCellWidget(row, self.findCol("Enabled"), cb)
 
         if trace:
-            temp = QTableWidgetItem("%d"%trace.config.numTraces)
-            temp.setFlags(temp.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, self.findCol("Trace Num"), temp)
-            self.table.setItem(row, self.findCol("Date Captured"), QTableWidgetItem("%s"%trace.config.date))
-            self.table.setItem(row, self.findCol("File"), QTableWidgetItem("%s"%trace.config.configfile))
-            temp = QTableWidgetItem("%d"%trace.config.points)
-            temp.setFlags(temp.flags() & ~Qt.ItemIsEditable)
-            self.table.setItem(row, self.findCol("Points"), temp)
-            self.table.setItem(row, self.findCol("Target HW"), QTableWidgetItem("%s"%trace.config.targetHW))
-            self.table.setItem(row, self.findCol("Target SW"), QTableWidgetItem("%s"%trace.config.targetSW))
-            self.table.setItem(row, self.findCol("Scope"), QTableWidgetItem("%s"%trace.config.scope))
-            self.table.setItem(row, self.findCol("Sample Rate"), QTableWidgetItem("%s"%trace.config.samplerate))
-            self.table.setItem(row, self.findCol("Notes"), QTableWidgetItem("%s"%trace.config.notes))
+            for t in trace.config.attrHeaderValues():
+                try:
+                    col = self.findCol(t["header"])
+                    wid = QTableWidgetItem("%s"%trace.config.attr(t["name"]))
+                    attrDict = trace.config.attrDict(t["name"])                    
+                    try:        
+                        isEditable = attrDict["editable"]
+                    except KeyError:
+                        isEditable = False
+                        
+                    if isEditable == False:
+                        wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
+                        
+                    self.table.setItem(row, col, wid)
+                                          
+                except ValueError:
+                    pass
 
         self.validateTable()
 
@@ -238,8 +248,8 @@ class TraceManagerDialog(QDialog):
                 startTrace = startTrace + tlen + 1
 
                 if self.traceList[i].traces is None:
-                    path = os.path.split(self.traceList[i].config.configfile)[0]
-                    self.traceList[i].loadAllTraces(path, self.traceList[i].config.prefix)                   
+                    path = os.path.split(self.traceList[i].config.configFilename())[0]
+                    self.traceList[i].loadAllTraces(path, self.traceList[i].config.attr("prefix"))                   
                 
             else:
                 self.traceList[i].enabled = False

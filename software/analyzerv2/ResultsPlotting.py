@@ -311,7 +311,7 @@ class ResultsTable(QObject):
     def setAttack(self, attack):
         self.attack = attack
         
-    def setKnownkey(self, knownkey):
+    def setKnownKey(self, knownkey):
         self.knownkey = knownkey
         
     def setAbsoluteMode(self, enabled):
@@ -321,6 +321,9 @@ class ResultsTable(QObject):
         self.useSingle = enabled    
 
     def updateTable(self):
+                
+        self.setKnownKey(self.attack.trace.getKnownKey())
+        
         self.pge = [self.numPerms-1]*self.numKeys
         data = self.attack.getStatistics()
         
@@ -358,6 +361,14 @@ class ResultsTable(QObject):
                     if self.knownkey is not None:
                         if maxes[j]['hyp'] == self.knownkey[bnum]:
                             self.pge[bnum] = j
+                            itm = self.table.item(j, bnum)
+                            itm.setForeground(QBrush(Qt.red))
+                            
+                            #font = QFont()
+                            #font.setFamily("Courier")
+                            #font.setFixedPitch(True)
+                            #font.set(10)
+                            #itm.setFont(font)
             else:
                 self.table.setColumnHidden(bnum, True)
 

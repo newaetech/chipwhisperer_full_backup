@@ -44,13 +44,16 @@ import glob
 #For profiling support (not 100% needed)
 import pstats, cProfile
 
-#Reading trace config files
-import ConfigParser
-
+try:
+    from configobj import ConfigObj  # import the module
+except ImportError:
+    print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
+    sys.exit()
+   
 class TraceContainerConfig(object):
     """
-    This class holds configuration data for a TraceContainer class. This is split into a seperate class
-    partially for historical reasons, since the old code had this as a seperate class.
+    This class holds configuration data for a TraceContainer class. This is split into a separate class
+    partially for historical reasons, since the old code had this as a separate class.
     
     This class is responsible for reading/writing the .cfg file associated with any traces. Even if we are
     using non-native trace format, the traces will STILL have a ChipWhisperer-specific .cfg file written
@@ -59,72 +62,164 @@ class TraceContainerConfig(object):
     This choice means you aren't forced to import traces into ChipWhisperer-only format, and can for example
     you may wish to keep them in some MATLAB workspace format instead.
     """   
+           
+        
+    ## Notes on dictionary:
+    # order = order of display, needed since dictionary is unordered
+    # value = value of variable
+    # desc = description of variable
+    # changed = has value changed since being written to disk?
+    # headerLabel = short description/name used for header label in trace management dialog
+    #
+           
+    attrDict = {
+                "sectionName":"Trace Config",
+                "moduleName":"native",
+                "module":None,
+                "values":{
+                    "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format"},
+                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"Num Traces"},
+                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"Num Points"},
+                    "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Cap. Date", "editable":True},
+                    "prefix":{"order":4, "value":None, "desc":"Prefix of all files if applicable", "changed":False},
+                    "targetHW":{"order":5, "value":"unknown", "desc":"Description of Target (DUT) Hardware", "changed":False, "headerLabel":"Target HW", "editable":True},
+                    "targetSW":{"order":6, "value":"unknown", "desc":"Description of Target (DUT) Software", "changed":False, "headerLabel":"Target SW", "editable":True},
+                    "scopeName":{"order":7, "value":"unknown", "desc":"Scope Model/Description", "changed":False, "headerLabel":"Scope Name", "editable":True},
+                    "scopeSampleRate":{"order":8, "value":0, "desc":"Sample Rate (s/sec)", "changed":False, "headerLabel":"Sample Rate", "editable":True},
+                    "scopeYUnits":{"order":9, "value":0, "desc":"Units of Y Points", "changed":False, "editable":True},
+                    "scopeXUnits":{"order":10, "value":0, "desc":"Units of X Points", "changed":False, "editable":True},
+                    "notes":{"order":11, "value":"", "desc":"Additional Notes about Capture Setup", "changed":False, "headerLabel":"Notes", "editable":True}                
+                    },
+                }
+    
+    attrList = [attrDict]
     
     def __init__(self, configfile=None):
         self.enabled = False
         self.mappedRange = None
-        self.numTraces = 0
-        self.date = ""
-        self.prefix = ""
-        self.points = 0
-        self.targetHW = ""
-        self.targetSW = ""
-        self.scope = ""
-        self.samplerate = 0
-        self.yscale = 1
-        self.yunits = "digits"
-        self.notes = ""
-
         self.trace = None
 
-        self.configfile = None
-
+        self.config = ConfigObj(configfile)
+        self._configfile = configfile
+        
+    def module(self, attr, moduleName=None):
+        """Given an attribute & possibly module name, return reference to module dictionary"""
+        module = None
+                
+        if moduleName == None:
+            for i in self.attrList:
+                if attr in i["values"]:
+                    module = i
+                    break
+        else:
+            for i in self.attrList:
+                if (i["moduleName"] == moduleName) | (i["sectionName"] == moduleName):
+                    if attr in i["values"]:
+                        module = i
+                        break
+                
+        if module == None:
+            raise ValueError("Invalid attribute: %s"%attr)
+        
+        return module
+        
+    def attrHeaderValues(self):
+        """Used to list all values in {"name":name, "header":header title, "desc":description} dictionary"""
+        lst = []
+        
+        for i in self.attrList:
+            for p in i["values"].iterkeys():
+                try:
+                    lst += [{ "name":p, "header":i["values"][p]["headerLabel"], "desc":i["values"][p]["desc"], "order":i["values"][p]["order"] }]
+                except KeyError:
+                    #If we don't have headerLabel type, we skip this item
+                    pass
+        
+        lst = sorted(lst, key=lambda k: k["order"]) 
+        
+        return lst
+     
+    def setConfigFilename(self, fname):
+        self._configfile = fname
+        
+    def configFilename(self):
+        return self._configfile
+     
+    def attr(self, attr, moduleName=None):
+        """Get value of attribute specified"""       
+        return self.attrDict(attr, moduleName)["value"]
+    
+    def attrDict(self, attr, moduleName=None):
+        """Get dictionary of attribute specified, includes additional info such as flags"""
+        mod = self.module(attr,moduleName)        
+        return mod["values"][attr]
+        
+    def setAttr(self, attr, value, moduleName=None):
+        """Set value of attribute"""
+        mod = self.module(attr,moduleName)   
+        mod["values"][attr]["value"] = value
+        mod["values"][attr]["changed"] = True 
+               
+    def syncFile(self):
+        """
+        Sync the local cache to the .cfg file specified already, basically this can be a save or load.
+        
+        The CHANGED flag is used to decide what to do. If the 'changed' flag is FALSE in the local cache,
+        the disk has priority. Any attributes not in the disk .cfg file will be taken from the local cache.
+        
+        If the 'changed' flag of an attribute is TRUE, the local cache will overwrite the disk file.
+        """
+         
+        debug = True
+         
+        for ad in self.attrList:
+            sn = ad["sectionName"]
+            
+            #Does section exist?
+            try:
+                self.config[sn]
+                if debug:
+                    print "Section %s found"%sn
+            except KeyError:
+                self.config[sn] = {}
+                if debug:
+                    print "Section %s not found"%sn
+                
+            #Check each item
+            for item in ad["values"].iterkeys():
+                try:
+                    self.config[sn][item]
+                    
+                    #Check priority
+                    if ad["values"][item]["changed"] == False:                        
+                        ad["values"][item]["value"] = self.config[sn][item]
+                        if debug:
+                            print "%s from configfile = "%item,
+                            print self.config[sn][item]
+                    else:
+                        self.config[sn][item] = ad["values"][item]["value"]
+                        if debug:
+                            print "%s from cache = "%item,
+                            print ad["values"][item]["value"]
+                
+                except KeyError:
+                    self.config[sn][item] = ad["values"][item]["value"]
+                    if debug: 
+                        print "%s missing in cfg file"%item                   
+        
     def loadTrace(self, configfile=None):
-
-        if configfile:
-            self.configfile = configfile
-
-        config = ConfigParser.RawConfigParser()
-        config.read(self.configfile)
+        """Load config file"""
+        if configfile:            
+            self._configfile = configfile
         
-        sname = "Trace Config"
+        self.config = ConfigObj(self._configfile)
+            
+        self.syncFile()
         
-        self.numTraces = config.getint(sname, 'NumTraces')
-        self.date = config.get(sname, 'Date')
-        self.prefix = config.get(sname, 'Prefix')
-        self.points = config.getint(sname, 'Points')
-        self.targetHW = config.get(sname, 'TargetHW')
-        self.targetSW = config.get(sname, 'TargetSW')
-        self.scope = config.get(sname, 'ScopeName')
-        self.samplerate = config.get(sname, 'ScopeSampleRate')
-        self.yscale = config.getfloat(sname, 'ScopeYScale')
-        self.yunits = config.get(sname, 'ScopeYUnits')
-        self.notes = config.get(sname, 'Notes')
-
     def saveTrace(self, configfile = None):
-        if configfile:
-            self.configfile = configfile
-
-        config = ConfigParser.RawConfigParser()
-        sname = "Trace Config"
-        
-        config.add_section(sname)
-        config.set(sname, 'NumTraces', self.numTraces)
-        config.set(sname, 'Date', self.date)
-        config.set(sname, 'Prefix', self.prefix)
-        config.set(sname, 'Points', self.points)
-        config.set(sname, 'TargetHW', self.targetHW)
-        config.set(sname, 'TargetSW', self.targetSW)
-        config.set(sname, 'ScopeName', self.scope)
-        config.set(sname, 'ScopeSampleRate', self.samplerate)
-        config.set(sname, 'ScopeYScale', self.yscale)
-        config.set(sname, 'ScopeYUnits', self.yunits)
-        config.set(sname, 'Notes', self.notes)
-
-        configfile = open(self.configfile, 'wb')
-        config.write(configfile)
-        configfile.flush()
-        configfile.close()
+        self.config.filename = self._configfile
+        self.syncFile()     
+        self.config.write()
 
     def checkTraceItem(self, itemname, localitem, changedlist):
         if localitem != self.__dict__[itemname]:                      
@@ -135,42 +230,9 @@ class TraceContainerConfig(object):
     def checkTrace(self, configfile = None):
         if configfile == None:
             configfile = self.configfile
-
-        config = ConfigParser.RawConfigParser()
-        config.read(configfile)
+      
+        changed = True
         
-        sname = "Trace Config"
+        #TODO: THIS
 
-        numTraces = config.getint(sname, 'NumTraces')
-        date = config.get(sname, 'Date')
-        prefix = config.get(sname, 'Prefix')
-        points = config.getint(sname, 'Points')
-        targetHW = config.get(sname, 'TargetHW')
-        targetSW = config.get(sname, 'TargetSW')
-        scope = config.get(sname, 'ScopeName')
-        samplerate = config.get(sname, 'ScopeSampleRate')
-        yscale = config.getfloat(sname, 'ScopeYScale')
-        yunits = config.get(sname, 'ScopeYUnits')
-        notes = config.get(sname, 'Notes')
-
-        #Compare memory to sections
-        changed = False
-        changedName = []
-        changed = changed or self.checkTraceItem("numTraces", numTraces, changedName)
-        changed = changed or self.checkTraceItem("date", date, changedName)
-        changed = changed or self.checkTraceItem("prefix", prefix, changedName)
-        changed = changed or self.checkTraceItem("points", points, changedName)
-        changed = changed or self.checkTraceItem("targetHW", targetHW, changedName)
-        changed = changed or self.checkTraceItem("targetSW", targetSW, changedName)
-        changed = changed or self.checkTraceItem("scope", scope, changedName)
-        changed = changed or self.checkTraceItem("samplerate", samplerate, changedName)
-        changed = changed or self.checkTraceItem("yscale", yscale, changedName)
-        changed = changed or self.checkTraceItem("yunits", yunits, changedName)
-        changed = changed or self.checkTraceItem("notes", notes, changedName)
-
-        #print changed
-        #print changedName
-
-        #TODO: Actually save or anything else
-        
         return changed

@@ -72,8 +72,9 @@ class TraceContainer(object):
         self.pointhint = points
 
     def numTraces(self):
-        if self.config.numTraces != self._numTraces:
-            self._numTraces = max(self.config.numTraces, self._numTraces)
+        cfint = int(self.config.attr("numTraces"))
+        if cfint != self._numTraces:
+            self._numTraces = max(cfint, self._numTraces)
         return self._numTraces
 
     def addTrace(self, trace, textin, textout, key, dtype=np.double):
@@ -82,8 +83,8 @@ class TraceContainer(object):
         self.addTextout(textout)
         
     def writeDataToConfig(self):
-        self.config.numTraces = self.numTraces()
-        self.config.points = self.numPoints()      
+        self.config.setAttr("numTraces", self.numTraces())
+        self.config.setAttr("numPoints", self.numPoints())      
 
     def addWave(self, trace, dtype=None):                
         if self.traces is None:

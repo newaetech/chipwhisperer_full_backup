@@ -43,9 +43,9 @@ import pstats, cProfile
 
 from TraceContainer import TraceContainer
 
-class TraceFormatDPAv3(TraceContainer):
+class TraceContainerDPAv3(TraceContainer):
     def __init__(self):
-        super(TraceFormatDPAv3, self).__init__()
+        super(TraceContainerDPAv3, self).__init__()
         self.dir = "."
 
     def setDirectory(self, directory):

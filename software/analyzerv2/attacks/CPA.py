@@ -43,6 +43,9 @@ import numpy as np
 import scipy as sp
 from ExtendedParameter import ExtendedParameter
 
+from joblib import Parallel, delayed
+
+
 try:
     import pyqtgraph as pg
     import pyqtgraph.multiprocess as mp
@@ -57,6 +60,94 @@ import attacks.models.AES128_8bit
 from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
+
+def CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+     #For all bytes of key
+
+    diffs = [0]*256
+
+    if pointRange == None:
+        traces = traces_all
+        padbefore = 0
+        padafter = 0
+    else:
+        traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
+        padbefore = pointRange[bnum][0]
+        padafter = len(traces_all[0,:]) - pointRange[bnum][1]
+        #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+
+    #For each 0..0xFF possible value of the key byte
+    for key in range(0, 256):                
+        #Initialize arrays & variables to zero
+        sumnum = np.zeros(len(traces[0,:]))
+        sumden1 = np.zeros(len(traces[0,:]))
+        sumden2 = np.zeros(len(traces[0,:]))
+
+        hyp = [0] * numtraces
+
+        #Formula for CPA & description found in "Power Analysis Attacks"
+        # by Mangard et al, page 124, formula 6.2.                         
+        
+        #Generate hypotheticals
+        for tnum in range(numtraces):
+
+            if len(plaintexts) > 0:
+                pt = plaintexts[tnum]
+
+            if len(ciphertexts) > 0:
+                ct = ciphertexts[tnum]
+
+            if keyround == "first":
+                ct = None
+            elif keyround == "last":
+                pt = None
+            else:
+                raise ValueError("keyround invalid")
+            
+            #Generate the output of the SBOX
+            if modeltype == "Hamming Weight":
+                hypint = model.HypHW(pt, ct, key, bnum);
+            elif modeltype == "Hamming Distance":
+                hypint = model.HypHD(pt, ct, key, bnum);
+            else:
+                raise ValueError("modeltype invalid")
+            hyp[tnum] = model.getHW(hypint)
+            
+        hyp = np.array(hyp)                    
+
+        #Mean of hypothesis
+        meanh = np.mean(hyp, dtype=np.float64)
+
+        #Mean of all points in trace
+        meant = np.mean(traces, axis=0, dtype=np.float64)
+                           
+        #For each trace, do the following
+        for tnum in range(numtraces):
+            hdiff = (hyp[tnum] - meanh)
+            tdiff = traces[tnum,:] - meant
+
+            sumnum = sumnum + (hdiff*tdiff)
+            sumden1 = sumden1 + hdiff*hdiff 
+            sumden2 = sumden2 + tdiff*tdiff             
+
+        if progressBar:
+            progressBar.setValue(pbcnt)
+            #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+            pbcnt = pbcnt + 1
+            if progressBar.wasCanceled():
+                break
+
+        diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+
+        if padafter > 0:
+            diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
+
+        if padbefore > 0:
+            diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
+    
+    return (diffs, pbcnt)
+
+
 
 class AttackCPA_SimpleLoop(QObject):
     """
@@ -77,6 +168,11 @@ class AttackCPA_SimpleLoop(QObject):
     
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
+        
+        #From all the key candidates, select the largest difference as most likely
+        #foundbyte = diffs.index(max(diffs))
+        #foundkey.append(foundbyte)
+#            print "%2x "%foundbyte,
     
     def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
         keyround=self.keyround
@@ -95,100 +191,16 @@ class AttackCPA_SimpleLoop(QObject):
             pbcnt = 0
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256)
+            progressBar.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         numtraces = len(traces_all[:,0])
 
-        #For all bytes of key
+        pbcnt = 0
+        #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
+        #self.all_diffs, pb = zip(*r)
+        #pbcnt = 0
         for bnum in brange:
-
-            diffs = [0]*256
-
-            if pointRange == None:
-                traces = traces_all
-                padbefore = 0
-                padafter = 0
-            else:
-                traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
-                padbefore = pointRange[bnum][0]
-                padafter = len(traces_all[0,:]) - pointRange[bnum][1]
-                #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
-
-            #For each 0..0xFF possible value of the key byte
-            for key in range(0, 256):                
-                #Initialize arrays & variables to zero
-                sumnum = np.zeros(len(traces[0,:]))
-                sumden1 = np.zeros(len(traces[0,:]))
-                sumden2 = np.zeros(len(traces[0,:]))
-
-                hyp = [0] * numtraces
-
-                #Formula for CPA & description found in "Power Analysis Attacks"
-                # by Mangard et al, page 124, formula 6.2.                         
-                
-                #Generate hypotheticals
-                for tnum in range(numtraces):
-
-                    if len(plaintexts) > 0:
-                        pt = plaintexts[tnum]
-
-                    if len(ciphertexts) > 0:
-                        ct = ciphertexts[tnum]
-
-                    if keyround == "first":
-                        ct = None
-                    elif keyround == "last":
-                        pt = None
-                    else:
-                        raise ValueError("keyround invalid")
-                    
-                    #Generate the output of the SBOX
-                    if modeltype == "Hamming Weight":
-                        hypint = self.model.HypHW(pt, ct, key, bnum);
-                    elif modeltype == "Hamming Distance":
-                        hypint = self.model.HypHD(pt, ct, key, bnum);
-                    else:
-                        raise ValueError("modeltype invalid")
-                    hyp[tnum] = self.model.getHW(hypint)
-                    
-                hyp = np.array(hyp)                    
-
-                #Mean of hypothesis
-                meanh = np.mean(hyp, dtype=np.float64)
-
-                #Mean of all points in trace
-                meant = np.mean(traces, axis=0, dtype=np.float64)
-                                   
-                #For each trace, do the following
-                for tnum in range(numtraces):
-                    hdiff = (hyp[tnum] - meanh)
-                    tdiff = traces[tnum,:] - meant
-
-                    sumnum = sumnum + (hdiff*tdiff)
-                    sumden1 = sumden1 + hdiff*hdiff 
-                    sumden2 = sumden2 + tdiff*tdiff             
-
-                if progressBar:
-                    progressBar.setValue(pbcnt)
-                    #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
-                    pbcnt = pbcnt + 1
-                    if progressBar.wasCanceled():
-                        break
-
-                diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
-
-                if padafter > 0:
-                    diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
-
-                if padbefore > 0:
-                    diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
-            
-            self.all_diffs[bnum] = diffs
-
-            #From all the key candidates, select the largest difference as most likely
-            #foundbyte = diffs.index(max(diffs))
-            #foundkey.append(foundbyte)
-#            print "%2x "%foundbyte,
-
+            (self.all_diffs[bnum], pbcnt) = CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
 
     def getDiff(self, bnum, hyprange=None):
         if hyprange == None:
@@ -542,8 +554,11 @@ class CPA(AttackBaseClass):
         #Following attack DOES NOT WORK
         #self.attack = AttackCPA_SciPyCorrelation(attacks.models.AES128_8bit)
         self.attack.setByteList(self.bytesEnabled())
-        self.attack.setKeyround("first")
-        self.attack.setModeltype("Hamming Weight")
+        #self.attack.setKeyround("first")
+        #self.attack.setModeltype("Hamming Weight")
+        
+        self.attack.setKeyround("last")
+        self.attack.setModeltype("Hamming Distance")
         
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)

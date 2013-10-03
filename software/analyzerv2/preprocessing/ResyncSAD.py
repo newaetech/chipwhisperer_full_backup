@@ -111,8 +111,13 @@ class ResyncSAD(QObject):
             if trace is None:
                 return None
             sad = self.findSAD(trace)
+            
             if self.debugReturnSad:
                 return sad
+            
+            if len(sad) == 0:
+                return None            
+            
             newmaxloc = np.argmin(sad)
             maxval = min(sad)
             #if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
@@ -141,7 +146,12 @@ class ResyncSAD(QObject):
         return self.trace.getKnownKey()
    
     def init(self):
-        self.calcRefTrace(self.rtrace)
+        try:
+            self.calcRefTrace(self.rtrace)
+        #Probably shouldn't do this, but deals with user enabling preprocessing
+        #before trace management setup
+        except ValueError:
+            pass
    
     def setTraceManager(self, tmanager):
         self.trace = tmanager    

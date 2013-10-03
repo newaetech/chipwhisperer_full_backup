@@ -26,9 +26,9 @@ import os
 import numpy as np
 from TraceContainer import TraceContainer
 
-class TraceFormatNative(TraceContainer):
+class TraceContainerNative(TraceContainer):
     def __init__(self):
-        super(TraceFormatNative, self).__init__()
+        super(TraceContainerNative, self).__init__()
 
     def copyTo(self, srcTraces=None):
         self.NumTrace = srcTraces.NumTrace
@@ -78,5 +78,5 @@ class TraceFormatNative(TraceContainer):
         
     def closeAll(self):
         self.config.saveTrace()
-        self.saveAllTraces( os.path.dirname(self.config.configfile), prefix=self.config.prefix)
+        self.saveAllTraces( os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
         

@@ -74,7 +74,7 @@ except ImportError:
 
 from MainChip import MainChip
 from ProjectFormat import ProjectFormat
-from TraceFormatNative import TraceFormatNative
+from TraceContainerNative import TraceContainerNative
 from attacks.CPA import CPA
 from ResultsPlotting import ResultsPlotting
 import preprocessing.Preprocessing as Preprocessing
@@ -82,13 +82,16 @@ import preprocessing.Preprocessing as Preprocessing
 #TEMP
 from ResultsPlotting import ResultsPlotData
 
-class MainWindow(MainChip):
+class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(MainWindow, self).__init__(name="ChipWhisperer Analyzer V2", imagepath=imagePath)
+        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer Analyzer V2", imagepath=imagePath)
         self.console = self.addConsole()   
         
         self.results = ResultsPlotting()
+        
+        numPreprocessingStep = 3
+        self.preprocessingList = [None]*numPreprocessingStep
         
         self.cwParams = [
                 {'name':'Traces', 'type':'group', 'children':[
@@ -96,12 +99,15 @@ class MainWindow(MainChip):
                     {'name':'Traces', 'type':'int', 'value':0, 'readonly':True}
                     ]},
                     
-                {'name':'Pre-Processing', 'type':'group', 'children':[
+                {'name':'Pre-Processing', 'type':'group', 'children':#[
                     #{'name':'All Enabled', 'type':'bool', 'value':False},
-                    {'name':'Module #1', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 0)},
-                    {'name':'Module #2', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 1)},
-                    {'name':'Module #3', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 2)},
-                    ]},
+                    #{'name':'Module #1', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 0)},
+                    #{'name':'Module #2', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 1)},
+                    #{'name':'Module #3', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 2)},
+                    #]},
+                    
+                    [{'name':'Module #%d'%step, 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, step)} for step in range(0, numPreprocessingStep)]},
+                    
                          
                 {'name':'Attack', 'type':'group', 'children':[
                     {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self)}, 'value':'CPA', 'set':self.setAttack},                                          
@@ -158,7 +164,6 @@ class MainWindow(MainChip):
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
         self.setAttack(CPA(self))
         
-        self.preprocessingList = [None]*3
         self.setupPreprocessorChain()
         
     def setPlotInputEach(self, enabled):
@@ -390,15 +395,19 @@ class MainWindow(MainChip):
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")
   
-if __name__ == '__main__':
-    
+def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Analyzer V2")
+    return app
+  
+if __name__ == '__main__':
     
+    # Create the Qt Application
+    app = makeApplication()
     # Create and show the form
-    window = MainWindow()
+    window = ChipWhispererAnalyzer()
     window.show()
    
     # Run the main Qt loop
