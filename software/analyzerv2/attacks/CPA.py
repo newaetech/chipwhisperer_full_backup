@@ -62,94 +62,113 @@ from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
 
-def CPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-     #For all bytes of key
-
-    diffs = [0]*256
-
-    if pointRange == None:
-        traces = traces_all
-        padbefore = 0
-        padafter = 0
-    else:
-        traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
-        padbefore = pointRange[bnum][0]
-        padafter = len(traces_all[0,:]) - pointRange[bnum][1]
-        #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
-
-    #For each 0..0xFF possible value of the key byte
-    for key in range(0, 256):                
-        #Initialize arrays & variables to zero
-        sumnum = np.zeros(len(traces[0,:]))
-        sumden1 = np.zeros(len(traces[0,:]))
-        sumden2 = np.zeros(len(traces[0,:]))
-
-        hyp = [0] * numtraces
-
-        #Formula for CPA & description found in "Power Analysis Attacks"
-        # by Mangard et al, page 124, formula 6.2.     
-        #
-        # This has been modified to reduce computational requirements such that adding a new waveform
-        # doesn't require you to recalculate everything
-        
-        #Generate hypotheticals
-        for tnum in range(numtraces):
-
-            if len(plaintexts) > 0:
-                pt = plaintexts[tnum]
-
-            if len(ciphertexts) > 0:
-                ct = ciphertexts[tnum]
-
-            if keyround == "first":
-                ct = None
-            elif keyround == "last":
-                pt = None
-            else:
-                raise ValueError("keyround invalid")
-            
-            #Generate the output of the SBOX
-            if modeltype == "Hamming Weight":
-                hypint = model.HypHW(pt, ct, key, bnum);
-            elif modeltype == "Hamming Distance":
-                hypint = model.HypHD(pt, ct, key, bnum);
-            else:
-                raise ValueError("modeltype invalid")
-            hyp[tnum] = model.getHW(hypint)
-            
-        hyp = np.array(hyp)                    
-
-        #Mean of hypothesis
-        meanh = np.mean(hyp, dtype=np.float64)
-
-        #Mean of all points in trace
-        meant = np.mean(traces, axis=0, dtype=np.float64)                           
-            
-        sumt = np.sum(traces, axis=0)
-        sumh = np.sum(hyp, axis=0)
-        sumht = np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
-
-        sumnum =  sumht - meant*sumh - meanh*sumt + (numtraces * meanh * meant)
-
-        sumden1 = np.sum(np.multiply(hyp, hyp),axis=0) - (2*meanh*sumh) + (numtraces*meanh*meanh)
-        sumden2 = np.sum(np.multiply(traces,traces),axis=0) - (2*meant*sumt) + (numtraces*meant*meant)
-
-        if progressBar:
-            progressBar.setValue(pbcnt)
-            #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
-            pbcnt = pbcnt + 1
-            if progressBar.wasCanceled():
-                break
-
-        diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
-
-        if padafter > 0:
-            diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
-
-        if padbefore > 0:
-            diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
+class CPAMemoryOneSubkey(object):
+    def __init__(self):
+        self.sumhq = [0]*256
+        self.sumtq = [0]*256
+        self.sumt = [0]*256
+        self.sumh = [0]*256
+        self.sumht = [0]*256
+        self.totalTraces = 0
     
-    return (diffs, pbcnt)
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+         #For all bytes of key
+    
+        diffs = [0]*256
+        self.totalTraces += numtraces
+    
+        if pointRange == None:
+            traces = traces_all
+            padbefore = 0
+            padafter = 0
+        else:
+            traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
+            padbefore = pointRange[bnum][0]
+            padafter = len(traces_all[0,:]) - pointRange[bnum][1]
+            #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+    
+        #For each 0..0xFF possible value of the key byte
+        for key in range(0, 256):                
+            #Initialize arrays & variables to zero
+            sumnum = np.zeros(len(traces[0,:]))
+            sumden1 = np.zeros(len(traces[0,:]))
+            sumden2 = np.zeros(len(traces[0,:]))
+    
+            hyp = [0] * numtraces
+    
+            #Formula for CPA & description found in "Power Analysis Attacks"
+            # by Mangard et al, page 124, formula 6.2.     
+            #
+            # This has been modified to reduce computational requirements such that adding a new waveform
+            # doesn't require you to recalculate everything
+            
+            #Generate hypotheticals
+            for tnum in range(numtraces):
+    
+                if len(plaintexts) > 0:
+                    pt = plaintexts[tnum]
+    
+                if len(ciphertexts) > 0:
+                    ct = ciphertexts[tnum]
+    
+                if keyround == "first":
+                    ct = None
+                elif keyround == "last":
+                    pt = None
+                else:
+                    raise ValueError("keyround invalid")
+                
+                #Generate the output of the SBOX
+                if modeltype == "Hamming Weight":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                elif modeltype == "Hamming Distance":
+                    hypint = model.HypHD(pt, ct, key, bnum);
+                else:
+                    raise ValueError("modeltype invalid")
+                hyp[tnum] = model.getHW(hypint)
+                
+            hyp = np.array(hyp)                                
+                
+            self.sumt[key] += np.sum(traces, axis=0)
+            self.sumh[key] += np.sum(hyp, axis=0)
+            self.sumht[key] += np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
+    
+            #WARNING: not casting to np.float64 causes algorithm degredation... always be careful
+            meanh = self.sumh[key] / np.float64(self.totalTraces)
+            meant = self.sumt[key] / np.float64(self.totalTraces)
+    
+            #numtraces * meanh * meant = sumh * meant
+            #sumnum =  self.sumht[key] - meant*self.sumh[key] - meanh*self.sumt[key] + (self.sumh[key] * meant)
+            #sumnum =  self.sumht[key] - meanh*self.sumt[key]
+            sumnum =  self.sumht[key] - meanh*self.sumt[key]
+    
+            self.sumhq[key] += np.sum(np.multiply(hyp, hyp),axis=0)
+            self.sumtq[key] += np.sum(np.multiply(traces,traces),axis=0)
+    
+            #numtraces * meanh * meanh = sumh * meanh
+            #sumden1 = sumhq - (2*meanh*self.sumh) + (numtraces*meanh*meanh)
+            #sumden1 = sumhq - (2*meanh*self.sumh) + (self.sumh * meanh)
+            #sumden1 = sumhq - meanh*self.sumh    
+            #similarly for sumden2     
+            sumden1 = self.sumhq[key] - meanh*self.sumh[key]
+            sumden2 = self.sumtq[key] - meant*self.sumt[key]
+    
+            if progressBar:
+                progressBar.setValue(pbcnt)
+                #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+                pbcnt = pbcnt + 1
+                if progressBar.wasCanceled():
+                    break
+    
+            diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+    
+            if padafter > 0:
+                diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
+    
+            if padbefore > 0:
+                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
+        
+        return (diffs, pbcnt)
 
 def CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
      #For all bytes of key
@@ -292,7 +311,10 @@ class AttackCPA_SimpleLoop(QObject):
         for bnum in brange:
             #CPAMemoryOneSubkey
             #CPASimpleOneSubkey
-            (self.all_diffs[bnum], pbcnt) = CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
+            #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
+                        
+            cpa = CPAMemoryOneSubkey()
+            (self.all_diffs[bnum], pbcnt) = cpa.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
 
     def getDiff(self, bnum, hyprange=None):
         if hyprange == None:
