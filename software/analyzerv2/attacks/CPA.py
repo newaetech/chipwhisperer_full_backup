@@ -72,7 +72,6 @@ class CPAMemoryOneSubkey(object):
         self.totalTraces = 0
     
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-         #For all bytes of key
     
         diffs = [0]*256
         self.totalTraces += numtraces
@@ -134,24 +133,32 @@ class CPAMemoryOneSubkey(object):
             self.sumht[key] += np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
     
             #WARNING: not casting to np.float64 causes algorithm degredation... always be careful
-            meanh = self.sumh[key] / np.float64(self.totalTraces)
-            meant = self.sumt[key] / np.float64(self.totalTraces)
+            #meanh = self.sumh[key] / np.float64(self.totalTraces)
+            #meant = self.sumt[key] / np.float64(self.totalTraces)
     
             #numtraces * meanh * meant = sumh * meant
             #sumnum =  self.sumht[key] - meant*self.sumh[key] - meanh*self.sumt[key] + (self.sumh[key] * meant)
             #sumnum =  self.sumht[key] - meanh*self.sumt[key]
-            sumnum =  self.sumht[key] - meanh*self.sumt[key]
+#            sumnum =  self.sumht[key] - meanh*self.sumt[key]
+            #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
+            sumnum = self.totalTraces*self.sumht[key] - self.sumh[key]*self.sumt[key]
     
-            self.sumhq[key] += np.sum(np.multiply(hyp, hyp),axis=0)
-            self.sumtq[key] += np.sum(np.multiply(traces,traces),axis=0)
+            self.sumhq[key] += np.sum(np.square(hyp),axis=0, dtype=np.float64)
+            self.sumtq[key] += np.sum(np.square(traces),axis=0, dtype=np.float64)
     
             #numtraces * meanh * meanh = sumh * meanh
             #sumden1 = sumhq - (2*meanh*self.sumh) + (numtraces*meanh*meanh)
             #sumden1 = sumhq - (2*meanh*self.sumh) + (self.sumh * meanh)
             #sumden1 = sumhq - meanh*self.sumh    
             #similarly for sumden2     
-            sumden1 = self.sumhq[key] - meanh*self.sumh[key]
-            sumden2 = self.sumtq[key] - meant*self.sumt[key]
+            #sumden1 = self.sumhq[key] - meanh*self.sumh[key]
+            #sumden2 = self.sumtq[key] - meant*self.sumt[key]
+            #sumden = sumden1 * sumden2    
+
+            sumden1 = (np.square(self.sumh[key]) - self.totalTraces * self.sumhq[key])
+            sumden2 = (np.square(self.sumt[key]) - self.totalTraces * self.sumtq[key])
+            sumden = sumden1 * sumden2
+
     
             if progressBar:
                 progressBar.setValue(pbcnt)
@@ -160,7 +167,7 @@ class CPAMemoryOneSubkey(object):
                 if progressBar.wasCanceled():
                     break
     
-            diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+            diffs[key] = sumnum / np.sqrt(sumden)
     
             if padafter > 0:
                 diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
@@ -314,7 +321,22 @@ class AttackCPA_SimpleLoop(QObject):
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
                         
             cpa = CPAMemoryOneSubkey()
-            (self.all_diffs[bnum], pbcnt) = cpa.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
+            
+            tdiff = 10
+            
+            tstart = 0
+            tend = tdiff
+            
+            while tstart < numtraces:                                       
+                (self.all_diffs[bnum], pbcnt) = cpa.oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                tend += tdiff
+                tstart += tdiff
+                
+                if tend > numtraces:
+                    tend = numtraces
+                    
+                if tstart > numtraces:
+                    tstart = numtraces
 
     def getDiff(self, bnum, hyprange=None):
         if hyprange == None:
