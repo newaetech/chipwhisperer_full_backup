@@ -62,7 +62,8 @@ from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
 
-class CPAMemoryOneSubkey(object):
+class CPAProgressiveOneSubkey(object):
+    """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
         self.sumhq = [0]*256
         self.sumtq = [0]*256
@@ -177,104 +178,15 @@ class CPAMemoryOneSubkey(object):
         
         return (diffs, pbcnt)
 
-def CPASimpleOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-     #For all bytes of key
-
-    diffs = [0]*256
-
-    if pointRange == None:
-        traces = traces_all
-        padbefore = 0
-        padafter = 0
-    else:
-        traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
-        padbefore = pointRange[bnum][0]
-        padafter = len(traces_all[0,:]) - pointRange[bnum][1]
-        #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
-
-    #For each 0..0xFF possible value of the key byte
-    for key in range(0, 256):                
-        #Initialize arrays & variables to zero
-        sumnum = np.zeros(len(traces[0,:]))
-        sumden1 = np.zeros(len(traces[0,:]))
-        sumden2 = np.zeros(len(traces[0,:]))
-
-        hyp = [0] * numtraces
-
-        #Formula for CPA & description found in "Power Analysis Attacks"
-        # by Mangard et al, page 124, formula 6.2.                         
-        
-        #Generate hypotheticals
-        for tnum in range(numtraces):
-
-            if len(plaintexts) > 0:
-                pt = plaintexts[tnum]
-
-            if len(ciphertexts) > 0:
-                ct = ciphertexts[tnum]
-
-            if keyround == "first":
-                ct = None
-            elif keyround == "last":
-                pt = None
-            else:
-                raise ValueError("keyround invalid")
-            
-            #Generate the output of the SBOX
-            if modeltype == "Hamming Weight":
-                hypint = model.HypHW(pt, ct, key, bnum);
-            elif modeltype == "Hamming Distance":
-                hypint = model.HypHD(pt, ct, key, bnum);
-            else:
-                raise ValueError("modeltype invalid")
-            hyp[tnum] = model.getHW(hypint)
-            
-        hyp = np.array(hyp)                    
-
-        #Mean of hypothesis
-        meanh = np.mean(hyp, dtype=np.float64)
-
-        #Mean of all points in trace
-        meant = np.mean(traces, axis=0, dtype=np.float64)
-                           
-        #For each trace, do the following
-        for tnum in range(numtraces):
-            hdiff = (hyp[tnum] - meanh)
-            tdiff = traces[tnum,:] - meant
-
-            sumnum = sumnum + (hdiff*tdiff)
-            sumden1 = sumden1 + hdiff*hdiff 
-            sumden2 = sumden2 + tdiff*tdiff             
-
-        if progressBar:
-            progressBar.setValue(pbcnt)
-            #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
-            pbcnt = pbcnt + 1
-            if progressBar.wasCanceled():
-                break
-
-        diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
-
-        if padafter > 0:
-            diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
-
-        if padbefore > 0:
-            diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
-    
-    return (diffs, pbcnt)
-
-
-
-class AttackCPA_SimpleLoop(QObject):
+class AttackCPA_Progressive(QObject):
     """
-    CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
-    This attack does not provide trace-by-trace statistics however, you can only gather results once
-    all the traces have been run through the attack.
+    CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
 
     def __init__(self, model):
-        super(AttackCPA_SimpleLoop, self).__init__()
+        super(AttackCPA_Progressive, self).__init__()
         self.model = model
+        self.sr = None
 
     def setByteList(self, brange):
         self.brange = brange
@@ -320,7 +232,7 @@ class AttackCPA_SimpleLoop(QObject):
             #CPASimpleOneSubkey
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
                         
-            cpa = CPAMemoryOneSubkey()
+            cpa = CPAProgressiveOneSubkey()
             
             tdiff = 10
             
@@ -337,6 +249,156 @@ class AttackCPA_SimpleLoop(QObject):
                     
                 if tstart > numtraces:
                     tstart = numtraces
+                    
+                if self.sr is not None:
+                    self.sr()
+
+    def getDiff(self, bnum, hyprange=None):
+        if hyprange == None:
+            hyprange = range(0,256)
+        return [self.all_diffs[bnum][i] for i in hyprange];
+    
+    def getStatistics(self):
+        t = [0]*16
+        for i in self.brange:
+            try:
+                t[i] = self.getDiff(i)
+            except TypeError:
+                t[i] = None
+        return t
+    
+    def setStatsReadyCallback(self, sr):
+        self.sr = sr
+
+class AttackCPA_SimpleLoop(QObject):
+    """
+    CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
+    This attack does not provide trace-by-trace statistics however, you can only gather results once
+    all the traces have been run through the attack.
+    """
+
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+    
+        diffs = [0]*256
+    
+        if pointRange == None:
+            traces = traces_all
+            padbefore = 0
+            padafter = 0
+        else:
+            traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
+            padbefore = pointRange[bnum][0]
+            padafter = len(traces_all[0,:]) - pointRange[bnum][1]
+            #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+    
+        #For each 0..0xFF possible value of the key byte
+        for key in range(0, 256):                
+            #Initialize arrays & variables to zero
+            sumnum = np.zeros(len(traces[0,:]))
+            sumden1 = np.zeros(len(traces[0,:]))
+            sumden2 = np.zeros(len(traces[0,:]))
+    
+            hyp = [0] * numtraces
+    
+            #Formula for CPA & description found in "Power Analysis Attacks"
+            # by Mangard et al, page 124, formula 6.2.                         
+            
+            #Generate hypotheticals
+            for tnum in range(numtraces):
+    
+                if len(plaintexts) > 0:
+                    pt = plaintexts[tnum]
+    
+                if len(ciphertexts) > 0:
+                    ct = ciphertexts[tnum]
+    
+                if keyround == "first":
+                    ct = None
+                elif keyround == "last":
+                    pt = None
+                else:
+                    raise ValueError("keyround invalid")
+                
+                #Generate the output of the SBOX
+                if modeltype == "Hamming Weight":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                elif modeltype == "Hamming Distance":
+                    hypint = model.HypHD(pt, ct, key, bnum);
+                else:
+                    raise ValueError("modeltype invalid")
+                hyp[tnum] = model.getHW(hypint)
+                
+            hyp = np.array(hyp)                    
+    
+            #Mean of hypothesis
+            meanh = np.mean(hyp, dtype=np.float64)
+    
+            #Mean of all points in trace
+            meant = np.mean(traces, axis=0, dtype=np.float64)
+                               
+            #For each trace, do the following
+            for tnum in range(numtraces):
+                hdiff = (hyp[tnum] - meanh)
+                tdiff = traces[tnum,:] - meant
+    
+                sumnum = sumnum + (hdiff*tdiff)
+                sumden1 = sumden1 + hdiff*hdiff 
+                sumden2 = sumden2 + tdiff*tdiff             
+    
+            if progressBar:
+                progressBar.setValue(pbcnt)
+                #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+                pbcnt = pbcnt + 1
+                if progressBar.wasCanceled():
+                    break
+    
+            diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+    
+            if padafter > 0:
+                diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
+    
+            if padbefore > 0:
+                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
+        
+        return (diffs, pbcnt)
+
+    def __init__(self, model):
+        super(AttackCPA_SimpleLoop, self).__init__()
+        self.model = model
+
+    def setByteList(self, brange):
+        self.brange = brange
+
+    def setKeyround(self, keyround):
+        self.keyround = keyround
+    
+    def setModeltype(self, modeltype):
+        self.modeltype = modeltype
+    
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+        keyround=self.keyround
+        modeltype=self.modeltype
+        brange=self.brange
+                                                                   
+        traces_all = np.array(traces)
+        plaintexts =np.array(plaintexts)
+        ciphertexts =np.array(ciphertexts)
+
+        foundkey = []
+
+        self.all_diffs = range(0,16)
+
+        if progressBar:
+            pbcnt = 0
+            progressBar.setMinimum(0)
+            progressBar.setMaximum(len(brange) * 256)
+            progressBar.setWindowFlags(Qt.WindowStaysOnTopHint)
+
+        numtraces = len(traces_all[:,0])
+
+        pbcnt = 0
+        for bnum in brange:
+            (self.all_diffs[bnum], pbcnt) = self.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
 
     def getDiff(self, bnum, hyprange=None):
         if hyprange == None:
@@ -348,6 +410,9 @@ class AttackCPA_SimpleLoop(QObject):
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
+    
+    def setStatsReadyCallback(self, sr):
+        pass
 
 class AttackCPA_Bayesian(QObject):
     """
@@ -516,6 +581,9 @@ class AttackCPA_Bayesian(QObject):
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
+    
+    def setStatsReadyCallback(self, sr):
+        pass
 
 class AttackCPA_SciPyCorrelation(QObject):
     """
@@ -632,6 +700,9 @@ class AttackCPA_SciPyCorrelation(QObject):
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
+    
+    def setStatsReadyCallback(self, sr):
+        pass
 
 #TODO: This should be broken into a separate function I think
 class CPA(AttackBaseClass):
@@ -707,18 +778,26 @@ class CPA(AttackBaseClass):
         #Following attack DOES NOT WORK
         #self.attack = AttackCPA_SciPyCorrelation(attacks.models.AES128_8bit)
         
+        self.attack = AttackCPA_Progressive(attacks.models.AES128_8bit)
+        
         self.attack.setByteList(self.bytesEnabled())
         self.attack.setKeyround(self.attackRound)
         self.attack.setModeltype(self.attackModel)
+        self.attack.setStatsReadyCallback(self.statsReady)
         
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
         
         #TODO:  pointRange=self.TraceRangeList[1:17]
+        
         self.attack.addTraces(data, textins, textouts, progress)
         
         self.attackDone.emit()
+
+    def statsReady(self):
+        self.statsUpdated.emit()
+        QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

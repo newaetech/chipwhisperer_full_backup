@@ -103,12 +103,12 @@ class ResultsPlotting(QObject):
         
     def attackDone(self):
         self.attackStatsUpdated()
-        self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.updateTable()
+        #self.table.setBytesEnabled(self.attack.bytesEnabled())
+        #self.table.updateTable()
     
     def attackStatsUpdated(self):
-        #self.graphoutput.
-        pass
+        self.table.setBytesEnabled(self.attack.bytesEnabled())
+        self.table.updateTable()
         
 class ResultsPlotData(GraphWidget):
     """
@@ -332,7 +332,10 @@ class ResultsTable(QObject):
         for bnum in range(0, self.numKeys):
             if bnum in self.enabledBytes:
                 self.table.setColumnHidden(bnum, False)
-                diffs = data[bnum]                
+                diffs = data[bnum]    
+                
+                if diffs is None:
+                    continue            
 
                 maxes = np.zeros(256,dtype=[('hyp','i2'),('point','i4'),('value','f8')] )
 
