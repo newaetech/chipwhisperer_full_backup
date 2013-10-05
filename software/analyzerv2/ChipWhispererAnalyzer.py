@@ -402,8 +402,7 @@ def makeApplication():
     app.setApplicationName("Analyzer V2")
     return app
   
-if __name__ == '__main__':
-    
+def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
@@ -412,3 +411,6 @@ if __name__ == '__main__':
    
     # Run the main Qt loop
     sys.exit(app.exec_())
+
+if __name__ == '__main__':
+    main()

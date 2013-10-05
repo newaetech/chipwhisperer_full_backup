@@ -64,6 +64,12 @@ from attacks.AttackBaseClass import AttackBaseClass
 
 from functools import partial
 
+try:
+    import pyximport; pyximport.install()
+    import attacks.CPACython as CPACython
+except ImportError:
+    CPACython = None
+
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
@@ -721,7 +727,13 @@ class CPA(AttackBaseClass):
             self.console.append(sr)
         
     def setupParameters(self):      
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':{'Progressive':AttackCPA_Progressive, 'Simple':AttackCPA_SimpleLoop}, 'value':AttackCPA_Progressive},
+        
+        cpaalgos = {'Progressive':AttackCPA_Progressive, 'Simple':AttackCPA_SimpleLoop}
+        
+        if CPACython is not None:
+            cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
+        
+        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':AttackCPA_Progressive},
                         {'name':'Reporting Interval (if supported)', 'key':'CPA_tracesloop', 'type':'int', 'range':(0,10E9), 'value':100},                        
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
