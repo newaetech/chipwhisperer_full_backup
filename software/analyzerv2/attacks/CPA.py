@@ -25,6 +25,7 @@
 
 
 import sys
+from datetime import datetime
 
 try:
     from PySide.QtCore import *
@@ -43,7 +44,7 @@ import numpy as np
 import scipy as sp
 from ExtendedParameter import ExtendedParameter
 
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 
 
 try:
@@ -51,6 +52,7 @@ try:
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+    from pyqtgraph.parametertree.parameterTypes import ListParameter
     #print pg.systemInfo()    
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
@@ -202,7 +204,7 @@ class AttackCPA_Progressive(QObject):
         #foundkey.append(foundbyte)
 #            print "%2x "%foundbyte,
     
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -215,13 +217,16 @@ class AttackCPA_Progressive(QObject):
 
         self.all_diffs = range(0,16)
 
+
+        tdiff = tracesLoop
+
+        numtraces = len(traces_all[:,0])
+
         if progressBar:
             pbcnt = 0
             progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256)
+            progressBar.setMaximum(len(brange) * 256 * (numtraces/tdiff + 1))
             progressBar.setWindowFlags(Qt.WindowStaysOnTopHint)
-
-        numtraces = len(traces_all[:,0])
 
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
@@ -234,22 +239,21 @@ class AttackCPA_Progressive(QObject):
                         
             cpa = CPAProgressiveOneSubkey()
             
-            tdiff = 10
-            
             tstart = 0
             tend = tdiff
             
             while tstart < numtraces:                                       
-                (self.all_diffs[bnum], pbcnt) = cpa.oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
-                tend += tdiff
-                tstart += tdiff
-                
                 if tend > numtraces:
                     tend = numtraces
                     
                 if tstart > numtraces:
                     tstart = numtraces
                     
+                
+                (self.all_diffs[bnum], pbcnt) = cpa.oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                tend += tdiff
+                tstart += tdiff
+                
                 if self.sr is not None:
                     self.sr()
 
@@ -375,7 +379,7 @@ class AttackCPA_SimpleLoop(QObject):
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
     
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -432,7 +436,7 @@ class AttackCPA_Bayesian(QObject):
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
     
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, algo="log"):
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -604,7 +608,7 @@ class AttackCPA_SciPyCorrelation(QObject):
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
     
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -708,15 +712,21 @@ class AttackCPA_SciPyCorrelation(QObject):
 class CPA(AttackBaseClass):
     """Correlation Power Analysis Attack"""
             
-    def __init__(self, parent=None, log=None):
+    def __init__(self, parent=None, console=None):
         super(CPA, self).__init__(parent)
-        self.log=log 
+        self.console=console 
+        
+    def debug(self, sr):
+        if self.console is not None:
+            self.console.append(sr)
         
     def setupParameters(self):      
-        attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
-                        {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first', 'set':self.setRound},
-                        {'name':'Power Model', 'type':'list', 'values':{'HW-VCC':('Hamming Weight', 'VCC'), 'HW-GND':('Hamming Weight', 'GND'), 'HD-VCC':('Hamming Distance', 'VCC'), 'HD-GND':('Hamming Distance', 'GND')}, 'value':('Hamming Weight', 'VCC'), 'set':self.setModel},
+        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':{'Progressive':AttackCPA_Progressive, 'Simple':AttackCPA_SimpleLoop}, 'value':AttackCPA_Progressive},
+                        {'name':'Reporting Interval (if supported)', 'key':'CPA_tracesloop', 'type':'int', 'range':(0,10E9), 'value':100},                        
+                        {'name':'Hardware Model', 'type':'group', 'children':[
+                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
+                        {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
+                        {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':['Hamming Weight', 'Hamming Distance'], 'value':'Hamming Weight'},
                         ]},
                        {'name':'Take Absolute', 'type':'bool', 'value':True},
                        
@@ -726,18 +736,10 @@ class CPA(AttackBaseClass):
                         },                    
                       ]
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params)
-        
-        self.setRound('first')
-        self.setModel(("Hamming Weight", "VCC"))
-            
-    def setRound(self, rnd):
-        self.attackRound = rnd
-        
-    def setModel(self, model):
-        self.attackModel = model[0]
-        self.attackModelVccGnd = model[1]
-        
+        #Need 'showScriptParameter = None' for setupExtended call below
+        self.showScriptParameter = None
+        ExtendedParameter.setupExtended(self.params, self)
+                                         
     def processKnownKey(self, inpkey):
         if inpkey is None:
             return None
@@ -748,6 +750,9 @@ class CPA(AttackBaseClass):
             return inpkey
             
     def doAttack(self):        
+        
+        start = datetime.now()
+        
         #TODO: support start/end point different per byte
         (startingPoint, endingPoint) = self.getPointRange(None)
         (startingTrace, endingTrace) = self.getTraceRange()
@@ -770,7 +775,7 @@ class CPA(AttackBaseClass):
             textins.append(self.trace.getTextin(i))
             textouts.append(self.trace.getTextout(i)) 
         
-        self.attack = AttackCPA_SimpleLoop(attacks.models.AES128_8bit)
+        #self.attack = AttackCPA_SimpleLoop(attacks.models.AES128_8bit)
          
         #Following still needs debugging
         #self.attack = AttackCPA_Bayesian(attacks.models.AES128_8bit)                        
@@ -778,11 +783,12 @@ class CPA(AttackBaseClass):
         #Following attack DOES NOT WORK
         #self.attack = AttackCPA_SciPyCorrelation(attacks.models.AES128_8bit)
         
-        self.attack = AttackCPA_Progressive(attacks.models.AES128_8bit)
+        hwmodel = self.findParam('hw_algo').value()
+        self.attack = self.findParam('CPA_algo').value()(hwmodel)        
         
         self.attack.setByteList(self.bytesEnabled())
-        self.attack.setKeyround(self.attackRound)
-        self.attack.setModeltype(self.attackModel)
+        self.attack.setKeyround(self.findParam('hw_round').value())
+        self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
         self.attack.setStatsReadyCallback(self.statsReady)
         
         progress = QProgressDialog("Analyzing", "Abort", 0, 100)
@@ -791,10 +797,13 @@ class CPA(AttackBaseClass):
         
         #TODO:  pointRange=self.TraceRangeList[1:17]
         
-        self.attack.addTraces(data, textins, textouts, progress)
+        self.attack.addTraces(data, textins, textouts, progress, tracesLoop=self.findParam('CPA_tracesloop').value())
         
         self.attackDone.emit()
-
+        
+        end = datetime.now()
+        self.debug("Attack Time: %s"%str(end-start)) 
+        
     def statsReady(self):
         self.statsUpdated.emit()
         QApplication.processEvents()
