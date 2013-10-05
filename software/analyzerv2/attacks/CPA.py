@@ -168,7 +168,7 @@ class CPAProgressiveOneSubkey(object):
                 #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                 pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
-                    break
+                    raise KeyboardInterrupt
     
             diffs[key] = sumnum / np.sqrt(sumden)
     
@@ -354,7 +354,7 @@ class AttackCPA_SimpleLoop(QObject):
                 #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                 pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
-                    break
+                    raise KeyboardInterrupt
     
             diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
     
@@ -530,7 +530,7 @@ class AttackCPA_Bayesian(QObject):
                     #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                     pbcnt = pbcnt + 1
                     if progressBar.wasCanceled():
-                        break
+                        raise KeyboardInterrupt
 
                 diffs[key] = sumstd
 
@@ -680,7 +680,7 @@ class AttackCPA_SciPyCorrelation(QObject):
                     #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                     pbcnt = pbcnt + 1
                     if progressBar.wasCanceled():
-                        break
+                        raise KeyboardInterrupt
 
                 diffs[key] = sp.signal.correlate(traces, hyp, 'valid')[0,:]
                 
@@ -797,12 +797,16 @@ class CPA(AttackBaseClass):
         
         #TODO:  pointRange=self.TraceRangeList[1:17]
         
-        self.attack.addTraces(data, textins, textouts, progress, tracesLoop=self.findParam('CPA_tracesloop').value())
+        try:
+            self.attack.addTraces(data, textins, textouts, progress, tracesLoop=self.findParam('CPA_tracesloop').value())
+            end = datetime.now()
+            self.debug("Attack Time: %s"%str(end-start)) 
+        except KeyboardInterrupt:
+            end = datetime.now()
+            self.debug("Attack Aborted after %s"%str(end-start))
         
         self.attackDone.emit()
         
-        end = datetime.now()
-        self.debug("Attack Time: %s"%str(end-start)) 
         
     def statsReady(self):
         self.statsUpdated.emit()
