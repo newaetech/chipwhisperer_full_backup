@@ -407,6 +407,7 @@ class OpenADCInterface(QObject):
     def dcmTimeout(self):
         if self.parent:
             self.parent.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
+            self.parent.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
         
     def setAutorefreshDCM(self, enabled):
         if enabled:

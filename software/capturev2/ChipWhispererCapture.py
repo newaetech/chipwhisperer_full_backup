@@ -25,6 +25,8 @@
 
 
 import sys
+import importlib
+from functools import partial
 
 try:
     from PySide.QtCore import *
@@ -174,12 +176,6 @@ class acquisitionController(QObject):
         self.key = key
         self.newPlain()
 
-        #self.target.init()
-
-        #self.target.read(0xFFFC)
-        #self.textin = [0x45, 0xE7 ,0xF9 ,0x71 ,0x0F ,0xFF ,0xB4 ,0x23 ,0xD0 ,0x98 ,0x60 ,0xF3 ,0x94 ,0xBC ,0x51 ,0x10]
-        #self.key = range(0,16)
-
         ## Start target now
         if self.textInLabel != None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
@@ -190,7 +186,6 @@ class acquisitionController(QObject):
             self.target.loadEncryptionKey(self.key)  
         
         self.scope.arm()
-
         
         if self.target is not None:            
             #Load input, start encryption, get output
@@ -487,6 +482,8 @@ class ChipWhispererCapture(MainChip):
         self.addSettingsDocks()
         self.addWaveforms()
         self.addToolMenu()
+
+        self.addExampleScripts()
         
         self.restoreDockGeometry()
         self.newProject()   
@@ -523,6 +520,46 @@ class ChipWhispererCapture(MainChip):
     
     def FWLoaderGo(self):
         self.CWFirmwareConfig.loadRequired()
+        
+    def addExampleScripts(self):
+        self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
+        
+        self.projectMenu.addSeparator()
+        self.projectMenu.addAction(self.exampleScriptAct)
+        
+        subMenu = QMenu("Submenu", self)
+              
+        self.scriptList = []
+              
+        if os.path.isdir("scripts"):
+            for fn in os.listdir('scripts/.'):
+                fnfull = 'scripts/'+fn
+                if os.path.isfile(fnfull) and fnfull.lower().endswith('.py'):
+                    try:
+                        m = importlib.import_module('scripts.'+os.path.splitext(fn)[0])
+                        m.name()
+                        self.scriptList.append(m)
+                    except ImportError, e:
+                        #for debugging uncomment this:
+                        #print str(e)
+                        pass
+                    
+                    except AttributeError,e:
+                        #for debugging uncomment this:
+                        #print str(e)
+                        pass
+                    
+        for t in self.scriptList:
+            subMenu.addAction(QAction(t.name(), self, statusTip=t.tip(), triggered=partial(self.runScript, t)))
+            
+        self.exampleScriptAct.setMenu(subMenu)
+        
+    def runScript(self, mod):
+        self.console.append( "****Running Script: %s"%mod.name() )
+        m = mod.userScript(self)
+        m.run()
+        self.console.append( "****Finished Script: %s"%mod.name() )
+        
 
     def addToolMenu(self):        
         self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
@@ -736,12 +773,8 @@ def makeApplication():
     app.setApplicationName("Capture V2")
     return app
   
-import gc
-  
 if __name__ == '__main__':
     app = makeApplication()
-    
-    gc.disable()
     
     # Create and show the form
     window = ChipWhispererCapture()
