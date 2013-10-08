@@ -27,8 +27,6 @@ import numpy as np
 from TraceContainer import TraceContainer
 
 class TraceContainerNative(TraceContainer):
-    def __init__(self):
-        super(TraceContainerNative, self).__init__()
 
     def copyTo(self, srcTraces=None):
         self.NumTrace = srcTraces.NumTrace

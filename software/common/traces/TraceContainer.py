@@ -42,7 +42,9 @@ class TraceContainer(object):
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
     
-    def __init__(self):
+    getParams = None
+    
+    def __init__(self, params=None):
         self.textins = []
         self.textouts = []
         self.knownkey = None
@@ -117,7 +119,7 @@ class TraceContainer(object):
         
     def addTextout(self, data):
         self.textouts.append(data)
-
+        
     def getTrace(self, n):
         data = self.traces[n]
 

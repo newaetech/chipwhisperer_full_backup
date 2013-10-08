@@ -100,6 +100,11 @@ from ProjectFormat import ProjectFormat
 from traces.TraceContainerNative import TraceContainerNative
 from traces.TraceContainerDPAv3 import TraceContainerDPAv3
 
+try:
+    from traces.TraceContainerMySQL import TraceContainerMySQL
+except ImportError:
+    TraceContainerMySQL = None
+
 class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
     captureDone = Signal(bool)
@@ -417,7 +422,6 @@ class FWLoaderConfig(QDialog):
             self.console.append(stdout)
             self.console.append(stderr)        
 
-
 class EncryptionStatusMonitor(QDialog):
     def __init__(self, parent):
         super(EncryptionStatusMonitor, self).__init__(parent)
@@ -452,11 +456,12 @@ class ChipWhispererCapture(MainChip):
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}        
-        valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}#"DPA Contest v3": writer_dpav3.dpav3()}    
+        valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}    
+        
+        if TraceContainerMySQL is not None:
+            valid_traces["MySQL"] = TraceContainerMySQL
         
         self.esm = EncryptionStatusMonitor(self)
-        
-       
         
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
@@ -590,6 +595,7 @@ class ChipWhispererCapture(MainChip):
         self.settingsNormalDock = self.addSettings(self.paramTree, "General Settings")
         self.settingsScopeDock = self.addSettings(self.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
+        self.settingsTraceDock = self.addSettings(self.traceParamTree, "Trace Settings")
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
@@ -599,6 +605,7 @@ class ChipWhispererCapture(MainChip):
         
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
+        self.traceParamTree = ParameterTree()
                 
     #def paramTreeChanged(self, param, changes):
     #    if self.showScriptParameter is not None:
@@ -609,6 +616,14 @@ class ChipWhispererCapture(MainChip):
         
     def reloadTargetParamList(self, lst=None):
         ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
+        
+    def reloadTraceParamList(self, lst=None):
+        if self.traceparams is not None:
+            try:
+                ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree)
+            except AttributeError:
+                #Some trace writers have no configuration options
+                pass
         
     def reloadParamList(self, lst=None):
         ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
@@ -710,7 +725,7 @@ class ChipWhispererCapture(MainChip):
             
         #Load trace writer
         if self.trace is not None:
-            writer = self.trace()
+            writer = self.trace(self.traceparams)
             starttime = datetime.now()            
             prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S_') 
             writer.config.setAttr("prefix", prefix)
@@ -739,7 +754,14 @@ class ChipWhispererCapture(MainChip):
         
     def traceChanged(self, newtrace):
         self.trace = newtrace
-        #TODO: Reload?
+        try:
+            self.traceparams = newtrace.getParams()
+        except AttributeError:
+            self.traceparams = None
+        except TypeError:
+            self.traceparams = None
+            
+        self.reloadTraceParamList()
   
     def newProject(self):        
         self.proj = ProjectFormat()
