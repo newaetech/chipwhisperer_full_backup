@@ -63,7 +63,7 @@ class MainChip(QMainWindow):
     def __init__(self, name="Demo", imagepath="images/"):       
         super(MainChip, self).__init__()
         
-        self.manageTraces = TraceManagerDialog()
+        self.manageTraces = TraceManagerDialog(self)
         
         self.imagepath = imagepath
         self.name = name        

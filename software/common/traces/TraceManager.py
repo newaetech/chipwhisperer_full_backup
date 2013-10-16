@@ -35,6 +35,8 @@ from TraceContainerConfig import TraceContainerConfig
 from TraceContainerNative import TraceContainerNative
 from TraceContainerDPAv3 import ImportDPAv3Dialog
 
+from TraceManagerImport import TraceManagerImport
+
 import re
 
 #For copying files when adding existing traces
@@ -134,13 +136,13 @@ class TraceManagerDialog(QDialog):
         #temp.clicked.connect(self.addRow)
         #layout.addWidget(temp)
 
-        importDPAv3 = QPushButton("Import DPAv3")
-        importDPAv3.clicked.connect(self.importDPAv3)
-        layout.addWidget(importDPAv3)
+        #importDPAv3 = QPushButton("Import DPAv3")
+        #importDPAv3.clicked.connect(self.importDPAv3)
+        #layout.addWidget(importDPAv3)
 
-        copyExisting = QPushButton("Copy Existing and Add")
-        copyExisting.clicked.connect(self.copyExisting)
-        layout.addWidget(copyExisting)
+        #copyExisting = QPushButton("Copy Existing and Add")
+        #copyExisting.clicked.connect(self.copyExisting)
+        #layout.addWidget(copyExisting)
 
         importExisting = QPushButton("Add Reference to Existing")
         importExisting.clicked.connect(self.importExisting)
@@ -153,9 +155,9 @@ class TraceManagerDialog(QDialog):
 
         self.newProject()
 
-    def updatePreview(self):
-        if self.parent is not None:
-            self.parent.updatePreview()
+    #def updatePreview(self):
+    #    if self.parent is not None:
+    #        self.parent.updatePreview()
 
     def newProject(self):        
         self.traceList = []    
@@ -248,8 +250,13 @@ class TraceManagerDialog(QDialog):
                 startTrace = startTrace + tlen + 1
 
                 if self.traceList[i].traces is None:
-                    path = os.path.split(self.traceList[i].config.configFilename())[0]
-                    self.traceList[i].loadAllTraces(path, self.traceList[i].config.attr("prefix"))                   
+                    if self.traceList[i].config.configFilename() is not None:
+                        path = os.path.split(self.traceList[i].config.configFilename())[0]
+                        pref = self.traceList[i].config.attr("prefix")
+                    else:
+                        path = None
+                        pref = None
+                    self.traceList[i].loadAllTraces(path, pref)                   
                 
             else:
                 self.traceList[i].enabled = False
@@ -257,31 +264,39 @@ class TraceManagerDialog(QDialog):
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
 
         self.iface.UpdateTraces()    
-        self.updatePreview()
+        #self.updatePreview()
         self.tracesChanged.emit()
         
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)
         imp.exec_()
         self.importExisting(imp.getTraceCfgFile())
-        self.updatePreview()
+        #self.updatePreview()
         
     def append(self, ti):
         self.traceList.append(ti)
         self.addRow(ti)
-        self.updatePreview()
+        #self.updatePreview()
 
     def importExisting(self, fname=None):
-        if fname == None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
-            if fname:
-                QSettings().setValue("trace_last_file", fname)
+        
+        tmi = TraceManagerImport(self)
+        tmi.exec_()
+        
+        if tmi.getTrace() is not None:
+            tmi.updateConfigData()
+            self.append(tmi.getTrace())
+        
+        #if fname == None:
+        #    fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
+        #    if fname:
+        #        QSettings().setValue("trace_last_file", fname)
 
-        if fname:
-            #Add to file list
-            ti = TraceFormatNative()
-            ti.config.loadTrace(fname)
-            self.append(ti)
+        #if fname:
+        #    #Add to file list
+        #    ti = TraceFormatNative()
+        #    ti.config.loadTrace(fname)
+        #    self.append(ti)
 
     def copyExisting(self, fname=None):
         if fname == None:
@@ -329,3 +344,5 @@ class TraceManagerDialog(QDialog):
             ti = TraceFormatNative()
             ti.config.loadTrace(newcfgname)
             self.append(ti)
+        
+

@@ -341,13 +341,16 @@ class ResultsTable(QObject):
 
                 for hyp in range(0, 256):
                     if self.useAbs:
-                        v = np.amax(np.fabs(diffs[hyp]))
+                        v = np.nanmax(np.fabs(diffs[hyp]))
                     else:
-                        v = np.amax(diffs[hyp])                    
+                        v = np.nanmax(diffs[hyp])                    
                     
                     #Get maximum value for this hypothesis
                     mvalue = v
-                    mindex = np.amin(np.where(v == mvalue))
+                    try:
+                        mindex = np.amin(np.where(v == mvalue))
+                    except ValueError:
+                        mindex = 255
                     maxes[hyp] = (hyp,mindex,mvalue)
 
                 maxes.sort(order='value')
