@@ -28,10 +28,27 @@ import sys
 sys.path.append('../common')
 
 import numpy as np
-from TraceContainerConfig import TraceContainerConfig
+import TraceContainerConfig
 
 #For profiling support (not 100% needed)
 import pstats, cProfile
+
+from pyqtgraph.parametertree import Parameter
+from ExtendedParameter import ExtendedParameter
+
+class parameters(object):
+    def __init__(self, openMode=False):
+        self.fmt = None
+        traceParams = [{'name':'Trace Configuration', 'type':'group', 'children':[
+                        {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
+                        {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
+                      ]}]
+        self.params = Parameter.create(name='Trace Configuration', type='group', children=traceParams)
+        self.traceParams = traceParams
+        ExtendedParameter.setupExtended(self.params, self)
+        
+    def paramList(self):
+        return [self.params]
 
 class TraceContainer(object):
     """
@@ -42,9 +59,9 @@ class TraceContainer(object):
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
     
-    getParams = None
+    getParams = parameters()
     
-    def __init__(self, params=None):
+    def __init__(self, params=None, configfile=None):
         self.textins = []
         self.textouts = []
         self.knownkey = None
@@ -56,7 +73,10 @@ class TraceContainer(object):
         self.pointhint = 0
         self._numTraces = 0
         
-        self.config = TraceContainerConfig()
+        if params is not None:
+            self.getParams = params
+        
+        self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
 
     def setDirty(self, dirty):
         self.dirty = dirty
@@ -143,7 +163,9 @@ class TraceContainer(object):
         #if self.traces is None:
         #    self.traces = np.zeros((self.tracehint, self.pointhint))
         
-        
+    def loadAllConfig(self):
+        """Placeholder for loading configuration data ONLY. May not be required."""
+        pass
     
     def loadAllTraces(self, directory=None, prefix=""):
         """Placeholder for load command. May not actually read everything into memory depending on format."""

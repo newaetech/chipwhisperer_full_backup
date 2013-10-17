@@ -29,14 +29,15 @@ import sys
 sys.path.append('../common')
 
 import numpy as np
-from TraceContainer import TraceContainer
+import TraceContainer
 from pyqtgraph.parametertree import Parameter
 
 import umysql as sql
 
 from ExtendedParameter import ExtendedParameter
+from TraceContainerConfig import makeAttrDict
 
-class parameters(object):
+class parameters(object):    
     def __init__(self, openMode=False):
         self.fmt = None
         traceParams = [{'name':'MySQL Configuration', 'type':'group', 'children':[
@@ -44,16 +45,20 @@ class parameters(object):
                         {'name':'Server Port', 'key':'port', 'type':'int', 'value':'3306'},
                         {'name':'Username', 'key':'user', 'type':'str', 'value':'root'},
                         {'name':'Password', 'key':'password', 'type':'str', 'value':'admin'},
-                        {'name':'Database', 'key':'database', 'type':'str', 'value':'CWTraces'}
+                        {'name':'Database', 'key':'database', 'type':'str', 'value':'CWTraces'},
+                        {'name':'Table Name', 'key':'tableName', 'type':'str', 'value':'', 'readonly':True}
                       ]}]
         
         if openMode == False:
-            traceParams[0]['children'].append({'name':'Table Naming', 'key':'tableNameType', 'type':'list', 'values':{'Date/Time Based':'datetime'}, 'value':'datetime'})
-        else:
-            traceParams[0]['children'].append({'name':'Table Name', 'key':'tableName', 'type':'list', 'values':[]})
-            traceParams[0]['children'].append({'name':'List Tables', 'key':'tableListAct', 'type':'action'})
-        
+            traceParams[0]['children'].append({'name':'Table Naming', 'key':'tableNameType', 'type':'list', 'values':{'Auto-Prefix':'prefix'}, 'value':'prefix'})   
+        else:            
+            traceParams[0]['children'].append({'name':'Relist Tables', 'key':'tableListAct', 'type':'action'})
+            traceParams[0]['children'].append({'name':'Table List', 'key':'tableNameList', 'type':'list', 'values':[], 'value':'', 'linked':['Table Name']})  
+           
         traceParams[0]['children'].append({'name':'Trace Format', 'key':'traceFormat', 'type':'list', 'values':['NumPy Pickle'], 'value':'NumPy Pickle', 'set':self.setFormat})
+        
+        self.traceParams = traceParams
+        
         self.params = Parameter.create(name='MySQL Settings', type='group', children=traceParams)
         ExtendedParameter.setupExtended(self.params, self)
         
@@ -69,9 +74,9 @@ class parameters(object):
     def paramList(self):
         return [self.params]
 
-class TraceContainerMySQL(TraceContainer):
-    
-    getParams = parameters
+class TraceContainerMySQL(TraceContainer.TraceContainer):   
+    getParamsClass = parameters
+    getParams = parameters()
     
     def __init__(self, params=None):
         super(TraceContainerMySQL, self).__init__()
@@ -81,10 +86,36 @@ class TraceContainerMySQL(TraceContainer):
         
         if params is not None:
             self.getParams = params
+                        
+        #Connect actions if applicable
+        try:            
             self.getParams.findParam('tableListAct').opts['action'] = self.listAllTables
+        except AttributeError:
+            pass
+             
+        self.getParams.findParam('tableName').opts['get'] = self._getTableName
             
-    def makePrefix(self, mode='datetime'):
-        return "test"
+        #Save extra configuration options
+        self.attrDict = makeAttrDict("MySQL Config", "mysql", self.getParams.traceParams)
+        self.config.attrList.append(self.attrDict)
+            
+        #Format name must agree with names from TraceContainerFormatList
+        self.config.setAttr("format", "mysql")
+            
+    def makePrefix(self, mode='prefix'):
+        if mode == 'prefix':
+            prefix = self.config.attr('prefix')
+            if prefix == "" or prefix is None:
+                raise AttributeError("Prefix attribute not set in trace config")
+            
+            #Drop everything but underscore (_) for table name
+            prefix = "tracedb_" + prefix
+            prefix = prefix.replace("-","_")
+            prefix = ''.join(c for c in prefix if c.isalnum() or c in("_"))
+            
+            return prefix
+        
+        raise ValueError("Invalid mode: %s"%mode)
             
     def prepareDisk(self):
         self.con()        
@@ -95,7 +126,7 @@ class TraceContainerMySQL(TraceContainer):
         result = self.db.query("SELECT VERSION()")
         print "MySQL Version: %s"%result.rows[0][0]
          
-        self.tableName = "test_table"
+        self.tableName = traceprefix
          
         self.db.query("CREATE TABLE IF NOT EXISTS %s(Id INT PRIMARY KEY AUTO_INCREMENT,\
          Textin VARCHAR(32),\
@@ -120,6 +151,9 @@ class TraceContainerMySQL(TraceContainer):
         
         self.db = db
         
+    def _getTableName(self):
+        return self.getParams.findParam('tableNameList').value()
+        
     def listAllTables(self):
         self.con()
         database = self.getParams.findParam('database').value()
@@ -127,7 +161,7 @@ class TraceContainerMySQL(TraceContainer):
         tables = []
         for r in results.rows:
             tables.append(r[0])            
-        self.getParams.findParam('tableName').setLimits(tables)
+        self.getParams.findParam('tableNameList').setLimits(tables)
         
         
     def updateConfigData(self):
@@ -151,9 +185,17 @@ class TraceContainerMySQL(TraceContainer):
             self.updateConfigData()
         return self._NumPoint
         
+    def loadAllConfig(self):
+        for p in self.getParams.traceParams[0]['children']:
+            try:
+                val = self.config.attr(p["key"], "mysql")
+                self.getParams.findParam(p["key"]).setValue(val)
+            except ValueError:
+                pass
+            #print "%s to %s=%s"%(p["key"], val, self.getParams.findParam(p["key"]).value())
+        
     def loadAllTraces(self, path=None, prefix=None):
         self.updateConfigData()
-        
         
     def formatWave(self, wave, read=False):
         if self.getParams.format() == "NumPy Pickle":
@@ -183,7 +225,18 @@ class TraceContainerMySQL(TraceContainer):
         self.db.query("INSERT INTO %s(Textin, Textout, EncKey, Wave) VALUES('%s', '%s', '%s', "%(self.tableName, strTextin, strTextout,
                                                                                                 strKey) + "%s)", (self.formatWave(trace),))
         
+    def saveAll(self):        
+        #Save attributes from config settings
+        for t in self.getParams.traceParams[0]['children']:
+            self.config.setAttr(t["key"],  self.getParams.findParam(t["key"]).value() ,"mysql")
+            
+        #Save table name/prefix too
+        self.config.setAttr("tableName", self.tableName, "mysql")
+        self.config.saveTrace()
+        
     def closeAll(self):
+        self.saveAll()
+        
         if self.db is not None:
             self.db.close()
         self.db = None

@@ -27,28 +27,49 @@ __author__ = "Colin O'Flynn"
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
-import os.path
 sys.path.append('../common')
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-import tracereader_dpacontestv3
-import tracereader_native
-import re
-import numpy as np
-from scipy import signal
-
-#For copying files when adding existing traces
-import shutil
-import glob
 
 #For profiling support (not 100% needed)
-import pstats, cProfile
+#import pstats, cProfile
 
 try:
     from configobj import ConfigObj  # import the module
 except ImportError:
     print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
     sys.exit()
+   
+def makeAttrDict(sectionname, modulename, paramSpecs):
+    """
+    Converts a parameter tree configuration setup into an attribute dictionary. Requires specific setup
+    of parameter tree, assumes passed a single-element list, with first element having 'children'. No
+    sub-groups allowed. Any element without a 'value' key is skipped.
+    """
+    
+    ps = paramSpecs[0]['children']
+    
+    attrDict = {
+                "sectionName":sectionname,
+                "moduleName":modulename,
+                "module":None,
+                "values":{},
+                }    
+    order = 0    
+    for p in ps:
+        try:
+            edit = not p["readonly"]
+        except KeyError:
+            edit = True
+            
+        try:
+            attrDict["values"][p["key"]] = {"order":order, "value":p["value"], "desc":p["name"], "changed":False, "editable":edit}
+        except KeyError:
+            #Silently skip anything without a 'value' attribute given, which forms the initial value
+            pass
+        
+        order += 1
+        
+    return attrDict
+    
    
 class TraceContainerConfig(object):
     """
@@ -62,7 +83,6 @@ class TraceContainerConfig(object):
     This choice means you aren't forced to import traces into ChipWhisperer-only format, and can for example
     you may wish to keep them in some MATLAB workspace format instead.
     """   
-           
         
     ## Notes on dictionary:
     # order = order of display, needed since dictionary is unordered
@@ -95,12 +115,14 @@ class TraceContainerConfig(object):
     attrList = [attrDict]
     
     def __init__(self, configfile=None):
+        """If a config file is given, will attempt to load that file"""
         self.enabled = False
         self.mappedRange = None
         self.trace = None
-
-        self.config = ConfigObj(configfile)
         self._configfile = configfile
+        
+        #Attempt load/sync
+        self.loadTrace(configfile)
         
     def module(self, attr, moduleName=None):
         """Given an attribute & possibly module name, return reference to module dictionary"""
@@ -140,13 +162,15 @@ class TraceContainerConfig(object):
         return lst
      
     def setConfigFilename(self, fname):
+        """Set the config filename, WITHOUT syncronizing internal DB to File. Use load or save for this feature."""
         self._configfile = fname
         
     def configFilename(self):
+        """Get Config Filename"""
         return self._configfile
      
     def attr(self, attr, moduleName=None):
-        """Get value of attribute specified"""       
+        """Get value of attribute specified from internal DB"""       
         return self.attrDict(attr, moduleName)["value"]
     
     def attrDict(self, attr, moduleName=None):
@@ -155,19 +179,19 @@ class TraceContainerConfig(object):
         return mod["values"][attr]
         
     def setAttr(self, attr, value, moduleName=None):
-        """Set value of attribute"""
+        """Set value of attribute in internal DB"""
         mod = self.module(attr,moduleName)   
         mod["values"][attr]["value"] = value
         mod["values"][attr]["changed"] = True 
                
     def syncFile(self):
         """
-        Sync the local cache to the .cfg file specified already, basically this can be a save or load.
+        Sync the internal DB cache to the .cfg file specified already, basically this can be a save or load.
         
-        The CHANGED flag is used to decide what to do. If the 'changed' flag is FALSE in the local cache,
-        the disk has priority. Any attributes not in the disk .cfg file will be taken from the local cache.
+        The CHANGED flag is used to decide what to do. If the 'changed' flag is FALSE in the internal DB,
+        the disk has priority. Any attributes not in the disk .cfg file will be taken from the internal DB.
         
-        If the 'changed' flag of an attribute is TRUE, the local cache will overwrite the disk file.
+        If the 'changed' flag of an attribute is TRUE, the internal DB will overwrite the disk file.
         """
          
         debug = True
@@ -208,7 +232,7 @@ class TraceContainerConfig(object):
                         print "%s missing in cfg file"%item                   
         
     def loadTrace(self, configfile=None):
-        """Load config file"""
+        """Load config file. Syncs internal DB to File"""
         if configfile:            
             self._configfile = configfile
         
@@ -217,6 +241,7 @@ class TraceContainerConfig(object):
         self.syncFile()
         
     def saveTrace(self, configfile = None):
+        """Save internal DB to Config File"""
         self.config.filename = self._configfile
         self.syncFile()     
         self.config.write()

@@ -24,9 +24,9 @@
 
 import os
 import numpy as np
-from TraceContainer import TraceContainer
+import TraceContainer
 
-class TraceContainerNative(TraceContainer):
+class TraceContainerNative(TraceContainer.TraceContainer):
 
     def copyTo(self, srcTraces=None):
         self.NumTrace = srcTraces.NumTrace
@@ -68,13 +68,13 @@ class TraceContainerNative(TraceContainer):
         self.setDirty(False)
 
     def saveAllTraces(self, directory, prefix=""):
+        self.config.saveTrace()
         np.save(directory + "/%straces.npy"%prefix, self.traces)
         np.save(directory + "/%stextin.npy"%prefix, self.textins)
         np.save(directory + "/%stextout.npy"%prefix, self.textouts)
         np.save(directory + "/%sknownkey.npy"%prefix, self.knownkey)
         self.setDirty(False)
         
-    def closeAll(self):
-        self.config.saveTrace()
+    def closeAll(self):        
         self.saveAllTraces( os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
         

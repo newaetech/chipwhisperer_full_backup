@@ -37,13 +37,18 @@ from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, reg
 from ExtendedParameter import ExtendedParameter
     
 from TraceContainerNative import TraceContainerNative
+from TraceContainerConfig import TraceContainerConfig
+import TraceContainerTypes
+
+from functools import partial
+
 try:
     from traces.TraceContainerMySQL import TraceContainerMySQL
 except ImportError:
     TraceContainerMySQL = None
     
 class TraceManagerImport(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None):        
         super(TraceManagerImport, self).__init__(parent)
         self.parent = parent
 
@@ -53,7 +58,13 @@ class TraceManagerImport(QDialog):
         self.setLayout(layout)
         self.setWindowTitle("Add Existing Trace")
 
+        self.openCfg = QPushButton("Load .cfg File")
+        self.openCfg.clicked.connect(self.loadCfg)
+
+        layout.addWidget(self.openCfg)
+        
         self.modName = QComboBox()
+        self.modName.addItem("Select format for manual mode only...")
         self.modName.addItem("ChipWhisperer/Native")
         self.modName.addItem("DPAContestv3")
         if TraceContainerMySQL is not None:        
@@ -61,19 +72,30 @@ class TraceManagerImport(QDialog):
         self.modName.currentIndexChanged.connect(self.traceTypeChanged)
         
         layout.addWidget(self.modName)
-        
-        
-        #self.params = Parameter.create(name='Generic Settings', type='group', children=[])
-        #ExtendedParameter.setupExtended(self.params)
+
         self.paramTree = ParameterTree()
-        #self.paramTree.setParameters(self.params, showTop=False)
-        
         layout.addWidget(self.paramTree)
+
+        buts = QHBoxLayout()
+        cancel = QPushButton("Screw This")
+        cancel.clicked.connect(self.abort)
+        ok = QPushButton("Import")
+        ok.clicked.connect(self.accept)
+        buts.addWidget(ok)
+        buts.addWidget(cancel)
         
+        layout.addLayout(buts)
+        
+        self.tmanager = None
+        
+    def abort(self):
+        self.tmanager = None
+        self.reject()        
 
     def traceTypeChanged(self, newindx):
+        self.openCfg.setEnabled(False)
         newTT = self.modName.itemData(newindx)        
-        self.tmanagerParams = newTT.getParams(openMode=True)   
+        self.tmanagerParams = newTT.getParamsClass(openMode=True)   
         self.tmanager = newTT(self.tmanagerParams)
         ExtendedParameter.reloadParams(self.tmanagerParams.paramList(), self.paramTree)
         
@@ -83,4 +105,26 @@ class TraceManagerImport(QDialog):
     def updateConfigData(self):
         if self.tmanager is not None:
             self.tmanager.updateConfigData()
+            
+    def loadCfg(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
+        if fname:
+            QSettings().setValue("trace_last_file", fname)
 
+        if fname:
+            self.modName.setEnabled(False)
+            
+            #Figure out what format this is in
+            tc = TraceContainerConfig(fname)
+            fmt = tc.attr("format")
+            
+            #Generate a temp class for getting parameters from
+            fmtclass = TraceContainerTypes.TraceContainerFormatList[fmt]
+            
+            #Use temp class to finally initilize our "good" version
+            self.tmanager = fmtclass( fmtclass.getParamsClass(openMode=True) )
+            self.tmanager.config.loadTrace(fname)
+            self.tmanager.loadAllConfig()
+            ExtendedParameter.reloadParams(self.tmanager.getParams.paramList(), self.paramTree)
+            
+            

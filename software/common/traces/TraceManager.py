@@ -30,9 +30,9 @@ from PySide.QtGui import *
 import os.path
 sys.path.append('../common')
 
-from TraceContainer import TraceContainer
-from TraceContainerConfig import TraceContainerConfig
-from TraceContainerNative import TraceContainerNative
+#import TraceContainer
+import TraceContainerConfig
+import TraceContainerNative
 from TraceContainerDPAv3 import ImportDPAv3Dialog
 
 from TraceManagerImport import TraceManagerImport
@@ -122,7 +122,7 @@ class TraceManagerDialog(QDialog):
         layout = QVBoxLayout()
 
         #Get labels in use
-        exampleConfig = TraceContainerConfig()
+        exampleConfig = TraceContainerConfig.TraceContainerConfig()
         attrs = exampleConfig.attrHeaderValues()      
         attrHeaders = [i["header"] for i in attrs]
         attrHeaders.insert(0, "Mapped Range")
@@ -188,7 +188,7 @@ class TraceManagerDialog(QDialog):
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
                 print "Opening %s"%fname
-                ti = TraceContainerNative()
+                ti = TraceContainerNative.TraceContainerNative()
                 ti.config.loadTrace(fname)
                 self.traceList.append(ti)
                 self.addRow(ti)
@@ -286,17 +286,6 @@ class TraceManagerDialog(QDialog):
         if tmi.getTrace() is not None:
             tmi.updateConfigData()
             self.append(tmi.getTrace())
-        
-        #if fname == None:
-        #    fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
-        #    if fname:
-        #        QSettings().setValue("trace_last_file", fname)
-
-        #if fname:
-        #    #Add to file list
-        #    ti = TraceFormatNative()
-        #    ti.config.loadTrace(fname)
-        #    self.append(ti)
 
     def copyExisting(self, fname=None):
         if fname == None:
