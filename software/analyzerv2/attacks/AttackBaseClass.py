@@ -88,8 +88,8 @@ class AttackBaseClass(QObject):
         self.endPoint = [0]*self.numsubkeys
 
         self.log=log        
-        self.setupParameters()
         self.setupPointsParam()
+        self.setupParameters()
 
     def setupParameters(self):
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[

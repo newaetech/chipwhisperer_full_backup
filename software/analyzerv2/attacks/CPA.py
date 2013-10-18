@@ -46,13 +46,8 @@ from ExtendedParameter import ExtendedParameter
 
 #from joblib import Parallel, delayed
 
-
 try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    from pyqtgraph.parametertree.parameterTypes import ListParameter
+    from pyqtgraph.parametertree import Parameter
     #print pg.systemInfo()    
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
@@ -72,7 +67,7 @@ except ImportError:
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
-    def __init__(self):
+    def __init__(self):        
         self.sumhq = [0]*256
         self.sumtq = [0]*256
         self.sumt = [0]*256
@@ -190,11 +185,20 @@ class AttackCPA_Progressive(QObject):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
+    paramListUpdated = Signal(list)
 
     def __init__(self, model):
         super(AttackCPA_Progressive, self).__init__()
+        
+        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100}]
+        self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        
         self.model = model
         self.sr = None
+        
+    def paramList(self):
+        return [self.params]
 
     def setByteList(self, brange):
         self.brange = brange
@@ -210,7 +214,7 @@ class AttackCPA_Progressive(QObject):
         #foundkey.append(foundbyte)
 #            print "%2x "%foundbyte,
     
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, tracesLoop=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -224,7 +228,7 @@ class AttackCPA_Progressive(QObject):
         self.all_diffs = range(0,16)
 
 
-        tdiff = tracesLoop
+        tdiff = self.findParam('reportinterval').value()
 
         numtraces = len(traces_all[:,0])
 
@@ -720,21 +724,20 @@ class CPA(AttackBaseClass):
             
     def __init__(self, parent=None, console=None):
         super(CPA, self).__init__(parent)
-        self.console=console 
+        self.console=console
         
     def debug(self, sr):
         if self.console is not None:
             self.console.append(sr)
         
     def setupParameters(self):      
-        
         cpaalgos = {'Progressive':AttackCPA_Progressive, 'Simple':AttackCPA_SimpleLoop}
         
         if CPACython is not None:
             cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
         
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':AttackCPA_Progressive},
-                        {'name':'Reporting Interval (if supported)', 'key':'CPA_tracesloop', 'type':'int', 'range':(0,10E9), 'value':100},                        
+        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':AttackCPA_Progressive, 'set':self.setAlgo},
+                        #{'name':'Reporting Interval (if supported)', 'key':'CPA_tracesloop', 'type':'int', 'range':(0,10E9), 'value':100},                        
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
@@ -751,7 +754,18 @@ class CPA(AttackBaseClass):
         #Need 'showScriptParameter = None' for setupExtended call below
         self.showScriptParameter = None
         ExtendedParameter.setupExtended(self.params, self)
-                                         
+        
+        self.setAlgo(self.findParam('CPA_algo').value())
+            
+    def setAlgo(self, algo):
+        self.attack = algo(self.findParam('hw_algo').value())
+        try:
+            self.attackParams = self.attack.paramList()[0]
+        except:
+            self.attackParams = None
+
+        self.paramListUpdated.emit(self.paramList())
+                                                
     def processKnownKey(self, inpkey):
         if inpkey is None:
             return None
@@ -795,8 +809,8 @@ class CPA(AttackBaseClass):
         #Following attack DOES NOT WORK
         #self.attack = AttackCPA_SciPyCorrelation(attacks.models.AES128_8bit)
         
-        hwmodel = self.findParam('hw_algo').value()
-        self.attack = self.findParam('CPA_algo').value()(hwmodel)        
+        #hwmodel = self.findParam('hw_algo').value()
+        #self.attack = self.findParam('CPA_algo').value()(hwmodel)        
         
         self.attack.setByteList(self.bytesEnabled())
         self.attack.setKeyround(self.findParam('hw_round').value())
@@ -831,4 +845,7 @@ class CPA(AttackBaseClass):
         return self.attack.getStatistics()
             
     def paramList(self):
-        return [self.params, self.pointsParams]
+        l = [self.params, self.pointsParams]
+        if self.attackParams is not None:
+            l.append(self.attackParams)
+        return l

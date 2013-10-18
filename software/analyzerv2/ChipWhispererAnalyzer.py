@@ -211,6 +211,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.console.append("Attack Done")
         
     def reloadAttackParamList(self, list=None):
+        print self.attack.paramList()
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
         
     def tracesChanged(self):
@@ -364,7 +365,6 @@ class ChipWhispererAnalyzer(MainChip):
         self.setCurrentFile(fname)
         self.proj.setFilename(fname)
         self.proj.load()
-         
         
         #Open project file & read in everything
         self.proj.traceManager.loadProject(fname)
