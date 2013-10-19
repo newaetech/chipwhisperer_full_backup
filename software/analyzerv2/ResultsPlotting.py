@@ -140,11 +140,11 @@ class ResultsPlotData(GraphWidget):
         
         self.highlightTop = True
         
-        resultsParams = [{'name':'Show', 'type':'bool', 'value':False, 'set':self.showDockSignal.emit},                       
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
                       ]
         
         self.params = Parameter.create(name='Plot of Output vs Time', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
         
     def paramList(self):
         return [self.params]
@@ -152,12 +152,12 @@ class ResultsPlotData(GraphWidget):
     def setDock(self, dock):
         self.dock = dock
         self.showDockSignal.connect(dock.setVisible)      
-        dock.visibilityChanged.connect(self.visibleChanged) 
+        dock.visibilityChanged.connect(self.visibleChanged)
+        self.visibleChanged() 
    
     def visibleChanged(self):
-        #TODO: Update the status of the parameter tree with this
         visible = self.dock.isVisible()
-        pass
+        self.findParam('show').setValue(visible)
    
     def setKnownKey(self, knownkey):
         self.knownkey = knownkey
@@ -210,6 +210,7 @@ class ResultsPlotData(GraphWidget):
         
     def redrawPlot(self):
         data = self.attack.getStatistics()
+        data = data.diffs()
        
         #Do Redraw
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
@@ -277,10 +278,29 @@ class ResultsTable(QObject):
         super(ResultsTable, self).__init__()
 
         self.table = QTableWidget(permPerSubkey, subkeys)
+        self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        
+        fullTable = QWidget()
+        fullLayout = QVBoxLayout()
+        fullTable.setLayout(fullLayout)
+        
+        fullLayout.addWidget(self.table)
+        
+        self.pgetable = QTableWidget(1, subkeys)        
+        self.pgetable.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.pgetable.setMaximumHeight(75)
+        
+        for i in range(0,subkeys):
+            self.pgetable.setItem(0,i,QTableWidgetItem("   "))
+        
+        self.pgetable.resizeColumnsToContents()
+        
+        fullLayout.addWidget(self.pgetable)
+        
         self.ResultsTable = QDockWidget("Results Table")
         self.ResultsTable.setObjectName("Results Table")
         self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.ResultsTable.setWidget(self.table)       
+        self.ResultsTable.setWidget(fullTable)       
         self.ResultsTable.setVisible(False)
         self.ResultsTable.visibilityChanged.connect(self.visibleChanged)
         
@@ -292,20 +312,24 @@ class ResultsTable(QObject):
         self.useSingle = False
         
         resultsParams = [
-                         {'name':'Show', 'type':'bool', 'value':False, 'set':self.ResultsTable.setVisible},
+                         {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.ResultsTable.setVisible},
                          {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
-                         {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode}
+                         {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
+                         {'name':'Update Mode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}},
                       ]
 
         self.params = Parameter.create(name='Ranked Table', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
+        
+        #Update parameter tree
+        self.visibleChanged()
         
     def paramList(self):
         return [self.params]
         
     def visibleChanged(self):
-        #TODO: Update the status of the parameter tree with this
         visible = self.ResultsTable.isVisible()
+        self.findParam('show').setValue(visible)
         
     def setBytesEnabled(self, enabledbytes):
         self.enabledBytes = enabledbytes
@@ -323,46 +347,20 @@ class ResultsTable(QObject):
         self.useSingle = enabled    
 
     def updateTable(self):
-                
         self.setKnownKey(self.attack.trace.getKnownKey())
         
         self.pge = [self.numPerms-1]*self.numKeys
-        data = self.attack.getStatistics()
+        
+        attackStats = self.attack.getStatistics()
+        
+        #TODO: LOOP IN OTHER STUFF
+        attackStats.findMaximums()
         
         for bnum in range(0, self.numKeys):
-            if bnum in self.enabledBytes:
+            if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
                 self.table.setColumnHidden(bnum, False)
-                diffs = data[bnum]    
-                
-                if diffs is None:
-                    continue            
-
-                maxes = np.zeros(256,dtype=[('hyp','i2'),('point','i4'),('value','f8')] )
-
-                for hyp in range(0, 256):
-                    if self.useAbs:
-                        v = np.nanmax(np.fabs(diffs[hyp]))
-                    else:
-                        v = np.nanmax(diffs[hyp])                    
-                    
-                    #Get maximum value for this hypothesis
-                    mvalue = v
-                    try:
-                        mindex = np.amin(np.where(v == mvalue))
-                    except ValueError:
-                        mindex = 255
-                    maxes[hyp] = (hyp,mindex,mvalue)
-
-                maxes.sort(order='value')
-                maxes = maxes[::-1]
-
-                if self.useSingle:
-                    #All table values are taken from same point MAX is taken from
-                    where = maxes[0]['point']
-                    for j in range(0,256):
-                        maxes[j]['point'] = where
-                        maxes[j]['value'] = diffs[maxes[j]['hyp']][where]
-            
+                maxes = attackStats.maxes[bnum]                
+                            
                 for j in range(0,self.numPerms):
                     self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
 
@@ -373,15 +371,12 @@ class ResultsTable(QObject):
                             self.pge[bnum] = j
                             itm = self.table.item(j, bnum)
                             itm.setForeground(QBrush(Qt.red))
-                            
-                            #font = QFont()
-                            #font.setFamily("Courier")
-                            #font.setFixedPitch(True)
-                            #font.set(10)
-                            #itm.setFont(font)
             else:
                 self.table.setColumnHidden(bnum, True)
 
         self.table.resizeRowsToContents()
         self.table.resizeColumnsToContents()
         self.ResultsTable.setVisible(True)
+
+        for i in range(0,self.numKeys):
+            self.pgetable.setItem(0,i,QTableWidgetItem("%d"%self.pge[i]))

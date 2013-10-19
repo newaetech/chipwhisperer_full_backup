@@ -56,6 +56,9 @@ except ImportError:
 import attacks.models.AES128_8bit
 import attacks.models.AES_RoundKeys
 from attacks.AttackBaseClass import AttackBaseClass
+from attacks.AttackStats import DataTypeDiffs
+
+imagePath = '../common/images/'
 
 from functools import partial
 
@@ -166,10 +169,13 @@ class CPAProgressiveOneSubkey(object):
     
             if progressBar:
                 progressBar.setValue(pbcnt)
-                #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
+                progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces), bnum)
                 pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
                     raise KeyboardInterrupt
+                
+                if progressBar.wasSkipped():
+                    return (diffs, pbcnt)
     
             diffs[key] = sumnum / np.sqrt(sumden)
     
@@ -190,12 +196,17 @@ class AttackCPA_Progressive(QObject):
     def __init__(self, model):
         super(AttackCPA_Progressive, self).__init__()
         
-        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100}]
+        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
+                         {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},                         
+                         ]
         self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         
         self.model = model
         self.sr = None
+        
+        self.stats = DataTypeDiffs()
         
     def paramList(self):
         return [self.params]
@@ -208,11 +219,6 @@ class AttackCPA_Progressive(QObject):
     
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
-        
-        #From all the key candidates, select the largest difference as most likely
-        #foundbyte = diffs.index(max(diffs))
-        #foundkey.append(foundbyte)
-#            print "%2x "%foundbyte,
     
     def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
         keyround=self.keyround
@@ -236,18 +242,26 @@ class AttackCPA_Progressive(QObject):
             pbcnt = 0
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256 * (numtraces/tdiff + 1))
-            progressBar.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
         #self.all_diffs, pb = zip(*r)
         #pbcnt = 0
+        cpa = [None]*(max(brange)+1)
         for bnum in brange:
+            cpa[bnum] = CPAProgressiveOneSubkey()
+            
+        brangeMap = [None]*(max(brange)+1)
+        i = 1
+        for bnum in brange:
+            brangeMap[bnum] = i
+            i += 1
+        
+        for bnum in brange:
+        #for i in range(1):
             #CPAMemoryOneSubkey
             #CPASimpleOneSubkey
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
-                        
-            cpa = CPAProgressiveOneSubkey()
             
             tstart = 0
             tend = tdiff
@@ -260,26 +274,24 @@ class AttackCPA_Progressive(QObject):
                     tstart = numtraces
                     
                 
-                (self.all_diffs[bnum], pbcnt) = cpa.oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                #for bnum in brange:
+                for i in range(1):
+                    (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                    self.stats.updateSubkey(bnum, data)     
+                    
+                    if progressBar.wasSkipped():
+                        progressBar.clearSkipped()
+                        pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
+                        break
+                
                 tend += tdiff
                 tstart += tdiff
                 
                 if self.sr is not None:
                     self.sr()
-
-    def getDiff(self, bnum, hyprange=None):
-        if hyprange == None:
-            hyprange = range(0,256)
-        return [self.all_diffs[bnum][i] for i in hyprange];
     
     def getStatistics(self):
-        t = [0]*16
-        for i in self.brange:
-            try:
-                t[i] = self.getDiff(i)
-            except TypeError:
-                t[i] = None
-        return t
+        return self.stats
     
     def setStatsReadyCallback(self, sr):
         self.sr = sr
@@ -406,13 +418,14 @@ class AttackCPA_SimpleLoop(QObject):
             pbcnt = 0
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256)
-            progressBar.setWindowFlags(Qt.WindowStaysOnTopHint)
 
         numtraces = len(traces_all[:,0])
 
         pbcnt = 0
         for bnum in brange:
-            (self.all_diffs[bnum], pbcnt) = self.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
+            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
+            #self.all_diffs[bnum]
+            self.stats.updateSubkey(bnum, data)
 
     def getDiff(self, bnum, hyprange=None):
         if hyprange == None:
@@ -718,6 +731,86 @@ class AttackCPA_SciPyCorrelation(QObject):
     def setStatsReadyCallback(self, sr):
         pass
 
+class AttackProgressDialog(QDialog):
+    def __init__(self, parent=None):
+        super(AttackProgressDialog, self).__init__(parent)
+        self.min = 0
+        self.max = 10
+        self.abort = False
+        self.skip = False
+        
+        #Qt.WindowCloseButtonHint | 
+        self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) & ~(Qt.WindowContextHelpButtonHint))
+        self.setWindowTitle("Analysis in Progress")
+        self.setWindowIcon(QIcon(imagePath+"attack_transp.png"))
+        
+        layout = QVBoxLayout()
+        clayout = QHBoxLayout()
+        skip = QPushButton("Next Byte")
+        cancel = QPushButton("Abort")
+        cancel.clicked.connect(self.setCanceled)
+        skip.clicked.connect(self.setSkipped)
+        clayout.addStretch()
+        clayout.addWidget(skip)
+        clayout.addWidget(cancel)        
+        self.pbar = QProgressBar()
+        
+        statusInfo = QVBoxLayout()
+        self.byteNum = QLabel("Current Subkey = ?")
+        self.traceNum = QLabel("Current Traces = ?") 
+        statusInfo.addWidget(self.byteNum)
+        statusInfo.addWidget(self.traceNum)       
+        
+        layout.addLayout(statusInfo)        
+        layout.addWidget(self.pbar)
+        layout.addLayout(clayout)
+        
+        self.setLayout(layout)
+        
+    def updateStatus(self, trace, byte):
+        self.byteNum.setText("Current Subkey = %d"%byte)
+        try:
+            self.traceNum.setText("Current Trace = %d-%d"%(trace[0], trace[1]))
+        except:    
+            self.traceNum.setText("Current Trace = %d"%trace)        
+        
+    def setMinimumDuration(self, duration):
+        pass
+        
+    def setMinimum(self, mv):
+        self.pbar.setMinimum(mv)
+    
+    def setMaximum(self, mv):
+        self.max = mv
+        self.pbar.setMaximum(mv)
+    
+    def setValue(self, val):
+        if self.isVisible() == False:
+            self.show()
+        
+        self.pbar.setValue(val)
+        if val == self.max:
+            self.close()
+            
+        QApplication.processEvents()
+    
+    def setCanceled(self):
+        self.abort = True
+        
+    def wasCanceled(self):
+        return self.abort
+        
+    def setSkipped(self):
+        self.skip = True
+    
+    def clearSkipped(self):
+        self.skip = False
+    
+    def wasSkipped(self):        
+        return self.skip
+        
+
+
 #TODO: This should be broken into a separate function I think
 class CPA(AttackBaseClass):
     """Correlation Power Analysis Attack"""
@@ -817,14 +910,15 @@ class CPA(AttackBaseClass):
         self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
         self.attack.setStatsReadyCallback(self.statsReady)
         
-        progress = QProgressDialog("Analyzing", "Abort", 0, 100)
+        #progress = QProgressDialog("Analyzing", "Abort", 0, 100)
+        progress = AttackProgressDialog()
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000)
         
         #TODO:  pointRange=self.TraceRangeList[1:17]
         
         try:
-            self.attack.addTraces(data, textins, textouts, progress, tracesLoop=self.findParam('CPA_tracesloop').value())
+            self.attack.addTraces(data, textins, textouts, progress)
             end = datetime.now()
             self.debug("Attack Time: %s"%str(end-start)) 
         except KeyboardInterrupt:
