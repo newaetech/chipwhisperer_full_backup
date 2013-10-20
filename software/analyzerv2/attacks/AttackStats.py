@@ -63,7 +63,11 @@ class DataTypeDiffs(object):
     def __init__(self, numSubkeys=16, numPerms=256):
         self.numSubkeys = numSubkeys
         self.numPerms = numPerms
+        self.knownkey = None
         
+        self.clear()
+        
+    def clear(self):
         #Diffs from CPA/DPA Attack
         self.diffs = [None]*self.numSubkeys
         
@@ -71,12 +75,9 @@ class DataTypeDiffs(object):
         self.maxes = [0]*self.numSubkeys
         for i in range(0, self.numSubkeys):
             self.maxes[i] = np.zeros(self.numPerms,dtype=[('hyp','i2'),('point','i4'),('value','f8')])
-        
+            
         #If maximum diffs are valid & sorted correctly
         self.maxValid = [False]*self.numSubkeys
-        
-        self.knownkey = None
-        
         self.pge = [255]*self.numSubkeys
         
     def simplePGE(self, bnum):

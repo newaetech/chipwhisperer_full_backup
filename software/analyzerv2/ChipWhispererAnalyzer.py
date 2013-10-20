@@ -198,7 +198,17 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.paramListUpdated.connect(self.reloadAttackParamList)
         self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
         
-    def doAttack(self):
+    def doAttack(self):        
+        #Check if traces enabled
+        if self.traces.NumTrace == 0:
+            msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project - open Trace Manager?",
+                                       QMessageBox.NoButton, self)
+            msgBox.addButton("Yes", QMessageBox.AcceptRole)
+            msgBox.addButton("No", QMessageBox.RejectRole)
+            if msgBox.exec_() == QMessageBox.AcceptRole:
+                self.manageTraces.show()
+            return
+            
         self.console.append("Attack Started")
         
         if self.results is not None:
@@ -211,7 +221,6 @@ class ChipWhispererAnalyzer(MainChip):
         self.console.append("Attack Done")
         
     def reloadAttackParamList(self, list=None):
-        print self.attack.paramList()
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
         
     def tracesChanged(self):
