@@ -277,25 +277,30 @@ class ResultsTable(QObject):
     def __init__(self, subkeys=16, permPerSubkey=256, useAbs=True):
         super(ResultsTable, self).__init__()
 
-        self.table = QTableWidget(permPerSubkey, subkeys)
+        self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        
+        self.pgeBrush = QBrush(QColor(253,255,205))
+        pgehdr =  QTableWidgetItem("PGE")        
+        self.table.setVerticalHeaderItem(0,pgehdr)
+        for i in range(1,permPerSubkey+1):
+            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d"%(i-1)))
+            
+        for i in range(0,subkeys):
+            fi = QTableWidgetItem("")
+            fi.setBackground(self.pgeBrush)
+            self.table.setItem(0,i,fi)
+            
+        for i in range(0,subkeys):
+            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d"%i))
+            
+        self.table.resizeColumnsToContents()
         
         fullTable = QWidget()
         fullLayout = QVBoxLayout()
         fullTable.setLayout(fullLayout)
         
         fullLayout.addWidget(self.table)
-        
-        self.pgetable = QTableWidget(1, subkeys)        
-        self.pgetable.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.pgetable.setMaximumHeight(75)
-        
-        for i in range(0,subkeys):
-            self.pgetable.setItem(0,i,QTableWidgetItem("   "))
-        
-        self.pgetable.resizeColumnsToContents()
-        
-        fullLayout.addWidget(self.pgetable)
         
         self.ResultsTable = QDockWidget("Results Table")
         self.ResultsTable.setObjectName("Results Table")
@@ -349,27 +354,27 @@ class ResultsTable(QObject):
     def updateTable(self):
         self.setKnownKey(self.attack.trace.getKnownKey())
         
-        self.pge = [self.numPerms-1]*self.numKeys
-        
         attackStats = self.attack.getStatistics()
-        
-        #TODO: LOOP IN OTHER STUFF
+        attackStats.setKnownkey(self.attack.trace.getKnownKey())
         attackStats.findMaximums()
         
         for bnum in range(0, self.numKeys):
             if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
                 self.table.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]                
+                   
+                pgitm = QTableWidgetItem("%3d"%attackStats.pge[bnum])
+                pgitm.setBackground(self.pgeBrush)
+                self.table.setItem(0,bnum,pgitm)
                             
                 for j in range(0,self.numPerms):
-                    self.table.setItem(j,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
+                    self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
 
                     highlights = self.knownkey
 
                     if highlights is not None:
                         if maxes[j]['hyp'] == highlights[bnum]:
-                            self.pge[bnum] = j
-                            itm = self.table.item(j, bnum)
+                            itm = self.table.item(j+1, bnum)
                             itm.setForeground(QBrush(Qt.red))
             else:
                 self.table.setColumnHidden(bnum, True)
@@ -377,6 +382,3 @@ class ResultsTable(QObject):
         self.table.resizeRowsToContents()
         self.table.resizeColumnsToContents()
         self.ResultsTable.setVisible(True)
-
-        for i in range(0,self.numKeys):
-            self.pgetable.setItem(0,i,QTableWidgetItem("%d"%self.pge[i]))

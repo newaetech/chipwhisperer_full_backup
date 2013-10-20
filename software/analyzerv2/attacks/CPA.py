@@ -256,9 +256,22 @@ class AttackCPA_Progressive(QObject):
         for bnum in brange:
             brangeMap[bnum] = i
             i += 1
+            
+        skipPGE = self.findParam('checkpge').value()
+        bf = self.findParam('itmode').value() == 'bf'
         
-        for bnum in brange:
-        #for i in range(1):
+        #bf specifies a 'breadth-first' search. bf means we search across each
+        #subkey by only the amount of traces specified. Depth-First means we
+        #search each subkey completely, then move onto the next.
+        if bf:
+            brange_df = [0]
+            brange_bf = brange
+        else:
+            brange_bf = [0]
+            brange_df = brange
+        
+        
+        for bnum_df in brange_df:
             #CPAMemoryOneSubkey
             #CPASimpleOneSubkey
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
@@ -274,15 +287,25 @@ class AttackCPA_Progressive(QObject):
                     tstart = numtraces
                     
                 
-                #for bnum in brange:
-                for i in range(1):
-                    (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
-                    self.stats.updateSubkey(bnum, data)     
+                for bnum_bf in brange_bf:
                     
-                    if progressBar.wasSkipped():
+                    if bf:
+                        bnum = bnum_bf
+                    else:
+                        bnum = bnum_df
+                
+                    
+                    skip = False
+                    if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):                    
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                        self.stats.updateSubkey(bnum, data)
+                    else:  
+                        skip = True
+                    
+                    if progressBar.wasSkipped() or skip:
                         progressBar.clearSkipped()
                         pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
-                        break
+                        tstart = numtraces
                 
                 tend += tdiff
                 tstart += tdiff

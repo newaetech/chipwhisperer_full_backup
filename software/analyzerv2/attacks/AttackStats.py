@@ -75,6 +75,21 @@ class DataTypeDiffs(object):
         #If maximum diffs are valid & sorted correctly
         self.maxValid = [False]*self.numSubkeys
         
+        self.knownkey = None
+        
+        self.pge = [255]*self.numSubkeys
+        
+    def simplePGE(self, bnum):
+        if self.maxValid[bnum] == False:
+            #TODO: should sort
+            return 1
+            
+        return self.pge[bnum]
+            
+    def setKnownkey(self, knownkey):
+        self.knownkey = knownkey         
+        
+        
     def updateSubkey(self, bnum, data, copy=False, forceUpdate=False):
         if (id(data) != id(self.diffs[bnum])) or forceUpdate:
             self.maxValid[bnum] = False
@@ -117,7 +132,11 @@ class DataTypeDiffs(object):
                     where = self.maxes[i][0]['point']
                     for j in range(0,256):
                         self.maxes[i][j]['point'] = where
-                        self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where]    
+                        self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where] 
+                        
+                if self.knownkey is not None:
+                    self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0]
+                         
         return self.maxes
         
     
