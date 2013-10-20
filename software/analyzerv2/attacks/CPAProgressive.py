@@ -297,7 +297,9 @@ class CPAProgressive(QObject):
                     if progressBar.wasSkipped() or skip:
                         progressBar.clearSkipped()
                         pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
-                        tstart = numtraces
+                        
+                        if bf is False:
+                            tstart = numtraces
                 
                 tend += tdiff
                 tstart += tdiff
