@@ -86,7 +86,6 @@ module reg_triggerio(
 	 end    
 	
 	 reg [7:0] reg_datao_reg;
-	 reg reg_datao_valid_reg;
 	 assign reg_datao = reg_datao_reg;
 	 
 	 reg [31:0] clkdiv_reg;
@@ -106,6 +105,8 @@ module reg_triggerio(
 	 assign clkdiv = clkdiv_reg[17:0];
 	 assign rst_core = clkdiv_reg[31];
 	 
+	 /*
+	 reg reg_datao_valid_reg;
 	 always @(posedge clk) begin
 		if (reg_addrvalid) begin
 			case (reg_address)
@@ -117,6 +118,7 @@ module reg_triggerio(
 			reg_datao_valid_reg <= 0;
 		end
 	 end
+	 */
 	  	 
 	 always @(posedge clk) begin
 		if (reg_read) begin
@@ -187,7 +189,7 @@ module reg_triggerio(
 		.trig_out(trig_out_int), 
 		.clkdivider(clkdiv), 
 		.state_prog_en(prog_en), 
-		.state_prog_addr(prog_addr), 
+		.state_prog_addr(prog_addr[5:0]), 
 		.state_prog_wr(prog_wr), 
 		.state_prog_data(prog_data)
 	);

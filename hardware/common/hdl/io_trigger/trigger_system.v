@@ -50,13 +50,13 @@ module trigger_system#(
 	
 	/* Programming of trigger data*/
    input state_prog_en,
-   input [8:0] state_prog_addr,
+   input [stateaddr_width-1:0] state_prog_addr,
    input state_prog_wr,
    input [17:0] state_prog_data	
    );
 	
 	//Clock Enables for 2x and divided clock
-	wire clk2xdiv, clkdiv;
+	wire clkdiv;
 	
 	wire [stateaddr_width-1:0] stateaddr;
 	reg  [stateaddr_width-1:0] stateaddr_reg;
@@ -83,7 +83,7 @@ module trigger_system#(
 	always @(posedge clk) begin
 		laststate <= io_line;
 	end
-	assign io_changed = (laststate == io_line) ? 0 : 1;
+	assign io_changed = (laststate == io_line) ? 1'b0 : 1'b1;
 	
 	reg clkdiv_delay;
 	always @(posedge clk) begin
@@ -97,7 +97,7 @@ module trigger_system#(
 				currentstate_cnt <= 1;
 			else if (clkdiv_delay)
 				if (currentstate_cnt < 9'd510)
-					currentstate_cnt <= currentstate_cnt + 1;
+					currentstate_cnt <= currentstate_cnt + 9'd1;
 		
 	wire [7:0] expected_low_limit;
 	wire [8:0] expected_high_limit;
@@ -111,7 +111,7 @@ module trigger_system#(
 	reg state_cnt_ok;	
 	always @(posedge clk)
 		//if (clkdiv)
-			state_cnt_ok <= ((expected_state == io_line) && (((currentstate_cnt >= expected_low_limit) && (currentstate_cnt <= expected_high_limit)))) ? 1 : 0;
+			state_cnt_ok <= ((expected_state == io_line) && (((currentstate_cnt >= expected_low_limit) && (currentstate_cnt <= expected_high_limit)))) ? 1'b1 : 1'b0;
 	
 	/* State Counter */
 	always @(posedge clk)
@@ -124,7 +124,7 @@ module trigger_system#(
 				
 			//If IO change & state IN correct state, goto next one
 			else if ((io_changed & state_cnt_ok & clkdiv_delay) || (state_cnt_ok & clkdiv_delay & (expected_high_limit == 9'd511)) || (io_changed & state_cnt_ok & clkdiv_delay & (expected_high_limit == 9'd510)))
-				stateaddr_reg <= stateaddr_reg + 1;
+				stateaddr_reg <= stateaddr_reg + 1'b1;
 		end
 	
 	/* Watch for end of state storage */
@@ -150,7 +150,8 @@ module trigger_system#(
 		.clk(clk),
 		.rst(rst),
 		.clk2xdiv_setting(clkdivider),
-		.clk2xdiv(clk2xdiv),
+		//.clk2xdiv(clk2xdiv),
+		.clk2xdiv(),
 		.clkdiv(clkdiv));
 	/*
 		wire [35:0] control;
@@ -204,7 +205,7 @@ module clk_div(
 		end else begin
 			clk2xdiv_reg <= 0;
 			clkdiv_reg <= 0;
-			clk2xcnt <= clk2xcnt + 1;
+			clk2xcnt <= clk2xcnt + 18'd1;
 		end
 	end
 	

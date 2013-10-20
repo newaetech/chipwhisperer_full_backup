@@ -88,7 +88,6 @@ module reg_usi(
 	 end    
 	
 	 reg [7:0] reg_datao_reg;
-	 reg reg_datao_valid_reg;
 	 assign reg_datao = reg_datao_reg;
 	 
 	 reg [31:0] clkdiv_reg;
@@ -105,11 +104,13 @@ module reg_usi(
 	 wire			rst_core;
 	 
 	 assign prog_data = prog_reg[7:0];
-	 assign prog_addr = prog_reg[30:8];
+	 assign prog_addr = prog_reg[23:8];
 	 
 	 assign clkdiv = clkdiv_reg[17:0];
 	 assign rst_core = clkdiv_reg[31];
 	 
+	 /*
+	 reg reg_datao_valid_reg;
 	 always @(posedge clk) begin
 		if (reg_addrvalid) begin
 			case (reg_address)
@@ -122,6 +123,7 @@ module reg_usi(
 			reg_datao_valid_reg <= 0;
 		end
 	 end
+	 */
 	  	 
 	 always @(posedge clk) begin
 		if (reg_read) begin

@@ -191,7 +191,7 @@ module reg_chipwhisperer(
 			.CE(1'b0), // 1-bit input: Enable INC input
 			.CLK(), // 1-bit input: Clock input
 			.IDATAIN(trigger_fpa_i), // 1-bit input: Data input (connect to top-level port or I/O buffer)
-			.INC(INC), // 1-bit input: Increment / decrement input
+			.INC(), // 1-bit input: Increment / decrement input
 			.IOCLK0(adc_sample_clk), // 1-bit input: Input from the I/O clock network
 			.IOCLK1(), // 1-bit input: Input from the I/O clock network
 			.ODATAIN(), // 1-bit input: Output data input from output register or OSERDES2.
@@ -210,8 +210,6 @@ module reg_chipwhisperer(
 				default: reg_hyplen_reg<= 0;
 		endcase
 	 end
-	 	     
-	 assign input_clk_src_o = registers_cwextclk[1:0];
 
 	 reg [7:0] reg_datao_reg;
 	 reg reg_datao_valid_reg;

@@ -273,7 +273,7 @@ module interface(
 		.clk(ifclk_buf),
 		.reg_address(reg_addr), 
 		.reg_bytecnt(reg_bcnt), 
-		.reg_datao(reg_datai_triggersys), 
+		.reg_datao(reg_datai_triggerio), 
 		.reg_datai(reg_datao), 
 		.reg_size(reg_size), 
 		.reg_read(reg_read), 
@@ -281,6 +281,7 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_triggerio),
+		.reg_stream(),
 		.io_line(advio_trigger_line),
 		.trig_out(adv_trigger)
 	);
@@ -299,6 +300,7 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_cw),
+		.reg_stream(),
 		.extclk_fpa_i(DUT_CLK_i),
 		.extclk_fpb_i(1'b0),
 		.extclk_pll_i(pll_clk0),
@@ -307,7 +309,7 @@ module interface(
 		.extclk_o(extclk_mux),
 		.adc_sample_clk(adc_sample_clk),
 		.trigger_fpa_i(DUT_trigger_i),
-		//.trigger_fpb_i(),
+		.trigger_fpb_i(),
 		.trigger_io1_i(target_io1),
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
@@ -391,6 +393,7 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_usi),
+		.reg_stream(),
 		.usi_out(usi_out),
 		.usi_in(usi_in)
 	);
@@ -408,6 +411,7 @@ module interface(
 		.reg_addrvalid(reg_addrvalid), 
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_i2c),
+		.reg_stream(),
 		.scl(pll_scl),
 		.sda(pll_sda)
 	);
@@ -455,7 +459,7 @@ module led_extend(
 		if (ledin == 1)
 			ledcnt <= 0;
 		if (ledcnt != 18'h20000)
-			ledcnt <= ledcnt + 1;
+			ledcnt <= ledcnt + 18'd1;
 	end	 
 	assign ledout = ~ledcnt[17];
 	

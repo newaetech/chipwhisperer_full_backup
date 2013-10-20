@@ -40,7 +40,7 @@ module usitx#(
 	output reg dataout,
 	input run,
 	output reg done,
-	input [stateaddr_width:0] num_states,
+	input [stateaddr_width-1:0] num_states,
 
 	
 	/* freq = clk / (2*(clkdivider-1)) . Therefor:
@@ -50,7 +50,7 @@ module usitx#(
 	
 	/* Programming of trigger data*/
    input state_prog_en,
-   input [15:0] state_prog_addr,
+   input [stateaddr_width-1:0] state_prog_addr,
    input state_prog_wr,
    input [7:0] state_prog_data	
    );
@@ -101,7 +101,7 @@ module usitx#(
 			stateaddr_reg <= 0;
 		else if (clkdiv)
 			if (bitcnt == 3'b111)
-				stateaddr_reg <= stateaddr_reg + 1;
+				stateaddr_reg <= stateaddr_reg + 1'b1;
 		
 	reg [2:0] bitcnt;
 	wire advgo;
@@ -110,7 +110,7 @@ module usitx#(
 		if (advgo == 1'b0)
 			bitcnt <= 0;
 		else if (clkdiv)
-			bitcnt <= bitcnt + 1;
+			bitcnt <= bitcnt + 1'b1;
 	
 	reg datareg;
 	always @(posedge clk)
@@ -156,7 +156,7 @@ module usirx#(
 	input datain,
 	input run,
 	output reg done,
-	input [stateaddr_width:0] num_states,
+	input [stateaddr_width-1:0] num_states,
 
 	
 	/* freq = clk / (2*(clkdivider-1)) . Therefor:
@@ -166,7 +166,7 @@ module usirx#(
 	
 	/* Read of Data */
    input state_read_en,
-   input [15:0] state_read_addr,
+   input [stateaddr_width-1:0] state_read_addr,
    output reg [7:0] state_read_data	
    );
 	
@@ -197,7 +197,7 @@ module usirx#(
 	reg [2:0] idlecnt;
 	always @(posedge clk)
 		if (data != idle)
-			idlecnt <= idlecnt + 1;
+			idlecnt <= idlecnt + 1'b1;
 		else
 			idlecnt <= 0;
 			
@@ -219,13 +219,13 @@ module usirx#(
 		if (reset_cnt | rst)
 			zeros_cnt <= 0;
 		else if (data == 0)
-			zeros_cnt <= zeros_cnt + 1;
+			zeros_cnt <= zeros_cnt + 1'b1;
 			
 	always @(posedge clk)
 		if (reset_cnt | rst)
 			ones_cnt <= 0;
 		else if (data == 1)
-			ones_cnt <= ones_cnt + 1;
+			ones_cnt <= ones_cnt + 1'b1;
 			
 	reg bit_state;
 	
@@ -241,36 +241,36 @@ module usirx#(
 		
 	always @(posedge clk)
 		if (((prevclkdiv == 0) & (clkdiv == 1)) | (oneshot_run))
-			reset_cnt <= 1;
+			reset_cnt <= 'b1;
 		else
-			reset_cnt <= 0;
+			reset_cnt <= 'b0;
 			
 	//Once user requests we start running, doesn't take effect until receive line becomes non-idle
 	reg oneshot_run;
 	reg oneshot_run_arm;
 	always @(posedge clk)
 		if (run == 0)
-			oneshot_run_arm <= 1;
+			oneshot_run_arm <= 'b1;
 		else if (oneshot_run)
-			oneshot_run_arm <= 0;
+			oneshot_run_arm <= 'b0;
 			
 	//If we are 'armed', user requests run, and line is not idle we start
 	always @(posedge clk)
 			if (run & oneshot_run_arm & not_idle4)
-				oneshot_run <= 1;
+				oneshot_run <= 'b1;
 			else
-				oneshot_run <= 0;
+				oneshot_run <= 'b0;
 		
 	reg go;
 	wire addrmatch;
-	assign addrmatch = (stateaddr_reg == num_states) ? 1 : 0;
+	assign addrmatch = (stateaddr_reg == num_states) ? 1'b1 : 1'b0;
 		
 	//Latch start condition until we write specified number of bytes
 	always @(posedge clk)
 		if (oneshot_run)
-			go <= 1;
+			go <= 'b1;
 		else if (addrmatch | rst)
-			go <= 0;
+			go <= 'b0;
 
 	//Increment the address every time clockdiv starts
 	always @(posedge clk)
@@ -278,22 +278,22 @@ module usirx#(
 			stateaddr_reg <= 0;
 		else if (ram_wr)
 			if (bitcnt == 3'b001)
-				stateaddr_reg <= stateaddr_reg + 1;
+				stateaddr_reg <= stateaddr_reg + 1'b1;
 		
 	reg [2:0] bitcnt;
 	wire advgo;
 	//assign advgo = (oneshot_run & clkdiv) | go;
 	always @(posedge clk)
 	   if (go == 1'b0)
-			bitcnt <= 0;
+			bitcnt <= 'b0;
 		else if (clkdiv)
-			bitcnt <= bitcnt + 1;
+			bitcnt <= bitcnt + 1'b1;
 	
 	always @(posedge clk)
 		if	(run == 1'b0)
-			done <= 0;
+			done <= 'b0;
 		else if (addrmatch == 1'b1)
-			done <= 1;
+			done <= 'b1;
 	
 	reg [7:0] data_to_ram;
 			
@@ -306,9 +306,9 @@ module usirx#(
 	always @(posedge clk)
 		if (prevclkdiv)
 			if (bitcnt == 3'b000)
-				ram_wr <= 1;
+				ram_wr <= 'b1;
 			else
-				ram_wr <= 0;
+				ram_wr <= 'b0;
 	
 	wire[7:0] read_data;
 	

@@ -55,8 +55,6 @@ module reg_serialtarget(
 	input				target_rx									              
    );
 	 
-	 wire	  reset;
-	 assign reset = reset_i;
 	 assign reg_stream = 1'b0;
 
 `ifdef CHIPSCOPE
@@ -100,10 +98,11 @@ module reg_serialtarget(
 		endcase
 	 end    
 	
-	 reg [7:0] reg_datao_reg;
-	 reg reg_datao_valid_reg;
+	 reg [7:0] reg_datao_reg;	 
 	 assign reg_datao = reg_datao_reg;
 	 
+	 /*
+	 reg reg_datao_valid_reg;
 	 always @(posedge clk) begin
 		if (reg_addrvalid) begin
 			case (reg_address)
@@ -116,7 +115,8 @@ module reg_serialtarget(
 			reg_datao_valid_reg <= 0;
 		end
 	 end
-	  	 
+	 */
+		
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
@@ -196,7 +196,7 @@ module reg_serialtarget(
 
 	wire [7:0] rx_data;
 	wire       rx_data_rdy;
-	targ_async_receiver targ_rx(.clk(clk), .RxD(target_rx), .RxD_data_ready(rx_data_rdy), .RxD_data(rx_data), .RxD_endofpacket(), .RxD_idle());	
+	targ_async_receiver targ_rx(.clk(clk), .RxD(target_rx), .RxD_data_ready(rx_data_rdy), .RxD_data_error(), .RxD_data(rx_data), .RxD_endofpacket(), .RxD_idle());	
  	fifo_target_tx rx_fifo (
     .clk(clk),
     .rst(reset_i),

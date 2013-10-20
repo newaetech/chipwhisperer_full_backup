@@ -1,6 +1,6 @@
 `include "includes.v"
 //`define CHIPSCOPE
-//`define USE_I2C
+`define USE_I2C
 
 /***********************************************************************
 This file is part of the ChipWhisperer Project. See www.newae.com for more details,
@@ -87,13 +87,14 @@ module reg_i2c(
 	 end    
 	
 	 reg [7:0] reg_datao_reg;
-	 reg reg_datao_valid_reg;
 	 assign reg_datao = reg_datao_reg;	 
 	 reg [7:0]  datawr_reg;
-	 reg [23:0] status_reg;	 	 
-	 wire [23:0] status_reg_read;	 
+	 reg [23:0] status_reg;	 	 	 
 	 wire [7:0] i2c_regdataout;
 		 
+	 wire [23:0] status_reg_read;	 
+		 
+		/*
 	 always @(posedge clk) begin
 		if (reg_addrvalid) begin
 			case (reg_address)
@@ -105,11 +106,13 @@ module reg_i2c(
 			reg_datao_valid_reg <= 0;
 		end
 	 end
+	 reg reg_datao_valid_reg;
+	 */
 	  	 
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
-				`I2CSTATUS_ADDR: begin reg_datao_reg <= status_reg[reg_bytecnt*8 +: 8]; end
+				`I2CSTATUS_ADDR: begin reg_datao_reg <= status_reg_read[reg_bytecnt*8 +: 8]; end
 				`I2CDATA_ADDR: begin reg_datao_reg <= i2c_regdataout;	end
 				default: begin reg_datao_reg <= 0; end
 			endcase
@@ -129,10 +132,7 @@ module reg_i2c(
 		end
 	 end	 
 
-	assign status_reg_read[23:0] = status_reg[23:0];
-	assign status_reg_read[2] = status_reg[2];
-	assign status_reg_read[0] = status_reg[0];
-		
+	assign status_reg_read[23:2] = status_reg[23:2];		
 	
 	/*
 	  Byte 2:
