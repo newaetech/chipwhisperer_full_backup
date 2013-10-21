@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import sys
+from collections import OrderedDict
 
 try:
     from PySide.QtCore import *
@@ -104,11 +105,33 @@ class ResultsPlotting(QObject):
     def attackDone(self):
         self.attackStatsUpdated()
         #self.table.setBytesEnabled(self.attack.bytesEnabled())
-        #self.table.updateTable()
+        self.table.updateTable(attackDone=True)
+        self.dumpPGE()
+    
+    def dumpPGE(self):
+        stats = self.attack.getStatistics()
+        
+        pge = stats.pge_total
+        
+        allpge = OrderedDict()
+                
+        for i in pge:
+            tnum = i['trace']
+            if not tnum in allpge:
+                allpge[tnum] = [255]*stats.numSubkeys                
+            allpge[tnum][i['subkey']] = i['pge']          
+        
+        for (tnum, plist) in allpge.iteritems():
+            print "%6d "%tnum,
+            for j in plist:
+                print "%3d "%j,
+            print ""
+        
     
     def attackStatsUpdated(self):
         self.table.setBytesEnabled(self.attack.bytesEnabled())
         self.table.updateTable()
+        
         
 class ResultsPlotData(GraphWidget):
     """
@@ -210,7 +233,7 @@ class ResultsPlotData(GraphWidget):
         
     def redrawPlot(self):
         data = self.attack.getStatistics()
-        data = data.diffs()
+        data = data.diffs
        
         #Do Redraw
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
@@ -320,12 +343,14 @@ class ResultsTable(QObject):
                          {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.ResultsTable.setVisible},
                          {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
                          {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
-                         {'name':'Update Mode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}},
+                         {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
                       ]
 
         self.params = Parameter.create(name='Ranked Table', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        
+   
+        self.updateMode = self.findParam('updateMode').value()
+                
         #Update parameter tree
         self.visibleChanged()
         
@@ -335,6 +360,9 @@ class ResultsTable(QObject):
     def visibleChanged(self):
         visible = self.ResultsTable.isVisible()
         self.findParam('show').setValue(visible)
+        
+    def setUpdateMode(self, mode):
+        self.updateMode = mode
         
     def setBytesEnabled(self, enabledbytes):
         self.enabledBytes = enabledbytes
@@ -351,7 +379,7 @@ class ResultsTable(QObject):
     def setSingleMode(self, enabled):
         self.useSingle = enabled    
 
-    def updateTable(self):
+    def updateTable(self, attackDone=False):
         self.setKnownKey(self.attack.trace.getKnownKey())
         
         attackStats = self.attack.getStatistics()
@@ -361,21 +389,22 @@ class ResultsTable(QObject):
         for bnum in range(0, self.numKeys):
             if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
                 self.table.setColumnHidden(bnum, False)
-                maxes = attackStats.maxes[bnum]                
+                maxes = attackStats.maxes[bnum]            
                    
                 pgitm = QTableWidgetItem("%3d"%attackStats.pge[bnum])
                 pgitm.setBackground(self.pgeBrush)
                 self.table.setItem(0,bnum,pgitm)
-                            
-                for j in range(0,self.numPerms):
-                    self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
-
-                    highlights = self.knownkey
-
-                    if highlights is not None:
-                        if maxes[j]['hyp'] == highlights[bnum]:
-                            itm = self.table.item(j+1, bnum)
-                            itm.setForeground(QBrush(Qt.red))
+                
+                if (self.updateMode == 'all') or attackDone:    
+                    for j in range(0,self.numPerms):
+                        self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
+    
+                        highlights = self.knownkey
+    
+                        if highlights is not None:
+                            if maxes[j]['hyp'] == highlights[bnum]:
+                                itm = self.table.item(j+1, bnum)
+                                itm.setForeground(QBrush(Qt.red))
             else:
                 self.table.setColumnHidden(bnum, True)
 

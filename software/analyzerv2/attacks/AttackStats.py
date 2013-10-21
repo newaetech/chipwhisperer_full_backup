@@ -64,7 +64,6 @@ class DataTypeDiffs(object):
         self.numSubkeys = numSubkeys
         self.numPerms = numPerms
         self.knownkey = None
-        
         self.clear()
         
     def clear(self):
@@ -79,26 +78,31 @@ class DataTypeDiffs(object):
         #If maximum diffs are valid & sorted correctly
         self.maxValid = [False]*self.numSubkeys
         self.pge = [255]*self.numSubkeys
+        self.diffs_tnum = [None]*self.numSubkeys
+        self.pge_total = []
+        
+        #TODO: Ensure this gets called by attack algorithms when rerunning
         
     def simplePGE(self, bnum):
         if self.maxValid[bnum] == False:
             #TODO: should sort
             return 1
-            
         return self.pge[bnum]
             
     def setKnownkey(self, knownkey):
         self.knownkey = knownkey         
         
         
-    def updateSubkey(self, bnum, data, copy=False, forceUpdate=False):
+    def updateSubkey(self, bnum, data, copy=False, forceUpdate=False, tnum=None):
         if (id(data) != id(self.diffs[bnum])) or forceUpdate:
             self.maxValid[bnum] = False
 
             if data is not None and copy:            
                 self.diffs[bnum] = data[:]
+                self.diffs_tnum[bnum] = tnum
             else:
                 self.diffs[bnum] = data
+                self.diffs_tnum[bnum] = tnum
         
     def findMaximums(self, bytelist=None, useAbsolute=True, useSingle=False):
         if bytelist is None:
@@ -137,7 +141,9 @@ class DataTypeDiffs(object):
                         
                 if self.knownkey is not None:
                     self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0]
-                         
+                    
+            tnum = self.diffs_tnum[i]
+            self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})      
         return self.maxes
         
     

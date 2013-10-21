@@ -290,7 +290,7 @@ class CPAProgressive(QObject):
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):                    
                         (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
-                        self.stats.updateSubkey(bnum, data)
+                        self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:  
                         skip = True
                     
