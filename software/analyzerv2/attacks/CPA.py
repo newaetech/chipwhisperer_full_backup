@@ -60,8 +60,9 @@ from attacks.AttackProgressDialog import AttackProgressDialog
 from attacks.CPAProgressive import CPAProgressive
 from attacks.CPASimpleLoop import CPASimpleLoop
 
+from AttackGenericParameters import AttackGenericParameters
 
-class CPA(AttackBaseClass):
+class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
             
     def __init__(self, parent=None, console=None):
@@ -78,8 +79,7 @@ class CPA(AttackBaseClass):
         #if CPACython is not None:
         #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
         
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.setAlgo},
-                        #{'name':'Reporting Interval (if supported)', 'key':'CPA_tracesloop', 'type':'int', 'range':(0,10E9), 'value':100},                        
+        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.setAlgo},                   
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
