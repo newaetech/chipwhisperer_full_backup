@@ -71,23 +71,28 @@ class ResultsPlotting(QObject):
         #ExtendedParameter.setupExtended(self.params)
         
         #ResultsTable manages class
-        self.table = ResultsTable()        
+        self.table = ResultsTable()
         
-        
-        self.graphoutput = ResultsPlotData(imagePath)
-        self.GraphOutputDock = QDockWidget("Output vs Point Plot")
-        self.GraphOutputDock.setObjectName("Output vs Point Plot")
+        self.graphoutput = OutputVsTime(imagePath)
+        self.GraphOutputDock = QDockWidget(self.graphoutput.name)
+        self.GraphOutputDock.setObjectName(self.graphoutput.name)
         self.GraphOutputDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.GraphOutputDock.setWidget(self.graphoutput)
         self.graphoutput.setDock(self.GraphOutputDock)
-
+        
+        self.pgegraph = PGEVsTrace(imagePath)
+        self.PGEGraphDock = QDockWidget(self.pgegraph.name)
+        self.PGEGraphDock.setObjectName(self.pgegraph.name)
+        self.PGEGraphDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+        self.PGEGraphDock.setWidget(self.pgegraph)
+        self.pgegraph.setDock(self.PGEGraphDock)
         
     def paramList(self):
-        p = [self.table.params, self.graphoutput.params] 
+        p = [self.table.params, self.graphoutput.params, self.pgegraph.params] 
         return p            
             
     def dockList(self):
-        return [self.table.ResultsTable, self.GraphOutputDock]
+        return [self.table.ResultsTable, self.GraphOutputDock, self.PGEGraphDock]
     
     def setAttack(self, attack):
         """Pass the attack to all plotting devices. They pull stats from the attack directly, and listen to attackDone/statusUpdated signals."""
@@ -98,6 +103,8 @@ class ResultsPlotting(QObject):
         
         self.graphoutput.setAttack(attack)
         
+        self.pgegraph.setAttack(attack)
+        
     def setTraceManager(self, tmanager):        
         self.trace = tmanager        
         self.graphoutput.setKnownKey(self.trace.getKnownKey())
@@ -105,34 +112,12 @@ class ResultsPlotting(QObject):
     def attackDone(self):
         self.attackStatsUpdated()
         #self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.updateTable(attackDone=True)
-        self.dumpPGE()
-    
-    def dumpPGE(self):
-        stats = self.attack.getStatistics()
-        
-        pge = stats.pge_total
-        
-        allpge = OrderedDict()
-                
-        for i in pge:
-            tnum = i['trace']
-            if not tnum in allpge:
-                allpge[tnum] = [255]*stats.numSubkeys                
-            allpge[tnum][i['subkey']] = i['pge']          
-        
-        for (tnum, plist) in allpge.iteritems():
-            print "%6d "%tnum,
-            for j in plist:
-                print "%3d "%j,
-            print ""
-        
+        self.table.updateTable(attackDone=True)        
     
     def attackStatsUpdated(self):
         self.table.setBytesEnabled(self.attack.bytesEnabled())
         self.table.updateTable()
-        
-        
+               
 class ResultsPlotData(GraphWidget):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
@@ -140,6 +125,7 @@ class ResultsPlotData(GraphWidget):
     """
      
     showDockSignal = Signal(bool)
+    name = "Some Descriptive Name"
      
     def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
         super(ResultsPlotData, self).__init__(imagepath)
@@ -165,8 +151,7 @@ class ResultsPlotData(GraphWidget):
         
         resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
                       ]
-        
-        self.params = Parameter.create(name='Plot of Output vs Time', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         
     def paramList(self):
@@ -230,7 +215,26 @@ class ResultsPlotData(GraphWidget):
             self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
             self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
         
+class OutputVsTime(ResultsPlotData):
+    """
+    Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
+    correlation over all data points, or the most likely correlation over number of traces
+    """
+    
+    name = "Output vs Point Plot"
+
+    def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
+        super(OutputVsTime, self).__init__(imagepath)
         
+        self.numKeys = subkeys
+        self.numPerms = permPerSubkey
+        
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
+                      ]
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        
+                  
     def redrawPlot(self):
         data = self.attack.getStatistics()
         data = data.diffs
@@ -245,10 +249,7 @@ class ResultsPlotData(GraphWidget):
         self.clearPushed()
         self.setupHighlights()
         #prange = range(self.pstart[bnum], self.pend[bnum])
-        
-        
-        #self.backgroundplot(prange, None)
-        
+                
         try:
             for bnum in range(0, self.numKeys):
                 if self.enabledbytes[bnum]:
@@ -260,20 +261,7 @@ class ResultsPlotData(GraphWidget):
                     prange = self.attack.getPointRange(bnum)
                     prange = range(prange[0], prange[1])                    
                     self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
-                    self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')                   
-                    
-                    #for i in range(0,self.numPerms):
-                    #    canceled = progress.wasCanceled() #_callSync='off'
-                    #    if self.highlightTop:
-                    #        if i not in self.highlights[bnum]:
-                    #            self.backgroundplot(prange, diffs[i])
-                    #    else:               
-                    #            self.pw.plot(prange, diffs[i], pen=(i%8,8))
-                    #    if (i % 32) == 0:
-                    #        progress.setValue(i)
-                    #    if canceled:
-                    #        raise StopIteration
-                        
+                    self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')                       
                         
                 if self.highlightTop:
                     #Plot the highlighted byte(s) on top
@@ -288,12 +276,88 @@ class ResultsPlotData(GraphWidget):
                                 if i in self.highlights[bnum]:
                                     penclr = self.highlightColour( self.highlights[bnum].index(i) )
                                     self.pw.plot(prange, diffs[i], pen=penclr )
-                                        
-                                #if canceled:
-                                #    raise StopIteration
         except StopIteration:
             pass
         
+      
+class PGEVsTrace(ResultsPlotData):
+    """
+    Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
+    correlation over all data points, or the most likely correlation over number of traces
+    """
+    
+    name = "PGE vs Trace Plot"
+
+    def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
+        super(PGEVsTrace, self).__init__(imagepath)
+        
+        self.numKeys = subkeys
+        self.numPerms = permPerSubkey
+        
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
+                      ]
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        
+    def calculatePGE(self, printPGE=False):
+        stats = self.attack.getStatistics()
+        pge = stats.pge_total
+        allpge = OrderedDict()
+                        
+        for i in pge:
+            tnum = i['trace']
+            if not tnum in allpge:
+                allpge[tnum] = [{'pgesum':0, 'trials':0} for z in range(0,stats.numSubkeys)]
+                                                
+            allpge[tnum][i['subkey']]['pgesum'] += i['pge']
+            allpge[tnum][i['subkey']]['trials'] += 1              
+                
+        for (tnum, plist) in allpge.iteritems():
+            for j in plist:
+                if j['trials'] > 0:
+                    j['pge'] = float(j['pgesum']) / float(j['trials'])
+                else:
+                    j['pge'] = None
+                
+        if printPGE:
+            for (tnum, plist) in allpge.iteritems():
+                print "%6d "%tnum,
+                for j in plist:
+                    if j['trials'] > 0:
+                        print "%3.3f "%j['pge'],
+                    else:                
+                        print " NaN ",
+                print ""
+                
+        return allpge
+                  
+    def redrawPlot(self):
+        allpge = self.calculatePGE()
+
+        self.clearPushed()
+        self.setupHighlights()
+        #prange = range(self.pstart[bnum], self.pend[bnum])
+                
+        try:
+            for bnum in range(0, self.numKeys):                
+                if self.enabledbytes[bnum]:
+                    trace = []
+                    pge = []                                
+                    for (tnum, plist) in allpge.iteritems():
+                        trace.append(tnum)
+                        pge.append(plist[bnum]['pge'])
+                    self.pw.plot(trace, pge, pen='r')                       
+                 
+                #penclr = self.highlightColour( self.highlights[bnum].index(i) )
+                #                   self.pw.plot(prange, diffs[i], pen=penclr )
+                        
+                #if self.highlightTop:
+                #    #Plot the highlighted byte(s) on top
+                #    for bnum in range(0, self.numKeys):
+                #        prange = self.attack.getPointRange(bnum)
+                #        prange = range(prange[0], prange[1])                                      
+        except StopIteration:
+            pass       
    
 class ResultsTable(QObject):
     """Table of results, showing all guesses based on sorting output of attack"""

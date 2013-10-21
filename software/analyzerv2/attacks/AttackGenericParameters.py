@@ -63,8 +63,10 @@ class AttackGenericParameters(QObject):
         self.allPointsSame = True
         self.startPoint = [0]*self.numsubkeys
         self.endPoint = [0]*self.numsubkeys
+        self.traceMax = 1
 
         self.log=log        
+        self.setupTraceParam()
         self.setupPointsParam()
         self.setupParameters()
 
@@ -90,8 +92,106 @@ class AttackGenericParameters(QObject):
         init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
         return init
     
-    def getTraceRange(self):
-        return (self.startTrace, self.endTrace)
+    def bytesEnabled(self):
+        blist = []
+        for t in self.bytesParameters():
+            if t.value() == True:
+                blist.append(t.opts['bytenum'])
+        return blist
+
+    def allBytesOn(self):
+        for t in self.bytesParameters():
+            t.setValue(True)
+    
+    def allBytesOff(self):
+        for t in self.bytesParameters():
+            t.setValue(False)
+
+    def bytesParameters(self):
+        #TODO: Use 'key' & .findParam in ExtendedParameter
+        blist = []
+        for p in self.params.children():
+            if p.name() == 'Attacked Bytes':
+                for t in p.children():
+                    if t.name().startswith('Byte'):
+                        blist.append(t)
+
+        return blist
+    
+    def setTraceManager(self, tmanager):
+        self.trace = tmanager
+        
+############ Trace-Specific
+    def setupTraceParam(self):
+        self.traceParams = Parameter.create(name='Trace Setup', type='group', children=[
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.validateTraceSettings},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1,1000), 'value':1, 'set':self.validateTraceSettings},
+            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings}
+            ])
+        ExtendedParameter.setupExtended(self.traceParams)
+        
+        self.traceRuns = 1
+        self.traceTraces = 1
+        self.traceStart = 0     
+        self.singleEmit = True   
+    
+    def validateTraceSettings(self, ignored=None):
+        runs = ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams)
+        atraces = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
+        strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
+        
+        #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
+        
+        if (runs.value() * atraces.value() + strace.value()) > (self.traceMax):
+            solv = (self.traceMax - strace.value()) / runs.value()
+            solv = int(solv)            
+            atraces.setValue(solv)
+            atraces.setLimits((1, solv))
+            self.singleEmit = True           
+        else:
+            lim = (1, self.traceMax)
+            #WORK-AROUND: need to emit an extra sigLimitsChanged???
+            if atraces.setLimits(lim) is None and self.singleEmit:
+                self.singleEmit = False 
+                atraces.sigLimitsChanged.emit(atraces, lim)                           
+            
+        self.traceRuns = runs.value()
+        self.traceTraces = atraces.value()
+        self.traceStart = strace.value()        
+    
+    def getTraceStart(self):
+        return self.traceStart
+    
+    def getTraceNum(self):
+        return self.traceTraces
+    
+    def getIterations(self):
+        return self.traceRuns
+    
+        
+############# Points-Specific
+    def setupPointsParam(self):
+        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
+        ExtendedParameter.setupExtended(self.pointsParams)
+    
+    def getPointList(self):        
+        if self.allPointsSame == False:
+            init = [{'name':'Byte %d'%bnum, 'type':'group', 'children': [
+                        {'name':'Starting Point', 'type':'int', 'value':self.startPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
+                        {'name':'Ending Point', 'type':'int', 'value':self.endPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
+                        {'name':'Copy from Output Graph', 'type':'action', 'action':partial(self.copyPointsFromOutput, bnum)},
+                        {'name':'Copy from Trace Graph', 'type':'action', 'action':partial(self.copyPointsFromTrace, bnum)},         
+                        ]} for bnum in range(0, 16)]
+        else:
+            init = [{'name':'Starting Point', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0],self.endPoint[0])},
+                    {'name':'Ending Point', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0],self.endPoint[0])},
+                    {'name':'Copy from Output Graph', 'type':'action', 'action':self.copyPointsFromOutput},
+                    {'name':'Copy from Trace Graph', 'type':'action', 'action':self.copyPointsFromTrace},         
+                    ]
+            
+        #NOT ACTUALLY SUPPORTED
+        init.insert(0,{'name':'Points Same across Subkeys', 'type':'bool', 'value':self.allPointsSame, 'set':self.setAllPointsSame, 'readonly':True})            
+        return init
     
     def getPointRange(self, bnum):        
         (startparam, endparam) = self.findPointParam(self.pointsParams, bnum)
@@ -115,8 +215,20 @@ class AttackGenericParameters(QObject):
     
     def setTraceLimits(self, traces, points):
         self.setPointRange(0, points, setlimits=True)
-        self.startTrace = 0
-        self.endTrace = traces
+        self.traceMax = traces
+    
+        self.traceRuns = 1
+        self.traceTraces = traces
+        self.traceStart = 0
+    
+        strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
+        ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams).setValue(1)
+        atrace = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
+        
+        strace.setValue(0)
+        strace.setLimits((0,traces))
+        atrace.setValue(traces)
+        atrace.setLimits((1, traces))  
     
     def setPointRange(self, start, end, bnum=None, setlimits=False):
         start = int(start)
@@ -145,9 +257,7 @@ class AttackGenericParameters(QObject):
             self.endPoint[:] = [end] * len(self.endPoint)
         else:
             self.startPoint[bnum] = start
-            self.endPoint[bnum] = end
-        
-            
+            self.endPoint[bnum] = end     
         self.paramListUpdated.emit(None)
     
     def findPointParam(self, paramtree, bnum=None):
@@ -177,60 +287,7 @@ class AttackGenericParameters(QObject):
     def setAllPointsSame(self, val):
         self.allPointsSame = val
         self.setupPointsParam()
-        self.paramListUpdated.emit(None)        
-    
-    def setupPointsParam(self):
-        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
-        ExtendedParameter.setupExtended(self.pointsParams)
-    
-    def getPointList(self):        
-        if self.allPointsSame == False:
-            init = [{'name':'Byte %d'%bnum, 'type':'group', 'children': [
-                        {'name':'Starting Point', 'type':'int', 'value':self.startPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
-                        {'name':'Ending Point', 'type':'int', 'value':self.endPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
-                        {'name':'Copy from Output Graph', 'type':'action', 'action':partial(self.copyPointsFromOutput, bnum)},
-                        {'name':'Copy from Trace Graph', 'type':'action', 'action':partial(self.copyPointsFromTrace, bnum)},         
-                        ]} for bnum in range(0, 16)]
-        else:
-            init = [{'name':'Starting Point', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0],self.endPoint[0])},
-                    {'name':'Ending Point', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0],self.endPoint[0])},
-                    {'name':'Copy from Output Graph', 'type':'action', 'action':self.copyPointsFromOutput},
-                    {'name':'Copy from Trace Graph', 'type':'action', 'action':self.copyPointsFromTrace},         
-                    ]
-            
-        #NOT ACTUALLY SUPPORTED
-        init.insert(0,{'name':'Points Same across Subkeys', 'type':'bool', 'value':self.allPointsSame, 'set':self.setAllPointsSame, 'readonly':True})            
-        return init
-
-
-    def bytesEnabled(self):
-        blist = []
-        for t in self.bytesParameters():
-            if t.value() == True:
-                blist.append(t.opts['bytenum'])
-        return blist
-
-    def allBytesOn(self):
-        for t in self.bytesParameters():
-            t.setValue(True)
-    
-    def allBytesOff(self):
-        for t in self.bytesParameters():
-            t.setValue(False)
-
-    def bytesParameters(self):
-        #TODO: Use 'key' & .findParam in ExtendedParameter
-        blist = []
-        for p in self.params.children():
-            if p.name() == 'Attacked Bytes':
-                for t in p.children():
-                    if t.name().startswith('Byte'):
-                        blist.append(t)
-
-        return blist
-    
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager
+        self.paramListUpdated.emit(None)
                 
     def paramList(self):
-        return [self.params, self.pointsParams]
+        return [self.params, self.pointsParams, self.traceParams]

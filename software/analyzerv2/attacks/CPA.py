@@ -123,45 +123,46 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         
         #TODO: support start/end point different per byte
         (startingPoint, endingPoint) = self.getPointRange(None)
-        (startingTrace, endingTrace) = self.getTraceRange()
         
-        #print "%d-%d"%(startingPoint, endingPoint)
-        
-        data = []
-        textins = []
-        textouts = []
-        
-        for i in range(startingTrace, endingTrace):
-            d = self.trace.getTrace(i)
+        for itNum in range(1, self.getIterations()+1):
+            startingTrace = self.getTraceNum()*(itNum-1) + self.getTraceStart()
+            endingTrace = self.getTraceNum()*itNum + self.getTraceStart()
             
-            if d is None:
-                continue
+            #print "%d-%d"%(startingPoint, endingPoint)            
+            data = []
+            textins = []
+            textouts = []
             
-            d = d[startingPoint:endingPoint]
+            for i in range(startingTrace, endingTrace):
+                d = self.trace.getTrace(i)
+                
+                if d is None:
+                    continue
+                
+                d = d[startingPoint:endingPoint]
+                
+                data.append(d)
+                textins.append(self.trace.getTextin(i))
+                textouts.append(self.trace.getTextout(i)) 
             
-            data.append(d)
-            textins.append(self.trace.getTextin(i))
-            textouts.append(self.trace.getTextout(i)) 
+            self.attack.setByteList(self.bytesEnabled())
+            self.attack.setKeyround(self.findParam('hw_round').value())
+            self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
+            self.attack.setStatsReadyCallback(self.statsReady)
+            
+            progress = AttackProgressDialog()
+            progress.setWindowModality(Qt.WindowModal)
+            progress.setMinimumDuration(1000)
+            progress.offset = startingTrace
+            
+            #TODO:  pointRange=self.TraceRangeList[1:17]
+            try:
+                self.attack.addTraces(data, textins, textouts, progress)
+            except KeyboardInterrupt:
+                self.debug("Attack ABORTED... stopping")
         
-        self.attack.setByteList(self.bytesEnabled())
-        self.attack.setKeyround(self.findParam('hw_round').value())
-        self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
-        self.attack.setStatsReadyCallback(self.statsReady)
-        
-        progress = AttackProgressDialog()
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(1000)
-        
-        #TODO:  pointRange=self.TraceRangeList[1:17]
-        
-        try:
-            self.attack.addTraces(data, textins, textouts, progress)
-            end = datetime.now()
-            self.debug("Attack Time: %s"%str(end-start)) 
-        except KeyboardInterrupt:
-            end = datetime.now()
-            self.debug("Attack Aborted after %s"%str(end-start))
-        
+        end = datetime.now()
+        self.debug("Attack Time: %s"%str(end-start)) 
         self.attackDone.emit()
         
         
@@ -176,7 +177,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         return self.attack.getStatistics()
             
     def paramList(self):
-        l = [self.params, self.pointsParams]
+        l = [self.params, self.pointsParams, self.traceParams]
         if self.attackParams is not None:
             l.append(self.attackParams)
         return l

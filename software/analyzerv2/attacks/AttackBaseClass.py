@@ -33,13 +33,10 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
-from subprocess import Popen, PIPE
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
 sys.path.append('../common/traces')
 imagePath = '../common/images/'
-
-from functools import partial
 
 class AttackBaseClass(QObject):
     """Generic Attack Interface"""

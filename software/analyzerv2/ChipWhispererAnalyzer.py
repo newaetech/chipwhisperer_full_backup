@@ -73,6 +73,7 @@ except ImportError:
     AES = None    
 
 from MainChip import MainChip
+#from ResultsDialog import ResultsDialog
 from ProjectFormat import ProjectFormat
 from TraceContainerNative import TraceContainerNative
 from attacks.CPA import CPA
@@ -89,6 +90,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.console = self.addConsole()   
         
         self.results = ResultsPlotting()
+        #self.resultsDialog = ResultsDialog(self)
+        #self.addShowStats()
         
         numPreprocessingStep = 3
         self.preprocessingList = [None]*numPreprocessingStep
@@ -330,6 +333,9 @@ class ChipWhispererAnalyzer(MainChip):
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
         self.waveformDock.widget().YDefault() 
  
+    #def addShowStats(self):
+    #    self.statsShowAct = QAction('&Results Monitor', self, statusTip='Plot/Save PGE etc', triggered=self.resultsDialog.show)
+    #    self.projectMenu.addAction(self.statsShowAct)
         
     def addSettingsDocks(self):      
         self.setupParametersTree()        

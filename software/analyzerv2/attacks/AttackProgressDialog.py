@@ -73,12 +73,14 @@ class AttackProgressDialog(QDialog):
         
         self.skipPB.setVisible(False)
         
+        self.offset = 0
+        
     def updateStatus(self, trace, byte):
         self.byteNum.setText("Current Subkey = %d"%byte)
         try:
-            self.traceNum.setText("Current Trace = %d-%d"%(trace[0], trace[1]))
+            self.traceNum.setText("Current Trace = %d-%d"%(trace[0]+self.offset, trace[1]+self.offset))
         except:    
-            self.traceNum.setText("Current Trace = %d"%trace)        
+            self.traceNum.setText("Current Trace = %d"%(trace+self.offset))        
         
     def supportSkipByte(self, sup):
         self.skipPB.setVisible(sup)
