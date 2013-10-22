@@ -124,6 +124,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         #TODO: support start/end point different per byte
         (startingPoint, endingPoint) = self.getPointRange(None)
         
+        self.attack.getStatistics().clear()
+        
         for itNum in range(1, self.getIterations()+1):
             startingTrace = self.getTraceNum()*(itNum-1) + self.getTraceStart()
             endingTrace = self.getTraceNum()*itNum + self.getTraceStart()

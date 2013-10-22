@@ -87,6 +87,7 @@ class ResultsPlotting(QObject):
         self.PGEGraphDock.setWidget(self.pgegraph)
         self.pgegraph.setDock(self.PGEGraphDock)
         
+        
     def paramList(self):
         p = [self.table.params, self.graphoutput.params, self.pgegraph.params] 
         return p            
@@ -152,7 +153,7 @@ class ResultsPlotData(GraphWidget):
         resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        ExtendedParameter.setupExtended(self.params, self)        
         
     def paramList(self):
         return [self.params]
@@ -282,8 +283,7 @@ class OutputVsTime(ResultsPlotData):
       
 class PGEVsTrace(ResultsPlotData):
     """
-    Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
-    correlation over all data points, or the most likely correlation over number of traces
+    Plots Partial Guessing Entropy (PGE) vs Number of Traces in Attack
     """
     
     name = "PGE vs Trace Plot"
@@ -294,12 +294,62 @@ class PGEVsTrace(ResultsPlotData):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
         
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},   
+                         {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
+                         {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},               
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         
-    def calculatePGE(self, printPGE=False):
+    def copyPGE(self, dontCopy=False, addPlotMatlab=True):        
+        allpge = self.calculatePGE()
+        cb = QClipboard()
+        
+        fmt = self.findParam('fmt').value()
+        
+        if fmt == 'CSV':
+            spge = "Trace Number, "
+            for i in range(0,self.numKeys):
+                spge += "Subkey %d, "%i
+            spge += "\n"
+            for (tnum, plist) in allpge.iteritems():                
+                spge += "%d, "%tnum
+                for j in plist:
+                    if j['trials'] > 0:
+                        spge += "%f, "%j['pge']
+                    else:                
+                        spge += "NaN, "
+                spge += "\n"
+        elif fmt == 'MATLAB':
+            tracestr = "tnum = ["       
+            spge = "pge = ["     
+            trials = 0
+            for (tnum, plist) in allpge.iteritems():                
+                tracestr += "%d "%tnum
+                for j in plist:
+                    if j['trials'] > 0:
+                        spge += "%f "%j['pge']
+                        trials = max(trials, j['trials'])
+                    else:                
+                        spge += "NaN, "
+                spge += ";\n"                
+            tracestr += "];\n"            
+            spge += "];\n"
+            spge += tracestr
+            spge += "\n"
+            if addPlotMatlab:
+                spge += "plot(tnum, pge)\n"  
+                spge += "xlabel('Trace Number')\n"
+                spge += "ylabel('Average PGE (%d Trials)')\n"%trials       
+                spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')"
+        else:
+            raise ValueError("Invalid fmt: %s"%fmt)
+        
+        if dontCopy is False:
+            cb.setText(spge)   
+        return spge     
+        
+    def calculatePGE(self):
         stats = self.attack.getStatistics()
         pge = stats.pge_total
         allpge = OrderedDict()
@@ -318,16 +368,6 @@ class PGEVsTrace(ResultsPlotData):
                     j['pge'] = float(j['pgesum']) / float(j['trials'])
                 else:
                     j['pge'] = None
-                
-        if printPGE:
-            for (tnum, plist) in allpge.iteritems():
-                print "%6d "%tnum,
-                for j in plist:
-                    if j['trials'] > 0:
-                        print "%3.3f "%j['pge'],
-                    else:                
-                        print " NaN ",
-                print ""
                 
         return allpge
                   
