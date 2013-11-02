@@ -274,8 +274,7 @@ class OpenADCInterface_ZTEX(QWidget):
         self.console = console
        
         if (openadc_qt is None) or (usb is None):               
-            self.ser = None
-            return
+            raise ImportError("Needed imports for ChipWhisperer missing")
         else:            
             self.ser = None
             self.scope = oadcInstance
@@ -376,22 +375,43 @@ class OpenADCInterface(QObject):
         self.scopetype = None
         self.datapoints = []
         
-        cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console, showScriptParameter=showScriptParameter)
-        ftdi = OpenADCInterface_FTDI(self.qtadc, console=console, showScriptParameter=showScriptParameter)
-        cwser = OpenADCInterface_Serial(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        try:
+            cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        except ImportError:
+            cwrev2 = None
+            
+        try:
+            ftdi = OpenADCInterface_FTDI(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        except ImportError:
+            ftdi = None
+            
+        try:
+            cwser = OpenADCInterface_Serial(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        except ImportError:
+            cwser = None
+            
         self.setCurrentScope(cwrev2, False)
-        
-        ftdi.paramListUpdated.connect(self.emitParamListUpdated)
-        cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
-        cwser.paramListUpdated.connect(self.emitParamListUpdated)
-        
         defscope = cwrev2
+        
+        cw_cons = {}
+        
+        if ftdi:
+            ftdi.paramListUpdated.connect(self.emitParamListUpdated)
+            cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
+        
+        if cwrev2:
+            cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
+            cw_cons["ChipWhisperer Rev2"] = cwrev2
+            
+        if cwser:
+            cwser.paramListUpdated.connect(self.emitParamListUpdated)
+            cw_cons["Serial Port (LX9)"] = cwser
+        
+        
         
         self.advancedSettings = None
         
-        scopeParams = [{'name':'connection', 'type':'list', 'values':{"ChipWhisperer Rev2":cwrev2,
-                                                                     "Serial Port (LX9)":cwser,
-                                                                     "FTDI (SASEBO-W)":ftdi}, 'value':defscope, 'set':self.setCurrentScope},
+        scopeParams = [{'name':'connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
                        {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
         

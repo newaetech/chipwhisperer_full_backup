@@ -101,7 +101,7 @@ class userScript(QObject):
         for cmd in lstexample: cap.setParameter(cmd)
         
         #Let's only do a few traces
-        cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 75])
+        cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
                       
         #Throw away first few
         cap.capture1()
@@ -110,10 +110,17 @@ class userScript(QObject):
         pe()
         
         #Start capture process
-        writer = cap.captureM()
+        #writer = cap.captureM()
+        #
+        #pe()
+        #
+        #cap.proj.setFilename("../capturev2/test_live.cwp")
+        #
+        #pe()
+        #
+        #cap.saveProject()
         
-        #Save files to MATLAB arrays instead
-        sio.savemat('sca_data.mat', {'powertrace':writer.traces, 'textin':writer.textins, 'textout':writer.textouts, 'knownkey':writer.knownkey})
+        pe()
 
         print "***** Ending User Script *****"
         
