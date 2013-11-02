@@ -32,7 +32,11 @@ import numpy as np
 import TraceContainer
 from pyqtgraph.parametertree import Parameter
 
-import umysql as sql
+try:
+    import umysql as sql
+except ImportError, e:
+    print "umysql required: https://pypi.python.org/pypi/umysql"
+    raise ImportError(e)
 
 from ExtendedParameter import ExtendedParameter
 from TraceContainerConfig import makeAttrDict

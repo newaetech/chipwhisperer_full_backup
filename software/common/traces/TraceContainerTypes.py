@@ -24,7 +24,13 @@
 __author__ = "Colin O'Flynn"
 
 import TraceContainerNative
-import TraceContainerMySQL
+try:
+    import TraceContainerMySQL
+except ImportError:
+    TraceContainerMySQL = None
+
 import TraceContainerDPAv3
 
-TraceContainerFormatList = {"native":TraceContainerNative.TraceContainerNative, "mysql":TraceContainerMySQL.TraceContainerMySQL, "dpav3":TraceContainerDPAv3.TraceContainerDPAv3 }
+TraceContainerFormatList = {"native":TraceContainerNative.TraceContainerNative, "dpav3":TraceContainerDPAv3.TraceContainerDPAv3 }
+if TraceContainerMySQL is not None:
+    TraceContainerFormatList["mysql"] = TraceContainerMySQL.TraceContainerMySQL

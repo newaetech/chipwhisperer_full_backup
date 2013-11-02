@@ -217,6 +217,9 @@ class CWAdvTrigger(object):
         #of IO line before changing state
         #high = 'wait'
 
+        if len(pattern) > 63:
+            raise ValueError("pattern too long: Hardware supports max of 64 pattern points")
+
         addr = 0        
         for p in pattern:
             state = p[0]
