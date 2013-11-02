@@ -87,6 +87,7 @@ class OpenADCInterface_FTDI(QWidget):
        
         if (openadc_qt is None) or (ft is None):               
             self.ser = None
+            raise ImportError("Needed imports for FTDI missing")
             return
         else:            
             self.ser = None
@@ -187,6 +188,7 @@ class OpenADCInterface_Serial(QWidget):
        
         if (openadc_qt is None) or (serial is None):               
             self.ser = None
+            raise ImportError("Needed imports for serial missing")
             return
         else:            
             self.ser = None
@@ -272,11 +274,12 @@ class OpenADCInterface_ZTEX(QWidget):
                   ]           
        
         self.console = console
+        self.ser = None
+        
        
         if (openadc_qt is None) or (usb is None):               
             raise ImportError("Needed imports for ChipWhisperer missing")
         else:            
-            self.ser = None
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)  
