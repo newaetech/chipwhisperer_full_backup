@@ -107,8 +107,15 @@ class ResultsPlotting(QObject):
         self.pgegraph.setAttack(attack)
         
     def setTraceManager(self, tmanager):        
-        self.trace = tmanager        
-        self.graphoutput.setKnownKey(self.trace.getKnownKey())
+        self.trace = tmanager       
+        
+    def updateKnownKey(self):
+        try:
+            nk = self.trace.getKnownKey()
+            nk = self.attack.processKnownKey(nk)
+            self.graphoutput.setKnownKey(nk)
+        except AttributeError, e:
+            print str(e)
         
     def attackDone(self):
         self.attackStatsUpdated()
@@ -118,6 +125,7 @@ class ResultsPlotting(QObject):
     def attackStatsUpdated(self):
         self.table.setBytesEnabled(self.attack.bytesEnabled())
         self.table.updateTable()
+        self.updateKnownKey()
                
 class ResultsPlotData(GraphWidget):
     """
@@ -135,22 +143,30 @@ class ResultsPlotData(GraphWidget):
         self.numPerms = permPerSubkey
         self.knownkey = None
         self.enabledbytes = [False]*subkeys
+        self.doRedraw = True
         
         self.byteNumAct = []
         for i in range(0,self.numKeys):
             self.byteNumAct.append(QAction('%d'%i, self))
             self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
             self.byteNumAct[i].setCheckable(True)
+            
+        byteNumAllOn = QAction('All On', self)
+        byteNumAllOff = QAction('All Off', self)
+        byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
+        byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
                 
         self.bselection = QToolBar()
         
         for i in range(0, self.numKeys):
             self.bselection.addAction(self.byteNumAct[i])
+        self.bselection.addAction(byteNumAllOn)
+        self.bselection.addAction(byteNumAllOff)
         self.layout().addWidget(self.bselection)
         
         self.highlightTop = True
         
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                      
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)        
@@ -173,6 +189,15 @@ class ResultsPlotData(GraphWidget):
    
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
+        if self.doRedraw:
+            self.redrawPlot()
+        
+    def setByteAll(self, status):
+        self.doRedraw = False
+        for t in self.byteNumAct:
+            t.setChecked(status)
+            t.trigger()
+        self.doRedraw = True
         self.redrawPlot()
    
     def setAttack(self, attack):
@@ -230,7 +255,9 @@ class OutputVsTime(ResultsPlotData):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
         
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                       
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},       
+                         {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
+                         {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}                 
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -240,29 +267,49 @@ class OutputVsTime(ResultsPlotData):
         data = self.attack.getStatistics()
         data = data.diffs
        
+        byteson = 0
+        for i in range(0, self.numKeys):
+            if self.enabledbytes[i]:
+                byteson += 1
+       
         #Do Redraw
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000) #_callSync='off'
         progress.setMinimum(0) #_callSync='off'
-        progress.setMaximum(256) #_callSync='off'
+        progress.setMaximum(byteson*self.numPerms) #_callSync='off'
         
         self.clearPushed()
         self.setupHighlights()
         #prange = range(self.pstart[bnum], self.pend[bnum])
+        
+        fastDraw = self.findParam('fast').value()
                 
+        pvalue = 0
+                
+        if self.findParam('hide').value():
+            self.pw.setVisible(False)
         try:
             for bnum in range(0, self.numKeys):
+                progress.setValue(pvalue)
                 if self.enabledbytes[bnum]:
                     diffs = data[bnum]
-                    
-                    maxlimit = np.amax(diffs, 0)
-                    minlimit = np.amin(diffs, 0)
-                    
+                                        
                     prange = self.attack.getPointRange(bnum)
                     prange = range(prange[0], prange[1])                    
-                    self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
-                    self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')                       
+                    
+                    if fastDraw:
+                        maxlimit = np.amax(diffs, 0)
+                        minlimit = np.amin(diffs, 0)
+                        self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
+                        self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')
+                        pvalue += self.numPerms
+                        progress.setValue(pvalue)
+                    else:
+                        for i in range(0,256):
+                            self.pw.plot(prange, diffs[i], pen='g')     
+                            pvalue += 1
+                            progress.setValue(pvalue)                  
                         
                 if self.highlightTop:
                     #Plot the highlighted byte(s) on top
@@ -280,6 +327,7 @@ class OutputVsTime(ResultsPlotData):
         except StopIteration:
             pass
         
+        self.pw.setVisible(True)
       
 class PGEVsTrace(ResultsPlotData):
     """
@@ -341,7 +389,13 @@ class PGEVsTrace(ResultsPlotData):
                 spge += "plot(tnum, pge)\n"  
                 spge += "xlabel('Trace Number')\n"
                 spge += "ylabel('Average PGE (%d Trials)')\n"%trials       
-                spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')"
+                spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')\n"
+                spge += "legend("
+                for k in range(0, self.numKeys):
+                    spge += "'Subkey %d'"%k
+                    if k != (self.numKeys-1):
+                        spge += ", "
+                spge += ")\n"
         else:
             raise ValueError("Invalid fmt: %s"%fmt)
         
@@ -484,10 +538,12 @@ class ResultsTable(QObject):
         self.useSingle = enabled    
 
     def updateTable(self, attackDone=False):
-        self.setKnownKey(self.attack.trace.getKnownKey())
-        
+        nk = self.attack.trace.getKnownKey()
+        nk = self.attack.processKnownKey(nk)
+        self.setKnownKey(nk)
+                
         attackStats = self.attack.getStatistics()
-        attackStats.setKnownkey(self.attack.trace.getKnownKey())
+        attackStats.setKnownkey(nk)
         attackStats.findMaximums()
         
         for bnum in range(0, self.numKeys):

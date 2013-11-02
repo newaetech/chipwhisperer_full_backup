@@ -188,7 +188,7 @@ class AES_RoundKeys(object):
         roundKey = [0] * 16
         for i in range(4):
             for j in range(4):
-                roundKey[j*4+i] = expandedKey[roundKeyPointer + i*4 + j]
+                roundKey[j+i*4] = expandedKey[roundKeyPointer + i*4 + j]
         return roundKey
 
 
@@ -202,6 +202,9 @@ if __name__ == "__main__":
     inpkey = [  0,   1,   2,   3,   4,   5,   6,   7,   8, 247,  21, 136,   9, 207,  79,  60]
     rkey = AES_RoundKeys().getFinalKey(inpkey)
 
+    for t in inpkey:
+        print "%02x "%t,
+    print ""
     for t in rkey:
         print "%02x "%t,
 

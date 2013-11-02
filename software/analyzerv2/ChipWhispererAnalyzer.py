@@ -128,8 +128,7 @@ class ChipWhispererAnalyzer(MainChip):
                         {'name':'Ending Point', 'type':'int', 'limits':(0,0), 'value':0},
                         {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
                         ]}                                                     
-                    ]},
-                                   
+                    ]},                        
                 ]
     
         

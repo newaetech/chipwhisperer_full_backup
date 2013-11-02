@@ -84,6 +84,8 @@ class ResyncSAD(QObject):
         self.wdStart = 0
         self.wdEnd = 1
         
+        self.NumTrace = 1
+        
     def paramList(self):
         return [self.params]
     

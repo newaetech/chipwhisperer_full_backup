@@ -154,9 +154,15 @@ class CPAProgressiveOneSubkey(object):
             #sumden2 = self.sumtq[key] - meant*self.sumt[key]
             #sumden = sumden1 * sumden2    
 
+            #Sumden1/Sumden2 are variance of these variables, may be numeric unstability
+            #See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance for online update
+            #algorithm which might be better
             sumden1 = (np.square(self.sumh[key]) - self.totalTraces * self.sumhq[key])
             sumden2 = (np.square(self.sumt[key]) - self.totalTraces * self.sumtq[key])
             sumden = sumden1 * sumden2
+            
+            #if sumden.any() < 1E-12:
+            #    print "WARNING: sumden small"
 
     
             if progressBar:
