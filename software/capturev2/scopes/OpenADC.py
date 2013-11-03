@@ -121,7 +121,7 @@ class OpenADCInterface_FTDI(QWidget):
                 self.ser = self
             except ft.ftd2xx.DeviceError, e:
                 self.ser = None
-                raise IOError("Could not open %s"%self.serialNumber)
+                raise IOError("Could not open %s: %s"%(self.serialNumber,e))
             
         try:
             self.scope.con(self.ser)
