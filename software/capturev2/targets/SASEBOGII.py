@@ -81,8 +81,8 @@ class SaseboGII(QObject):
 
     def con(self):   
         try:
-#            self.sasebo = ft.openEx("FTSZ1IONB")
-            self.sasebo = ft.openEx("FTWQ8BMIA")
+            self.sasebo = ft.openEx("FTSZ1IONB")
+#            self.sasebo = ft.openEx("FTWQ8BMIA")
         except ft.ftd2xx.DeviceError, e:
             self.sasebo = None
             return False
@@ -171,6 +171,9 @@ class SaseboGII(QObject):
 
     def setModeDecrypt(self):
         self.write(0x000C, 0x00, 0x01)
+
+    def checkEncryptionKey(self, key):          
+        return key 
 
     def loadEncryptionKey(self, key):
         """Encryption key is bytearray"""
