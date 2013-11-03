@@ -744,7 +744,7 @@ class ChipWhispererCapture(MainChip):
         
         stoptime = datetime.now()
         
-        self.log.append("Capture delta time: %s"%str(stoptime-starttime))
+        self.console.append("Capture delta time: %s"%str(stoptime-starttime))
         
         return writer
         
