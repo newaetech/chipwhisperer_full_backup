@@ -238,7 +238,7 @@ class MainChip(QMainWindow):
             return
         
         settings = QSettings()
-        files = settings.value('recentFileList', [])
+        files = settings.value('recentFileList', [" ", " ", " ", " "])
         
         try:
             files.remove(fname)
