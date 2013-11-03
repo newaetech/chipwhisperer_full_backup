@@ -723,10 +723,11 @@ class ChipWhispererCapture(MainChip):
         if target:
             self.setKey(target.checkEncryptionKey(self.key), True, True)
             
-        #Load trace writer
+        starttime = datetime.now()  
+            
+        #Load trace writer        
         if self.trace is not None:
-            writer = self.trace(self.traceparams)
-            starttime = datetime.now()            
+            writer = self.trace(self.traceparams)                      
             prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S_') 
             writer.config.setAttr("prefix", prefix)
             writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
@@ -740,6 +741,10 @@ class ChipWhispererCapture(MainChip):
         ac.setMaxtraces(tn)        
         ac.doReadings(addToList=self.manageTraces, key=self.key)
         self.statusBar().showMessage("%d Captures Completed"%tn)
+        
+        stoptime = datetime.now()
+        
+        self.log.append("Capture delta time: %s"%str(stoptime-starttime))
         
         return writer
         
