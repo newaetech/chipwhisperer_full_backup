@@ -316,7 +316,7 @@ class ProtocolTemplate(QObject):
         return ""
 
     def go(self):
-        pass    
+        pass
     
 class ProtocolSASEBOWCardOS(ProtocolTemplate):
 
@@ -431,3 +431,6 @@ class SmartCard(QObject):
 
     def setModeEncrypt(self):
         pass
+    
+    def checkEncryptionKey(self, key):
+        return key
