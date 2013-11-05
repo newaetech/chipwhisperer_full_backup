@@ -41,14 +41,61 @@ except ImportError:
 sys.path.append('../common')
 sys.path.append('../../openadc/controlsw/python/common')
 from ExtendedParameter import ExtendedParameter
-    
+import scan    
 
-class SimpleSerial_serial(QObject):
-    paramListUpdated = Signal(list) 
-    
-    def __init__(self):
-        super(SimpleSerial_serial, self).__init__()
+class SimpleSerial_serial(TargetTemplate):
+    def setupParameters(self):
+        ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400}, 'value':38400},
+                    {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
+                    {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
+                    ]      
+        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
         
+        ExtendedParameter.setupExtended(self.params, self)      
+        self.ser = None
+            
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
+
+    def paramList(self):
+        return [self.params]
+
+    def updateSerial(self):
+        serialnames = scan.scan()
+        self.findParam('port').setLimits(serialnames)
+        if len(serialnames) > 0:
+            self.findParam('port').setValue(serialnames[0])
+
+    def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
+        pass
+
+    def write(self, string):
+        return self.ser.write(string)
+
+    def read(self, num=0, timeout=100):
+        return self.ser.read(num)
+
+    def flush(self):
+        self.ser.flushInput()
+            
+    def flushInput(self):
+        self.ser.flushInput()
+            
+    def close(self):
+        if self.ser is not None:
+            self.ser.close()
+            self.ser = None
+            
+    def con(self):
+        if self.ser == None:
+            
+            # Open serial port if not already
+            self.ser = serial.Serial()
+            self.ser.port     = self.findParam('port').value()
+            self.ser.baudrate = self.findParam('baud').value()
+            self.ser.timeout  = 2     # 2 second timeout
+            self.ser.open()
 
 class SimpleSerial_ChipWhisperer(TargetTemplate):    
     CODE_READ       = 0x80
@@ -136,15 +183,20 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             
     def close(self):
         pass
+    
+    def con(self):
+        pass
        
 class SimpleSerial(TargetTemplate):   
     paramListUpdated = Signal(list)     
 
     def setupParameters(self):
-        ssParams = [{'name':'connection', 'type':'list', 'values':{"System Serial Port":SimpleSerial_serial(), "ChipWhisperer":SimpleSerial_ChipWhisperer(self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
+        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ser = None   
+        
+        self.setConnection(self.findParam('con').value())
       
     def setOpenADC(self, oadc):
         try:
@@ -163,6 +215,7 @@ class SimpleSerial(TargetTemplate):
         return p
     
     def con(self):        
+        self.ser.con()
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
