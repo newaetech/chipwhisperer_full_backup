@@ -25,6 +25,7 @@ from ExtendedParameter import ExtendedParameter
 from utils.SerialProtocols import strToBits as strToBits
 from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from targets.ChipWhispererTargets import CWUniversalSerial as CWUniversalSerial
+import ChipWhispererGlitch
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -54,6 +55,8 @@ class ChipWhispererExtra(QObject):
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         
+        self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
+        
         
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
@@ -61,12 +64,14 @@ class ChipWhispererExtra(QObject):
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)
+        self.glitch.setOpenADC(oa.sc)
         self.cwEXTRA.con(oa.sc)
         self.params.getAllParameters()
         
     def paramList(self):
         p = []
-        p.append(self.params)            
+        p.append(self.params)   
+        p.append(self.glitch.params)         
         return p
 
     #def testPattern(self):
@@ -120,8 +125,8 @@ class CWExtraSettings(object):
                                                                  'PLL Input':self.CLOCK_PLL,
                                                                  'Target IO-IN':self.CLOCK_RTIOIN,
                                                                  'Target IO-OUT':self.CLOCK_RTIOOUT}, 'set':self.setClockSource, 'get':self.clockSource},
-                
-                
+                {'name':'Clock Out Connection', 'type':'list', 'values':{'Target IO-Out':0}, 'value':0},
+                {'name':'Clock Out Source', 'type':'list', 'values':{'Glitch Module':0}, 'value':0},                 
                 ]}]
     
     def con(self, oa):
