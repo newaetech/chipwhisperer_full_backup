@@ -20,7 +20,33 @@ class PartialReconfigData(object):
         #Update base
         for diff in diffs:
             data[diff[0]] = diff[1]
+        return data
+
+class PartialReconfigDataMulti(object):
+    def __init__(self):
+        self.dataList = []
+        self.limitList = []
+       
+    def load(self, fname):
+        data =  pickle.load(open(fname, 'rb')) 
+        self.dataList.append(data )        
+        klist = list(data['values'].keys())
+        self.limitList.append((min(klist), max(klist)))       
         
+    def getPartialBitstream(self, indxlst):
+        
+        data = list(self.dataList[0]['base'])
+        
+        diffs = []
+        for i, cfg in enumerate(self.dataList):
+            diff = cfg['values'][indxlst[i]]
+                        
+            diffs.append( diff )        
+        
+            #Update base
+            for d in diff:
+                data[d[0]] = d[1]             
+                
         return data
 
 class PartialReconfigConnection(object):
@@ -47,8 +73,7 @@ class PartialReconfigConnection(object):
         for data in cfgdata:
             #data = int(t, 2)
             msb = data >> 8;
-            lsb = data & 0xff;            
-            #print "%x %x"%(msb, lsb)            
+            lsb = data & 0xff;    
             dataarray.append(msb)
             dataarray.append(lsb)
 
