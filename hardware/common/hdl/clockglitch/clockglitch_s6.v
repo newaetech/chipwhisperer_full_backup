@@ -104,17 +104,17 @@ module clockglitch_s6(
 	wire dcm1_locked_int;
 	wire dcm2_locked_int;
 	
-	//dcm_locked_int may be high if clock is removed, so also check clkfx output is toggling
-	assign dcm1_locked = dcm1_locked_int & (~dcm1_status[2]);
-	assign dcm2_locked = dcm2_locked_int & (~dcm2_status[2]);
+	//Cannot monitor status[2] bit if not using clkfx output
+	assign dcm1_locked = dcm1_locked_int; // & (~dcm1_status[2]);
+	assign dcm2_locked = dcm2_locked_int; //& (~dcm2_status[2]);
 
 	wire dcm1_clk;
-	wire dcm2_clk_in;
-	
-	wire clk_out;
+	wire dcm2_clk;
+	wire dcm1_clk_out;
+	wire dcm2_clk_out;
 	
 	wire glitchstream;
-	assign glitchstream = dcm2_clk_in & ~source_clk;
+	assign glitchstream = dcm1_clk_out & ~dcm2_clk_out;
 	
 	assign glitched_clk = glitchstream;
 
@@ -125,7 +125,7 @@ module clockglitch_s6(
 	.CLKFX_DIVIDE(2), // Divide value on CLKFX outputs - D - (1-32)
 	.CLKFX_MULTIPLY(2), // Multiply value on CLKFX outputs - M - (2-32)
 	.CLKIN_DIVIDE_BY_2("FALSE"), // CLKIN divide by two (TRUE/FALSE)
-	.CLKIN_PERIOD(10.0), // Input clock period specified in nS
+	.CLKIN_PERIOD(15.0), // Input clock period specified in nS
 	.CLKOUT_PHASE_SHIFT("VARIABLE"), // Output phase shift (NONE, FIXED, VARIABLE)
 	.CLK_FEEDBACK("2X"), // Feedback source (NONE, 1X, 2X)
 	.DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"), // SYSTEM_SYNCHRNOUS or SOURCE_SYNCHRONOUS
@@ -137,7 +137,7 @@ module clockglitch_s6(
 	.CLK0(),
 	.CLK2X180(),
 	.CLK90(),
-	.CLK180(dcm2_clk_in),
+	.CLK180(dcm1_clk_out),
 	.CLK270(),
 	.CLKFX(),
 	.CLKFX180(),
@@ -160,11 +160,11 @@ module clockglitch_s6(
 	.CLKFX_DIVIDE(2), // Divide value on CLKFX outputs - D - (1-32)
 	.CLKFX_MULTIPLY(2), // Multiply value on CLKFX outputs - M - (2-32)
 	.CLKIN_DIVIDE_BY_2("FALSE"), // CLKIN divide by two (TRUE/FALSE)
-	.CLKIN_PERIOD(10.0), // Input clock period specified in nS
+	.CLKIN_PERIOD(15.0), // Input clock period specified in nS
 	.CLKOUT_PHASE_SHIFT("VARIABLE"), // Output phase shift (NONE, FIXED, VARIABLE)
 	.CLK_FEEDBACK("2X"), // Feedback source (NONE, 1X, 2X)
 	.DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"), // SYSTEM_SYNCHRNOUS or SOURCE_SYNCHRONOUS
-	.PHASE_SHIFT(0), // Amount of fixed phase shift (-255 to 255)
+	.PHASE_SHIFT(15), // Amount of fixed phase shift (-255 to 255)
 	.STARTUP_WAIT("FALSE") // Delay config DONE until DCM_SP LOCKED (TRUE/FALSE)
 	)
 	DCM_extclock_gen2 (
@@ -172,7 +172,7 @@ module clockglitch_s6(
 	.CLK0(),
 	.CLK2X180(),
 	.CLK90(),
-	.CLK180(clk_out),
+	.CLK180(dcm2_clk_out),
 	.CLK270(),
 	.CLKFX(),
 	.CLKFX180(),
@@ -181,7 +181,7 @@ module clockglitch_s6(
 	.PSDONE(dcm2_psdone), // 1-bit output: Phase shift done output
 	.STATUS(dcm2_status), // 8-bit output: DCM_SP status output
 	.CLKFB(dcm2_clk), // 1-bit input: Clock feedback input
-	.CLKIN(dcm2_clk_in), // 1-bit input: Clock input
+	.CLKIN(dcm1_clk_out), // 1-bit input: Clock input
 	.PSCLK(phase_clk_buf), // 1-bit input: Phase shift clock input
 	.PSEN(dcm2_psen), // 1-bit input: Phase shift enable
 	.PSINCDEC(dcm2_psincdec), // 1-bit input: Phase shift increment/decrement input

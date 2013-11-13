@@ -341,6 +341,7 @@ module interface(
 		.glitchclk(target_hs2)
 		);
 	
+`ifdef ENABLE_RECONFIG
 	reg_reconfig reg_reconfig(
 		.reset_i(reg_rst),
 		.clk(ifclk_buf),
@@ -356,6 +357,10 @@ module interface(
 		.reg_hyplen(reg_hyplen_reconfig),
 		.reg_stream()
 		);
+`else
+	assign reg_hyplen_reconfig = 'd0;
+	assign reg_datai_reconfig = 'd0;
+`endif
 	
 	/*
 	 wire [7:0] scard_cla, scard_ins, scard_p1, scard_p2, scard_async_data;

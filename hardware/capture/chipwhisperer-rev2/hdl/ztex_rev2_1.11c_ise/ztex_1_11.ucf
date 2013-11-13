@@ -2,19 +2,24 @@
 NET "ifclk" TNM_NET = "TN_IFCLK";
 TIMESPEC TS_ifclk = PERIOD TN_IFCLK 33.33 ns HIGH 50% PRIORITY 2;
 
+#TODO: This clock can run faster, but due to problems with DCM configuration
+#causing tools to design very strict constraints, have relaxed timing
 NET "DUT_CLK_i" TNM_NET = "TN_EXTCLK";
-NET "target_hs1" TNM_NET = "TN_EXTCLK";
-TIMESPEC "TS_EXTCLK" = PERIOD "TN_EXTCLK" 10 ns HIGH 50 % PRIORITY 1;
+TIMESPEC "TS_EXTCLK" = PERIOD "TN_EXTCLK" 20 ns HIGH 50 % PRIORITY 1;
+
+NET "target_hs1" TNM_NET = "TN_TargetClock";
+TIMESPEC "TS_TargetClock" = PERIOD "TN_TargetClock" 15 nS HIGH 50%;
 
 #Note: ISE generates a too-strict derived constraints... ADC signals only good up to 100 MHz due
 #to ADC requirements. But if the input is 100 MHz, this signal would be at 400 MHz. The
 #user knows they can't use the 4x clock then so we don't need such a high constraint...
 NET "oadc/genclocks/dcm_clk_in" TNM_NET = "TN_DCMInput";
-TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 20 ns HIGH 50% PRIORITY 0;
+NET "oadc/genclocks/clkgenfx_in" TNM_NET = "TN_DCMInput";
+TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 40 ns HIGH 50% PRIORITY 0;
 
 NET "oadc/genclocks/out_from_dcmmux" TNM_NET = "TN_ADCSampleClock";
 NET "oadc/ADC_clk_sample" TNM_NET = "TN_ADCSampleClock";
-TIMESPEC "TS_ADCSampleClock" = PERIOD "TN_ADCSampleClock" 10 ns HIGH 50% PRIORITY 0;
+TIMESPEC "TS_ADCSampleClock" = PERIOD "TN_ADCSampleClock" 12 ns HIGH 50% PRIORITY 0;
 NET "oadc/genclocks/ADC_clk_times4" TIG;
 
 #Based on CLK delay from AD9215 Datasheet, 125 MHz clock
@@ -28,7 +33,8 @@ NET "target_hs2" CLOCK_DEDICATED_ROUTE = FALSE;
 #This is required to allow use of ifclock for DCM input
 NET "ifclk" CLOCK_DEDICATED_ROUTE = FALSE;
 
-PIN "reg_clockglitch/gc/dcm2_clk_in_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
+#PIN "reg_clockglitch/gc/dcm2_clk_in_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
+PIN "reg_clockglitch/gc/dcm1_clk_out_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
 
 ############ Location Constraints
 
