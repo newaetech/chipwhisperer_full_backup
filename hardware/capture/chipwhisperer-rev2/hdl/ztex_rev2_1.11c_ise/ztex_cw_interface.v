@@ -100,7 +100,7 @@ module interface(
 	 assign target_hs1 = 1'bZ;
 	 
 	 //TODO: FIX THESE IF NEEDED
-	 assign target_hs2 = 1'b0;
+	 //assign target_hs2 = 1'b0;
 	 assign target_io2 = 1'bZ;
 	 //assign target_io1 = 1'bZ;
 	 //assign target_io3 = 1'bZ;
@@ -164,8 +164,10 @@ module interface(
 	wire [7:0] reg_datai_triggerio;
 	wire [7:0] reg_datai_cw;
 	wire [7:0] reg_datai_i2c;
+	wire [7:0] reg_datai_reconfig;
 	//wire [7:0] reg_datai_scard;
 	wire [7:0] reg_datai_usi;
+	wire [7:0] reg_datai_glitch;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
@@ -177,8 +179,10 @@ module interface(
 	wire [15:0] reg_hyplen_triggerio;
 	wire [15:0] reg_hyplen_cw;
 	//wire [15:0] reg_hyplen_scard;
+	wire [15:0] reg_hyplen_glitch;
 	wire [15:0] reg_hyplen_usi;
 	wire [15:0] reg_hyplen_i2c;
+	wire [15:0] reg_hyplen_reconfig;
 	
 	wire ext_trigger;
 	wire adv_trigger;
@@ -218,14 +222,14 @@ module interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi | reg_datai_i2c), //reg_datai_scard
+		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi | reg_datai_i2c | reg_datai_glitch | reg_datai_reconfig), //reg_datai_scard
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(reg_stream_serial), //reg_stream_scard
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi | reg_hyplen_i2c)  //reg_hyplen_scard
+		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi | reg_hyplen_i2c | reg_hyplen_glitch | reg_hyplen_reconfig)  //reg_hyplen_scard
 	/*
 		,.LPDDR_A(LPDDR_A),
 		.LPDDR_BA(LPDDR_BA),
@@ -318,7 +322,46 @@ module interface(
 		.trigger_advio_i(adv_trigger),
 		.trigger_o(ext_trigger)
 	);
-		
+	
+	reg_clockglitch reg_clockglitch(
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_glitch), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_glitch),
+		.reg_stream(),
+		.sourceclk(target_hs1),
+		.glitchclk(target_hs2)
+		);
+	
+`ifdef ENABLE_RECONFIG
+	reg_reconfig reg_reconfig(
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_reconfig), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_reconfig),
+		.reg_stream()
+		);
+`else
+	assign reg_hyplen_reconfig = 'd0;
+	assign reg_datai_reconfig = 'd0;
+`endif
+	
 	/*
 	 wire [7:0] scard_cla, scard_ins, scard_p1, scard_p2, scard_async_data;
 	 wire [4:0] scard_len_command, scard_len_response;

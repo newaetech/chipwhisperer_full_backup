@@ -18,6 +18,7 @@
 	`define HW_TYPE 3
 	`define HW_VER 0
 	
+	//`define ENABLE_RECONFIG	
 `endif
 
 //`define USE_DDR
