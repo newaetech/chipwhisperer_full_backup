@@ -25,7 +25,7 @@ from ExtendedParameter import ExtendedParameter
 from utils.SerialProtocols import strToBits as strToBits
 from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from targets.ChipWhispererTargets import CWUniversalSerial as CWUniversalSerial
-import ChipWhispererGlitch
+#import ChipWhispererGlitch
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -55,7 +55,7 @@ class ChipWhispererExtra(QObject):
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         
-        self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
+        #self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
         
         
     def paramTreeChanged(self, param, changes):
@@ -64,14 +64,14 @@ class ChipWhispererExtra(QObject):
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)
-        self.glitch.setOpenADC(oa.sc)
+        #self.glitch.setOpenADC(oa.sc)
         self.cwEXTRA.con(oa.sc)
         self.params.getAllParameters()
         
     def paramList(self):
         p = []
         p.append(self.params)   
-        p.append(self.glitch.params)         
+        #p.append(self.glitch.params)         
         return p
 
     #def testPattern(self):
