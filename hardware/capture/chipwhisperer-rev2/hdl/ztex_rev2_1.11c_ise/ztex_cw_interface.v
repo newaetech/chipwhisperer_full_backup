@@ -55,7 +55,7 @@ module interface(
 	 input [9:0]   ADC_Data,
 	 input         ADC_OR,
 	 output        ADC_clk,
-	 input         DUT_CLK_i,
+	 inout         DUT_CLK_i,
 	 inout         DUT_trigger_i,
 	 output        amp_gain,
 	 output        amp_hilo,
@@ -100,7 +100,6 @@ module interface(
 	 assign target_hs1 = 1'bZ;
 	 
 	 //TODO: FIX THESE IF NEEDED
-	 //assign target_hs2 = 1'b0;
 	 assign target_io2 = 1'bZ;
 	 //assign target_io1 = 1'bZ;
 	 //assign target_io3 = 1'bZ;
@@ -191,7 +190,7 @@ module interface(
 	
 	//assign ext_trigger = DUT_trigger_i;
 	//assign ext_trigger = target_io4;
-
+	wire clkgen;
 	openadc_interface oadc(
 		.reset_i(reset_i),
 		.clk_adcint(ifclk_buf),
@@ -204,11 +203,11 @@ module interface(
 		.ADC_OR(ADC_OR),
 		.ADC_clk(ADC_clk_int),
 		.ADC_clk_feedback(ADC_clk_int),
-		//.DUT_CLK_i(DUT_CLK_i),
 		.DUT_CLK_i(extclk_mux),
 		.DUT_trigger_i(ext_trigger),
 		.amp_gain(amp_gain),
 		.amp_hilo(amp_hilo),
+		.target_clk(clkgen),
 				
 		.ftdi_data(fd),
 		.ftdi_rxfn(~flagb),
@@ -290,6 +289,7 @@ module interface(
 		.trig_out(adv_trigger)
 	);
 	
+	wire glitchclk;
 	
 	reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -305,11 +305,11 @@ module interface(
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_cw),
 		.reg_stream(),
-		.extclk_fpa_i(DUT_CLK_i),
+		.extclk_fpa_io(DUT_CLK_i),
 		.extclk_fpb_i(1'b0),
 		.extclk_pll_i(pll_clk0),
 		.extclk_rearin_i(target_hs1),
-		.extclk_rearout_i(target_hs2),
+		.extclk_rearout_o(target_hs2),
 		.extclk_o(extclk_mux),
 		.adc_sample_clk(adc_sample_clk),
 		.trigger_fpa_i(DUT_trigger_i),
@@ -320,8 +320,11 @@ module interface(
 		.trigger_io4_i(target_io4),
 		.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(adv_trigger),
+		.clkgen_i(clkgen),
+		.glitchclk_i(glitchclk),
 		.trigger_o(ext_trigger)
 	);
+	
 	
 	reg_clockglitch reg_clockglitch(
 		.reset_i(reg_rst),
@@ -338,7 +341,7 @@ module interface(
 		.reg_hyplen(reg_hyplen_glitch),
 		.reg_stream(),
 		.sourceclk(target_hs1),
-		.glitchclk(target_hs2)
+		.glitchclk(glitchclk)
 		);
 	
 `ifdef ENABLE_RECONFIG
