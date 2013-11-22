@@ -82,6 +82,7 @@ try:
 except ImportError:
     target_SmartCard = None
     target_SmartCard_str = sys.exc_info()
+    print "SmartCard targets disabled: %s"%str(target_SmartCard_str)
     
 try:
     import targets.SASEBOGII as target_SASEBOGII
