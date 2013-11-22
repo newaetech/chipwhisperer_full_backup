@@ -419,9 +419,12 @@ class PGEVsTrace(ResultsPlotData):
         for (tnum, plist) in allpge.iteritems():
             for j in plist:
                 if j['trials'] > 0:
-                    j['pge'] = float(j['pgesum']) / float(j['trials'])
+                    j['pge'] = float(j['pgesum']) / float(j['trials'])       
+                    #print "%d "%j['trials'],             
                 else:
                     j['pge'] = None
+                
+        #print ""
                 
         return allpge
                   

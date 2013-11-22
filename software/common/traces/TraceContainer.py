@@ -60,6 +60,7 @@ class TraceContainer(object):
     """
     
     getParams = parameters()
+    getParamsClass = parameters
     
     def __init__(self, params=None, configfile=None):
         self.textins = []
@@ -80,6 +81,9 @@ class TraceContainer(object):
 
     def setDirty(self, dirty):
         self.dirty = dirty
+        
+    def updateConfigData(self):
+        return
 
     def numPoints(self):
         try:        

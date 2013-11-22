@@ -22,10 +22,10 @@ sys.path.append('../../common')
 sys.path.append('../.')
 from ExtendedParameter import ExtendedParameter
 
-from utils.SerialProtocols import strToBits as strToBits
-from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
-from targets.ChipWhispererTargets import CWUniversalSerial as CWUniversalSerial
-#import ChipWhispererGlitch
+#from utils.SerialProtocols import strToBits as strToBits
+#from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+
+import ChipWhispererGlitch
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -55,7 +55,10 @@ class ChipWhispererExtra(QObject):
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         
-        #self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
+        self.enableGlitch = True
+        
+        if self.enableGlitch:
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
         
         
     def paramTreeChanged(self, param, changes):
@@ -64,14 +67,16 @@ class ChipWhispererExtra(QObject):
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)
-        #self.glitch.setOpenADC(oa.sc)
+        if self.enableGlitch:
+            self.glitch.setOpenADC(oa.sc)
         self.cwEXTRA.con(oa.sc)
         self.params.getAllParameters()
         
     def paramList(self):
         p = []
-        p.append(self.params)   
-        #p.append(self.glitch.params)         
+        p.append(self.params)
+        if self.enableGlitch:   
+            p.append(self.glitch.params)         
         return p
 
     #def testPattern(self):
@@ -124,21 +129,34 @@ class CWExtraSettings(object):
                                                                  'Front Panel B':self.CLOCK_FPB,
                                                                  'PLL Input':self.CLOCK_PLL,
                                                                  'Target IO-IN':self.CLOCK_RTIOIN,
-                                                                 'Target IO-OUT':self.CLOCK_RTIOOUT}, 'set':self.setClockSource, 'get':self.clockSource},
-                {'name':'Clock Out Connection', 'type':'list', 'values':{'Target IO-Out':0}, 'value':0},
-                {'name':'Clock Out Source', 'type':'list', 'values':{'Glitch Module':0}, 'value':0},                 
+                                                                 #'Target IO-OUT':self.CLOCK_RTIOOUT #This is no longer allowed by the hardware
+                                                                 }, 'set':self.setClockSource, 'get':self.clockSource},
+                #{'name':'Clock Out Connection', 'type':'list', 'values':{'Target IO-Out':0}, 'value':0},
+                {'name':'Target IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},                 
                 ]}]
     
     def con(self, oa):
         self.oa = oa
            
     def setClockSource(self, source):
-        data = [source]
+        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data[0] = (data[0] & ~0x07) | source
+        print "%2x"%data[0]
         self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
         
     def clockSource(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return resp[0] & 0x07
+           
+    def setTargetCLKOut(self, clkout):
+        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
+        print "%2x"%data[0]
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data) 
+        
+    def targetClkOut(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        return ((resp[0] & (3<<5)) >> 5)
            
     def setPin(self, enabled, pin):
         current = self.getPins()

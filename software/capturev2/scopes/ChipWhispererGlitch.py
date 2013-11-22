@@ -45,10 +45,10 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
                 {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
-                {'name':'Glitch Trigger', 'type':'list', 'values':{'Capture Trigger':0, 'Manual':1, 'Continous':2}, 'value':0},                   
-                {'name':'Repeat', 'type':'int'},
-                {'name':'Manual Trigger', 'type':'action'},
-                {'name':'Output Mode', 'type':'list', 'values':{'Clock Pos-Glitch':1, 'Clock Neg-Glitch':2, 'Glitch Only':3, 'Clock Only':4}},
+                {'name':'Glitch Trigger', 'type':'list', 'values':{'Capture Trigger':1, 'Manual':0, 'Continous':2}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},                   
+                {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
+                {'name':'Manual Trigger', 'type':'action', 'action':self.glitchManual},
+                {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3}, 'set':self.setGlitchType, 'get':self.glitchType},
                 {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
                 {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
                 ]
@@ -120,7 +120,7 @@ class ChipWhispererGlitch(QObject):
             
         print "Partial: %d %d"%(widthint, offsetint)
        
-    def setGlitchOffsetFine(self, fine):
+    def setGlitchWidthFine(self, fine):
         '''Set the fine phase adjust, range -255 to 255'''
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               
 
@@ -137,10 +137,10 @@ class ChipWhispererGlitch(QObject):
      
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
         
-    def getGlitchOffsetFine(self):
+    def getGlitchWidthFine(self):
         return self.getDCMStatus()[0]
 
-    def setGlitchWidthFine(self, fine):
+    def setGlitchOffsetFine(self, fine):
         '''Set the fine phase adjust, range -255 to 255'''
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               
 
@@ -155,7 +155,10 @@ class ChipWhispererGlitch(QObject):
         #assign clockglitch_settings_read[37] = phase1_done_reg;
         #assign clockglitch_settings_read[38] = phase2_done_reg;     
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
-        
+                
+    def getGlitchOffsetFine(self):
+        return self.getDCMStatus()[1] 
+
     def getDCMStatus(self):
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         
@@ -178,9 +181,6 @@ class ChipWhispererGlitch(QObject):
         
         return (phase1, phase2, dcm1Lock, dcm2Lock)
         
-    def getGlitchWidthFine(self):
-        return self.getDCMStatus()[1] 
-        
     def resetDCMs(self):
         reset = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8) 
         reset[5] |= (1<<1)
@@ -196,4 +196,39 @@ class ChipWhispererGlitch(QObject):
         print "DCM1: Phase %d, Locked %r"%(stat[0], stat[2])
         print "DCM2: Phase %d, Locked %r"%(stat[1], stat[3])  
         
+    def setNumGlitches(self, num):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        if num < 1:
+            num = 1
+        resp[6] = num-1
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+        
+    def numGlitches(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        return resp[6]+1
+    
+    def setGlitchTrigger(self, trigger):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        resp[5] = (resp[5] & ~(0x0C)) | (trigger << 2)
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)        
+        
+    def glitchTrigger(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        return (resp[5] & 0x0C) >> 2
+    
+    def setGlitchType(self, t):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        resp[5] = (resp[5] & ~(0x70)) | (t << 4)
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)        
+        
+    def glitchType(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        return (resp[5] & 0x70) >> 4
+        
+    def glitchManual(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        resp[5] = resp[5] | (1<<7)
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)           
+        resp[5] = resp[5] & ~(1<<7)
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False) 
         

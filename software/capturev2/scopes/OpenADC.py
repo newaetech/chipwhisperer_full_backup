@@ -336,7 +336,11 @@ class OpenADCInterface_ZTEX(QWidget):
         
 
     def read(self, N=0, debug=False):
-        data = self.dev.read(self.readEP, N, self.interface, 500)
+        try:
+            data = self.dev.read(self.readEP, N, self.interface, 500)
+        except IOError:
+            return []
+        
         data = bytearray(data)
         if debug:
             print "RX: ",
