@@ -108,7 +108,6 @@ class ReaderChipWhisperer(ReaderTemplate):
         """Set baud rate of reader"""
         
         #For SmartCard we assume Stop-bits = 1, guard-bits=1, start-bits=1, parity=even
-        
         self.usi.setBaud(brate)
         
     
@@ -181,6 +180,56 @@ class ReaderChipWhisperer(ReaderTemplate):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         pass
     
+class ReaderChipWhispererSCard(ReaderTemplate):
+    def __init__(self, console=None, showScriptParameter=None):
+        super(ReaderChipWhispererSCard, self).__init__(console, showScriptParameter)
+        self.scard = ChipWhispererTargets.CWSCardIntegrated()
+        
+
+    def setupParameters(self):
+        ssParams = [{'name':'Card Present', 'key':'statusStr', 'type':'bool', 'value':False, 'readonly':True},
+                    {'name':'Update Status', 'type':'action', 'action':self.statusUpdate},
+                    {'name':'Answer To Reset (ATR)', 'key':'atr', 'type':'str', 'value':'', 'readonly':True},
+                    {'name':'Reset Card', 'type':'action', 'action':self.reset},                                                        
+                    ]        
+        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
+        ExtendedParameter.setupExtended(self.params, self)       
+
+    def reset(self):
+        atr = self.scard.reset()
+        self.findParam('atr').setValue(atr)
+        
+    def getATR(self):
+        return self.scard.stratr
+
+    def statusUpdate(self):
+        self.findParam('statusStr').setValue(self.scard.isPresent())
+        
+    def con(self, oa):
+        self.scard.con(oa)
+        self.reset()
+
+    def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
+        """Send APDU to SmartCard, get Response"""        
+    
+        if txdata is None:
+            resp = self.scard.APDURecv(cla, ins, p1, p2, rxdatalen)
+            status = resp[16:18]
+            status = (status[0] << 8) | status[1]
+            payload = resp[0:rxdatalen]
+            
+            print "%4x"%status
+            
+            return (status, payload)
+   
+        else:    
+            return self.scard.APDUSend(cla, ins, p1, p2, txdata)
+    
+    
+    
+    
+
+      
 from smartcard.CardType import AnyCardType
 from smartcard.CardRequest import CardRequest
 from smartcard.util import toHexString
@@ -357,7 +406,7 @@ class SmartCard(QObject):
         self.showScriptParameter = showScriptParameter
         self.oa=None
         self.driver = None
-        ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':{"ChipWhisperer-Connected":ReaderChipWhisperer(), "PC/SC Reader":ReaderPCSC(), "Cheapskate-Serial":None}, 'value':None, 'set':self.setConnection},
+        ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':{"ChipWhisperer-USI":ReaderChipWhisperer(), "ChipWhisperer-SCARD":ReaderChipWhispererSCard(), "PC/SC Reader":ReaderPCSC(), "Cheapskate-Serial":None}, 'value':None, 'set':self.setConnection},
                     #"BasicCard v7.5 (INCOMPLETE"):None, 
                     #"Custom (INCOMPLETE)":None, "DPAContestv4 (INCOMPLETE)":None
                     {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(), "ChipWhisperer-Dumb":None}, 'value':None, 'set':self.setProtocol}                    
