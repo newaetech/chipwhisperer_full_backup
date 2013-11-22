@@ -736,7 +736,9 @@ class ChipWhispererCapture(MainChip):
         else:
             writer = None
                     
-        ac = acquisitionController(self.scope, target, writer, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
+        ac = acquisitionController(self.scope, target, writer, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine,
+                                   textExpectedLabel=self.esm.textOutExpected,
+                                   fixedPlain=self.fixedPlain)
         ac.traceDone.connect(self.printTraceNum)
         tn = self.numTraces
         ac.setMaxtraces(tn)        

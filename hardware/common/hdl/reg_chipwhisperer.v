@@ -51,11 +51,11 @@ module reg_chipwhisperer(
 	output  [15:0] reg_hyplen,
 	
 	/* External Clock */
-	input				extclk_fpa_i,
+	inout				extclk_fpa_io,
 	input				extclk_fpb_i,
 	input				extclk_pll_i,
 	input				extclk_rearin_i,
-	input				extclk_rearout_i,
+	output			extclk_rearout_o,
 	output			extclk_o,
 			
 	/* Extern Trigger Connections */
@@ -71,6 +71,10 @@ module reg_chipwhisperer(
 	output			trigger_ext_o,	
 	input				trigger_advio_i, 
 	
+	/* Clock Sources */
+	input				clkgen_i,
+	input				glitchclk_i,
+	
 	/* Main trigger connections */
 	output			trigger_o /* Trigger signal to capture system */
     ); 
@@ -81,15 +85,25 @@ module reg_chipwhisperer(
 	 `define CW_TRIGSRC_ADDR		39
 	 `define CW_TRIGMOD_ADDR		40
  
- /*  0xXX - External Clock Source (One Byte)
+ /*  0xXX - External Clock Connections (One Byte)
 	 
-	   [  X  X  X  X  X  S  S  S ]
+	   [  X RO RO FA FA S  S  S ]
 	     
 		  S S S = 000 Front Panel Channel A
 					 001 Front Panel Channel B
 					 010 Front Panel PLL Input
 		          011 Rear TargetIO - High Speed Input
 					 100 Rear TargetIO - High Speed Output				
+					
+			FA = 00 Front Panel A: High-Z (REQUIRED if using as input)
+			     01 Front Panel A: CLKGEN
+				  10 Front Panel A: Glitch Module	
+					
+			RO = (Bit 6/Bit 5) Rear Clock Out Source
+       		  00 : Disabled (constant)
+				  10 : CLKGEN
+				  11 : Glitch Module
+				  
    
      0xXX - External Trigger Connections (One Byte)
 	 
@@ -124,16 +138,65 @@ module reg_chipwhisperer(
 	 reg [7:0] registers_cwtrigmod;
   	 
 	
-	//Do to no assumed phase relationship we use regular old fabric for switching
-	assign extclk_o =   (registers_cwextclk[2:0] == 3'b000) ? extclk_fpa_i : 
+	 //Do to no assumed phase relationship we use regular old fabric for switching
+	 assign extclk_o =   (registers_cwextclk[2:0] == 3'b000) ? extclk_fpa_io : 
 							  (registers_cwextclk[2:0] == 3'b001) ? extclk_fpb_i : 
 							  (registers_cwextclk[2:0] == 3'b010) ? extclk_pll_i : 
 							  (registers_cwextclk[2:0] == 3'b011) ? extclk_rearin_i : 
-							  (registers_cwextclk[2:0] == 3'b100) ? extclk_rearout_i : 
+							  //(registers_cwextclk[2:0] == 3'b100) ? extclk_rearout_o : 
 							  1'b0;
 							  
-	
+	 //TODO: Should use a mux?
+	 //The glitch-clock comes from the fabric anyway, but the clkgen comes from the DCM. Either way we are jumping back
+	 //and forth a lot.
+	 //assign extclk_fpa_io = (registers_cwextclk[4:3] == 2'b01) ? clkgen_i :
+	 //							  (registers_cwextclk[4:3] == 2'b10) ? glitchclk_i :
+	 //							  1'bZ;
 	 
+	 assign extclk_fpa_io = 1'bZ;
+	 
+	
+	wire rearclk;
+	
+	BUFGMUX #(
+	.CLK_SEL_TYPE("ASYNC") // Glitchles ("SYNC") or fast ("ASYNC") clock switch-over
+	)
+	clkgenfx_mux (
+	.O(rearclk), // 1-bit output: Clock buffer output
+	.I0(clkgen_i), // 1-bit input: Clock buffer input (S=0)
+	.I1(glitchclk_i), // 1-bit input: Clock buffer input (S=1)
+	.S(registers_cwextclk[5]) // 1-bit input: Clock buffer select
+	);
+	
+	//Output clock using DDR2 block (recommended for Spartan-6 device)
+	ODDR2 #(
+		// The following parameters specify the behavior
+		// of the component.
+		.DDR_ALIGNMENT("NONE"), // Sets output alignment
+										// to "NONE", "C0" or "C1"
+		.INIT(1'b0),    // Sets initial state of the Q 
+							 //   output to 1'b0 or 1'b1
+		.SRTYPE("ASYNC") // Specifies "SYNC" or "ASYNC"
+							 //   set/reset
+	)
+	ODDR2_inst (
+		.Q(extclk_rearout_o),   // 1-bit DDR output data
+		.C0(rearclk), // 1-bit clock input
+		.C1(~rearclk), // 1-bit clock input
+		.CE(registers_cwextclk[6]), // 1-bit clock enable input
+		.D0(1'b1), // 1-bit data input (associated with C0)
+		.D1(1'b0), // 1-bit data input (associated with C1)
+		.R(~registers_cwextclk[6]),   // 1-bit reset input
+		.S(1'b0)    // 1-bit set input
+	);
+	
+	 //TODO: Should use a mux?
+	 /*
+	 assign extclk_rearout_o = (registers_cwextclk[6:5] == 2'b01) ? clkgen_i :
+								  (registers_cwextclk[6:5] == 2'b10) ? glitchclk_i :
+								  1'bZ;	
+	 */
+		
 	 wire trigger_and;
 	 wire trigger_or;
 	 wire trigger_ext;

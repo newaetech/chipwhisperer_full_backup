@@ -121,6 +121,75 @@ module reg_clockglitch(
 	 assign phase2_requested = clockglitch_settings_reg[17:9];
 	 
 	 wire dcm_rst;
+
+/*
+	 Clock-glitch settings main registers (address 51)
+	 [8..0]  = Glitch Offset Fine Phase 
+	 [17..9] = Glitch Width Fine Phase
+	 [18] = Load Phases
+	 [..19] =  Glitch Offset current setting
+	 [36..] =  Glitch Width current setting
+	 [37] = Offset Fine loaded
+	 [38] = Width Fine loaded
+	 [39] (Byte 4, Bit 7)  = Offset DCM Locked
+	 [40] (Byte 5, Bit 0)  = Width DCM Locked	 
+	 [41] (Byte 5, Bit 1)  = DCM Reset
+	 [43..42] (Byte 5, Bit [3..2]) = Glitch trigger source
+	      00 = Manual
+			01 = Capture Trigger (with offset)
+			10 = Continous
+	 
+	 [46..44] (Byte 5, Bit [6..4]) = Glitch Type
+			000 = Glitch is XORd with Clock (Positive or Negative going glitch)
+		   001 = Glitch is ORd with Clock (Positive going glitch only)
+			010 = Glitch Only
+			011 = Clock Only	 
+
+	 [47] (Byte 5, Bit 7) = Manual Glitch. Set to 1 then 0, glitch on rising edge
+	 
+	 [55..48] (Byte 6, Bits [7..0])
+	      Cycles to glitch-1 (e.g. 0 means 1 glitch)
+*/	
+	 
+	 wire [2:0] glitch_type;
+	 assign glitch_type = clockglitch_settings_reg[46:44];
+	 wire [1:0] glitch_trigger_src;
+	 assign glitch_trigger_src = clockglitch_settings_reg[43:42];
+	 
+	 wire [7:0] max_glitches;
+	 assign max_glitches = clockglitch_settings_reg[55:48];
+	 
+	 wire manual;
+	 assign manual = clockglitch_settings_reg[47];
+	 reg manual_dly;
+	 always @(posedge sourceclk)
+		manual_dly <= manual;
+	 
+	 reg glitch_trigger;
+	 always @(posedge sourceclk) begin
+		if (glitch_trigger_src == 2'b10)
+			glitch_trigger <= 1'b1;
+		else if (glitch_trigger_src == 2'b00)
+			glitch_trigger <= manual & ~manual_dly;
+		else
+			glitch_trigger <= 1'b0;
+	 end	 
+	
+	 reg [8:0] glitch_cnt;
+	 reg glitch_go;
+	 always @(posedge sourceclk) begin
+		if (glitch_trigger)
+			glitch_go <= 'b1;
+	 	else if (glitch_cnt >= max_glitches)
+			glitch_go <= 'b0;
+	 end
+	
+	 always @(posedge sourceclk) begin
+		if (glitch_go)
+			glitch_cnt <= glitch_cnt + 8'd1;
+		else
+			glitch_cnt <= 0;
+	 end
 	 
 	 assign clockglitch_settings_read[18:0] = clockglitch_settings_reg[18:0];
 	 assign clockglitch_settings_read[36:19] = {phase2_actual, phase1_actual};
@@ -128,7 +197,7 @@ module reg_clockglitch(
 	 assign clockglitch_settings_read[38] = phase2_done_reg;
 	 assign clockglitch_settings_read[39] = dcm1_locked;
 	 assign clockglitch_settings_read[40] = dcm2_locked;
-	 assign clockglitch_settings_read[63:56] = 8'h7B;
+	 assign clockglitch_settings_read[63:41] = clockglitch_settings_reg[63:41];
 	 assign dcm_rst = clockglitch_settings_reg[41];	 	 
 	
 	 always @(posedge clk) begin
@@ -178,7 +247,8 @@ module reg_clockglitch(
 	 clockglitch_s6 gc(
 		.source_clk(sourceclk),
 		.glitched_clk(glitchclk),
-		.glitch_next(),
+		.glitch_next(glitch_go),
+		.glitch_type(glitch_type),
 		.phase_clk(clk),
 		.dcm_rst(dcm_rst),
 		.phase1_requested(phase1_requested),
