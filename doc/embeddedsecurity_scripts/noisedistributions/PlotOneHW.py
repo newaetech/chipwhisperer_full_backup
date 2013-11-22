@@ -27,11 +27,14 @@
 
 from scipy.stats import norm
 from numpy import linspace
-from pylab import plot,show,hist,figure,title,hold,xlabel,ylabel
+from pylab import plot,show,hist,figure,title,hold,xlabel,ylabel,subplot,subplots
 import numpy as np
 
+def autocorr(x):
+    result = np.correlate(x, x, mode='full')
+    return result[result.size/2:]
 
-def PlotOneHW(hwlist, plotHist=True, plotNorms=True, plotMeans=True, plotSDs=True):
+def PlotOneHW(hwlist, plotHist=True, plotNorms=True, plotMeans=True, plotSDs=True, plotAutoCorr=True):
     xlims = [+1E99,-1E99]
 
     means = [0]*9
@@ -53,19 +56,30 @@ def PlotOneHW(hwlist, plotHist=True, plotNorms=True, plotMeans=True, plotSDs=Tru
         xlims[1] = max(xlims[1], 4*param[1]+param[0])
 
     if plotHist:
+        figure()
+        f, sb = subplots(3, 3, sharex='col', sharey='row')
+        sb = sb.flatten()
+        f.suptitle('Fitted Distribution, byte=%d'%(bnum), fontsize=14)
+        sb[3].set_ylabel('Occurances (normalized to match Gaussian PDF)')
+        sb[7].set_xlabel('Current Measurement (unitless, linear relation)')
         for i in range(0,9):
-            figure()
             x = linspace(xlims[0],xlims[1],500)
             # fitted distribution
-            pdf_fitted = norm.pdf(x,loc=param[0],scale=param[1])
+            pdf_fitted = norm.pdf(x,loc=means[i],scale=sds[i])
             # original distribution
             pdf = norm.pdf(x)
 
-            title('Fitted Distribution, HW=%d, byte=%d'%(i, bnum))
-            plot(x,pdf_fitted,'r-',x,pdf,'b-')
-            hist(data,normed=1,alpha=.3)
-            ylabel('Occurances (normalized to match Gaussian PDF)')
-            xlabel('Current Measurement (unitless, linear relation)')
+            #subplot(3,3,i+1)
+            sb[i].set_title('HW=%d'%(i))            
+            sb[i].plot(x,pdf_fitted,'r-',x,pdf,'b-')
+            sb[i].hist(hwlist[i],normed=1,alpha=.3)
+
+    if plotHist:
+        figure()
+        for i in range(0,9):
+            hist(hwlist[i],alpha=.3)
+        title('Histogram of Noise, byte=%d'%bnum)
+        
 
     if plotNorms:
         figure()
@@ -94,9 +108,47 @@ def PlotOneHW(hwlist, plotHist=True, plotNorms=True, plotMeans=True, plotSDs=Tru
         xlabel('Hamming Weight of Measurement')
         ylabel('Measurement Mean (unitless, linear relation to current)')
 
+    if plotAutoCorr:
+        figure()
+        f, sb = subplots(3, 3, sharey='row') #sharex='col'
+        sb = sb.flatten()
+        f.suptitle('Auto-Correlation of Noise, byte=%d'%(bnum), fontsize=14)
+        sb[3].set_ylabel('Auto-Correlation R[n], Normalized for R[0]=1.0')
+        sb[7].set_xlabel('Sample No.')
+        for i in range(0,9):
+            data = hwlist[i]
+
+            #Zero-Mean
+            data = data - means[i]
+
+            ac = autocorr(data)
+            ac = ac / ac[0]
+            sb[i].set_title('HW=%d'%(i))
+            sb[i].plot(range(0,len(data)),ac,)
+
+            #xmin, xmax = sb[i].get_xlim()
+            #print xmax
+
+            xl = sb[i].get_xticks()
+
+            xstr = []
+            for t in xl:
+                if t < 1000:
+                    s = "%d"%t
+                elif t < 10000:
+                    s = "%.1fk"%(t/1000.0)
+                else:
+                    s = "%dk"%(t/1000)
+                                    
+                xstr.append(s)
+
+            sb[i].set_xticklabels(xstr)
+            
+
     show()
 
 if __name__ == "__main__":
     bnum=7
     hwlist = np.load("hwlist_bnum=%d.npy"%bnum)
     PlotOneHW(hwlist)
+    #PlotOneHW(hwlist, plotHist=False, plotNorms=False, plotMeans=False, plotSDs=False, plotAutoCorr=True)
