@@ -39,7 +39,14 @@ module clockglitch_s6(
 	 output wire  glitched_clk,
 	 
 	 /* Glitch request */
-	 input wire   glitch_next,
+	 input wire        glitch_next,
+	 input wire [2:0]  glitch_type,
+	  /*
+			000 = Glitch is XORd with Clock (Positive or Negative going glitch)
+		   001 = Glitch is ORd with Clock (Positive going glitch only)
+			010 = Glitch Only
+			011 = Clock Only	 
+	 */
  
 	 /* ??? */
 	 input wire   phase_clk,
@@ -114,9 +121,24 @@ module clockglitch_s6(
 	wire dcm2_clk_out;
 	
 	wire glitchstream;
-	assign glitchstream = dcm1_clk_out & ~dcm2_clk_out;
+		
+	reg glitch_next_reg;
+	reg glitch_next_reg1;
+	//Need to think carefully about which clock to syncronize this too, and
+	//which edge. Lots of trouble as different options on outputs & adjustable
+	//phase
+	always @(negedge source_clk) begin
+		glitch_next_reg1 <= glitch_next;
+		glitch_next_reg <= glitch_next_reg1;
+	end
 	
-	assign glitched_clk = glitchstream;
+	assign glitchstream = (dcm1_clk_out & ~dcm2_clk_out) & glitch_next_reg;
+	
+	assign glitched_clk = (glitch_type == 3'b000) ? source_clk ^ glitchstream :
+	                      (glitch_type == 3'b001) ? source_clk | glitchstream :
+								 (glitch_type == 3'b010) ? glitchstream :
+								 (glitch_type == 3'b011) ? source_clk :
+								 1'b0;
 
 	// DCM_SP: Digital Clock Manager
 	// Spartan-6
