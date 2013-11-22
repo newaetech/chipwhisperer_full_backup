@@ -20,6 +20,8 @@
 	`define HW_TYPE 2
 	`define HW_VER 0
 	
+	//`define USE_USI
+	
 `endif
 
 //Baud rate of the UART
