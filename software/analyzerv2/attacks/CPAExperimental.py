@@ -118,7 +118,7 @@ class AttackCPA_Bayesian(QObject):
                     else:
                         raise ValueError("modeltype invalid")
                     
-                    hyp[tnum] = self.model.getHW(hypint)
+                    hyp[tnum] = hypint
                     
                 hyp = np.array(hyp)                    
 
@@ -303,7 +303,7 @@ class AttackCPA_SciPyCorrelation(QObject):
                         hypint = self.model.HypHD(pt, ct, key, bnum);
                     else:
                         raise ValueError("modeltype invalid")
-                    hyp[tnum, 0] = self.model.getHW(hypint)       
+                    hyp[tnum, 0] = hypint       
 
                 if progressBar:
                     progressBar.setValue(pbcnt)

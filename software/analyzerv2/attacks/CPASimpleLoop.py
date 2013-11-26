@@ -95,7 +95,7 @@ class CPASimpleLoop(QObject):
                     hypint = model.HypHD(pt, ct, key, bnum);
                 else:
                     raise ValueError("modeltype invalid")
-                hyp[tnum] = model.getHW(hypint)
+                hyp[tnum] = hypint
                 
             hyp = np.array(hyp)                    
     

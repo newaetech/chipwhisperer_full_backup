@@ -119,11 +119,14 @@ class CPAProgressiveOneSubkey(object):
                 #Generate the output of the SBOX
                 if modeltype == "Hamming Weight":
                     hypint = model.HypHW(pt, ct, key, bnum);
+                elif modeltype == "Hamming Weight (inverse)":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = 8 - hypint
                 elif modeltype == "Hamming Distance":
                     hypint = model.HypHD(pt, ct, key, bnum);
                 else:
                     raise ValueError("modeltype invalid")
-                hyp[tnum] = model.getHW(hypint)
+                hyp[tnum] = hypint
                 
             hyp = np.array(hyp)                                
                 

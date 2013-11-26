@@ -160,7 +160,7 @@ cdef class CPAProgressiveOneSubkey(object):
                     hypint = model.HypHD(pt, ct, key, bnum);
                 else:
                     raise ValueError("modeltype invalid")
-                hyp[tnum] = model.getHW(hypint)                                
+                hyp[tnum] = hypint                            
             
             #print "working"
             for j in range(numtraces):

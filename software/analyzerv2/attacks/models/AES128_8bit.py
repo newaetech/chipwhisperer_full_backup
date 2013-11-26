@@ -61,9 +61,9 @@ def xtime(a):
 def HypHW(pt, ct, key, bnum):
     """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
     if pt != None:
-        return aes_tables.sbox[pt[bnum] ^ key]
+        return getHW(aes_tables.sbox[pt[bnum] ^ key])
     elif ct != None:        
-        return aes_tables.i_sbox[ct[bnum] ^ key]
+        return getHW(aes_tables.i_sbox[ct[bnum] ^ key])
     else:
         raise ValueError("Must specify PT or CT")
 
@@ -72,7 +72,7 @@ def HypHWXtime(pt, keyguess, numguess, keyknown, bnumknown):
     a = aes_tables.sbox[pt[numguess] ^ keyguess]
     b = aes_tables.sbox[pt[bnumknown] ^ keyknown] 
     raise ValueError("Should this be HW instead of just xtime()???")  
-    return xtime(a^b)
+    return getHW(xtime(a^b))
 
 def HypHD(pt, ct, key, bnum):
     """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming distance of result"""
@@ -81,11 +81,11 @@ def HypHD(pt, ct, key, bnum):
         #TODO: This does't work too well, need to fix
         st2 = aes_tables.sbox[pt[bnum] ^ key]
         st1 = pt[bnum]
-        return st1 ^ st2
+        return getHW(st1 ^ st2)
     elif ct != None:
         st10 = ct[INVSHIFT[bnum]]
         st9 =  aes_tables.i_sbox[ct[bnum] ^ key]
-        return st9 ^ st10
+        return getHW(st9 ^ st10)
     else:
         raise ValueError("Must specify PT or CT")    
 
