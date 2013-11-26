@@ -92,6 +92,9 @@ class TargetTemplate(QObject):
     def init(self):
         """Init Hardware"""
         pass
+    
+    def reinit(self):
+        pass
 
     def setModeEncrypt(self):
         """Set hardware to do encryption, if supported"""

@@ -187,10 +187,12 @@ class acquisitionController(QObject):
 
         #Set mode
         if self.target is not None:
+            self.target.reinit()
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)  
         
-        self.scope.arm()
+        if self.scope is not None:
+            self.scope.arm()
         
         if self.target is not None:            
             #Load input, start encryption, get output
@@ -201,13 +203,14 @@ class acquisitionController(QObject):
                     self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
 
         #Get ADC reading
-        try:
-            if self.scope.capture(update, N) == True:
-                print "Timeout"
-                return False       
-        except IOError,e:
-            print "IOError: %s"%str(e)
-            return False
+        if self.scope is not None:
+            try:
+                if self.scope.capture(update, N) == True:
+                    print "Timeout"
+                    return False       
+            except IOError,e:
+                print "IOError: %s"%str(e)
+                return False
         
         return True
 
@@ -681,14 +684,19 @@ class ChipWhispererCapture(MainChip):
                         try:
                             self.target.setOpenADC(self.scope.qtadc.ser)
                         except:
-                            pass        
-                    self.target.con()
+                            pass      
                     self.statusBar().showMessage("Connected :)")
                 except IOError:
                     exctype, value = sys.exc_info()[:2]
                     self.console.append("Connect Error: %s"%(str(value)))
-                    #QMessageBox.warning(None, "Connect Error", str(exctype) + str(value))  
-                    
+                    #QMessageBox.warning(None, "Connect Error", str(exctype) + str(value))
+            
+            if self.target is not None:
+                try:
+                    self.target.con()  
+                except IOError:
+                    exctype, value = sys.exc_info()[:2]
+                    self.console.append("Connect Error: %s"%(str(value)))    
         else:
             if self.scope is not None:
                 self.scope.dis()
