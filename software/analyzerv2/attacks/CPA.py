@@ -83,7 +83,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
-                        {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':['Hamming Weight', 'Hamming Distance'], 'value':'Hamming Weight'},
+                        {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':['Hamming Weight', 'Hamming Distance', 'Hamming Weight (inverse)'], 'value':'Hamming Weight'},
                         ]},
                        {'name':'Take Absolute', 'type':'bool', 'value':True},
                        
