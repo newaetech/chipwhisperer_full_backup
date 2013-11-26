@@ -298,9 +298,17 @@ class OutputVsTime(ResultsPlotData):
                     prange = self.attack.getPointRange(bnum)
                     prange = range(prange[0], prange[1])                    
                     
-                    if fastDraw:
-                        maxlimit = np.amax(diffs, 0)
-                        minlimit = np.amin(diffs, 0)
+                    if fastDraw:             
+                        if self.highlightTop:
+                            newdiff = np.array(diffs)
+                            for j in self.highlights[bnum]:
+                                newdiff[j] = 0
+                        else:
+                            newdiff = diffs
+                                
+                                  
+                        maxlimit = np.amax(newdiff, 0)
+                        minlimit = np.amin(newdiff, 0)
                         self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
                         self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')
                         pvalue += self.numPerms
