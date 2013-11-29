@@ -1,6 +1,5 @@
 `include "includes.v"
 //`define CHIPSCOPE
-`define USE_I2C
 
 /***********************************************************************
 This file is part of the ChipWhisperer Project. See www.newae.com for more details,
@@ -151,11 +150,11 @@ module reg_i2c(
 	wire i2c_rd_nwr;
 	
 	 
-`ifdef USE_I2C
+`ifdef ENABLE_I2C
 	/* The following module not yet in GIT due to licensing issues. Was purchased from
 	    http://skytek.x10.mx.
 
-	If you have the core, enable it with 'USE_I2C'.
+	If you have the core, enable it with 'ENABLE_I2C'.
 		 */
 	iic iic_sys(
 		.sysclk(clk),
