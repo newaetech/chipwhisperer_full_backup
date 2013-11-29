@@ -1,0 +1,121 @@
+#
+# Input file for OpenADC-MakeISE for the ChipWhisperer-CaptureRev2 Hardware
+#
+# OpenADC-MakeISE is a method of making ISE Project files automatically, and will eventually
+# be extended to include command-line design flows. This saves the issue of dealing with changes
+# in project files being added to git, especially if using different versions of ISE.
+#
+# WARNING: Everything is CASE SENSITIVE
+#
+
+[ISE Configuration]
+#Generate project configuration
+#You can specify any parameter here which will override the input file 'defaults'
+InputFile = ise_verilog_template.xise.in
+Version = 14.4
+Device Family = Spartan6
+Package = ftg256
+Device = xc6slx25
+Speed Grade = -3
+Verilog Include Directories = ../../../hdl|../../../../../openadc/hdl/hdl
+
+#This is needed to allow the partial bitstream files to be generated successfully
+Other Map Command Line Options = -convert_bram8
+
+#Some little optimization improvements
+Allow Logic Optimization Across Hierarchy = true
+Global Optimization map spartan6 = speed
+
+#The following will run faster, but need to be changed for your PC
+#Enable Multi-Threading = 2
+#Enable Multi-Threading par spartan6 = 4
+
+[UCF Files]
+#Normally just one UCF file
+ztex_rev2_1.11c_ise/ztex_1_11.ucf
+
+[Verilog Files]
+#List of verilog source files... by default added for sim + implementation
+ztex_rev2_1.11c_ise/ztex_cw_interface.v
+ztex_rev2_1.11c_ise/reg_reconfig.v
+setup.v = Setup File
+
+#### OpenADC Files
+../../../../openadc/hdl/hdl/openadc_interface.v
+../../../../openadc/hdl/hdl/reg_main.v
+../../../../openadc/hdl/hdl/reg_openadc.v
+../../../../openadc/hdl/hdl/reg_openadc_adcfifo.v
+../../../../openadc/hdl/hdl/trigger_unit.v
+../../../../openadc/hdl/hdl/spartan6/dcm_phaseshift_interface.v
+#clock_managment not needed if using advanced
+#../../../../openadc/hdl/hdl/spartan6/clock_managment.v
+../../../../openadc/hdl/hdl/spartan6/fifo_top.v
+../../../../openadc/hdl/hdl/serial_reg_iface.v
+../../../../openadc/hdl/hdl/spartan6/clock_managment_advanced.v
+../../../../openadc/hdl/hdl/spartan6/dcm_clkgen_load.v
+
+
+#### ChipWhisperer Files
+../../../common/hdl/clockglitch/clockglitch_s6.v
+../../../common/hdl/clockglitch/reg_clockglitch.v
+../../../common/hdl/i2c/reg_i2c.v
+../../../common/hdl/io_trigger/reg_iotrigger.v
+../../../common/hdl/io_trigger/trigger_system.v
+../../../common/hdl/reg_chipwhisperer.v
+../../../common/hdl/serialtarget/reg_serialtarget.v
+../../../common/hdl/serialtarget/targ_async_receiver.v
+../../../common/hdl/serialtarget/targ_async_transmitter.v
+../../../common/hdl/smartcard/async_receiver_scard.v
+../../../common/hdl/smartcard/async_transmitter_scard.v
+../../../common/hdl/smartcard/reg_smartcards.v
+../../../common/hdl/smartcard/scard_hls_generated.v
+../../../common/hdl/smartcard/serial_scard_hls_iface.v
+../../../common/hdl/universal_serial/reg_usi.v
+../../../common/hdl/universal_serial/usi.v
+../../../common/hdl/universal_serial/usi_tb_rx.v
+../../../common/hdl/universal_serial/usi_tb_tx.v
+
+# The following file is NOT in repository & you must get a license for it, which
+# was purchased from http://skytek.x10.mx . The license was only $13, so it's not
+# exactly breaking the bank. You only need this if you want to use the PLL (which requires I2C)
+# Be sure to enable the associated logic with ENABLE_I2C in the Setup section
+#../../../common/hdl/i2c/nonfree/iic.v
+
+[CoreGen Files]
+#Add XCO files. You can just list the filename, OR have the CoreGen files be
+#auto-generated as well by specifying the section name
+fifoonly_adcfifo.xco = ADC FIFO CoreGen Setup
+fifo_target_tx.xco = Target TX FIFO Setup
+icap_fifo.xco = ICAP FIFO Setup
+
+[ADC FIFO CoreGen Setup]
+InputFile = fifoonly_adcfifo.xco.in
+#WARNING: Do not modify this w/o adjusting 'Setup File' Depth
+input_depth = 8192
+output_depth = CALCULATE $input_depth$ / 4
+full_threshold_assert_value = CALCULATE $input_depth$ - 2
+full_threshold_negate_value = CALCULATE $input_depth$ - 1
+#How to get these widths? Just copied from the file in the end...
+write_data_count_width = 14
+read_data_count_width = 12
+data_count_width = 13
+
+[Target TX FIFO Setup]
+InputFile = fifo_target_tx.xco.in
+
+[ICAP FIFO Setup]
+InputFile = icap_fifo.xco.in
+
+[Setup File]
+ZTEX
+UART_CLK = 30000000
+MAX_SAMPLES = 24573
+FAST_FTDI
+NOBUFG_ADCCLK
+CLOCK_ADVANCED
+SYSTEM_CLK = 30000000
+TARG_UART_BAUD = 38400
+HW_TYPE = 3
+HW_VER = 0
+#ENABLE_RECONFIG	
+#ENABLE_I2C
