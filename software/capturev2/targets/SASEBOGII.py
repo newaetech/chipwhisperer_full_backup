@@ -42,6 +42,156 @@ from ExtendedParameter import ExtendedParameter
 
 import ChipWhispererTargets
 
+class SaseboGIIDPAContest(object):
+    def init(self):
+        #Select AES
+        self.write(0x0004, 0x00, 0x01)
+        self.write(0x0006, 0x00, 0x00)
+
+        #Reset AES module
+        self.write(0x0002, 0x00, 0x04)
+        self.write(0x0002, 0x00, 0x00)
+
+        #Select AES output
+        self.write(0x0008, 0x00, 0x01)
+        self.write(0x000A, 0x00, 0x00)
+        
+        self.write(0x0002, 0x00, 0x02)
+        while self.isDone() == False:
+            continue
+
+    def setModeEncrypt(self):
+        self.write(0x000C, 0x00, 0x00)
+
+    def setModeDecrypt(self):
+        self.write(0x000C, 0x00, 0x01)
+
+    def checkEncryptionKey(self, key):          
+        return key 
+
+    def loadEncryptionKey(self, key):
+        """Encryption key is bytearray"""
+
+        if key:     
+            self.write(0x0100, key[0], key[1])
+            self.write(0x0102, key[2], key[3])
+            self.write(0x0104, key[4], key[5])
+            self.write(0x0106, key[6], key[7])
+            self.write(0x0108, key[8], key[9])
+            self.write(0x010A, key[10], key[11])
+            self.write(0x010C, key[12], key[13])
+            self.write(0x010E, key[14], key[15])
+
+        #Generate key
+        self.write(0x0002, 0x00, 0x02)
+        while self.isDone() == False:
+            continue
+
+    def loadInput(self, inputtext):
+        self.write(0x0140, inputtext[0], inputtext[1])
+        self.write(0x0142, inputtext[2], inputtext[3])
+        self.write(0x0144, inputtext[4], inputtext[5])
+        self.write(0x0146, inputtext[6], inputtext[7])
+        self.write(0x0148, inputtext[8], inputtext[9])
+        self.write(0x014A, inputtext[10], inputtext[11])
+        self.write(0x014C, inputtext[12], inputtext[13])
+        self.write(0x014E, inputtext[14], inputtext[15])
+
+    def isDone(self):
+        result = self.read(0x0002)
+
+        if result[0] == 0x00 and result[1] == 0x00:
+            return True
+        else:
+            return False
+
+    def readOutput(self):        
+        return self.read128(0x0180)
+
+    def setMode(self, mode):
+        if mode == "encryption":
+            self.write(0x000C, 0x00, 0x00)
+        elif mode == "decryption":
+            self.write(0x000C, 0x00, 0x01)
+        else:
+            print "Wrong mode!!!!"
+
+    def go(self):
+        self.write(0x0002, 0x00, 0x01)
+    
+    
+class SaseboGIIAESRev1(object):
+    def init(self):
+        #Select AES
+        self.write(0x0004, 0x00, 0x01)
+
+        #Reset AES module
+        self.write(0x0002, 0x00, 0x04)
+        self.write(0x0002, 0x00, 0x00)
+
+        #Select AES output
+        self.write(0x0008, 0x00, 0x01)
+
+    def setModeEncrypt(self):
+        self.write(0x000C, 0x00, 0x00)
+
+    def setModeDecrypt(self):
+        self.write(0x000C, 0x00, 0x01)
+
+    def checkEncryptionKey(self, key):          
+        return key 
+
+    def loadEncryptionKey(self, key):
+        """Encryption key is bytearray"""
+
+        if key:     
+            self.write(0x0100, key[0], key[1])
+            self.write(0x0102, key[2], key[3])
+            self.write(0x0104, key[4], key[5])
+            self.write(0x0106, key[6], key[7])
+            self.write(0x0108, key[8], key[9])
+            self.write(0x010A, key[10], key[11])
+            self.write(0x010C, key[12], key[13])
+            self.write(0x010E, key[14], key[15])
+
+        #Generate key
+        self.write(0x0002, 0x00, 0x02)
+
+        while self.isDone() == False:
+            continue
+
+    def loadInput(self, inputtext):
+        self.write(0x0140, inputtext[0], inputtext[1])
+        self.write(0x0142, inputtext[2], inputtext[3])
+        self.write(0x0144, inputtext[4], inputtext[5])
+        self.write(0x0146, inputtext[6], inputtext[7])
+        self.write(0x0148, inputtext[8], inputtext[9])
+        self.write(0x014A, inputtext[10], inputtext[11])
+        self.write(0x014C, inputtext[12], inputtext[13])
+        self.write(0x014E, inputtext[14], inputtext[15])
+
+    def isDone(self):
+        result = self.read(0x0002)
+
+        if result[0] == 0x00 and result[1] == 0x00:
+            return True
+        else:
+            return False
+
+    def readOutput(self):        
+        return self.read128(0x0180)
+
+    def setMode(self, mode):
+        if mode == "encryption":
+            self.write(0x000C, 0x00, 0x00)
+        elif mode == "decryption":
+            self.write(0x000C, 0x00, 0x01)
+        else:
+            print "Wrong mode!!!!"
+
+    def go(self):
+        self.write(0x0002, 0x00, 0x01)
+    
                
 class SaseboGII(QObject):   
     paramListUpdated = Signal(list) 
@@ -147,6 +297,9 @@ class SaseboGII(QObject):
 
     def close(self):
         self.sasebo.close()
+        
+    def reinit(self):
+        self.init()
 
     def init(self):
         #Select AES
@@ -161,8 +314,8 @@ class SaseboGII(QObject):
         self.write(0x0008, 0x00, 0x01)
         self.write(0x000A, 0x00, 0x00)
         
+        #Generate key
         self.write(0x0002, 0x00, 0x02)
-        
         while self.isDone() == False:
             continue
 
@@ -174,6 +327,14 @@ class SaseboGII(QObject):
 
     def checkEncryptionKey(self, key):          
         return key 
+    
+    def timeoutWait(self, timeout=100):
+        tm = 0
+        while self.isDone() == False:
+            tm += 1
+            if tm > timeout:
+                raise IOError("Timeout")
+        
 
     def loadEncryptionKey(self, key):
         """Encryption key is bytearray"""
@@ -188,11 +349,10 @@ class SaseboGII(QObject):
             self.write(0x010C, key[12], key[13])
             self.write(0x010E, key[14], key[15])
 
-        #I don't know what this is but we need it? Not documented?
+        #Generate key
         self.write(0x0002, 0x00, 0x02)
 
-        while self.isDone() == False:
-            continue
+        self.timeoutWait()
 
     def loadInput(self, inputtext):
         self.write(0x0140, inputtext[0], inputtext[1])
