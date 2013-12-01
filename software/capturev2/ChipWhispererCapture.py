@@ -72,6 +72,11 @@ except ImportError:
 from scopes.OpenADC import OpenADCInterface as OpenADCInterface
 
 try:
+    from scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
+except ImportError:
+    VisaScopeInterface = None
+
+try:
     import targets.SimpleSerial as target_SimpleSerial
 except ImportError:
     target_SimpleSerial = None
@@ -464,6 +469,9 @@ class ChipWhispererCapture(MainChip):
         
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
+            
+        if VisaScopeInterface is not None:
+            valid_scopes["VisaScopeInterface"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
         
         self.esm = EncryptionStatusMonitor(self)
         
