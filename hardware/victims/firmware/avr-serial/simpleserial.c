@@ -57,11 +57,11 @@ void hex_print(const uint8_t * in, int len, char *out)
 		out[j] = 0;
 }
 
-uint8_t memory[64];
-char asciibuf[64];
+uint8_t memory[KEY_LENGTH*4];
+char asciibuf[KEY_LENGTH*4];
 uint8_t pt[16];
 //Default key
-uint8_t tmp[16] = {0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c};
+uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
 
 
 //We want to use the AVR ADC-pins, since they have a seperate power rail
@@ -75,9 +75,13 @@ uint8_t tmp[16] = {0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,0xab,0xf7,0x15,0x88,0
 #define OSCMAX 0x7F
 #define OSCMIN 0x00
 
+#define OSCCAL_CENTER 112
+#define OSCCAL_VARY 12
+
 /* NOTE: The following is determined emperically. You want to calibrate the
-   internal oscillator to 7.37 MHz */
-#define OSCCAL_UARTGOOD 104
+   internal oscillator to 7.37 MHz, which you can measure on the OSCOUT
+   pin */
+#define OSCCAL_UARTGOOD 95
 
 int main
 	(
@@ -93,9 +97,10 @@ int main
 	
     //OSCCAL only needed for internal oscillator mode, doesn't hurt anyway
 	OSCCAL = OSCCAL_UARTGOOD;	
+    OSCCAL = 125; //100 = 7.65 MHz, 125 = 9.39
 	_delay_ms(500);
 
-	/* Uncomment this to get a HELLO message for debug */
+ 	/* Uncomment this to get a HELLO message for debug */
 	/*
 	output_ch_0('h');
 	output_ch_0('e');
@@ -177,8 +182,8 @@ int main
 #ifdef VARYING_CLOCK
 				_delay_ms(25);
 				
-				newosc = (rand() & 10);
-				OSCCAL = OSCCAL_UARTGOOD + (int8_t)((int8_t)5 - (int8_t)newosc);
+				newosc = (rand() & OSCCAL_VARY);
+				OSCCAL = OSCCAL_CENTER + (int8_t)((int8_t)(OSCCAL_VARY/2) - (int8_t)newosc);
 				
 				_delay_ms(1);
 #endif
