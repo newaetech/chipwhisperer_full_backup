@@ -56,7 +56,7 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         
         
     def loadAllTraces(self, directory=None, prefix=""):
-        self.traces = np.load(directory + "/%straces.npy"%prefix)
+        self.traces = np.load(directory + "/%straces.npy"%prefix, mmap_mode='r')
         self.textins = np.load(directory + "/%stextin.npy"%prefix)
         self.textouts = np.load(directory + "/%stextout.npy"%prefix)
         self.knownkey = np.load(directory + "/%sknownkey.npy"%prefix)
