@@ -191,7 +191,7 @@ class SimpleSerial(TargetTemplate):
     paramListUpdated = Signal(list)     
 
     def setupParameters(self):
-        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
+        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ser = None   
