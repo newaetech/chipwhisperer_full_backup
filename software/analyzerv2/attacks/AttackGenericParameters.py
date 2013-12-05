@@ -57,6 +57,8 @@ class AttackGenericParameters(QObject):
 
         self.MainWindow = MainWindow
 
+	self.maxSubKeys = 32
+
         #TODO: Where to get this from?
         self.numsubkeys = 16
 
@@ -85,18 +87,28 @@ class AttackGenericParameters(QObject):
 
         self.params = Parameter.create(name='Attack Settings', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params)
+        self.updateBytesVisible()
 
     def getByteList(self):
-        init = [dict(name='Byte %d'%bnum, type='bool', value=True, bytenum=bnum) for bnum in range(0,self.numsubkeys)]
+        init = [dict(name='Byte %d'%bnum, type='bool', value=True, bytenum=bnum) for bnum in range(0,self.maxSubKeys)]
         init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
         init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
         return init
     
+    def updateBytesVisible(self):
+        blist = []
+        for i,t in enumerate(self.bytesParameters()):
+            if i < self.numsubkeys:
+                t.show()
+            else:
+                t.hide()
+
     def bytesEnabled(self):
         blist = []
-        for t in self.bytesParameters():
-            if t.value() == True:
-                blist.append(t.opts['bytenum'])
+        for i,t in enumerate(self.bytesParameters()):
+            if i < self.numsubkeys:
+                if t.value() == True:
+                    blist.append(t.opts['bytenum'])
         return blist
 
     def allBytesOn(self):
