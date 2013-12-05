@@ -61,8 +61,9 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         self.textouts = np.load(directory + "/%stextout.npy"%prefix)
         self.knownkey = np.load(directory + "/%sknownkey.npy"%prefix)
 
-        self.NumTrace = self.traces.shape[0]
-        self.NumPoint = self.traces.shape[1]
+	#These should come from config file
+        #self.NumTrace = self.traces.shape[0]
+        #self.NumPoint = self.traces.shape[1]
 
         #Traces loaded means saved
         self.setDirty(False)

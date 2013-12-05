@@ -120,6 +120,14 @@ CDEFS += -DAVRCRYPTOLIB
 #	   aes_sbox-asm.S
 #CDEFS += -DAVRCRYPTOLIB  
 
+########
+#From http://www.dpacontest.org/v4/rsm_doc.php which is a masked version
+#of AES-256
+#CRYPTO_LIB = dpav4
+#SRC += aes_enc.c aes_keyschedule.c
+#ASRC += gf256mul.S aes_sbox-asm.S
+#CDEFS += -DDPAV4
+
 ##########################################################################
 ##########################################################################
 

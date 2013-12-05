@@ -63,6 +63,37 @@ void aes_indep_enc(uint8_t * pt)
 	}
 }
 
+#elif defined(DPAV4)
+
+#include "aes.h"
+#include "aes_enc.h"
+
+/*  This is the AES RSM 256 encryption function that call the generic AES RSM encryption core*/
+void aes256_enc(uint8_t* j, void* buffer, aes256_ctx_t* ctx,uint8_t rng){
+	aes_encrypt_core(j,buffer, (aes_genctx_t*)ctx, 14,(uint8_t)rng);
+}
+
+aes256_ctx_t ctx;
+
+void aes_indep_init(void)
+{
+    ;
+}
+
+void aes_indep_key(uint8_t * key)
+{
+	aes256_init(key, &ctx);
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+	static uint8_t j[0];
+
+	//Encryption with trigger enabled
+	aes256_enc(j, pt, &ctx, 1);
+}
+
+
 #else
 
 #error "No Crypto Lib Defined?"

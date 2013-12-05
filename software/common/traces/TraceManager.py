@@ -64,7 +64,7 @@ class TraceManager():
     def findMappedTrace(self, n):
         for t in self.dlg.traceList:
             if t.mappedRange:
-                if n >= t.mappedRange[0] or n <= t.mappedRange[1]:
+                if n >= t.mappedRange[0] and n <= t.mappedRange[1]:
                     return t
         raise ValueError("n = %d not in mapped range"%n)
 
@@ -245,9 +245,9 @@ class TraceManagerDialog(QDialog):
             if self.table.cellWidget(i, self.findCol("Enabled")).isChecked():
                 self.traceList[i].enabled = True
                 tlen = self.traceList[i].numTraces()
-                self.traceList[i].mappedRange = [startTrace, startTrace+tlen]
-                self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d"%(startTrace, startTrace+tlen)))
-                startTrace = startTrace + tlen + 1
+                self.traceList[i].mappedRange = [startTrace, startTrace+tlen-1]
+                self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d"%(startTrace, startTrace+tlen-1)))
+                startTrace = startTrace + tlen
 
                 if self.traceList[i].traces is None:
                     if self.traceList[i].config.configFilename() is not None:
