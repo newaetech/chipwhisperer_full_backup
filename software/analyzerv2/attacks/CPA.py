@@ -60,6 +60,9 @@ from attacks.AttackProgressDialog import AttackProgressDialog
 from attacks.CPAProgressive import CPAProgressive
 from attacks.CPASimpleLoop import CPASimpleLoop
 
+#DO NOT COMMIT
+from attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
+
 from AttackGenericParameters import AttackGenericParameters
 
 class CPA(AttackBaseClass, AttackGenericParameters):
@@ -74,7 +77,9 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             self.console.append(sr)
         
     def setupParameters(self):      
-        cpaalgos = {'Progressive':CPAProgressive, 'Simple':CPASimpleLoop}
+        cpaalgos = {'Progressive':CPAProgressive,
+                    'Simple':CPASimpleLoop,
+                    'Channel Info':CPAExperimentalChannelinfo}
         
         #if CPACython is not None:
         #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
