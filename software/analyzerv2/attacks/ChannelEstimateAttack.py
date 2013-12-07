@@ -26,9 +26,6 @@ import os
 import sys
 from operator import itemgetter
 
-sys.path.append('../common')
-import attacks.models.AES128_8bit as AES128_8bit
-
 class ChannelEstimateAttackOneSubkey(object):
     """ Redos entire attack """
     def __init__(self):        
@@ -38,13 +35,16 @@ class ChannelEstimateAttackOneSubkey(object):
         pass
     
     def oneSubkey(self, bnum, traces_fit, traces_test, plaintexts_fit, plaintexts_test,
-                  modeltype="Hamming Weight", model=AES128_8bit,
-                  key=None, printData=False, aroundStartEnd=False, useSVD=True,
+                  model, modeltype="Hamming Weight",
+                  key=None, printData=False, aroundStartEnd=False, useSVD=True, tracefitPInv=False,
                   progressBar=None, pbcnt=0):
 
-        ntracesfit = len(traces_fit[:,0])
+        if tracefitPInv:
+            ntracesfit = len(traces_fit[0,:])
+        else:
+            ntracesfit = len(traces_fit[:,0])
         ntracestry = len(traces_test[:,0])
-    
+
         if printData:
             print " Key %d = %2x"%(bnum, key[bnum])
 
@@ -75,11 +75,15 @@ class ChannelEstimateAttackOneSubkey(object):
                 hwlst[i][0] = AES128_8bit.HypHW(t, None, guess, bnum)
     
             if useSVD:
-                #Use pseudo-inverse which is fairly fast, as NumPY uses a SVD decomposition
-                channel = np.dot(np.linalg.pinv(traces_fit), hwlst) 
+                if tracefitPInv:
+                    #traces_fit already a pseudoinverse
+                    channel = np.dot(traces_fit, hwlst)
+                else:
+                    #Use pseudo-inverse which is fairly fast, as NumPY uses a SVD decomposition
+                    channel = np.dot(np.linalg.pinv(traces_fit), hwlst) 
             else:
                 #Classic but VERY SLOW least-squares
-                #channel = np.linalg.lstsq(traces_fit, hwlst)[0]           
+                channel = np.linalg.lstsq(traces_fit, hwlst)[0]           
 
             hwtry = np.zeros( (ntracestry, 1) )
             for i,t in enumerate(plaintexts_test):
@@ -100,6 +104,11 @@ class ChannelEstimateAttackOneSubkey(object):
 
         return (diffs, pbcnt)
 
+#Hacks for main()
+sys.path.append('../../common')
+sys.path.append('../.')
+import attacks.models.AES128_8bit as AES128_8bit
+
 def main(tracedir, fitrange, tryrange):    
     preflist = []
 
@@ -119,38 +128,65 @@ def main(tracedir, fitrange, tryrange):
     key = np.load(tracedir + prefix + "knownkey.npy")
     
     #Majority of traces used in generating estimated channel
-    tracesfit = traces[fitrange(0):fitrange(1),:]
-    textinfit = textin[fitrange(0):fitrange(1),:]
+    tracesfit = traces[fitrange[0]:fitrange[1],:]
+    textinfit = textin[fitrange[0]:fitrange[1],:]
 
     #Select a few traces to use a test
-    tracestry = traces[tryrange(0):tryrange(1),:]
-    textintry = textin[tryrange(0):tryrange(1),:]
+    tracestry = traces[tryrange[0]:tryrange[1],:]
+    textintry = textin[tryrange[0]:tryrange[1],:]
+
+    tracesfit = np.linalg.pinv(tracesfit)
 
     cea = ChannelEstimateAttackOneSubkey()
 
-    for bnum in range(0, 16):
+    diffs = [0]*16
+    blist = range(0, 16)
+
+    for bnum in blist:
         print "Attacking byte %d"%bnum
         cea.clearStats()
 
-        #Example running an attack, don't set 'aroundStartEnd' if you wan the full attack and not quick cheater
-        cea.oneSubkey(bnum, tracesfit, tracestry, textinfit, textintry, key=key, printData=True, aroundStartEnd=True)        
+        #Example running an attack, don't set 'aroundStartEnd' if you want
+        #the full attack and not quick cheater
+        diffs[bnum] = cea.oneSubkey(bnum, tracesfit, tracestry, textinfit, textintry, AES128_8bit,
+                      key=key, printData=False, aroundStartEnd=False, tracefitPInv=True)[0]
+
+    #Sort Output
+    output = [0]*16
+    for bnum in blist:
+        output[bnum] = []
+        for i,d in enumerate(diffs[bnum]):
+            output[bnum].append({'hyp':i, 'sse':d})
+
+        output[bnum] = sorted(output[bnum], key=itemgetter('sse'))
+
+    #Print most likely & PGE
+    for bnum in blist:
+        print " %02x "%output[bnum][0]['hyp'],
+    print ""
+    for bnum in blist:
+        print "%3d "%map(itemgetter('hyp'), output[bnum]).index(key[bnum]),
+    print ""
+
 
 if __name__ == "__main__":
     #Point to some example traces, available from ChipWhisperer.com
 
     #RSM-AES256 (DPAv4 Contest)
-    #directory = "/home/colin/Documents/chipwhisperer/git/chipwhisperer/software/scripting-examples/default-data-dir/traces-avr-dpav4-vcc/"
+    directory = "/home/colin/Documents/chipwhisperer/git/chipwhisperer/software/scripting-examples/default-data-dir/traces-avr-dpav4-vcc/"
+    fitrange = (0, 4000)
+    tryrange = (4000, 10000)
 
     #Simple AES
-    directory = "/home/colin/Documents/chipwhisperer/git/chipwhisperer/software/scripting-examples/default-data-dir/traces-avr-aes128-vcc/"
+    #directory = "/home/colin/Documents/chipwhisperer/git/chipwhisperer/software/scripting-examples/default-data-dir/traces-avr-aes128-vcc/"
+    #fitrange = (0, 100)
+    #tryrange = (8000, 8150)
 
     #Input traces need to be split into a "fitting set" and a "test set"
     #A channel will be generated with the "fitting set", and later we'll
     #try then with the "test set". The two sets are used to avoid fitting
     #random noise, and check how things actually worked
-    fitrange = (0, 100)
-    tryrange = (5000, 5050)
-
+    
     main(directory, fitrange, tryrange)
    
 
