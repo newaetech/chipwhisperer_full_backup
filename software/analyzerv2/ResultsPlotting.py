@@ -573,9 +573,12 @@ class ResultsTable(QObject):
                         highlights = self.knownkey
     
                         if highlights is not None:
-                            if maxes[j]['hyp'] == highlights[bnum]:
-                                itm = self.table.item(j+1, bnum)
-                                itm.setForeground(QBrush(Qt.red))
+                            try:
+                                if maxes[j]['hyp'] == highlights[bnum]:
+                                    itm = self.table.item(j+1, bnum)
+                                    itm.setForeground(QBrush(Qt.red))
+                            except IndexError:
+                                pass
             else:
                 self.table.setColumnHidden(bnum, True)
 

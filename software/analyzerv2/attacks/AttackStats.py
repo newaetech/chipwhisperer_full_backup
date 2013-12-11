@@ -139,7 +139,10 @@ class DataTypeDiffs(object):
                         self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where] 
                         
                 if self.knownkey is not None:
-                    self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0]
+                    try:
+                        self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0]
+                    except IndexError:
+                        self.pge[i] = 255
                     
             tnum = self.diffs_tnum[i]
             self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})      

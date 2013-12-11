@@ -26,7 +26,7 @@ import sys
 sys.path.append('../common')
 import aes_tables
 
-numSubKeys = 16
+numSubKeys = 32
 
 ##Generate this table with:
 #HW = []

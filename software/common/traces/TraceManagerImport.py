@@ -106,8 +106,10 @@ class TraceManagerImport(QDialog):
         if self.tmanager is not None:
             self.tmanager.updateConfigData()
             
-    def loadCfg(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
+    def loadCfg(self, fname=None):
+	if fname is None:
+	        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
+
         if fname:
             QSettings().setValue("trace_last_file", fname)
 

@@ -53,12 +53,16 @@ except ImportError:
     sys.exit()
 
 import attacks.models.AES128_8bit
+import attacks.models.AES256_8bit
 import attacks.models.AES_RoundKeys
 from attacks.AttackBaseClass import AttackBaseClass
 from attacks.AttackProgressDialog import AttackProgressDialog
 
 from attacks.CPAProgressive import CPAProgressive
 from attacks.CPASimpleLoop import CPASimpleLoop
+
+#DO NOT COMMIT
+from attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
 
 from AttackGenericParameters import AttackGenericParameters
 
@@ -74,14 +78,16 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             self.console.append(sr)
         
     def setupParameters(self):      
-        cpaalgos = {'Progressive':CPAProgressive, 'Simple':CPASimpleLoop}
+        cpaalgos = {'Progressive':CPAProgressive,
+                    'Simple':CPASimpleLoop,
+                    'Channel Info':CPAExperimentalChannelinfo}
         
         #if CPACython is not None:
         #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
         
         attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.setAlgo},                   
                         {'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit}, 'value':'AES-128'},
+                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit, 'AES-256 (8-bit)':attacks.models.AES256_8bit}, 'value':'AES-128', 'set':self.setHWAlgo},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
                         {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':['Hamming Weight', 'Hamming Distance', 'Hamming Weight (inverse)'], 'value':'Hamming Weight'},
                         ]},
@@ -98,7 +104,12 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         ExtendedParameter.setupExtended(self.params, self)
         
         self.setAlgo(self.findParam('CPA_algo').value())
+        self.updateBytesVisible()
             
+    def setHWAlgo(self, algo):
+        self.numsubkeys = algo.numSubKeys
+        self.updateBytesVisible()
+
     def setAlgo(self, algo):
         self.attack = algo(self.findParam('hw_algo').value())
         try:

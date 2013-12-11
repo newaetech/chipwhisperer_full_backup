@@ -78,7 +78,7 @@ def main(tracedir, bnum, ptlist):
 if __name__ == "__main__":
     # Point this to the 500 000 traces recorded of AES-128 on Mega328P
     # Available from ChipWhisperer.com
-    directory = "../../../../traces_500000/traces/"
+    directory = "../../../software/scripting-examples/default-data-dir/traces-avr-aes128-gnd/"
 
     # Interesting points, each point corresponds to where in the point-list
     # we've found the expected correlation (e.g. peak). Note some of these
@@ -87,8 +87,10 @@ if __name__ == "__main__":
     #ptlist = [26, 126, 301, 2594, 426, 526, 626, 726, 826, 926, 1025, 1126,
     #          1225, 1326, 1501, 1526]
 
-    ptlist = [26, 126, 226, 326, 426, 526, 626, 726, 826, 926, 1026, 1126,
-              1226, 1326, 1426, 1526]
+    #ptlist = [25, 125, 225, 325, 425, 525, 625, 725, 825, 926, 1025, 1125,
+    #          1225, 1325, 1425, 1525]
+
+    ptlist = range(26, 1600, 100)
 
     #Generate for one byte
     #main(directory, 5, ptlist)
