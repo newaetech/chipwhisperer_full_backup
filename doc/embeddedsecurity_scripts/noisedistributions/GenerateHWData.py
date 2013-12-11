@@ -46,7 +46,7 @@ def myFunc(directory, prefix, hwlist, bnum, ptlist):
     traces = traces[0:-1,:]
 
     for i,t in enumerate(textin):
-        hwans = AAES128_8bit.HypHW(t, None, key[bnum], bnum)
+        hwans = AES128_8bit.HypHW(t, None, key[bnum], bnum)
         pt = traces[i, ptlist[bnum]]
         hwlist[hwans].append(pt)
 
