@@ -22,32 +22,51 @@
 
 
 
-load('hwlist_bnum=5.mat')
+load('hwlist_bnum=7.mat')
 close all
-figure
+%figure
 hold on
 
 mulist = [];
+mucilist = [];
+sglist = [];
+sgcilist = [];
+
+%ix = -0.07:0.001:-0.02;
 
 for i=1:9
     [muhat,sigmahat,muci,sigmaci] = normfit(hwlist{i});
     mulist = [mulist, muhat];
-    mu = muhat;
-    sd = sigmahat;
-    ix = -3*sd:1e-4:3*sd; %covers more than 99% of the curve
-    ix = ix + muhat;
-    iy = normpdf(ix, mu, sd);
-    plot(ix,iy);    
-    xlabel('Shunt Current (linear in mA)')
+    mucilist = [mucilist, muci];
+    
+    sglist = [sglist, sigmahat];
+    sgcilist = [sgcilist, sigmaci];
+%    mu = muhat;
+%    sd = sigmahat;
+%    ix = -3*sd:1e-4:3*sd; %covers more than 99% of the curve
+%    ix = ix + muhat;
+%    iy = normpdf(ix, mu, sd);
+%    plot(ix,iy);    
+%    xlabel('Shunt Current (linear in mA)')
 end
 
-figure
-plot([0:8], mulist)
+%figure
+%plot([0:8], mulist)
+errorbar([0:8], mulist, mucilist(1,:)-mulist, mucilist(2,:)-mulist)
+title('Measurement Average vs. Hamming Weight of Leakge')
+xlabel('Hamming Weight')
+ylabel('Measurement Average')
 
-for i=1:9
-    figure
-    histfit(hwlist{i}, 22);
-    title(sprintf('Hamming Weight = %d', i-1))
-    xlabel('Shunt Current (linear in mA)')
-    xlim([-0.14 -0.07])
-end
+figure()
+errorbar([0:8], sglist, sgcilist(1,:)-sglist, sgcilist(2,:)-sglist)
+title('Measurement Std-Dev vs. Hamming Weight of Leakage')
+xlabel('Hamming Weight')
+ylabel('Measurement Std-Dev')
+
+%for i=1:9
+%    figure
+%    histfitff(hwlist{i}, 15);
+%    title(sprintf('Hamming Weight = %d', i-1))
+%    xlabel('Shunt Current (linear in mA)')
+%    %xlim([-0.14 -0.07])
+%end
