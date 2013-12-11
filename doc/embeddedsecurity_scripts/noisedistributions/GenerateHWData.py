@@ -46,7 +46,7 @@ def myFunc(directory, prefix, hwlist, bnum, ptlist):
     traces = traces[0:-1,:]
 
     for i,t in enumerate(textin):
-        hwans = AES128_8bit.getHW(AES128_8bit.HypHW(t, None, key[bnum], bnum))
+        hwans = AES128_8bit.HypHW(t, None, key[bnum], bnum)
         pt = traces[i, ptlist[bnum]]
         hwlist[hwans].append(pt)
 
@@ -84,8 +84,11 @@ if __name__ == "__main__":
     # we've found the expected correlation (e.g. peak). Note some of these
     # are possibly wrong (e.g. ptlist[3] is off). Was found manually by
     # running an attack, and looking where the correlation peak is.
-    ptlist = [26, 126, 301, 2594, 426, 526, 626, 726, 826, 926, 1025, 1126,
-              1225, 1326, 1501, 1526]
+    #ptlist = [26, 126, 301, 2594, 426, 526, 626, 726, 826, 926, 1025, 1126,
+    #          1225, 1326, 1501, 1526]
+
+    ptlist = [26, 126, 226, 326, 426, 526, 626, 726, 826, 926, 1026, 1126,
+              1226, 1326, 1426, 1526]
 
     #Generate for one byte
     #main(directory, 5, ptlist)
