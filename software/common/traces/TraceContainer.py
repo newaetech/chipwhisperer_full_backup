@@ -65,6 +65,7 @@ class TraceContainer(object):
     def __init__(self, params=None, configfile=None):
         self.textins = []
         self.textouts = []
+        self.keylist = []
         self.knownkey = None
         self.directory = None
         self.dirty = False
@@ -107,6 +108,7 @@ class TraceContainer(object):
         self.addWave(trace, dtype)
         self.addTextin(textin)
         self.addTextout(textout)
+	self.addKey(key)
         
     def writeDataToConfig(self):
         self.config.setAttr("numTraces", self.numTraces())
@@ -137,6 +139,9 @@ class TraceContainer(object):
 
     def setKnownKey(self, key):
         self.knownkey = key
+
+    def addKey(self, key):
+        self.keylist.append(key)
 
     def addTextin(self, data):
         self.textins.append(data)

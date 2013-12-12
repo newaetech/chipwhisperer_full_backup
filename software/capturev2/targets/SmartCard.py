@@ -351,6 +351,9 @@ class ProtocolTemplate(QObject):
     
     def init(self):
         pass
+
+    def reinit(self):
+        pass
     
     def loadEncryptionKey(self, key):
         pass
@@ -462,6 +465,9 @@ class SmartCard(QObject):
         
     def init(self):
         self.protocol.init()
+
+    def reinit(self):
+        self.protocol.reinit()
       
     def loadEncryptionKey(self, key):
         self.protocol.loadEncryptionKey(key)
