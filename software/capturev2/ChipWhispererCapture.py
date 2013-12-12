@@ -115,7 +115,7 @@ class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
     captureDone = Signal(bool)
     
-    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
+    def __init__(self, scope, target, writer, fixedPlain=None, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
         super(acquisitionController, self).__init__()
 
         self.target = target
@@ -160,16 +160,15 @@ class acquisitionController(QObject):
 
         return resp
 
-    def newPlain(self, textIn=None):     
-          
+    def newPlain(self, textIn=None):      
+
         if textIn:
             self.textin = textIn
         else:
-            if not self.fixedPlainText:       
-                self.textin = bytearray(16)
-                for i in range(0,16):
-                    self.textin[i] = random.randint(0, 255)
-                    #self.textin[i] = i
+            self.textin = bytearray(16)
+            for i in range(0,16):
+                self.textin[i] = random.randint(0, 255)
+                #self.textin[i] = i
         #Do AES if setup
         if AES and (self.textExpectedLabel != None):
             if self.key == None:
@@ -185,7 +184,7 @@ class acquisitionController(QObject):
     def doSingleReading(self, update=True, N=None, key=None):
        
         self.key = key
-        self.newPlain()
+        self.newPlain(self.fixedPlainText)
 
         ## Start target now
         if self.textInLabel != None:
@@ -460,6 +459,7 @@ class ChipWhispererCapture(MainChip):
         self.scope = None        
         self.trace = None
         self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
+        self.setPlaintext('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
         #self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
@@ -488,7 +488,8 @@ class ChipWhispererCapture(MainChip):
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E6), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
-                        {'name':'Fixed Plaintest', 'type':'bool', 'value':False, 'set':self.setFixedPlain }
+                        {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
+                        {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
                     ]}             
                 ]
         
@@ -531,6 +532,20 @@ class ChipWhispererCapture(MainChip):
             self.key = bytearray()
             for s in key.split():
                 self.key.append(int(s, 16))
+
+    def setPlaintext(self, key, binary=False, updateParamList=False):
+        
+        if binary:
+            self.plaintextStr = ''
+            for s in key:
+                self.plaintextStr += '%02x '%s
+            self.plaintext = bytearray(key)
+        else:        
+            self.plaintextStr = key       
+            self.plaintext = bytearray()
+            for s in key.split():
+                self.plaintext.append(int(s, 16))
+
         
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
@@ -722,7 +737,12 @@ class ChipWhispererCapture(MainChip):
         if target:
             self.setKey(target.checkEncryptionKey(self.key), True, True)
                      
-        ac = acquisitionController(self.scope, target, writer=None, fixedPlain=self.fixedPlain, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
+        if self.fixedPlain:
+            ptInput = self.plaintext
+        else:
+            ptInput = None
+
+        ac = acquisitionController(self.scope, target, writer=None, fixedPlain=ptInput, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
         ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
 
@@ -752,9 +772,14 @@ class ChipWhispererCapture(MainChip):
         else:
             writer = None
                     
+        if self.fixedPlain:
+            ptInput = self.plaintext
+        else:
+            ptInput = None
+
         ac = acquisitionController(self.scope, target, writer, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine,
                                    textExpectedLabel=self.esm.textOutExpected,
-                                   fixedPlain=self.fixedPlain)
+                                   fixedPlain=ptInput)
         ac.traceDone.connect(self.printTraceNum)
         tn = self.numTraces
         ac.setMaxtraces(tn)        

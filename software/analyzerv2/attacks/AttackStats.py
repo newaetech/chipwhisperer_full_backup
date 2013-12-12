@@ -119,14 +119,23 @@ class DataTypeDiffs(object):
                     else:
                         v = np.nanmax(self.diffs[i][hyp])                    
                     
-                    #Get maximum value for this hypothesis
                     mvalue = v
+
+                    #Get maximum value for this hypothesis
                     try:
                         mindex = np.amin(np.where(v == mvalue))
                     except ValueError:
                         mindex = 255
-                    self.maxes[i][hyp] = (hyp,mindex,mvalue)
+                    self.maxes[i][hyp]['hyp'] = hyp
+                    self.maxes[i][hyp]['point'] = mindex
+                    self.maxes[i][hyp]['value'] = mvalue
 
+
+                #TODO: why does this fail?
+                #self.maxes[i][np.isnan(self.maxes[i]['value'])]['value'] = 0
+                #TODO: workaround for PGE, as NaN's get ranked first
+                numnans = np.isnan(self.maxes[i]['value']).sum()
+			
                 self.maxes[i].sort(order='value')
                 self.maxes[i] = self.maxes[i][::-1]
                 self.maxValid[i] = True
@@ -140,7 +149,9 @@ class DataTypeDiffs(object):
                         
                 if self.knownkey is not None:
                     try:
-                        self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0]
+                        self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0] - numnans
+                        if self.pge[i] < 0:
+                            self.pge[i] = 128
                     except IndexError:
                         self.pge[i] = 255
                     
