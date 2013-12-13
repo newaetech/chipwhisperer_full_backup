@@ -164,8 +164,8 @@ class acquisitionController(QObject):
         return resp
 
     def newKey(self):
-        newkey = bytearray(16)
-        for i in range(0,16):
+        newkey = bytearray(self.target.keyLen())
+        for i in range(0,self.target.keyLen()):
             newkey[i] = random.randint(0,255)
         return newkey
 
@@ -187,22 +187,32 @@ class acquisitionController(QObject):
                 ct = cipher.encrypt(str(self.textin))
                 if self.textExpectedLabel != None:
                     ct = bytearray(ct)
-                    self.textExpectedLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(ct[0],ct[1],ct[2],ct[3],ct[4],ct[5],ct[6],ct[7],ct[8],ct[9],ct[10],ct[11],ct[12],ct[13],ct[14],ct[15]))
+                    text = ""
+                    for t in ct: text += "%02X "%t                                             
+                    self.textExpectedLabel.setText(text)
 
 
     def doSingleReading(self, update=True, N=None, key=None):       
         self.key = key
         self.newPlain(self.fixedPlainText)
 
+        if self.key is not None:
+            self.key = self.target.checkEncryptionKey(key)
+            if (self.target.keyLen() != len(self.key)):
+                print "Key length WRONG for given target"
+                raise IOError("Key Length Wrong for Given Target, %d != %d"%(self.target.keyLen(), len(self.key)))                                                
+
         if self.textKeyLabel is not None:
             txtlabel = ""
-            for i in range(0,16): txtlabel += "%02X "%self.key[i]
+            for t in self.key: txtlabel += "%02X "%t
             self.textKeyLabel.setText(txtlabel)
 
         ## Start target now
         if self.textInLabel is not None:
-            self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
-
+            text = ""
+            for t in self.textin: text += "%02X "%t                                             
+            self.textInLabel.setText(text)
+           
         #Set mode
         if self.target is not None:
             self.target.reinit()
@@ -217,8 +227,10 @@ class acquisitionController(QObject):
             self.textout = self.TargetDoTrace(self.textin, key)
 
             if self.textout is not None:
-                if len(self.textout) >= 16:    
-                    self.textOutLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textout[0],self.textout[1],self.textout[2],self.textout[3],self.textout[4],self.textout[5],self.textout[6],self.textout[7],self.textout[8],self.textout[9],self.textout[10],self.textout[11],self.textout[12],self.textout[13],self.textout[14],self.textout[15]))
+                if len(self.textout) >= 16:  
+                    text = ""
+                    for t in self.textout: text += "%02X "%t                                             
+                    self.textOutLabel.setText(text)
 
         #Get ADC reading
         if self.scope is not None:

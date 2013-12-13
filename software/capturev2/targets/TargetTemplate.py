@@ -52,7 +52,7 @@ class TargetTemplate(QObject):
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
         self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)      
-            
+                        
     def paramList(self):
         p = [self.params]
         #if self.ser is not None:
@@ -125,3 +125,7 @@ class TargetTemplate(QObject):
 
     def go(self):
         """Do Encryption"""
+
+    def keyLen(self):
+        """Length of key system is using"""
+        return 16
