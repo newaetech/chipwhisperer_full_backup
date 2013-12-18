@@ -16,7 +16,7 @@ def myFunc(pinvRx, traces, textin, key, bnum, ntraces, npoints):
     for i in range(0, ntraces):
         hwlist[i][0] = AES128_8bit.HypHW(textin[i], None, key[bnum], bnum)
 
-    hb = np.zeros( (npoints, 1) )
+    Ryx = np.zeros( (npoints, 1) )
     for i in range(0, ntraces):        
         hb = hb + traces[i:i+1,:].T * hwlist[i]
         
@@ -55,9 +55,9 @@ def main(directory):
     print "traces = %d"%ntraces
     print "points = %d"%npoints
 
-    calcRxx = True
+    calcRxx = False
 
-   if calcRxx:
+    if calcRxx:
         print "Calculating Rxx..."
         Rxx = np.zeros( (npoints, npoints ) )
         for i in range(0, ntraces):
