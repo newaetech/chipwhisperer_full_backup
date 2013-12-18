@@ -244,6 +244,8 @@ class MainChip(QMainWindow):
             files.remove(fname)
         except ValueError:
             pass
+        except AttributeError:
+            pass
 
         files.insert(0, fname)
         del files[MainChip.MaxRecentFiles:]

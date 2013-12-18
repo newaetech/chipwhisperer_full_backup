@@ -137,7 +137,7 @@ class AttackGenericParameters(QObject):
     def setupTraceParam(self):
         self.traceParams = Parameter.create(name='Trace Setup', type='group', children=[
             {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.validateTraceSettings},
-            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1,1000), 'value':1, 'set':self.validateTraceSettings},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings},
             {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings}
             ])
         ExtendedParameter.setupExtended(self.traceParams)

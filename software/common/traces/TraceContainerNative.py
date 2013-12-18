@@ -73,6 +73,7 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         np.save(directory + "/%straces.npy"%prefix, self.traces)
         np.save(directory + "/%stextin.npy"%prefix, self.textins)
         np.save(directory + "/%stextout.npy"%prefix, self.textouts)
+        np.save(directory + "/%skeylist.npy"%prefix, self.keylist)    
         np.save(directory + "/%sknownkey.npy"%prefix, self.knownkey)
         self.setDirty(False)
         

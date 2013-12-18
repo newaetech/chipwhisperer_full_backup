@@ -115,7 +115,7 @@ class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
     captureDone = Signal(bool)
     
-    def __init__(self, scope, target, writer, fixedPlain=False, updateData=None, textInLabel=None, textOutLabel=None, textExpectedLabel=None):
+    def __init__(self, scope, target, writer, fixedPlain=None, updateData=None, esm=None, newKeyPerTrace=False):
         super(acquisitionController, self).__init__()
 
         self.target = target
@@ -125,9 +125,12 @@ class acquisitionController(QObject):
         self.fixedPlainText = fixedPlain
         self.maxtraces = 1
         self.updateData = updateData
-        self.textInLabel = textInLabel
-        self.textOutLabel = textOutLabel
-        self.textExpectedLabel = textExpectedLabel
+
+        self.textInLabel = esm.textInLine
+        self.textOutLabel = esm.textOutLine
+        self.textExpectedLabel = esm.textOutExpected
+        self.textKeyLabel = esm.textEncKey
+        self.newKeyPerTrace=newKeyPerTrace
 
         self.textin = bytearray(16)
         for i in range(0,16):
@@ -160,16 +163,21 @@ class acquisitionController(QObject):
 
         return resp
 
-    def newPlain(self, textIn=None):     
-          
+    def newKey(self):
+        newkey = bytearray(16)
+        for i in range(0,16):
+            newkey[i] = random.randint(0,255)
+        return newkey
+
+    def newPlain(self, textIn=None):      
+
         if textIn:
             self.textin = textIn
         else:
-            if not self.fixedPlainText:       
-                self.textin = bytearray(16)
-                for i in range(0,16):
-                    self.textin[i] = random.randint(0, 255)
-                    #self.textin[i] = i
+            self.textin = bytearray(16)
+            for i in range(0,16):
+                self.textin[i] = random.randint(0, 255)
+                #self.textin[i] = i
         #Do AES if setup
         if AES and (self.textExpectedLabel != None):
             if self.key == None:
@@ -182,13 +190,17 @@ class acquisitionController(QObject):
                     self.textExpectedLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(ct[0],ct[1],ct[2],ct[3],ct[4],ct[5],ct[6],ct[7],ct[8],ct[9],ct[10],ct[11],ct[12],ct[13],ct[14],ct[15]))
 
 
-    def doSingleReading(self, update=True, N=None, key=None):
-       
+    def doSingleReading(self, update=True, N=None, key=None):       
         self.key = key
-        self.newPlain()
+        self.newPlain(self.fixedPlainText)
+
+        if self.textKeyLabel is not None:
+            txtlabel = ""
+            for i in range(0,16): txtlabel += "%02X "%self.key[i]
+            self.textKeyLabel.setText(txtlabel)
 
         ## Start target now
-        if self.textInLabel != None:
+        if self.textInLabel is not None:
             self.textInLabel.setText("%02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X %02X"%(self.textin[0],self.textin[1],self.textin[2],self.textin[3],self.textin[4],self.textin[5],self.textin[6],self.textin[7],self.textin[8],self.textin[9],self.textin[10],self.textin[11],self.textin[12],self.textin[13],self.textin[14],self.textin[15]))
 
         #Set mode
@@ -235,6 +247,9 @@ class acquisitionController(QObject):
         nt = 0
 
         while (nt < self.maxtraces) and self.running:
+            if self.newKeyPerTrace:
+                self.key = self.newKey()
+
             if self.doSingleReading(True, None, key=self.key) == True:
                 if self.writer is not None:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
@@ -447,6 +462,12 @@ class EncryptionStatusMonitor(QDialog):
         self.textOutExpected = QLineEdit()
         self.textOutExpected.setReadOnly(True)        
         self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
+
+        self.textResultsLayout.addWidget(QLabel("Enc. Key"), 3, 0)
+        self.textEncKey = QLineEdit()
+        self.textEncKey.setReadOnly(True)        
+        self.textResultsLayout.addWidget(self.textEncKey, 3, 1)
+
         self.setLayout(self.textResultsLayout)  
         self.hide()
                
@@ -460,6 +481,7 @@ class ChipWhispererCapture(MainChip):
         self.scope = None        
         self.trace = None
         self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
+        self.setPlaintext('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
         #self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
@@ -483,12 +505,14 @@ class ChipWhispererCapture(MainChip):
                 {'name':'Key Settings', 'type':'group', 'children':[
                         {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
                         {'name':'Send Key to Target', 'type':'bool', 'value':True},
+                        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
                     ]},   
                          
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E6), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
-                        {'name':'Fixed Plaintest', 'type':'bool', 'value':False, 'set':self.setFixedPlain }
+                        {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
+                        {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
                     ]}             
                 ]
         
@@ -531,6 +555,20 @@ class ChipWhispererCapture(MainChip):
             self.key = bytearray()
             for s in key.split():
                 self.key.append(int(s, 16))
+
+    def setPlaintext(self, key, binary=False, updateParamList=False):
+        
+        if binary:
+            self.plaintextStr = ''
+            for s in key:
+                self.plaintextStr += '%02x '%s
+            self.plaintext = bytearray(key)
+        else:        
+            self.plaintextStr = key       
+            self.plaintext = bytearray()
+            for s in key.split():
+                self.plaintext.append(int(s, 16))
+
         
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
@@ -722,7 +760,12 @@ class ChipWhispererCapture(MainChip):
         if target:
             self.setKey(target.checkEncryptionKey(self.key), True, True)
                      
-        ac = acquisitionController(self.scope, target, writer=None, fixedPlain=self.fixedPlain, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine, textExpectedLabel=self.esm.textOutExpected)
+        if self.fixedPlain:
+            ptInput = self.plaintext
+        else:
+            ptInput = None
+
+        ac = acquisitionController(self.scope, target, writer=None, fixedPlain=ptInput, esm = self.esm)
         ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
 
@@ -752,9 +795,15 @@ class ChipWhispererCapture(MainChip):
         else:
             writer = None
                     
-        ac = acquisitionController(self.scope, target, writer, textInLabel=self.esm.textInLine, textOutLabel=self.esm.textOutLine,
-                                   textExpectedLabel=self.esm.textOutExpected,
-                                   fixedPlain=self.fixedPlain)
+        if self.fixedPlain:
+            ptInput = self.plaintext
+        else:
+            ptInput = None
+
+        rndKey = self.findParam('newKeyAlways').value()
+
+        ac = acquisitionController(self.scope, target, writer, esm=self.esm,
+                                   fixedPlain=ptInput, newKeyPerTrace=rndKey)
         ac.traceDone.connect(self.printTraceNum)
         tn = self.numTraces
         ac.setMaxtraces(tn)        
