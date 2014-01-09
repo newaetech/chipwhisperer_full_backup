@@ -145,6 +145,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             data = []
             textins = []
             textouts = []
+
+            print "%d-%d"%(startingTrace, endingTrace)
             
             for i in range(startingTrace, endingTrace):
                 d = self.trace.getTrace(i)
@@ -158,6 +160,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 textins.append(self.trace.getTextin(i))
                 textouts.append(self.trace.getTextout(i)) 
             
+            #self.attack.clearStats()
             self.attack.setByteList(self.bytesEnabled())
             self.attack.setKeyround(self.findParam('hw_round').value())
             self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
