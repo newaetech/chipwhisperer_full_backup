@@ -1,0 +1,533 @@
+# -*- coding: utf -*-
+# This file is part of ChipWhisperer
+# Copyright (C) Colin O'Flynn 2013
+# See www.newae.com for details
+#
+# Released under GPL License
+
+import sys
+from functools import partial
+import time
+
+from PySide.QtCore import *
+from PySide.QtGui import *
+
+try:
+    from pyqtgraph.parametertree import Parameter
+except ImportError:
+    print "ERROR: PyQtGraph is required for this program"
+    sys.exit()
+    
+sys.path.append('../../common')
+sys.path.append('../.')
+from ExtendedParameter import ExtendedParameter
+
+#from utils.SerialProtocols import strToBits as strToBits
+#from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+
+import ChipWhispererGlitch
+
+CODE_READ       = 0x80
+CODE_WRITE      = 0xC0
+
+ADDR_DATA       = 33
+ADDR_LEN        = 34
+ADDR_BAUD       = 35
+
+ADDR_TRIGCLKDIV = 36
+ADDR_TRIGIOPROG = 37
+
+ADDR_EXTCLK = 38
+ADDR_TRIGSRC = 39
+ADDR_TRIGMOD = 40
+
+ADDR_I2CSTATUS = 47
+ADDR_I2CDATA = 48
+
+
+class ChipWhispererExtra(QObject):
+    paramListUpdated = Signal(list)
+     
+    def __init__(self, showScriptParameter=None):
+        #self.cwADV = CWAdvTrigger()
+        self.cwEXTRA = CWExtraSettings()        
+        self.params = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.showScriptParameter = showScriptParameter
+        
+        self.enableGlitch = True
+        
+        if self.enableGlitch:
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
+        
+        
+    def paramTreeChanged(self, param, changes):
+        if self.showScriptParameter is not None:
+            self.showScriptParameter(param, changes, self.params)
+
+    def setOpenADC(self, oa):
+        #self.cwADV.setOpenADC(oa)
+        if self.enableGlitch:
+            self.glitch.setOpenADC(oa.sc)
+        self.cwEXTRA.con(oa.sc)
+        self.params.getAllParameters()
+        
+    def paramList(self):
+        p = []
+        p.append(self.params)
+        if self.enableGlitch:   
+            p.append(self.glitch.params)         
+        return p
+
+    #def testPattern(self):
+    #    desired_freq = 38400 * 3
+    #    clk = 30E6
+    #    clkdivider = (clk / (2 * desired_freq)) + 1        
+    #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
+
+    
+    
+
+class CWExtraSettings(object):
+    PIN_FPA = 0x01
+    PIN_FPB = 0x02
+    PIN_RTIO1 = 0x04
+    PIN_RTIO2 = 0x08
+    PIN_RTIO3 = 0x10
+    PIN_RTIO4 = 0x20
+    MODE_OR = 0x00
+    MODE_AND = 0x01
+    
+    MODULE_BASIC = 0x00
+    MODULE_ADVPATTERN = 0x01
+    
+    CLOCK_FPA = 0x00
+    CLOCK_FPB = 0x01
+    CLOCK_PLL = 0x02
+    CLOCK_RTIOIN = 0x03
+    CLOCK_RTIOOUT = 0x04
+    
+    def __init__(self):
+        super(CWExtraSettings, self).__init__()
+        self.oa = None
+    
+        self.name = "CW Extra Settings"        
+        self.param = [{'name': 'CW Extra Settings', 'type': 'group', 'children': [
+                {'name': 'Trigger Pins', 'type':'group', 'children':[
+                    {'name': 'Front Panel A', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
+                    {'name': 'Front Panel B', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)},
+                    {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
+                    {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
+                    {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
+                    {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
+                    {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'value':"OR", 'get':self.getPinMode, 'set':self.setPinMode }                                      
+                    ]},
+                {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN}, 'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule},
+                {'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut},
+                
+                {'name':'Clock Source', 'type':'list', 'values':{'Front Panel A':self.CLOCK_FPA, 
+                                                                 'Front Panel B':self.CLOCK_FPB,
+                                                                 'PLL Input':self.CLOCK_PLL,
+                                                                 'Target IO-IN':self.CLOCK_RTIOIN,
+                                                                 #'Target IO-OUT':self.CLOCK_RTIOOUT #This is no longer allowed by the hardware
+                                                                 }, 'set':self.setClockSource, 'get':self.clockSource},
+                #{'name':'Clock Out Connection', 'type':'list', 'values':{'Target IO-Out':0}, 'value':0},
+                {'name':'Target IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},                 
+                ]}]
+    
+    def con(self, oa):
+        self.oa = oa
+           
+    def setClockSource(self, source):
+        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data[0] = (data[0] & ~0x07) | source
+        print "%2x"%data[0]
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+        
+    def clockSource(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        return resp[0] & 0x07
+           
+    def setTargetCLKOut(self, clkout):
+        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
+        print "%2x"%data[0]
+        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data) 
+        
+    def targetClkOut(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
+        return ((resp[0] & (3<<5)) >> 5)
+           
+    def setPin(self, enabled, pin):
+        current = self.getPins()
+        
+        pincur = current[0] & ~(pin)
+        if enabled:
+            pincur = pincur | pin
+            
+        self.setPins(pincur, current[1])
+        
+            
+    def getPin(self, pin):
+        current = self.getPins()        
+        current = current[0] & pin
+        if current == 0:
+            return False
+        else:
+            return True
+    
+    def setPinMode(self, mode):
+        current = self.getPins()
+        self.setPins(current[0], mode)
+    
+    def getPinMode(self):
+        current = self.getPins()
+        return current[1]
+           
+    def setPins(self, pins, mode):
+        d = bytearray()        
+        d.append((mode << 6) | pins)  
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGSRC, d)
+        
+    def getPins(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGSRC, Validate=False, maxResp=1)
+        pins = resp[0] & 0x3F
+        mode = resp[0] >> 6
+        return(pins, mode)
+        
+    def setModule(self,  module):        
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)        
+        resp[0] = resp[0] & 0xF8
+        resp[0] = resp[0] | module      
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+        
+    def getModule(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        return resp[0] 
+        
+    def setTrigOut(self, enabled):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)        
+        resp[0] = resp[0] & 0xE7    
+        if enabled:
+            resp[0] = resp[0] | 0x08
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)      
+   
+class CWAdvTrigger(object):
+    def __init__(self):
+        super(CWAdvTrigger, self).__init__()
+        self.oa = None
+    
+    def con(self, oa):
+        self.oa = oa
+
+    def setExtPin(self, line):
+        return
+
+    def setIOPattern(self, pattern, form='units', clkdiv=None):
+        ''' Setup the IO trigger pattern.'''
+        "Form can be 'units' or 'seconds'. If set to 'units' you"
+        "must also set the clkdiv parameter properly"        
+
+        #Pattern format:
+        #[state, low, high]
+        #state = 1/0
+        #low = time in seconds/units
+        #high = time in seconds/units
+        #Special high variables:
+        #Set to 'now' means next state after low time passes
+        #high = 'now'        
+        #Set to 'wait' means no upper limit, but wait for transition
+        #of IO line before changing state
+        #high = 'wait'
+
+        if len(pattern) > 63:
+            raise ValueError("pattern too long: Hardware supports max of 64 pattern points")
+
+        addr = 0        
+        for p in pattern:
+            state = p[0]
+            low = p[1]
+            high = p[2]        
+            #TODO: support seconds
+            if form == 'seconds':
+                print "Not Supported"
+
+            if high == 'now':
+                high = 511
+
+            if high == 'wait':
+                high = 510
+                
+            self.writeOnePattern(addr, state, low, high)
+            addr = addr + 1
+
+        #Set done marker
+        self.writeOnePattern(addr, 1, 255, 511)
+
+        if clkdiv:
+            self.writeClockDiv(clkdiv)
+
+    def writeClockDiv(self, clkdiv):
+        clkdiv = int(clkdiv)
+        d = bytearray()        
+        d.append(clkdiv & 0xff)
+        d.append((clkdiv >> 8) & 0xff)
+        d.append((clkdiv >> 16) & 0xff)        
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, d)
+
+    def reset(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGCLKDIV, Validate=False, maxResp=3)
+        #Assert Reset
+        resp[2] = resp[2] | 0x80
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
+
+        #Deassert Reset
+        resp[2] = resp[2] & 0x7F;
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
+
+    def writeOnePattern(self, addr, state, low, high):
+        d = bytearray()
+        d.append(low)
+        d.append(high & 0xff)
+        d.append((0x01 & (high >> 8)) | (state << 1))
+        d.append(addr)        
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGIOPROG, d)  
+        
+    def processBit(self, state, cnt, first=False, last=False, var=1, osRate=3):
+        cnt = osRate * cnt
+        low = cnt - var
+        high = cnt + var
+    
+        if low < 1:
+            low = 1
+    
+        if high > 509:
+            high = 509
+    
+        if first:
+            high = 'wait'
+    
+        if last:
+            high = 'now'    
+    
+        return [state, low, high]    
+    
+    def bitsToPattern(self, bits):
+        pattern = []
+        lastbit = 2
+        bitcnt = 0
+        first = True
+        for b in bits:
+            if b == lastbit:
+                bitcnt = bitcnt + 1
+            else:
+                if bitcnt > 0:
+                    #print "%d %d"%(lastbit, bitcnt)
+                    pattern.append(self.processBit(lastbit, bitcnt, first=first))
+                lastbit = b
+                bitcnt = 1
+    
+            first = False
+        pattern.append(self.processBit(lastbit, bitcnt, last=True))
+        return pattern
+    
+    def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
+        totalpat = strToBits(string, startbits, stopbits, parity)
+        return self.bitsToPattern(totalpat)
+
+class CWPLLDriver(object):
+    def __init__(self):
+        super(CWPLLDriver, self).__init__()
+        self.oa = None
+    
+    def con(self, oa):
+        self.oa = oa
+        
+    def isPresent(self):
+        """Check for CDCE906 PLL Chip"""
+        try:
+            result = self.readByte(0x00)
+        except IOError:
+            return False        
+        if result & 0x0F != 0x01:
+            return False        
+        return True
+       
+    def setupPLL(self, N, M, bypass=False, highspeed=True, num=1):
+        """
+        Setup PLL1.
+         * For M & N:
+            M =< N. 
+            VCOF = (Fin * N) / M
+            VCOF must be in range 80-300MHz.
+            
+         * For highspeed:
+           Set to 'True' if VCO freq in range 180-300 MHz. Set low if in range 80-200 MHz
+        """
+        
+        if num != 1:
+            raise ValueError("Only PLL1 Config Supported")
+        
+        self.writeByte(0x01, M & 0xFF)
+        self.writeByte(0x02, N & 0xFF)
+        
+        b = self.readByte(0x03)
+        b &= (1<<6)|(1<<5)
+        if bypass:
+            b |= 1<<7
+        
+        b |= (M >> 8)
+        b |= ((N >> 8) & 0x0F) << 1
+        
+        self.writeByte(0x03, b)
+        
+        b = self.readByte(0x06)
+        b &= ~(1<<7)
+        if highspeed:
+            b |= 1<<7        
+    
+        self.writeByte(0x06, b)
+    
+    def setupDivider(self, setting, clksrc, divnum=2):
+        """
+        setting = Divide VCOF from PLL by this value
+        
+        clksrc = 0 means PLL Bypass
+        clksrc = 1 means PLL1
+        clksrc = 2 means PLL2 w/ SCC etc... not supported
+        
+        divnum is divider number (0-5)        
+        """
+        
+        if divnum > 5:
+            raise ValueError("Invalid Divider Number (0-5 allowed): %d"%divnum)
+        
+        divreg = 13 + divnum
+        
+        if (setting < 1) | (setting > 127):
+            raise ValueError("Invalid Divider Setting (1-127 allowed): %d"%setting)
+        
+        self.writeByte(divreg, setting)
+        
+        if divnum == 0:
+            divreg = 9
+            divbits = 5
+        elif divnum == 1:
+            divreg = 10
+            divbits = 5
+        elif divnum == 2:
+            divreg = 11
+            divbits = 0
+        elif divnum == 3:
+            divreg = 11
+            divbits = 3
+        elif divnum == 4:
+            divreg = 12
+            divbits = 0
+        else:
+            divreg = 12
+            divbits = 3
+        
+        bold = self.readByte(divreg)
+        b = bold & ~(0x07<<divbits)
+        b |= (clksrc & 0x07) << divbits
+                        
+        if bold != b:
+            self.writeByte(divreg, b)
+            
+    def setupOutput(self, outnum, inv=False, enabled=True, divsource=2, slewrate=3):
+        """
+        outnum is output number, 0-5
+        inv = invert output?
+        enable = enable output?
+        divsource = divider source, 0-5
+        """
+        outreg = 19 + outnum
+        
+        data = 0
+        
+        if enabled:
+            data |= 1<<3
+            
+        if inv:
+            data |= 1<<6
+            
+        if divsource > 5:
+            raise ValueError("Invalid Divider Source Number (0-5 allowed): %d"%divsource)
+            
+        data |= divsource
+        data |= (slewrate & 0x03) << 4
+        
+        self.writeByte(outreg, data)
+        
+        
+    def setupClockSource(self, diff=True, useIN0=False, useIN1=False):        
+        if diff == False:
+            #Select which single-ended input to use
+            if (useIN0 ^ useIN1) == False:
+                raise ValueError("Only one of useIN0 or useIN1 can be True")
+                           
+            bold = self.readByte(10)
+            b = bold & ~(1<<4)
+            if useIN1:
+                b |= 1<<4
+                
+            if b != bold:
+                self.writeByte(10, b) 
+                #print "%x, %x"%(b, self.readByte(10))  
+    
+        bold = self.readByte(11)
+        bnew = bold & ~((1<<6) | (1<<7))
+        if diff:
+            bnew |= 1<<7
+        else:
+            bnew |= 1<<6
+        
+        if bnew != bold:
+            self.writeByte(11, bnew)
+        
+        print "%x, %x"%(bnew, self.readByte(11))  
+        
+            
+       
+    def readByte(self, regaddr, slaveaddr=0x69):
+        d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x04, 0x80 | 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
+        if stat[0] & 0x01:
+            raise IOError("No ACK from Slave in I2C")
+
+        stat = self.oa.sendMessage(CODE_READ, ADDR_I2CDATA, Validate=False, maxResp=1)
+        return stat[0]     
+        
+    def writeByte(self, regaddr, data, slaveaddr=0x69):        
+        d = bytearray([data])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CDATA, d, Validate=False)
+        
+        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x04, 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)  
+        time.sleep(0.05)
+        
+        stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
+        if stat[0] & 0x01:
+            raise IOError("No ACK from Slave in I2C")
+
+   
