@@ -1,7 +1,7 @@
 #!/usr/bin/pythonh
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, Colin O'Flynn <coflynn@newae.com>
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -64,21 +64,27 @@ class ResyncPeakDetect(QObject):
         self.enabled = True
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Ref Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd}       
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+                         {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
+                         {'name':'Point Start', 'type':'int', 'set':self.setRefPointStart},
+                         {'name':'Point End', 'type':'int', 'set':self.setRefPointEnd},
+                         {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0,10), 'set':self.setValidLimit}, 
+                         {'name':'Rocket Ship', 'type':'rangegraph', 'plotwidget':parent.waveformDock.widget().pw},
                       ]
         
         self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
         self.parent = parent
         self.setTraceManager(parent.manageTraces.iface)
         self.ccStart = 0
         self.ccEnd = 0
+        self.limit = 0
         
     def paramList(self):
         return [self.params]
+    
+    def setValidLimit(self, limit):
+        self.limit = limit
     
     def setRefPointStart(self, start):
         self.ccStart = start
@@ -100,8 +106,9 @@ class ResyncPeakDetect(QObject):
                 return None
             newmaxloc = np.argmin(trace[self.ccStart:self.ccEnd])
             maxval = min(trace[self.ccStart:self.ccEnd])
-            if (maxval > self.refmaxsize * 1.1) | (maxval < self.refmaxsize * 0.9):
-                return None
+            if self.limit:
+                if (maxval > self.refmaxsize * (1.0 + self.limit)) | (maxval < self.refmaxsize * (1.0 - self.limit)):
+                    return None
             
             diff = newmaxloc-self.refmaxloc
             if diff < 0:
@@ -123,7 +130,10 @@ class ResyncPeakDetect(QObject):
         return self.trace.getKnownKey()
    
     def init(self):
-        self.calcRefTrace(self.rtrace)
+        try:
+            self.calcRefTrace(self.rtrace)
+        except ValueError:
+            self.findParam('enabled').setValue(False)
    
     def setTraceManager(self, tmanager):
         self.trace = tmanager    

@@ -76,6 +76,7 @@ from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNativ
 from chipwhisperer.analyzer.attacks.CPA import CPA
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 import chipwhisperer.analyzer.preprocessing.Preprocessing as Preprocessing
+import chipwhisperer.common.ParameterTypesCustom
 
 #TEMP
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
@@ -91,6 +92,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.results = ResultsPlotting()
         #self.resultsDialog = ResultsDialog(self)
         #self.addShowStats()
+        
+        self.addWaveforms()
         
         numPreprocessingStep = 3
         self.preprocessingList = [None]*numPreprocessingStep
@@ -141,7 +144,6 @@ class ChipWhispererAnalyzer(MainChip):
 
         self.addToolbars()
         self.addSettingsDocks()
-        self.addWaveforms()
         
         for d in self.results.dockList():
             self.addDockWidget(Qt.RightDockWidgetArea, d)
@@ -335,7 +337,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.waveformDock = self.addTraceDock("Waveform Display")        #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault() 
+        self.waveformDock.widget().YDefault()
  
     #def addShowStats(self):
     #    self.statsShowAct = QAction('&Results Monitor', self, statusTip='Plot/Save PGE etc', triggered=self.resultsDialog.show)
