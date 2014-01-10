@@ -75,8 +75,8 @@ from preprocessing.Filter import Filter
 
 def listAll(parent):
     valid_targets = {"Disabled":0}
-    valid_targets["Cross Correlation Resync"] = ResyncCrossCorrelation(parent)
-    valid_targets["Peak Detect Resync"] = ResyncPeakDetect(parent)
-    valid_targets["Minimize Sum-of-Error"] = ResyncSAD(parent)
-    valid_targets["Filter"] = Filter(parent)
+    valid_targets["Resync: Cross Correlation"] = ResyncCrossCorrelation(parent)
+    valid_targets["Resync: Peak Detect"] = ResyncPeakDetect(parent)
+    valid_targets["Resync: Sum-of-Difference"] = ResyncSAD(parent)
+    valid_targets["Digital Filter"] = Filter(parent)
     return valid_targets
