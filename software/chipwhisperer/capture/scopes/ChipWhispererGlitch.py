@@ -19,10 +19,8 @@ try:
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
-    
-sys.path.append('../../common')
-sys.path.append('../.')
-from ExtendedParameter import ExtendedParameter
+
+from openadc.ExtendedParameter import ExtendedParameter
 
 glitchaddr = 51    
 CODE_READ       = 0x80

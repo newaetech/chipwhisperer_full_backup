@@ -43,8 +43,27 @@ except ImportError:
 from GraphWidget import GraphWidget
 import PythonConsole
 
-sys.path.append("traces")
 from traces.TraceManager import TraceManagerDialog
+
+class ModuleListDialog(QDialog):
+    def __init__(self, lmFunc):
+        super(ModuleListDialog, self).__init__()
+        self.setWindowTitle("Enabled Modules")
+               
+        modules = lmFunc()
+               
+        table = QTableWidget(len(modules), 3, self)
+        table.setHorizontalHeaderLabels(["Module", "Enabled", "Details"])
+        
+        for indx,itm in enumerate(modules):
+            table.setItem(indx, 0, QTableWidgetItem(itm[0]))
+            table.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
+            table.setItem(indx, 2, QTableWidgetItem(itm[2]))
+        
+        
+        layout = QVBoxLayout()
+        layout.addWidget(table)
+        self.setLayout(layout)        
 
 class MainChip(QMainWindow):
     MaxRecentFiles = 4
@@ -197,7 +216,9 @@ class MainChip(QMainWindow):
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpManualAct = QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.jerkface)
+        self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
         self.helpMenu.addAction(self.helpManualAct)
+        self.helpMenu.addAction(self.helpListAct)
             
     def enforceMenuOrder(self):
         self.fakeAction = QAction('Does Nothing', self, visible=False)        
@@ -227,7 +248,14 @@ class MainChip(QMainWindow):
         
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(self.dirty)
+        
+    def listModulesShow(self):
+        ml = ModuleListDialog(self.listModules)
+        ml.exec_()
 
+    def listModules(self):
+        """Overload this to test imports"""
+        return [["MainChip", True, ""]]
 
     def setCurrentFile(self, fname):
         self.filename = fname

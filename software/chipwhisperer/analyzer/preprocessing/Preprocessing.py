@@ -38,16 +38,13 @@ import random
 import os.path
 import shlex
 from subprocess import Popen, PIPE
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 import scipy
 import numpy as np
 
 
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 try:
     import writer_dpav3

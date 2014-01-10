@@ -25,7 +25,6 @@
 __author__ = "Colin O'Flynn"
 
 import sys
-sys.path.append('../common')
 
 import numpy as np
 import TraceContainerConfig
@@ -34,7 +33,7 @@ import TraceContainerConfig
 import pstats, cProfile
 
 from pyqtgraph.parametertree import Parameter
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 class parameters(object):
     def __init__(self, openMode=False):

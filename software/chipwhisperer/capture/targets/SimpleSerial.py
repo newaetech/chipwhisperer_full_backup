@@ -38,10 +38,8 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
     
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-from ExtendedParameter import ExtendedParameter
-import scan    
+from openadc.ExtendedParameter import ExtendedParameter
+import openadc.scan as scan    
 
 class SimpleSerial_serial(TargetTemplate):
     def setupParameters(self):

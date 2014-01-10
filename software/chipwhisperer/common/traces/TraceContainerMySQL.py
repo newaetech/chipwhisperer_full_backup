@@ -26,7 +26,6 @@ import os
 import pickle
 
 import sys
-sys.path.append('../common')
 
 import numpy as np
 import TraceContainer
@@ -38,7 +37,7 @@ except ImportError, e:
     print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)
 
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 from TraceContainerConfig import makeAttrDict
 
 class parameters(object):    

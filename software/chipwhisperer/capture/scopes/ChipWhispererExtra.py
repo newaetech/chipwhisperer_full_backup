@@ -17,10 +17,8 @@ try:
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
-    
-sys.path.append('../../common')
-sys.path.append('../.')
-from ExtendedParameter import ExtendedParameter
+
+from openadc.ExtendedParameter import ExtendedParameter
 
 #from utils.SerialProtocols import strToBits as strToBits
 #from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv

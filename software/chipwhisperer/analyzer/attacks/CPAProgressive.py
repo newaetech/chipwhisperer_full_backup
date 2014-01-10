@@ -31,12 +31,9 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-
 import numpy as np
 import scipy as sp
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 
 try:

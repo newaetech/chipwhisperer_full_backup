@@ -28,13 +28,12 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 import os.path
-sys.path.append('../common')
 
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
 import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
     
 from TraceContainerNative import TraceContainerNative
 from TraceContainerConfig import TraceContainerConfig

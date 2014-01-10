@@ -32,9 +32,6 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 from GraphWidget import GraphWidget
@@ -53,7 +50,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
    
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)

@@ -34,9 +34,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
     
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 from TargetTemplate import TargetTemplate
 

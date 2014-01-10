@@ -35,13 +35,11 @@ except ImportError:
     sys.exit()
     
 from subprocess import Popen, PIPE
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
 sys.path.append('../common/traces')
 
 import numpy as np
 import scipy as sp
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 #from joblib import Parallel, delayed
 
@@ -52,17 +50,17 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-import attacks.models.AES128_8bit
-import attacks.models.AES256_8bit
-import attacks.models.AES_RoundKeys
-from attacks.AttackBaseClass import AttackBaseClass
-from attacks.AttackProgressDialog import AttackProgressDialog
+import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
+import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
+import chipwhisperer.analyzer.attacks.models.AES_RoundKeys as models_AES_RoundKeys
+from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
+from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 
-from attacks.CPAProgressive import CPAProgressive
-from attacks.CPASimpleLoop import CPASimpleLoop
+from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
+from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
 
-#DO NOT COMMIT
-from attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
+#TEMPORARY - NOT FOR REAL USE
+from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
 
 from AttackGenericParameters import AttackGenericParameters
 
@@ -87,7 +85,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         
         attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.setAlgo},                   
                         {'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':attacks.models.AES128_8bit, 'AES-256 (8-bit)':attacks.models.AES256_8bit}, 'value':'AES-128', 'set':self.setHWAlgo},
+                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit, 'AES-256 (8-bit)':models_AES256_8bit}, 'value':'AES-128', 'set':self.setHWAlgo},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
                         {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':['Hamming Weight', 'Hamming Distance', 'Hamming Weight (inverse)'], 'value':'Hamming Weight'},
                         ]},
@@ -124,7 +122,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             return None
         
         if self.findParam('hw_round').value() == 'last':
-            return attacks.models.AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
+            return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
         else:
             return inpkey
             

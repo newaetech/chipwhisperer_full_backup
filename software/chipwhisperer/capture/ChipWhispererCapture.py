@@ -40,12 +40,9 @@ import random
 import os.path
 import shlex
 from subprocess import Popen, PIPE
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
 imagePath = '../common/images/'
 
-
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 try:
     import writer_dpav3
@@ -69,47 +66,49 @@ try:
 except ImportError:
     AES = None    
 
-from scopes.OpenADC import OpenADCInterface as OpenADCInterface
+from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 
 try:
-    from scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
+    from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
 except ImportError:
     VisaScopeInterface = None
 
 try:
-    import targets.SimpleSerial as target_SimpleSerial
+    import  chipwhisperer.capture.targets.SimpleSerial as target_SimpleSerial
 except ImportError:
     target_SimpleSerial = None
     target_SimpleSerial_str = sys.exc_info()
     
 try:
-    import targets.SmartCard as target_SmartCard
+    import  chipwhisperer.capture.targets.SmartCard as target_SmartCard
 except ImportError:
     target_SmartCard = None
     target_SmartCard_str = sys.exc_info()
     print "SmartCard targets disabled: %s"%str(target_SmartCard_str)
     
 try:
-    import targets.SASEBOGII as target_SASEBOGII
+    import  chipwhisperer.capture.targets.SASEBOGII as target_SASEBOGII
 except ImportError:
     target_SASEBOGII = None
     target_SASEBOGII_str = sys.exc_info()
     
 try:
-    import targets.SAKURAG as target_SAKURAG
+    import  chipwhisperer.capture.targets.SAKURAG as target_SAKURAG
 except ImportError:
     target_SAKURAG = None
     target_SAKURAG_str = sys.exc_info()
 
-from MainChip import MainChip
-from ProjectFormat import ProjectFormat
-from traces.TraceContainerNative import TraceContainerNative
-from traces.TraceContainerDPAv3 import TraceContainerDPAv3
+from chipwhisperer.common.MainChip import MainChip
+from chipwhisperer.common.ProjectFormat import ProjectFormat
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
+from chipwhisperer.common.traces.TraceContainerDPAv3 import TraceContainerDPAv3
 
 try:
-    from traces.TraceContainerMySQL import TraceContainerMySQL
+    from chipwhisperer.common.traces.TraceContainerMySQL import TraceContainerMySQL
 except ImportError:
     TraceContainerMySQL = None
+
+from chipwhisperer.capture.ListAllModules import ListAllModules
 
 class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
@@ -533,6 +532,10 @@ class ChipWhispererCapture(MainChip):
         self.saveFile.connect(self.saveProject)   
         
         self.fixedPlain = False 
+  
+    def listModules(self):
+        """Overload this to test imports"""
+        return ListAllModules()
      
     def setFixedPlain(self, x):
         self.fixedPlain = x

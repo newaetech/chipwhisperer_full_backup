@@ -36,7 +36,7 @@ except ImportError:
 sys.path.append('../../common')
 sys.path.append('../../../openadc/controlsw/python/common')
 
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 try:
     from pyqtgraph.parametertree import Parameter   
@@ -45,9 +45,9 @@ except ImportError:
     sys.exit()
 
 try:
-    import openadc_qt
+    import openadc.qt as openadc_qt
 except ImportError:
-    print "ERROR: openadc_qt is required for this program"
+    print "ERROR: openadc.qt is required for this program"
     sys.exit()
 
 try:

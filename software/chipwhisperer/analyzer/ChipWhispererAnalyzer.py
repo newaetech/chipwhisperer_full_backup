@@ -38,9 +38,6 @@ import random
 import os.path
 import shlex
 from subprocess import Popen, PIPE
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 import scipy
@@ -48,7 +45,7 @@ import numpy as np
 
 from functools import partial
 
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 try:
     import writer_dpav3
@@ -72,16 +69,18 @@ try:
 except ImportError:
     AES = None    
 
-from MainChip import MainChip
+from chipwhisperer.common.MainChip import MainChip
 #from ResultsDialog import ResultsDialog
-from ProjectFormat import ProjectFormat
-from TraceContainerNative import TraceContainerNative
-from attacks.CPA import CPA
-from ResultsPlotting import ResultsPlotting
-import preprocessing.Preprocessing as Preprocessing
+from chipwhisperer.common.ProjectFormat import ProjectFormat
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
+from chipwhisperer.analyzer.attacks.CPA import CPA
+from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
+import chipwhisperer.analyzer.preprocessing.Preprocessing as Preprocessing
 
 #TEMP
-from ResultsPlotting import ResultsPlotData
+from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
+
+from chipwhisperer.analyzer.ListAllModules import ListAllModules
 
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
@@ -167,6 +166,11 @@ class ChipWhispererAnalyzer(MainChip):
         self.setAttack(CPA(self, console=self.console))
         
         self.setupPreprocessorChain()
+        
+    def listModules(self):
+        """Overload this to test imports"""
+        return ListAllModules()
+     
         
     def setPlotInputEach(self, enabled):
         self.plotInputEach = enabled

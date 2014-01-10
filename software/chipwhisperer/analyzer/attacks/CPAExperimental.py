@@ -35,14 +35,11 @@ except ImportError:
     sys.exit()
     
 from subprocess import Popen, PIPE
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
 imagePath = '../common/images/'
 
 import numpy as np
 import scipy as sp
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 from attacks.AttackStats import DataTypeDiffs
 

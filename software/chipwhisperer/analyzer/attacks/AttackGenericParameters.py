@@ -33,11 +33,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
-
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
 def enforceLimits(value, limits):

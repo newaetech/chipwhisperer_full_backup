@@ -32,11 +32,9 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
 imagePath = '../common/images/'
 
-from ExtendedParameter import ExtendedParameter
+from openadc.ExtendedParameter import ExtendedParameter
 
 try:
     import pyqtgraph as pg
