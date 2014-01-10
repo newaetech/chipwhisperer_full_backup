@@ -185,7 +185,8 @@ class ChipWhispererAnalyzer(MainChip):
         
     def setPreprocessing(self, num, module):
         self.preprocessingList[num] = module
-        module.paramListUpdated.connect(self.reloadParamListPreprocessing)
+        if module:
+            module.paramListUpdated.connect(self.reloadParamListPreprocessing)
         self.reloadParamListPreprocessing() 
         self.setupPreprocessorChain()   
 
