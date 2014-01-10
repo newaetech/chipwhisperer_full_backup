@@ -71,10 +71,12 @@ except ImportError:
 from preprocessing.ResyncCrossCorrelation import ResyncCrossCorrelation
 from preprocessing.ResyncPeakDetect import ResyncPeakDetect
 from preprocessing.ResyncSAD import ResyncSAD
+from preprocessing.Filter import Filter
 
 def listAll(parent):
     valid_targets = {"Disabled":0}
     valid_targets["Cross Correlation Resync"] = ResyncCrossCorrelation(parent)
     valid_targets["Peak Detect Resync"] = ResyncPeakDetect(parent)
     valid_targets["Minimize Sum-of-Error"] = ResyncSAD(parent)
+    valid_targets["Filter"] = Filter(parent)
     return valid_targets

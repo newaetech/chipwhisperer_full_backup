@@ -62,57 +62,48 @@ class Filter(QObject):
                 
         self.enabled = True
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}},
-                         {'name':'Type', 'type':'list', 'values':["lowpass", "highpass"], 'value':'lowpass'},
-                         {'name':'Order', 'type':'int', 'limits':(1,32), 'value':5},                         
-                         {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Ref Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd},            
-                         {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}         
+                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateFilter},
+                         {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high"], 'value':'low', 'set':self.updateFilter},
+                         {'name':'Critical Freq (0-1)', 'key':'freq', 'type':'float', 'limits':(0,1), 'value':0.1, 'set':self.updateFilter},
+                         {'name':'Order', 'key':'order', 'type':'int', 'limits':(1,32), 'value':5, 'set':self.updateFilter},                                
                       ]
         
-        self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params)
+        self.params = Parameter.create(name='Filter', type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params, self)
         self.parent = parent
         self.setTraceManager(parent.manageTraces.iface)
-        self.ccStart = 0
-        self.ccEnd = 0
+        self.updateFilter()
         
+        self.NumTrace = 1
+
     def paramList(self):
         return [self.params]
-    
-    def setRefPointStart(self, start):
-        self.ccStart = start
         
-    def setRefPointEnd(self, end):
-        self.ccEnd = end
-    
     def setEnabled(self, enabled):
         self.enabled = enabled
    
-    def setOutputCorr(self, enabled):
-        self.debugReturnCorr = enabled
+    def updateFilter(self, param1=None):
+        filt = self.findParam('form').value()
+        N = self.findParam('order').value()
+        ftype = self.findParam('type').value()
+        freq = self.findParam('freq').value()
+        b, a = filt(N, freq, ftype)
+        self.b = b
+        self.a = a
    
     def getTrace(self, n):
         if self.enabled:
-            #TODO: fftconvolve
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
-            cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
-            if self.debugReturnCorr:
-                return cross
-            newmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-            maxval = max(cross[self.ccStart:self.ccEnd])
-            if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
-                return None
             
-            diff = newmaxloc-self.refmaxloc
-            if diff < 0:
-                trace = np.append(np.zeros(-diff), trace[:diff])
-            elif diff > 0:
-                trace = np.append(trace[diff:], np.zeros(diff))
-            return trace
+            filttrace = sp.signal.lfilter(self.b, self.a, trace)
+            
+            #print len(trace)
+            #print len(filttrace)
+            
+            return filttrace
+           
             
         else:
             return self.trace.getTrace(n)       
@@ -127,18 +118,10 @@ class Filter(QObject):
         return self.trace.getKnownKey()
    
     def init(self):
-        self.calcRefTrace(self.rtrace)
+        pass
    
     def setTraceManager(self, tmanager):
         self.trace = tmanager    
-    
-    def setRefTrace(self, tnum):
-        self.rtrace = tnum
+
         
-    def calcRefTrace(self, tnum):
-        self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
-        self.reftrace = self.reftrace[::-1]
-        #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
-        self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-        self.refmaxsize = max(cross[self.ccStart:self.ccEnd])
+    
