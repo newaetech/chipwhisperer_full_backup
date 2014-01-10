@@ -64,7 +64,7 @@ class Filter(QObject):
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateFilter},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high"], 'value':'low', 'set':self.updateFilter},
-                         {'name':'Critical Freq (0-1)', 'key':'freq', 'type':'float', 'limits':(0,1), 'value':0.1, 'set':self.updateFilter},
+                         {'name':'Critical Freq (0-1)', 'key':'freq', 'type':'float', 'limits':(0,1), 'step':0.05, 'value':0.1, 'set':self.updateFilter},
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1,32), 'value':5, 'set':self.updateFilter},                                
                       ]
         
