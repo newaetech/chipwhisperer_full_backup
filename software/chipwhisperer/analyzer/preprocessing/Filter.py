@@ -35,21 +35,11 @@ except ImportError:
 imagePath = '../common/images/'
 
 from openadc.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
 
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    #print pg.systemInfo()    
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-
-from functools import partial
+# from functools import partial
 import scipy as sp
-import numpy as np
+# import numpy as np
         
 class Filter(QObject):
     """
