@@ -14,15 +14,27 @@ import pyqtgraph as pg
 
 imagepath = '../common/images/'
 
+class SigStuff(QtGui.QWidget):
+    sigValueChanged = QtCore.Signal(object)  # (self)
+    sigValueChanging = QtCore.Signal(object, object)  # (self, value)  sent immediately; no delay.    
+
 class RangeParameterItem(WidgetParameterItem):
     """
     WidgetParameterItem subclass providing two int selection for range    
     """
+   
     def __init__(self, param, depth):
         self.targetValue = None
         WidgetParameterItem.__init__(self, param, depth)
+
+    def svChangedEmit(self):
+        self.sigs.sigValueChanged.emit(self)
+        
+    def svChangingEmit(self, val):
+        self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
         
     def makeLayout(self):
+        self.sigs = SigStuff()
         opts = self.param.opts        
         defs = {
                 'value': 0, 'min': None, 'max': None, 'int': True, 
@@ -38,6 +50,10 @@ class RangeParameterItem(WidgetParameterItem):
         whigh = SpinBox()
         whigh.setOpts(**defs)
         
+        whigh.sigValueChanged.connect(self.svChangedEmit)
+        whigh.sigValueChanging.connect(self.svChangingEmit)
+        wlow.sigValueChanged.connect(self.svChangedEmit)
+        wlow.sigValueChanging.connect(self.svChangingEmit)        
         
         l = QtGui.QHBoxLayout()
         l.setContentsMargins(0,0,0,0)
@@ -56,13 +72,11 @@ class RangeParameterItem(WidgetParameterItem):
         w = QtGui.QWidget()
         w.setLayout(l)
         
-        w.sigChanged = self.wlow.sigValueChanged
-        w.sigChanging = self.wlow.sigValueChanging
+        w.sigChanged = self.sigs.sigValueChanged
+        w.sigChanging = self.sigs.sigValueChanging
         w.value = self.value
-        w.setValue = self.setValue
-        
+        w.setValue = self.setValue        
         return w
-
 
     def value(self):
         return (self.wlow.value(), self.whigh.value())
@@ -97,14 +111,14 @@ class RangeParameterGraphItem(RangeParameterItem):
         w = QtGui.QWidget()
         w.setLayout(l)
         
-        w.sigChanged = self.wlow.sigValueChanged
-        w.sigChanging = self.wlow.sigValueChanging
+        w.sigChanged = self.sigs.sigValueChanged
+        w.sigChanging = self.sigs.sigValueChanging
         w.value = self.value
         w.setValue = self.setValue
         
         self.wlow.sigValueChanged.connect(self.sbChanged)
         self.whigh.sigValueChanged.connect(self.sbChanged)
-        
+                
         opts = self.param.opts
         self.pw = opts['plotwidget']
         self.lri = pg.LinearRegionItem(values=(self.wlow.value(), self.whigh.value()))

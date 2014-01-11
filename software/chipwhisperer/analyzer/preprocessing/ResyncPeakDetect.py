@@ -66,10 +66,10 @@ class ResyncPeakDetect(QObject):
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         {'name':'Point End', 'type':'int', 'set':self.setRefPointEnd},
+                         #{'name':'Point Start', 'type':'int', 'set':self.setRefPointStart},
+                         #{'name':'Point End', 'type':'int', 'set':self.setRefPointEnd},
+                         {'name':'Point Range', 'type':'rangegraph', 'plotwidget':parent.waveformDock.widget().pw, 'set':self.setPointRange},
                          {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0,10), 'set':self.setValidLimit}, 
-                         {'name':'Rocket Ship', 'type':'rangegraph', 'plotwidget':parent.waveformDock.widget().pw},
                       ]
         
         self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
@@ -86,11 +86,14 @@ class ResyncPeakDetect(QObject):
     def setValidLimit(self, limit):
         self.limit = limit
     
-    def setRefPointStart(self, start):
-        self.ccStart = start
-        
-    def setRefPointEnd(self, end):
-        self.ccEnd = end
+    #def setRefPointStart(self, start):
+    #    self.ccStart = start
+    #    
+    #def setRefPointEnd(self, end):
+    #    self.ccEnd = end
+    def setPointRange(self, val):
+        self.ccStart = val[0]
+        self.ccEnd = val[1]
     
     def setEnabled(self, enabled):
         self.enabled = enabled
