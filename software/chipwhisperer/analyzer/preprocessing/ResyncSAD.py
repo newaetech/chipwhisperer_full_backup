@@ -58,6 +58,11 @@ class ResyncSAD(QObject):
     """
     paramListUpdated = Signal(list)
      
+    descrString = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
+                  "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
+                  "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
+                  "as the shift amount for that trace."
+
     def __init__(self, parent):
         super(ResyncSAD, self).__init__()
                 
@@ -66,15 +71,15 @@ class ResyncSAD(QObject):
         self.debugReturnSad = False
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Ref Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         {'name':'Ref Point End', 'type':'int', 'set':self.setRefPointEnd},  
-                         {'name':'Input Window Start', 'type':'int', 'set':self.setWindowStart},
-                         {'name':'Input Window End', 'type':'int', 'set':self.setWindowEnd},          
-                         {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}         
+                         {'name':'Reference Points', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setRefPointRange},
+                         {'name':'Input Window', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setWindowPointRange},
+                         # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
+                         {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
+                         {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
         self.params = Parameter.create(name='Minimize Sum of Absolute Difference', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
         self.parent = parent
         self.setTraceManager(parent.manageTraces.iface)
         self.ccStart = 0
@@ -87,17 +92,13 @@ class ResyncSAD(QObject):
     def paramList(self):
         return [self.params]
     
-    def setWindowStart(self, start):
-        self.wdStart = start
-        
-    def setWindowEnd(self, end):
-        self.wdEnd = end
+    def setWindowPointRange(self, rng):
+        self.wdStart = rng[0]
+        self.wdEnd = rng[1]
     
-    def setRefPointStart(self, start):
-        self.ccStart = start
-        
-    def setRefPointEnd(self, end):
-        self.ccEnd = end
+    def setRefPointRange(self, rng):
+        self.ccStart = rng[0]
+        self.ccEnd = rng[1]
     
     def setEnabled(self, enabled):
         self.enabled = enabled

@@ -104,15 +104,8 @@ class ChipWhispererAnalyzer(MainChip):
                     {'name':'Traces', 'type':'int', 'value':0, 'readonly':True}
                     ]},
                     
-                {'name':'Pre-Processing', 'type':'group', 'children':#[
-                    #{'name':'All Enabled', 'type':'bool', 'value':False},
-                    #{'name':'Module #1', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 0)},
-                    #{'name':'Module #2', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 1)},
-                    #{'name':'Module #3', 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, 2)},
-                    #]},
-                    
-                    [{'name':'Module #%d'%step, 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, step)} for step in range(0, numPreprocessingStep)]},
-                    
+                {'name':'Pre-Processing', 'type':'group', 'children':
+                    [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, step)} for step in range(0, numPreprocessingStep)]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
                     {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self, console=self.console)}, 'value':'CPA', 'set':self.setAttack},                                          
