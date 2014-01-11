@@ -122,15 +122,21 @@ class RangeParameterGraphItem(RangeParameterItem):
         opts = self.param.opts
         self.pw = opts['plotwidget']
         self.lri = pg.LinearRegionItem(values=(self.wlow.value(), self.whigh.value()))
-        self.pw.addItem(self.lri)
+        self.addLri()
         self.lri.setVisible(False)
         self.lri.sigRegionChanged.connect(self.lriChanged)        
         return w
     
+    def addLri(self):
+        if self.lri not in self.pw.items():
+            self.pw.addItem(self.lri)
+    
     def buttonPressed(self, status):
+        self.addLri()
         self.lri.setVisible(status)
         
     def lriChanged(self):
+        self.addLri()
         new = self.lri.getRegion()
         self.wlow.setValue(new[0])
         self.whigh.setValue(new[1])

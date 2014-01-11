@@ -54,9 +54,14 @@ import numpy as np
         
 class ResyncPeakDetect(QObject):
     """
-    Use maximum point in trace to resync
+    Resyncronize based on peak value.
     """
     paramListUpdated = Signal(list)
+    
+    descrString = "Line up traces so peak (either max positive or max negative) within" \
+    " some given range of points all aligns. For each trace the following must hold or the trace is rejected:\n" \
+    "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
+    "If 'valid limit' is 0 then this is ignored, and all traces are kept."   
      
     def __init__(self, parent):
         super(ResyncPeakDetect, self).__init__()
@@ -66,10 +71,10 @@ class ResyncPeakDetect(QObject):
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         #{'name':'Point Start', 'type':'int', 'set':self.setRefPointStart},
-                         #{'name':'Point End', 'type':'int', 'set':self.setRefPointEnd},
+                         {'name':'Peak Type', 'type':'list', 'value':'Max', 'values':['Max', 'Min'],  'set':self.setType},
                          {'name':'Point Range', 'type':'rangegraph', 'plotwidget':parent.waveformDock.widget().pw, 'set':self.setPointRange},
                          {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0,10), 'set':self.setValidLimit}, 
+                         {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
         self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
@@ -79,18 +84,17 @@ class ResyncPeakDetect(QObject):
         self.ccStart = 0
         self.ccEnd = 0
         self.limit = 0
+        self.type = max
         
     def paramList(self):
         return [self.params]
     
     def setValidLimit(self, limit):
         self.limit = limit
+        
+    def setType(self, t):
+        self.type = t
     
-    #def setRefPointStart(self, start):
-    #    self.ccStart = start
-    #    
-    #def setRefPointEnd(self, end):
-    #    self.ccEnd = end
     def setPointRange(self, val):
         self.ccStart = val[0]
         self.ccEnd = val[1]
@@ -107,8 +111,13 @@ class ResyncPeakDetect(QObject):
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
-            newmaxloc = np.argmin(trace[self.ccStart:self.ccEnd])
-            maxval = min(trace[self.ccStart:self.ccEnd])
+            if self.type == 'Max':
+                newmaxloc = np.argmax(trace[self.ccStart:self.ccEnd])
+                maxval = max(trace[self.ccStart:self.ccEnd])                    
+            else:
+                newmaxloc = np.argmin(trace[self.ccStart:self.ccEnd])
+                maxval = min(trace[self.ccStart:self.ccEnd])
+
             if self.limit:
                 if (maxval > self.refmaxsize * (1.0 + self.limit)) | (maxval < self.refmaxsize * (1.0 - self.limit)):
                     return None
@@ -146,5 +155,9 @@ class ResyncPeakDetect(QObject):
         
     def calcRefTrace(self, tnum):
         reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
-        self.refmaxloc = np.argmin(reftrace)
-        self.refmaxsize = min(reftrace)
+        if self.type == 'Max':
+            self.refmaxloc = np.argmax(reftrace)
+            self.refmaxsize = max(reftrace)
+        else:
+            self.refmaxloc = np.argmin(reftrace)
+            self.refmaxsize = min(reftrace)

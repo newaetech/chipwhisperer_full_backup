@@ -369,9 +369,8 @@ class ChipWhispererAnalyzer(MainChip):
     def reloadParamListResults(self, lst=None):
         ExtendedParameter.reloadParams(self.results.paramList(), self.resultsParamTree)
         
-    def reloadParamList(self, lst=None):        
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)      
-        
+    def reloadParamList(self, lst=None):
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)  
         
     def paramList(self):
         p = []
