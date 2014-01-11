@@ -84,6 +84,16 @@ class RangeParameterItem(WidgetParameterItem):
     def setValue(self, val):
         self.wlow.setValue(val[0])
         self.whigh.setValue(val[1])
+        print val
+
+    def limitsChanged(self, param, limits):
+        """Called when the parameter's limits have changed"""
+        # Do we need this? copied from example
+        ParameterItem.limitsChanged(self, param, limits)
+
+        self.wlow.setOpts(bounds=limits)
+        self.whigh.setOpts(bounds=limits)
+
 
 class RangeParameter(Parameter):
     itemClass = RangeParameterItem

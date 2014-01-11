@@ -124,15 +124,12 @@ class ChipWhispererAnalyzer(MainChip):
                     {'name':'Input Trace Plot', 'type':'group', 'children':[
                         {'name':'Enabled', 'type':'bool', 'value':True},
                         {'name':'Redraw after Each (slower)', 'type':'bool', 'value':True, 'set':self.setPlotInputEach},
-                        {'name':'Starting Trace', 'type':'int', 'limits':(0,0), 'value':0},
-                        {'name':'Ending Trace', 'type':'int', 'limits':(0,0), 'value':0},
-                        {'name':'Starting Point', 'type':'int', 'limits':(0,0), 'value':0},
-                        {'name':'Ending Point', 'type':'int', 'limits':(0,0), 'value':0},
+                        {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0)},
+                        {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'plotwidget':self.waveformDock.widget().pw},
                         {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
                         ]}                                                     
                     ]},                        
                 ]
-    
         
         self.plotInputEach = False
         
@@ -248,16 +245,15 @@ class ChipWhispererAnalyzer(MainChip):
         
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
-        params = self.inputTraceSettingParams()
         self.waveformDock.widget().clearPushed()
         self.waveformDock.widget().setPersistance(True)
         
         self.setupPreprocessorChain()
         
-        tstart = params[0].value()
-        tend = params[1].value()
-        pstart = params[2].value()
-        pend = params[3].value()
+        tstart = self.findParam('tracerng').value()[0]
+        tend = self.findParam('tracerng').value()[1]
+        pstart = self.findParam('pointrng').value()[0]
+        pend = self.findParam('pointrng').value()[1]
         
         ttotal = 0
         
@@ -273,7 +269,6 @@ class ChipWhispererAnalyzer(MainChip):
             if self.plotInputEach:
                 QCoreApplication.processEvents()
 
-        
         print ttotal
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
@@ -286,52 +281,20 @@ class ChipWhispererAnalyzer(MainChip):
         self.pointLimits = points
         self.attack.setTraceLimits(traces, points)
             
-        #Set local parameters for trace viewer
-        params = self.inputTraceSettingParams()
+        # Set local parameters for trace viewer
         if traces is not None:
-            params[0].setLimits((0, traces))
-            params[1].setLimits((0, traces))
-            params[0].setValue(0)
+            self.findParam('tracerng').setLimits((0, traces))
             #TODO: Bug in pyqtgraph maybe - if call with just deftrace & 
             #setLimits was called with (0,0), the setValue(1) is ignored which is OK,
             #but then calling setLimits with higher value followed by setValue still
             #has no effect??
             #WORKAROUND: use min(traces,deftrace) to ensure don't set value beyond limit for now
-            params[1].setValue(min(traces, deftrace))
+            self.findParam('tracerng').setValue((0, min(traces, deftrace)))
             
         
         if points is not None:
-            params[2].setLimits((0, points))
-            params[3].setLimits((0, points))
-            params[2].setValue(0)
-            params[3].setValue(defpoint)
-        
-        
-    def inputTraceSettingParams(self):
-        """Find parameters dealing with input trace plotting"""
-        tracestart = None
-        traceend = None
-        pointstart = None
-        pointend = None
-        
-        for p in self.params.children():
-            if p.name() == 'Result Collection':
-                for t in p.children():
-                    if t.name() == 'Input Trace Plot':
-                        for q in t.children():
-                            if q.name() == 'Starting Trace':
-                                tracestart = q
-                                
-                            if q.name() == 'Ending Trace':
-                                traceend = q
-                                
-                            if q.name() == 'Starting Point':
-                                pointstart = q
-                                
-                            if q.name() == 'Ending Point':
-                                pointend = q
-                                
-        return (tracestart, traceend, pointstart, pointend)
+            self.findParam('pointrng').setLimits((0, points))
+            self.findParam('pointrng').setValue((0, defpoint))
 
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Waveform Display")        #TODO: FIX THIS HACK
@@ -354,7 +317,7 @@ class ChipWhispererAnalyzer(MainChip):
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
         self.paramTree = ParameterTree()
         self.paramTree.setParameters(self.params, showTop=False)
         
