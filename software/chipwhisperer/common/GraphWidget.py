@@ -91,6 +91,8 @@ class GraphWidget(QWidget):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.imagepath = imagepath
+        
+        self.persistantItems = []
 
         QWidget.__init__(self)
         layout = QVBoxLayout()
@@ -241,8 +243,19 @@ class GraphWidget(QWidget):
         xaxis = range(startoffset, len(trace)+startoffset)
             
         self.pw.plot(xaxis, trace, pen=(self.acolor,8)) 
+        # self.checkPersistantItems()
 
 
     def clearPushed(self):
         """Clear display"""
         self.pw.clear()
+        self.checkPersistantItems()
+
+    def addPersistantItem(self, item):
+        self.persistantItems.append(item)
+        self.checkPersistantItems()
+
+    def checkPersistantItems(self):
+        for t in self.persistantItems:
+            if t not in self.pw.items():
+                self.pw.addItem(t)

@@ -125,7 +125,7 @@ class ChipWhispererAnalyzer(MainChip):
                         {'name':'Enabled', 'type':'bool', 'value':True},
                         {'name':'Redraw after Each (slower)', 'type':'bool', 'value':True, 'set':self.setPlotInputEach},
                         {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0)},
-                        {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'plotwidget':self.waveformDock.widget().pw},
+                        {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'graphwidget':self.waveformDock.widget()},
                         {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
                         ]}                                                     
                     ]},                        
@@ -264,7 +264,7 @@ class ChipWhispererAnalyzer(MainChip):
                 continue
                   
             ttotal += 1                
-            self.waveformDock.widget().passTrace(trace[pstart:pend])
+            self.waveformDock.widget().passTrace(trace[pstart:pend], pstart)
             
             if self.plotInputEach:
                 QCoreApplication.processEvents()

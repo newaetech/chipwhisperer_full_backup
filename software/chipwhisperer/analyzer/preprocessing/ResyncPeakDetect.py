@@ -72,7 +72,7 @@ class ResyncPeakDetect(QObject):
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
                          {'name':'Peak Type', 'type':'list', 'value':'Max', 'values':['Max', 'Min'],  'set':self.setType},
-                         {'name':'Point Range', 'type':'rangegraph', 'plotwidget':parent.waveformDock.widget().pw, 'set':self.setPointRange},
+                         {'name':'Point Range', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setPointRange},
                          {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0,10), 'set':self.setValidLimit}, 
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]

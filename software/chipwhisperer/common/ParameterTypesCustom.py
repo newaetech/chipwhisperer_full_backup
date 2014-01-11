@@ -84,7 +84,6 @@ class RangeParameterItem(WidgetParameterItem):
     def setValue(self, val):
         self.wlow.setValue(val[0])
         self.whigh.setValue(val[1])
-        print val
 
     def limitsChanged(self, param, limits):
         """Called when the parameter's limits have changed"""
@@ -130,23 +129,17 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.whigh.sigValueChanged.connect(self.sbChanged)
                 
         opts = self.param.opts
-        self.pw = opts['plotwidget']
+        self.pg = opts['graphwidget']
         self.lri = pg.LinearRegionItem(values=(self.wlow.value(), self.whigh.value()))
-        self.addLri()
+        self.pg.addPersistantItem(self.lri)
         self.lri.setVisible(False)
         self.lri.sigRegionChanged.connect(self.lriChanged)        
         return w
     
-    def addLri(self):
-        if self.lri not in self.pw.items():
-            self.pw.addItem(self.lri)
-    
     def buttonPressed(self, status):
-        self.addLri()
         self.lri.setVisible(status)
         
     def lriChanged(self):
-        self.addLri()
         new = self.lri.getRegion()
         self.wlow.setValue(new[0])
         self.whigh.setValue(new[1])
@@ -154,6 +147,26 @@ class RangeParameterGraphItem(RangeParameterItem):
     def sbChanged(self):
         self.lri.setRegion((self.wlow.value(), self.whigh.value()))
         
+    def limitsChanged(self, param, limits):
+        """Called when the parameter's limits have changed"""
+        # Do we need this? copied from example
+        ParameterItem.limitsChanged(self, param, limits)
+
+        self.wlow.setOpts(bounds=limits)
+        self.whigh.setOpts(bounds=limits)
+        self.lri.setBounds(limits)
+
+    def showEditor(self):
+        self.widget.show()
+        self.displayLabel.hide()
+        self.widget.setFocus(QtCore.Qt.OtherFocusReason)
+        self.lri.setVisible(True)
+
+    def hideEditor(self):
+        self.widget.hide()
+        self.displayLabel.show()
+        self.lri.setVisible(self.graphBtn.isChecked())
+
     
 class RangeParameterGraph(Parameter):
     itemClass = RangeParameterGraphItem
