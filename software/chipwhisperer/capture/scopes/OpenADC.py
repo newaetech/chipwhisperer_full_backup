@@ -400,7 +400,7 @@ class OpenADCInterface(QObject):
         self.setCurrentScope(cwrev2, False)
         defscope = cwrev2
         
-        cw_cons = {}
+        cw_cons = {None}
         
         if ftdi:
             ftdi.paramListUpdated.connect(self.emitParamListUpdated)
