@@ -66,6 +66,8 @@ class ModuleListDialog(QDialog):
         self.setLayout(layout)        
 
 class MainChip(QMainWindow):
+    settings_docks = []
+
     MaxRecentFiles = 4
 
     #Be sure to set things with:
@@ -143,8 +145,15 @@ class MainChip(QMainWindow):
         """Add a settings dock - same as addDock but defaults to left-hand side"""
         self.paramTrees.append(tree)
         dock = self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)
-        return dock        
-    
+        self.settings_docks.append(dock)
+        return dock
+
+    def dockifySettings(self):
+        if len(self.settings_docks) > 1:
+            for index in range(0, len(self.settings_docks) - 1):
+                self.tabifyDockWidget(self.settings_docks[index], self.settings_docks[index + 1])
+        self.settings_docks[0].raise_()
+
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
         gw = GraphWidget(self.imagepath)
