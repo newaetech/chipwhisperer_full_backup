@@ -400,7 +400,7 @@ class OpenADCInterface(QObject):
         self.setCurrentScope(cwrev2, False)
         defscope = cwrev2
         
-        cw_cons = {None}
+        cw_cons = {}
         
         if ftdi:
             ftdi.paramListUpdated.connect(self.emitParamListUpdated)
@@ -414,7 +414,12 @@ class OpenADCInterface(QObject):
             cwser.paramListUpdated.connect(self.emitParamListUpdated)
             cw_cons["Serial Port (LX9)"] = cwser
         
-        
+        if cw_cons == {}:
+            # If no scopes could be found, add a dummy entry so the
+            # app can at least start up
+            cw_cons["None"] = None
+            QMessageBox.warning(None, "OpenADC", "No supported scope found!")            
+               
         
         self.advancedSettings = None
         
