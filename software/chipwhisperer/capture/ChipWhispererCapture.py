@@ -98,6 +98,11 @@ except ImportError:
     target_SAKURAG = None
     target_SAKURAG_str = sys.exc_info()
 
+try:
+    import  chipwhisperer.capture.auxiliary.FrequencyMeasure as aux_FrequencyMeasure
+except ImportError:
+    aux_FrequencyMeasure = None
+
 from chipwhisperer.common.MainChip import MainChip
 from chipwhisperer.common.ProjectFormat import ProjectFormat
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
@@ -114,12 +119,13 @@ class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
     captureDone = Signal(bool)
     
-    def __init__(self, scope, target, writer, fixedPlain=None, updateData=None, esm=None, newKeyPerTrace=False):
+    def __init__(self, scope, target, writer, aux=None, fixedPlain=None, updateData=None, esm=None, newKeyPerTrace=False):
         super(acquisitionController, self).__init__()
 
         self.target = target
         self.scope = scope
         self.writer = writer
+        self.aux = aux
         self.running = False
         self.fixedPlainText = fixedPlain
         self.maxtraces = 1
@@ -133,7 +139,10 @@ class acquisitionController(QObject):
 
         self.textin = bytearray(16)
         for i in range(0,16):
-            self.textin[i] = i #random.randint(0, 255)       
+            self.textin[i] = i  # random.randint(0, 255)
+
+        if self.aux is not None:
+            self.aux.init()
 
     def TargetDoTrace(self, plaintext, key=None):
         if self.target is None:
@@ -210,6 +219,9 @@ class acquisitionController(QObject):
         
         if self.scope is not None:
             self.scope.arm()
+
+        if self.aux is not None:
+            self.aux.captureArm()
         
         if self.target is not None:            
             #Load input, start encryption, get output
@@ -228,6 +240,9 @@ class acquisitionController(QObject):
             except IOError,e:
                 print "IOError: %s"%str(e)
                 return False
+
+        if self.aux is not None:
+            self.aux.captureDone()
         
         return True
 
@@ -293,10 +308,6 @@ class TargetInterface(QObject):
             valid_targets["SAKURA G"] = target_SAKURAG.SakuraG(self.log, showScriptParameter=showScriptParameter)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
-
-    #def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
@@ -495,6 +506,9 @@ class ChipWhispererCapture(MainChip):
         # system. Useful if you are wanting to do something like script different core voltages, frequencies, or otherwise
         # control some external device for every capture run.
 
+        if aux_FrequencyMeasure is not None:
+            valid_aux["Frequency Counter"] = aux_FrequencyMeasure.FrequencyMeasure(console=self.console, showScriptParameter=self.showScriptParameter)
+
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
             
@@ -536,6 +550,7 @@ class ChipWhispererCapture(MainChip):
         
         self.restoreDockGeometry()
         self.dockifySettings()
+        self.settingsAuxDock.setVisible(False)
 
         self.newProject()   
         
@@ -673,11 +688,7 @@ class ChipWhispererCapture(MainChip):
         self.targetParamTree = ParameterTree()
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
-                
-    #def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
-                
+
     def reloadScopeParamList(self, lst=None): 
         ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)              
         
@@ -693,9 +704,9 @@ class ChipWhispererCapture(MainChip):
                 pass
 
     def reloadAuxParamList(self, lst=None):
-        if self.traceparams is not None:
+        if self.aux is not None:
             try:
-                ExtendedParameter.reloadParams(self.auxparams.paramList(), self.auxParamTree)
+                ExtendedParameter.reloadParams(self.aux.paramList(), self.auxParamTree)
             except AttributeError:
                 # Some trace writers have no configuration options
                 pass
@@ -790,7 +801,7 @@ class ChipWhispererCapture(MainChip):
         else:
             ptInput = None
 
-        ac = acquisitionController(self.scope, target, writer=None, fixedPlain=ptInput, esm = self.esm)
+        ac = acquisitionController(self.scope, target, writer=None, aux=self.aux, fixedPlain=ptInput, esm=self.esm)
         ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
 
@@ -827,8 +838,10 @@ class ChipWhispererCapture(MainChip):
 
         rndKey = self.findParam('newKeyAlways').value()
 
-        ac = acquisitionController(self.scope, target, writer, esm=self.esm,
-                                   fixedPlain=ptInput, newKeyPerTrace=rndKey)
+        ac = acquisitionController(self.scope, target, writer, aux=self.aux,
+                                   esm=self.esm, fixedPlain=ptInput,
+                                   newKeyPerTrace=rndKey)
+
         ac.traceDone.connect(self.printTraceNum)
         tn = self.numTraces
         ac.setMaxtraces(tn)        
@@ -864,12 +877,14 @@ class ChipWhispererCapture(MainChip):
     def auxChanged(self, newaux):
         self.aux = newaux
         try:
-            self.auxparams = newaux.getParams()
-            self.settingsAuxDock.setVisible(False)
+            newaux.paramList()
+            newaux.paramListUpdated.connect(self.reloadAuxParamList)
+            self.reloadAuxParamList()
+            self.settingsAuxDock.setVisible(True)
         except AttributeError:
-            self.auxparams = None
+            self.settingsAuxDock.setVisible(False)
         except TypeError:
-            self.auxparams = None
+            self.settingsAuxDock.setVisible(False)
   
     def newProject(self):        
         self.proj = ProjectFormat()
