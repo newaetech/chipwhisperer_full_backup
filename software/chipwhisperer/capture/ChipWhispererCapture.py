@@ -526,6 +526,8 @@ class ChipWhispererCapture(MainChip):
         self.addExampleScripts()
         
         self.restoreDockGeometry()
+        self.dockifySettings()
+
         self.newProject()   
         
         self.newFile.connect(self.newProject)

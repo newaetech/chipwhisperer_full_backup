@@ -148,6 +148,9 @@ class ChipWhispererAnalyzer(MainChip):
         self.tabifyDockWidget(self.settingsNormalDock, self.settingsPostProcessingDock)
         self.tabifyDockWidget(self.settingsNormalDock, self.settingsResultsDock)
         
+        for d in self.results.dockList():
+            self.tabifyDockWidget(self.waveformDock, d)
+
         self.newProject()   
         
         self.newFile.connect(self.newProject)
