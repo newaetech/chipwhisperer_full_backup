@@ -479,6 +479,7 @@ class ChipWhispererCapture(MainChip):
     
         self.scope = None        
         self.trace = None
+        self.aux = None
         self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
         self.setPlaintext('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
         #self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
@@ -487,7 +488,13 @@ class ChipWhispererCapture(MainChip):
     
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}        
         valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}    
+        valid_aux = {"None":None}
         
+        # If you want to add a 'hacked-in' module, you can do that in the 'aux' system. The aux system is designed to make
+        # it very easy to add some code that does something like measure an external instrument, or control some other
+        # system. Useful if you are wanting to do something like script different core voltages, frequencies, or otherwise
+        # control some external device for every capture run.
+
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
             
@@ -501,6 +508,8 @@ class ChipWhispererCapture(MainChip):
                 self.target.toplevel_param,
                 {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"], 'set':self.traceChanged},
                 
+                {'name':'Auxilary Module', 'type':'list', 'values':valid_aux, 'value':valid_aux["None"], 'set':self.auxChanged },
+
                 {'name':'Key Settings', 'type':'group', 'children':[
                         {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
                         {'name':'Send Key to Target', 'type':'bool', 'value':True},
@@ -651,6 +660,8 @@ class ChipWhispererCapture(MainChip):
         self.settingsScopeDock = self.addSettings(self.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
         self.settingsTraceDock = self.addSettings(self.traceParamTree, "Trace Settings")
+        self.settingsAuxDock = self.addSettings(self.auxParamTree, "Aux Settings")
+        self.settingsAuxDock.setVisible(False)
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
@@ -661,6 +672,7 @@ class ChipWhispererCapture(MainChip):
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
         self.traceParamTree = ParameterTree()
+        self.auxParamTree = ParameterTree()
                 
     #def paramTreeChanged(self, param, changes):
     #    if self.showScriptParameter is not None:
@@ -678,6 +690,14 @@ class ChipWhispererCapture(MainChip):
                 ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree)
             except AttributeError:
                 #Some trace writers have no configuration options
+                pass
+
+    def reloadAuxParamList(self, lst=None):
+        if self.traceparams is not None:
+            try:
+                ExtendedParameter.reloadParams(self.auxparams.paramList(), self.auxParamTree)
+            except AttributeError:
+                # Some trace writers have no configuration options
                 pass
         
     def reloadParamList(self, lst=None):
@@ -840,6 +860,16 @@ class ChipWhispererCapture(MainChip):
             self.traceparams = None
             
         self.reloadTraceParamList()
+
+    def auxChanged(self, newaux):
+        self.aux = newaux
+        try:
+            self.auxparams = newaux.getParams()
+            self.settingsAuxDock.setVisible(False)
+        except AttributeError:
+            self.auxparams = None
+        except TypeError:
+            self.auxparams = None
   
     def newProject(self):        
         self.proj = ProjectFormat()
