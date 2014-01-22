@@ -50,9 +50,13 @@ class freqMeasure():
     
     def __init__(self, ps):
         self.ps = ps
+        self.isOpen = False
     
     def openScope(self):
-        self.ps.open()
+        if self.isOpen == False:
+            self.ps.open()
+
+        self.isOpen = True
 
         self.ps.setChannel("A", coupling="DC", VRange=5.0, probeAttenuation=10)
         self.ps.setChannel("B", enabled=False)
@@ -67,6 +71,7 @@ class freqMeasure():
 
     def closeScope(self):
         self.ps.close()
+        self.isOpen = False
 
     def armMeasure(self):
         self.ps.runBlock()
@@ -115,14 +120,20 @@ class FrequencyMeasure(AuxiliaryTemplate):
     def setConnection(self, con):
         self.fm = freqMeasure(con)
 
-    def init(self):
+    def captureInit(self):
         self.fm.openScope()
+        self.data = []
         
     def close(self):
         self.fm.closeScope()
         
-    def captureArm(self):
+    def traceArm(self):
         self.fm.armMeasure()
 
-    def captureDone(self):
+    def traceDone(self):
         freq = self.fm.measure()
+        self.data.append(freq)
+
+    def captureComplete(self):
+        np.save("frequency-%s.npy" % self.prefix, self.data)
+

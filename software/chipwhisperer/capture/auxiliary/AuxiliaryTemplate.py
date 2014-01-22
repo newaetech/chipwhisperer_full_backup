@@ -44,6 +44,7 @@ class AuxiliaryTemplate(QObject):
         self.console = console
         self.showScriptParameter = showScriptParameter
         self.setupParameters()
+        self.prefix = ""
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
@@ -72,14 +73,22 @@ class AuxiliaryTemplate(QObject):
         """Close target, disconnect if required"""
         pass
 
-    def init(self):
+    def captureInit(self):
         """Called once before each capture grouping, do connect etc"""
         pass
 
-    def captureArm(self):
+
+    def captureComplete(self):
+        """Called once complete capture is complete"""
+        pass
+
+    def traceArm(self):
         """Called before sending trace to target, use to arm aux system"""
         pass
 
-    def captureDone(self):
+    def traceDone(self):
         """Called once capture is complete for a single trace"""
         pass
+
+    def setPrefix(self, prefix):
+        self.prefix = prefix

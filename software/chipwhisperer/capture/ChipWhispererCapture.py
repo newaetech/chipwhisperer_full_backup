@@ -142,7 +142,7 @@ class acquisitionController(QObject):
             self.textin[i] = i  # random.randint(0, 255)
 
         if self.aux is not None:
-            self.aux.init()
+            self.aux.captureInit()
 
     def TargetDoTrace(self, plaintext, key=None):
         if self.target is None:
@@ -221,7 +221,7 @@ class acquisitionController(QObject):
             self.scope.arm()
 
         if self.aux is not None:
-            self.aux.captureArm()
+            self.aux.traceArm()
         
         if self.target is not None:            
             #Load input, start encryption, get output
@@ -242,7 +242,7 @@ class acquisitionController(QObject):
                 return False
 
         if self.aux is not None:
-            self.aux.captureDone()
+            self.aux.traceDone()
         
         return True
 
@@ -258,6 +258,9 @@ class acquisitionController(QObject):
             self.writer.prepareDisk()
             self.writer.setKnownKey(self.key)
 
+        if self.aux is not None:
+            self.aux.captureInit()
+
         nt = 0
 
         while (nt < self.maxtraces) and self.running:
@@ -272,6 +275,9 @@ class acquisitionController(QObject):
                 self.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
             QCoreApplication.processEvents()
             
+
+        if self.aux is not None:
+            self.aux.captureComplete()
 
         if self.writer is not None:
             self.writer.closeAll()
@@ -820,11 +826,12 @@ class ChipWhispererCapture(MainChip):
             self.setKey(target.checkEncryptionKey(self.key), True, True)
             
         starttime = datetime.now()  
+        baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
+        prefix = baseprefix + "_"
             
         #Load trace writer        
         if self.trace is not None:
-            writer = self.trace(self.traceparams)                      
-            prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S_') 
+            writer = self.trace(self.traceparams)
             writer.config.setAttr("prefix", prefix)
             writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
             writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
@@ -837,6 +844,7 @@ class ChipWhispererCapture(MainChip):
             ptInput = None
 
         rndKey = self.findParam('newKeyAlways').value()
+        self.aux.setPrefix(baseprefix)
 
         ac = acquisitionController(self.scope, target, writer, aux=self.aux,
                                    esm=self.esm, fixedPlain=ptInput,
