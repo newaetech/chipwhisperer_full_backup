@@ -26,6 +26,7 @@ __author__ = "Colin O'Flynn"
 
 import sys
 import os
+import traceback
 #We always import PySide first, to force usage of PySide over PyQt
 try:
     from PySide.QtCore import *
@@ -363,7 +364,8 @@ class MainChip(QMainWindow):
                 #Check if this is a dictionary/list
                 if "values" in top.opts:
                     try:
-                        value = top.opts["values"][value]
+                        if isinstance(top.opts["values"], dict):
+                            value = top.opts["values"][value]                        
                     except TypeError:
                         pass   
                     
@@ -390,7 +392,9 @@ class MainChip(QMainWindow):
             print "Parameter not found: %s"%str(parameter)
         except ValueError:
             #A little klunky: we use exceptions to tell us the system DID work as intended
-            pass               
+            pass          
+        except IndexError:
+            raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))     
           
         #User might be calling these in a row, need to process all events
         QCoreApplication.processEvents()

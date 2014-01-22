@@ -189,10 +189,13 @@ class SimpleSerial(TargetTemplate):
     paramListUpdated = Signal(list)     
 
     def setupParameters(self):
-        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection}]        
+        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection},
+                    {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
+                    ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ser = None   
+        self.keylength = 16
         
         self.setConnection(self.findParam('con').value())
       
@@ -201,6 +204,14 @@ class SimpleSerial(TargetTemplate):
             self.ser.setOpenADC(oadc)
         except:
             pass
+        
+    def setKeyLen(self, klen):
+        """ Set key length in BITS """
+        self.keylength = klen / 8
+        
+    def keyLen(self):
+        """ Return key length in BYTES """
+        return self.keylength
 
     def setConnection(self, con):
         self.ser = con        
@@ -279,6 +290,22 @@ class SimpleSerial(TargetTemplate):
         self.ser.flushInput()
         self.ser.write(cmd)
         #self.ser.read(1)       
+        
+    def checkEncryptionKey(self, kin):
+        blen = self.keyLen()
+        
+        if len(kin) < blen:
+            print "note: Padding key..."
+            newkey = bytearray(kin)
+            newkey += bytearray([0]*(blen - len(kin)))
+            return newkey
+        elif len(kin) > blen:
+            print "note: Trunacating key..."
+            return kin[0:blen]
+                        
+        return kin
+        
+        
         
 class SimpleSerialWidget(SimpleSerial, QWidget):
     def __init__(self):

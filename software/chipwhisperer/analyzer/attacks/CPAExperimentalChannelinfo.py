@@ -269,9 +269,26 @@ class CPAExperimentalChannelinfo(QObject):
             brange_df = brange
         
         
-        H = np.load('channelinfo-masked.npy')
+        #H = np.load('channelinfo-masked.npy')
+        #H = np.load('csi-masked-newkey.npy')
+        #H = np.load('channelinfo.npy')
+        #mio = sio.loadmat('equalizer.mat')
+        #H = mio['equaltotal']
+        H = np.load('equalization.npy')
+
+        #for j in range(0, 16):
+            #4 = 500-800
+            #test = H.copy()
+            #for i in range(0, 5):
+            #    threshold = max(abs(test[j]))
+            #    test[j, abs(test[j,:]) >= threshold ] = 0
+            
+            #print "%f %d"%(threshold, (abs(H[j,:]) > threshold).sum())
         
+            #H[j, abs(H[j,:]) < threshold] = 0
+
         for bnum_df in brange_df:
+        
             #CPAMemoryOneSubkey
             #CPASimpleOneSubkey
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
@@ -295,8 +312,7 @@ class CPAExperimentalChannelinfo(QObject):
                     else:
                         bnum = bnum_df
                 
-                    traces_fixed = np.dot(traces_all, H[bnum])
-                    
+                    traces_fixed = np.dot(traces_all - traces_all.mean(axis=0), H[bnum]) + 4
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):                    
                         (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_fixed[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
@@ -313,9 +329,12 @@ class CPAExperimentalChannelinfo(QObject):
                 
                 tend += tdiff
                 tstart += tdiff
-                
+               
                 if self.sr is not None:
                     self.sr()
+
+            if progressBar is not None:
+                pbcnt = 0
     
     def getStatistics(self):
         return self.stats

@@ -89,7 +89,7 @@ class DataTypeDiffs(object):
     def setKnownkey(self, knownkey):
         self.knownkey = knownkey        
         
-    def updateSubkey(self, bnum, data, copy=False, forceUpdate=False, tnum=None):
+    def updateSubkey(self, bnum, data, copy=True, forceUpdate=False, tnum=None):
         if (id(data) != id(self.diffs[bnum])) or forceUpdate:
             self.maxValid[bnum] = False
 
