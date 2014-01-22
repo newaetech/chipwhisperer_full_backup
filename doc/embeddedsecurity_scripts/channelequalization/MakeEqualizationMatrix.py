@@ -22,7 +22,7 @@ def myFunc(pinvRx, traces, textin, key, bnum, ntraces, npoints):
             k = key
         hwlist[i][0] = AES128_8bit.HypHW(textin[i], None, k[bnum], bnum) - hwmean
 
-    hb = np.zeros( (npoints, 1) )
+    Ryx = np.zeros( (npoints, 1) )
     for i in range(0, ntraces):        
         hb = hb + traces[i:i+1,:].T * hwlist[i]
         
