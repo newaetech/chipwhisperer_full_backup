@@ -28,6 +28,7 @@ from preprocessing.ResyncPeakDetect import ResyncPeakDetect
 from preprocessing.ResyncSAD import ResyncSAD
 from preprocessing.Filter import Filter
 from preprocessing.AddNoiseJitter import AddNoiseJitter
+from preprocessing.Normalize import Normalize
 
 def listAll(parent):
     valid_targets = {}
@@ -35,6 +36,7 @@ def listAll(parent):
     valid_targets["Resync: Peak Detect"] = ResyncPeakDetect(parent)
     valid_targets["Resync: Sum-of-Difference"] = ResyncSAD(parent)
     valid_targets["Digital Filter"] = Filter(parent)
+    valid_targets["Normalize"] = Normalize(parent)
     valid_targets["Add Noise: Jitter"] = AddNoiseJitter(parent)
     valid_targets["Disabled"] = 0
 
