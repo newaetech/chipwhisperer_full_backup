@@ -23,8 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-sys.path.append('../common')
-import aes_tables
+import chipwhisperer.common.aes_tables as aes_tables
 
 numSubKeys = 16
 

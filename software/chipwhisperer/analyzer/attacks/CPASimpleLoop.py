@@ -33,7 +33,7 @@ except ImportError:
     sys.exit()
 
 import numpy as np
-from attacks.AttackStats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 
 class CPASimpleLoop(QObject):
     """

@@ -23,12 +23,12 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from preprocessing.ResyncCrossCorrelation import ResyncCrossCorrelation
-from preprocessing.ResyncPeakDetect import ResyncPeakDetect
-from preprocessing.ResyncSAD import ResyncSAD
-from preprocessing.Filter import Filter
-from preprocessing.AddNoiseJitter import AddNoiseJitter
-from preprocessing.Normalize import Normalize
+from chipwhisperer.analyzer.preprocessing.ResyncCrossCorrelation import ResyncCrossCorrelation
+from chipwhisperer.analyzer.preprocessing.ResyncPeakDetect import ResyncPeakDetect
+from chipwhisperer.analyzer.preprocessing.ResyncSAD import ResyncSAD
+from chipwhisperer.analyzer.preprocessing.Filter import Filter
+from chipwhisperer.analyzer.preprocessing.AddNoiseJitter import AddNoiseJitter
+from chipwhisperer.analyzer.preprocessing.Normalize import Normalize
 
 def listAll(parent):
     valid_targets = {}

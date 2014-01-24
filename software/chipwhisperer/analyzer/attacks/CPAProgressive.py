@@ -42,7 +42,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from attacks.AttackStats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 
 imagePath = '../common/images/'
 

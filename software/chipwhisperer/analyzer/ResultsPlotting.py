@@ -34,7 +34,7 @@ except ImportError:
 
 imagePath = '../common/images/'
 
-from GraphWidget import GraphWidget
+from chipwhisperer.common.GraphWidget import GraphWidget
 
 from functools import partial
 
