@@ -31,8 +31,6 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
-imagePath = '../common/images/'
 
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter

@@ -46,8 +46,6 @@ except ImportError:
 
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 
-imagePath = '../common/images/'
-
 from functools import partial
 
 try:

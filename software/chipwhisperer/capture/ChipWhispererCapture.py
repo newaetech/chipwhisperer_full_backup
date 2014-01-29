@@ -40,9 +40,9 @@ import random
 import os.path
 import shlex
 from subprocess import Popen, PIPE
-imagePath = '../common/images/'
 
 from openadc.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.qrc_resources
 
 try:
     import writer_dpav3
@@ -503,7 +503,7 @@ class EncryptionStatusMonitor(QDialog):
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(ChipWhispererCapture, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
+        super(ChipWhispererCapture, self).__init__(name="ChipWhisperer Capture V2")
         self.console = self.addConsole()
     
         self.scope = None        
@@ -747,15 +747,15 @@ class ChipWhispererCapture(MainChip):
         self.addCaptureTools()
 
     def addCaptureTools(self):
-        capture1 = QAction(QIcon(imagePath+'play1.png'), 'Capture 1', self)
+        capture1 = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
         capture1.triggered.connect(self.capture1)
-        captureM = QAction(QIcon(imagePath+'playM.png'), 'Capture Multi', self)
+        captureM = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
         captureM.triggered.connect(self.captureM)
         
         self.captureStatus = QToolButton()
-        self.captureStatusActionDis = QAction(QIcon(imagePath+'status_disconnected.png'),  'Status: Disconnected',  self)
+        self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Status: Disconnected', self)
         self.captureStatusActionDis.triggered.connect(self.doConDis)
-        self.captureStatusActionCon = QAction(QIcon(imagePath+'status_connected.png'),  'Status: Connected',  self)
+        self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Status: Connected', self)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')

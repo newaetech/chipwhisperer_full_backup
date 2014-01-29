@@ -37,6 +37,8 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
+import chipwhisperer.common.qrc_resources
+
 class ColorDialog(QDialog):
     def __init__(self, color,  auto):
         super(ColorDialog, self).__init__()
@@ -87,11 +89,12 @@ class GraphWidget(QWidget):
     xRangeChanged = Signal(int, int)
     
     
-    def __init__(self, imagepath='images/'):
+    def __init__(self):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        self.imagepath = imagepath
         
+        self.imagepath = ":/images/"
+
         self.persistantItems = []
 
         QWidget.__init__(self)

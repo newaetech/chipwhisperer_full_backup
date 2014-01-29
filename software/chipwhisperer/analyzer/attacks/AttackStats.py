@@ -36,7 +36,6 @@ except ImportError:
     sys.exit()
     
 from subprocess import Popen, PIPE
-imagePath = '../common/images/'
 
 import numpy as np
 from openadc.ExtendedParameter import ExtendedParameter

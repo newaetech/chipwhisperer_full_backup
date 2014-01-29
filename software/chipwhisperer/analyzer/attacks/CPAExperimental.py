@@ -37,15 +37,12 @@ except ImportError:
     sys.exit()
     
 from subprocess import Popen, PIPE
-imagePath = '../common/images/'
 
 import numpy as np
 import scipy as sp
 from openadc.ExtendedParameter import ExtendedParameter
 
 from attacks.AttackStats import DataTypeDiffs
-
-imagePath = '../common/images/'
 
 class AttackCPA_Bayesian(QObject):
     """

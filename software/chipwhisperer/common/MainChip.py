@@ -82,12 +82,10 @@ class MainChip(QMainWindow):
     newFile = Signal()
     
     
-    def __init__(self, name="Demo", imagepath="images/"):       
+    def __init__(self, name="Demo"):
         super(MainChip, self).__init__()
         
         self.manageTraces = TraceManagerDialog(self)
-        
-        self.imagepath = imagepath
         self.name = name        
         self.filename = None
         self.dirty = True
@@ -157,7 +155,7 @@ class MainChip(QMainWindow):
 
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
-        gw = GraphWidget(self.imagepath)
+        gw = GraphWidget()
         return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
         
     def addConsole(self, name="Debug Logging", visible=True):
@@ -240,7 +238,7 @@ class MainChip(QMainWindow):
     def initUI(self):        
         self.statusBar()
         self.setWindowTitle(self.name)
-        self.setWindowIcon(QIcon("../common/cwicon.png"))
+        self.setWindowIcon(QIcon(":/images/cwicon.png"))
         
         self.recentFileActs = []
         self.createFileActions()

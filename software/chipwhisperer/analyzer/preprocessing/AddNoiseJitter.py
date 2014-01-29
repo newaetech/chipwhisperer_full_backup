@@ -36,9 +36,6 @@ import random
 import numpy as np
 
 from pyqtgraph.parametertree import Parameter
-
-imagePath = '../common/images/'
-
 from openadc.ExtendedParameter import ExtendedParameter
 
 class AddNoiseJitter(QObject):

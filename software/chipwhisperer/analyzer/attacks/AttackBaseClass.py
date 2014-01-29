@@ -35,11 +35,6 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
-imagePath = '../common/images/'
-
 class AttackBaseClass(QObject):
     """Generic Attack Interface"""
 
