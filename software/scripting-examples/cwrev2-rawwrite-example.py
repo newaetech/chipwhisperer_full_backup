@@ -35,10 +35,9 @@
 
 #Setup path
 import sys
-sys.path.append("../capturev2")
 
 #Import the ChipWhispererCapture module
-import ChipWhispererCapture as cwc
+import chipwhisperer.capture.ChipWhispererCapture as cwc
 
 #Check for PySide
 try:

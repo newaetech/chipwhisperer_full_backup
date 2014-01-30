@@ -35,10 +35,9 @@
 
 #Setup path
 import sys
-sys.path.append("../capturev2")
 
 #Import the ChipWhispererCapture module
-import ChipWhispererCapture as cwc
+import chipwhisperer.capture.ChipWhispererCapture as cwc
 
 #Check for PySide
 try:
@@ -96,7 +95,7 @@ class userScript(QObject):
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
                       #Final step: make DCMs relock in case they are lost
-                      ['OpenADC', 'Clock Setup', 'Relock DCMs', None],
+                      ['OpenADC', 'Clock Setup', 'Reset DCMs', None],
                       ]
         
         #Download all hardware setup parameters

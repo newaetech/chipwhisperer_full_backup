@@ -39,8 +39,8 @@ except ImportError:
     
 from openadc.ExtendedParameter import ExtendedParameter
 
-from utils.SerialProtocols import strToBits as strToBits
-from utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
+from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
+from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0

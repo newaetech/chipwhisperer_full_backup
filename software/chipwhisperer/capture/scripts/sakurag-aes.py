@@ -35,7 +35,6 @@
 
 #Setup path
 import sys
-sys.path.append("../capturev2")
 
 #Import the ChipWhispererCapture module
 import chipwhisperer.capture.ChipWhispererCapture as cwc

@@ -317,7 +317,7 @@ class TargetInterface(QObject):
             valid_targets["Simple Serial"] = target_SimpleSerial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
             
         if target_SmartCard is not None:
-            valid_targets["Smart Card"] = target_SmartCard.SmartCard(showScriptParameter=showScriptParameter)
+            valid_targets["Smart Card"] = target_SmartCard.SmartCard(self.log, showScriptParameter=showScriptParameter)
             
         if target_SASEBOGII is not None:
             valid_targets["SASEBO GII"] = target_SASEBOGII.SaseboGII(self.log, showScriptParameter=showScriptParameter)

@@ -40,8 +40,8 @@ except ImportError:
 
 from openadc.ExtendedParameter import ExtendedParameter
 
-#from utils.SerialProtocols import strToBits as strToBits
-#from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
+from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 
 import ChipWhispererGlitch
 

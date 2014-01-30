@@ -37,8 +37,7 @@ except ImportError:
     sys.exit()
     
 from openadc.ExtendedParameter import ExtendedParameter
-
-import ChipWhispererTargets
+import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
 
 class ReaderTemplate(QObject):
     paramListUpdated = Signal(list)
