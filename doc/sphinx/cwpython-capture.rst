@@ -2,3 +2,7 @@
 
 ChipWhisperer Capture
 =============================
+
+.. toctree::
+    :maxdepth: 3
+    
