@@ -46,7 +46,7 @@ To do so, open a command prompt (on XP: run->cmd, on Windows 7: search 'cmd' fro
    
 Results should look something similar to this:
 
-TODO
+.. image:: /images/easy_install-configobj.png
 
 Assuming you are planning on using the ChipWhisperer Capture Rev2 hardware, you also require `PyUSB <http://sourceforge.net/projects/pyusb/>`_.
 The easiest method is to again use easy_install, by opening a terminal and running::
