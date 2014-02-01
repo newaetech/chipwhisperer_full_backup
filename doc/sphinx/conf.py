@@ -17,6 +17,17 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/common'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer/attacks'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer/attacks/models'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer/preprocessing'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/auxiliary'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/scopes'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/targets'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/utils'))
 
 # -- General configuration -----------------------------------------------------
 
@@ -91,7 +102,7 @@ pygments_style = 'sphinx'
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'default'
+html_theme = 'sphinxdoc'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
