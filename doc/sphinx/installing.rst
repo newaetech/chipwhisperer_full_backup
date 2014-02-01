@@ -145,7 +145,8 @@ Building & Programming Example Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following section is **NOT REQUIRED** for your first attack - you can jump right to the tutorial if you wish. However you'll ultimately wish to
-modify the code of the device under test, and these instructions tell you how.
+modify the code of the device under test, and these instructions tell you how. You should first follow the tutorial to confirm your system is working
+before modifying the code however!
 
 To build the code, you'll need to install WinAVR. 
 
@@ -181,8 +182,8 @@ external code changes, this may eventually be instead rolled into the main codeb
             bunzip2 avrcryptolib-current.tar.bz2
             tar -xvf avrcryptolib-current.tar
             
-    c.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\aes`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avrcryptolib\aes`` (may need to created directory)
-    d.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\gf256mul`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avrcryptolib\aes`` (same directory as above)
+    c.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\aes`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avr-crypto-lib\aes`` (may need to created directory)
+    d.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\gf256mul`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avr-crypto-lib\aes`` (same directory as above)
 
 4.  ``cd`` to the directory with the avr-serial example, and run ``make atmega328p``::
     
@@ -194,14 +195,28 @@ external code changes, this may eventually be instead rolled into the main codeb
     .. image:: /images/avr-build-ok.png
     
     If instead you get an error something like ``make: *** No rule to make target `simpleserial.elf', needed by `elf'.  Stop.``, this means a required file was missing. Check
-    that you have copied all files to the ``avrcryptolib\aes directory``, in particular did you copy the two *gf256mul* files? 
+    that you have copied all files to the ``avr-crypto-lib\aes directory``, in particular did you copy the two *gf256mul* files? 
 
-Next, you will need to program the AVR itself. On Windows we will make use of the free `Atmel Studio 4.19 <www.atmel.com/tools/STUDIOARCHIVE.aspx>`_. You can find a direct link here:
-`Direct Link to Atmel Studio 4.19 Binary <http://www.atmel.com/System/BaseForm.aspx?target=tcm:26-17924>'_ which will require you to enter an email address to receive the
-download link.  Note it is possible to use ``avrdude``, a command-line program which is part of WinAVR instead if you wish. However since many people find the graphical interface
-of AVRStudio easier, this guide will use AVRStudio.
+5.  Next, you will need to program the AVR itself. On Windows we will make use of the free `Atmel Studio 4.19 <www.atmel.com/tools/STUDIOARCHIVE.aspx>`_. You can find a direct link here:
+    `Direct Link to Atmel Studio 4.19 Binary <http://www.atmel.com/System/BaseForm.aspx?target=tcm:26-17924>`_ which will require you to enter an email address to receive the
+    download link.  Note it is possible to use ``avrdude``, a command-line program which is part of WinAVR instead if you wish. However since many people find the graphical interface
+    of AVRStudio easier, this guide will use AVRStudio. Be sure to install the USB drivers as part of the package.
 
-Once AVR Studio is installed, 
+6.  Plug in the USB-A Connector on the rear side of the ChipWhisperer Rev2. This should trigger the driver installation, which will detect the device as a *AVR-ISP MK2*.
+
+7.  Once AVR Studio is installed, open the main window. From the toolbar select either the *Con* or *AVR* icon, and select the *AVR-ISP MK-II* Device:
+    
+    .. image:: /images/studio4-connect.png
+
+8.  In the window that opens, select the *Main* tab. Select the device type as *AtMega328P*, and hit *Read Signature*. You should get an indication that the device signature was
+    successfully read!
+
+    .. image:: /images/studio4-read-signature.png
+    
+9.  Finally we can program the chip. To do so switch to the *Program* tab, select the ``simpleserial.hex`` file that was generated in Step 4, and hit *Program*. If it's successful
+    you should see some output data saying so.
+    
+    .. image:: /images/studio4-program.png
 
 You can see a `Video <http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1>`_ of the Target Build Procedure:
 

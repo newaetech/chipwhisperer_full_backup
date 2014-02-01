@@ -13,6 +13,8 @@ Contents:
     
     installing
     tutorial
+    hardware
+    fpgamain
 
 Indices and tables
 ==================
