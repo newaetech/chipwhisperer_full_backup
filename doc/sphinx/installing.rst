@@ -53,6 +53,9 @@ The easiest method is to again use easy_install, by opening a terminal and runni
 
     easy_install pyusb
 
+
+.. _optional-ftdi:
+
 Optional Packages
 """""""""""""""""
 
@@ -233,3 +236,59 @@ You can see a `Video <http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1>`__ of the
 
 Linux
 -------
+
+Python Setup
+^^^^^^^^^^^^^^^
+
+On Linux, installing Python & all the associated packages is much easier than on Windows. Typically you can install them from a package manager, if you are
+using Fedora Core or similar, just type::
+
+    $ sudo yum install python27 python27-devel python27-libs python-pyside numpy scipy python-configobj pyusb
+    
+You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not normally in those repositories.
+
+ChipWhisperer Rev2 Capture Hardware Driver
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The *driver* for Linux is built in, however you need to allow your user account to access the peripheral. To do so, 
+you'll have to make a file called ``/etc/udev/rules.d/99-ztex.rules`` . The contents of this file should be::
+
+    # allow users to claim the device
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="0664", GROUP="plugdev"
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="221a", ATTRS{idProduct}=="0100", MODE="0664", GROUP="plugdev"
+
+Then add your username to the plugdev group::
+
+    $ sudo usermod -a -G plugdev YOUR-USERNAME
+
+And reset the udev system::
+
+    $ sudo udevadm control --reload-rules
+
+Finally log out & in again for the group change to take effect. 
+
+
+FTDI Hardware Driver (SASEBO-W, SAKURA-G, SASEBO-GII)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**This is only required for supporting FTDI-connected hardware** such as the SASEBO-W, SAKURA-G, SASEBO-GII. This is NOT
+required for the ChipWhisperer Capture Rev2.
+
+First, you need to install the D2XX drivers & python module. See the section :ref:`optional-ftdi`.
+
+Currently, there is a bit of a hack needed. You have to create (or modify if it exists) the file ``/etc/udev/rules.d/99-libftdi.rules`` .
+The following modifications will cause **any FTDI-serial device to stop working**, so backup the existing file! The contents of this file should be::
+
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0664", GROUP="plugdev"
+    ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", RUN+="/bin/sh -c 'echo $kernel > /sys/bus/usb/drivers/ftdi_sio/unbind'"
+
+Then add your username to the plugdev group::
+
+    $ sudo usermod -a -G plugdev YOUR-USERNAME
+
+And reset the udev system::
+
+    $ sudo udevadm control --reload-rules
+
+Finally log out & in again for the group change to take effect. 
+
+
