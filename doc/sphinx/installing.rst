@@ -1,13 +1,19 @@
 .. _installing:
 
-Installing Python, ChipWhisperer, Drivers
-=============================================
+Installing Python, ChipWhisperer, Drivers & Building Target Firmware
+====================================================================
 
 Windows XP/7
 ------------
 
+Installing on Windows requires a few extra steps compared to Linux, as Linux normally comes with most of the required tools.
+
 Python Setup
 ^^^^^^^^^^^^^
+
+You may already have Python installed, in which case you can skip some of these steps. If you already have Python installed make sure it is
+the correct version (2.7.x). Python 3.x will not work with this codebase.
+
 
 Python & Required Packages
 """"""""""""""""""""""""""
@@ -27,11 +33,11 @@ click the following link (assuming you've already installed Python!) and let it 
 Next, there will be a number of packages to install. You can generally follow the *Direct link for Windows* for all of these
 packages. Be sure to select the *win32-py2.7.exe* version, which corresponds to your Python version.
 
-3. `PySide <http://qt-project.org/wiki/Category:LanguageBindings::PySide::Downloads>`_ (Direct Link for `Windows <http://qt-project.org/wiki/PySide_Binaries_Windows>`_)
-4. `PySerial <http://pypi.python.org/pypi/pyserial>`_ (Direct Link for `Windows <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyserial>`_)
-5. `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/numpy/files/latest/download?source=files>`_)
-6. `SciPy <http://sourceforge.net/projects/scipy/files/scipy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/scipy/files/latest/download?source=files>`_)
-7. `PyQtGraph <http://www.pyqtgraph.org/>`_ (Direct Link for `Windows <http://www.pyqtgraph.org/downloads/pyqtgraph-0.9.8.win32.exe>`_)
+3. `PySide <http://qt-project.org/wiki/Category:LanguageBindings::PySide::Downloads>`_ (Direct Link for `Windows <http://qt-project.org/wiki/PySide_Binaries_Windows>`__)
+4. `PySerial <http://pypi.python.org/pypi/pyserial>`_ (Direct Link for `Windows <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyserial>`__)
+5. `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/numpy/files/latest/download?source=files>`__)
+6. `SciPy <http://sourceforge.net/projects/scipy/files/scipy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/scipy/files/latest/download?source=files>`__)
+7. `PyQtGraph <http://www.pyqtgraph.org/>`_ (Direct Link for `Windows <http://www.pyqtgraph.org/downloads/pyqtgraph-0.9.8.win32.exe>`__)
 
 Certain packages are not available in normal Windows installers. Instead we'll use easy_install to install these packages.
 To do so, open a command prompt (on XP: run->cmd, on Windows 7: search 'cmd' from search bar) and type::  
@@ -92,7 +98,7 @@ If you wish to confirm the installation worked, you can run ChipWhispererAnalyze
 Alternatively you can just double-click on ``ChipWhispererAnalyzer.py`` from Windows explorer, which should run the file using
 Python.
 
-You can see a `Video <http://www.youtube.com/watch?v=qd86cUD8iBs&hd=1>`_ of the Installation Procedure:
+You can see a `Video <http://www.youtube.com/watch?v=qd86cUD8iBs&hd=1>`__ of the Installation Procedure:
 
 |YouTubeWin7Install|_
 
@@ -133,7 +139,7 @@ FPGA loader program, microcontroller program, and FPGA bitstream.
 9. Under the *Tools* menu selection *Download CW Firmware* with the ChipWhisperer device attached. If this works you will see a message in the *Debug Logging*
    window about firmware upload successful. If this fails check the output of the console to see what went wrong.
 
-You can see a `Video <http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1>`_ of the Installation Process:
+You can see a `Video <http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1>`__ of the Installation Process:
 
 |YouTubeWin7Driver|_
 
@@ -218,7 +224,7 @@ external code changes, this may eventually be instead rolled into the main codeb
     
     .. image:: /images/studio4-program.png
 
-You can see a `Video <http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1>`_ of the Target Build Procedure:
+You can see a `Video <http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1>`__ of the Target Build Procedure:
 
 |YouTubeWin7Target|_
 

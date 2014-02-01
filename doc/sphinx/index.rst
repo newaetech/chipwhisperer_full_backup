@@ -13,6 +13,7 @@ Contents:
     
     installing
     tutorial
+    cwpython
     hardware
     fpgamain
 

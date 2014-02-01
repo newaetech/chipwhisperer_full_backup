@@ -10,3 +10,4 @@ Contents:
     
     hwcapturerev2
     hwmultitarget
+    hwftdi
