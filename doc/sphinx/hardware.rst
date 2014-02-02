@@ -11,3 +11,5 @@ Contents:
     hwcapturerev2
     hwmultitarget
     hwftdi
+    hwvisascope
+    hwpicoscope
