@@ -13,6 +13,8 @@ Contents:
     
     installing
     tutorial
+    tutorialresync
+    tutorialglitch
     cwpython
     hardware
     fpgamain
