@@ -40,6 +40,9 @@ except ImportError:
 import chipwhisperer.common.qrc_resources
 
 class ColorDialog(QDialog):
+    """
+    Simple dialog to pick colours for the trace data.
+    """
     def __init__(self, color,  auto):
         super(ColorDialog, self).__init__()
         layout = QVBoxLayout()
@@ -188,9 +191,11 @@ class GraphWidget(QWidget):
             self.YLockedAction.setChecked(True) 
             
     def VBXRangeChanged(self, vb, range):
+        """Called when X-Range changed"""
         self.xRangeChanged.emit(range[0], range[1])
         
     def xRange(self):
+        """Returns the X-Range"""
         return self.pw.getPlotItem().getViewBox().viewRange()[0]
             
     def YDefault(self, extraarg=None):
@@ -232,7 +237,12 @@ class GraphWidget(QWidget):
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
         
     def passTrace(self, trace, startoffset=0):
-        """Plot a new trace"""
+        """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
+        
+        :param startoffset: Offset of X-Axis, such that zero point is marked as this number
+        :type startoffset: int        
+        
+        """
         if self.persistant:
             if self.autocolor:
                 nc = (self.acolor + 1) % 8
