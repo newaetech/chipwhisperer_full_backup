@@ -345,22 +345,22 @@ div.viewcode-block:target {
 }
 
 
-h2 ~ *:not(h2) {
+div.section > h2 ~ *:not(h2) {
     margin-left: 20px;
 }
 
-h3 ~ *:not(h3) {
+div.section > h3 ~ *:not(h3) {
     margin-left: 40px;
 }
 
-h4 ~ *:not(h4) {
+div.section > h4 ~ *:not(h4) {
     margin-left: 60px;
 }
 
-h5 ~ *:not(h5) {
+div.section > h5 ~ *:not(h5) {
     margin-left: 80px;
 }
 
-h6 ~ *:not(h6) {
+div.section > h6 ~ *:not(h6) {
     margin-left: 100px;
 }

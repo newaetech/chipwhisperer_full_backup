@@ -6,6 +6,8 @@
 ChipWhisperer Main Documentation
 ================================
 
+.. image:: /images/cw_banner_tagline.png
+
 Contents:
 
 .. toctree::
