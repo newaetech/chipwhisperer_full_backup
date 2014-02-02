@@ -74,6 +74,11 @@ except ImportError:
     VisaScopeInterface = None
 
 try:
+    from  chipwhisperer.capture.scopes.PicoScope import PicoScopeInterface as PicoScopeInterface
+except ImportError:
+    PicoScopeInterface = None
+
+try:
     import  chipwhisperer.capture.targets.SimpleSerial as target_SimpleSerial
 except ImportError:
     target_SimpleSerial = None
@@ -531,7 +536,10 @@ class ChipWhispererCapture(MainChip):
             valid_traces["MySQL"] = TraceContainerMySQL
             
         if VisaScopeInterface is not None:
-            valid_scopes["VisaScopeInterface"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
+            valid_scopes["VISA Scope"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
+
+        if PicoScopeInterface is not None:
+            valid_scopes["PicoScope"] = PicoScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
         
         self.esm = EncryptionStatusMonitor(self)
         
