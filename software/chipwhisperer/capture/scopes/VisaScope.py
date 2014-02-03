@@ -226,6 +226,7 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         self.dataUpdated.emit(self.datapoints, 0)
 
 
+
 class VisaScopeInterface(QObject):
     connectStatus = Signal(bool)
     dataUpdated = Signal(list, int)
@@ -307,7 +308,7 @@ class VisaScopeInterface(QObject):
         self.scopetype.arm()
 
     def capture(self, update=True, NumberPoints=None):
-        """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
+        """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
         return self.scopetype.capture(update, NumberPoints)    
         
     def paramList(self):
