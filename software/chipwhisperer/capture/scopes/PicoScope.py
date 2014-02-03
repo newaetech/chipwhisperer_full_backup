@@ -53,6 +53,8 @@ from picoscope import ps5000a
 
 import collections
 
+import time
+
 class PicoScope(QWidget):
     paramListUpdated = Signal(list) 
     dataUpdated = Signal(list, int)
@@ -75,17 +77,17 @@ class PicoScope(QWidget):
 
         scopeParams = [
                       {'name':'Trace Measurement', 'type':'group', 'children':[
-                         {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0},
-                         {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1},
-                         {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0},
-                         {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0}, ]},
+                         {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
+                         {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
+                         {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'set':self.updateCurrentSettings},
+                         {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'set':self.updateCurrentSettings}, ]},
                       {'name':'Trigger', 'type':'group', 'children':[
-                         {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1},
-                         {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10},
-                         {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1},
-                         {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0},
-                         {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2},
-                         {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5},
+                         {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'set':self.updateCurrentSettings},
+                         {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'set':self.updateCurrentSettings},
+                         {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'set':self.updateCurrentSettings},
+                         {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'set':self.updateCurrentSettings},
+                         {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
+                         {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
                          ]},
                       {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.UpdateSampleRateFreq, 'siPrefix':True, 'suffix':'S/s'},
                       {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.UpdateSampleRateFreq},
@@ -120,18 +122,15 @@ class PicoScope(QWidget):
 
 
     def con(self):
-        print "opening...."
         self.ps.open()
-        # Turn off all channels
-        # for c in self.ps.CHANNELS:
-        #    self.ps.setChannel(c, enabled=False)
         self.updateCurrentSettings()
             
     def paramList(self):
         p = [self.params]            
         return p
     
-    def updateCurrentSettings(self):
+    def updateCurrentSettings(self, ignored=False):
+        if self.ps.handle is None: return
 
         try:
             # Turn off all channels
@@ -156,7 +155,7 @@ class PicoScope(QWidget):
             self.ps.setChannel(channel=TrigCh, coupling=TrigCo, VRange=TrigY, probeAttenuation=TrigP, enabled=True)
 
             # Trigger
-            self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').value(), direction=self.findParam('trigtype').value())
+            self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').value(), direction=self.findParam('trigtype').value(), timeout_ms=1000)
 
             self.UpdateSampleRateFreq()
         except IOError, e:
@@ -165,11 +164,18 @@ class PicoScope(QWidget):
 
 
     def arm(self):       
-        """Example arm implementation works on most"""
-        pass
+        self.ps.runBlock()
         
     def capture(self, Update=False, N=None):
+        while(self.ps.isReady() == False): time.sleep(0.01)
+        data = self.ps.getDataV(self.findParam('tracesource').value(), self.findParam('samplelength').value(), returnOverflow=True)
+        if data[1] is True:
+            print "WARNING: OVERFLOW IN DATA"
+        self.datapoints = data[0]
         self.dataUpdated.emit(self.datapoints, 0)
+
+        # No timeout?
+        return False
 
 class PicoScopeInterface(QObject):
     connectStatus = Signal(bool)
@@ -184,11 +190,6 @@ class PicoScopeInterface(QObject):
 
         scope_cons = {}
         
-        # if mso54831d:
-        #    mso54831d.paramListUpdated.connect(self.emitParamListUpdated)
-        #    mso54831d.dataUpdated.connect(self.passUpdated)
-        #    scope_cons["Agilent MSO 54831D"] = mso54831d
-
         scope_cons["PS6000"] = ps6000.PS6000(connect=False)
         scope_cons["PS5000a"] = ps5000a.PS5000a(connect=False)
         defscope = scope_cons["PS5000a"]
@@ -218,6 +219,7 @@ class PicoScopeInterface(QObject):
     def setCurrentScope(self, scope, update=True):
         if scope is not None:
             self.scopetype = PicoScope(scope)
+            self.scopetype.dataUpdated.connect(self.passUpdated)
         else:
             self.scopetype = scope
 
