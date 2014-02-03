@@ -864,7 +864,9 @@ class ChipWhispererCapture(MainChip):
             ptInput = None
 
         rndKey = self.findParam('newKeyAlways').value()
-        self.aux.setPrefix(baseprefix)
+
+        if self.aux is not None:
+            self.aux.setPrefix(baseprefix)
 
         ac = acquisitionController(self.scope, target, writer, aux=self.aux,
                                    esm=self.esm, fixedPlain=ptInput,
