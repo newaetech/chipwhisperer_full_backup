@@ -797,7 +797,6 @@ class ChipWhispererCapture(MainChip):
         self.ScopeToolbar.addWidget(self.scopeStatus)
         self.ScopeToolbar.setEnabled(False)
 
-
         # Target Toolbar
         self.targetStatus = QToolButton()
         self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self)

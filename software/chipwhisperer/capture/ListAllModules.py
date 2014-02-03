@@ -47,6 +47,16 @@ finally:
     modList.append(["scopes.VisaScope", ok, err])
 
 try:
+    import chipwhisperer.capture.scopes.PicoScope
+    ok = True
+    err = ""
+except ImportError, e:
+    ok = False
+    err = str(e)
+finally:
+    modList.append(["scopes.PicoScope", ok, err])
+
+try:
     import chipwhisperer.capture.scopes.PartialReconfiguration
     ok = True
     err = ""
