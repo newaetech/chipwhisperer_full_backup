@@ -204,11 +204,6 @@ class SaseboGII(TargetTemplate):
     def setOpenADC(self, oadc):
         pass
         
-    def setProtocol(self, con):
-        self.protocol = con
-        self.paramListUpdated.emit(self.paramList)
-        self.protocol.setReaderHardware(self.driver)
-        
     def paramList(self):
         p = [self.params]
         return p
