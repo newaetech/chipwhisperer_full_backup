@@ -66,6 +66,32 @@ class ModuleListDialog(QDialog):
         layout.addWidget(table)
         self.setLayout(layout)        
 
+class OutLog:
+    def __init__(self, edit, out=None, color=None):
+        """(edit, out=None, color=None) -> can write stdout, stderr to a
+        QTextEdit.
+        edit = QTextEdit
+        out = alternate stream ( can be the original sys.stdout )
+        color = alternate color (i.e. color stderr a different color)
+        """
+        self.edit = edit
+        self.out = None
+        self.color = color
+
+    def write(self, m):
+        if self.color:
+            tc = self.edit.textColor()
+            self.edit.setTextColor(self.color)
+
+        self.edit.moveCursor(QTextCursor.End)
+        self.edit.insertPlainText(m)
+
+        if self.color:
+            self.edit.setTextColor(tc)
+
+        if self.out:
+            self.out.write(m)
+
 class MainChip(QMainWindow):
     """
     This is the base GUI class, used for both the Analyzer and Capture software. It defines a number of
@@ -179,10 +205,15 @@ class MainChip(QMainWindow):
         gw = GraphWidget()
         return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
         
-    def addConsole(self, name="Debug Logging", visible=True):
+    def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
-        self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible) 
+        self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
+
+        if redirectStdOut:
+            sys.stdout = OutLog(console, sys.stdout)
+            sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0))
+
         return console    
     
     def addPythonConsole(self, name="Python Console", visible=False):
