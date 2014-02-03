@@ -780,6 +780,7 @@ class ChipWhispererCapture(MainChip):
         self.CaptureToolbar.setObjectName('Capture Tools')
         self.CaptureToolbar.addAction(capture1)
         self.CaptureToolbar.addAction(captureM)
+        self.CaptureToolbar.addWidget(QLabel('Master:'))
         self.CaptureToolbar.addWidget(self.captureStatus)
         #self.CaptureToolbar.setEnabled(False)
         
@@ -792,6 +793,7 @@ class ChipWhispererCapture(MainChip):
 
         self.ScopeToolbar = self.addToolBar('Scope Toolbar')
         self.ScopeToolbar.setObjectName('Scope Toolbar')
+        self.ScopeToolbar.addWidget(QLabel('Scope:'))
         self.ScopeToolbar.addWidget(self.scopeStatus)
         self.ScopeToolbar.setEnabled(False)
 
@@ -805,6 +807,7 @@ class ChipWhispererCapture(MainChip):
         
         self.TargetToolbar = self.addToolBar('Target Toolbar')
         self.TargetToolbar.setObjectName('Target Toolbar')
+        self.TargetToolbar.addWidget(QLabel('Target:'))
         self.TargetToolbar.addWidget(self.targetStatus)
         self.TargetToolbar.setEnabled(False)
 
