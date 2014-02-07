@@ -191,7 +191,7 @@ class CPAProgressive(QObject):
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, model):
+    def __init__(self, model, showScriptParameter=None):
         super(CPAProgressive, self).__init__()
         
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
@@ -199,6 +199,9 @@ class CPAProgressive(QObject):
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},                         
                          ]
         self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
+        if showScriptParameter is not None:
+            self.showScriptParameter = showScriptParameter
+            #print self.showScriptParameter        
         ExtendedParameter.setupExtended(self.params, self)
         
         self.model = model

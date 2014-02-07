@@ -27,7 +27,7 @@ __author__ = "Colin O'Flynn"
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
-sys.path.append('../common')
+import os
 
 #For profiling support (not 100% needed)
 #import pstats, cProfile
@@ -119,6 +119,8 @@ class TraceContainerConfig(object):
         self.enabled = False
         self.mappedRange = None
         self.trace = None
+        if configfile is not None:
+            configfile = os.path.normpath(configfile)
         self._configfile = configfile
         
         #Attempt load/sync
@@ -163,6 +165,8 @@ class TraceContainerConfig(object):
      
     def setConfigFilename(self, fname):
         """Set the config filename, WITHOUT syncronizing internal DB to File. Use load or save for this feature."""
+        if fname is not None:
+            fname = os.path.normpath(fname)
         self._configfile = fname
         
     def configFilename(self):
@@ -233,8 +237,8 @@ class TraceContainerConfig(object):
         
     def loadTrace(self, configfile=None):
         """Load config file. Syncs internal DB to File"""
-        if configfile:            
-            self._configfile = configfile
+        if configfile:           
+            self._configfile = os.path.normpath(configfile)
         
         self.config = ConfigObj(self._configfile)
             

@@ -48,12 +48,11 @@ from functools import partial
 class AttackGenericParameters(QObject):       
     paramListUpdated = Signal(list)
         
-    def __init__(self, MainWindow=None, log=None):
+    def __init__(self, MainWindow=None, log=None, showScriptParameter=None):
         super(AttackGenericParameters, self).__init__(MainWindow)
 
         self.MainWindow = MainWindow
-
-	self.maxSubKeys = 32
+        self.maxSubKeys = 32
 
         #TODO: Where to get this from?
         self.numsubkeys = 16
@@ -63,7 +62,10 @@ class AttackGenericParameters(QObject):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.log=log        
+        self.log=log      
+        #if showScriptParameter is not None:
+        #    self.showScriptParameter = showScriptParameter
+                
         self.setupTraceParam()
         self.setupPointsParam()
         self.setupParameters()
@@ -82,7 +84,7 @@ class AttackGenericParameters(QObject):
                       ]
 
         self.params = Parameter.create(name='Attack Settings', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params)
+        ExtendedParameter.setupExtended(self.params, self)
         self.updateBytesVisible()
 
     def getByteList(self):
@@ -136,7 +138,7 @@ class AttackGenericParameters(QObject):
             {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings},
             {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings}
             ])
-        ExtendedParameter.setupExtended(self.traceParams)
+        ExtendedParameter.setupExtended(self.traceParams, self)
         
         self.traceRuns = 1
         self.traceTraces = 1
@@ -180,7 +182,7 @@ class AttackGenericParameters(QObject):
 ############# Points-Specific
     def setupPointsParam(self):
         self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
-        ExtendedParameter.setupExtended(self.pointsParams)
+        ExtendedParameter.setupExtended(self.pointsParams, self)
     
     def getPointList(self):        
         if self.allPointsSame == False:

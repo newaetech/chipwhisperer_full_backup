@@ -252,7 +252,7 @@ class TraceManagerDialog(QDialog):
                 if self.traceList[i].traces is None:
                     if self.traceList[i].config.configFilename() is not None:
                         path = os.path.split(self.traceList[i].config.configFilename())[0]
-                        pref = self.traceList[i].config.attr("prefix")
+                        pref = self.traceList[i].config.attr("prefix")                        
                     else:
                         path = None
                         pref = None

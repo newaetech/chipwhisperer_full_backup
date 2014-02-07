@@ -42,7 +42,7 @@ class CPASimpleLoop(QObject):
     all the traces have been run through the attack.
     """
 
-    def __init__(self, model):
+    def __init__(self, model,showScriptParameter=None):
         super(CPASimpleLoop, self).__init__()
         self.model = model
         self.stats = DataTypeDiffs()

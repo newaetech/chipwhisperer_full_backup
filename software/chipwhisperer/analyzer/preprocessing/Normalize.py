@@ -99,17 +99,17 @@ class normlinfunc(NormBase):
             self.zdata = np.load(f)
 
     def processTrace(self, t, tindex):
-        if self.f1coeff == 0:
+        if isinstance(self.f1coeff, (int, long)) and self.f1coeff == 0:             
             f1 = 0
         else:
             f1 = np.polyval(self.f1coeff, self.zdata[tindex])
 
-        if self.f2coeff == 1:
+        if isinstance(self.f2coeff, (int, long)) and self.f2coeff == 1:
             f2 = 1
         else:
             f2 = np.polyval(self.f2coeff, self.zdata[tindex])
 
-        return (t + f1) / f2
+        return (t - f1) / f2
 
 class Normalize(QObject):
     """

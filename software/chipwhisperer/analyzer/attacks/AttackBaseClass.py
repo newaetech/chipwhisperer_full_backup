@@ -32,11 +32,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
-sys.path.append('../common')
-sys.path.append('../../openadc/controlsw/python/common')
-sys.path.append('../common/traces')
-imagePath = '../common/images/'
+
 
 class AttackBaseClass(QObject):
     """Generic Attack Interface"""
@@ -52,7 +48,8 @@ class AttackBaseClass(QObject):
     def __init__(self, parent=None, log=None):
         super(AttackBaseClass, self).__init__(parent)
         self.parent = parent
-        self.log=log        
+        self.log=log
+
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
