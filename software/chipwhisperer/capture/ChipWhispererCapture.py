@@ -772,7 +772,7 @@ class ChipWhispererCapture(MainChip):
         
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
-        self.captureStatusActionDis.triggered.connect(self.doConDisMaster)
+        self.captureStatusActionDis.triggered.connect(self.doConDis)
         self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
@@ -903,7 +903,7 @@ class ChipWhispererCapture(MainChip):
             self.console.append("Target Error: %s" % str(e))
 
 
-    def doConDisMaster(self):
+    def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:      
             self.doConDisScope(True)

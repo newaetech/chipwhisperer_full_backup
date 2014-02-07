@@ -91,6 +91,7 @@ class PicoScope(QWidget):
                          ]},
                       {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.UpdateSampleRateFreq, 'siPrefix':True, 'suffix':'S/s'},
                       {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.UpdateSampleRateFreq},
+                      {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.UpdateSampleRateFreq},
                   ]           
         
 
@@ -109,7 +110,7 @@ class PicoScope(QWidget):
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
-            self.ps.setSamplingFrequency(paramSR.value(), paramSL.value())
+            self.ps.setSamplingFrequency(paramSR.value(), paramSL.value() + self.findParam('sampleoffset').value(), 1)
             # paramSR.setValue(self.ps.sampleRate)
             # paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
             QTimer.singleShot(0, self.UpdateSampleParameters)
@@ -168,7 +169,7 @@ class PicoScope(QWidget):
         
     def capture(self, Update=False, N=None):
         while(self.ps.isReady() == False): time.sleep(0.01)
-        data = self.ps.getDataV(self.findParam('tracesource').value(), self.findParam('samplelength').value(), returnOverflow=True)
+        data = self.ps.getDataV(self.findParam('tracesource').value(), self.findParam('samplelength').value(), startIndex=self.findParam('sampleoffset').value(), returnOverflow=True)
         if data[1] is True:
             print "WARNING: OVERFLOW IN DATA"
         self.datapoints = data[0]
