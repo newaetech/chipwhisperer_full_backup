@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -39,6 +39,7 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 
 import ChipWhispererTargets
+from TargetTemplate import TargetTemplate
 
 class SaseboGIIDPAContest(object):
     def init(self):
@@ -191,34 +192,17 @@ class SaseboGIIAESRev1(object):
         self.write(0x0002, 0x00, 0x01)
     
                
-class SaseboGII(QObject):   
+class SaseboGII(TargetTemplate):
     paramListUpdated = Signal(list) 
      
-    def __init__(self, console=None, showScriptParameter=None):
-        super(SaseboGII, self).__init__()
-        
-        self.console = console
-        self.showScriptParameter = showScriptParameter
-        ssParams = []        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
+    def setupParameters(self):
+        """Parameter Definition."""
+        ssParams = []
+        self.params = Parameter.create(name='SASEBO-GII Parameters', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-
-    def __del__(self):
-        self.close()
-        
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
             
     def setOpenADC(self, oadc):
         pass
-        
-    def setProtocol(self, con):
-        self.protocol = con
-        self.paramListUpdated.emit(self.paramList)
-        self.protocol.setReaderHardware(self.driver)
         
     def paramList(self):
         p = [self.params]

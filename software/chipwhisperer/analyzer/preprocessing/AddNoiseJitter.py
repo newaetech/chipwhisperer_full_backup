@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Author: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -36,9 +38,6 @@ import random
 import numpy as np
 
 from pyqtgraph.parametertree import Parameter
-
-imagePath = '../common/images/'
-
 from openadc.ExtendedParameter import ExtendedParameter
 
 class AddNoiseJitter(QObject):

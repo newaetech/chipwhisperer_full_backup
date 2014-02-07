@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -37,8 +37,7 @@ except ImportError:
     sys.exit()
     
 from openadc.ExtendedParameter import ExtendedParameter
-
-import ChipWhispererTargets
+import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
 
 class ReaderTemplate(QObject):
     paramListUpdated = Signal(list)

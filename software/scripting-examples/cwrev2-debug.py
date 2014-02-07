@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -33,8 +35,6 @@
 
 #Setup path
 import sys
-sys.path.append("../capturev2")
-
 import time
 
 #Check for PySide
@@ -46,8 +46,8 @@ except ImportError:
     sys.exit()
 
 #Import the ChipWhispererCapture module
-import ChipWhispererCapture as cwc
-import target_chipwhisperer_extra as cwe 
+import chipwhisperer.capture.ChipWhispererCapture as cwc
+import chipwhisperer.capture.scopes.ChipWhispererExtra as cwe
 
 
 exitWhenDone=False

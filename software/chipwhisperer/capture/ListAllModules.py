@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2014, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -45,6 +45,16 @@ except ImportError, e:
     err = str(e)
 finally:
     modList.append(["scopes.VisaScope", ok, err])
+
+try:
+    import chipwhisperer.capture.scopes.PicoScope
+    ok = True
+    err = ""
+except ImportError, e:
+    ok = False
+    err = str(e)
+finally:
+    modList.append(["scopes.PicoScope", ok, err])
 
 try:
     import chipwhisperer.capture.scopes.PartialReconfiguration

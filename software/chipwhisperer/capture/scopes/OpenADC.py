@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -490,7 +492,7 @@ class OpenADCInterface(QObject):
         self.qtadc.arm()
 
     def capture(self, update=True, NumberPoints=None):
-        """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
+        """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
         return self.qtadc.capture(update, NumberPoints)    
         
     def paramList(self):

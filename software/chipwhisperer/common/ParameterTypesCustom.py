@@ -11,8 +11,7 @@ from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem
 from pyqtgraph.pgcollections import OrderedDict
 from pyqtgraph.widgets.SpinBox import SpinBox
 import pyqtgraph as pg
-
-imagepath = '../common/images/'
+import chipwhisperer.common.qrc_resources
 
 class SigStuff(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)
@@ -105,8 +104,8 @@ class RangeParameterGraphItem(RangeParameterItem):
         l = self.makeLayout()
         
         graphIcon = QtGui.QIcon()
-        graphIcon.addFile(imagepath+'wavelimits.png', state=QtGui.QIcon.On)
-        graphIcon.addFile(imagepath+'wavelimitsoff.png', state=QtGui.QIcon.Off)
+        graphIcon.addFile(':/images/wavelimits.png', state=QtGui.QIcon.On)
+        graphIcon.addFile(':/images/wavelimitsoff.png', state=QtGui.QIcon.Off)
         
         self.graphBtn = QtGui.QPushButton()
         self.graphBtn.setFixedWidth(20)

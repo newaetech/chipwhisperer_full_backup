@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -32,8 +34,6 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-imagePath = '../common/images/'
-
 from chipwhisperer.common.GraphWidget import GraphWidget
 
 from functools import partial
@@ -51,6 +51,7 @@ except ImportError:
     sys.exit()
 
 from openadc.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.qrc_resources
    
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)
@@ -70,14 +71,14 @@ class ResultsPlotting(QObject):
         #ResultsTable manages class
         self.table = ResultsTable()
         
-        self.graphoutput = OutputVsTime(imagePath)
+        self.graphoutput = OutputVsTime()
         self.GraphOutputDock = QDockWidget(self.graphoutput.name)
         self.GraphOutputDock.setObjectName(self.graphoutput.name)
         self.GraphOutputDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.GraphOutputDock.setWidget(self.graphoutput)
         self.graphoutput.setDock(self.GraphOutputDock)
         
-        self.pgegraph = PGEVsTrace(imagePath)
+        self.pgegraph = PGEVsTrace()
         self.PGEGraphDock = QDockWidget(self.pgegraph.name)
         self.PGEGraphDock.setObjectName(self.pgegraph.name)
         self.PGEGraphDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
@@ -133,8 +134,8 @@ class ResultsPlotData(GraphWidget):
     showDockSignal = Signal(bool)
     name = "Some Descriptive Name"
      
-    def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
-        super(ResultsPlotData, self).__init__(imagepath)
+    def __init__(self, subkeys=16, permPerSubkey=256):
+        super(ResultsPlotData, self).__init__()
         
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -246,8 +247,8 @@ class OutputVsTime(ResultsPlotData):
     
     name = "Output vs Point Plot"
 
-    def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
-        super(OutputVsTime, self).__init__(imagepath)
+    def __init__(self, subkeys=16, permPerSubkey=256):
+        super(OutputVsTime, self).__init__()
         
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -341,8 +342,8 @@ class PGEVsTrace(ResultsPlotData):
     
     name = "PGE vs Trace Plot"
 
-    def __init__(self, imagepath, subkeys=16, permPerSubkey=256):
-        super(PGEVsTrace, self).__init__(imagepath)
+    def __init__(self, subkeys=16, permPerSubkey=256):
+        super(PGEVsTrace, self).__init__()
         
         self.numKeys = subkeys
         self.numPerms = permPerSubkey

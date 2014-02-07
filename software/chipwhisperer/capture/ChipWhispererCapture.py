@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -40,9 +40,9 @@ import random
 import os.path
 import shlex
 from subprocess import Popen, PIPE
-imagePath = '../common/images/'
 
 from openadc.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.qrc_resources
 
 try:
     import writer_dpav3
@@ -72,6 +72,11 @@ try:
     from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
 except ImportError:
     VisaScopeInterface = None
+
+try:
+    from  chipwhisperer.capture.scopes.PicoScope import PicoScopeInterface as PicoScopeInterface
+except ImportError:
+    PicoScopeInterface = None
 
 try:
     import  chipwhisperer.capture.targets.SimpleSerial as target_SimpleSerial
@@ -305,6 +310,8 @@ class acquisitionController(QObject):
 class TargetInterface(QObject):
     """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
     paramListUpdated = Signal(list)
+    targetUpdated = Signal(bool)
+    connectStatus = Signal(bool)
     
     def __init__(self, parent=None, log=None,showScriptParameter=None):
         super(TargetInterface, self).__init__(parent)
@@ -317,7 +324,7 @@ class TargetInterface(QObject):
             valid_targets["Simple Serial"] = target_SimpleSerial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
             
         if target_SmartCard is not None:
-            valid_targets["Smart Card"] = target_SmartCard.SmartCard(showScriptParameter=showScriptParameter)
+            valid_targets["Smart Card"] = target_SmartCard.SmartCard(self.log, showScriptParameter=showScriptParameter)
             
         if target_SASEBOGII is not None:
             valid_targets["SASEBO GII"] = target_SASEBOGII.SaseboGII(self.log, showScriptParameter=showScriptParameter)
@@ -335,10 +342,12 @@ class TargetInterface(QObject):
     def con(self):
         if self.driver is not None:
             self.driver.con()
+            self.connectStatus.emit(True)
         
     def dis(self):
         if self.driver is not None:
             self.driver.dis()
+            self.connectStatus.emit(False)
 
     def setDriver(self, driver):
         self.driver = driver
@@ -349,9 +358,11 @@ class TargetInterface(QObject):
         
         if self.driver is None:
             self.paramListUpdated.emit(None)
+            self.targetUpdated.emit(False)
         else:
             self.driver.paramListUpdated.connect(self.paramListUpdated.emit)
             self.paramListUpdated.emit(self.driver.paramList())
+            self.targetUpdated.emit(True)
             
     def paramList(self):
         if self.driver is None:
@@ -503,7 +514,7 @@ class EncryptionStatusMonitor(QDialog):
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(ChipWhispererCapture, self).__init__(name="ChipWhisperer Capture V2", imagepath=imagePath)
+        super(ChipWhispererCapture, self).__init__(name="ChipWhisperer Capture V2")
         self.console = self.addConsole()
     
         self.scope = None        
@@ -531,7 +542,10 @@ class ChipWhispererCapture(MainChip):
             valid_traces["MySQL"] = TraceContainerMySQL
             
         if VisaScopeInterface is not None:
-            valid_scopes["VisaScopeInterface"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
+            valid_scopes["VISA Scope"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
+
+        if PicoScopeInterface is not None:
+            valid_scopes["PicoScope"] = PicoScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
         
         self.esm = EncryptionStatusMonitor(self)
         
@@ -576,6 +590,8 @@ class ChipWhispererCapture(MainChip):
         self.saveFile.connect(self.saveProject)   
         
         self.fixedPlain = False 
+        self.target.targetUpdated.connect(self.TargetToolbar.setEnabled)
+        self.target.connectStatus.connect(self.targetStatusChanged)
   
     def listModules(self):
         """Overload this to test imports"""
@@ -708,10 +724,12 @@ class ChipWhispererCapture(MainChip):
         self.auxParamTree = ParameterTree()
 
     def reloadScopeParamList(self, lst=None): 
-        ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)              
+        if self.scope is not None:
+            ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)
         
     def reloadTargetParamList(self, lst=None):
-        ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
+        if self.target is not None:
+            ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
         
     def reloadTraceParamList(self, lst=None):
         if self.traceparams is not None:
@@ -747,62 +765,152 @@ class ChipWhispererCapture(MainChip):
         self.addCaptureTools()
 
     def addCaptureTools(self):
-        capture1 = QAction(QIcon(imagePath+'play1.png'), 'Capture 1', self)
+        capture1 = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
         capture1.triggered.connect(self.capture1)
-        captureM = QAction(QIcon(imagePath+'playM.png'), 'Capture Multi', self)
+        captureM = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
         captureM.triggered.connect(self.captureM)
         
         self.captureStatus = QToolButton()
-        self.captureStatusActionDis = QAction(QIcon(imagePath+'status_disconnected.png'),  'Status: Disconnected',  self)
-        self.captureStatusActionDis.triggered.connect(self.doConDis)
-        self.captureStatusActionCon = QAction(QIcon(imagePath+'status_connected.png'),  'Status: Connected',  self)
+        self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
+        self.captureStatusActionDis.triggered.connect(self.doConDisMaster)
+        self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')
         self.CaptureToolbar.setObjectName('Capture Tools')
         self.CaptureToolbar.addAction(capture1)
         self.CaptureToolbar.addAction(captureM)
+        self.CaptureToolbar.addWidget(QLabel('Master:'))
         self.CaptureToolbar.addWidget(self.captureStatus)
         #self.CaptureToolbar.setEnabled(False)
         
-        
+        # Scope Toolbar
+        self.scopeStatus = QToolButton()
+        self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self)
+        self.scopeStatusActionDis.triggered.connect(self.doConDisScope)
+        self.scopeStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Scope: Connected', self)
+        self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
 
-    def connected(self, status=True, text=None):
-        #self.CaptureToolbar.setEnabled(status)
+        self.ScopeToolbar = self.addToolBar('Scope Toolbar')
+        self.ScopeToolbar.setObjectName('Scope Toolbar')
+        self.ScopeToolbar.addWidget(QLabel('Scope:'))
+        self.ScopeToolbar.addWidget(self.scopeStatus)
+        self.ScopeToolbar.setEnabled(False)
+
+        # Target Toolbar
+        self.targetStatus = QToolButton()
+        self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self)
+        self.targetStatusActionDis.triggered.connect(self.doConDisTarget)
+        self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self)
+        self.targetStatus.setDefaultAction(self.targetStatusActionDis)
         
-        if status:
+        self.TargetToolbar = self.addToolBar('Target Toolbar')
+        self.TargetToolbar.setObjectName('Target Toolbar')
+        self.TargetToolbar.addWidget(QLabel('Target:'))
+        self.TargetToolbar.addWidget(self.targetStatus)
+        self.TargetToolbar.setEnabled(False)
+
+
+    def masterStatusChanged(self):
+        # Deal with multiple
+
+        if self.scopeStatus.defaultAction() == self.scopeStatusActionCon:
+            scopeStat = True
+        else:
+            scopeStat = False
+
+        if self.targetStatus.defaultAction() == self.targetStatusActionCon:
+            targetStat = True
+        else:
+            targetStat = False
+
+        if targetStat or scopeStat:
             self.captureStatus.setDefaultAction(self.captureStatusActionCon)
         else:
             self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
+    def scopeStatusChanged(self, status=True, text=None):
+        """Callback when scope connection successful"""
+        # self.CaptureToolbar.setEnabled(status)
 
-    def doConDis(self):        
-        if self.captureStatus.defaultAction() == self.captureStatusActionDis:      
-            if self.scope is not None:
-                try:
-                    self.scope.con()
-                    if self.scope is not None:
-                        try:
-                            self.target.setOpenADC(self.scope.qtadc.ser)
-                        except:
-                            pass      
-                    self.statusBar().showMessage("Connected :)")
-                except IOError:
-                    exctype, value = sys.exc_info()[:2]
-                    self.console.append("Connect Error: %s"%(str(value)))
-                    #QMessageBox.warning(None, "Connect Error", str(exctype) + str(value))
-            
-            if self.target is not None:
-                try:
-                    self.target.con()  
-                except IOError:
-                    exctype, value = sys.exc_info()[:2]
-                    self.console.append("Connect Error: %s"%(str(value)))    
+        if status:
+            self.scopeStatus.setDefaultAction(self.scopeStatusActionCon)
         else:
-            if self.scope is not None:
-                self.scope.dis()
+            self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
+
+        self.masterStatusChanged()
+
+    def targetStatusChanged(self, status=True, text=None):
+        """Callback when target connection successful"""
+        #self.CaptureToolbar.setEnabled(status)
+        
+        if status:
+            self.targetStatus.setDefaultAction(self.targetStatusActionCon)
+        else:
+            self.targetStatus.setDefaultAction(self.targetStatusActionDis)
+
+        self.masterStatusChanged()
+
+    def doConDisTarget(self, con=None):
+        """Toggle connect button pushed (target), alternatively can use via API by setting 'con' to True or False"""
+
+        if self.target is None:
+            return
+        
+        #Triggered from GUI
+        if con is None:
+            if self.targetStatus.defaultAction() == self.targetStatusActionDis:
+                con = True
+            else:
+                con = False
+        
+        #Triggered from API
+        try:
+            if con:
+                self.target.con()
+                self.statusBar().showMessage("Target Connected")
+            else:
+                self.target.dis()
+        except IOError, e:
+            self.console.append("Target Error: %s"%str(e))
             
-            self.target.dis()
+        
+    def doConDisScope(self, con=None):
+        """Toggle connect button pushed (scope), alternatively can use via API by setting 'con' to True or False"""
+        if self.scope is None:
+            return
+
+        # Triggered from GUI
+        if con is None:
+            if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
+                con = True
+            else:
+                con = False
+        
+        # Triggered from API
+        try:
+            if con:
+                self.scope.con()
+                self.statusBar().showMessage("Scope Connected")
+                #Pass to target if required
+                try:
+                    self.target.setOpenADC(self.scope.qtadc.ser)
+                except:
+                    pass      
+            else:
+                self.scope.dis()
+        except IOError, e:
+            self.console.append("Target Error: %s" % str(e))
+
+
+    def doConDisMaster(self):
+        """Toggle connect button pushed (master): attempts both target & scope connection"""
+        if self.captureStatus.defaultAction() == self.captureStatusActionDis:      
+            self.doConDisScope(True)
+            self.doConDisTarget(True)
+        else:
+            self.doConDisScope(False)
+            self.doConDisTarget(False)
 
     def capture1(self):
         if self.target.driver:
@@ -856,7 +964,9 @@ class ChipWhispererCapture(MainChip):
             ptInput = None
 
         rndKey = self.findParam('newKeyAlways').value()
-        self.aux.setPrefix(baseprefix)
+
+        if self.aux is not None:
+            self.aux.setPrefix(baseprefix)
 
         ac = acquisitionController(self.scope, target, writer, aux=self.aux,
                                    esm=self.esm, fixedPlain=ptInput,
@@ -878,11 +988,13 @@ class ChipWhispererCapture(MainChip):
         self.scope = newscope
         if self.scope is not None:
             self.scope.paramListUpdated.connect(self.reloadScopeParamList)                     
-        self.reloadScopeParamList()
-        
-        self.scope.dataUpdated.connect(self.newScopeData)
-        self.scope.connectStatus.connect(self.connected)
-        
+            self.scope.dataUpdated.connect(self.newScopeData)
+            self.scope.connectStatus.connect(self.scopeStatusChanged)
+            self.reloadScopeParamList()
+            self.ScopeToolbar.setEnabled(True)
+        else:
+            self.ScopeToolbar.setEnabled(False)
+
     def traceChanged(self, newtrace):
         self.trace = newtrace
         try:

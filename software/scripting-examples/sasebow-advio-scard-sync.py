@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -33,13 +35,11 @@
 
 #Setup path
 import sys
-sys.path.append("../capturev2")
 
 #Import the ChipWhispererCapture module
-import ChipWhispererCapture as cwc
-
-from scopes.ChipWhispererExtra import CWAdvTrigger
-from utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+import chipwhisperer.capture.ChipWhispererCapture as cwc
+from chipwhisperer.capture.scopes.ChipWhispererExtra import CWAdvTrigger
+from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 
 #Check for PySide
 try:
@@ -70,9 +70,9 @@ class userScript(QObject):
         print "***** Starting User Script *****"
        
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-Connected'])
+        cap.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
+        cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-USI'])
         cap.setParameter(['Target Connection', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
 
         #Load FW (must be configured in GUI first)
@@ -101,7 +101,7 @@ class userScript(QObject):
                       ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Collection Mode', 'AND'],
                       ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO3 (SmartCard Serial)', True],
                       #Final step: make DCMs relock in case they are lost
-                      ['OpenADC', 'Clock Setup', 'Relock DCMs', None],
+                      ['OpenADC', 'Clock Setup', 'Reset DCMs', None],
                       ]
         
         #Download all hardware setup parameters

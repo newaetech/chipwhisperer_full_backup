@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -34,7 +36,6 @@ except ImportError:
     sys.exit()
     
 from subprocess import Popen, PIPE
-imagePath = '../common/images/'
 
 import numpy as np
 from openadc.ExtendedParameter import ExtendedParameter

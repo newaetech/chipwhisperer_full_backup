@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -38,11 +40,10 @@ import random
 import os.path
 import shlex
 from subprocess import Popen, PIPE
-imagePath = '../common/images/'
 
 import scipy
 import numpy as np
-
+import chipwhisperer.common.qrc_resources
 from functools import partial
 
 from openadc.ExtendedParameter import ExtendedParameter
@@ -86,7 +87,7 @@ from chipwhisperer.analyzer.ListAllModules import ListAllModules
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer Analyzer V2", imagepath=imagePath)
+        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer Analyzer V2")
         self.console = self.addConsole()   
         
         self.results = ResultsPlotting()
@@ -171,7 +172,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.plotInputEach = enabled
         
     def addToolbars(self):
-        attack = QAction(QIcon(imagePath+'attack.png'), 'Start Attack', self)
+        attack = QAction(QIcon(':/images/attack.png'), 'Start Attack', self)
         attack.triggered.connect(self.doAttack)
 
         self.AttackToolbar = self.addToolBar('Attack Tools')
