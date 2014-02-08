@@ -344,6 +344,42 @@ div.viewcode-block:target {
     border-bottom: 1px solid #ac9;
 }
 
+/*all figure are centered with a border and max width*/
+div.figure {
+border-top: 2px solid #888;
+border-left: 2px solid #888;
+border-bottom: 2px solid #888;
+border-right: 2px solid #888;
+max-width:50%;
+margin-left:15px;
+margin-right:15px;
+margin-top:5px;
+margin-bottom:5px;
+text-align:center;
+background-color:#fff;
+padding:1%;
+display:block;
+margin-right:auto;
+margin-left:auto;
+}
+
+div.figlarge {
+border-top: 2px solid #888;
+border-left: 2px solid #888;
+border-bottom: 2px solid #888;
+border-right: 2px solid #888;
+max-width:70%;
+margin-left:15px;
+margin-right:15px;
+margin-top:5px;
+margin-bottom:5px;
+text-align:center;
+background-color:#fff;
+padding:1%;
+display:block;
+margin-right:auto;
+margin-left:auto;
+}
 
 div.section > h2 ~ *:not(h2) {
     margin-left: 20px;
