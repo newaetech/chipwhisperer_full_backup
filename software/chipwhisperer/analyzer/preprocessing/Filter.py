@@ -53,8 +53,9 @@ class Filter(QObject):
         self.enabled = True
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateFilter},
-                         {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high"], 'value':'low', 'set':self.updateFilter},
-                         {'name':'Critical Freq (0-1)', 'key':'freq', 'type':'float', 'limits':(0,1), 'step':0.05, 'value':0.1, 'set':self.updateFilter},
+                         {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateFilter},
+                         {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateFilter},
+                         {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateFilter},
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1,32), 'value':5, 'set':self.updateFilter},                                
                       ]
         
@@ -76,7 +77,16 @@ class Filter(QObject):
         filt = self.findParam('form').value()
         N = self.findParam('order').value()
         ftype = self.findParam('type').value()
-        freq = self.findParam('freq').value()
+        freq1 = self.findParam('freq1').value()
+        freq2 = self.findParam('freq2').value()
+        
+        if ftype == "bandpass":
+            self.findParam('freq2').show()
+            freq = [freq1, freq2]
+        else:
+            self.findParam('freq2').hide()
+            freq = freq1
+        
         b, a = filt(N, freq, ftype)
         self.b = b
         self.a = a
