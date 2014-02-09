@@ -39,38 +39,25 @@ import numpy as np
 
 from pyqtgraph.parametertree import Parameter
 from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
-class AddNoiseJitter(QObject):
+
+class AddNoiseJitter(PreprocessingBase):
     """
-    Adds random jitter. Used to test resync preprocessing modules.
+    Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
-    paramListUpdated = Signal(list)
 
     descrString = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
                   "in actual analysis."
      
-    def __init__(self, parent):
-        super(AddNoiseJitter, self).__init__()
-                
-        self.enabled = True
-        resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+    def setupParameters(self):
+        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'limits':(0, 1000), 'set':self.setMaxJitter},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
-        
-        self.params = Parameter.create(name='Add Random Jitter', type='group', children=resultsParams)
+        self.params = Parameter.create(name='Add Random Jitter', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.parent = parent
-        self.setTraceManager(parent.manageTraces.iface)
-
-        self.NumTrace = 1
         self.maxJitter = 0
-
-    def paramList(self):
-        return [self.params]
-        
-    def setEnabled(self, enabled):
-        self.enabled = enabled
    
     def setMaxJitter(self, jit):
         self.maxJitter = jit
@@ -87,21 +74,6 @@ class AddNoiseJitter(QObject):
             
         else:
             return self.trace.getTrace(n)       
-    
-    def getTextin(self, n):
-        return self.trace.getTextin(n)
-
-    def getTextout(self, n):
-        return self.trace.getTextout(n)
-    
-    def getKnownKey(self, n=None):
-        return self.trace.getKnownKey()
-   
-    def init(self):
-        pass
-   
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager    
 
         
 # This function stolen from: http://stackoverflow.com/questions/2777907/python-numpy-roll-with-padding

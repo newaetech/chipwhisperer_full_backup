@@ -35,46 +35,38 @@ except ImportError:
     sys.exit()
 
 import numpy as np
+from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
         
-class ResyncPeakDetect(QObject):
+class ResyncPeakDetect(PreprocessingBase):
     """
     Resyncronize based on peak value.
     """
-    paramListUpdated = Signal(list)
     
     descrString = "Line up traces so peak (either max positive or max negative) within" \
     " some given range of points all aligns. For each trace the following must hold or the trace is rejected:\n" \
     "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
     "If 'valid limit' is 0 then this is ignored, and all traces are kept."   
      
-    def __init__(self, parent):
-        super(ResyncPeakDetect, self).__init__()
-                
-        self.enabled = True
+    def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
                          {'name':'Peak Type', 'type':'list', 'value':'Max', 'values':['Max', 'Min'],  'set':self.setType},
-                         {'name':'Point Range', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setPointRange},
+                         {'name':'Point Range', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setPointRange},
                          {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0,10), 'set':self.setValidLimit}, 
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
         self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.parent = parent
-        self.setTraceManager(parent.manageTraces.iface)
         self.ccStart = 0
         self.ccEnd = 0
         self.limit = 0
         self.type = max
         
-    def paramList(self):
-        return [self.params]
-    
     def setValidLimit(self, limit):
         self.limit = limit
         
@@ -84,9 +76,6 @@ class ResyncPeakDetect(QObject):
     def setPointRange(self, val):
         self.ccStart = val[0]
         self.ccEnd = val[1]
-    
-    def setEnabled(self, enabled):
-        self.enabled = enabled
    
     def setOutputCorr(self, enabled):
         self.debugReturnCorr = enabled
@@ -118,24 +107,12 @@ class ResyncPeakDetect(QObject):
         else:
             return self.trace.getTrace(n)       
     
-    def getTextin(self, n):
-        return self.trace.getTextin(n)
-
-    def getTextout(self, n):
-        return self.trace.getTextout(n)
-    
-    def getKnownKey(self, n=None):
-        return self.trace.getKnownKey()
-   
     def init(self):
         try:
             self.calcRefTrace(self.rtrace)
         except ValueError:
             self.findParam('enabled').setValue(False)
    
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager    
-    
     def setRefTrace(self, tnum):
         self.rtrace = tnum
         

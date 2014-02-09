@@ -35,30 +35,27 @@ except ImportError:
     sys.exit()
 
 import numpy as np
+from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
         
-class ResyncSAD(QObject):
+class ResyncSAD(PreprocessingBase):
     """
     Resync by minimizing the SAD.
     """
-    paramListUpdated = Signal(list)
-     
     descrString = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."
 
-    def __init__(self, parent):
-        super(ResyncSAD, self).__init__()
-                
-        self.enabled = True
+    def setupParameters(self):
+
         self.rtrace = 0
         self.debugReturnSad = False
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Reference Points', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setRefPointRange},
-                         {'name':'Input Window', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setWindowPointRange},
+                         {'name':'Reference Points', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setRefPointRange},
+                         {'name':'Input Window', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setWindowPointRange},
                          # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
                          {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
@@ -66,17 +63,10 @@ class ResyncSAD(QObject):
         
         self.params = Parameter.create(name='Minimize Sum of Absolute Difference', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.parent = parent
-        self.setTraceManager(parent.manageTraces.iface)
         self.ccStart = 0
         self.ccEnd = 1
         self.wdStart = 0
         self.wdEnd = 1
-        
-        self.NumTrace = 1
-        
-    def paramList(self):
-        return [self.params]
     
     def setWindowPointRange(self, rng):
         self.wdStart = rng[0]
@@ -86,9 +76,6 @@ class ResyncSAD(QObject):
         self.ccStart = rng[0]
         self.ccEnd = rng[1]
     
-    def setEnabled(self, enabled):
-        self.enabled = enabled
-   
     def setOutputSad(self, enabled):
         self.debugReturnSad = enabled
    
@@ -122,15 +109,6 @@ class ResyncSAD(QObject):
             
         else:
             return self.trace.getTrace(n)       
-    
-    def getTextin(self, n):
-        return self.trace.getTextin(n)
-
-    def getTextout(self, n):
-        return self.trace.getTextout(n)
-    
-    def getKnownKey(self, n=None):
-        return self.trace.getKnownKey()
    
     def init(self):
         try:
@@ -139,9 +117,6 @@ class ResyncSAD(QObject):
         #before trace management setup
         except ValueError:
             pass
-   
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager    
     
     def setRefTrace(self, tnum):
         self.rtrace = tnum

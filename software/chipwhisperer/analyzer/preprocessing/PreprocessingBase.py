@@ -37,12 +37,14 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
-
 class PreprocessingBase(QObject):
     """
     Base Class for all preprocessing modules
     """
     paramListUpdated = Signal(list)
+
+    descrString = "The person who made this module failed to supply a descrString. They made a bad module" \
+                  " and should feel bad."
 
     def __init__(self, parent, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
@@ -56,8 +58,10 @@ class PreprocessingBase(QObject):
         self.setupParameters()
 
     def setupParameters(self):
-        """You should overload this. Copy/Paste into your class."""
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled}, ]
+        """Setup parameters specific to preprocessing module"""
+        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+                    # PUT YOUR PARAMETERS HERE
+                    {'name':'Desc', 'type':'text', 'value':self.descrString}]
         self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
@@ -93,7 +97,7 @@ class PreprocessingBase(QObject):
         return self.trace.getKnownKey()
 
     def init(self):
-        """Do any initilization required"""
+        """Do any initilization required once all traces are loaded"""
         pass
 
     def setTraceSource(self, tmanager):

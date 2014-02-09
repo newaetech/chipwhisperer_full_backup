@@ -34,51 +34,40 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
+from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
 import numpy as np
 import scipy as sp
         
-class ResyncCrossCorrelation(QObject):
+class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-    paramListUpdated = Signal(list)
-     
+
     descrString = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
-    def __init__(self, parent):
-        super(ResyncCrossCorrelation, self).__init__()
-                
-        self.enabled = True
+    def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Window', 'type':'rangegraph', 'graphwidget':parent.waveformDock.widget(), 'set':self.setRefPointRange},
+                         {'name':'Window', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setRefPointRange},
                          {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
-        
         self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.parent = parent
-        self.setTraceManager(parent.manageTraces.iface)
+
         self.ccStart = 0
         self.ccEnd = 0
-        
-    def paramList(self):
-        return [self.params]
-    
+
     def setRefPointRange(self, rng):
         self.ccStart = rng[0]
         self.ccEnd = rng[1]
     
-    def setEnabled(self, enabled):
-        self.enabled = enabled
-   
     def setOutputCorr(self, enabled):
         self.debugReturnCorr = enabled
    
@@ -105,24 +94,12 @@ class ResyncCrossCorrelation(QObject):
             
         else:
             return self.trace.getTrace(n)       
-    
-    def getTextin(self, n):
-        return self.trace.getTextin(n)
-
-    def getTextout(self, n):
-        return self.trace.getTextout(n)
-    
-    def getKnownKey(self, n=None):
-        return self.trace.getKnownKey()
    
     def init(self):
         try:
             self.calcRefTrace(self.rtrace)
         except ValueError:
             self.findParam('enabled').setValue(False)
-   
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager    
     
     def setRefTrace(self, tnum):
         self.rtrace = tnum

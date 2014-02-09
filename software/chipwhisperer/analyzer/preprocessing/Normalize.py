@@ -34,6 +34,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
+from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 import numpy as np
@@ -113,37 +114,27 @@ class normlinfunc(NormBase):
 
         return (t - f1) / f2
 
-class Normalize(QObject):
+
+
+class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
-    paramListUpdated = Signal(list)
      
-    def __init__(self, parent):
-        super(Normalize, self).__init__()
-                
-        self.enabled = True
+    def setupParameters(self):
+
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":normmean, "y=(x-mean(x))/stddev(x)":normmeanstd, "y=(x-f1(z))/f2(z)":normlinfunc}, 'set':self.updateNormClass},
                          {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateF1Coeffs},
                          {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateF2Coeffs},
                          {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateZFile},
+                         {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
         self.params = Parameter.create(name='Normalize Traces', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.parent = parent
-        self.setTraceManager(parent.manageTraces.iface)
         self.updateNormClass(normmean)
-        
-        self.NumTrace = 1
 
-    def paramList(self):
-        return [self.params]
-        
-    def setEnabled(self, enabled):
-        self.enabled = enabled
-   
     def updateF1Coeffs(self, f):
         if f is not None:
             if f is 5:
@@ -198,21 +189,7 @@ class Normalize(QObject):
             return self.norm.processTrace(trace, n)
         else:
             return self.trace.getTrace(n)       
-    
-    def getTextin(self, n):
-        return self.trace.getTextin(n)
 
-    def getTextout(self, n):
-        return self.trace.getTextout(n)
-    
-    def getKnownKey(self, n=None):
-        return self.trace.getKnownKey()
-   
-    def init(self):
-        pass
-   
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager    
 
         
     
