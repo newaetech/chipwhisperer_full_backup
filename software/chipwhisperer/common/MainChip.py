@@ -67,7 +67,7 @@ class ModuleListDialog(QDialog):
         self.setLayout(layout)        
 
 class OutLog:
-    def __init__(self, edit, out=None, color=None):
+    def __init__(self, edit, out=None, color=None, origStdout=None):
         """(edit, out=None, color=None) -> can write stdout, stderr to a
         QTextEdit.
         edit = QTextEdit
@@ -77,8 +77,11 @@ class OutLog:
         self.edit = edit
         self.out = None
         self.color = color
+        self.origStdout = origStdout
 
     def write(self, m):
+        # Still redirect to original STDOUT
+
         if self.color:
             tc = self.edit.textColor()
             self.edit.setTextColor(self.color)
@@ -91,6 +94,9 @@ class OutLog:
 
         if self.out:
             self.out.write(m)
+
+        if self.origStdout:
+            self.origStdout.write(m)
 
 class MainChip(QMainWindow):
     """
@@ -129,6 +135,7 @@ class MainChip(QMainWindow):
         self.initUI()
         self.lastMenuActionSection = None
         self.paramTrees = []
+        self.originalStdout = None
         
         #Fake widget for dock
         #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
@@ -211,8 +218,10 @@ class MainChip(QMainWindow):
         self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
         if redirectStdOut:
-            sys.stdout = OutLog(console, sys.stdout)
-            sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0))
+            if self.originalStdout is None:
+                self.originalStdout = sys.stdout
+            sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
+            sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0), origStdout=self.originalStdout)
 
         return console    
     
