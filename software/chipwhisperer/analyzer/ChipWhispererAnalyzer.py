@@ -234,7 +234,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.lastoutput = self.manageTraces.iface
         for t in self.preprocessingList:
             if t:
-                t.setTraceManager(self.lastoutput)
+                t.setTraceSource(self.lastoutput)
                 t.init()
                 self.lastoutput = t           
         self.traces = self.lastoutput
