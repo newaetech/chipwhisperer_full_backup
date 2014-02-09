@@ -32,6 +32,7 @@ Full Table of Contents:
 .. toctree::
     :maxdepth: 3
     
+    background
     installing
     tutorial
     tutorialresync

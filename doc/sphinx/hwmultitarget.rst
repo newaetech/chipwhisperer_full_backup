@@ -8,7 +8,8 @@ Layout of the Board
 
 The general board layout is shown in the following image:
 
-XREF
+.. figure:: /images/multitarget.jpg
+    :figclass: figlarge
 
 Specifics of each section will be discussed next.
 
@@ -57,7 +58,7 @@ a standard 50-ohm termination of the pulse generator output.
     again when looking at the jumper selection for the SmartCard device.
     
 
-.. _volnet:
+.. _vref:
 
 Target Voltage Selection
 --------------------------
@@ -67,7 +68,7 @@ mode. To accomplish this the 'VREF' pin is set to the operating voltage of the t
 data lines) will have correct voltage-levels for the specific target.
 
 JP20 selects the IO standard in use. Typically this should be set to **INT.**, which will use 3.3V standards. If operating
-the smartcard in pass-through mode it might be needed to set this to **EXT.**, see the section XREF.
+the smartcard in pass-through mode it might be needed to set this to **EXT.**, see the section :ref:`smartcard`.
 
 The following figure shows the routing of power. Pay careful attention to the fact that the 'VOUT' measurement is routed
 to *ALL* targets. Thus when you are not using a target, you **MUST** remove the jumpers on the 6-pin shunt selection header.
@@ -111,6 +112,8 @@ The clock output from the FPGA is used when generating a clock on the FPGA, or f
 **FPGAOUT** is not used.
 
 The XMEGA has differing setup of clock selection, which is described in more detail in the XMEGA Specific section.
+
+.. _20pin:
 
 20-Pin Target Header
 ----------------------
@@ -215,17 +218,20 @@ The XMEGA is programmed via the PDI interface, and the PDI pins on the XMEGA con
 
     Ensure JP20 is set to **INT.** so that the serial bus lines will drive a 3.3V logic level when using the XMEGA.
 
+.. _smartcard:
+
 SmartCard Target Section
 -------------------------
 
+TODO
 
 Pass-Thru/SASEBO-W Adapator
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""""""
 
 .. warning::
 
     It is completely possible to use the **EXT.** IO voltage, allowing the ChipWhisperer to interface with 5V SmartCards. Before doing
-    this follow all warnings in section XREF, or you may **DESTROY THE CHIPWHISPERER DEVICE** by shunting the external power supply
+    this follow all warnings in section :ref:`vref`, or you may **DESTROY THE CHIPWHISPERER DEVICE** by shunting the external power supply
     onto internal 3.3V rails.
     
 Low Noise Amplifier

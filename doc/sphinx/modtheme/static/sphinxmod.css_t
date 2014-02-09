@@ -368,7 +368,7 @@ border-top: 2px solid #888;
 border-left: 2px solid #888;
 border-bottom: 2px solid #888;
 border-right: 2px solid #888;
-max-width:70%;
+max-width:80%;
 margin-left:15px;
 margin-right:15px;
 margin-top:5px;
