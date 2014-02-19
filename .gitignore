@@ -6,3 +6,4 @@ software/capture/capture-*
 */.autopilot*
 *.autopilot*
 hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/bmp/tests*
+*.epf
