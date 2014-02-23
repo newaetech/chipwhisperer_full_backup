@@ -29,6 +29,12 @@ is described on the `setuptools documentation site <https://pypi.python.org/pypi
 click the following link (assuming you've already installed Python!) and let it run:
 
 2. `Get ez_setup.py program <https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py>`_
+   
+3. Open a command prompt (on XP: run->cmd, on Windows 7: search 'cmd' from search bar) and type::  
+
+    easy_install
+    
+   If this works you should get
 
 Next, there will be a number of packages to install. You can generally follow the *Direct link for Windows* for all of these
 packages. Be sure to select the *win32-py2.7.exe* version, which corresponds to your Python version.
