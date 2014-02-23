@@ -244,8 +244,35 @@ On Linux, installing Python & all the associated packages is much easier than on
 using Fedora Core or similar, just type::
 
     $ sudo yum install python27 python27-devel python27-libs python-pyside numpy scipy python-configobj pyusb
+
+On Ubuntu or similar:
+
+    $ sudo apt-get install python2.7 python2.7-dev python2.7-libs python-numpy python-scipy python-pyside python-configobj python-usb python-setuptools
+
     
-You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not normally in those repositories.
+You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not normally in those repositories. See the PyQtGraph website
+for either a Debian/Ubuntu package, or information about installing from source.
+
+Getting ChipWhisperer
+^^^^^^^^^^^^^^^^^^^^^^^
+
+As in the Windows release, you can download a complete ChipWhisperer software release. Alternatively you can clone the
+ChipWhisperer repository with git, which is very simple on Linux:
+
+    $ git clone
+    $ cd chipwhisperer
+    $ git clone 
+    
+Be aware that the git code may be broken, although we try not to commit completely untested code to the master branch. Either way
+once you have the `chipwhisperer` directory somewhere, do the following from within that directory:
+
+    $ cd software
+    $ sudo python setup.py develop
+    $ cd ../openadc/controlsw/python
+    $ sudo python setup.py develop
+
+**NB:**This assumes the `python` command links to Python-2.7, and not Python-3.x. You may need to specify either `python2.7` or `python27`
+as the command instead of python to force this.
 
 ChipWhisperer Rev2 Capture Hardware Driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
