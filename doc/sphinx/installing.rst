@@ -29,25 +29,47 @@ is described on the `setuptools documentation site <https://pypi.python.org/pypi
 click the following link (assuming you've already installed Python!) and let it run:
 
 2. `Get ez_setup.py program <https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py>`_
+   
+3. Open a command prompt (on XP: run->cmd, on Windows 7: search 'cmd' from search bar) and type::  
 
-Next, there will be a number of packages to install. You can generally follow the *Direct link for Windows* for all of these
-packages. Be sure to select the *win32-py2.7.exe* version, which corresponds to your Python version.
+    easy_install configobj
+	
+   The results should look something similar to this:
 
-3. `PySide <http://qt-project.org/wiki/Category:LanguageBindings::PySide::Downloads>`_ (Direct Link for `Windows <http://qt-project.org/wiki/PySide_Binaries_Windows>`__)
-4. `PySerial <http://pypi.python.org/pypi/pyserial>`_ (Direct Link for `Windows <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyserial>`__)
+   .. image:: /images/easy_install-configobj.png
+   
+   If easy_install *is not* working, you need to modify your system path (see sidebar). Assuming it is, continue to install other required packages::
+
+	easy_install pyside
+	easy_install pyqtgraph
+	easy_install configobj
+
+
+.. sidebar:: Python Path Settings
+
+	When you installed Python, it may not have modified your system path. Generally this will make your life easier, although it's not required.
+	This guide assumes you can run python commands such as easy_install.exe direct from the command line. If you cannot seem to do so, it's easy to
+	fix that.
+	
+	First, you need to open the environmental variables editing dialog. On Windows 7 / 8 simply search for **environment** from the start menu, and you'll
+	get an option to **Edit System Environment Variables**. On Windows XP you'll have to find the **System Properties** option in the control panel, then
+	go to the **Advanced** tab.
+	
+	Finally open the **Environment Variables** dialog, and edit the *PATH* system variable to include::
+	
+		;C:\Python27;C:\Python27\Scripts
+		
+	.. image:: /images/pathmodify.png
+
+
+Next, you have to install NumPy & SciPy which don't work with easy_install. Run the following Windows binary installers - Be sure you are downloading the
+*win32-py2.7.exe* version. The *Direct Link for Windows* should be the correct version, but they may get changed in the future to default to another Python
+(e.g. 3.x which we don't use) version. The installer itself will validate you downloaded the correct version of NumPy/SciPy for your python installation, so
+the installation will fail anyway if you accidently download the wrong version.
+
 5. `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/numpy/files/latest/download?source=files>`__)
 6. `SciPy <http://sourceforge.net/projects/scipy/files/scipy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/scipy/files/latest/download?source=files>`__)
-7. `PyQtGraph <http://www.pyqtgraph.org/>`_ (Direct Link for `Windows <http://www.pyqtgraph.org/downloads/pyqtgraph-0.9.8.win32.exe>`__)
-
-Certain packages are not available in normal Windows installers. Instead we'll use easy_install to install these packages.
-To do so, open a command prompt (on XP: run->cmd, on Windows 7: search 'cmd' from search bar) and type::  
- 
-   easy_install configobj
    
-Results should look something similar to this:
-
-.. image:: /images/easy_install-configobj.png
-
 Assuming you are planning on using the ChipWhisperer Capture Rev2 hardware, you also require `PyUSB <http://sourceforge.net/projects/pyusb/>`_.
 The easiest method is to again use easy_install, by opening a terminal and running::
 
@@ -71,8 +93,10 @@ unzip it somewhere. Then run the following where you unzipped it::
 This package will also require you to install the `FTDI D2XX Drivers <http://www.ftdichip.com/Drivers/D2XX.htm>`_. In the preceeding
 link simply find the correct driver for your OS Version & install that.
 
-**MYSQL**: If you want to use the MySQL trace format (not used by default), you'll need to install `umysql <https://pypi.python.org/pypi/umysql>`_.
-See the preceeding link for installation information, or use ``easy_install``.
+**MYSQL**: If you want to use the MySQL trace format (not used by default), you'll need to install `umysql <https://pypi.python.org/pypi/umysql>`_::
+
+	easy_install umysql
+
 
 Getting & Installing ChipWhisperer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -244,8 +268,35 @@ On Linux, installing Python & all the associated packages is much easier than on
 using Fedora Core or similar, just type::
 
     $ sudo yum install python27 python27-devel python27-libs python-pyside numpy scipy python-configobj pyusb
+
+On Ubuntu or similar:
+
+    $ sudo apt-get install python2.7 python2.7-dev python2.7-libs python-numpy python-scipy python-pyside python-configobj python-usb python-setuptools
+
     
-You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not normally in those repositories.
+You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not normally in those repositories. See the PyQtGraph website
+for either a Debian/Ubuntu package, or information about installing from source.
+
+Getting ChipWhisperer
+^^^^^^^^^^^^^^^^^^^^^^^
+
+As in the Windows release, you can download a complete ChipWhisperer software release. Alternatively you can clone the
+ChipWhisperer repository with git, which is very simple on Linux:
+
+    $ git clone
+    $ cd chipwhisperer
+    $ git clone 
+    
+Be aware that the git code may be broken, although we try not to commit completely untested code to the master branch. Either way
+once you have the `chipwhisperer` directory somewhere, do the following from within that directory:
+
+    $ cd software
+    $ sudo python setup.py develop
+    $ cd ../openadc/controlsw/python
+    $ sudo python setup.py develop
+
+**NB:**This assumes the `python` command links to Python-2.7, and not Python-3.x. You may need to specify either `python2.7` or `python27`
+as the command instead of python to force this.
 
 ChipWhisperer Rev2 Capture Hardware Driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

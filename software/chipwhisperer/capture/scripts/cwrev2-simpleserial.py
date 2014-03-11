@@ -101,7 +101,7 @@ class userScript(QObject):
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
                       #Final step: make DCMs relock in case they are lost
-                      ['OpenADC', 'Clock Setup', 'Reset ADC DCM', None],
+                      ['OpenADC', 'Clock Setup', 'Reset DCMs', None],
                       ]
         
         #Download all hardware setup parameters
