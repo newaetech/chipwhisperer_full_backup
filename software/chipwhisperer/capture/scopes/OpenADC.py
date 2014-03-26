@@ -279,8 +279,13 @@ class OpenADCInterface_ZTEX(QWidget):
         self.ser = None
         
        
-        if (openadc_qt is None) or (usb is None):               
-            raise ImportError("Needed imports for ChipWhisperer missing")
+        if (openadc_qt is None) or (usb is None):
+            missingInfo = ""
+            if openadc_qt is None:
+                missingInfo += "openadc.qt "
+            if usb is None:
+                missingInfo += " usb"
+            raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:            
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
@@ -386,7 +391,8 @@ class OpenADCInterface(QObject):
         
         try:
             cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console, showScriptParameter=showScriptParameter)
-        except ImportError:
+        except ImportError, e:
+            print "Failed to enable CWRev2, Error: %s" % str(e)
             cwrev2 = None
             
         try:
