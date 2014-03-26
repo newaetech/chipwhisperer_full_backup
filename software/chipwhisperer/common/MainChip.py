@@ -233,7 +233,7 @@ class MainChip(QMainWindow):
         
     def clearAllSettings(self):
         """Clear all saved QSettings(), such as window location etc"""
-        QSettings.remove("")
+        QSettings().remove("")
         
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
