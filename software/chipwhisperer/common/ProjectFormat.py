@@ -79,6 +79,11 @@ class ProjectFormat(QObject):
         self.config = ConfigObj()
         self.traceManager = None
         
+        #Check if data-directory exists?
+        if not os.path.isdir(self.datadirectory):
+            os.mkdir(self.datadirectory)
+            os.mkdir(os.path.join(self.datadirectory, 'traces'))
+        
     def hasFilename(self):
         if self.filename == "untitled.cwp":
             return False
