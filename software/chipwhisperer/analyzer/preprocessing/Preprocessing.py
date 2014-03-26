@@ -31,7 +31,11 @@ from chipwhisperer.analyzer.preprocessing.ResyncSAD import ResyncSAD
 from chipwhisperer.analyzer.preprocessing.Filter import Filter
 from chipwhisperer.analyzer.preprocessing.AddNoiseJitter import AddNoiseJitter
 from chipwhisperer.analyzer.preprocessing.Normalize import Normalize
-from chipwhisperer.analyzer.preprocessing.DecimationClockRecovery import DecimationClockRecovery
+
+try:
+    from chipwhisperer.analyzer.preprocessing.DecimationClockRecovery import DecimationClockRecovery
+except ImportError:
+    DecimationClockRecovery = None
 # from chipwhisperer.analyzer.preprocessing.DecimationFixed import DecimationFixed
 
 def listAll(parent):
@@ -42,7 +46,8 @@ def listAll(parent):
     valid_targets["Digital Filter"] = Filter(parent)
     valid_targets["Normalize"] = Normalize(parent)
     valid_targets["Add Noise: Jitter"] = AddNoiseJitter(parent)
-    valid_targets["Decimation: Clock Recovery"] = DecimationClockRecovery(parent)
+    if DecimationClockRecovery:
+        valid_targets["Decimation: Clock Recovery"] = DecimationClockRecovery(parent)
     # valid_targets["Decimation: Fixed"] = DecimationFixed(parent)
     valid_targets["Disabled"] = 0
 
