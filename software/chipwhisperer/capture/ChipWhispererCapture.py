@@ -438,7 +438,7 @@ class FWLoaderConfig(QDialog):
         """Get the output of the FWLoader command with the -i (info) option"""
         #Check Status
         cmd = "java -cp %s FWLoader -c -i"%(self.fwLocation.text())
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         process.wait()
         
@@ -468,7 +468,7 @@ class FWLoaderConfig(QDialog):
     def loadFirmware(self):               
         """Load the USB microcontroller firmware file setup in the dialog"""
         cmd = "java -cp %s FWLoader -c -f -uu %s"%(self.fwLocation.text(), self.firmwareLocation.text())
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         exit_code = process.wait()     
         if self.console:
@@ -478,7 +478,7 @@ class FWLoaderConfig(QDialog):
     def loadFPGA(self):
         """Load the FPGA bitfile set up in the dialog"""        
         cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitLocation.text())
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE)
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         exit_code = process.wait()        
         if self.console:
