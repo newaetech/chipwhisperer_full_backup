@@ -411,9 +411,40 @@ class FWLoaderConfig(QDialog):
         self.setLayout(layout)
         
         settings = QSettings()
-        self.fwLocation.setText(settings.value("fwloader-location"))
-        self.bitLocation.setText(settings.value("bitstream-location"))
-        self.firmwareLocation.setText(settings.value("firmware-location"))
+        
+        self.javaCmd = 'java'
+        
+        #Override this if path-specific java required, e.g.:
+        #self.javaCmd = '"C:/Program Files/Java/jre7/bin/java"'
+        
+        fwLLoc = settings.value("fwloader-location")
+        bsLoc = settings.value("bitstream-location")
+        fwFLoc = settings.value("firmware-location")
+        
+        #Defaults?
+        #print os.getcwd()
+        
+        if not fwLLoc:
+            defLocfwL = "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/fwloader/FWLoader.jar"
+            #defLocfwL = os.path.realpath(defLocfwL)
+            if os.path.isfile(defLocfwL):
+                fwLLoc = str(defLocfwL)
+        
+        if not fwFLoc:
+            defLocfwF = "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"
+            #defLocfwF = os.path.realpath(defLocfwF)
+            if os.path.isfile(defLocfwF):
+                fwFLoc = str(defLocfwF)
+                
+        if not bsLoc:
+            defLocbs = "../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"
+            #defLocbs = os.path.realpath(defLocbs)
+            if os.path.isfile(defLocbs):
+                bsLoc = str(defLocbs)
+
+        self.fwLocation.setText(fwLLoc)
+        self.bitLocation.setText(bsLoc)
+        self.firmwareLocation.setText(fwFLoc)
        
     def findFWLoader(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FWLoader','.','FWLoader.jar')        
@@ -430,14 +461,14 @@ class FWLoaderConfig(QDialog):
     def findFirmware(self):   
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware','.','*.ihx')        
         if fname:
-            print fname
             self.firmwareLocation.setText(fname)
             QSettings().setValue("firmware-location", fname)
            
     def getStatus(self):
         """Get the output of the FWLoader command with the -i (info) option"""
         #Check Status
-        cmd = "java -cp %s FWLoader -c -i"%(self.fwLocation.text())
+        cmd = '%s -cp %s FWLoader -c -i'%(self.javaCmd, self.fwLocation.text())
+        #print shlex.split(cmd)
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         process.wait()
@@ -467,7 +498,8 @@ class FWLoaderConfig(QDialog):
             
     def loadFirmware(self):               
         """Load the USB microcontroller firmware file setup in the dialog"""
-        cmd = "java -cp %s FWLoader -c -f -uu %s"%(self.fwLocation.text(), self.firmwareLocation.text())
+        cmd = "%s -cp %s FWLoader -c -f -uu %s"%(self.javaCmd, self.fwLocation.text(), self.firmwareLocation.text())
+        #print shlex.split(cmd)
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         exit_code = process.wait()     
@@ -477,7 +509,8 @@ class FWLoaderConfig(QDialog):
     
     def loadFPGA(self):
         """Load the FPGA bitfile set up in the dialog"""        
-        cmd = "java -cp %s FWLoader -f -uf %s"%(self.fwLocation.text(), self.bitLocation.text())
+        cmd = "%s -cp %s FWLoader -f -uf %s"%(self.javaCmd, self.fwLocation.text(), self.bitLocation.text())
+        #print shlex.split(cmd)
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         exit_code = process.wait()        
