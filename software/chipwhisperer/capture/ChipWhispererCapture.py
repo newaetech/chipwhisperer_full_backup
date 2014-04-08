@@ -39,6 +39,7 @@ from datetime import datetime
 import random
 import os.path
 import shlex
+import time
 from subprocess import Popen, PIPE
 
 from openadc.ExtendedParameter import ExtendedParameter
@@ -510,7 +511,9 @@ class FWLoaderConfig(QDialog):
     def loadFPGA(self):
         """Load the FPGA bitfile set up in the dialog"""        
         cmd = "%s -cp %s FWLoader -f -uf %s"%(self.javaCmd, self.fwLocation.text(), self.bitLocation.text())
-        #print shlex.split(cmd)
+        # print shlex.split(cmd)
+        print "FPGA Bitstream Created: %s" % time.ctime(os.path.getmtime(self.bitLocation.text()))
+                
         process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
         stdout, stderr = process.communicate()
         exit_code = process.wait()        

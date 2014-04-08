@@ -139,7 +139,7 @@ class ChipWhispererGlitch(QObject):
             if self.oa is not None:
                 self.resetDCMs()   
             
-        print "Partial: %d %d"%(widthint, offsetint)
+        # print "Partial: %d %d"%(widthint, offsetint)
        
     def setGlitchWidthFine(self, fine):
         '''Set the fine phase adjust, range -255 to 255'''

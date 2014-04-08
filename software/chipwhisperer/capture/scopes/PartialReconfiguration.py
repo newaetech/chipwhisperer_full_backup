@@ -26,6 +26,8 @@
 #=================================================
 
 import pickle
+import os.path
+import time
 
 class PartialReconfigData(object):   
     def load(self, fname):
@@ -55,6 +57,9 @@ class PartialReconfigDataMulti(object):
         self.limitList = []
        
     def load(self, fname):
+
+        print "Partial Data Created: %s" % time.ctime(os.path.getmtime(fname))
+
         data =  pickle.load(open(fname, 'rb')) 
         self.dataList.append(data )        
         klist = list(data['values'].keys())
@@ -94,9 +99,18 @@ class PartialReconfigConnection(object):
        
         if self.oa is None:            
             return
+
+        # Reset PR System
+        self.oa.sendMessage(self.CODE_WRITE, self.reconfig, [0x20], Validate=False)
+        self.oa.sendMessage(self.CODE_WRITE, self.reconfig, [0x00], Validate=False)
        
+        # Load Data
         dataarray = [0x00]
        
+        # print len(cfgdata)
+        if len(cfgdata) > 512:
+            raise IOError("PR Data too long!")
+
         for data in cfgdata:
             #data = int(t, 2)
             msb = data >> 8;
@@ -107,10 +121,15 @@ class PartialReconfigConnection(object):
 
         self.oa.sendMessage(self.CODE_WRITE, self.reconfig, dataarray, Validate=False)
 
-        #stat = sc.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
-        #print "%02x"%stat[0]
+        # stat = self.oa.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
+        # print "%02x" % stat[0]
 
+        # Write Data
         self.oa.sendMessage(self.CODE_WRITE, self.reconfig, [0x1A], Validate=False)
         
-        #stat = sc.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
-        #print "%02x"%stat[0]
+        # Check PR Loaded OK
+        stat = self.oa.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
+
+        if stat[0] != 0x00:
+            raise IOError("Failed to load PR Data - Status Register = 0x%02x, should be 0x00" % stat[0])
+        # print "%02x" % stat[0]
