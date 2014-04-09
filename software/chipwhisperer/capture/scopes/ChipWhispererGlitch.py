@@ -77,9 +77,26 @@ class ChipWhispererGlitch(QObject):
         self.oa = None
         
         try:            
-            self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchwidth.p")
-            self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchoffset.p")
+            twidth = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchwidth.p")
+            toffset = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchoffset.p")
+
+            tfpga = QSettings().value("bitstream-date")
             self.prEnabled = True
+
+            # TODO: Should save MD5SUM/CRC of FPGA Bitstream inside .p files instead, and confirm
+            #      the MD5SUM/CRC of bitstream. For now have hack that checks date/time & confirms
+            #      files were probably generated from bitstream files.
+            try:
+                tfpga = int(tfpga)
+                if abs(twidth - tfpga) > 20000 or abs(toffset - tfpga) > 20000:
+                    self.prEnabled = False
+                    print "Partial Reconfiguration DISABLED: FPGA File too > 6 hours difference from PR files"
+
+            except TypeError:
+                self.prEnabled = False
+                print "Partial Reconfiguration DISABLED: Unknown FPGA Date"
+
+
         except IOError, e:
             print str(e)
             self.prEnabled = False
