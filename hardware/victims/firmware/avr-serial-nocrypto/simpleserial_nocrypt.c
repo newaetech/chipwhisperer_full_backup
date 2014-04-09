@@ -55,11 +55,13 @@ void hex_print(const uint8_t * in, int len, char *out)
 		out[j] = 0;
 }
 
-#define BUFLEN 16*4
+#define KEY_LENGTH 16
+#define BUFLEN (KEY_LENGTH*4)
 
 //Buffers for decoding
 char asciibuf[BUFLEN];
-uint8_t pt[16];
+uint8_t pt[KEY_LENGTH];
+uint8_t tmp[KEY_LENGTH];
 
 
 //We want to use the AVR ADC-pins, since they have a seperate power rail
@@ -138,9 +140,12 @@ int main
 		
 		else if (state == KEY) {
 			if ((c == '\n') || (c == '\r')) {
-				asciibuf[ptr] = 0;
+				asciibuf[ptr] = 0;                
 				hex_decode(asciibuf, ptr, tmp);
-				aes_indep_key(tmp);
+				
+                //If you want to use 'key' for something do so here
+                //Decoded value held in 'tmp' register
+                
 				state = IDLE;
 			} else {
 				asciibuf[ptr++] = c;
@@ -170,10 +175,10 @@ int main
                  ********************************/
 
 				/* Print Results */
-				hex_print(pt, 16, asciibuf);
+				hex_print(pt, KEY_LENGTH, asciibuf);
 				
 				output_ch_0('r');
-				for(int i = 0; i < 32; i++){
+				for(int i = 0; i < KEY_LENGTH*2; i++){
 					output_ch_0(asciibuf[i]);
 				}
 				output_ch_0('\n');
