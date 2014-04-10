@@ -50,7 +50,8 @@ module reg_clockglitch(
 	output [15:0]  reg_hyplen,
 
 	input wire 		sourceclk,
-	output wire    glitchclk
+	output wire    glitchclk,
+	input wire     exttrigger
    );
 	 
 	 wire	  reset;
@@ -164,6 +165,14 @@ module reg_clockglitch(
 	 reg manual_dly;
 	 always @(posedge sourceclk)
 		manual_dly <= manual;
+		
+	 reg exttrigger_resync;
+	 reg exttrigger_resync_dly;
+	 always @(posedge sourceclk)
+		exttrigger_resync <= exttrigger;
+	 
+	 always @(posedge sourceclk)
+		exttrigger_resync_dly <= exttrigger_resync;
 	 
 	 reg glitch_trigger;
 	 always @(posedge sourceclk) begin
@@ -171,6 +180,8 @@ module reg_clockglitch(
 			glitch_trigger <= 1'b1;
 		else if (glitch_trigger_src == 2'b00)
 			glitch_trigger <= manual & ~manual_dly;
+		else if (glitch_trigger_src == 2'b01)
+			glitch_trigger <= exttrigger_resync & ~exttrigger_resync_dly;
 		else
 			glitch_trigger <= 1'b0;
 	 end	 
