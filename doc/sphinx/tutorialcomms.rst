@@ -42,7 +42,7 @@ Building the Basic Example
 
 You'll need to have installed WinAVR. You may have already done this by following the installation guide, if not perform the following step:
 
-.. include:: installing_winavr.rst
+.. include:: installing_winavr.rsti
 
 2. Copy the directory ``avr-serial-nocrypto`` which is found at ``chipwhisperer\hardware\victims\firmware\`` of the 
    chipwhisperer release somewhere. The following examples assume it has been copied to ``c:\chipwhisperer\user\comm\avr-serial-nocrypto\``.
@@ -128,7 +128,7 @@ editor such as Programmer's Notepad (which ships with WinAVR).
 3. Rebuild the example using the ``make MCU=atmega328p`` command. Remember you can press the up arrow on the
    keyboard to get recently typed commands in most OSes.
       
-.. include:: tutorialbasic_setup.rst
+.. include:: tutorialbasic_setup.rsti
       
 Programming the Example
 ----------------------------

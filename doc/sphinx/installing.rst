@@ -37,6 +37,7 @@ click the following link (assuming you've already installed Python!) and let it 
    The results should look something similar to this:
 
    .. image:: /images/easy_install-configobj.png
+      :width: 12cm 
    
    If easy_install *is not* working, you need to modify your system path (see sidebar). Assuming it is, continue to install other required packages::
 
@@ -60,6 +61,9 @@ click the following link (assuming you've already installed Python!) and let it 
 		;C:\Python27;C:\Python27\Scripts
 		
 	.. image:: /images/pathmodify.png
+        
+        
+
 
 
 Next, you have to install NumPy & SciPy which don't work with easy_install. Run the following Windows binary installers - Be sure you are downloading the
@@ -183,7 +187,7 @@ before modifying the code however!
 
 To build the code, you'll need to install WinAVR. 
 
-.. include:: installing_winavr.rst
+.. include:: installing_winavr.rsti
 
 Note that the default codebase *does not* include the cryptographic code we attack. Instead you are required to add this code into the system -- if the
 external code changes, this may eventually be instead rolled into the main codebase. To setup the code, follow the following steps:
@@ -278,7 +282,7 @@ once you have the `chipwhisperer` directory somewhere, do the following from wit
     $ cd ../openadc/controlsw/python
     $ sudo python setup.py develop
 
-**NB:**This assumes the `python` command links to Python-2.7, and not Python-3.x. You may need to specify either `python2.7` or `python27`
+**NB**: This assumes the `python` command links to Python-2.7, and not Python-3.x. You may need to specify either `python2.7` or `python27`
 as the command instead of python to force this.
 
 ChipWhisperer Rev2 Capture Hardware Driver

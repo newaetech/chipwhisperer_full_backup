@@ -33,7 +33,6 @@ Full Table of Contents:
     :maxdepth: 3
     :numbered: 
     
-    background
     installing    
     tutorialsbasic
     tutorialsadvanced
