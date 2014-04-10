@@ -1,0 +1,39 @@
+Setting up the Hardware
+------------------------
+
+This tutorial uses the :ref:`hwcapturerev2` hardware along with the :ref:`hwmultitarget`
+board. This hardware is the standard setup for all basic tutorials.
+
+This example uses the Atmel AVR in 28-pin DIP programmed with a *simpleserial* communications protocol. This is the default firmware
+programmed into the devices, so you shouldn't need to do anything. If you've erased the device, you can see programming instructions
+in the :ref:`installing` section.
+
+The Multi-Target board should be plugged into the ChipWhisperer Capture Rev2 via the 20-pin target cable. The *VOUT* SMA connector is
+wired to the *LNA* input on the ChipWhisperer-Capture Rev2 front panel. The general hardware setup is as follows:
+
+   .. image:: /images/tutorials/basic/aes/hw-1.jpg
+   
+   1. 20-Pin Header connects Multi-Target to Capture Hardware
+   2. VOUT Connects to SMA Cable
+   3. SMA Cable connects to 'LNA' on CHA input
+   4. USB-Mini connects to side (NB: Confirm jumper settings in next section first)
+
+Jumpers on the Multi-Target Victim board are as follows:
+
+   .. image:: /images/tutorials/basic/aes/hw-2.jpg
+   
+   1. NO jumpers mounted in XMEGA Portion or SmartCard Portion (JP10-JP15, JP19, JP7-JP8, JP17)
+   2. 3.3V IO Level (JP20 set to INT.)
+   3. The 7.37 MHz oscillator is selected as the CLKOSC source (JP18)
+   4. The CLKOSC is connected to the AVR CLock Network, along with connected to the FPGAIN pin (JP4)
+   5. The TXD & RXD jumpers are set (JP5, JP6)
+   6. Power measurement taken from VCC shunt (JP1)
+   
+   For more information on these jumper settings see :ref:`hwmultitarget` .
+
+Setting up the Software
+------------------------
+
+It is assumed that you've already followed the guide in :ref:`installing`. Thus it is assumed you are able to communicate with the ChipWhisperer Capture Rev2 hardware (or whatever capture hardware you are using). Note in particular you must have configured the FPGA bitstream in the ChipWhisperer-Capture software, all part of the description in the :ref:`installing` guide.
+
+Assuming this setup is complete, you can confirm you are able to communicate with the hardware by running the example capture of traces given in the :ref:`tutorialaes`.

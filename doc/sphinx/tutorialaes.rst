@@ -1,4 +1,4 @@
-.. _tutorial:
+.. _tutorialaes:
 
 Tutorial: Breaking AES (Straightforward)
 =========================================
@@ -21,7 +21,7 @@ in the :ref:`installing` section.
 The Multi-Target board should be plugged into the ChipWhisperer Capture Rev2 via the 20-pin target cable. The *VOUT* SMA connector is
 wired to the *LNA* input on the ChipWhisperer-Capture Rev2 front panel. The general hardware setup is as follows:
 
-   .. image:: /images/tutorial-basic/hw-1.jpg
+   .. image:: /images/tutorials/basic/aes/hw-1.jpg
    
    1. 20-Pin Header connects Multi-Target to Capture Hardware
    2. VOUT Connects to SMA Cable
@@ -30,7 +30,7 @@ wired to the *LNA* input on the ChipWhisperer-Capture Rev2 front panel. The gene
 
 Jumpers on the Multi-Target Victim board are as follows:
 
-   .. image:: /images/tutorial-basic/hw-2.jpg
+   .. image:: /images/tutorials/basic/aes/hw-2.jpg
    
    1. NO jumpers mounted in XMEGA Portion or SmartCard Portion (JP10-JP15, JP19, JP7-JP8, JP17)
    2. 3.3V IO Level (JP20 set to INT.)
@@ -59,11 +59,11 @@ This tutorial uses a simple script that ships with the ChipWhisperer Capture sof
 1. Close & reopen the capture software (to clear out any previous connection which may be invalid).
 2. From the *Project* menu elect the *Example Scripts* and then *ChipWhisperer-Rev2: SimpleSerial Target*
 
-   .. image:: /images/tutorial-basic/runscript.png
+   .. image:: /images/tutorials/basic/aes/runscript.png
    
 3. The script will automatically connect to the capture hardware and run 2 example traces. You should see something that looks like the following screen:
 
-   .. image:: /images/tutorial-basic/capture.png
+   .. image:: /images/tutorials/basic/aes/capture.png
    
    To complete the tutorial, follow these steps:
    
@@ -83,7 +83,7 @@ Analyzing the Traces
 2. From the *File --> Open Project* option, navigate to the `.cwp` file you save previously. Open this file.
 3. Select the *Project --> Manage Traces* option to open the dialog, enable the captured traces by adding a check-mark in the box. Close the dialog with `ESC`:
 
-   .. image:: /images/tutorial-basic/tracemanage.png
+   .. image:: /images/tutorials/basic/aes/tracemanage.png
    
 4. If you wish to view the trace data, follow these steps:
    
@@ -95,7 +95,7 @@ Analyzing the Traces
    6. (oops there is no 6)
    7. Use the toolbar to quickly reset the zoom back to original
    
-   .. image:: /images/tutorial-basic/traceplotting.png
+   .. image:: /images/tutorials/basic/aes/traceplotting.png
    
 5. You can view or change the attack options on the *Attack* parameter settings tab:  
 
@@ -108,16 +108,16 @@ Analyzing the Traces
       If you only care about attacking the system, the reporting interval can be set to the number of traces. In which case the attack runs completely, and you get the results. For this
       tutorial you can set to a smaller number (such as 5).
 
-   .. image:: /images/tutorial-basic/attacksettings.png
+   .. image:: /images/tutorials/basic/aes/attacksettings.png
 
 6. Finally run the attack by switching to the *Results Table* tab and then hitting the *Attack* button:
 
-   .. image:: /images/tutorial-basic/attack.png
+   .. image:: /images/tutorials/basic/aes/attack.png
    
 7. If you adjusted the *Reporting Interval* to a smaller number such as 5, you'll see the progression of attack results as more traces are used.
    If not you should simply see the final results, which should have the correct key highlighted in red. In the following case the correct key *was* recovered:
    
-   .. image:: /images/tutorial-basic/attack-done.png
+   .. image:: /images/tutorials/basic/aes/attack-done.png
    
 8. You can also switch to the *Output vs Point Plot* window to see *where* exactly the data was recovered:
    
@@ -129,7 +129,7 @@ Analyzing the Traces
    5. This byte occured much later - sample 1240. By exploring where the maximum correlation was found for the correct key-guess of each byte, you
       can determine where exactly the attacked operation occured.
 
-   .. image:: /images/tutorial-basic/attack-done2.png
+   .. image:: /images/tutorials/basic/aes/attack-done2.png
 
 Next Steps
 -----------

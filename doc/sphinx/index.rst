@@ -31,12 +31,12 @@ Full Table of Contents:
 
 .. toctree::
     :maxdepth: 3
+    :numbered: 
     
     background
-    installing
-    tutorial
-    tutorialresync
-    tutorialglitch
+    installing    
+    tutorialsbasic
+    tutorialsadvanced
     cwpython
     hardware
     fpgamain

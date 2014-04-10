@@ -183,24 +183,7 @@ before modifying the code however!
 
 To build the code, you'll need to install WinAVR. 
 
-1. Download & Install `WinAVR 20100110 <http://sourceforge.net/projects/winavr/files/WinAVR/20100110/WinAVR-20100110-install.exe>`_
-
-
-.. sidebar:: WinAVR Path Settings
-
-    By default, WinAVR is added to your system path. This means you can run ``avr-gcc``, ``make`` and other programs from your normal Windows command line.
-    You may **not** want this on certain systems where you already have similar tools installed. In which case either uncheck the *Add WinAVR to Path* option,
-    or edit your system path to remove the WinAVR directories.
-   
-    If you do not add it to the system path, you'll need a method of readding the WinAVR directories when you want to use WinAVR. To do so create a file
-    called ``winavr.bat`` in ``C:\WinAVR-20100110`` with the following contents::
-   
-        set PATH=%PATH%;C:\WinAVR-20100110\bin;C:\WinAVR-20100110\utils\bin
-        cmd
-    
-    Now when you want to run WinAVR (e.g. to continue the examples here), you can simply double-click on the ``winavr.bat`` file. This will configure the path
-    for *just that terminal*, rather than every terminal you open.
-   
+.. include:: installing_winavr.rst
 
 Note that the default codebase *does not* include the cryptographic code we attack. Instead you are required to add this code into the system -- if the
 external code changes, this may eventually be instead rolled into the main codebase. To setup the code, follow the following steps:
