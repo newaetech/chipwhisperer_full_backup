@@ -341,7 +341,8 @@ module interface(
 		.reg_hyplen(reg_hyplen_glitch),
 		.reg_stream(),
 		.sourceclk(target_hs1),
-		.glitchclk(glitchclk)
+		.glitchclk(glitchclk),
+		.exttrigger(ext_trigger)	
 		);
 	
 `ifdef ENABLE_RECONFIG
