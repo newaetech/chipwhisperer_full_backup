@@ -217,8 +217,8 @@ external code changes, this may eventually be instead rolled into the main codeb
     If instead you get an error something like ``make: *** No rule to make target `simpleserial.elf', needed by `elf'.  Stop.``, this means a required file was missing. Check
     that you have copied all files to the ``avr-crypto-lib\aes directory``, in particular did you copy the two *gf256mul* files? 
 
-5.  Next, you will need to program the AVR itself. On Windows we will make use of the free `Atmel Studio 4.19 <www.atmel.com/tools/STUDIOARCHIVE.aspx>`_. You can find a direct link here:
-    `Direct Link to Atmel Studio 4.19 Binary <http://www.atmel.com/System/BaseForm.aspx?target=tcm:26-17924>`_ which will require you to enter an email address to receive the
+5.  Next, you will need to program the AVR itself. On Windows we will make use of the free `AVR Studio 4.19 <www.atmel.com/tools/STUDIOARCHIVE.aspx>`_. You can find a direct link here:
+    `Direct Link to AVR Studio 4.19 Binary <http://www.atmel.com/System/BaseForm.aspx?target=tcm:26-17924>`_ which will require you to enter an email address to receive the
     download link.  Note it is possible to use ``avrdude``, a command-line program which is part of WinAVR instead if you wish. However since many people find the graphical interface
     of AVRStudio easier, this guide will use AVRStudio. Be sure to install the USB drivers as part of the package.
 
