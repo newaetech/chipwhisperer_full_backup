@@ -28,7 +28,10 @@ import serial
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-import ftd2xx as ft
+try:
+    import ftd2xx as ft
+except WindowsError:
+    raise ImportError
 
 try:
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType

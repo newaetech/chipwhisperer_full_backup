@@ -37,7 +37,10 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
 
-import ftd2xx as ft
+try:
+    import ftd2xx as ft
+except WindowsError:
+    raise ImportError
 
 class ChipWhispererComm(object):
     CODE_READ = 0x80
