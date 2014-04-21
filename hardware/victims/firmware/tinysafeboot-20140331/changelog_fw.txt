@@ -1,0 +1,226 @@
+------------------------------------------------------------------------
+CHANGELOG TINYSAFEBOOT - FIRMWARE 
+------------------------------------------------------------------------
+tsb_tinymega.asm
+------------------------------------------------------------------------
+
+
+20140331
+Added support for ATtiny441 and ATtiny841: Firmware and installer 
+component required some major adjustments due to that creepy 4-pages 
+erase mode and missing definitions in the 441 and 841.
+--- My explicit thanks go to Geoff S. for his elaborate 
+help and testing on this solution! ---
+Added safety-interval for RXD-Low-detection: Former TSB directly jumped
+into the Application, should RXD not have reached safe logical High- 
+level (which stands for regular idle state in TTL-RS232) while TSB is 
+being initialized. Seems that this feature causes sporadic bootloader 
+lockouts on devices that can only perform power-up-resets and voltages 
+not clearly defined from the instance. Now the delay of some tens 
+up to hundreds of milliseconds (depending on clock frequency) seems to fix 
+this problem and, as a side effect, minimizes risk of being locked-out 
+by a too-shortly defined timeout.
+
+
+20140302
+Revisited internal verifying feature (TSB for ATtinys).
+
+
+20131023
+Fixed Hang-up by Watchdog-Reset: On many ATtinys, a Watchdog-Reset will 
+leave the Watchdog activated (which is a good feature) but restore its 
+Prescaler (amongst other registers), resulting in a rather short 
+timing interval until next Reset is triggered by the Watchdog.
+Normally this could be easily intercepted within the application's very
+own Reset-Routine.
+Since TSB is invoked before the Reset part of the Application, it ends
+up an infinite loop of Watchdog-re-resetting with virtually no chance
+to leave because the short-leashed Watchdog remains active anyway.
+Switching off the Watchdog by TSB is no option, if we consider 
+that some application's Watchdog may be permanently activated 
+by the WDTON fuse.
+It is better for TSB not to waste any time if Watchdog is enabled, but 
+instantly forward to the Application's Reset-Routine. 
+To regain access to TSB, the Application/Hardware can take the 
+following measures:
+Deactivate the Watchdog and then allow normal Resets - or -
+deactivate the Watchdog and directly jump to Address $0000 
+(TSB-modified Reset-vector on ATtinys).
+On ATmegas, the Application may directly jump to the starting Address 
+of TSB, whoose absolute Word-address is half of the value indicated 
+as "Appflash" in TSB device info. A switched-off Watchdog may 
+be automatically re-enabled by the Application's Reset-routine when 
+returned from TSB.
+Additional code is about 6 Bytes only. 
+Modification applicable to all TSB-devices so far.
+
+
+20130915
+Revisited Assembly source for improved compatibility with open source 
+assemblers. Removed some C-stylish preprocessor directives. 
+Unified syntax of sbiw/adiw to common sense, i.e. lowbyte-register 
+notation. 
+No changes in logical structure of the program.
+
+
+20130902
+For ATtinys below 16KB, the rjmp back to application has been simply 
+calculated by adding of one pagesize to the jump distance.
+This will works fine and will always produce correct rjmps, provided
+that the rjmp is located exactly one page below FLASHEND.
+The new method calculates the same rjmp that an assembler would have
+generated, i.e. it is a backward rjmp not skipping the memory boundary 
+and thus seems the most compatible method with regards to future devices
+and a different memory location for LASTPAGE. 
+Tested so far with some relevant 2-, 4- and 8-KB ATtinys.
+
+
+20130625
+Some bigger ATmegas seem to have lavish sized 'SECONDBOOTSTART' of
+512 WORDS instead of Bytes - with reference to SECONDBOOTSTART the 
+assembler generated TSB code that has left unused flash of 512 
+on top of memory... changed reference by a definition 
+((FLASHEND+1)-256) that could not fail.
+
+
+20130505
+Restructured Assembly sourcecode. 
+Optimized ATtiny code to approx. 550 Bytes of code length.
+Optimized ATmega code to fit into 512-bytes Bootloader Section.
+
+
+20130414
+Modified assembly with respect to further ATtinys with strange 
+I/O-ports assignments. 
+Some properties now recognized in a more universal way, e.g. 
+Pagesize and Flashsize, both requiring adjustments in the code.
+Minor improvements in coding.
+Extensive use of 'conditional assembly':
+One and the same .asm sourcefile should do well for all ATtinys 
+and other devices in question
+Same sourcecode may be 'switched' by setting one equate at the 
+beginning to make either a customized version of TSB 
+(with own port assignments), a TSB-Installer or a TSB-Template
+in manual assembly.
+TO-DOs: Testing with certain ATmegas.
+
+
+20130216
+Improved integrity check for TSB-Installer: 
+Calculates simple 16-bit checksum over all relevant contents of 
+TSB-Installer and TSB-Firmware, which is to be compared with the value 
+that's been packed into the 1st page of the Installer while 
+TSB-Software made the customized TSB-Installer from a template.
+If equal - upload is supposed to be correct and Installer is safe to
+continue with deactivation of the old bootloader, copy/verify of the 
+new bootloader's code etc.
+If NOT equal - program won't change anything and the old bootloader 
+remains in force.
+
+
+20130210
+Change of builddate format in device info block (permanent data):
+Unlike previous versions of TSB, that actually took three bytes 
+only for the date information, the new format is more efficient but 
+still easy to implement in the assembly source. 
+Chosen format allows to represent all dates from the year 2000 
+up to the year 2127 with good binary efficiency, thus leaving the 
+third byte free for any other purpose. 
+E.g. these precious 8 bits might contain additional info on project 
+status, authorship or security information.
+No functional or other relevant changes in TSB-firmware that far.
+
+
+20130106
+- Failsafe startup despite weak pullup on RXD-portline:
+if RXD is LOW from the beginning, the bootloader will not wait 
+for timeout but directly forward to the Application.
+- Fixed assembly for ATtiny87.
+
+
+20121216
+Merged TSB_base with an 'Installer' component to build some regular 
+application (starting at $0000 with reset vector) which can be uploaded 
+either by ISP or by way of a bootloader that is already residing 
+on the ATtiny!
+Normally this application is only 'run-once'. It will automatically 
+change the existing bootloader with the new TSB version brought along, 
+and finally remove itself from memory.
+Safety precautions have been taken against possible corruption
+of data or power-outage.
+Note: Other methods such as external serial downloader components, 
+dual-bootloader arrangements, etc. have been considered and found 
+inapplicable with respect to the limited memory on many ATtinys.
+The proposed method won't waste any additional memory after the 
+transfer is complete.
+The result is exactly the same as if the respective TSB-firmware 
+had been uploaded directly to the target address by way of ISP.
+(Refer to the source code for details.)  
+
+
+20121123
+Introduced conditional assembly to re-integrate all supported 
+ATtinys in one assembler source again.
+
+20121116
+- Consolidated port handling with respect to one/two-wire operation:
+In a two-wire configuration (e.g. D0 for RXD and D1 for TXD), the 
+firmware treats TXD as a normal port output, i.e. both logical ones 
+and zeroes are actively driven (sourcing and sinking 
+output). Reasonably this will provide the best compatibility with 
+common levelshifters like MAX232, PL230x, LT280x etc. or interfacing
+with sensitive HCMOS-inputs.
+Yet in one-wire configuration, that is alternating TX- and RX-
+transactions over the same portline, when it comes to data transmission,
+the firmware will control the port by the proven open-collector method 
+to safely prevent electrical conflicts with an attached CIV-interface.
+Fortunately and thanks to some code restructuring/optimization,
+in sum the tsb-firmware code grew only 2 bytes longer :-)
+
+20120902
+- 'One-Wire': Applied new method of portline handling to make it possible
+combining both portlines for serial communications to one wire
+(aka 'CIV-interface').
+The RXD assigned portline is normally configured as an input.
+The TXD assigned portline is now acting an output with open-collector
+characteristics.
+This allows to use the same portbit for RXD and TXD and thus make 
+direct connection to a One-wire serial adaptor with no logical or
+electronic conflicts arising, since rx/tx is already performed at
+discrete times (half-duplex) and the high-level is conveniently
+defined as the stopbit/idle state in TTL-RS232 logic.
+For one-wire it is therefore recommended to apply one pullup-resistor
+to ensure sufficient rise times and signal levels (especially when
+using more simple adaptors that draw all current from the RS232).
+To make the TSB bootloader for One-wire, you can simply generate the
+firmware via TSB-software, specifying the same portline for input
+and output! Of course you may also copy and change the sourcefile
+'tsb_base.asm' and assemble 'manually'.
+This new programming does not interfere with normal two-wired
+RS232 designs. With level converters like MAX232 or USB-COM-interface,
+like FT232, you may not even need additional pullup for TXD, since
+these chips feature internal pullups. Yet, the PL2302 apparently needs
+one pullup for its serial input line (thanks: OD).
+- Minor improvements in the code saved some bytes, so we are
+still around 560 Bytes with full-featured tsb :-)
+- Security: Former version of Password check was already 'silent', 
+but it turned to start the Application with some delay when the 
+first wrong character was submit. One could try to automatically
+hack the password by detecting the actual start of the Application, 
+then try a slightly different password string and so on. 
+NOW, the password checking routine will react only after the full 
+and correct password has been submit (or Emergency Erase was
+requested). Any other approach will start an infinite loop that 
+could only be stopped by hardware RESET on the MCU.
+From the outside, both states, regularly awaiting further password 
+characters or hangup, look the same. (Yes, with elaborate methods 
+like power analysis or tampering rf-spectral differences, it may be
+possible to distinguish both states.)
+- Revisited protocol and timing with no major changes.
+- Optimized calibration/timing loop  
+- Reformatted assembly source.
+
+20110921	
+Initially published fully functional version. No 'official' updates yet.
+
+***
