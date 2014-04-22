@@ -132,7 +132,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
     def write(self, string):
         for s in string:
-            d = bytearray(s)
+            d = bytearray(s, 'latin-1')
             #print "%x"%d[0]
             self.oa.sendMessage(self.CODE_WRITE, self.ADDR_DATA, d, Validate=False)
             
@@ -149,7 +149,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         data = bytearray()
 
         #TODO: why is this needed? Some garbage at front...
-        num = num + 1
+        # num = num + 1
 
         while (len(data) < num) and (timeout > 1):
             if waiting > 0:
@@ -165,8 +165,9 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             self.log("CW Serial timed out")
 
         #TODO: fix removing garbage at front
-        result = data[1:(len(data)+1)]        
-        result = result.decode("utf-8")
+        # result = data[1:(len(data)+1)]
+        result = data
+        result = result.decode('latin-1')
         self.debugInfo(lastRx=result)
         return result
 
