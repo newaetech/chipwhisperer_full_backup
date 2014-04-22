@@ -104,7 +104,10 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     ADDR_BAUD       = 35
 
     def setupParameters(self):
-        ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]        
+        # ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
+        ssParams = [{'name':'TX Baud Reg', 'type':'int', 'range':(0, 16384), 'value':84, 'get':self.txBaudReg, 'set':self.setTxBaudReg},
+                    {'name':'RX Baud Reg', 'type':'int', 'range':(0, 16384), 'value':671, 'get':self.rxBaudReg, 'set':self.setRxBaudReg},
+                    ]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)      
             
@@ -113,11 +116,27 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
 
-    def setBaud(self, baud):
-        return
+    def setTxBaudReg(self, breg):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        data[2] = breg & 0xff
+        data[3] = (breg >> 8) & 0xff
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
+
+    def setRxBaudReg(self, breg):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        data[0] = breg & 0xff
+        data[1] = (breg >> 8) & 0xff
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
     
-    def baud(self):
-        return 38400
+    def txBaudReg(self):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        breg = data[2] | (data[3] << 8)
+        return breg
+
+    def rxBaudReg(self):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        breg = data[0] | (data[1] << 8)
+        return breg
 
     def paramList(self):
         return [self.params]
@@ -184,7 +203,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         pass
     
     def con(self):
-        pass
+        self.params.getAllParameters()
        
 class SimpleSerial(TargetTemplate):   
     paramListUpdated = Signal(list)     
