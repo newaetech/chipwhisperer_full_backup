@@ -103,10 +103,11 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
 
+
     def setupParameters(self):
         # ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
-        ssParams = [{'name':'TX Baud Reg', 'type':'int', 'range':(0, 16384), 'value':84, 'get':self.txBaudReg, 'set':self.setTxBaudReg},
-                    {'name':'RX Baud Reg', 'type':'int', 'range':(0, 16384), 'value':671, 'get':self.rxBaudReg, 'set':self.setRxBaudReg},
+        ssParams = [{'name':'TX Baud', 'type':'int', 'range':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
+                    {'name':'RX Baud', 'type':'int', 'range':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
                     ]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)      
@@ -115,6 +116,31 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
+
+
+    def systemClk(self):
+        return 30E6
+
+    def setTxBaud(self, baud):
+        breg = (baud * 4096 + self.systemClk() / 32) / (self.systemClk() / 16)
+        breg = int(round(breg))
+        self.setTxBaudReg(breg)
+
+    def setRxBaud(self, baud):
+        breg = (baud * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
+        breg = int(round(breg))
+        self.setRxBaudReg(breg)
+
+    def txBaud(self):
+        breg = self.txBaudReg()
+        baud = ((breg * (self.systemClk() / 16)) - (self.systemClk() / 32)) / 4096
+        return baud
+
+    def rxBaud(self):
+        breg = self.rxBaudReg()
+        baud = ((breg * (self.systemClk() / 128)) - (self.systemClk() / 255)) / 512
+        baud = baud / 8
+        return baud
 
     def setTxBaudReg(self, breg):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
