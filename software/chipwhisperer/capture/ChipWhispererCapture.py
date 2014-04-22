@@ -211,10 +211,11 @@ class acquisitionController(QObject):
         self.newPlain(self.fixedPlainText)
 
         if self.key is not None:
-            self.key = self.target.checkEncryptionKey(key)
-            if (self.target.keyLen() != len(self.key)):
-                print "Key length WRONG for given target"
-                raise IOError("Key Length Wrong for Given Target, %d != %d"%(self.target.keyLen(), len(self.key)))                                                
+            if self.target is not None:
+                self.key = self.target.checkEncryptionKey(key)
+                if (self.target.keyLen() != len(self.key)):
+                    print "Key length WRONG for given target"
+                    raise IOError("Key Length Wrong for Given Target, %d != %d" % (self.target.keyLen(), len(self.key)))
 
         if self.textKeyLabel is not None:
             txtlabel = ""
@@ -252,7 +253,7 @@ class acquisitionController(QObject):
         #Get ADC reading
         if self.scope is not None:
             try:
-                if self.scope.capture(update, N) == True:
+                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
                     print "Timeout"
                     return False       
             except IOError,e:
@@ -480,6 +481,8 @@ class ChipWhispererCapture(MainChip):
         self.fixedPlain = False 
         self.target.targetUpdated.connect(self.TargetToolbar.setEnabled)
         self.target.connectStatus.connect(self.targetStatusChanged)
+
+        self.targetConnected = False
   
     def listModules(self):
         """Overload this to test imports"""
@@ -738,6 +741,8 @@ class ChipWhispererCapture(MainChip):
         """Callback when target connection successful"""
         #self.CaptureToolbar.setEnabled(status)
         
+        self.targetConnected = status
+
         if status:
             self.targetStatus.setDefaultAction(self.targetStatusActionCon)
         else:
@@ -807,7 +812,7 @@ class ChipWhispererCapture(MainChip):
             self.doConDisTarget(False)
 
     def capture1(self):
-        if self.target.driver:
+        if self.target.driver and self.targetConnected:
             target = self.target.driver
         else:
             target = None
