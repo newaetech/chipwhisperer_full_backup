@@ -101,6 +101,7 @@ module reg_serialtarget(
 	 reg [7:0] reg_datao_reg;	 
 	 assign reg_datao = reg_datao_reg;
 	 
+ 
 	 /*
 	 reg reg_datao_valid_reg;
 	 always @(posedge clk) begin
@@ -126,10 +127,15 @@ module reg_serialtarget(
 			endcase
 		end
 	 end
-						  
+	 
+	 wire [6:0] rdfifo_count_tmp;
+	 reg  [6:0] rdfifo_count_reg;	 
+	 assign fifo_count[14:8] = (rdfifo_count_reg > rdfifo_count_tmp) ? rdfifo_count_reg : rdfifo_count_tmp;
+	 
 	 always @(posedge clk) begin
 	  if ((reg_read) & (reg_address == `TARGSERIALDATA_ADDR)) begin
 			rxfifo_rd <= 1'b1;
+			rdfifo_count_reg <= rdfifo_count_tmp;
 	  end else begin
 	      rxfifo_rd <= 1'b0;
 	  end
@@ -153,15 +159,11 @@ module reg_serialtarget(
 	 assign cs_data[40] = reg_addrvalid;
 	 assign cs_data[46:41] = reg_hypaddress;
 	 assign cs_data[62:47] = reg_hyplen;
-	 assign cs_data[68:63] = scard_len_response;
-	 assign cs_data[84:69] = scard_response[127:112];
-	 assign cs_data[85] = scard_busy;
-	 assign cs_data[86] = scard_status;
-	 assign cs_data[94:87] = scard_async_data;
-	 assign cs_data[95] = scard_async_datardy;
-	 assign cs_data[96] = scard_reset;
-	 assign cs_data[97] = reg_stream;
-	 assign cs_data[98] = scard_async_en;
+	 assign cs_data[70:63] = rx_data;
+	 assign cs_data[71] = rx_data_rdy;
+	 assign cs_data[78:72] = fifo_count[14:8];	
+	 assign cs_data[79] = rxfifo_rd;
+	 assign cs_data[87:80] = rxfifo_data; 
  `endif
  
 	wire [15:0] fifo_count;
@@ -197,6 +199,7 @@ module reg_serialtarget(
 	wire [7:0] rx_data;
 	wire       rx_data_rdy;
 	targ_async_receiver targ_rx(.clk(clk), .RxD(target_rx), .RxD_data_ready(rx_data_rdy), .RxD_data_error(), .RxD_data(rx_data), .RxD_endofpacket(), .RxD_idle());	
+	
  	fifo_target_tx rx_fifo (
     .clk(clk),
     .rst(reset_i),
@@ -206,7 +209,9 @@ module reg_serialtarget(
     .dout(rxfifo_data),
     .full(),
     .empty(),
-    .data_count(fifo_count[14:8])  );
+    .data_count(rdfifo_count_tmp)
+	 );
+ 
  
 endmodule
 
