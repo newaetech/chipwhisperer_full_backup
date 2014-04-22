@@ -64,6 +64,8 @@ try:
 except ImportError:
     AES = None    
 
+from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 
@@ -433,6 +435,8 @@ class ChipWhispererCapture(MainChip):
         
         self.esm = EncryptionStatusMonitor(self)
         
+        self.serialTerminal = SerialTerminalDialog(self)
+
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
                 self.target.toplevel_param,
@@ -577,6 +581,12 @@ class ChipWhispererCapture(MainChip):
         self.toolMenu.addAction(self.CWFirmwareConfigAct)
         self.toolMenu.addAction(self.CWFirmwareGoAct)
         self.toolMenu.addSeparator()
+
+        self.TerminalAct = QAction('Open Terminal', self,
+                                   statusTip='Open Simple Serial Terminal',
+                                   triggered=self.serialTerminal.show)
+
+        self.toolMenu.addAction(self.TerminalAct)
 
         
     def addWaveforms(self):
