@@ -404,6 +404,7 @@ of your algorithm.
 Conclusion
 ---------------
 
-In this tutorial you have learned how power analysis can tell you the operations being performed on a microcontroller.
+In this tutorial you have learned how power analysis can tell you the operations being performed on a microcontroller. In future work
+we will move towards using this for breaking various forms of security on devices.
 
 
