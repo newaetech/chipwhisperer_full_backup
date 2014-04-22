@@ -5,7 +5,7 @@
 
 `include "includes.v"
 
-module targ_async_transmitter(clk, TxD_start, TxD_data, TxD, TxD_busy);
+module targ_async_transmitter(clk, TxD_start, TxD_data, TxD, TxD_busy, TxD_BaudGeneratorInc);
 input clk, TxD_start;
 input [7:0] TxD_data;
 output TxD, TxD_busy;
@@ -14,10 +14,21 @@ parameter ClkFrequency = `UART_CLK;	// 40MHz
 parameter Baud = `TARG_UART_BAUD;
 parameter RegisterInputData = 1;	// in RegisterInputData mode, the input doesn't have to stay valid while the character is been transmitted
 
-// Baud generator
+// Baud generator (we use 8 times oversampling)
+//parameter ClkFrequency = `UART_CLK; // 40MHz
+//parameter Baud = `TARG_UART_BAUD;
+//wire [BaudGeneratorAccWidth:0] BaudGeneratorInc = ((Baud<<(BaudGeneratorAccWidth-4))+(ClkFrequency>>5))/(ClkFrequency>>4);
+
 parameter BaudGeneratorAccWidth = 16;
+input [BaudGeneratorAccWidth-1:0] TxD_BaudGeneratorInc; 
+
+wire [BaudGeneratorAccWidth-1:0] BaudGeneratorInc; 
+assign BaudGeneratorInc = TxD_BaudGeneratorInc;
+
+// Baud generator
+//parameter BaudGeneratorAccWidth = 16;
 reg [BaudGeneratorAccWidth:0] BaudGeneratorAcc;
-wire [BaudGeneratorAccWidth:0] BaudGeneratorInc = ((Baud<<(BaudGeneratorAccWidth-4))+(ClkFrequency>>5))/(ClkFrequency>>4);
+
 
 
 wire BaudTick = BaudGeneratorAcc[BaudGeneratorAccWidth];

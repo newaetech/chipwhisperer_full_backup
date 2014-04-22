@@ -85,6 +85,7 @@ module reg_serialtarget(
   	 reg 			rxfifo_rd;
  	 reg		   txfifo_wr;
  	 wire [7:0] rxfifo_data;
+	 reg  [31:0] baud_settings;
   
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
@@ -123,6 +124,7 @@ module reg_serialtarget(
 			case (reg_address)		
 				`TARGSERIALDATA_ADDR: begin reg_datao_reg <= rxfifo_data; end
 				`TARGSERIALLEN_ADDR: begin reg_datao_reg <= fifo_count[reg_bytecnt*8 +: 8];	end
+				`TARGSERIALBAUD_ADDR: begin reg_datao_reg <= baud_settings[reg_bytecnt*8 +: 8];	end
 				default: begin reg_datao_reg <= 0; end
 			endcase
 		end
@@ -148,6 +150,25 @@ module reg_serialtarget(
 			txfifo_wr <= 1'b0;
 	  end
 	 end
+
+	 always @(posedge clk) begin
+		if (reset_i) begin
+			//16 is width of RxD_Baud8GeneratorInc
+			baud_settings[15:0] <=  (((`TARG_UART_BAUD*8)<<(16-7))+((`UART_CLK)>>8))/((`UART_CLK)>>7); //RX
+			
+			//16 is width of TxD_BaudGeneratorInc
+			baud_settings[31:16] <=  (((`TARG_UART_BAUD)<<(16-4))+((`UART_CLK)>>5))/((`UART_CLK)>>4); //TX
+		end else if (reg_write) begin
+			if (reg_address == `TARGSERIALBAUD_ADDR) begin
+				baud_settings[reg_bytecnt*8 +: 8] <= reg_datai;
+			end
+		end
+	 end
+	 
+	 wire [15:0] TxD_BaudGeneratorInc;
+	 wire [15:0] RxD_Baud8GeneratorInc;
+	 assign TxD_BaudGeneratorInc = baud_settings[31:16];
+	 assign RxD_Baud8GeneratorInc = baud_settings[15:0];
 	 
  `ifdef CHIPSCOPE
 	 assign cs_data[5:0] = reg_address;
@@ -184,7 +205,15 @@ module reg_serialtarget(
 		fifo_go <= tx_start;
 	end
  
-	targ_async_transmitter targ_tx(.clk(clk), .TxD_start(tx_start), .TxD_data(tx_data), .TxD(target_tx), .TxD_busy(tx_busy));
+	targ_async_transmitter targ_tx(
+	 .clk(clk),
+	 .TxD_start(tx_start),
+	 .TxD_data(tx_data),
+	 .TxD(target_tx),
+	 .TxD_busy(tx_busy),
+	 .TxD_BaudGeneratorInc(TxD_BaudGeneratorInc)
+	 );
+	 
 	fifo_target_tx tx_fifo (
     .clk(clk),
     .rst(reset_i),
@@ -198,7 +227,16 @@ module reg_serialtarget(
 
 	wire [7:0] rx_data;
 	wire       rx_data_rdy;
-	targ_async_receiver targ_rx(.clk(clk), .RxD(target_rx), .RxD_data_ready(rx_data_rdy), .RxD_data_error(), .RxD_data(rx_data), .RxD_endofpacket(), .RxD_idle());	
+	targ_async_receiver targ_rx(
+	 .clk(clk),
+	 .RxD(target_rx),
+	 .RxD_data_ready(rx_data_rdy),
+	 .RxD_data_error(),
+	 .RxD_data(rx_data),
+	 .RxD_endofpacket(),
+	 .RxD_idle(),
+	 .RxD_Baud8GeneratorInc(RxD_Baud8GeneratorInc)
+	);	
 	
  	fifo_target_tx rx_fifo (
     .clk(clk),

@@ -3,14 +3,25 @@
 
 `include "includes.v"
 
-module targ_async_receiver(clk, RxD, RxD_data_ready, RxD_data_error, RxD_data, RxD_endofpacket, RxD_idle);
+//`define CHIPSCOPE
+
+module targ_async_receiver(clk, RxD, RxD_data_ready, RxD_data_error, RxD_data, RxD_endofpacket, RxD_idle, RxD_Baud8GeneratorInc);
 input clk, RxD;
 output RxD_data_ready;  // onc clock pulse when RxD_data is valid
 output RxD_data_error;
 output [7:0] RxD_data;
 
-parameter ClkFrequency = `UART_CLK; // 40MHz
-parameter Baud = `TARG_UART_BAUD;
+// Baud generator (we use 8 times oversampling)
+//parameter ClkFrequency = `UART_CLK; // 40MHz
+//parameter Baud = `TARG_UART_BAUD;
+//parameter Baud8 = Baud*8;
+// = ((Baud8<<(Baud8GeneratorAccWidth-7))+(ClkFrequency>>8))/(ClkFrequency>>7);
+parameter Baud8GeneratorAccWidth = 16;
+input [Baud8GeneratorAccWidth-1:0] RxD_Baud8GeneratorInc; 
+
+wire [Baud8GeneratorAccWidth-1:0] Baud8GeneratorInc; 
+assign Baud8GeneratorInc = RxD_Baud8GeneratorInc;
+
 
 // We also detect if a gap occurs in the received stream of characters
 // That can be useful if multiple characters are sent in burst
@@ -18,13 +29,23 @@ parameter Baud = `TARG_UART_BAUD;
 output RxD_endofpacket;  // one clock pulse, when no more data is received (RxD_idle is going high)
 output RxD_idle;  // no data is being received
 
-// Baud generator (we use 8 times oversampling)
-parameter Baud8 = Baud*8;
-parameter Baud8GeneratorAccWidth = 16;
-wire [Baud8GeneratorAccWidth:0] Baud8GeneratorInc = ((Baud8<<(Baud8GeneratorAccWidth-7))+(ClkFrequency>>8))/(ClkFrequency>>7);
 reg [Baud8GeneratorAccWidth:0] Baud8GeneratorAcc;
 always @(posedge clk) Baud8GeneratorAcc <= Baud8GeneratorAcc[Baud8GeneratorAccWidth-1:0] + Baud8GeneratorInc;
 wire Baud8Tick = Baud8GeneratorAcc[Baud8GeneratorAccWidth];
+
+ `ifdef CHIPSCOPE
+   wire [127:0] cs_data;   
+   wire [35:0]  chipscope_control;
+  coregen_icon icon (
+    .CONTROL0(chipscope_control) // INOUT BUS [35:0]
+   ); 
+
+   coregen_ila ila (
+    .CONTROL(chipscope_control), // INOUT BUS [35:0]
+    .CLK(clk), // IN
+    .TRIG0(cs_data) // IN BUS [127:0]
+   );  
+`endif
 
 ////////////////////////////
 reg [1:0] RxD_sync_inv;
@@ -93,4 +114,19 @@ always @(posedge clk) if (state!=0) gap_count<=5'h00; else if(Baud8Tick & ~gap_c
 assign RxD_idle = gap_count[4];
 reg RxD_endofpacket; always @(posedge clk) RxD_endofpacket <= Baud8Tick & (gap_count==5'h0F);
 
+
+`ifdef CHIPSCOPE
+	 assign cs_data[0] = RxD;
+	 assign cs_data[1] = RxD_data_error;
+	 assign cs_data[2] = RxD_data_ready;
+	 assign cs_data[3] = Baud8Tick;
+	 assign cs_data[4] = next_bit;
+	 assign cs_data[12:5] = RxD_data;
+	 assign cs_data[16:13] = state;
+	 assign cs_data[20:17] = bit_spacing;
+`endif
+
 endmodule
+
+//Don't forget to clear the define!
+`undef CHIPSCOPE
