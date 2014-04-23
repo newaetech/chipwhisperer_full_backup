@@ -57,8 +57,10 @@ void hex_print(const uint8_t * in, int len, char *out)
 		out[j] = 0;
 }
 
-uint8_t memory[KEY_LENGTH*4];
-char asciibuf[KEY_LENGTH*4];
+#define BUFLEN KEY_LENGTH*4
+
+uint8_t memory[BUFLEN];
+char asciibuf[BUFLEN];
 uint8_t pt[16];
 //Default key
 uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
@@ -75,13 +77,15 @@ uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
 #define OSCMAX 0x7F
 #define OSCMIN 0x00
 
+//#define OSCCAL_CENTER & OSCCAL_VARY to have OSCAL switching between
+//a smaller range. Without this OSCCAL will vary between 0-255
 #define OSCCAL_CENTER 112
 #define OSCCAL_VARY 12
 
 /* NOTE: The following is determined emperically. You want to calibrate the
    internal oscillator to 7.37 MHz, which you can measure on the OSCOUT
    pin */
-#define OSCCAL_UARTGOOD 95
+#define OSCCAL_UARTGOOD 107
 
 int main
 	(
@@ -96,9 +100,14 @@ int main
 	trigger_setup();
 	
     //OSCCAL only needed for internal oscillator mode, doesn't hurt anyway
+#ifdef OSCCAL
 	OSCCAL = OSCCAL_UARTGOOD;	
-    OSCCAL = 125; //100 = 7.65 MHz, 125 = 9.39
 	_delay_ms(500);
+#else
+    #ifdef VARYING_CLOCK
+        #error "VARYING_CLOCK requested but target does not have OSCCAL register"
+    #endif
+#endif
 
  	/* Uncomment this to get a HELLO message for debug */
 	/*
@@ -126,7 +135,7 @@ int main
 		
 	char c;
 	int ptr = 0;
-	
+    
 	//Initial key
 	aes_indep_init();
 	aes_indep_key(tmp);
@@ -182,9 +191,13 @@ int main
 #ifdef VARYING_CLOCK
 				_delay_ms(25);
 				
+#ifdef OSCCAL_CENTER
 				newosc = (rand() & OSCCAL_VARY);
 				OSCCAL = OSCCAL_CENTER + (int8_t)((int8_t)(OSCCAL_VARY/2) - (int8_t)newosc);
-				
+#else
+                OSCCAL = rand() & OSCMAX;
+#endif
+                
 				_delay_ms(1);
 #endif
 				
@@ -208,7 +221,11 @@ int main
 				
 				state = IDLE;
 			} else {
-				asciibuf[ptr++] = c;
+                if (ptr >= BUFLEN){
+                    state = IDLE;
+                } else {
+                    asciibuf[ptr++] = c;
+                }
 			}
 		}
 	}
