@@ -42,9 +42,13 @@ class SerialTerminalDialog(QDialog):
         self.textIn = QLineEdit()
         self.textIn.returnPressed.connect(self.returnPressedIn)
 
+        self.textInSend = QPushButton("Send")
+        self.textInSend.clicked.connect(self.returnPressedIn)
+
         # 3 = rowSpan
         self.textLayouts.addWidget(self.textOut, 0, 0)
         self.textLayouts.addWidget(self.textIn, 1, 0)
+        self.textLayouts.addWidget(self.textInSend, 1, 1)
 
         self.textOut.setReadOnly(True)
 
