@@ -29,8 +29,10 @@ Finally program the microcontroller with the file used here:
    To do so, open the file ``c:\chipwhisperer\user\timing\avr-serial-nocrypto\simpleserial_nocrypt.c`` with a text
    editor such as Programmer's Notepad (which ships with WinAVR).
 
-Testing the Serial Connection
--------------------------------
+.. _testingserialbasic:
+
+Testing the Serial Connection & Observing Power
+------------------------------------------------
 
 These steps differ from previous steps, as we are not going to be using a built-in target. However you can refer to :ref:`tutorialcomms`
 for general informationon using the ChipWhisperer-Capture Interface.
@@ -123,220 +125,476 @@ for general informationon using the ChipWhisperer-Capture Interface.
                                                                              after pressing button.
     =============================  ================  =====================  ==============================================================
 
-14. Almost there!
+14. Before attacking the real system, we'll need to confirm these settings will work. To do so we'll monitor the power consumption whilst
+    operating the bootloader under normal conditions.
+    
+    With our system running, push the 'Capture 1' button. Notice it will go grey indicating the system is waiting for the trigger to occur:
+    
+    .. image:: /images/tutorials/basic/timingpower/captrig_wait.png
+    
+    The trigger in this case is when the 'TXD' line goes low, which means when we send data to the bootloader. At this time we'll monitor
+    the power when sending the sequence of ``@@@`` used before. This is described in steps 15-17.
+    
+15. Prepare the serial window by typing ``@@@`` as before, but do not hit enter yet. We'll need to hit enter only after we arm the system.
 
-Modifying the Target
+16. Arm the system by pressing the 'Capture 1' button.
+
+17. Before the capture times out (e.g. before the button stops being gray), quickly click on the serial terminal output line and press 'Enter'
+    to send the command, or press the 'Send' button beside the terminal output line to send the ``@@@`` command.
+    
+    .. image:: /images/tutorials/basic/timingpower/captrig_example.png
+    
+18. If this works, you will see the power consumption on receiving the command. You'll notice two distinct power signatures, which may look something
+    like this:
+    
+    .. image:: /images/tutorials/basic/timingpower/powertrace1.png
+    
+    Or:
+    
+    .. image:: /images/tutorials/basic/timingpower/powertrace2.png
+    
+    The scale on the bottom is in samples. Remember we set the sample clock to 7.37 MHz (same speed of the device), meaning each sample represents
+    1 / 7.37E6 = 135.6nS. Our serial interface is running at approximately 9600 baud, meaning a single bit takes 1/9600 = 0.1042mS. Every byte requires
+    10 bits (1 start bit, 8 data bits, 1 stop bit), meaning a single byte over the UART represents 1.042mS, or 7684 samples. Note that in the second 
+    figure the power consumption drops dramatically after 7000 samples, which would correspond to a single byte being received (remember we triggered
+    the capture based on the start bit).
+    
+    The two power traces represent two different modes in the bootloader. In the first power trace the bootloader is waiting for the login sequence,
+    and receives all three bytes of it before awaiting the next command. In the second power trace the bootloader is already waiting the command byte.
+    Since ``@`` is not a valid command, when the bootloader receives the first ``@`` it simply jumps to the user program. The flash here is empty, which
+    effectively performs ``nop`` type operations. You can see a dramatic reduction in power as soon as the microcontroller stops receiving the data.
+    
+    Be aware that the data begin sent in both cases is the exact same! The power consumption differences are solely because the microcontroller stops
+    processing the incomming data. We'll exploit this to break a secret password in the final part of this experiment.
+
+
+Setting a Password on the Bootloader
+--------------------------------------
+
+The TinySafeBoot bootloader allows us to set a password. Doing so requires us to send a binary blob to the device - something which we cannot do
+through a normal ASCII serial interface. This section will demonstrate how to use the command-line interface of the ChipWhisperer-Capture software
+to perform advanced operations with Python.
+
+This section assums you still have the setup from the previous part running. If you have closed the program, perform steps 1 - 11 again (you don't
+need to configure the OpenADC settings).
+
+1. Close the *ChipWhisperer-Serial Terminal* window. 
+
+2. Switch to the *Python Console* on the bottom. You can enter commands in the bottom line & hit enter to have them executed:
+
+    .. image:: /images/tutorials/basic/timingpower/console.png
+    
+   As a test try just entering ``self``, which is a Python reference to the ChipWhisperer object. You can explore other options & Python will report
+   the data-type, for example::
+   
+        >>> self
+        <__main__.ChipWhispererCapture object at 0x05E27800>
+        >>> self.target.driver.ser
+        <chipwhisperer.capture.targets.SimpleSerial.SimpleSerial_ChipWhisperer object at 0x05E2BAF8>
+        
+3. You can also call methods. For example we can send a string with the following::
+
+        >>> self.target.driver.ser.write("@@@")
+
+4. And to retreive the data we would call the read() function, where we specify the number of bytes to attempt to read. As before if we fail to get
+   a response you may need to resend the "@@@" prompt::
+   
+    >>> self.target.driver.ser.write("@@@")
+    >>> self.target.driver.ser.read(255)
+    u''
+    >>> self.target.driver.ser.write("@@@")
+    >>> self.target.driver.ser.read(255)
+    u'TSB\x7f\x1c\xf0\x1e\x95\x0f@\xc0>\xff\x03\xaa\xaa!'
+    
+5. To make typing easier, create variables that point to the read and write functions::
+    
+    >>> read =  self.target.driver.ser.read
+    >>> write =  self.target.driver.ser.write
+    
+6. To set the bootloader on TSB, we need to modify a special page of FLASH memory. First, ensure you've recently (e.g. within < 30 seconds) received the
+   ``TSB`` signon prompt. If not resend the ``@@@`` string until the call to ``read(255)`` returns the ``TSB`` prompt. You should read the next step before
+   doing this however.
+   
+7. Send the command 'c' to read the last page of flash. Rather than printing to console, simply save this to a variable::
+
+    >>> write('c')
+    >>> lastpage = read(255)
+    >>> lastpage
+    u'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff!'
+
+   Success! You've managed to read the space where we'll store the user password. First, we need to now remove the trailing 'CONFIRM' character from the
+   end, leaving us with a complete page::
+   
+    >>> lastpage = lastpage[:-1]
+    
+   Next, you should convert this to a bytearray which will make modifications easier. When converting we need to specify a character set as well::
+   
+    >>> lastpage = bytearray(lastpage, 'latin-1')
+   
+   You can now retreive individual bytes of the array & get the associated value::
+   
+    >>> lastpage[2]
+    255
+
+   Finally, let's set a two-character password of 'ce'. The password starts at offset 3, and is terminated by a 0xFF::
+   
+    >>> lastpage[3] = ord('c')
+    >>> lastpage[4] = ord('e')
+    >>> lastpage[5] = 255
+    
+   Because we are using bytearrays, we needed to use the ``ord()`` function to get the integer value associated with each character. We could have more
+   directly written the password in if we had kept the original encoding. But often you need to modify byte-level values, meaning the ``bytearray()`` 
+   conversion is a useful tool to know.
+   
+8. Finally we can write this back to the system. We need to send two commands to do this::
+
+    >>> write('C')
+    >>> write('!')
+    >>> write(lastpage.decode('latin-1'))
+    >>> read(255)
+    u'?\xff\xff\xffce\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff!'
+    >>> write('c')
+    >>> read(255)
+    u'\xff\xff\xffce\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff
+    \xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff!'
+
+   Confirm that the ``ce`` sequence occurs at the start. If something else appears you may have the wrong password set in the device!
+
+9. We now have a bootloader with a password protection. Be aware that if you enter the wrong password you will cause the bootloader to spin into
+   an infinite loop! You can check the password (carefully) by executing the following commands:
+   
+    >>> write('q')
+    >>> write('@@@')
+    >>> read(255)
+    u''
+    >>> write('ce')
+    >>> read(255)
+    u'TSB\x7f\x1c\xf0\x1e\x95\x0f@\xc0>\xff\x03\xaa\xaa!'
+   
+   The ``q`` command causes the bootloader to quit & jump to the application. Since there is no application it re-enters the bootloader. The ``@@@``
+   is our standard sign-on sequence. However the bootloader waits for the secret password before transmitting the sign-on sequence. Note how it's
+   only after sending ``ce`` that the bootloader works.
+
+Running External Tools
 ------------------------
 
-Background on Setup
-^^^^^^^^^^^^^^^^^^^^
+The next step of this tutorial runs external tools. In particular we want to use the built-in AVR programmer to reset the AVR device, since we have
+no other method of asserting reset on the target.
 
-This tutorial is using an AtMega328p, which is an Atmel AVR device. We are comparing the power consumption of two different
-instructions, the ``MUL`` (multiply) instruction and the ``NOP`` (no operation) instruction. Some information on these two
-instructions:
+This assumes you have ``AVR Studio 4`` installed. If you are using another plaform you can simply modify these instructions to use the command-line
+tool of your choice, such as ``avrdude``.
 
-mul
-   * Multiples two 8-bit numbers together.
-   * Takes 2 clock cycles to complete
-   * Intuitively expect fairly large power consumption due to complexity of operation required
+1. First, ensure the USB-A cable is plugged into the rear of the ChipWhisperer. You will have both the USB-A and USB-Mini connections on the ChipWhisperer
+   connected to your computer.
    
-nop
-   * Does nothing
-   * Takes 1 clock cycle to complete
-   * Intuitively expect low power consumption due to core doing nothing
+2. Open a terminal, and attempt to run the command-line AVR tools. You may have to adjust the path for your specific machine binary location::
 
-Note that the capture clock is running at 4x the device clock. Thus a single ``mul`` instruction should span 8 samples on our
-output graph, since it takes 4 samples to cover a complete clock cycle.
+    cd "C:\Program Files (x86)\Atmel\AVR Tools\STK500"
+    Stk500.exe -dATMega328p -s -cUSB
+        STK500 command line programmer, v 2.4 Atmel Corp (C) 2004-2011.
 
-Initial Code
-^^^^^^^^^^^^^
-
-The initial code has a power signature something like this (yours will vary based on various physical considerations):
-
-.. image:: /images/tutorials/basic/simplepower/cap_nop_mul.png
-
-Note that the 10 ``mul`` instructions would be expected to take 80 samples to complete, and the 10 ``nop`` instructions should
-take 40 samples to complete. By modifying the code we can determine exactly which portion of the trace is corresponding to
-which operations.
-
-
-Increase number of NOPs
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-We will then modify the code to have twenty NOP operations in a row instead of ten. The modified code
-looks like this:
-
-   .. code-block:: c
-
-    /**********************************
-     * Start user-specific code here. */
-    trigger_high();
-    
-    asm volatile(
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    ::
-    );
-    
-    asm volatile(
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    ::
-    );
-  
-    asm volatile(
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"          
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    ::
-    );
-
-    trigger_low();
-    /* End user-specific code here. *
-     ********************************/
-
-Note that the ``mul`` operation takes 2 clock cycles on the AVR, and the ``nop`` operation takes 1 clock cycles. Thus we expect
-to now see two areas of the power trace which appear to take approximately the same time. The resulting power trace looks like this:
-
-.. image:: /images/tutorials/basic/simplepower/cap_doublenop_mul.png
-
-Pay particular attention to the section between sample number 0 & sample number 180. It is in this section we can compare the two
-power graphs to see the modified code. We can actually 'see' the change in operation of the device! It would appear the ``nop`` is 
-occuring from approximately 10-90, and the ``mul`` occuring from 90-170. 
-    
-Add NOP loop after MUL
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Finally, we will add 10 more NOPs after the 10 MULs. The code should look something like this:
-
-   .. code-block:: c
-
-    /**********************************
-     * Start user-specific code here. */
-    trigger_high();
-    
-    asm volatile(
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    ::
-    );
-    
-    asm volatile(
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    ::
-    );
-  
-    asm volatile(
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"          
-    "mul r0,r1" "\n\t"
-    "mul r0,r1" "\n\t"
-    ::
-    );
-
-    asm volatile(
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    "nop"       "\n\t"
-    ::
-    );
-
-    trigger_low();
-    /* End user-specific code here. *
-     ********************************/
-    
-With an output graph that looks like this:
-
-  .. image:: /images/tutorials/basic/simplepower/cap_doublenop_mul_nop.png
-    
-Comparison of All Three
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following graph lines the three options up. One can see where adding loops of different operations shows up in the power
-consumption.
-
-  .. image:: /images/tutorials/basic/simplepower/nop_mul_comparison.png
-    
-Clock Phase Adjustment
-----------------------------
-    
-A final area of interest is the clock phase adjustment. The clock phase adjustment is used to shift the ADC sample clock from the
-actual device clock by small amounts. This will affect the appearance of the captured waveform, and in more advanced methods is 
-used to improve the measurement.
-
-The phase adjustment is found under the *Phase Adjust* option of the *ADC Clock* setting:
-
-  .. image:: /images/tutorials/basic/simplepower/phasesetting.png
-  
-To see the effect this has, first consider an image of the power measured by a regular oscilloscope (at 1.25GS/s):
-
-  .. image:: /images/tutorials/basic/simplepower/scope_real.png
-  
-And the resulting waveforms for a variety of different phase shift settings:
-  
-.. image:: /images/tutorials/basic/simplepower/phase_differences.png 
+        Connected to AVRISP mkII on port USB:000200212345
+        Device parameters loaded
+        Programming mode entered
+        Signature is 0x1E 0x95 0x0F
+        Programming mode left
+        Connection to AVRISP mkII closed
+        
+   Note the signature was correctly read. As part of reading the signature the AVR device will be reset.
    
-The specifics of the capture are highly dependant on each ChipWhisperer board & target platform. The phase shift allows customization
-of the capture waveform for optimum performance, however what constitutes 'optimum performance' is highly dependant on the specifics
-of your algorithm.
+3. Next, we will run the programmer from a Python program. This will provide us with a method of resetting the AVR progmatically.
+
+4. Create a new file named something like ``test_bootloader.py`` with the following contents. Again adjust path as required to point to your
+   AVRStudio installation. Note on Windows the double-slash is due to the requirement of escaping the backslash inside the string::
+
+    from subprocess import call
+
+    def resetAVR():
+        call(["C:\\Program Files (x86)\\Atmel\\AVR Tools\\STK500\\Stk500.exe",
+              "-dATMega328p", "-s", "-cUSB"])
+
+    resetAVR()
+
+  Attempt to run this file & confirm it works as expected.
+  
+Scripting the Setup
+-------------------------------
+
+At this point we want to script the setup of the ChipWhisperer-Capture tool, along with pulling in our special utility which is capable
+of resetting the AVR microcontroller. 
+
+1. Create a Python file with a structure such as the following::
+
+    from subprocess import call
+    import chipwhisperer.capture.ChipWhispererCapture as cwc
+    from chipwhisperer.capture.scopes.ChipWhispererExtra import CWPLLDriver
+
+    try:
+        from PySide.QtCore import *
+        from PySide.QtGui import *
+    except ImportError:
+        print "ERROR: PySide is required for this program"
+        sys.exit()
+
+    def pe():
+        QCoreApplication.processEvents()
+
+    def resetAVR():
+        call(["C:\\Program Files (x86)\\Atmel\\AVR Tools\\STK500\\Stk500.exe",
+              "-dATMega328p", "-s", "-cUSB"])
+
+
+    #Make the application
+    app = cwc.makeApplication()
+
+    #If you DO NOT want to overwrite/use settings from the GUI version including
+    #the recent files list, uncomment the following:
+    #app.setApplicationName("Capture V2 Scripted")
+
+    #Get main module
+    cap = cwc.ChipWhispererCapture()
+
+    #Show window - even if not used
+    cap.show()
+
+    #NB: Must call processEvents since we aren't using proper event loop
+    pe()
+
+    cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
+    cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
+    cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer'])
+
+    #Load FW (must be configured in GUI first)
+    cap.FWLoaderGo()
+                    
+    #NOTE: You MUST add this call to pe() to process events. This is done automatically
+    #for setParameter() calls, but everything else REQUIRES this, since if you don't
+    #signals will NOT be processed correctly
+    pe()
+
+    #Connect to scope
+    cap.doConDisScope(True)
+    pe()
+
+    #Connect to serial port
+    ser = cap.target.driver.ser
+    ser.con()
+
+    #Set baud rate
+    cap.setParameter(['Serial Port Settings', 'TX Baud', 9600])
+    cap.setParameter(['Serial Port Settings', 'RX Baud', 9600])
+
+    #Attach special method so we can call from GUI if wanted
+    cap.resetAVR = resetAVR
+
+    #Some useful commands to play with from GUI
+    #self.resetAVR()
+    #ser = self.target.driver.ser
+    #ser.write("@@@")
+    #ser.write("ce")
+    #print ser.read(255)
+
+    #Run Application
+    app.exec_()
+
+   This is a basic 'script', which is really just a Python program using the ChipWhisperer library. Save the script to a file & run this, which should open
+   the ChipWhisperer-Capture window as before. Finally, let's once again configure the OpenADC for analog capture. Before doing this, switch to the
+   **Script Commands** tab, and note there is already some script information being printed. We will make changes to the system and then observe additional
+   data that gets printed here:
+
+   .. image:: /images/tutorials/basic/timingpower/scriptcommands1.png
+
+2. Follow step 13 from section :ref:`testingserialbasic`, which contains a number of settings for the OpenADC portion. After performing the
+   commands, you will note that additional steps have been printed to the **Script Commands** window. For example your output might look something like this::
+
+    ['OpenADC', 'Gain Setting', 'Setting', 45]
+    ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge']
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM']
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False]
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO1 (Serial TXD)', True]
+    ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN']
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None]
+
+   Note the format __changes slightly between releases__, and using the wrong format will cause errors. Thus you should copy the output from your specific
+   application and note the exact list used here. 
    
+3. Insert these commands into our master script such we don't need to perform any manual configuration. Close the ChipWhisperer-Capture window, and find
+   the following line in your script::
+
+    #Connect to scope
+    cap.doConDisScope(True)
+    pe()
+
+4. Copy and paste the list of commands into the script just below that::
+   
+    #Connect to scope
+    cap.doConDisScope(True)
+    pe()
+    
+    ['OpenADC', 'Gain Setting', 'Setting', 45]
+    ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge']
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM']
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False]
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO1 (Serial TXD)', True]
+    ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN']
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None]
+    
+5. Convert the list into a Python list variable with a name, which is done by inserting a ``cmds = [`` on the line above, a ``,`` after each line, and a
+   ``]`` after the final line::
+
+    #Connect to scope
+    cap.doConDisScope(True)
+    pe()
+    
+    cmds = [
+    ['OpenADC', 'Gain Setting', 'Setting', 45],
+    ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge'],
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM'],
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO1 (Serial TXD)', True],
+    ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
+    ]
+
+6. Add a loop to run each command on the system::
+
+    #Connect to scope
+    cap.doConDisScope(True)
+    pe()
+    
+    cmds = [
+    ['OpenADC', 'Gain Setting', 'Setting', 45],
+    ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge'],
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM'],
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
+    ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO1 (Serial TXD)', True],
+    ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
+    ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
+    ]
+    
+    for cmd in cmds: cap.setParameter(cmd)
+
+7. Run your script again. You should see the system connect to the target, and also configure the OpenADC settings. You can confirm this by hitting the
+   **Capture 1** button. You won't yet get very useful information, but it should give you some analog data after the timeout period.
+   
+8. Switch to the Python console in the running ChipWhisperer-Capture application. First create a shortcut for the serial port::
+
+    >>> ser = self.target.driver.ser
+
+   Then run the following commands::
+
+    >>> self.resetAVR()
+    >>> ser.write("@@@")
+    
+   At this point the system is waiting for a correct password. Put the following text into the Python console but do not hit enter yet::
+   
+    ser.write("ce")
+    
+9. With the ``ser.write("ce")`` still not yet sent, hit the **Capture 1** button. Then hit enter on the Python console to send the ``ser.write("ce")``
+   command. The system should trigger immediatly and capture a power trace, which might look something like this:
+   
+   .. image:: /images/tutorials/basic/timingpower/trace_passwordok.png
+   
+   To re-run the capture, perform the same sequence of commands in steps 8 & 9. You should get an almost identical trace each time you do this.
+    
+10. Now perform the same sequence (e.g. ``self.resetAVR()``, ``ser.write("@@@")``). But instead of sending the correct password "ce", send an incorrect
+    password such as "ff". You should now see a power trace such as this:
+    
+    .. image:: /images/tutorials/basic/timingpower/trace_password_firstwrong.png
+    
+    Notice the start difference! You can examin the bootloader source to get an idea why this occurs. In particular the portion dealing with the
+    password check looks like this::
+    
+        CheckPW:
+        chpw1:
+                lpm tmp3, z+                    ; load character from Flash
+                cpi tmp3, 255                   ; byte value (255) indicates
+                breq chpwx                      ; end of password -> exit
+                rcall Receivebyte               ; else receive next character
+        chpw2:
+                cp tmp3, tmp1                   ; compare with password
+                breq chpw1                      ; if equal check next character
+                cpi tmp1, 0                     ; or was it 0 (emergency erase)
+        chpwl:  brne chpwl                      ; if not, loop infinitely
+                rcall RequestConfirmation       ; if yes, request confirm
+                
+    Note as soon as you get a wrong character, the reception of characters stops.
+    
+11. Perform the same experiment, but send the first character right and the second character wrong. So send "cf" for example as the password::
+
+     >>> self.resetAVR()
+     >>> ser.write("@@@")
+     ---Push Capture 1 Button---
+     >>> ser.write("cf")
+    
+    The results will again have a sharp drop in power after the reception of the second character:
+    
+    .. image:: /images/tutorials/basic/timingpower/trace_password_secondwrong.png
+    
+
+Thus by looking at the power consumption, we can determine the wrong password character. This makes it possible to brute-force the password, since we
+can simply guess a single digit of the password at a time.
+
+Scripting the Complete Attack
+------------------------------
+
+The current script sets up the application, then runs the GUI normally at this line::
+
+    #Run Application
+    app.exec_()
+
+As a beginning point, the following allows you to manually specify two characters for the password. These characters are put into the system, and
+based on a simple power threshold it decides where the password failed. This script would be the same as your previous script, but replace the above
+call with::
+
+    num1 = ord('c')
+    num2 = ord('f')
+
+    cap.resetAVR()
+    time.sleep(0.1)
+    ser.write("@@@")
+    time.sleep(0.1)
+    cap.scope.arm()
+    pe()
+    ser.write(chr(num1) + chr(num2))
+    if cap.scope.capture(update=True, NumberPoints=None, waitingCallback=pe):
+        print "Timeout"
+    else:
+        print "Capture OK"
+
+    if min(cap.scope.datapoints[10000:14000]) > -0.1:
+        print "Byte 1 Wrong"
+
+    elif min(cap.scope.datapoints[18000:22000]) > -0.1:
+        print "Byte 2 Wrong"
+
+    else:
+        print "Password OK? Check response on serial"
+
+    #print ser.read(255)
+
+    #Run Application
+    app.exec_()
+
+    #Disconnect before exit to save grief
+    cap.scope.dis()
+    cap.target.dis()
+
+You will need to adjust the thresholds and possibly data point locations based on your own experiments. With this you should be able to make a script
+which brute-forces the password by breaking the first byte and then the second byte.
+
 Conclusion
 ---------------
 
-In this tutorial you have learned how power analysis can tell you the operations being performed on a microcontroller. In future work
-we will move towards using this for breaking various forms of security on devices.
-
+This tutorial has demonstrated the use of the power side-channel for performing timing attacks. A bootloader with a simple password-based security
+system is broken. In addition you have learned about the scripting support in the ChipWhisperer-Capture software.
 
