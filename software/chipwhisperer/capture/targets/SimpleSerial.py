@@ -181,7 +181,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             #print "%x"%d[0]
             self.oa.sendMessage(self.CODE_WRITE, self.ADDR_DATA, d, Validate=False)
             
-        self.debugInfo(s)
+            self.debugInfo(s)
             
     def inWaiting(self):
         resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_LEN, Validate=False, maxResp=2)
