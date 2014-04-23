@@ -662,10 +662,12 @@ class ChipWhispererCapture(MainChip):
         self.addCaptureTools()
 
     def addCaptureTools(self):
-        capture1 = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
-        capture1.triggered.connect(self.capture1)
-        captureM = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
-        captureM.triggered.connect(self.captureM)
+        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
+        self.capture1Act.triggered.connect(self.capture1)
+        self.capture1Act.setCheckable(True)
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
+        self.captureMAct.triggered.connect(self.captureM)
+        self.captureMAct.setCheckable(True)
         
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
@@ -675,8 +677,8 @@ class ChipWhispererCapture(MainChip):
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')
         self.CaptureToolbar.setObjectName('Capture Tools')
-        self.CaptureToolbar.addAction(capture1)
-        self.CaptureToolbar.addAction(captureM)
+        self.CaptureToolbar.addAction(self.capture1Act)
+        self.CaptureToolbar.addAction(self.captureMAct)
         self.CaptureToolbar.addWidget(QLabel('Master:'))
         self.CaptureToolbar.addWidget(self.captureStatus)
         #self.CaptureToolbar.setEnabled(False)
@@ -826,9 +828,16 @@ class ChipWhispererCapture(MainChip):
         else:
             ptInput = None
 
+        self.capture1Act.setEnabled(False)
+        self.captureMAct.setEnabled(False)
+
         ac = acquisitionController(self.scope, target, writer=None, aux=self.aux, fixedPlain=ptInput, esm=self.esm)
         ac.doSingleReading(key=self.key)
         self.statusBar().showMessage("One Capture Complete")
+
+        self.capture1Act.setChecked(False)
+        self.capture1Act.setEnabled(True)
+        self.captureMAct.setEnabled(True)
 
     def printTraceNum(self, num, data, offset=0):
         self.statusBar().showMessage("Trace %d done"%num)
@@ -874,6 +883,10 @@ class ChipWhispererCapture(MainChip):
         ac.traceDone.connect(self.printTraceNum)
         tn = self.numTraces
         ac.setMaxtraces(tn)        
+
+        self.capture1Act.setEnabled(False)
+        self.captureMAct.setEnabled(False)
+
         ac.doReadings(addToList=self.manageTraces, key=self.key)
         self.statusBar().showMessage("%d Captures Completed"%tn)
         
@@ -881,6 +894,10 @@ class ChipWhispererCapture(MainChip):
         
         self.console.append("Capture delta time: %s"%str(stoptime-starttime))
         
+        self.capture1Act.setEnabled(True)
+        self.captureMAct.setChecked(False)
+        self.captureMAct.setEnabled(True)
+
         return writer
         
     def scopeChanged(self, newscope):        
