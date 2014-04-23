@@ -1,34 +1,25 @@
 `timescale 1ns / 1ps
 /***********************************************************************
-This file is part of the ChipWhisperer Project. See www.newae.com for more details,
-or the codebase at http://www.assembla.com/spaces/openadc .
+This file is part of the ChipWhisperer Project. See www.newae.com for more
+details, or the codebase at http://www.chipwhisperer.com
 
-Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
-This project (and file) is released under the 2-Clause BSD License:
+Copyright (c) 2013-2014, NewAE Technology Inc. All rights reserved.
+Author: Colin O'Flynn <coflynn@newae.com>
 
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
+  chipwhisperer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-   * Redistributions of source code must retain the above copyright notice,
-	  this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above copyright
-	  notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
+  chipwhisperer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-
+  You should have received a copy of the GNU General Public License
+  along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************/
+
 module trigger_system#(
 	parameter stateaddr_width=6,
 	parameter stateaddr_states=64
@@ -57,6 +48,7 @@ module trigger_system#(
 	
 	//Clock Enables for 2x and divided clock
 	wire clkdiv;
+	reg  clkdiv_rst;
 	
 	wire [stateaddr_width-1:0] stateaddr;
 	reg  [stateaddr_width-1:0] stateaddr_reg;
@@ -93,11 +85,14 @@ module trigger_system#(
 	/* Count interations in current state */
 	reg [8:0] currentstate_cnt;
 	always @(posedge clk)
-			if (io_changed)
-				currentstate_cnt <= 1;
-			else if (clkdiv_delay)
+			if (rst) begin
+				currentstate_cnt <= 9'd1;
+			end else if (io_changed) begin
+				currentstate_cnt <= 9'd1;
+			end else if (clkdiv_delay) begin
 				if (currentstate_cnt < 9'd510)
 					currentstate_cnt <= currentstate_cnt + 9'd1;
+			end
 		
 	wire [7:0] expected_low_limit;
 	wire [8:0] expected_high_limit;
@@ -127,6 +122,17 @@ module trigger_system#(
 				stateaddr_reg <= stateaddr_reg + 1'b1;
 		end
 	
+	/* Start the clock divider on change of IO pin to syncronize to device clock */
+	always @(posedge clk) begin
+		if (rst) begin
+			clkdiv_rst <= 1'b1;
+		end else if ((stateaddr_reg == 0) && (currentstate_cnt == 9'd510)) begin
+			clkdiv_rst <= 1'b1;
+		end else begin
+			clkdiv_rst <= 1'b0;
+		end
+	end
+	
 	/* Watch for end of state storage */
 	reg trig_out_reg;
 	assign trig_out = trig_out_reg;
@@ -148,7 +154,7 @@ module trigger_system#(
 	/* Clock Divider */
 	clk_div cdiv(
 		.clk(clk),
-		.rst(rst),
+		.rst(clkdiv_rst),
 		.clk2xdiv_setting(clkdivider),
 		//.clk2xdiv(clk2xdiv),
 		.clk2xdiv(),
@@ -157,11 +163,16 @@ module trigger_system#(
 		wire [35:0] control;
 		wire [127:0] cs;
 			
-		assign cs[5:0] = stateaddr;
+		assign cs[5:0] = stateaddr_reg;
 		assign cs[6] = io_line;
 		assign cs[7] = trig_out;
 		assign cs[25:8] = statedata;
-		assign cs[31:26] = currentstate_cnt[5:0];
+		assign cs[34:26] = currentstate_cnt;
+		assign cs[35] = clkdiv_rst;
+		assign cs[36] = clkdiv;
+		assign cs[37] = io_changed;
+		assign cs[38] = state_cnt_ok;
+		assign cs[39] = mon_line;
 	
 coregen_ila ila (
     .CONTROL(control), // INOUT BUS [35:0]
@@ -192,19 +203,23 @@ module clk_div(
 		
 	always @(posedge clk) begin
 		if (rst)
-			clkdiv_reg_last <= 0;
+			clkdiv_reg_last <= 1'b0;
 		else if (clk2xcnt == clk2xdiv_setting)
 			clkdiv_reg_last <= ~clkdiv_reg_last;
 	end
 		
-	always @(posedge clk) begin
-		if ((clk2xcnt == clk2xdiv_setting) || (rst)) begin
-			clk2xdiv_reg <= 1;
+	always @(posedge clk) begin	
+		if (rst) begin
+			clk2xdiv_reg <= 1'b1;
+			clkdiv_reg <= 1'b1;
+			clk2xcnt <= 0;
+		end else if (clk2xcnt == clk2xdiv_setting) begin
+			clk2xdiv_reg <= 1'b1;
 			clkdiv_reg <= clkdiv_reg_last;
 			clk2xcnt <= 0;
 		end else begin
-			clk2xdiv_reg <= 0;
-			clkdiv_reg <= 0;
+			clk2xdiv_reg <= 1'b0;
+			clkdiv_reg <= 1'b0;
 			clk2xcnt <= clk2xcnt + 18'd1;
 		end
 	end
