@@ -45,12 +45,12 @@ from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkD
 
 import ChipWhispererGlitch
 
-CODE_READ       = 0x80
-CODE_WRITE      = 0xC0
+CODE_READ = 0x80
+CODE_WRITE = 0xC0
 
-ADDR_DATA       = 33
-ADDR_LEN        = 34
-ADDR_BAUD       = 35
+ADDR_DATA = 33
+ADDR_LEN = 34
+ADDR_BAUD = 35
 
 ADDR_TRIGCLKDIV = 36
 ADDR_TRIGIOPROG = 37
@@ -61,7 +61,6 @@ ADDR_TRIGMOD = 40
 
 ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
-
 
 class ChipWhispererExtra(QObject):
     paramListUpdated = Signal(list)
@@ -275,7 +274,19 @@ class CWAdvTrigger(object):
 
             if high == 'wait':
                 high = 510
-                
+
+            # Addr = 0 has several samples taken at 'full speed' before clock divider
+            # gets pushed in. The following seems to typically work to compensate, but
+            # at high speeds this might be wrong.
+            if addr == 0:
+                low += 3
+                high += 3
+
+                if (low >= 510) or (high >= 510):
+                    raise ValueError("low or high for addr=0 too large!")
+
+            # print "%04d: %2d - %2d" % (addr, low, high)
+
             self.writeOnePattern(addr, state, low, high)
             addr = addr + 1
 
