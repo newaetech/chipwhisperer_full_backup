@@ -25,9 +25,10 @@
 								<option id="gnu.cpp.compiler.exe.debug.option.optimization.level.1584533158" name="Optimization Level" superClass="gnu.cpp.compiler.exe.debug.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.debug.option.debugging.level.757904403" name="Debug Level" superClass="gnu.cpp.compiler.exe.debug.option.debugging.level" value="gnu.cpp.compiler.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.1284665404" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/ap_sysc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/etc"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/systemc/include"/>
 								</option>
@@ -37,9 +38,10 @@
 								<option defaultValue="gnu.c.optimization.level.none" id="gnu.c.compiler.exe.debug.option.optimization.level.696430054" name="Optimization Level" superClass="gnu.c.compiler.exe.debug.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.debug.option.debugging.level.744615842" name="Debug Level" superClass="gnu.c.compiler.exe.debug.option.debugging.level" value="gnu.c.debugging.level.max" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.1173688919" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/ap_sysc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/etc"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/systemc/include"/>
 								</option>
@@ -99,9 +101,10 @@
 								<option id="gnu.cpp.compiler.exe.release.option.optimization.level.239319691" name="Optimization Level" superClass="gnu.cpp.compiler.exe.release.option.optimization.level" value="gnu.cpp.compiler.optimization.level.most" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.exe.release.option.debugging.level.706777120" name="Debug Level" superClass="gnu.cpp.compiler.exe.release.option.debugging.level" value="gnu.cpp.compiler.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.cpp.compiler.option.include.paths.897657234" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/ap_sysc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/etc"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/systemc/include"/>
 								</option>
@@ -111,9 +114,10 @@
 								<option defaultValue="gnu.c.optimization.level.most" id="gnu.c.compiler.exe.release.option.optimization.level.326987090" name="Optimization Level" superClass="gnu.c.compiler.exe.release.option.optimization.level" valueType="enumerated"/>
 								<option id="gnu.c.compiler.exe.release.option.debugging.level.493238233" name="Debug Level" superClass="gnu.c.compiler.exe.release.option.debugging.level" value="gnu.c.debugging.level.none" valueType="enumerated"/>
 								<option id="gnu.c.compiler.option.include.paths.936269221" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/ap_sysc"/>
-									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/auto_cc/include"/>
+									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/include/etc"/>
 									<listOptionValue builtIn="false" value="C:/Xilinx/Vivado_HLS/2013.2/Win_x86/tools/systemc/include"/>
 								</option>

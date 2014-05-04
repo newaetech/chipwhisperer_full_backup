@@ -3,14 +3,14 @@
 
 #define num_pts 128
 
-void sad(ap_uint<7> max_points, ap_int<10> ref_points_in[num_pts], ap_int<10> * datain, ap_uint<20> * sumout)
+void sad(ap_uint<7> max_points, ap_uint<10> ref_points_in[num_pts], ap_uint<10> * datain, ap_uint<20> * sumout)
 {
 #pragma HLS INTERFACE ap_fifo port=ref_points_in
 #pragma HLS INTERFACE ap_fifo port=datain
 #pragma HLS INTERFACE ap_fifo port=sumout
 #pragma HLS INTERFACE ap_stable port=max_points
 
-	ap_int<10> datamem[num_pts];
+	ap_uint<10> datamem[num_pts];
 	ap_uint<10> sumtree[num_pts];
 	ap_uint<20> totalsum;
 	ap_uint<10> ref_points[num_pts];

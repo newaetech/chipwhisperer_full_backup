@@ -90,7 +90,7 @@
 		<link>
 			<name>testbench</name>
 			<type>2</type>
-			<location>C:/E/Documents/fpga/sad_trigger/sad_hls/sad/.apc/.tb</location>
+			<location>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls/sad/.apc/.tb</location>
 		</link>
 		<link>
 			<name>.reference/ldpc_decode.cpp</name>
@@ -105,27 +105,27 @@
 		<link>
 			<name>solution1/constraints</name>
 			<type>2</type>
-			<location>C:/E/Documents/fpga/sad_trigger/sad_hls/sad/solution1/.tcls</location>
+			<location>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls/sad/solution1/.tcls</location>
 		</link>
 		<link>
 			<name>source/sad.cpp</name>
 			<type>1</type>
-			<location>C:/E/Documents/fpga/sad_trigger/sad_hls/sad.cpp</location>
+			<location>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls/sad.cpp</location>
 		</link>
 		<link>
 			<name>solution1/constraints/.xml.directive</name>
 			<type>1</type>
-			<location>C:/E/Documents/fpga/sad_trigger/sad_hls/sad/solution1/solution1.directive</location>
+			<location>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls/sad/solution1/solution1.directive</location>
 		</link>
 		<link>
 			<name>solution1/constraints/directives.tcl</name>
 			<type>1</type>
-			<location>C:/E/Documents/fpga/sad_trigger/sad_hls/sad/solution1/directives.tcl</location>
+			<location>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls/sad/solution1/directives.tcl</location>
 		</link>
 		<link>
 			<name>solution1/constraints/script.tcl</name>
 			<type>1</type>
-			<location>C:/E/Documents/fpga/sad_trigger/sad_hls/sad/solution1/script.tcl</location>
+			<location>C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/common/hdl/sad_trigger/vivado_hls/sad/solution1/script.tcl</location>
 		</link>
 	</linkedResources>
 </projectDescription>
