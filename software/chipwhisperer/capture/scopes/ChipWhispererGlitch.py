@@ -139,7 +139,10 @@ class ChipWhispererGlitch(QObject):
             
         self.oa = oa
             
-        self.params.getAllParameters()
+        try:
+            self.params.getAllParameters()
+        except TypeError:
+            return
         
     def paramList(self):
         p = []
