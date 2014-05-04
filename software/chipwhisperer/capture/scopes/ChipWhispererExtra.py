@@ -117,6 +117,7 @@ class CWExtraSettings(object):
     
     MODULE_BASIC = 0x00
     MODULE_ADVPATTERN = 0x01
+    MODULE_SADPATTERN = 0x02
     
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
@@ -139,7 +140,8 @@ class CWExtraSettings(object):
                     {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
                     {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'value':"OR", 'get':self.getPinMode, 'set':self.setPinMode }                                      
                     ]},
-                {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN}, 'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule},
+                {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
+                 'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule},
                 {'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut},
                 
                 {'name':'Clock Source', 'type':'list', 'values':{'Front Panel A':self.CLOCK_FPA, 

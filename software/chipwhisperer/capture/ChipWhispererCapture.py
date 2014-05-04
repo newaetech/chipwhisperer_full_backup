@@ -125,7 +125,7 @@ class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
     captureDone = Signal(bool)
     
-    def __init__(self, scope, target, writer, aux=None, fixedPlain=None, updateData=None, esm=None, newKeyPerTrace=False):
+    def __init__(self, scope, target=None, writer=None, aux=None, fixedPlain=None, updateData=None, esm=None, newKeyPerTrace=False):
         super(acquisitionController, self).__init__()
 
         self.target = target
@@ -137,10 +137,17 @@ class acquisitionController(QObject):
         self.maxtraces = 1
         self.updateData = updateData
 
-        self.textInLabel = esm.textInLine
-        self.textOutLabel = esm.textOutLine
-        self.textExpectedLabel = esm.textOutExpected
-        self.textKeyLabel = esm.textEncKey
+        if esm:
+            self.textInLabel = esm.textInLine
+            self.textOutLabel = esm.textOutLine
+            self.textExpectedLabel = esm.textOutExpected
+            self.textKeyLabel = esm.textEncKey
+        else:
+            self.textInLabel = None
+            self.textOutLabel = None
+            self.textExpectedLabel = None
+            self.textKeyLabel = None
+
         self.newKeyPerTrace=newKeyPerTrace
 
         self.textin = bytearray(16)
