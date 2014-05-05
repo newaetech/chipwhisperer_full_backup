@@ -22,7 +22,7 @@ Copyright (C) 2013 Xilinx Inc. All rights reserved.
 @I [XFORM-101] Partitioning array 'sumtree.V' (sad.cpp:14) in dimension 1 completely.
 @I [XFORM-401] Performing if-conversion on hyperblock in function 'sad'... converting 2 basic blocks.
 @I [XFORM-11] Balancing expressions in function 'sad' (sad.cpp:6)...127 expression(s) balanced.
-@I [HLS-111] Elapsed time: 22.261 seconds; current memory usage: 67.7 MB.
+@I [HLS-111] Elapsed time: 23.519 seconds; current memory usage: 57.2 MB.
 @I [HLS-10] Starting hardware synthesis ...
 @I [HLS-10] Synthesizing 'sad' ...
 @I [HLS-10] ----------------------------------------------------------------
@@ -32,7 +32,7 @@ Copyright (C) 2013 Xilinx Inc. All rights reserved.
 @I [SCHED-61] Pipelining loop 'Loop 2'.
 @I [SCHED-61] Pipelining result: Target II: 1, Final II: 1, Depth: 3.
 @I [SCHED-11] Finished scheduling.
-@I [HLS-111] Elapsed time: 8.308 seconds; current memory usage: 75 MB.
+@I [HLS-111] Elapsed time: 7.469 seconds; current memory usage: 63.8 MB.
 @I [HLS-10] ----------------------------------------------------------------
 @I [HLS-10] -- Exploring micro-architecture for module 'sad' 
 @I [HLS-10] ----------------------------------------------------------------
@@ -41,7 +41,7 @@ Copyright (C) 2013 Xilinx Inc. All rights reserved.
 @I [BIND-101] Exploring resource sharing.
 @I [BIND-101] Binding resource limited operations ...
 @I [BIND-100] Finished micro-architecture binding.
-@I [HLS-111] Elapsed time: 1.229 seconds; current memory usage: 75.6 MB.
+@I [HLS-111] Elapsed time: 0.902 seconds; current memory usage: 64.3 MB.
 @I [HLS-10] ----------------------------------------------------------------
 @I [HLS-10] -- Generating RTL for module 'sad' 
 @I [HLS-10] ----------------------------------------------------------------
@@ -53,9 +53,9 @@ Copyright (C) 2013 Xilinx Inc. All rights reserved.
 @W [RTGEN-101] Port 'sad/max_points_V' has no fanin or fanout and is left dangling.
                Please use C simulation to confirm this function argument can be read from or written to.
 @I [RTGEN-100] Finished creating RTL model for 'sad'.
-@I [HLS-111] Elapsed time: 3.234 seconds; current memory usage: 79.7 MB.
+@I [HLS-111] Elapsed time: 3.227 seconds; current memory usage: 67.8 MB.
 @I [HLS-10] Finished generating all RTL models.
 @I [WSYSC-301] Generating RTL SystemC for 'sad'.
 @I [WVHDL-304] Generating RTL VHDL for 'sad'.
 @I [WVLOG-307] Generating RTL Verilog for 'sad'.
-@I [HLS-112] Total elapsed time: 40.171 seconds; peak memory usage: 79.7 MB.
+@I [HLS-112] Total elapsed time: 40.977 seconds; peak memory usage: 67.8 MB.
