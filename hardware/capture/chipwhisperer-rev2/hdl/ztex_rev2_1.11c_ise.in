@@ -74,6 +74,8 @@ setup.v = Setup File
 ../../../common/hdl/universal_serial/usi.v
 ../../../common/hdl/universal_serial/usi_tb_rx.v
 ../../../common/hdl/universal_serial/usi_tb_tx.v
+../../../common/hdl/sad_trigger/reg_sad.v
+../../../common/hdl/sad_trigger/sad_auto.v
 
 # The following file is NOT in repository & you must get a license for it, which
 # was purchased from http://skytek.x10.mx . The license was only $13, so it's not
@@ -87,6 +89,7 @@ setup.v = Setup File
 fifoonly_adcfifo.xco = ADC FIFO CoreGen Setup
 fifo_target_tx.xco = Target TX FIFO Setup
 icap_fifo.xco = ICAP FIFO Setup
+fifo_sad_reg.xco = SAD REFERENCE FIFO Setup
 
 [ADC FIFO CoreGen Setup]
 InputFile = fifoonly_adcfifo.xco.in
@@ -105,6 +108,9 @@ InputFile = fifo_target_tx.xco.in
 
 [ICAP FIFO Setup]
 InputFile = icap_fifo.xco.in
+
+[SAD REFERENCE FIFO Setup]
+InputFile = fifo_sad_ref.xco.in
 
 [Setup File]
 ZTEX
