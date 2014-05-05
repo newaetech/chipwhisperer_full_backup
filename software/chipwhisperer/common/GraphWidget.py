@@ -90,6 +90,7 @@ class GraphWidget(QWidget):
     """    
     
     xRangeChanged = Signal(int, int)
+    dataChanged = Signal(list, int)
     
     
     def __init__(self):
@@ -243,6 +244,8 @@ class GraphWidget(QWidget):
         :type startoffset: int        
         
         """
+        self.lastTraceData = trace
+
         if self.persistant:
             if self.autocolor:
                 nc = (self.acolor + 1) % 8
@@ -256,7 +259,11 @@ class GraphWidget(QWidget):
         xaxis = range(startoffset, len(trace)+startoffset)
             
         self.pw.plot(xaxis, trace, pen=(self.acolor,8)) 
-        # self.checkPersistantItems()
+
+        self.dataChanged.emit(trace, startoffset)
+
+        # TODO: This was commented out, why?
+        self.checkPersistantItems()
 
 
     def clearPushed(self):

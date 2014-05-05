@@ -71,6 +71,7 @@ except ImportError:
     serial = None
 
 import ChipWhispererExtra as ChipWhispererExtra
+import ChipWhispererSAD as ChipWhispererSAD
 
 class OpenADCInterface_FTDI(QWidget):    
     paramListUpdated = Signal(list) 
@@ -429,7 +430,9 @@ class OpenADCInterface(QObject):
             QMessageBox.warning(None, "OpenADC", "No supported scope found!")            
                
         
+        # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
+        self.advancedSAD = None
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
                        {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
@@ -477,6 +480,9 @@ class OpenADCInterface(QObject):
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter)
                 self.advancedSettings.setOpenADC(self.qtadc)
                 
+                self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter, self.parent)
+                self.advancedSAD.setOpenADC(self.qtadc)
+
                 self.paramListUpdated.emit(None)
             
             self.connectStatus.emit(True)
@@ -510,7 +516,11 @@ class OpenADCInterface(QObject):
         
         p.append(self.qtadc.params)  
             
+        # TODO: make this one list with modules that can be added elsewhere
         if self.advancedSettings is not None:
             for a in self.advancedSettings.paramList(): p.append(a)    
             
+        if self.advancedSAD is not None:
+            for a in self.advancedSAD.paramList(): p.append(a)
+
         return p

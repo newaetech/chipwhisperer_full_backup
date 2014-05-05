@@ -151,7 +151,7 @@ class CWExtraSettings(object):
                                                                  #'Target IO-OUT':self.CLOCK_RTIOOUT #This is no longer allowed by the hardware
                                                                  }, 'set':self.setClockSource, 'get':self.clockSource},
                 #{'name':'Clock Out Connection', 'type':'list', 'values':{'Target IO-Out':0}, 'value':0},
-                {'name':'Target IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},                 
+                {'name':'Target IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
                 ]}]
     
     def con(self, oa):
