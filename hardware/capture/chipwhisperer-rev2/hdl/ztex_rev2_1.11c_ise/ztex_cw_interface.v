@@ -165,6 +165,7 @@ module interface(
 	wire [7:0] reg_datai_i2c;
 	wire [7:0] reg_datai_reconfig;
 	//wire [7:0] reg_datai_scard;
+	wire [7:0] reg_datai_sad;
 	wire [7:0] reg_datai_usi;
 	wire [7:0] reg_datai_glitch;
 	wire [15:0] reg_size;
@@ -182,11 +183,15 @@ module interface(
 	wire [15:0] reg_hyplen_usi;
 	wire [15:0] reg_hyplen_i2c;
 	wire [15:0] reg_hyplen_reconfig;
+	wire [15:0] reg_hyplen_sad;
 	
 	wire ext_trigger;
 	wire adv_trigger;
 	
 	wire extclk_mux;
+	
+	wire [9:0] ADC_Data_int;
+	wire       ADC_Clk_int;
 	
 	//assign ext_trigger = DUT_trigger_i;
 	//assign ext_trigger = target_io4;
@@ -221,14 +226,14 @@ module interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi | reg_datai_i2c | reg_datai_glitch | reg_datai_reconfig), //reg_datai_scard
+		.reg_datai_i(reg_datai_serialtarg | reg_datai_triggerio | reg_datai_cw | reg_datai_usi | reg_datai_i2c | reg_datai_glitch | reg_datai_reconfig | reg_datai_sad), //reg_datai_scard
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(reg_stream_serial), //reg_stream_scard
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi | reg_hyplen_i2c | reg_hyplen_glitch | reg_hyplen_reconfig)  //reg_hyplen_scard
+		.reg_hyplen_i(reg_hyplen_serialtarg | reg_hyplen_triggerio | reg_hyplen_cw | reg_hyplen_usi | reg_hyplen_i2c | reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_sad)  //reg_hyplen_scard
 	/*
 		,.LPDDR_A(LPDDR_A),
 		.LPDDR_BA(LPDDR_BA),
@@ -245,6 +250,10 @@ module interface(
 		.LPDDR_WE_n(LPDDR_WE_n),
 		.LPDDR_RZQ(LPDDR_RZQ)	
 	*/
+	
+		,.ADC_Data_out(ADC_Data_int),
+		.ADC_Clk_out(ADC_Clk_int)
+	
 	);
 	
 	//wire target_tx, smartcard_rst;
@@ -290,6 +299,7 @@ module interface(
 	);
 	
 	wire glitchclk;
+	wire apatt_trigger;
 	
 	reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -320,12 +330,12 @@ module interface(
 		.trigger_io4_i(target_io4),
 		.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(adv_trigger),
+		.trigger_anapattern_i(apatt_trigger),
 		.clkgen_i(clkgen),
 		.glitchclk_i(glitchclk),
 		.trigger_o(ext_trigger)
 	);
-	
-	
+		
 	reg_clockglitch reg_clockglitch(
 		.reset_i(reg_rst),
 		.clk(ifclk_buf),
@@ -463,6 +473,25 @@ module interface(
 		.sda(pll_sda)
 	);
 	
+	reg_sad registers_sad (
+		.reset_i(reg_rst),
+		.clk(ifclk_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_sad), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_sad),
+		.reg_stream(),
+		.ADC_data(ADC_Data_int),
+		.ADC_clk(ADC_Clk_int),
+		.trig_out(apatt_trigger)
+	);
+		
 	assign target_io3 = (reg_rst) ? 1'bz:
 	                  (usi_out==1'b0)? 1'b0 : 1'bz;							
 	assign usi_in  = target_io3 | ~usi_out;	
