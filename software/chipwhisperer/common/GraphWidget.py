@@ -237,14 +237,17 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
         
-    def passTrace(self, trace, startoffset=0):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
-        :type startoffset: int        
+        :type startoffset: int
+                
         
         """
-        self.lastTraceData = trace
+
+        if ghostTrace is False:
+            self.lastTraceData = trace
 
         if self.persistant:
             if self.autocolor:
@@ -260,7 +263,8 @@ class GraphWidget(QWidget):
             
         self.pw.plot(xaxis, trace, pen=(self.acolor,8)) 
 
-        self.dataChanged.emit(trace, startoffset)
+        if ghostTrace is False:
+            self.dataChanged.emit(trace, startoffset)
 
         # TODO: This was commented out, why?
         self.checkPersistantItems()
