@@ -413,7 +413,6 @@ class SmartCard(QObject):
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        
 
     def __del__(self):
         self.close()
@@ -430,6 +429,10 @@ class SmartCard(QObject):
             self.driver.setOpenADC(oadc)
         except:
             pass
+
+    def keyLen(self):
+        """ Return key length in BYTES """
+        return 16
 
     def setConnection(self, con):
         self.driver = con        
