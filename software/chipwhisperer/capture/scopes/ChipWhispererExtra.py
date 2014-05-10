@@ -62,6 +62,8 @@ ADDR_TRIGMOD = 40
 ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 
+ADDR_IOROUTE = 55
+
 class ChipWhispererExtra(QObject):
     paramListUpdated = Signal(list)
      
@@ -125,6 +127,14 @@ class CWExtraSettings(object):
     CLOCK_RTIOIN = 0x03
     CLOCK_RTIOOUT = 0x04
     
+    IOROUTE_HIGHZ = 0
+    IOROUTE_STX = 0b00000001
+    IOROUTE_SRX = 0b00000010
+    IOROUTE_USIO = 0b00000100
+    IOROUTE_USII = 0b00001000
+    IOROUTE_GPIO = 0b01000000
+    IOROUTE_GPIOE = 0b10000000
+
     def __init__(self):
         super(CWExtraSettings, self).__init__()
         self.oa = None
@@ -151,11 +161,60 @@ class CWExtraSettings(object):
                                                                  #'Target IO-OUT':self.CLOCK_RTIOOUT #This is no longer allowed by the hardware
                                                                  }, 'set':self.setClockSource, 'get':self.clockSource},
                 #{'name':'Clock Out Connection', 'type':'list', 'values':{'Target IO-Out':0}, 'value':0},
-                {'name':'Target IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
+                {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
+                
+                {'name':'Target IOn Pins', 'type':'group', 'children':[
+                    {'name': 'Target IO1', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'High-Z':self.IOROUTE_HIGHZ},
+                                           'value':self.IOROUTE_STX, 'set':self.setTargetIO1, 'get':self.getTargetIO1},
+                    {'name': 'Target IO2', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'High-Z':self.IOROUTE_HIGHZ},
+                                           'value':self.IOROUTE_SRX, 'set':self.setTargetIO2, 'get':self.getTargetIO2},
+                    {'name': 'Target IO3', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'High-Z':self.IOROUTE_HIGHZ},
+                                           'value':self.IOROUTE_HIGHZ, 'set':self.setTargetIO3, 'get':self.getTargetIO3},
+                    {'name': 'Target IO4', 'type':'list', 'values':{'High-Z':self.IOROUTE_HIGHZ},
+                                           'value':self.IOROUTE_HIGHZ},
+                                                                                           
+                 ]},
+                
                 ]}]
     
     def con(self, oa):
         self.oa = oa
+           
+    def setTargetIO1(self, setting):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data[0] = setting
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetIO2(self, setting):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data[1] = setting
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetIO3(self, setting):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data[2] = setting
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetIO4(self, setting):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        data[3] = setting
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def getTargetIO1(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        return data[0]
+
+    def getTargetIO2(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        return data[1]
+
+    def getTargetIO3(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        return data[2]
+
+    def getTargetIO4(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        return data[3]
            
     def setClockSource(self, source):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
