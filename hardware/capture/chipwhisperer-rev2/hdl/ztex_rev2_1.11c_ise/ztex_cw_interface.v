@@ -1,34 +1,24 @@
 `include "includes.v"
 //`define CHIPSCOPE
 /***********************************************************************
-This file is part of the OpenADC Project. See www.newae.com for more details,
-or the codebase at http://www.assembla.com/spaces/openadc .
+This file is part of the ChipWhisperer Project. See www.newae.com for more
+details, or the codebase at http://www.chipwhisperer.com
 
-This file is the example using the LX9 Board in USB (Serial) Mode.
+Copyright (c) 2014, NewAE Technology Inc. All rights reserved.
+Author: Colin O'Flynn <coflynn@newae.com>
 
-Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
-This project (and file) is released under the 2-Clause BSD License:
+  chipwhisperer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
+  chipwhisperer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
-   * Redistributions of source code must retain the above copyright notice,
-	  this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above copyright
-	  notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
+  You should have received a copy of the GNU General Public License
+  along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************/
 
 module interface(
@@ -98,18 +88,10 @@ module interface(
 	 assign target_hs1_dir = 1'b0;
 	 assign target_hs2_dir = 1'b1;
 	 assign target_hs1 = 1'bZ;
-	 
-	 //TODO: FIX THESE IF NEEDED
-	 assign target_io2 = 1'bZ;
-	 //assign target_io1 = 1'bZ;
-	 //assign target_io3 = 1'bZ;
-	 assign target_io4 = 1'bZ;
-	 
+	 	 
 	 wire led_hbeat;
 	 assign GPIO_LED1 = led_hbeat;
 	 assign GPIO_LED5 = 1'b0;
-	 //assign GPIO_LED6 = ~target_io2 | ~target_io1;
-	 //assign GPIO_LED2 = ~slrd | ~slwr;
 	 
 	 wire ifclk_buf;
 	 wire led_cap;
@@ -259,7 +241,7 @@ module interface(
 	//wire target_tx, smartcard_rst;
 	
 	//The following assumes target_tx idles high
-	assign target_io1 = target_tx; // & ~smartcard_rst;
+	wire uart_tx, uart_rx;
 	
 	reg_serialtarget registers_serialtarget(
 		.reset_i(reg_rst),
@@ -275,8 +257,8 @@ module interface(
 		.reg_stream(reg_stream_serial),
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_serialtarg),
-		.target_tx(target_tx),
-		.target_rx(target_io2)					              
+		.target_tx(uart_tx),
+		.target_rx(uart_rx)					              
    );
 	
 	wire advio_trigger_line;
@@ -300,6 +282,8 @@ module interface(
 	
 	wire glitchclk;
 	wire apatt_trigger;
+	
+	wire usi_out, usi_in;
 	
 	reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -333,6 +317,17 @@ module interface(
 		.trigger_anapattern_i(apatt_trigger),
 		.clkgen_i(clkgen),
 		.glitchclk_i(glitchclk),
+		
+		.targetio1_io(target_io1),
+		.targetio2_io(target_io2),
+		.targetio3_io(target_io3),
+		.targetio4_io(target_io4),
+		
+		.uart_tx_i(uart_tx),
+		.uart_rx_o(uart_rx),
+		.usi_out_i(usi_out),
+		.usi_in_o(usi_in),
+				
 		.trigger_o(ext_trigger)
 	);
 		
@@ -434,9 +429,7 @@ module interface(
 		.scard_busy(scard_busy)
 	);
 	*/
-	
-	wire usi_out, usi_in;
-	
+		
 	reg_usi registers_usi (
 		.reset_i(reg_rst),
 		.clk(ifclk_buf),
@@ -492,9 +485,11 @@ module interface(
 		.trig_out(apatt_trigger)
 	);
 		
+	/*
 	assign target_io3 = (reg_rst) ? 1'bz:
 	                  (usi_out==1'b0)? 1'b0 : 1'bz;							
 	assign usi_in  = target_io3 | ~usi_out;	
+	*/
 	
 		
 	`ifdef CHIPSCOPE

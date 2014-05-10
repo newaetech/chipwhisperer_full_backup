@@ -2,37 +2,24 @@
 //`define CHIPSCOPE
 
 /***********************************************************************
-This file is part of the ChipWhisperer Project. See www.newae.com for more details,
-or the codebase at http://www.assembla.com/spaces/chipwhisperer .
+This file is part of the ChipWhisperer Project. See www.newae.com for more
+details, or the codebase at http://www.chipwhisperer.com
 
-This file is the ChipWhisperer main registers. Does not include the actual data
-transfer register which is in a seperate file.
+Copyright (c) 2014, NewAE Technology Inc. All rights reserved.
+Author: Colin O'Flynn <coflynn@newae.com>
 
-Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
-This project (and file) is released under the 2-Clause BSD License:
+  chipwhisperer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
 
-Redistribution and use in source and binary forms, with or without 
-modification, are permitted provided that the following conditions are met:
+  chipwhisperer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
 
-   * Redistributions of source code must retain the above copyright notice,
-	  this list of conditions and the following disclaimer.
-   * Redistributions in binary form must reproduce the above copyright
-	  notice, this list of conditions and the following disclaimer in the
-	  documentation and/or other materials provided with the distribution.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE.
-
-
+  You should have received a copy of the GNU General Public License
+  along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 *************************************************************************/
 module reg_chipwhisperer(
 	input 			reset_i,
@@ -76,6 +63,18 @@ module reg_chipwhisperer(
 	input				clkgen_i,
 	input				glitchclk_i,
 	
+	/* GPIO Pins & Routing */
+	inout				targetio1_io,
+	inout				targetio2_io,
+	inout				targetio3_io,
+	inout				targetio4_io,
+	
+	input				uart_tx_i,
+	output			uart_rx_o,
+	
+	input				usi_out_i,
+	output			usi_in_o,
+	
 	/* Main trigger connections */
 	output			trigger_o /* Trigger signal to capture system */
     ); 
@@ -85,6 +84,7 @@ module reg_chipwhisperer(
 	 `define CW_EXTCLK_ADDR			38
 	 `define CW_TRIGSRC_ADDR		39
 	 `define CW_TRIGMOD_ADDR		40
+	 `define CW_IOROUTE_ADDR      55
  
  /*  0xXX - External Clock Connections (One Byte)
 	 
@@ -132,11 +132,49 @@ module reg_chipwhisperer(
 					 
 		  FA = Output trigger to Front Panel A
 		  FB = Output trigger to Front Panel B
+		  
+	  0xXX - GPIO Pin Routing [8 bytes]
+	   
+		IMPORTANT: Only a single IO can be assigned
+		           to any input. e.g. you can't assign
+					  both GPIO1 and GPIO3 to 'RX'. 
+					  
+					  The system assigns priority to lower
+					  numbered GPIOs.
+					  
+					  Similarly if you attempt to assign multiple
+					  outputs to a single TargetIO it will use the
+					  lowest bit as the actual output.
+		
+		GPIO1:
+		  [ E G   X     X  USII USIO RX TX ]
+		  
+		GPIO2:
+		  [ E G   X     X  USII USIO RX TX ]
+		  
+		GPIO3:
+		  [ E G   X     X  USII USIO RX TX ]
+		  
+		RESERVED:
+		  [ X X   X     X    X    X  X   X ]
+		 
+	   RESERVED:
+		  [ X X   X     X    X    X  X   X ]
+		
+		RESERVED:
+		  [ X X   X     X    X    X  X   X ]
+		  
+		RESERVED:
+		  [ X X   X     X    X    X  X   X ]
+		  
+		RESERVED:
+		  [ X X   X     X    X    X  X   X ]
  */
     
 	 reg [7:0] registers_cwextclk;
 	 reg [7:0] registers_cwtrigsrc;
 	 reg [7:0] registers_cwtrigmod;
+	 reg [63:0] registers_iorouting;
   	 
 	
 	 //Do to no assumed phase relationship we use regular old fabric for switching
@@ -264,6 +302,36 @@ module reg_chipwhisperer(
 			.T() // 1-bit input: 3-state input signal
 		);
 	 
+	 /* IO Routing */
+	 
+	 assign targetio1_io = registers_iorouting[0 + 0] ? uart_tx_i :
+								  registers_iorouting[0 + 2] ? usi_out_i :
+								  registers_iorouting[0 + 7] ? registers_iorouting[0 + 6] :
+								  1'bZ;
+		
+	 assign targetio2_io = registers_iorouting[8 + 0] ? uart_tx_i :
+								  registers_iorouting[8 + 2] ? usi_out_i :
+								  registers_iorouting[8 + 7] ? registers_iorouting[8 + 6] :
+								  1'bZ;
+								  
+	 assign targetio3_io = registers_iorouting[16 + 0] ? uart_tx_i :
+								  registers_iorouting[16 + 2] ? usi_out_i :
+								  registers_iorouting[16 + 4] ? usi_out_i :
+								  registers_iorouting[8 + 7] ? registers_iorouting[8 + 6] :
+								  1'bZ;
+								  
+	 assign targetio4_io = 1'bZ;
+	 
+	 assign uart_rx_o = registers_iorouting[0 + 1] ? targetio1_io :
+							registers_iorouting[8 + 1] ? targetio2_io :
+							registers_iorouting[16 + 1] ? targetio2_io :
+							1'b1;
+							
+	assign usi_in_o = registers_iorouting[0 + 3] ? targetio1_io :
+							registers_iorouting[8 + 3] ? targetio2_io :
+							registers_iorouting[16 + 3] ? targetio2_io :
+							1'b1;	 
+	 
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
 	 
@@ -272,6 +340,7 @@ module reg_chipwhisperer(
             `CW_EXTCLK_ADDR: reg_hyplen_reg <= 1;
 				`CW_TRIGSRC_ADDR: reg_hyplen_reg <= 1;
 				`CW_TRIGMOD_ADDR: reg_hyplen_reg <= 1;
+				`CW_IOROUTE_ADDR: reg_hyplen_reg <= 8;
 				default: reg_hyplen_reg<= 0;
 		endcase
 	 end
@@ -286,6 +355,7 @@ module reg_chipwhisperer(
 				`CW_EXTCLK_ADDR: begin reg_datao_valid_reg <= 1; end
 				`CW_TRIGSRC_ADDR: begin reg_datao_valid_reg <= 1; end
 				`CW_TRIGMOD_ADDR: begin reg_datao_valid_reg <= 1; end
+				`CW_IOROUTE_ADDR: begin reg_datao_valid_reg <= 1; end
 				default: begin reg_datao_valid_reg <= 0; end	
 			endcase
 		end else begin
@@ -299,21 +369,24 @@ module reg_chipwhisperer(
 				`CW_EXTCLK_ADDR: reg_datao_reg <= registers_cwextclk; 
 				`CW_TRIGSRC_ADDR: reg_datao_reg <= registers_cwtrigsrc; 
 				`CW_TRIGMOD_ADDR: reg_datao_reg <= registers_cwtrigmod; 
+				`CW_IOROUTE_ADDR: reg_datao_reg <= registers_iorouting[reg_bytecnt*8 +: 8];
 				default: reg_datao_reg <= 0;	
 			endcase
 		end
-	 end
+	 end	  
 
 	 always @(posedge clk) begin
 		if (reset) begin
 			registers_cwextclk <= 0;
 			registers_cwtrigsrc <= 1;
 			registers_cwtrigmod <= 0;
+			registers_iorouting <= 64'b00000010_00000001;
 		end else if (reg_write) begin
 			case (reg_address)
 				`CW_EXTCLK_ADDR: registers_cwextclk <= reg_datai;
 				`CW_TRIGSRC_ADDR: registers_cwtrigsrc <= reg_datai;
 				`CW_TRIGMOD_ADDR: registers_cwtrigmod <= reg_datai;
+				`CW_IOROUTE_ADDR: registers_iorouting[reg_bytecnt*8 +: 8] <= reg_datai;
 				default: ;
 			endcase
 		end
