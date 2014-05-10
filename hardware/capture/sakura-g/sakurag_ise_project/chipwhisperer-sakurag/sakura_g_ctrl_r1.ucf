@@ -83,6 +83,7 @@ NET "amp_gain"					LOC="P7" | IOSTANDARD="LVCMOS25" ;
 NET "amp_hilo"					LOC="R6" | IOSTANDARD="LVCMOS25" ;
 
 NET "DUT_CLK_i" CLOCK_DEDICATED_ROUTE = FALSE; 
+PIN "registers_sakura_lbus/mk_clkrst/u13.O" CLOCK_DEDICATED_ROUTE = FALSE;
 
 # ---------------
 # User Header Pin
