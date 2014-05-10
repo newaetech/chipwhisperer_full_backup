@@ -134,6 +134,17 @@ class ChipWhispererComm(object):
         # Order = MSB, LSB
         return msg
 
+    def read128(self, address):
+        self.flush()
+        msg = bytearray(3 * 8)
+        for i in range(0, 8):
+            msg[i * 3] = 0x00;
+            msg[i * 3 + 1] = (address >> 8) & 0xFF;
+            msg[i * 3 + 2] = (address & 0xFF) + (i * 2);
+        self.writeMsg(str(msg))
+        msg = self.readMsg(16)
+        return bytearray(msg)
+
     def close(self):
         pass
 

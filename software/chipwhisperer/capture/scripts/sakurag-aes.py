@@ -90,13 +90,14 @@ class userScript(QObject):
         pe()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [#['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
+        lstexample = [['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 400],
                       ['OpenADC', 'Trigger Setup', 'Offset', 0],
                       ['OpenADC', 'Gain Setting', 'Setting', 40],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge'],
-                      #Final step: make DCMs relock in case they are lost
-                      #['OpenADC', 'Clock Setup', 'Relock DCMs', None],
+                      ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Divide', 2],
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x1 via DCM'],
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ]
         
         #Download all hardware setup parameters
