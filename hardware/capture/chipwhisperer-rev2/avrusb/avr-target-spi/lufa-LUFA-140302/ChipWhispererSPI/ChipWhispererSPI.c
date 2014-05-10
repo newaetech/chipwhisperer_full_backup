@@ -1,13 +1,12 @@
 /*
-             LUFA Library
-     Copyright (C) Dean Camera, 2014.
-
-  dean [at] fourwalledcubicle [dot] com
-           www.lufa-lib.org
+  SPI Driver for ChipWhisperer using AVR.
 */
 
 /*
-  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2014  Colin O'Flynn (coflynn [at] newae [dot] com)
+  
+  Based on GenericHID Example which is:  
+  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)  
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -28,13 +27,15 @@
   this software.
 */
 
-/** \file
- *
- *  Main source file for the GenericHID demo. This file contains the main tasks of
- *  the demo and is responsible for the initial application hardware configuration.
- */
-
 #include "ChipWhispererSPI.h"
+
+typedef void (*BootPtr_t)(void) __attribute__ ((noreturn));
+BootPtr_t BootPtr = (BootPtr_t)0x1800;
+
+//Use PD5 (PDIC Pin) as CS
+#define SETUP_CS()  (DDRD |= 1<<5)
+#define CS_HIGH()   (PORTD |= 1<<5)
+#define CS_LOW()    (PORTD &= ~(1<<5))
 
 /** Buffer to hold the previously generated HID report, for comparison purposes inside the HID class driver. */
 static uint8_t PrevHIDReportBuffer[GENERIC_REPORT_SIZE];
@@ -66,8 +67,16 @@ USB_ClassInfo_HID_Device_t Generic_HID_Interface =
 int main(void)
 {
 	SetupHardware();
+    SETUP_CS();
+    CS_HIGH();
 
-	//LEDs_SetAllLEDs(LEDMASK_USB_NOTREADY);
+	// Initialize the SPI driver before first use
+    // NB: Should check the SPI_SAMPLE_RISING etc for your own use
+    SPI_Init(SPI_SPEED_FCPU_DIV_128 | SPI_ORDER_MSB_FIRST | SPI_SCK_LEAD_RISING |
+             SPI_SAMPLE_LEADING | SPI_MODE_MASTER);
+             
+    DDRB |= (1 << 0);
+ 
 	GlobalInterruptEnable();
 
 	for (;;)
@@ -80,24 +89,12 @@ int main(void)
 /** Configures the board hardware and chip peripherals for the demo's functionality. */
 void SetupHardware(void)
 {
-#if (ARCH == ARCH_AVR8)
 	/* Disable watchdog if enabled by bootloader/fuses */
 	MCUSR &= ~(1 << WDRF);
 	wdt_disable();
 
 	/* Disable clock division */
 	clock_prescale_set(clock_div_1);
-#elif (ARCH == ARCH_XMEGA)
-	/* Start the PLL to multiply the 2MHz RC oscillator to 32MHz and switch the CPU core to run from it */
-	XMEGACLK_StartPLL(CLOCK_SRC_INT_RC2MHZ, 2000000, F_CPU);
-	XMEGACLK_SetCPUClockSource(CLOCK_SRC_PLL);
-
-	/* Start the 32MHz internal RC oscillator and start the DFLL to increase it to 48MHz using the USB SOF as a reference */
-	XMEGACLK_StartInternalOscillator(CLOCK_SRC_INT_RC32MHZ);
-	XMEGACLK_StartDFLL(CLOCK_SRC_INT_RC32MHZ, DFLL_REF_INT_USBSOF, F_USB);
-
-	PMIC.CTRL = PMIC_LOLVLEN_bm | PMIC_MEDLVLEN_bm | PMIC_HILVLEN_bm;
-#endif
 
 	/* Hardware Initialization */
 	USB_Init();
@@ -123,8 +120,6 @@ void EVENT_USB_Device_ConfigurationChanged(void)
 	ConfigSuccess &= HID_Device_ConfigureEndpoints(&Generic_HID_Interface);
 
 	USB_Device_EnableSOFEvents();
-
-	//LEDs_SetAllLEDs(ConfigSuccess ? LEDMASK_USB_READY : LEDMASK_USB_ERROR);
 }
 
 /** Event handler for the library USB Control Request reception event. */
@@ -139,6 +134,9 @@ void EVENT_USB_Device_StartOfFrame(void)
 	HID_Device_MillisecondElapsed(&Generic_HID_Interface);
 }
 
+uint8_t spi_data[64];
+uint8_t spi_wait;
+
 /** HID class driver callback function for the creation of HID reports to the host.
  *
  *  \param[in]     HIDInterfaceInfo  Pointer to the HID class interface configuration structure being referenced
@@ -147,7 +145,7 @@ void EVENT_USB_Device_StartOfFrame(void)
  *  \param[out]    ReportData  Pointer to a buffer where the created report should be stored
  *  \param[out]    ReportSize  Number of bytes written in the report (or zero if no report is to be sent)
  *
- *  \return Boolean \c true to force the sending of the report, \c false to let the library determine if it needs to be sent
+ *  \return Boolean true to force the sending of the report, false to let the library determine if it needs to be sent
  */
 bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDInterfaceInfo,
                                          uint8_t* const ReportID,
@@ -155,15 +153,26 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
                                          void* ReportData,
                                          uint16_t* const ReportSize)
 {
-	uint8_t* Data        = (uint8_t*)ReportData;
-	//uint8_t  CurrLEDMask = LEDs_GetLEDs();
+	*ReportID = 0;
+	uint8_t* Data = (uint8_t*)ReportData;
 
-	//Data[0] = ((CurrLEDMask & LEDS_LED1) ? 1 : 0);
-	//Data[1] = ((CurrLEDMask & LEDS_LED2) ? 1 : 0);
-	//Data[2] = ((CurrLEDMask & LEDS_LED3) ? 1 : 0);
-	//Data[3] = ((CurrLEDMask & LEDS_LED4) ? 1 : 0);
-
-	*ReportSize = GENERIC_REPORT_SIZE;
+	if(spi_wait > 0){		
+	
+		if(spi_wait > (GENERIC_REPORT_SIZE-1)){
+			spi_wait = GENERIC_REPORT_SIZE-1;
+		}
+	
+        Data[0] = 0x80 | spi_wait;
+    
+		for(uint8_t i = 0; i < (GENERIC_REPORT_SIZE-1); i++){
+			Data[i+1] = spi_data[i];
+		}
+		spi_wait = 0;	
+		*ReportSize = GENERIC_REPORT_SIZE;
+		return true;
+	}
+		
+	*ReportSize = 0;
 	return false;
 }
 
@@ -175,30 +184,45 @@ bool CALLBACK_HID_Device_CreateHIDReport(USB_ClassInfo_HID_Device_t* const HIDIn
  *  \param[in] ReportData  Pointer to a buffer where the received report has been stored
  *  \param[in] ReportSize  Size in bytes of the received HID report
  */
+ 
 void CALLBACK_HID_Device_ProcessHIDReport(USB_ClassInfo_HID_Device_t* const HIDInterfaceInfo,
                                           const uint8_t ReportID,
                                           const uint8_t ReportType,
                                           const void* ReportData,
                                           const uint16_t ReportSize)
 {
-	uint8_t* Data       = (uint8_t*)ReportData;
-
-/*
-	uint8_t  NewLEDMask = LEDS_NO_LEDS;
-
-	if (Data[0])
-	  NewLEDMask |= LEDS_LED1;
-
-	if (Data[1])
-	  NewLEDMask |= LEDS_LED2;
-
-	if (Data[2])
-	  NewLEDMask |= LEDS_LED3;
-
-	if (Data[3])
-	  NewLEDMask |= LEDS_LED4;
-
-	LEDs_SetAllLEDs(NewLEDMask);
-*/
+	uint8_t* Data = (uint8_t*)ReportData;	
+	
+    /* Sending 0xFE as first byte means jump to bootloader */
+    if (*Data == 0xfe) {
+        USB_Detach();
+		_delay_ms(400);
+		cli();
+		USB_Attach();
+		BootPtr();
+        return;    
+    }
+    
+    /* Sending 0x00 as first byte means send SPI command */
+    if (*Data == 0x01) {
+        /* Get number of valid bytes */
+        uint8_t spibytes = *(++Data);
+        uint8_t bindex = 0;
+        
+        //Max size is 64-2 = 62 bytes
+        if (spibytes > (GENERIC_EPSIZE - 2)){
+            return;
+        }
+        
+        CS_LOW();        
+        while(spibytes){
+            ++Data;
+            spi_data[bindex] = SPI_TransferByte(*Data);
+            bindex++;
+            spibytes--;
+        }
+        CS_HIGH();
+        
+        spi_wait = bindex;    
+    }
 }
-

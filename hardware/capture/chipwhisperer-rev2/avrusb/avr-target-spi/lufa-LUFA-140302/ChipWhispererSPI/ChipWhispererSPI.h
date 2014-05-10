@@ -1,13 +1,12 @@
 /*
-             LUFA Library
-     Copyright (C) Dean Camera, 2014.
-
-  dean [at] fourwalledcubicle [dot] com
-           www.lufa-lib.org
+  SPI Driver for ChipWhisperer using AVR.
 */
 
 /*
-  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)
+  Copyright 2014  Colin O'Flynn (coflynn [at] newae [dot] com)
+  
+  Based on GenericHID Example which is:  
+  Copyright 2014  Dean Camera (dean [at] fourwalledcubicle [dot] com)  
 
   Permission to use, copy, modify, distribute, and sell this
   software and its documentation for any purpose is hereby granted
@@ -28,11 +27,6 @@
   this software.
 */
 
-/** \file
- *
- *  Header file for GenericHID.c.
- */
-
 #ifndef _GENERICHID_H_
 #define _GENERICHID_H_
 
@@ -47,7 +41,9 @@
 		#include "Config/AppConfig.h"
 
 		#include <LUFA/Drivers/USB/USB.h>
-		#include <LUFA/Platform/Platform.h>
+		#include <LUFA/Drivers/Peripheral/SPI.h>
+        #include <LUFA/Platform/Platform.h>
+        
 
 	/* Function Prototypes: */
 		void SetupHardware(void);

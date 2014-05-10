@@ -56,6 +56,7 @@
 			USB_Descriptor_Interface_t            HID_Interface;
 			USB_HID_Descriptor_HID_t              HID_GenericHID;
 			USB_Descriptor_Endpoint_t             HID_ReportINEndpoint;
+            USB_Descriptor_Endpoint_t             HID_ReportOUTEndpoint;
 		} USB_Descriptor_Configuration_t;
 
 		/** Enum for the device interface descriptor IDs within the device. Each interface descriptor
@@ -81,9 +82,10 @@
 	/* Macros: */
 		/** Endpoint address of the Generic HID reporting IN endpoint. */
 		#define GENERIC_IN_EPADDR         (ENDPOINT_DIR_IN | 1)
+		#define GENERIC_OUT_EPADDR        (ENDPOINT_DIR_OUT| 2)
 
 		/** Size in bytes of the Generic HID reporting endpoint. */
-		#define GENERIC_EPSIZE            8
+		#define GENERIC_EPSIZE            64
 
 	/* Function Prototypes: */
 		uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
