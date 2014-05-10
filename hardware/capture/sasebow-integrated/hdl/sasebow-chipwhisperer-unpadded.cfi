@@ -1,0 +1,11 @@
+# PROMGEN: Xilinx Prom Generator P.20131013
+# Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+SOFTWARE_VERSION P.20131013
+DATE            05/10/2014 - 11:24
+SOURCE          C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\sasebow-integrated\hdl\sasebo-w-unified-iseproject\sasebow-chipwhisperer-unpadded.mcs
+DEVICE          16384K
+DATA_WIDTH      1
+FILL_DATA       0x00
+SIGNATURE       0x0054D55E
+START_ADDRESS   0x00000000 END_ADDRESS 0x00406533 DIRECTION_UP   "C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/capture/sasebow-integrated/hdl/sasebo-w-unified-iseproject/chip_sasebo_w_vcp.bit" 6slx150fgg484

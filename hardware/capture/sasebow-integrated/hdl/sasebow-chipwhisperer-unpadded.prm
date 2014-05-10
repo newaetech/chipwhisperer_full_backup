@@ -1,0 +1,17 @@
+PROMGEN: Xilinx Prom Generator P.20131013
+Copyright (c) 1995-2013 Xilinx, Inc.  All rights reserved.
+
+promgen -w -p mcs -c 00 -o C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\sasebow-integrated\hdl\sasebo-w-unified-iseproject//sasebow-chipwhisperer-unpadded -s 16384 -u 0000 C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/capture/sasebow-integrated/hdl/sasebo-w-unified-iseproject/chip_sasebo_w_vcp.bit -spi 
+
+PROM C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\sasebow-integrated\hdl\sasebo-w-unified-iseproject\sasebow-chipwhisperer-unpadded.prm map: Sat May 10 11:24:54 2014
+
+Calculating PROM checksum with fill value 00
+
+Format        Mcs86 (32-bit)
+Size          16384K
+PROM start    0000:0000
+PROM end      00ff:ffff
+PROM checksum 0054d55e
+
+        Addr1        Addr2                     Date File(s)
+    0000:0000    0040:6533     May 06 19:58:32 2014 C:/E/Documents/academic/sidechannel/chipwhisperer/hardware/capture/sasebow-integrated/hdl/sasebo-w-unified-iseproject/chip_sasebo_w_vcp.bit
