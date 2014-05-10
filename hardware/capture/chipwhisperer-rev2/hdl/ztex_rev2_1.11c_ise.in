@@ -89,7 +89,7 @@ setup.v = Setup File
 fifoonly_adcfifo.xco = ADC FIFO CoreGen Setup
 fifo_target_tx.xco = Target TX FIFO Setup
 icap_fifo.xco = ICAP FIFO Setup
-fifo_sad_reg.xco = SAD REFERENCE FIFO Setup
+fifo_sad_ref.xco = SAD REFERENCE FIFO Setup
 
 [ADC FIFO CoreGen Setup]
 InputFile = fifoonly_adcfifo.xco.in
