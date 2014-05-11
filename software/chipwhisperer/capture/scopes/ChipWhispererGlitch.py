@@ -88,9 +88,9 @@ class ChipWhispererGlitch(QObject):
             #      files were probably generated from bitstream files.
             try:
                 tfpga = int(tfpga)
-                if abs(twidth - tfpga) > 20000 or abs(toffset - tfpga) > 20000:
+                if abs(twidth - tfpga) > 40000 or abs(toffset - tfpga) > 40000:
                     self.prEnabled = False
-                    print "Partial Reconfiguration DISABLED: FPGA File too > 6 hours difference from PR files"
+                    print "Partial Reconfiguration DISABLED: FPGA File too old, > 12 hours difference from PR files"
 
             except TypeError:
                 self.prEnabled = False
