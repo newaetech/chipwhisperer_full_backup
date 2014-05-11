@@ -237,6 +237,7 @@ class SimpleSerial(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
+                    {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'}
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -329,7 +330,11 @@ class SimpleSerial(TargetTemplate):
 
     def go(self):
         self.ser.flushInput()
-        cmd = "p"
+
+        cmd = self.findParam('ptcmd').value()
+
+        # cmd = "p"
+
         for b in self.input:
             cmd = cmd + "%2x"%b
         cmd = cmd + "\n"
