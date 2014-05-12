@@ -41,6 +41,7 @@ import os.path
 
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.qrc_resources
+import chipwhisperer.common.ParameterTypesCustom
 
 try:
     import writer_dpav3
@@ -103,6 +104,12 @@ try:
 except ImportError:
     target_SAKURAG = None
     target_SAKURAG_str = sys.exc_info()
+
+try:
+    import  chipwhisperer.capture.targets.ChipWhispererSPI as target_CWSPI
+except ImportError:
+    target_CWSPI = None
+    target_CWSPI_str = sys.exc_info()
 
 try:
     import  chipwhisperer.capture.auxiliary.FrequencyMeasure as aux_FrequencyMeasure
@@ -340,6 +347,9 @@ class TargetInterface(QObject):
             
         if target_SAKURAG is not None:
             valid_targets["SAKURA G"] = target_SAKURAG.SakuraG(self.log, showScriptParameter=showScriptParameter)
+
+        if target_CWSPI is not None:
+            valid_targets["ChipWhisperer SPI"] = target_CWSPI.ChipWhispererSPI(self.log, showScriptParameter=showScriptParameter)
         
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
 
