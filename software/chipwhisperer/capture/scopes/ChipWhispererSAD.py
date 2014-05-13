@@ -121,23 +121,25 @@ class ChipWhispererSAD(QObject):
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         data[0] = 0x01
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
+
+        if self.checkStatus():
+            raise IOError("SAD Reset in progress, but SAD reports still running! Critical Error.")
+
         data[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
 
     def start(self):
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         data[0] = 0x02
-        self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
+        self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
         data[0] = 0x00
-        self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
+        self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
 
     def checkStatus(self):
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         if not (data[0] & self.STATUS_RUNNING_MASK):
-            print "SAD Trigger Invalid"
             return False
         else:
-            print "SAD Trigger Valid"
             return True
 
     def getThreshold(self):
@@ -152,9 +154,10 @@ class ChipWhispererSAD(QObject):
         data[1] = threshold & 0xff
         data[2] = (threshold >> 8) & 0xff
         data[3] = (threshold >> 16) & 0xff
-        self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
+        self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
 
-        self.checkStatus()
+        if self.checkStatus() == False:
+            raise IOError("SAD Threshold set, but SAD compare not running. No valid trigger will be present. Did you load a reference waveform?")
 
     def setRefWaveform(self, dataRef):
         dataRefInt = [int(i) for i in dataRef]
