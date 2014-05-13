@@ -242,8 +242,10 @@ class GraphWidget(QWidget):
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
         :type startoffset: int
-                
         
+        :param ghostTrace: By default the last plotted trace is stored for use with stuff such as an overlay that
+                           selects data off the graph. If ghostTrace is set to 'true' the passed data is NOT stored.
+        :type ghostTrace: bool
         """
 
         if ghostTrace is False:
