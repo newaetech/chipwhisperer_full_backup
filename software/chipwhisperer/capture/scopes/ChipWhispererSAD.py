@@ -123,7 +123,7 @@ class ChipWhispererSAD(QObject):
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
 
         if self.checkStatus():
-            raise IOError("SAD Reset in progress, but SAD reports still running! Critical Error.")
+            raise IOError("SAD Reset in progress, but SAD reports still running. Is ADC Clock stopped?")
 
         data[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
