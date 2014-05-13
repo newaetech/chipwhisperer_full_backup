@@ -27,17 +27,76 @@ class RangeParameterItem(WidgetParameterItem):
         WidgetParameterItem.__init__(self, param, depth)
 
     def svChangedEmit(self):
-        self.sigs.sigValueChanged.emit(self)
+        if self.validateLimits():
+            self.sigs.sigValueChanged.emit(self)
         
     def svChangingEmit(self, val):
         self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
+        
+    def svLowChanging(self):
+        if self.validateLimits("high"):
+            self.svChangingEmit(None)
+        
+    def svHighChanging(self):
+        if self.validateLimits("low"):
+            self.svChangingEmit(None)
+        
+    def validateLimits(self, change=0):
+        try:
+            fixedsize = self.param.opts['fixedsize']
+        except KeyError:
+            return True
+        
+        if fixedsize == 0:
+            return True
+        
+        if (self.whigh.value() - self.wlow.value()) != fixedsize:
+            
+            # Limits wrong! Adjust as needed
+
+            attempts = 0
+
+            while change != "done":
+                if change == "low":
+
+                    attempts += 1
+
+                    lowval = self.whigh.value() - fixedsize
+                    if self.wlow.valueInRange(lowval):
+                        self.wlow.setValue(lowval, update=True, delaySignal=True)
+                        change = "done"
+                    else:
+                        self.wlow.setValue(self.wlow.opts['bounds'][0], update=True, delaySignal=True)
+                        change = "high"
+
+                # Prefer to change whigh
+                if change == "high":
+
+                    attempts += 1
+
+                    highval = fixedsize + self.wlow.value()
+                    if self.whigh.valueInRange(highval):
+                        self.whigh.setValue(highval, update=True, delaySignal=True)
+                        change = "done"
+                    else:
+                        self.whigh.setValue(self.whigh.opts['bounds'][1], update=True, delaySignal=True)
+                        change = "low"
+
+                # Give up - not possible most likely
+                if attempts == 4:
+                    return False
+
+            return False
+        else:
+            return True
+        
         
     def makeLayout(self):
         self.sigs = SigStuff()
         opts = self.param.opts        
         defs = {
                 'value': 0, 'min': None, 'max': None, 'int': True, 
-                'step': 1.0, 'minStep': 1.0, 'dec': False, 
+                'step': 1.0, 'minStep': 1.0, 'dec': False, 'fixedsize':0,
                 'siPrefix': False, 'suffix': ''
             }
         defs.update(opts)
@@ -50,9 +109,9 @@ class RangeParameterItem(WidgetParameterItem):
         whigh.setOpts(**defs)
         
         whigh.sigValueChanged.connect(self.svChangedEmit)
-        whigh.sigValueChanging.connect(self.svChangingEmit)
+        whigh.sigValueChanging.connect(self.svHighChanging)
         wlow.sigValueChanged.connect(self.svChangedEmit)
-        wlow.sigValueChanging.connect(self.svChangingEmit)        
+        wlow.sigValueChanging.connect(self.svLowChanging)        
         
         l = QtGui.QHBoxLayout()
         l.setContentsMargins(0,0,0,0)
@@ -132,7 +191,7 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.lri = pg.LinearRegionItem(values=(self.wlow.value(), self.whigh.value()))
         self.pg.addPersistantItem(self.lri)
         self.lri.setVisible(False)
-        self.lri.sigRegionChanged.connect(self.lriChanged)        
+        self.lri.sigRegionChanged.connect(self.lriChanged)
         return w
     
     def buttonPressed(self, status):

@@ -27,7 +27,7 @@
 
 import sys
 from functools import partial
-import time
+import numpy as np
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -50,6 +50,10 @@ CODE_WRITE      = 0xC0
 class ChipWhispererSAD(QObject):
     paramListUpdated = Signal(list)
              
+    STATUS_RUNNING_MASK = 1<<3
+    STATUS_RESET_MASK = 1<<0
+    STATUS_START_MASK = 1 << 1
+             
     def __init__(self, showScriptParameter=None, CWMainWindow=None):
 
         self.waveformDock = CWMainWindow.waveformDock
@@ -58,13 +62,18 @@ class ChipWhispererSAD(QObject):
         paramSS = [
                 # {'name':'Open SAD Viewer', 'type':'action'},
                  {'name':'SAD Ref From Captured', 'type':'group', 'children':[
-                    {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self.waveformDock.widget()},
-                    {'name':'Copy Data from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
+                    {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0),
+                                           'graphwidget':self.waveformDock.widget(), 'set':self.updateSADTraceRef, 'fixedsize':128},
+                    {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
+                    {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'limits':(-1, 100E6), 'readonly':True},
                     ]},
                 {'name':'SAD Threshold', 'type':'int', 'range':(0, 100000), 'value':0, 'set':self.setThreshold, 'get':self.getThreshold}
                 ]
             
+        self.oldlow = None
+        self.oldhigh = None
         self.oa = None
+        self.sadref = [0]
         self.params = Parameter.create(name='SAD Trigger Module', type='group', children=paramSS)
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
@@ -76,17 +85,37 @@ class ChipWhispererSAD(QObject):
     def dataChanged(self, data, offset):
         low = offset
         up = offset + len(data) - 1
-        self.findParam('pointrng').setLimits((low, up))
-        self.findParam('pointrng').setValue((low, min(up, low + 128)))
 
-    def copyFromCaptureTrace(self):
+        if self.oldlow != low or self.oldup != up:
+            self.oldlow = low
+            self.oldup = up
+            self.findParam('pointrng').setLimits((low, up))
+            self.findParam('pointrng').setValue((low, min(up, low + 128)))
+
+        self.updateSADTraceRef()
+
+    def getCaptueTraceRef(self):
         pstart = self.findParam('pointrng').value()[0]
         pend = self.findParam('pointrng').value()[1]
-
         data = self.waveformDock.widget().lastTraceData[pstart:pend]
-        print len(data)
-        self.setRefWaveform(data)
+        data = np.array(data)
+        data = (data + 0.5) * 1024
+        return data
 
+    def copyFromCaptureTrace(self):
+        data = self.getCaptueTraceRef()
+
+        if len(data) != 128:
+            print "WARNING: Reference IS NOT 128 samples long"
+
+        self.sadref = data.copy()
+        self.setRefWaveform(data)
+        
+    def updateSADTraceRef(self, ignored=None):
+        data = self.getCaptueTraceRef()
+        diff = data - self.sadref
+        diff = sum(abs(diff))
+        self.findParam('sadrefcur').setValue(diff)
 
     def reset(self):
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
@@ -102,6 +131,15 @@ class ChipWhispererSAD(QObject):
         data[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
 
+    def checkStatus(self):
+        data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
+        if not (data[0] & self.STATUS_RUNNING_MASK):
+            print "SAD Trigger Invalid"
+            return False
+        else:
+            print "SAD Trigger Valid"
+            return True
+
     def getThreshold(self):
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         threshold = data[1]
@@ -116,14 +154,15 @@ class ChipWhispererSAD(QObject):
         data[3] = (threshold >> 16) & 0xff
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
 
-    def setRefWaveform(self, dataRefFP):
-        # HACK: Covert back to ADC Type
-        dataRef = [((i + 0.5) * 1024) for i in dataRefFP]
+        self.checkStatus()
+
+    def setRefWaveform(self, dataRef):
         dataRefInt = [int(i) for i in dataRef]
 
         self.reset()
 
-        print dataRefInt
+        # print dataRefInt
+        dataRefInt = dataRefInt[::-1]
 
         wavedata = []
         for d in dataRefInt:
