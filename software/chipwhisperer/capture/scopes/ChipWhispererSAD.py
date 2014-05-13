@@ -48,6 +48,11 @@ CODE_WRITE      = 0xC0
 
 
 class ChipWhispererSAD(QObject):
+    """
+    Communicates and drives with the Sum of Absolute Differences (SAD) Module inside the ChipWhisperer System. You
+    need to configure the trigger module as active & set the trigger polarity to "high" for this to work.    
+    """
+
     paramListUpdated = Signal(list)
              
     STATUS_RUNNING_MASK = 1<<3
@@ -83,6 +88,8 @@ class ChipWhispererSAD(QObject):
             self.showScriptParameter(param, changes, self.params)
 
     def dataChanged(self, data, offset):
+        """ Called when data in the trace window has changed. Used to update the limits for the point selection dialog. """
+
         low = offset
         up = offset + len(data) - 1
 
@@ -95,6 +102,8 @@ class ChipWhispererSAD(QObject):
         self.updateSADTraceRef()
 
     def getCaptueTraceRef(self):
+        """ Get the reference data for SAD algorithm from the capture trace window """
+
         pstart = self.findParam('pointrng').value()[0]
         pend = self.findParam('pointrng').value()[1]
         data = self.waveformDock.widget().lastTraceData[pstart:pend]
@@ -103,6 +112,8 @@ class ChipWhispererSAD(QObject):
         return data
 
     def copyFromCaptureTrace(self):
+        """ Send reference data to hardware from the trace window """
+
         data = self.getCaptueTraceRef()
 
         if len(data) != 128:
@@ -112,12 +123,16 @@ class ChipWhispererSAD(QObject):
         self.setRefWaveform(data)
         
     def updateSADTraceRef(self, ignored=None):
+        """ Update the calculated SAD value parameter """
+
         data = self.getCaptueTraceRef()
         diff = data - self.sadref
         diff = sum(abs(diff))
         self.findParam('sadrefcur').setValue(diff)
 
     def reset(self):
+        """ Reset the SAD hardware block. The ADC clock must be running! """
+
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         data[0] = 0x01
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
@@ -129,6 +144,8 @@ class ChipWhispererSAD(QObject):
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data)
 
     def start(self):
+        """ Start the SAD algorithm, which causes the reference data to be loaded from the FIFO """
+
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         data[0] = 0x02
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
@@ -136,6 +153,8 @@ class ChipWhispererSAD(QObject):
         self.oa.sendMessage(CODE_WRITE, sadcfgaddr, data, Validate=False)
 
     def checkStatus(self):
+        """ Check if the SAD module is running & outputting valid data """
+
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         if not (data[0] & self.STATUS_RUNNING_MASK):
             return False
@@ -143,6 +162,8 @@ class ChipWhispererSAD(QObject):
             return True
 
     def getThreshold(self):
+        """ Get the threshold. When the SAD output falls below this threshold the system triggers """
+
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         threshold = data[1]
         threshold |= data[2] << 8
@@ -150,6 +171,8 @@ class ChipWhispererSAD(QObject):
         return threshold
 
     def setThreshold(self, threshold):
+        """ Set the threshold. When the SAD output falls below this threshold the system triggers """
+
         data = self.oa.sendMessage(CODE_READ, sadcfgaddr, maxResp=4)
         data[1] = threshold & 0xff
         data[2] = (threshold >> 8) & 0xff
@@ -160,6 +183,8 @@ class ChipWhispererSAD(QObject):
             raise IOError("SAD Threshold set, but SAD compare not running. No valid trigger will be present. Did you load a reference waveform?")
 
     def setRefWaveform(self, dataRef):
+        """ Download a reference waveform. Resets the SAD module & starts it again after loading the new data. ADC Clock must be running! """
+
         dataRefInt = [int(i) for i in dataRef]
 
         self.reset()
@@ -176,6 +201,8 @@ class ChipWhispererSAD(QObject):
         self.start()
 
     def setOpenADC(self, oa):
+        """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
+
         self.oa = oa.sc
             
         try:
