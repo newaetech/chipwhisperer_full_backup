@@ -49,7 +49,9 @@ module reg_clockglitch(
 	input [5:0]    reg_hypaddress,
 	output [15:0]  reg_hyplen,
 
-	input wire 		sourceclk,
+	input wire 		sourceclk0,
+	input wire     sourceclk1,
+	
 	output wire    glitchclk,
 	input wire     exttrigger
    );
@@ -72,6 +74,7 @@ module reg_clockglitch(
    );  
 `endif
         	  
+	 			  
 	/* Controls width of pulse */
 	 wire [8:0] phase1_requested;
 	 wire [8:0] phase1_actual;
@@ -150,6 +153,10 @@ module reg_clockglitch(
 	 
 	 [55..48] (Byte 6, Bits [7..0])
 	      Cycles to glitch-1 (e.g. 0 means 1 glitch)
+			
+	 [57..56] (Byte 7, But [1..0]) = Glitch Clock Source
+	       00 = Source 0
+			 01 = Source 1	      
 */	
 	 
 	 wire [2:0] glitch_type;
@@ -159,6 +166,11 @@ module reg_clockglitch(
 	 
 	 wire [7:0] max_glitches;
 	 assign max_glitches = clockglitch_settings_reg[55:48];
+	 
+	 wire       sourceclk;
+	 assign sourceclk = (clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1 :
+								sourceclk0;
+							  //(clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1
 	 
 	 wire manual;
 	 assign manual = clockglitch_settings_reg[47];

@@ -345,7 +345,8 @@ module interface(
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_glitch),
 		.reg_stream(),
-		.sourceclk(target_hs1),
+		.sourceclk0(target_hs1),
+		.sourceclk1(clkgen),
 		.glitchclk(glitchclk),
 		.exttrigger(ext_trigger)	
 		);
