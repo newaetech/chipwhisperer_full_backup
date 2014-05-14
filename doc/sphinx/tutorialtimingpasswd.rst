@@ -57,6 +57,9 @@ for general informationon using the ChipWhisperer-Capture Interface.
    When you are done the software should look as follows:
    
    .. image:: /images/tutorials/basic/timingpower/connectscope_2.png
+   
+   Now press the target connect (click the button labeled *Target: DIS*). The scope & target should
+   now both be breen circles.
 
 7. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
 

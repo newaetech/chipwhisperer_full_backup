@@ -36,7 +36,7 @@ Full Table of Contents:
     installing    
     tutorialsbasic
     tutorialsadvanced
-    cwpython
+    chipwhisperer
     hardware
     fpgamain
 
