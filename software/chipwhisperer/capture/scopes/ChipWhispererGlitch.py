@@ -54,11 +54,19 @@ def SIGNEXT(x, b):
     return (x ^ m) - m
 
 class ChipWhispererGlitch(QObject):
+    """
+    Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA module inserted into other systems.
+    """
+
+    CLKSOURCE0_BIT = 0b00000000
+    CLKSOURCE1_BIT = 0b00000001
+    CLKSOURCE_MASK = 0b00000011
+
     paramListUpdated = Signal(list)
              
     def __init__(self, showScriptParameter=None):
         paramSS = [
-                {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':0}, 'value':0},
+                {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
                 {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
                 {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
@@ -150,6 +158,11 @@ class ChipWhispererGlitch(QObject):
         return p
     
     def updatePartialReconfig(self, anything=None):
+        """
+        Reads the values set via the GUI & updates the hardware settings for partial reconfiguration. Checks that PR
+        is enabled with self.prEnabled.
+        """
+
         width = self.findParam('width').value()
         offset = self.findParam('offset').value()
         
@@ -165,8 +178,8 @@ class ChipWhispererGlitch(QObject):
             
         # print "Partial: %d %d"%(widthint, offsetint)
        
-    def setGlitchWidthFine(self, fine):
-        '''Set the fine phase adjust, range -255 to 255'''
+    def setGlitchOffsetFine(self, fine):
+        """Set the fine glitch offset adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               
 
         LSB = fine & 0x00FF;
@@ -185,8 +198,8 @@ class ChipWhispererGlitch(QObject):
     def getGlitchWidthFine(self):
         return self.getDCMStatus()[0]
 
-    def setGlitchOffsetFine(self, fine):
-        '''Set the fine phase adjust, range -255 to 255'''
+    def setGlitchWidthFine(self, fine):
+        """Set the fine glitch width adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               
 
         LSB = fine & 0x00FF;
@@ -227,6 +240,8 @@ class ChipWhispererGlitch(QObject):
         return (phase1, phase2, dcm1Lock, dcm2Lock)
         
     def resetDCMs(self):
+        """Reset the DCMs for the Glitch width & Glitch offset. Required after doing a PR operation"""
+
         reset = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8) 
         reset[5] |= (1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
@@ -237,11 +252,14 @@ class ChipWhispererGlitch(QObject):
         self.findParam('offsetfine').setValue(0)
         
     def checkLocked(self):
+        """Check if the DCMs are locked and print results """
+
         stat = self.getDCMStatus()
         print "DCM1: Phase %d, Locked %r"%(stat[0], stat[2])
         print "DCM2: Phase %d, Locked %r"%(stat[1], stat[3])  
         
     def setNumGlitches(self, num):
+        """Set number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         if num < 1:
             num = 1
@@ -249,19 +267,23 @@ class ChipWhispererGlitch(QObject):
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
         
     def numGlitches(self):
+        """Get number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return resp[6]+1
     
     def setGlitchTrigger(self, trigger):
+        """Set glitch trigger type (manual, continous, adc-trigger)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = (resp[5] & ~(0x0C)) | (trigger << 2)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)        
         
     def glitchTrigger(self):
+        """Get glitch trigger type"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[5] & 0x0C) >> 2
     
     def setGlitchType(self, t):
+        """Set glitch output type (ORd with clock, XORd with clock, clock only, glitch only)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = (resp[5] & ~(0x70)) | (t << 4)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)        
@@ -271,9 +293,24 @@ class ChipWhispererGlitch(QObject):
         return (resp[5] & 0x70) >> 4
         
     def glitchManual(self):
+        """
+        Cause a single glitch event to occur. Depending on setting of numGlitches() this may mean
+        multiple glitches in a row
+        """
+
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = resp[5] | (1<<7)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)           
         resp[5] = resp[5] & ~(1<<7)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False) 
         
+    def setGlitchClkSource(self, source):
+        """Set the source of the glitched clock, either the HS1-In or the CLKGEN Module"""
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        resp[7] = (resp[7] & ~self.CLKSOURCE_MASK) | source
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False) 
+        
+    def glitchClkSource(self):
+        resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+        return (resp[7] & self.CLKSOURCE_MASK)
+
