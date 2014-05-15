@@ -72,7 +72,7 @@ class ChipWhispererSAD(QObject):
                     {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
                     {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'limits':(-1, 100E6), 'readonly':True},
                     ]},
-                {'name':'SAD Threshold', 'type':'int', 'range':(0, 100000), 'value':0, 'set':self.setThreshold, 'get':self.getThreshold}
+                {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'value':0, 'set':self.setThreshold, 'get':self.getThreshold}
                 ]
             
         self.oldlow = None
