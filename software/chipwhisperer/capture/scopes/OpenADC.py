@@ -72,6 +72,7 @@ except ImportError:
 
 import ChipWhispererExtra as ChipWhispererExtra
 import ChipWhispererSAD as ChipWhispererSAD
+import ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 
 class OpenADCInterface_FTDI(QWidget):    
     paramListUpdated = Signal(list) 
@@ -433,6 +434,7 @@ class OpenADCInterface(QObject):
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
+        self.digitalPattern = None
         
         scopeParams = [{'name':'connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
                        {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
@@ -483,6 +485,9 @@ class OpenADCInterface(QObject):
                 self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter, self.parent)
                 self.advancedSAD.setOpenADC(self.qtadc)
 
+                self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.showScriptParameter, self.parent)
+                self.digitalPattern.setOpenADC(self.qtadc)
+
                 self.paramListUpdated.emit(None)
             
             self.connectStatus.emit(True)
@@ -522,5 +527,8 @@ class OpenADCInterface(QObject):
             
         if self.advancedSAD is not None:
             for a in self.advancedSAD.paramList(): p.append(a)
+
+        if self.digitalPattern is not None:
+            for a in self.digitalPattern.paramList(): p.append(a)
 
         return p

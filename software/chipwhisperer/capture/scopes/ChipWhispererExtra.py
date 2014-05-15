@@ -39,10 +39,6 @@ except ImportError:
     sys.exit()
 
 from openadc.ExtendedParameter import ExtendedParameter
-
-from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
-
 import ChipWhispererGlitch
 
 CODE_READ = 0x80
@@ -51,9 +47,6 @@ CODE_WRITE = 0xC0
 ADDR_DATA = 33
 ADDR_LEN = 34
 ADDR_BAUD = 35
-
-ADDR_TRIGCLKDIV = 36
-ADDR_TRIGIOPROG = 37
 
 ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
@@ -174,7 +167,6 @@ class CWExtraSettings(object):
                                            'value':self.IOROUTE_HIGHZ},
                                                                                            
                  ]},
-                
                 ]}]
     
     def con(self, oa):
@@ -288,142 +280,7 @@ class CWExtraSettings(object):
         resp[0] = resp[0] & 0xE7    
         if enabled:
             resp[0] = resp[0] | 0x08
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)      
-   
-class CWAdvTrigger(object):
-    def __init__(self):
-        super(CWAdvTrigger, self).__init__()
-        self.oa = None
-    
-    def con(self, oa):
-        self.oa = oa
-
-    def setExtPin(self, line):
-        return
-
-    def setIOPattern(self, pattern, form='units', clkdiv=None):
-        ''' Setup the IO trigger pattern.'''
-        "Form can be 'units' or 'seconds'. If set to 'units' you"
-        "must also set the clkdiv parameter properly"        
-
-        #Pattern format:
-        #[state, low, high]
-        #state = 1/0
-        #low = time in seconds/units
-        #high = time in seconds/units
-        #Special high variables:
-        #Set to 'now' means next state after low time passes
-        #high = 'now'        
-        #Set to 'wait' means no upper limit, but wait for transition
-        #of IO line before changing state
-        #high = 'wait'
-
-        if len(pattern) > 63:
-            raise ValueError("pattern too long: Hardware supports max of 64 pattern points")
-
-        addr = 0        
-        for p in pattern:
-            state = p[0]
-            low = p[1]
-            high = p[2]        
-            #TODO: support seconds
-            if form == 'seconds':
-                print "Not Supported"
-
-            if high == 'now':
-                high = 511
-
-            if high == 'wait':
-                high = 510
-
-            # Addr = 0 has several samples taken at 'full speed' before clock divider
-            # gets pushed in. The following seems to typically work to compensate, but
-            # at high speeds this might be wrong.
-            if addr == 0:
-                low += 3
-                high += 3
-
-                if (low >= 510) or (high >= 510):
-                    raise ValueError("low or high for addr=0 too large!")
-
-            # print "%04d: %2d - %2d" % (addr, low, high)
-
-            self.writeOnePattern(addr, state, low, high)
-            addr = addr + 1
-
-        #Set done marker
-        self.writeOnePattern(addr, 1, 255, 511)
-
-        if clkdiv:
-            self.writeClockDiv(clkdiv)
-
-    def writeClockDiv(self, clkdiv):
-        clkdiv = int(clkdiv)
-        d = bytearray()        
-        d.append(clkdiv & 0xff)
-        d.append((clkdiv >> 8) & 0xff)
-        d.append((clkdiv >> 16) & 0xff)        
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, d)
-
-    def reset(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGCLKDIV, Validate=False, maxResp=3)
-        #Assert Reset
-        resp[2] = resp[2] | 0x80
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
-
-        #Deassert Reset
-        resp[2] = resp[2] & 0x7F;
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
-
-    def writeOnePattern(self, addr, state, low, high):
-        d = bytearray()
-        d.append(low)
-        d.append(high & 0xff)
-        d.append((0x01 & (high >> 8)) | (state << 1))
-        d.append(addr)        
-        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGIOPROG, d)  
-        
-    def processBit(self, state, cnt, first=False, last=False, var=1, osRate=3):
-        cnt = osRate * cnt
-        low = cnt - var
-        high = cnt + var
-    
-        if low < 1:
-            low = 1
-    
-        if high > 509:
-            high = 509
-    
-        if first:
-            high = 'wait'
-    
-        if last:
-            high = 'now'    
-    
-        return [state, low, high]    
-    
-    def bitsToPattern(self, bits):
-        pattern = []
-        lastbit = 2
-        bitcnt = 0
-        first = True
-        for b in bits:
-            if b == lastbit:
-                bitcnt = bitcnt + 1
-            else:
-                if bitcnt > 0:
-                    #print "%d %d"%(lastbit, bitcnt)
-                    pattern.append(self.processBit(lastbit, bitcnt, first=first))
-                lastbit = b
-                bitcnt = 1
-    
-            first = False
-        pattern.append(self.processBit(lastbit, bitcnt, last=True))
-        return pattern
-    
-    def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
-        totalpat = strToBits(string, startbits, stopbits, parity)
-        return self.bitsToPattern(totalpat)
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
 class CWPLLDriver(object):
     def __init__(self):
@@ -621,3 +478,8 @@ class CWPLLDriver(object):
             raise IOError("No ACK from Slave in I2C")
 
    
+
+
+    
+    
+    
