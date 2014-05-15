@@ -106,7 +106,7 @@ the configuration must be fixed at design time. The Xilinx-provided run-time adj
 +/- 5nS in 30pS increments (exact values vary with operating conditions).
 
 For most operating conditions this is insufficient - if attacking a target at 7.37MHz the clock cycle would have a period of 136nS. In order
-to provide a larger adjustment range an advanced FPGA feature called `Partial Reconfiguration` (PR) is used. The PR system requires special
+to provide a larger adjustment range, an advanced FPGA feature called `Partial Reconfiguration` (PR) is used. The PR system requires special
 `partial bitstreams` which contain modifications to the FPGA bitstream. These are stored as two files in the folder
 ``chipwhisperer\software\chipwhisperer\capture\scopes\cw-partial-file``. These two files are ``s6lx25-glitchwidth.p`` and ``s6lx25-glitchoffset.p``.
 These files are `keyed` to the bitstream file, and must be generated with a script. On startup the ChipWhisperer software confirms that the
@@ -226,43 +226,64 @@ One the AVR is programmed (see previous tutorials), you need to setup a few jump
 Hardware Setup
 ^^^^^^^^^^^^^^^^^
 
-The hardware is almost as in previous incarnations. The difference is the 'FPGAOUT' is bridged to the AVR clock, and the
-`CLKOSC` is bridged to the `FPGAIN`. You will require a small jumper wire to bridge `FPGAIN` to `CLKOSC`.
+The hardware is almost as in previous incarnations. The difference is the 'FPGAOUT' is bridged to the AVR clock. You can either choose to use the
+7.37MHz clock on the multi-target board, or use the CLKGEN feature to generate a suitable 7.37MHz clock. This example will use the CLKGEN feature.
+
+The AVR is being used as the glitch target. The following figure shows the expected jumper settings:
+
+TODO
 
 Software Setup
 ^^^^^^^^^^^^^^^^^
 
-1. Start ChipWhisperer-Capture
+1. Connect to the ChipWhisperer device:
 
-2. As the *Scope Module*, select the *ChipWhisperer/OpenADC* option
+    1. As the *Scope Module*, select the *ChipWhisperer/OpenADC* option
 
-3. As the *Target Module*, select the *Simple Serial* option
+    2. As the *Target Module*, select the *Simple Serial* option
 
-4. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* option
+    3. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* option
 
-5. Run the *Download CW Firmware* tool. You should see the FPGA being programmed if required.
+    4. Run the *Download CW Firmware* tool. You should see the FPGA being programmed if required.
 
-6. Run connect on both the Scope & Target. They should both switch to green circles indicating the system is connected.
+    5. Run connect on both the Scope & Target. They should both switch to green circles indicating the system is connected.
 
-7. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
+2. Setup the CLKGEN Module to Generate a 7.37 MHz clock and route it through the Glitch Generator
 
-   .. image:: /images/tutorials/basic/timingpower/termconn.png
+    1. Switch the *Freq Counter Src* to the *CLKGEN Output*
+    
+    2. Set the *Desired Frequency* to 7.37 MHz. Note you should only adjust the 'frequency' portion of this, if you highlight the entire field
+       you may not be able to type the frequency into the system.
+       
+    3. Confirm the *DCM Locked* checkbox is checked, if not hit the *Reset CLKGEN DCM* box. Check the *Freq Counter* to ensure the system is correctly
+       generating a 7.37 MHz clock.
+
+    4. Under the *Glitch Module* set the *Clock Source* as *CLKGEN*:
+    
+       .. image:: /images/tutorials/advanced/glitching/glitchgen-clkgen.png
+
+    5. Under the *Target HS IO-Out* option select the *Glitch Module*:
+
+       .. image:: /images/tutorials/advanced/glitching/targioout.png
+
+3. Connect the Serial Port
+    
+    1. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
+
+        .. image:: /images/tutorials/basic/timingpower/termconn.png
+
+    2. The baud rate for this system is 38400, which should be the default for the ChipWhisperer serial port. 
+
+    3. Connect the USB-A cable (if not already connected) to the back of the ChipWhisperer device. Start AVRStudio and open the
+       programmer dialog. We will use the `Read Signature` button to reset the AVR every time we want to restart the program. Confirm
+       this works by pressing the `Read Signature` button:
    
-8. Under the *Target HS IO-Out* option select the *Glitch Module*:
-
-   .. image:: /images/tutorials/advanced/glitching/targioout.png
-
-8. The baud rate for this system is 38400, which should be the default for the ChipWhisperer serial port. 
-
-9. Connect the USB-A cable (if not already connected) to the back of the ChipWhisperer device. Start AVRStudio and open the
-   programmer dialog. We will use the `Read Signature` button to reset the AVR every time we want to restart the program. Confirm
-   this works by pressing the `Read Signature` button:
+       .. image:: /images/tutorials/advanced/glitching/readsig.png
    
-   .. image:: /images/tutorials/advanced/glitching/readsig.png
+       When you press this button the AVR will display the `Hello` message, which should look something like this:
    
-   When you press this button the AVR will display the `Hello` message, which should look something like this:
-   
-   .. image:: /images/tutorials/advanced/glitching/termhello.png
+       .. image:: /images/tutorials/advanced/glitching/termhello.png
+
 
 We'll now look at glitching this routine. You should inspect the source code to determine that after sending the ``A`` the system goes into
 an infinite loop::
