@@ -87,7 +87,7 @@ from chipwhisperer.analyzer.ListAllModules import ListAllModules
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer Analyzer V2")
+        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer" + u"\u2122" + " Analyzer V2")
         self.console = self.addConsole()   
         
         self.results = ResultsPlotting()

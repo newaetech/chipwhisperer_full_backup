@@ -266,9 +266,46 @@ class MainChip(QMainWindow):
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
 
-    def jerkface(self):
-        """Trolls the User"""
-        QMessageBox.question(self, 'Just Kidding', "Just kidding, this doesn't exist yet. Well good luck then, I better be going.", QMessageBox.No, QMessageBox.No)
+    def helpdialog(self):
+        """Helps the User"""
+        QMessageBox.about(self, 'Link to Documentation', 'See <a href="http://www.newae.com/sidechannel/cwdocs">newae.com/sidechannel/cwdocs</a> for Tutorials and '
+                                                            'Documentation. If you are using an official release, this documentation should have also been present with '
+                                                            'your release.<br><br>'
+                                                            'See <a href="http://www.chipwhisperer.com">chipwhisperer.com</a> for Wiki, GIT Code, community information.'
+                                                            '<br><br>See the About dialog for Copyright, Trademark, and Authorship information'
+                                                            )
+
+    def aboutdialog(self):
+        """Tells the User"""
+        QMessageBox.about(self, 'About', '<h3>ChipWhisperer' + u'\u2122' + '</h3>'
+                                         '<h4>Copyright Information</h4>'
+                                         'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2014. <br>'
+                                         'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2014.'
+                                         '<h4>License Information</h4>'
+                                         'Released under the GPLv3 License, see <a href="http://www.gnu.org/copyleft/gpl.html">License Details</a>.<br>'
+                                         'Various parts of this project may be released under additional open-source licenses such as the BSD License '
+                                         'or LGPL license. See source code for details of specific licenses.'
+                                         '<h4>Projects used in ChipWhisperer</h4>'
+                                         'ChipWhisperer is built on or otherwise uses a number of open-source projects. Many thanks are given to the following '
+                                         'projects, which may also have additional license restrictions or information: '
+                                         '<ul>'
+                                         '<li><a href="https://www.python.org/">Python</a></li>'
+                                         '<li><a href="http://qt-project.org/">Qt</a></li>'
+                                         '<li><a href="http://qt-project.org/wiki/pyside">PySide</a></li>'
+                                         '<li><a href="http://www.pyqtgraph.org/">PyQtGraph</a></li>'
+                                         '<li><a href="http://www.numpy.org/">NumPy</a></li>'
+                                         '<li><a href="http://www.scipy.org/">SciPy</a></li>'
+                                         '<li><a href="http://sourceforge.net/apps/trac/pyusb/">PyUSB</a></li>'
+                                         '<li><a href="http://www.fourwalledcubicle.com/LUFA.php">LUFA USB Library</a></li>'
+                                         '<li><a href="http://www.ztex.de/downloads/#firmware_kit">ZTEX EZ-USB SDK</a></li>'
+                                         '<li><a href="http://www.libusb.org/wiki/libusb-1.0">libusb-1.0</a></li>'
+                                         '<li><a href="http://winavr.sourceforge.net/">WinAVR</a></li>'
+                                         '</ul>'
+                                         'Some projects may be missing from the above list - please let us know, any omission is a mistake!'
+                                         '<h4>Trademark Information</h4>'
+                                         'ChipWhisperer is a Trademark of NewAE Technology Inc.'
+                                         ''
+                                         )
 
     def createMenus(self):
         """Create all menus (File, Window, etc)"""
@@ -290,10 +327,12 @@ class MainChip(QMainWindow):
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpManualAct = QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.jerkface)
+        self.helpManualAct = QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog)
         self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
+        self.helpAboutAct = QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog)
         self.helpMenu.addAction(self.helpManualAct)
         self.helpMenu.addAction(self.helpListAct)
+        self.helpMenu.addAction(self.helpAboutAct)
             
     def enforceMenuOrder(self):
         """Makes sure menus appear in correct order, required as they get reordered when we add a new item to one"""
