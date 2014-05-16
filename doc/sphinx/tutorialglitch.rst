@@ -3,7 +3,13 @@
 Tutorial: Glitch Attacks
 =====================================
 
-This advanced tutorial will demonstrate glitch attacks using the ChipWhisperer system.
+This advanced tutorial will demonstrate glitch attacks using the ChipWhisperer system. There is a video which briefly outlines some of the attacks on this page too:
+
+|YouTubeGlitch|_
+
+.. |YouTubeGlitch| image:: /images/tutorials/advanced/glitching/youtube-glitch.png
+.. _YouTubeGlitch: http://www.youtube.com/watch?v=Ib8qvAlU8xo&hd=1
+
 
 Background on Glitching
 -------------------------
