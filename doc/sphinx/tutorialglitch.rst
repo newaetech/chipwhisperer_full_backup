@@ -92,7 +92,7 @@ The generation of glitches is done with two variable phase shift modules, config
 
 .. figure:: /images/tutorials/advanced/glitching/glitchgen-phaseshift.png
 
-The enable line is used to determine when glitches are inserted. Glitches can be inserted continously (useful for development) or triggered by 
+The enable line is used to determine when glitches are inserted. Glitches can be inserted continuously (useful for development) or triggered by 
 some event. The following figure shows how the glitch can be muxd to output to the Device Under Test (DUT).
 
 .. figure:: /images/tutorials/advanced/glitching/glitchgen-mux.png
@@ -149,12 +149,16 @@ You should also open the file ``glitchexample.c`` which is the source code. The 
     {
         //Can monitor Port C, Pin 5 (top right pin on 28-DIP)
         DDRC |= 1<<5;
-        PORTC = 1<<5;
+        PORTC |= 1<<5;
         
         //Some fake variable
         volatile uint8_t a = 0;
         
         output_ch_0('A');
+        
+        //External trigger logic
+        trigger_high();
+        trigger_low();
         
         //Should be an infinite loop
         while(a != 2){
@@ -197,16 +201,10 @@ You should also open the file ``glitchexample.c`` which is the source code. The 
 You should confirm that ``glitch1()`` is actually called from the main subroutine. There are several glitch examples and it's possible the
 wrong subroutine has been setup previously::
 
-    int main
-        (
-        void
-        )
-        {
+    int main(void){
+        trigger_setup();
         init_uart0();
         
-        /* For 2 MHz crystal use this hack */
-        //BAUD0L_REG = 12;
-
         /* Uncomment this to get a HELLO message for debug */	
         output_ch_0('h');
         output_ch_0('e');
@@ -214,7 +212,7 @@ wrong subroutine has been setup previously::
         output_ch_0('l');
         output_ch_0('o');
         output_ch_0('\n');
-        
+        _delay_ms(20);
             
         glitch1();
             
@@ -231,7 +229,7 @@ The hardware is almost as in previous incarnations. The difference is the 'FPGAO
 
 The AVR is being used as the glitch target. The following figure shows the expected jumper settings:
 
-TODO
+.. image:: /images/tutorials/advanced/glitching/glitchhw.jpg
 
 Software Setup
 ^^^^^^^^^^^^^^^^^
@@ -290,6 +288,10 @@ an infinite loop::
 
         output_ch_0('A');
         
+        //External trigger logic
+        trigger_high();
+        trigger_low();
+        
         //Should be an infinite loop
         while(a != 2){
         ;
@@ -306,6 +308,8 @@ an infinite loop::
 
 Using clock glitching we'll escape from this loop!
 
+.. _glitch-manual1:
+
 Manual Glitch Trigger
 ----------------------
 
@@ -315,23 +319,295 @@ out of. Doing so requires modifying the `glitch width` and `glitch offset` exper
 It is recommended to only use the *glitch width (as % of period)* option, as the fine adjust is too small of a change for this lower-speed
 example. Other hardware may need the precision added by the fine adjust however!
 
-To check if your glitches are working, simply hit the *Manual Trigger* button, which will insert a single glitch. You may find it useful to increase
-the *Repeat* number to send several glitches at once. Ideally however we want a single glitch to cause the loop to break out. You know the loop
-has broken out if you see additional information printed. The following figure shows several successul glitches:
+The following figure shows several different settings for a 7.37 MHz clock. The `width` is set to 10%, which for the 136nS clock period of the 7.37 MHz
+clock means the glitch width is about 13.6 nS. When the `offset` is negative, the glitch is placed in-front of the clock. The glitch is XORd with the clock,
+meaning this becomes a small positive-going glitch in-front of the regular clock pulse.
+
+If the `offset` is positive, the glitch occurs *after* the rising edge of the clock pulse. Because this glitch pulse is XORd with the clock, it becomes
+a negative-going glitch inserted in the 'middle' of the regular clock pulse.
+
+    .. image:: /images/tutorials/advanced/glitching/clockglitch-examplesettings.png
+
+With some background, let's now check some glitches. Assuming you've setup the example as before, do the following:
+
+1. Set the *Glitch Width (as % of period)* to around 7.5
+2. Set the *Glitch Offset (as % of period)* to around -10
+3. Ensure *Glitch Trigger* is *Manual*
+4. Set the *Repeat* to 1
+5. Hit the *Manual Trigger* button
+6. See if you end up with either the AVR resetting (reprints ``hello\nA``), or glitches out of the loop (prints ``1234``). It may do both. You may need to
+   press the *Manual Trigger* button several times quickly.
+7. To force a reset of the AVR, use the `Signature Read` option in AVRStudio.
+8. Adjust the glith width & offset as needed. 
+9. You may also adjust the *Repeat* option, or cause it to glitch several instructions.
+
+The following figure shows several successul glitches:
 
     .. image:: /images/tutorials/advanced/glitching/glitchsimple-playaround.png
     
-Be aware that you may crash the AVR! In the preceeding examples the AVR had reset after each glitch. It may simply go into another infinite loop
-however, or even enter invalid states. Use the `Signature Read` option in AVRStudio to force a hardware reset of the AVR.
+**Be aware that you may crash the AVR!** In the previous examples the AVR had reset after each glitch. It may simply go into another infinite loop
+however, or even enter invalid states. Again use the `Signature Read` option in AVRStudio to force a hardware reset of the AVR in these cases. It may
+appear like the AVR was never glitched, whereas in reality it was glitched into some invalid state.
 
-Automatic Glitch Triggering - Basic
-------------------------------------
+Automatic Glitch Triggering
+---------------------------------
+
+The manual trigger used previously is suitable when the embedded system is waiting for further input. For example if the embedded system is waiting for
+a password, you could insert glitches without requiring accurate timing. We'll explore the use of the capture trigger for glitching here, which also improves
+the repeatability of your glitch attempts.
+
+To use this system, you must first understand the routing of the trigger to the glitch module. The following figure shows the trigger routing, which is more
+basic than the power capture trigger:
+
+    .. image:: /images/triggerrouting.png
+
+Note in particular that if using an external IO pin, you only have a *rising edge trigger*. The example glitch program for the AVR includes a line which is
+set 'High' at critical moments, allowing you to experiment with this basic IO trigger. 
+
+Basic Trigger on ``glitch1()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This first example will use the automatic trigger to attack the existing system.
+
+1. Assuming your system is still setup to glitch as in :ref:`glitch-manual1`.
+
+2. Set the *Trigger Pins* to only use the *Target IO4* pin:
+
+    .. image:: /images/tutorials/advanced/glitching/glitchsetup-triggerext.png
+
+3. Using AVRStudio hit the *Read Signature* button to reset the AVR. You should once again see the following output when you hit the *Read Signature* button::
+
+    hello
+    A
+
+4. Under the *Glitch Trigger* set to *External Trigger*:
+
+    .. image:: /images/tutorials/advanced/glitching/glitchsetup-trigger.png
+    
+5. Using AVRStudio hit the *Read Signature* button to reset the AVR. You may need to adjust the *Repeat* number slightly, the objective is to have the system
+   automatically glitch through the loop on reset! Likely you won't get 100% reliability, but it's possible to check...
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic1.png
 
 
+Serial IO Line Trigger on ``glitch1()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Automatic Glitch Triggering - Serial IO Line
-----------------------------------------------
+We'll now attack the same system as before, but using an automatic digital pattern trigger. This will detect
+when the DUT sends the ``A`` character indicating the infinite loop is going to happen.
 
+1. Switch the *Trigger Module* to *Digital Pattern Matching*:
 
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger1.png
 
+2. Setup the system to monitor both TX & RX lines, using an AND logic. The lines normally idle high, thus
+   the AND combination allows you to trigger on either sent or received data:
 
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger2.png
+
+3. Under the *Digital Pattern Trigger Module*, set the Baud rate to 38400. Set the *Trigger Character* to ``A``:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger3.png
+
+When the glitch sends an ``A``, the glitch will trigger. If you want to check the trigger is occurring, you
+can use the normal analog capture. To do so follow these steps:
+
+4. Set the gain setting to *30*:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog1.png
+
+5. Set the trigger mode to *rising edge*:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog2.png
+   
+6. Set the ADC clock source to *CLKGEN x4 via DCM*, and ensure the *DCM Locked* checkbox indicates the DCM
+   is locked, along with the ADC frequency being *29.5 MHz*. Hit the *Reset ADC DCM* button if this is not
+   the case:
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog3.png
+
+Finally - we can check both the triggering and the glitches. To check the triggers our occurring:
+
+7. Hit the *Capture 1* box. Quickly (before the timeout occurs) hit the *Read Signature* button in AVRStudio,
+   which will reset the AVR. It should send an ``A`` causing the trigger to occur. If the system is working the
+   ADC will capture data, immediately on hitting *Read Signature*. If the trigger is NOT working you will instead
+   see a message printed about *Timeout in OpenADC capture(), trigger FORCED* in the *Debug Logging* tab:
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog3.png
+
+8. The glitch trigger will occur whenever the trigger conditions are met, and *DOES NOT* rely on the capture
+   to be armed. Thus for example try adjusting the *Repeat* number until you are able to get glitches occuring
+   by simply hitting the *Read Signature* button to reset the AVR.
+   
+  
+.. _basic-glitch2:
+
+Basic Trigger on ``glitch2()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In this module we'll be glitching a new function, which compares a received character to some known character. 
+The ``glitch2()`` function looks as follows::
+
+    void glitch2()
+    {
+        char c;  
+        
+        output_ch_0('B');
+           
+        c = input_ch_0();
+        
+        trigger_high();
+        trigger_low();
+        
+        if (c != 'q'){
+            output_ch_0('1');
+        } else {
+            output_ch_0('2');
+        }
+        output_ch_0('\n');
+        output_ch_0('\n');
+        output_ch_0('\n');
+        output_ch_0('\n');
+    }
+
+Here you need to send a character to the DUT for it to respond appropriately. The following steps details this,
+assuming you are already connected to the target device, for example by following at minimum the :ref:`glitch-manual1`
+example, however if you've completed the serial triggering tutorial you can also use that system setup.
+
+1. Modify the file ``glitchexample.c`` to call ``glitch2()`` instead of ``glitch1()``, which is to say simply
+   change the main function called from ``main()`` to ``glitch2()``.
+   
+2. Run ``make MCU=atmega328p`` in the folder ``chipwhisperer\hardware\victims\firmware\avr-glitch-examples``
+
+3. In order to program the resulting ``.hex`` file, you must **DISABLE** the glitches so you have a clean clock.
+   Set the glitch trigger to manual:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic2-disableglitch.png
+ 
+4. Program the ``glitchexample.hex`` file using AVRStudio into the microcontroller.
+
+5. Using AVRStudio hit the *Read Signature* button to reset the AVR. You should once again see the following output when you hit the *Read Signature* button::
+
+    hello
+    B
+
+6. Try typing a ``q`` character and hit enter, and view the response in the console. If you send a ``q`` the
+   system will respond with a ``2``. If you send any other character the system will respond with a ``1``. Once
+   the response has been sent you need to reset the AVR using the ``Read Signature`` button!
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic2-comms.png
+
+7. We will now set the *Glitch Trigger* set to *External Trigger*:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchsetup-trigger.png
+   
+8. Set the trigger routing to use IO-Pin 4 only, uncheck any other options (e.g. front-panel A or TX/RX lines): 
+
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic2-setup1.png
+   
+9. Reset the AVR, and again it will send a ``B`` then wait for input. Send a character (either ``q`` or something
+   that is not q such as ``a``). The objective is to observe some odd behaviour, such as always responding with a
+   ``2``. In the following example note that sending a ``q`` causes the system to continue operation correctly,
+   but other characters cause it to reset:
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic2-results.png
+   
+   You will have to modify the *Repeat* value! You may also need to tweak the glitch offset and width.
+   
+
+Basic Trigger on ``glitch3()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In this module we'll be glitching a new function, which compares a received password to some known password. 
+The ``glitch3()`` function looks as follows::
+
+    void glitch3()
+    {
+        char inp[16];
+        char c;
+        int cnt = 0;
+        output_ch_0('C');
+
+        c = 'A';
+        while((c != '\n') & (cnt < 16)){
+            c = input_ch_0();
+            inp[cnt] = c;
+            cnt++;
+        }
+        
+        char passwd[] = "touch";
+        char passok = 1;
+        
+        trigger_high();
+        trigger_low();
+        
+        //Simple test - doesn't check for too-long password!
+        for(cnt = 0; cnt < 5; cnt++){
+            if (inp[cnt] != passwd[cnt]){
+                passok = 0;
+            }
+        }
+        
+        if (!passok){
+            output_ch_0('B');
+            output_ch_0('a');
+            output_ch_0('d');
+            output_ch_0('\n');
+        } else {
+            output_ch_0('W');
+            output_ch_0('e');
+            output_ch_0('l');
+            output_ch_0('c');
+            output_ch_0('o');
+            output_ch_0('m');
+            output_ch_0('e');
+            output_ch_0('\n');
+        }
+    }
+    
+The following assumes you have already completed the setup in the :ref:`basic-glitch2`.
+
+1. Modify the file ``glitchexample.c`` to call ``glitch3()`` instead of ``glitch2()``, which is to say simply
+   change the main function called from ``main()`` to ``glitch3()``.
+   
+2. Run ``make MCU=atmega328p`` in the folder ``chipwhisperer\hardware\victims\firmware\avr-glitch-examples``
+
+3. In order to program the resulting ``.hex`` file, you must **DISABLE** the glitches so you have a clean clock.
+   Set the glitch trigger to manual:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic2-disableglitch.png
+ 
+4. Program the ``glitchexample.hex`` file using AVRStudio into the microcontroller.
+
+5. Using AVRStudio hit the *Read Signature* button to reset the AVR. You should see the following output when you hit the *Read Signature* button::
+
+    hello
+    C
+
+6. Ensure the *TX on Enter* is set to ``\n``. Type ``t`` and send to the target, which should respond with
+   ``Welcome``, indicating the password was accepted. Reset the AVR and try other passwords, it will respond with
+   ``Bad``. Our objective is to get the ``Welcome`` message with the wrong password!
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic3-serial.png
+
+7. We will now set the *Glitch Trigger* set to *External Trigger*:
+
+   .. image:: /images/tutorials/advanced/glitching/glitchsetup-trigger.png
+   
+8. The system is now setup to glitch! Using the AVR reset, keep trying new passwords. You will need to finely tune
+   all three parameters (Repeat, Glitch Width, Glitch Offset). In addition the glitch may not be reliable - it may
+   be only occasionally the password is accepted. However for most secure embedded systems it would not be required
+   to have a 'reliable' password glitch entry, just one that works often enough! The following shows an example of
+   a successful glitch attack:
+   
+   .. image:: /images/tutorials/advanced/glitching/glitchexample-basic3-success.png
+   
+Glitching Onward
+-------------------
+
+This basic tutorial has introduced you to glitch attacks. They are a powerful tool for bypassing authentication
+in embedded hardware devices. There are many ways to expand your knowledge with additional practice, such as:
+
+* Use manual glitches to try simply glitching past the prompt in ``glitch3()``.
+* Download some example source code (bootloaders, login prompts, etc) and port them to the AVR. See how you can
+  glitch past security checks.
+  
