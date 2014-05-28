@@ -737,6 +737,14 @@ class ChipWhispererCapture(MainChip):
         self.TargetToolbar.addWidget(self.targetStatus)
         self.TargetToolbar.setEnabled(False)
 
+        # Other Stuff
+        self.miscValidateAction = QAction(QIcon(':/images/validate.png'), 'Validate', self)
+        self.miscValidateAction.triggered.connect(self.validateSettings)
+
+        self.MiscToolbar = self.addToolBar('Misc Tools')
+        self.MiscToolbar.setObjectName('Misc Tools')
+        self.MiscToolbar.addAction(self.miscValidateAction)
+
 
     def masterStatusChanged(self):
         # Deal with multiple
@@ -871,21 +879,14 @@ class ChipWhispererCapture(MainChip):
         self.statusBar().showMessage("Trace %d done"%num)
         #self.newScopeData(data, offset)        
 
-    def validateSettings(self):
-        pass
-
-    def captureM(self):
+    def validateSettings(self, warnOnly=False):
+        # Validate settings from all modules before starting multi-capture
+        vw = ValidationDialog(onlyOkButton=not warnOnly)
+        
         if self.target.driver:
             target = self.target.driver
         else:
             target = None
-            
-        #Check key with target
-        if target:
-            self.setKey(target.checkEncryptionKey(self.key), True, True)
-            
-        # Validate settings from all modules before starting multi-capture
-        vw = ValidationDialog()
 
         # Basic Validation of settings from the main GUI
         if target is None:
@@ -925,14 +926,30 @@ class ChipWhispererCapture(MainChip):
         if tracesPerRun > 10E3:
             vw.addMessage("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb")
 
-        if vw.numWarnings() > 0:
-            if vw.exec_() == False:
-                return
+        if vw.numWarnings() > 0 or warnOnly == False:
+            return vw.exec_()
+        else:
+            return True
+
+    def captureM(self):
+        if self.target.driver:
+            target = self.target.driver
+        else:
+            target = None
+            
+        #Check key with target
+        if target:
+            self.setKey(target.checkEncryptionKey(self.key), True, True)
+            
+        if self.validateSettings(True) == False:
+            return
 
         overallstarttime = datetime.now()
 
         tcnt = 0
         writerlist = []
+
+        tracesPerRun = int(self.numTraces / self.numSegments)
 
         for i in range(0, self.numSegments):
 
