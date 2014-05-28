@@ -80,3 +80,10 @@ class TraceContainerNative(TraceContainer.TraceContainer):
     def closeAll(self):        
         self.saveAllTraces( os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
         
+        # Release memory associated with data
+        self.traces = None
+        self.textints = None
+        self.textouts = None
+        self.keylist = None
+        self.knownkey = None
+
