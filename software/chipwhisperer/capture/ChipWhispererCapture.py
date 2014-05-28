@@ -127,6 +127,7 @@ except ImportError:
     TraceContainerMySQL = None
 
 from chipwhisperer.capture.ListAllModules import ListAllModules
+from chipwhisperer.common.ValidationDialog import ValidationDialog
 
 class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
@@ -860,6 +861,9 @@ class ChipWhispererCapture(MainChip):
         self.statusBar().showMessage("Trace %d done"%num)
         #self.newScopeData(data, offset)        
 
+    def validateSettings(self):
+        pass
+
     def captureM(self):
         if self.target.driver:
             target = self.target.driver
@@ -870,6 +874,38 @@ class ChipWhispererCapture(MainChip):
         if target:
             self.setKey(target.checkEncryptionKey(self.key), True, True)
             
+        # Validate settings from all modules before starting multi-capture
+        vw = ValidationDialog()
+
+        # Basic Validation
+        if target is None:
+            vw.addMessage("warn", "ChipWhispererCapture", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
+        else:
+            try:
+                target.validateSettings(vw)
+            except AttributeError:
+                vw.addMessage("info", "Target Module", "Target has no validateSettings()", "", "73b08424-3865-4274-8fd7-dd213ede2c46")
+
+        if self.scope is None:
+            vw.addMessage("warn", "ChipWhispererCapture", "No Scope Module", "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f")
+        else:
+            try:
+                self.scope.validateSettings(vw)
+            except AttributeError:
+                vw.addMessage("info", "Scope Module", "Scope has no validateSettings()", "", "d19be31d-ad1a-4533-80dc-9423dfa92753")
+
+        if self.trace is None:
+            vw.addMessage("warn", "ChipWhispererCapture", "No Writer Module", "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727")
+        else:
+            try:
+                self.trace.validateSettings(vw)
+            except AttributeError:
+                vw.addMessage("info", "Writer Module", "Writer has no validateSettings()", "", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae")
+
+        if vw.exec_() == False:
+            return
+
+
         starttime = datetime.now()  
         baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
         prefix = baseprefix + "_"
