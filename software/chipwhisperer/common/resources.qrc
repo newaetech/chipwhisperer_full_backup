@@ -19,5 +19,6 @@
 <file>images/yauto.png</file>
 <file>images/ydefault.png</file>
 <file>images/ylock.png</file>
+<file>images/validate.png</file>
 </qresource>
 </RCC>
