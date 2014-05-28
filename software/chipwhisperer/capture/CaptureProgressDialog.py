@@ -45,7 +45,8 @@ class CaptureProgressDialog(QDialog):
         self.abort = False
 
         # Qt.WindowCloseButtonHint |
-        self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) & ~(Qt.WindowContextHelpButtonHint))
+        # | Qt.WindowStaysOnTopHint
+        self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & ~(Qt.WindowContextHelpButtonHint))
         self.setWindowTitle("Capture in Progress")
         # self.setWindowIcon(QIcon(imagePath + "attack_transp.png"))
 
