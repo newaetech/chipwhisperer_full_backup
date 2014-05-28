@@ -78,11 +78,10 @@ class ProjectFormat(QObject):
         self.datadirectory = "default-data-dir/"
         self.config = ConfigObj()
         self.traceManager = None
+        self.checkDataDirectory()
         
-        #Check if data-directory exists?
-        if not os.path.isdir(self.datadirectory):
-            os.mkdir(self.datadirectory)
-            os.mkdir(os.path.join(self.datadirectory, 'traces'))
+        self.dataDirIsDefault = True
+
         
     def hasFilename(self):
         if self.filename == "untitled.cwp":
@@ -117,8 +116,18 @@ class ProjectFormat(QObject):
     def setFilename(self, f):
         self.filename = f
         self.config.filename = f        
-        self.datadirectory = os.path.basename(self.filename) + "/"
+        self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
+        self.checkDataDirectory()
+        self.dataDirIsDefault = False
         
+    def checkDataDirectory(self):
+        # Check if data-directory exists?
+        if not os.path.isdir(self.datadirectory):
+            os.mkdir(self.datadirectory)
+
+            # Make trace storage directory too
+            os.mkdir(os.path.join(self.datadirectory, 'traces'))
+
     def load(self, f=None):
         if f is not None:
             self.setFilename(f)
