@@ -471,7 +471,9 @@ class ChipWhispererCapture(MainChip):
                          
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
-                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.setNumSegments, 'get':self.getNumSegments},
+                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.setNumSegments, 'get':self.getNumSegments, 'tip':'Break capture into N segments, '
+                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
+                         'as each segment is buffered into RAM before being written to disk.'},
                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
                         {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
                         {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
@@ -885,7 +887,7 @@ class ChipWhispererCapture(MainChip):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog()
 
-        # Basic Validation
+        # Basic Validation of settings from the main GUI
         if target is None:
             vw.addMessage("warn", "General Settings", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
         else:
@@ -915,13 +917,17 @@ class ChipWhispererCapture(MainChip):
             except AttributeError:
                 vw.addMessage("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae")
 
+        if self.proj.dataDirIsDefault:
+            vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
+
         tracesPerRun = int(self.numTraces / self.numSegments)
 
         if tracesPerRun > 10E3:
             vw.addMessage("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb")
 
-        if vw.exec_() == False:
-            return
+        if vw.numWarnings() > 0:
+            if vw.exec_() == False:
+                return
 
         overallstarttime = datetime.now()
 

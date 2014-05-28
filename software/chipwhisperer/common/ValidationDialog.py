@@ -42,6 +42,7 @@ class ValidationDialog(QDialog):
         self.setupLayout(onlyOkButton)
 
         self.messageList = []
+        self.nWarnings = 0
 
     def addMessage(self, level, module, note, fix, uuid):
 
@@ -53,10 +54,11 @@ class ValidationDialog(QDialog):
 
     def reloadTables(self):
         for m in self.messageList:
-            # TODO: Check promote/demote table
+            # TODO: Check promote/demote table to override the default settings
             if m["level"] == "warn":
                 table = self.tableWarnings
                 pbtext = "Demote"
+                self.nWarnings += 1
             else:
                 table = self.tableInfos
                 pbtext = "Promote"
@@ -85,6 +87,9 @@ class ValidationDialog(QDialog):
 
     def clearDefaultErrorLevels(self):
         pass
+
+    def numWarnings(self):
+        return self.nWarnings
 
     def setupLayout(self, onlyOkButton=False):
         self.tableWarnings = QTableWidget(0, 4)
