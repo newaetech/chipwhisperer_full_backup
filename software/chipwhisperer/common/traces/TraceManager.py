@@ -173,7 +173,9 @@ class TraceManagerDialog(QDialog):
     def saveProject(self, config, configfilename):
         for indx, t in enumerate(self.traceList):
             config[self.secName]['tracefile%d'%indx] = os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0])
-            config[self.secName]['enabled%d'%indx] = str(t.config.enabled)
+
+            # TODO: Fix me - this whole system is too much of a hack. Just enable everythign on save for now...
+            config[self.secName]['enabled%d' % indx] = "True"  # str(t.config.enabled)
 
     def loadProject(self, configfilename):
         config = ConfigParser.RawConfigParser()
@@ -215,6 +217,7 @@ class TraceManagerDialog(QDialog):
         self.table.insertRow(location)
         row = self.table.rowCount()-1
         cb = QCheckBox()
+        cb.setChecked(True)
         cb.clicked.connect(self.validateTable)
         self.table.setCellWidget(row, self.findCol("Enabled"), cb)
 
