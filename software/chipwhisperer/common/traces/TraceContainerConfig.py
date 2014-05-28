@@ -92,7 +92,10 @@ class TraceContainerConfig(object):
     # headerLabel = short description/name used for header label in trace management dialog
     #
            
-    attrDict = {
+
+    def __init__(self, configfile=None):
+        """If a config file is given, will attempt to load that file"""
+        self.attrDictInst = {
                 "sectionName":"Trace Config",
                 "moduleName":"native",
                 "module":None,
@@ -112,17 +115,13 @@ class TraceContainerConfig(object):
                     },
                 }
     
-    attrList = [attrDict]
-    
-    def __init__(self, configfile=None):
-        """If a config file is given, will attempt to load that file"""
-        self.enabled = False
+        self.attrList = [self.attrDictInst]
         self.mappedRange = None
         self.trace = None
         if configfile is not None:
             configfile = os.path.normpath(configfile)
         self._configfile = configfile
-        
+
         #Attempt load/sync
         self.loadTrace(configfile)
         
@@ -198,7 +197,7 @@ class TraceContainerConfig(object):
         If the 'changed' flag of an attribute is TRUE, the internal DB will overwrite the disk file.
         """
          
-        debug = True
+        debug = False
          
         for ad in self.attrList:
             sn = ad["sectionName"]

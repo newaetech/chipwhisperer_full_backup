@@ -470,7 +470,8 @@ class ChipWhispererCapture(MainChip):
                     ]},   
                          
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
-                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E6), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
+                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
+                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.setNumSegments, 'get':self.getNumSegments},
                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
                         {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
                         {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
@@ -479,6 +480,7 @@ class ChipWhispererCapture(MainChip):
         
         self.da = None
         self.numTraces = 100
+        self.numSegments = 1
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -514,6 +516,12 @@ class ChipWhispererCapture(MainChip):
         
     def setNumTraces(self, t):
         self.numTraces = t      
+
+    def setNumSegments(self, s):
+        self.numSegments = s
+
+    def getNumSegments(self):
+        return self.numSegments
 
     def setKey(self, key, binary=False, updateParamList=False):
         
@@ -879,79 +887,101 @@ class ChipWhispererCapture(MainChip):
 
         # Basic Validation
         if target is None:
-            vw.addMessage("warn", "ChipWhispererCapture", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
+            vw.addMessage("warn", "General Settings", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
         else:
             try:
                 target.validateSettings(vw)
             except AttributeError:
-                vw.addMessage("info", "Target Module", "Target has no validateSettings()", "", "73b08424-3865-4274-8fd7-dd213ede2c46")
+                vw.addMessage("info", "Target Module", "Target has no validateSettings()", "Internal Error", "73b08424-3865-4274-8fd7-dd213ede2c46")
 
         if self.scope is None:
-            vw.addMessage("warn", "ChipWhispererCapture", "No Scope Module", "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f")
+            vw.addMessage("warn", "General Settings", "No Scope Module", "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f")
         else:
             try:
                 self.scope.validateSettings(vw)
             except AttributeError:
-                vw.addMessage("info", "Scope Module", "Scope has no validateSettings()", "", "d19be31d-ad1a-4533-80dc-9423dfa92753")
+                vw.addMessage("info", "Scope Module", "Scope has no validateSettings()", "Internal Error", "d19be31d-ad1a-4533-80dc-9423dfa92753")
 
-        if self.trace is None:
-            vw.addMessage("warn", "ChipWhispererCapture", "No Writer Module", "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727")
+        if self.trace is not None:
+            writer = self.trace(self.traceparams)
+        else:
+            writer = None
+
+        if writer is None:
+            vw.addMessage("warn", "General Settings", "No Writer Module", "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727")
         else:
             try:
-                self.trace.validateSettings(vw)
+                writer.validateSettings(vw)
             except AttributeError:
-                vw.addMessage("info", "Writer Module", "Writer has no validateSettings()", "", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae")
+                vw.addMessage("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae")
+
+        tracesPerRun = int(self.numTraces / self.numSegments)
+
+        if tracesPerRun > 10E3:
+            vw.addMessage("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb")
 
         if vw.exec_() == False:
             return
 
+        overallstarttime = datetime.now()
 
-        starttime = datetime.now()  
-        baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
-        prefix = baseprefix + "_"
+        tcnt = 0
+        writerlist = []
+
+        for i in range(0, self.numSegments):
+
+            if self.trace is not None:
+                writer = self.trace(self.traceparams)
+            else:
+                writer = None
+
+            starttime = datetime.now()
+            baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
+            prefix = baseprefix + "_"
+
+            # Load trace writer information
+            if writer:
+                writer.config.setAttr("prefix", prefix)
+                writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
+                writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+
+
+            if self.fixedPlain:
+                ptInput = self.plaintext
+            else:
+                ptInput = None
+
+            rndKey = self.findParam('newKeyAlways').value()
+
+            if self.aux is not None:
+                self.aux.setPrefix(baseprefix)
+
+            ac = acquisitionController(self.scope, target, writer, aux=self.aux,
+                                       esm=self.esm, fixedPlain=ptInput,
+                                       newKeyPerTrace=rndKey)
+
+            ac.traceDone.connect(self.printTraceNum)
+            ac.setMaxtraces(tracesPerRun)
+
+            self.capture1Act.setEnabled(False)
+            self.captureMAct.setEnabled(False)
+
+            ac.doReadings(addToList=self.manageTraces, key=self.key)
+
+            tcnt += tracesPerRun
+            self.statusBar().showMessage("%d Captures Completed" % tcnt)
             
-        #Load trace writer        
-        if self.trace is not None:
-            writer = self.trace(self.traceparams)
-            writer.config.setAttr("prefix", prefix)
-            writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
-            writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
-        else:
-            writer = None
-                    
-        if self.fixedPlain:
-            ptInput = self.plaintext
-        else:
-            ptInput = None
+            stoptime = datetime.now()
 
-        rndKey = self.findParam('newKeyAlways').value()
-
-        if self.aux is not None:
-            self.aux.setPrefix(baseprefix)
-
-        ac = acquisitionController(self.scope, target, writer, aux=self.aux,
-                                   esm=self.esm, fixedPlain=ptInput,
-                                   newKeyPerTrace=rndKey)
-
-        ac.traceDone.connect(self.printTraceNum)
-        tn = self.numTraces
-        ac.setMaxtraces(tn)        
-
-        self.capture1Act.setEnabled(False)
-        self.captureMAct.setEnabled(False)
-
-        ac.doReadings(addToList=self.manageTraces, key=self.key)
-        self.statusBar().showMessage("%d Captures Completed"%tn)
+            writerlist.append(writer)
         
-        stoptime = datetime.now()
-        
-        self.console.append("Capture delta time: %s"%str(stoptime-starttime))
+        self.console.append("Capture delta time: %s" % str(stoptime - overallstarttime))
         
         self.capture1Act.setEnabled(True)
         self.captureMAct.setChecked(False)
         self.captureMAct.setEnabled(True)
 
-        return writer
+        return writerlist
         
     def scopeChanged(self, newscope):        
         self.scope = newscope

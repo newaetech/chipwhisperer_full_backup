@@ -129,7 +129,7 @@ class TraceContainer(object):
                     
                 #Do a resize now to allocate more memory
                 self.traces.resize((self.tracehint, self.traces.shape[1]))
-                        
+
             self.traces[self._numTraces][:] = trace
             
         self._numTraces += 1
@@ -190,6 +190,10 @@ class TraceContainer(object):
     def closeAll(self):
         """Writer is done, can close/save any files."""               
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
+
+    def validateSettings(self, vw):
+        """Check settings, log any messages to special setup window"""
+        pass
         
         
 if __name__ == "__main__":
