@@ -128,6 +128,7 @@ except ImportError:
 
 from chipwhisperer.capture.ListAllModules import ListAllModules
 from chipwhisperer.common.ValidationDialog import ValidationDialog
+from chipwhisperer.capture.CaptureProgressDialog import CaptureProgressDialog
 
 class acquisitionController(QObject):
     traceDone = Signal(int, list, int)
@@ -282,6 +283,10 @@ class acquisitionController(QObject):
 
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
+
+    def abortCapture(self, doAbort=True):
+        if doAbort:
+            self.running = False
 
     def doReadings(self, addToList=None, key=None):
         self.running = True
@@ -875,9 +880,9 @@ class ChipWhispererCapture(MainChip):
         self.capture1Act.setEnabled(True)
         self.captureMAct.setEnabled(True)
 
-    def printTraceNum(self, num, data, offset=0):
-        self.statusBar().showMessage("Trace %d done"%num)
-        #self.newScopeData(data, offset)        
+    # def printTraceNum(self, num, data, offset=0):
+    #    self.statusBar().showMessage("Trace %d done"%num)
+    #    #self.newScopeData(data, offset)
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
@@ -951,7 +956,13 @@ class ChipWhispererCapture(MainChip):
 
         tracesPerRun = int(self.numTraces / self.numSegments)
 
+        cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
+
+        cprog.startCapture()
+
         for i in range(0, self.numSegments):
+
+            cprog.incSeg()
 
             if self.trace is not None:
                 writer = self.trace(self.traceparams)
@@ -983,8 +994,9 @@ class ChipWhispererCapture(MainChip):
                                        esm=self.esm, fixedPlain=ptInput,
                                        newKeyPerTrace=rndKey)
 
-            ac.traceDone.connect(self.printTraceNum)
+            ac.traceDone.connect(cprog.traceDoneSlot)
             ac.setMaxtraces(tracesPerRun)
+            cprog.abortCapture.connect(ac.abortCapture)
 
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
