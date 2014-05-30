@@ -319,7 +319,8 @@ class acquisitionController(QObject):
             self.aux.captureComplete()
 
         if self.writer is not None:
-            self.writer.closeAll()
+            # Don't clear trace as we re-use the buffer
+            self.writer.closeAll(clearTrace=False)
         
         if addToList is not None:
             if self.writer is not None:
@@ -960,6 +961,13 @@ class ChipWhispererCapture(MainChip):
 
         cprog.startCapture()
 
+        # This system re-uses one wave buffer a bunch of times. This is required since the memory will become
+        # fragmented, even though you are just freeing & reallocated the same size buffer. It's slightly less
+        # clear but it ensures you don't suddently have a capture interrupted with a memory error. This can
+        # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
+        # the 1GB limit that a 32-bit process would expect to give you trouble at.
+        waveBuffer = None
+
         for i in range(0, self.numSegments):
 
             cprog.incSeg()
@@ -978,6 +986,10 @@ class ChipWhispererCapture(MainChip):
                 writer.config.setAttr("prefix", prefix)
                 writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
                 writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+                writer.setTraceHint(tracesPerRun)
+
+                if waveBuffer is not None:
+                    writer.setTraceBuffer(waveBuffer)
 
 
             if self.fixedPlain:
@@ -1006,6 +1018,9 @@ class ChipWhispererCapture(MainChip):
             tcnt += tracesPerRun
             self.statusBar().showMessage("%d Captures Completed" % tcnt)
             
+            # Re-use the wave buffer for later segments
+            waveBuffer = writer.traces
+
             stoptime = datetime.now()
 
             writerlist.append(writer)
