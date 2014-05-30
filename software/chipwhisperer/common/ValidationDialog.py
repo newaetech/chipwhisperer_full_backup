@@ -38,6 +38,7 @@ class ValidationDialog(QDialog):
     def __init__(self, parent=None, onlyOkButton=False):
         super(ValidationDialog, self).__init__(parent)
         self.setWindowTitle("Results of Validation Check")
+        self.setObjectName("Results of Validation Check")
         # self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) & ~(Qt.WindowContextHelpButtonHint))
         self.setupLayout(onlyOkButton)
 
