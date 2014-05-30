@@ -29,6 +29,9 @@ import sys
 import numpy as np
 import TraceContainerConfig
 
+# Hacks for memory problems
+import gc, time
+
 #For profiling support (not 100% needed)
 import pstats, cProfile
 
@@ -91,6 +94,10 @@ class TraceContainer(object):
         except:
             return 0
         
+    def setTraceBuffer(self, tracebuffer):
+        """Reuse a trace buffer allocated elsewhere"""
+        self.traces = tracebuffer
+
     def setTraceHint(self, traces):
         self.tracehint = traces
         
@@ -107,30 +114,36 @@ class TraceContainer(object):
         self.addWave(trace, dtype)
         self.addTextin(textin)
         self.addTextout(textout)
-	self.addKey(key)
+        self.addKey(key)
         
     def writeDataToConfig(self):
         self.config.setAttr("numTraces", self.numTraces())
         self.config.setAttr("numPoints", self.numPoints())      
 
     def addWave(self, trace, dtype=None):                
-        if self.traces is None:
-            if dtype is None:
-                dtype = np.double            
-            self.tracedtype = dtype    
-            self.traces = np.zeros((self.tracehint, len(trace)), dtype=dtype)           
-            self.traces[self._numTraces][:] = trace        
-        else:
-            #Check can fit this
-            if self.traces.shape[0] <= self._numTraces:
-                if self._numTraces >= self.tracehint:
-                    #Tracehint wrong - increase by 25
-                    self.tracehint += 25
-                    
-                #Do a resize now to allocate more memory
-                self.traces.resize((self.tracehint, self.traces.shape[1]))
 
-            self.traces[self._numTraces][:] = trace
+        try:
+            if self.traces is None:
+                if dtype is None:
+                    dtype = np.double
+                self.tracedtype = dtype
+                self.traces = np.zeros((self.tracehint, len(trace)), dtype=dtype)
+                self.traces[self._numTraces][:] = trace
+            else:
+                # Check can fit this
+                if self.traces.shape[0] <= self._numTraces:
+                    if self._numTraces >= self.tracehint:
+                        # Tracehint wrong - increase by 25
+                        self.tracehint += 25
+
+                    print self.tracehint
+
+                    # Do a resize now to allocate more memory
+                    self.traces.resize((self.tracehint, self.traces.shape[1]))
+
+                self.traces[self._numTraces][:] = trace
+        except MemoryError:
+            raise MemoryError("Failed to allocate/resize array for %d x %d, if you have sufficient memory it may be fragmented. Use smaller segments and retry." % (self.tracehint, self.traces.shape[1]))
             
         self._numTraces += 1
         self.setDirty(True)
@@ -162,9 +175,30 @@ class TraceContainer(object):
     def getTextout(self, n):
         return self.textouts[n]
 
-    def getKnownKey(self, n=None):    
+    def getKnownKey(self, n=0):
+        if hasattr(self, 'keylist'):
+            if self.keylist is not None:
+                return self.keylist[n]
+
         return self.knownkey
     
+    def addAuxData(self, newmodule):
+        """Add a new module to the config file, place in aux data"""
+
+        self.config.attrList.append(newmodule)
+        self.config.syncFile(sectionname=newmodule["sectionName"])
+
+
+#    def getAuxData(self, modulename, dataname):
+#        """Get extra data mentioned in the configuration file"""
+#        # Standard module/data names:
+#        #  Trace Partitions/KeyByte
+#        #  Trace Partitions/SBoxOutputValue
+#        #  Trace Partitions/SBoxOutputHW
+#        #  Trace Partitions/SBoxOutputHD#
+#
+#        self.config.attr(attr, moduleName)
+
     def prepareDisk(self):
         """Placeholder called after creating a new file setup, but before actually writing traces to it"""
         
@@ -178,6 +212,10 @@ class TraceContainer(object):
     def loadAllTraces(self, directory=None, prefix=""):
         """Placeholder for load command. May not actually read everything into memory depending on format."""
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
+
+    def saveAuxiliaryData(self, extraname, data):
+        """Placeholder for command to save auxiliary data into some location which follows traces (e.g. same database/folder with same prefix.)"""
+        raise AttributeError("%s doesn't have this method implemented" % self.__class__.__name__)
     
     def saveAllTraces(self, directory, prefix=""):
         """Placeholder for save command."""

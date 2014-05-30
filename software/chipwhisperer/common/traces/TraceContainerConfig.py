@@ -187,7 +187,7 @@ class TraceContainerConfig(object):
         mod["values"][attr]["value"] = value
         mod["values"][attr]["changed"] = True 
                
-    def syncFile(self):
+    def syncFile(self, sectionname=None):
         """
         Sync the internal DB cache to the .cfg file specified already, basically this can be a save or load.
         
@@ -198,8 +198,14 @@ class TraceContainerConfig(object):
         """
          
         debug = False
-         
+
         for ad in self.attrList:
+
+            # If user only wishes to update a certain section do that
+            if sectionname is not None:
+                if ad["sectionName"] != sectionname:
+                    continue
+
             sn = ad["sectionName"]
             
             #Does section exist?
