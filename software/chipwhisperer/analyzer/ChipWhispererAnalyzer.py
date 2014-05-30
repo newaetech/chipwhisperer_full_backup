@@ -81,8 +81,8 @@ import chipwhisperer.common.ParameterTypesCustom
 
 #TEMP
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
-
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
+from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
@@ -99,6 +99,14 @@ class ChipWhispererAnalyzer(MainChip):
         numPreprocessingStep = 3
         self.preprocessingList = [None]*numPreprocessingStep
         
+        
+        self.utilList = []
+
+        partGen = Partition(self)
+        self.PartitionDialog = PartitionDialog(self, partGen)
+
+        self.utilList.append(partGen)
+
         self.cwParams = [
                 {'name':'Traces', 'type':'group', 'children':[
                     {'name':'Points', 'type':'int', 'value':0, 'readonly':True},
@@ -179,6 +187,18 @@ class ChipWhispererAnalyzer(MainChip):
         self.AttackToolbar.setObjectName('Attack Tools')
         self.AttackToolbar.addAction(attack)  
         
+        # Add utilities
+        self.UtilitiesPartition = QAction('Generate Partitions', self,
+                               statusTip='Generate Partitions for Template Attacks',
+                               triggered=self.PartitionDialog.exec_)
+
+        self.toolMenu.addSeparator()
+        self.toolMenu.addAction(self.UtilitiesPartition)
+        self.toolMenu.addSeparator()
+
+    def generatePartitions(self):
+        pass
+
     def setPreprocessing(self, num, module):
         self.preprocessingList[num] = module
         if module:
@@ -238,6 +258,9 @@ class ChipWhispererAnalyzer(MainChip):
                 t.init()
                 self.lastoutput = t           
         self.traces = self.lastoutput
+
+        for item in self.utilList:
+            item.setTraceSource(self.traces)
 
         
     def plotInputTrace(self):
