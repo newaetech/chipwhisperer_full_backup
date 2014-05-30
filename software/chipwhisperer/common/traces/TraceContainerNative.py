@@ -61,12 +61,25 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         self.textouts = np.load(directory + "/%stextout.npy"%prefix)
         self.knownkey = np.load(directory + "/%sknownkey.npy"%prefix)
 
-	#These should come from config file
+        # OK if this fails
+        try:
+            self.keylist = np.load(directory + "/%skeylist.npy" % prefix)
+        except IOError:
+            self.keylist = None
+
+        # These should come from config file
         #self.NumTrace = self.traces.shape[0]
         #self.NumPoint = self.traces.shape[1]
 
         #Traces loaded means saved
         self.setDirty(False)
+
+    def saveAuxiliaryData(self, extraname, data):
+        path = os.path.dirname(self.config.configFilename())
+        prefix = self.config.attr("prefix")
+        fname = "%s%s.npy" % (prefix, extraname)
+        np.save(path + "/" + fname, data)
+        return fname
 
     def saveAllTraces(self, directory, prefix=""):
         self.config.saveTrace()
@@ -77,13 +90,18 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         np.save(directory + "/%sknownkey.npy"%prefix, self.knownkey)
         self.setDirty(False)
         
-    def closeAll(self):        
+    def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
         self.saveAllTraces( os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
         
-        # Release memory associated with data
-        self.traces = None
-        self.textints = None
-        self.textouts = None
-        self.keylist = None
-        self.knownkey = None
+        # Release memory associated with data in case this isn't deleted
+        if clearTrace:
+            self.traces = None
+
+        if clearText:
+            self.textins = None
+            self.textouts = None
+
+        if clearKeys:
+            self.keylist = None
+            self.knownkey = None
 
