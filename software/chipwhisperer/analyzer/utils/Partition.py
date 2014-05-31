@@ -1,4 +1,3 @@
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
@@ -72,6 +71,7 @@ class PartitionEncKey(object):
 
     sectionName = "Aux Data - Partition Based on Key Value"
     moduleName = "PartitionKeyValue"
+    partitionType = "Key Value"
 
     def getNumPartitions(self):
         return 256
@@ -99,13 +99,16 @@ class Partition(QObject):
                     },
                 }
 
+    supportedMethods = [PartitionEncKey]
+
     def __init__(self, parent, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
         super(Partition, self).__init__()
         self.console = console
         self.showScriptParameter = showScriptParameter
         self.parent = parent
-        self.setTraceSource(parent.manageTraces.iface)
+        if parent is not None:
+            self.setTraceSource(parent.manageTraces.iface)
         self.setupParameters()
 
     def setupParameters(self):
@@ -119,6 +122,7 @@ class Partition(QObject):
         self.setPartMethod(PartitionEncKey)
 
     def setPartMethod(self, method):
+        self.partMethodClass = method
         self.partMethod = method()
         self.attrDictPartition["sectionName"] = self.partMethod.sectionName
         self.attrDictPartition["moduleName"] = self.partMethod.moduleName
@@ -134,6 +138,50 @@ class Partition(QObject):
     def setTraceSource(self, tmanager):
         """Set the input trace source"""
         self.trace = tmanager
+        
+    def createBlankTable(self, t):
+        # Create storage for partition information
+        partitionTable = []
+        for j in range(0, len(t.getKnownKey())):
+            partitionTable.append([])
+            for i in range(0, self.partMethod.getNumPartitions()):
+                partitionTable[j].append([])
+
+        return partitionTable
+
+    def loadPartitions(self, start=0, end=-1):
+        """Load partitions from trace files, convert to mapped range"""
+        if end == -1:
+            end = self.trace.NumTrace
+
+        partitionTable = None
+
+        tnum = start
+        while tnum < end:
+            t = self.trace.findMappedTrace(tnum)
+            # Discover where this trace starts & ends
+            tmapstart = t.mappedRange[0]
+            tmapend = t.mappedRange[1]
+            tmapend = min(tmapend, end)
+
+            partdata = t.loadAuxiliaryData(self.partMethod.moduleName)
+
+            if partitionTable is None:
+                partitionTable = self.createBlankTable(t)
+
+            # Merge tables now - better way to do this?
+            for j in range(0, len(t.getKnownKey())):
+                for i in range(0, self.partMethod.getNumPartitions()):
+                    # for pd in partdata[j][i]:
+                    #    partitionTable[j][i].append(pd + tmapstart)
+                    partitionTable[j][i] = partitionTable[j][i] + partdata[j][i]
+
+            print tmapstart
+
+            # Next trace round
+            tnum = tmapend + 1
+        
+        return partitionTable
 
     def runPartitions(self, start=0, end=-1, report=None):
         """Run partioning & save results to .npz file"""
@@ -148,12 +196,7 @@ class Partition(QObject):
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
                         
-            #Create storage for partition information
-            partitionTable = []
-            for j in range(0, len(t.getKnownKey())):
-                partitionTable.append([])
-                for i in range(0, self.partMethod.getNumPartitions()):
-                    partitionTable[j].append([])
+            partitionTable = self.createBlankTable()
                 
             for tnum in range(tmapstart, tmapend+1):
                 #Check each trace, write partition number

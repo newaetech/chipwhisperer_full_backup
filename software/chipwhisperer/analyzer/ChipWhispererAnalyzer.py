@@ -83,6 +83,7 @@ import chipwhisperer.common.ParameterTypesCustom
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
 from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
+from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
@@ -104,8 +105,10 @@ class ChipWhispererAnalyzer(MainChip):
 
         partGen = Partition(self)
         self.PartitionDialog = PartitionDialog(self, partGen)
-
         self.utilList.append(partGen)
+
+        self.traceExplorerDialog = TraceExplorerDialog(self)
+        self.utilList.append(self.traceExplorerDialog)
 
         self.cwParams = [
                 {'name':'Traces', 'type':'group', 'children':[
@@ -187,12 +190,19 @@ class ChipWhispererAnalyzer(MainChip):
         self.AttackToolbar.setObjectName('Attack Tools')
         self.AttackToolbar.addAction(attack)  
         
+
         # Add utilities
+
+        self.UtilitiesTraceExplorer = QAction('Trace Explorer', self,
+                               statusTip='Get information on traces',
+                               triggered=self.traceExplorerDialog.show)
+
         self.UtilitiesPartition = QAction('Generate Partitions', self,
                                statusTip='Generate Partitions for Template Attacks',
                                triggered=self.PartitionDialog.exec_)
 
         self.toolMenu.addSeparator()
+        self.toolMenu.addAction(self.UtilitiesTraceExplorer)
         self.toolMenu.addAction(self.UtilitiesPartition)
         self.toolMenu.addSeparator()
 

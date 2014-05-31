@@ -81,6 +81,12 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         np.save(path + "/" + fname, data)
         return fname
 
+    def loadAuxiliaryData(self, extraname):
+        path = os.path.dirname(self.config.configFilename())
+        prefix = self.config.attr("prefix")
+        fname = "%s%s.npy" % (prefix, extraname)
+        return np.load(path + "/" + fname)
+
     def saveAllTraces(self, directory, prefix=""):
         self.config.saveTrace()
         np.save(directory + "/%straces.npy"%prefix, self.traces)
