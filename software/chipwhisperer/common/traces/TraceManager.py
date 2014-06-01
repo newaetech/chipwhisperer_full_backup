@@ -89,6 +89,16 @@ class TraceManager():
                     return t
         raise ValueError("n = %d not in mapped range"%n)
 
+    def getAuxData(self, n, auxDic):
+        t = self.findMappedTrace(n)
+        cfg = t.getAuxDataConfig(auxDic)
+        if cfg is not None:
+            filedata = t.loadAuxData(cfg["filename"])
+        else:
+            filedata = None
+
+        return {'cfgdata':cfg, 'filedata':filedata}
+
     def getTrace(self, n):
         t = self.findMappedTrace(n)
         return t.getTrace(n - t.mappedRange[0])
