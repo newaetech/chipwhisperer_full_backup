@@ -50,9 +50,6 @@ class TraceExplorerDialog(QDialog):
         self.setWindowTitle("Trace Explorer")
         self.setObjectName("Trace Explorer")
 
-        # Add example scripts to this list
-        self.exampleScripts = [PartitionDisplay(self)]
-
         self.qwindow = QMainWindow()
 
         # We want to use dock widgets, but need a QMainWindow for this to work
@@ -61,6 +58,9 @@ class TraceExplorerDialog(QDialog):
         layout.addWidget(self.qwindow)
         self.setLayout(layout)
 
+        # Add example scripts to this list
+        self.exampleScripts = [PartitionDisplay(self)]
+
         # Add Scripts
         self.setupCommonScripts()
 
@@ -68,6 +68,10 @@ class TraceExplorerDialog(QDialog):
 
         self.graphDockList = []
         self.getGraphWidgets(["Basic Plot"])
+
+        self.progressBar = QProgressBar()
+
+
 
 
     def setupCommonScripts(self):
@@ -136,5 +140,8 @@ class TraceExplorerDialog(QDialog):
             widgetList.append(gd.widget())
 
         return widgetList
+
+    def getProgressIndicator(self):
+        return self.progressBar
 
 

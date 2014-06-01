@@ -207,8 +207,6 @@ class TraceContainer(object):
                             if newmodule["values"][k]["definesunique"]:
                                 try:
                                     if str(self.config.config[sname][k]) != str(newmodule["values"][k]["value"]):
-                                        # print self.config.config[sname][k]
-                                        # print newmodule["values"][k]["value"]
                                         return None
                                 except KeyError:
                                     return None

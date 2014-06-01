@@ -156,14 +156,84 @@ class DifferenceMode(QObject):
     def load(self, trace):
         # Check if trace has stuff
         cfg = trace.getAuxDataConfig(self.attrDictCombination)
-
-        print cfg
-
         if cfg is None:
             return None
-
         return trace.loadAuxData(cfg["filename"])
 
+class POI(QWidget):
+    def __init__(self, parent):
+        super(POI, self).__init__()
+
+        layout = QVBoxLayout()
+
+        self.setWindowTitle('Point of Interest Selection')
+
+        self.mainTable = QTableWidget()
+
+        layout.addWidget(self.mainTable)
+        pbSave = QPushButton('Set as POI in Project')
+        pbCalc = QPushButton('Recalc POI Values')
+        pbCalc.clicked.connect(self.calcPOI)
+        pbSaveNPY = QPushButton('Save to NPY File')
+        pbLoadNPY = QPushButton('Load NPY File')
+
+        pbLayout = QHBoxLayout()
+        pbLayout.addWidget(pbSave)
+        pbLayout.addWidget(pbCalc)
+        pbLayout.addWidget(pbSaveNPY)
+        pbLayout.addWidget(pbLoadNPY)
+
+        layout.addLayout(pbLayout)
+
+        self.setLayout(layout)
+
+        self.diffs = []
+
+    def setDifferences(self, diffs):
+        self.diffs = diffs
+        self.calcPOI()
+
+    def setMinSpace(self, minspace):
+        self.minSpace = minspace
+        self.calcPOI()
+
+    def setNumMax(self, nummax):
+        self.numMax = nummax
+        self.calcPOI()
+
+    def calcPOI(self):
+        # Setup Table for current stuff
+        self.mainTable.setRowCount(len(self.diffs))
+        self.mainTable.setColumnCount(2)
+        self.mainTable.setHorizontalHeaderLabels(["Subkey Number", "Point List"])
+        self.mainTable.verticalHeader().hide()
+
+        self.poiArray = []
+
+        for bnum in range(0, len(self.diffs)):
+
+            maxarray = []
+
+            # Copy since we will be overwriting it a bunch
+            data = copy.deepcopy(self.diffs[bnum])
+
+            while len(maxarray) < self.numMax:
+                # Find maximum location
+                mloc = np.argmax(data)
+
+                # Store this maximum
+                maxarray.append(mloc)
+
+                # set to -INF data within +/- the minspace
+                mstart = max(0, mloc - self.minSpace)
+                mend = min(mloc + self.minSpace, len(data))
+                data[mstart:mend] = -np.inf
+
+            # print maxarray
+            self.poiArray.append(maxarray)
+
+            self.mainTable.setItem(bnum, 0, QTableWidgetItem("%d" % bnum))
+            self.mainTable.setCellWidget(bnum, 1, QLineEdit(str(maxarray)))
 
 class PartitionDisplay(QObject):
 
@@ -189,13 +259,28 @@ class PartitionDisplay(QObject):
         diffModeList = {}
         for a in self.diffObject.supportedMethods:
             diffModeList[a.differenceType] = a
+
+        self.poi = POI(self)
+        self.poidock = self.parent.addDock(self.poi, "Points of Interest", area=Qt.RightDockWidgetArea)
+        self.poidock.hide()
                     
         self.params = [
               {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'set':self.diffObject.setDiffMethod},
               {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'set':self.partObject.setPartMethod},
               {'name':'Combination Mode', 'key':'combomode', 'type':'list', 'values':combModeList, 'value':self.combObject.combMethodClass, 'set':self.combObject.setCombMethod},
-              {'name':'Display', 'type':'action', 'action':self.runAction}
+              {'name':'Display', 'type':'action', 'action':self.runAction},
+
+              {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
+                 {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
+                 {'name':'Num POI/Subkey', 'key':'pointskey', 'type':'int', 'limits':(1, 200), 'value':1, 'set':self.poi.setNumMax},
+                 {'name':'Min Spacing between POI', 'key':'minspacing', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'set':self.poi.setMinSpace},
+                 {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
+                 {'name':'Open POI Table', 'type':'action', 'action':self.poidock.show},
+              ]},
              ]
+
+        self.poi.setNumMax(1)
+        self.poi.setMinSpace(1)
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -224,6 +309,9 @@ class PartitionDisplay(QObject):
 
         # Get Plotting Figure
         self.graph = self.parent.getGraphWidgets(["Partition Differences"])[0]
+
+        # Get progress indicator
+        pbar = self.parent.getProgressIndicator()
 
         self.enabledbytes = [False] * self.numKeys
         self.doRedraw = True
@@ -255,10 +343,7 @@ class PartitionDisplay(QObject):
         #Get segment list
         segList = traces.getTraceList()
 
-        print len(segList['traceList'])
-
         for i, titem in enumerate(segList['traceList']):
-
             SADSeg = self.diffObject.load(titem)
             if SADSeg is None:
                 # Calculate SAD data and save to trace file
@@ -292,5 +377,7 @@ class PartitionDisplay(QObject):
                 SADList[bnum] += SADList[bnum] + SADSeg[bnum]
 
         self.SADList = SADList
+
+        self.poi.setDifferences(self.SADList)
 
                 
