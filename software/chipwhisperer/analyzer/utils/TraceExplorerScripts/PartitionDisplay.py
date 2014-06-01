@@ -253,7 +253,7 @@ class PartitionDisplay(QObject):
         SADList = np.zeros((self.numKeys, numPoints))
         
         #Get segment list
-        segList = traces.getTraceList(end=4000)
+        segList = traces.getTraceList()
 
         print len(segList['traceList'])
 
