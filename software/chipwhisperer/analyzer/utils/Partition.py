@@ -69,7 +69,7 @@ class PartitionDialog(QDialog):
 
 class PartitionEncKey(object):
 
-    sectionName = "Aux Data - Partition Based on Key Value"
+    sectionName = "Partition Based on Key Value"
     moduleName = "PartitionKeyValue"
     partitionType = "Key Value"
 
@@ -90,11 +90,11 @@ class Partition(QObject):
     descrString = "Partition traces based on some method"
 
     attrDictPartition = {
-                "sectionName":"Aux Data - Partition Based on XXXX",
-                "moduleName":"auxDataPartitions",
+                "sectionName":"Partition Based on XXXX",
+                "moduleName":"Partitions",
                 "module":None,
                 "values":{
-                    "round":{"value":0, "desc":"Round", "changed":False},
+                    "round":{"value":0, "desc":"Round", "changed":False, "definesunique":True},
                     "partfile":{"value":None, "desc":"Partition File", "changed":False, "headerLabel":"Partition Data"},
                     },
                 }

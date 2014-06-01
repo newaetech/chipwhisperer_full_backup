@@ -134,7 +134,6 @@ class TraceExplorerDialog(QDialog):
         widgetList = []
         for gd in self.graphDockList:
             widgetList.append(gd.widget())
-            gd.widget().passTrace([1, 2, 3])
 
         return widgetList
 
