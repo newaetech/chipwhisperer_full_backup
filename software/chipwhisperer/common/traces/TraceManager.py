@@ -61,6 +61,27 @@ class TraceManager():
         self.NumPoint = 0
         self.knownkey = None
 
+    def getTraceList(self, start=0, end=-1):
+        """
+        Get a list of pointers to trace objects that spans from start to end. Useful when capture
+        has occured as a number of segments (as it usually will), and you want to apply analysis
+        over certain segments at a time.
+        """
+        tnum = start
+        if end == -1:
+            end = self.NumTrace
+            
+        dataDict = {'traceList':[], 'offsetList':[], 'lengthList':[]}
+            
+        while(tnum < end):
+            t = self.findMappedTrace(tnum)
+            dataDict['traceList'].append(t)
+            dataDict['offsetList'].append(t.mappedRange[0])
+            dataDict['lengthList'].append(t.mappedRange[1] - t.mappedRange[0] + 1)
+            tnum = t.mappedRange[1] + 1
+
+        return dataDict
+
     def findMappedTrace(self, n):
         for t in self.dlg.traceList:
             if t.mappedRange:
@@ -217,7 +238,7 @@ class TraceManagerDialog(QDialog):
         self.table.insertRow(location)
         row = self.table.rowCount()-1
         cb = QCheckBox()
-        cb.setChecked(True)
+        cb.setChecked(False)
         cb.clicked.connect(self.validateTable)
         self.table.setCellWidget(row, self.findCol("Enabled"), cb)
 

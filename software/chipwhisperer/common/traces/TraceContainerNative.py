@@ -74,17 +74,24 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         #Traces loaded means saved
         self.setDirty(False)
 
-    def saveAuxiliaryData(self, extraname, data):
+    def saveAuxData(self, data, configDict, filenameKey="filename"):
         path = os.path.dirname(self.config.configFilename())
         prefix = self.config.attr("prefix")
-        fname = "%s%s.npy" % (prefix, extraname)
+        fname = "%s%s_aux_%04d.npy" % (prefix, configDict["moduleName"], configDict["auxNumber"])
         np.save(path + "/" + fname, data)
+
+        # if filenameKey is not None:
+        configDict["values"][filenameKey]["value"] = fname
+        configDict["values"][filenameKey]["changed"] = True
+        self.config.syncFile(sectionname=configDict["sectionName"])
+        self.config.saveTrace()
+
         return fname
 
-    def loadAuxiliaryData(self, extraname):
+    def loadAuxData(self, fname):
         path = os.path.dirname(self.config.configFilename())
         prefix = self.config.attr("prefix")
-        fname = "%s%s.npy" % (prefix, extraname)
+        # fname = "%s%s.npy" % (prefix, extraname)
         return np.load(path + "/" + fname)
 
     def saveAllTraces(self, directory, prefix=""):

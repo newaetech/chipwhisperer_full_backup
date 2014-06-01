@@ -29,8 +29,8 @@ import sys
 import numpy as np
 import TraceContainerConfig
 
-# Hacks for memory problems
-import gc, time
+import copy
+import re
 
 #For profiling support (not 100% needed)
 import pstats, cProfile
@@ -182,22 +182,76 @@ class TraceContainer(object):
 
         return self.knownkey
     
-    def addAuxData(self, newmodule):
+    def getAuxDataConfig(self, newmodule):
+        """
+        Get auxilary data section in config file, searches based on both 'modname'
+        and 'uniquedict'. Checks file itself & NOT the local database, since the
+        auxilary data is not loaded into database.
+        """
+
+        # Get all section names
+        for sname in self.config.config.keys():
+            # Find if starts with 'Aux Data'
+            if sname.startswith("Aux Data"):
+
+                # print "Found %s" % sname
+
+                # Find if module name matches
+                if sname.endswith(newmodule["sectionName"]):
+
+                    # print "Found %s" % sname
+
+                    # Finally confirm unique dictionary values
+                    for k in newmodule["values"].keys():
+                        try:
+                            if newmodule["values"][k]["definesunique"]:
+                                try:
+                                    if str(self.config.config[sname][k]) != str(newmodule["values"][k]["value"]):
+                                        # print self.config.config[sname][k]
+                                        # print newmodule["values"][k]["value"]
+                                        return None
+                                except KeyError:
+                                    return None
+                        except KeyError:
+                            pass
+
+                    return self.config.config[sname]
+
+        return None
+
+
+    def addAuxDataConfig(self, newmodule):
         """Add a new module to the config file, place in aux data"""
+        # newmodule is a dict of data
 
-        self.config.attrList.append(newmodule)
-        self.config.syncFile(sectionname=newmodule["sectionName"])
+        # sectionName will be prepended with "Aux Data N - ", where NNNN
+        # is a sequential number. The original section name will be called
+        # .originalSectionName, which can be used when searching the system.
+        # the NNNN will be also written as an integer to the .auxNumber member
 
+        newdict = copy.deepcopy(newmodule)
+        
+        #Check dictionary
+        maxNumber = 0
+        for ad in self.config.attrList:
+            if hasattr(ad, "auxNumber"):
+                maxNumber = max(maxNumber, ad.auxNumber + 1)
 
-#    def getAuxData(self, modulename, dataname):
-#        """Get extra data mentioned in the configuration file"""
-#        # Standard module/data names:
-#        #  Trace Partitions/KeyByte
-#        #  Trace Partitions/SBoxOutputValue
-#        #  Trace Partitions/SBoxOutputHW
-#        #  Trace Partitions/SBoxOutputHD#
-#
-#        self.config.attr(attr, moduleName)
+        #Check configuration file
+        for sname in self.config.config.keys():
+            # Find if starts with 'Aux Data'
+            if sname.startswith("Aux Data"):
+                maxNumber = max(int(re.findall(r'\d+', sname)[0]) + 1, maxNumber)
+
+        newdict["auxNumber"] = maxNumber
+        newdict["originalSectionName"] = newdict["sectionName"]
+        newdict["sectionName"] = "Aux Data %04d - " % maxNumber + newdict["sectionName"]
+
+        self.config.attrList.append(newdict)
+        self.config.syncFile(sectionname=newdict["sectionName"])
+
+        return newdict
+
 
     def prepareDisk(self):
         """Placeholder called after creating a new file setup, but before actually writing traces to it"""
@@ -213,7 +267,7 @@ class TraceContainer(object):
         """Placeholder for load command. May not actually read everything into memory depending on format."""
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
 
-    def saveAuxiliaryData(self, extraname, data):
+    def saveAuxData(self, extraname, data):
         """Placeholder for command to save auxiliary data into some location which follows traces (e.g. same database/folder with same prefix.)"""
         raise AttributeError("%s doesn't have this method implemented" % self.__class__.__name__)
     
