@@ -105,6 +105,7 @@ class DataTypeDiffs(object):
         if bytelist is None:
             bytelist = range(0, self.numSubkeys)
             
+
         for i in bytelist:
             if self.diffs[i] is None:
                 self.maxValid[i] = False

@@ -49,12 +49,18 @@ from functools import partial
 
 class AttackGenericParameters(QObject):       
     paramListUpdated = Signal(list)
+    traceManagerChanged = Signal(object)
+    projectChanged = Signal(QObject)
+    settingsChanged = Signal(QObject)
         
     def __init__(self, MainWindow=None, log=None, showScriptParameter=None):
         super(AttackGenericParameters, self).__init__(MainWindow)
+        self._tmanager = None
+        self._project = None
 
         self.MainWindow = MainWindow
         self.maxSubKeys = 32
+        self.useAbs = True
 
         #TODO: Where to get this from?
         self.numsubkeys = 16
@@ -72,12 +78,13 @@ class AttackGenericParameters(QObject):
         self.setupPointsParam()
         self.setupParameters()
 
+
     def setupParameters(self):
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':None}, 'value':'AES-128'},
                         {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'}
                         ]},
-                       {'name':'Take Absolute', 'type':'bool', 'value':True},
+                       {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
                        
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
@@ -88,6 +95,10 @@ class AttackGenericParameters(QObject):
         self.params = Parameter.create(name='Attack Settings', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.updateBytesVisible()
+
+    def setAbsoluteMode(self, mode):
+        self.useAbs = mode
+        self.settingsChanged.emit(mode)
 
     def getByteList(self):
         init = [dict(name='Byte %d'%bnum, type='bool', value=True, bytenum=bnum) for bnum in range(0,self.maxSubKeys)]
@@ -130,8 +141,23 @@ class AttackGenericParameters(QObject):
 
         return blist
     
+    def traceManager(self):
+        return self._tmanager
+
     def setTraceManager(self, tmanager):
+        self._tmanager = tmanager
+
+        # Temp - should replace these calls with .trace()
         self.trace = tmanager
+
+        self.traceManagerChanged.emit(tmanager)
+
+    def setProject(self, proj):
+        self._project = proj
+        self.projectChanged.emit(proj)
+
+    def project(self):
+        return self._project
         
 ############ Trace-Specific
     def setupTraceParam(self):

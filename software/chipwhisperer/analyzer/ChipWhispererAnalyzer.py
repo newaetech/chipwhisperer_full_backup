@@ -75,6 +75,7 @@ from chipwhisperer.common.MainChip import MainChip
 from chipwhisperer.common.ProjectFormat import ProjectFormat
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 from chipwhisperer.analyzer.attacks.CPA import CPA
+from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 import chipwhisperer.analyzer.preprocessing.Preprocessing as Preprocessing
 import chipwhisperer.common.ParameterTypesCustom
@@ -120,7 +121,9 @@ class ChipWhispererAnalyzer(MainChip):
                     [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, step)} for step in range(0, numPreprocessingStep)]},
                          
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self, console=self.console, showScriptParameter=self.showScriptParameter)}, 'value':'CPA', 'set':self.setAttack},                                          
+                    {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self, console=self.console, showScriptParameter=self.showScriptParameter),
+                                                               'Profiling':Profiling(self, console=self.console, showScriptParameter=self.showScriptParameter),
+                                                               }, 'value':'CPA', 'set':self.setAttack},
                     ]},
                          
                 {'name':'Post-Processing', 'type':'group'},
@@ -170,7 +173,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.openFile.connect(self.openProject)
 
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
-        self.setAttack(CPA(self, console=self.console, showScriptParameter=self.showScriptParameter))
+        cpaTemp = CPA(self, console=self.console, showScriptParameter=self.showScriptParameter)
+        self.setAttack(cpaTemp)
         
         self.setupPreprocessorChain()
         
@@ -231,6 +235,12 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.paramListUpdated.connect(self.reloadAttackParamList)
         self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
         
+        # Sometimes required
+        if hasattr(self, "traces") and self.traces is not None:
+            self.attack.setTraceManager(self.traces)
+
+        self.attack.setProject(self.proj)
+
     def doAttack(self):        
         #Check if traces enabled
         if self.traces.NumTrace == 0:
@@ -381,6 +391,9 @@ class ChipWhispererAnalyzer(MainChip):
         
         #Open project file & read in everything
         self.proj.traceManager.loadProject(fname)
+
+        # Ensure attack knows about this project
+        self.attack.setProject(self.proj)
 
   
     def newProject(self):        
