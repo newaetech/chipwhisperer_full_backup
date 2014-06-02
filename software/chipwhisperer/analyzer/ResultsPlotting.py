@@ -99,17 +99,22 @@ class ResultsPlotting(QObject):
         self.table.setAttack(attack)        
         self.attack.attackDone.connect(self.attackDone)
         self.attack.statsUpdated.connect(self.attackStatsUpdated)
-        
+        self.attack.settingsChanged.connect(self.attackSettingsChanged)
         self.graphoutput.setAttack(attack)
-        
         self.pgegraph.setAttack(attack)
         
+        self.attackSettingsChanged()
+        
+    def attackSettingsChanged(self):
+        # Update possible settings
+        self.table.setAbsoluteMode(self.attack.useAbs)
+
     def setTraceManager(self, tmanager):        
         self.trace = tmanager       
         
     def updateKnownKey(self):
         try:
-            nk = self.trace.getKnownKey()
+            nk = self.trace.getKnownKey(self.startTrace)
             nk = self.attack.processKnownKey(nk)
             self.graphoutput.setKnownKey(nk)
         except AttributeError, e:
@@ -121,7 +126,9 @@ class ResultsPlotting(QObject):
         self.table.updateTable(attackDone=True)        
     
     def attackStatsUpdated(self):
+        self.startTrace = self.attack.getTraceStart()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
+        self.table.setStartTrace(self.startTrace)
         self.table.updateTable()
         self.updateKnownKey()
                
@@ -534,6 +541,9 @@ class ResultsTable(QObject):
     def setBytesEnabled(self, enabledbytes):
         self.enabledBytes = enabledbytes
         
+    def setStartTrace(self, starttrace):
+        self.startTrace = starttrace
+
     def setAttack(self, attack):
         self.attack = attack
         
@@ -547,13 +557,13 @@ class ResultsTable(QObject):
         self.useSingle = enabled    
 
     def updateTable(self, attackDone=False):
-        nk = self.attack.trace.getKnownKey()
+        nk = self.attack.trace.getKnownKey(self.startTrace)
         nk = self.attack.processKnownKey(nk)
         self.setKnownKey(nk)
                 
         attackStats = self.attack.getStatistics()
         attackStats.setKnownkey(nk)
-        attackStats.findMaximums()
+        attackStats.findMaximums(useAbsolute=self.useAbs)
         
         for bnum in range(0, self.numKeys):
             if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
