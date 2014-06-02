@@ -164,6 +164,8 @@ class POI(QWidget):
     def __init__(self, parent):
         super(POI, self).__init__()
 
+        self.parent = parent
+
         layout = QVBoxLayout()
 
         self.setWindowTitle('Point of Interest Selection')
@@ -172,6 +174,7 @@ class POI(QWidget):
 
         layout.addWidget(self.mainTable)
         pbSave = QPushButton('Set as POI in Project')
+        pbSave.clicked.connect(self.savePOI)
         pbCalc = QPushButton('Recalc POI Values')
         pbCalc.clicked.connect(self.calcPOI)
         pbSaveNPY = QPushButton('Save to NPY File')
@@ -200,6 +203,10 @@ class POI(QWidget):
     def setNumMax(self, nummax):
         self.numMax = nummax
         self.calcPOI()
+
+    def savePOI(self):
+        poiDict = {"poi":self.poiArray}
+        self.parent.parent.parent.proj.addDataConfig(poiDict, "Template Data", "Points of Interest")
 
     def calcPOI(self):
         # Setup Table for current stuff

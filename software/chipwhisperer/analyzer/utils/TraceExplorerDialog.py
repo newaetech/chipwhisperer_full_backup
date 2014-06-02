@@ -51,6 +51,7 @@ class TraceExplorerDialog(QDialog):
         self.setObjectName("Trace Explorer")
 
         self.qwindow = QMainWindow()
+        self.parent = parent
 
         # We want to use dock widgets, but need a QMainWindow for this to work
         # thus we place a QMainWindow inside the QDialog. Great Success.
