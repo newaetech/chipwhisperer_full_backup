@@ -70,12 +70,14 @@ class TraceContainer(object):
         self.keylist = []
         self.knownkey = None
         self.directory = None
+        self.prefix = None
         self.dirty = False
         self.tracedtype = np.double  
         self.traces = None
         self.tracehint = 1
         self.pointhint = 0
         self._numTraces = 0
+        self._isloaded = False
         
         if params is not None:
             self.getParams = params
@@ -263,7 +265,12 @@ class TraceContainer(object):
     
     def loadAllTraces(self, directory=None, prefix=""):
         """Placeholder for load command. May not actually read everything into memory depending on format."""
+        self._isloaded = True
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
+
+    def unloadAllTraces(self):
+        """Placeholder for unload command. If loadAllTraces unloaded into memory, this may drop from memory. May not be implemented."""
+        self._isloaded = False
 
     def saveAuxData(self, extraname, data):
         """Placeholder for command to save auxiliary data into some location which follows traces (e.g. same database/folder with same prefix.)"""
@@ -284,6 +291,11 @@ class TraceContainer(object):
     def validateSettings(self, vw):
         """Check settings, log any messages to special setup window"""
         pass
+
+    def isLoaded(self):
+        """Returns true if you can use getTrace, getTextin, etc methods"""
+        return self._isloaded
+
         
         
 if __name__ == "__main__":

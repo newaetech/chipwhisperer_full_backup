@@ -49,7 +49,7 @@ import pstats, cProfile
 #Reading trace config files
 import ConfigParser
 
-class TraceManager():
+class TraceManager(object):
     """
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
     block of traces. This class is used to handle the remapping.
@@ -59,7 +59,6 @@ class TraceManager():
         self.dlg = parent
         self.NumTrace = 0
         self.NumPoint = 0
-        self.knownkey = None
 
     def getTraceList(self, start=0, end=-1):
         """
@@ -86,7 +85,10 @@ class TraceManager():
         for t in self.dlg.traceList:
             if t.mappedRange:
                 if n >= t.mappedRange[0] and n <= t.mappedRange[1]:
+                    if not t.isLoaded():
+                        t.loadAllTraces(None, None)
                     return t
+
         raise ValueError("n = %d not in mapped range"%n)
 
     def getAuxData(self, n, auxDic):
@@ -111,9 +113,9 @@ class TraceManager():
         t = self.findMappedTrace(n)
         return t.getTextout(n - t.mappedRange[0])
 
-    def getKnownKey(self):
-        #For now all traces need to have same key
-        return self.knownkey
+    def getKnownKey(self, n):
+        t = self.findMappedTrace(n)
+        return t.getKnownKey(n - t.mappedRange[0])
 
     def UpdateTraces(self):
         #Find total (last mapped range)
@@ -124,9 +126,6 @@ class TraceManager():
             if t.mappedRange is not None:
                 num.append(t.mappedRange[1])
                 pts.append(int(t.config.attr("numPoints")))
-
-                if self.knownkey == None:
-                    self.knownkey = t.getKnownKey()
 
         if not num:
             self.NumTrace = 0
@@ -290,7 +289,9 @@ class TraceManagerDialog(QDialog):
                     else:
                         path = None
                         pref = None
-                    self.traceList[i].loadAllTraces(path, pref)                   
+                    self.traceList[i].directory = path
+                    self.traceList[i].prefix = pref
+                    # self.traceList[i].loadAllTraces(path, pref)
                 
             else:
                 self.traceList[i].enabled = False

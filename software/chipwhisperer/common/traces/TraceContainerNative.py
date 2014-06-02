@@ -56,6 +56,14 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         
         
     def loadAllTraces(self, directory=None, prefix=""):
+        """Load all traces into memory"""
+
+        if directory is None:
+            directory = self.directory
+
+        if prefix is None:
+            prefix = self.prefix
+
         self.traces = np.load(directory + "/%straces.npy"%prefix, mmap_mode='r')
         self.textins = np.load(directory + "/%stextin.npy"%prefix)
         self.textouts = np.load(directory + "/%stextout.npy"%prefix)
@@ -67,12 +75,16 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         except IOError:
             self.keylist = None
 
-        # These should come from config file
-        #self.NumTrace = self.traces.shape[0]
-        #self.NumPoint = self.traces.shape[1]
-
         #Traces loaded means saved
         self.setDirty(False)
+
+    def unloadAllTraces(self):
+        """Drop traces from memory to save space """
+        self.traces = None
+        self.textins = None
+        self.textouts = None
+        self.knownkey = None
+        self.keylist = None
 
     def saveAuxData(self, data, configDict, filenameKey="filename"):
         path = os.path.dirname(self.config.configFilename())
