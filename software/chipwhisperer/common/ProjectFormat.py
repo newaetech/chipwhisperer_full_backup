@@ -26,6 +26,8 @@ __author__ = "Colin O'Flynn"
 
 import sys
 import os
+import re
+
 #We always import PySide first, to force usage of PySide over PyQt
 try:
     from PySide.QtCore import *
@@ -125,12 +127,19 @@ class ProjectFormat(QObject):
         if not os.path.isdir(self.datadirectory):
             os.mkdir(self.datadirectory)
 
-            # Make trace storage directory too
+        # Make trace storage directory too
+        if not os.path.isdir(os.path.join(self.datadirectory, 'traces')):
             os.mkdir(os.path.join(self.datadirectory, 'traces'))
+
+        # Make analysis storage directory
+        if not os.path.isdir(os.path.join(self.datadirectory, 'analysis')):
+            os.mkdir(os.path.join(self.datadirectory, 'analysis'))
 
     def load(self, f=None):
         if f is not None:
             self.setFilename(f)
+
+        self.config = ConfigObj(self.filename)
             
         #TODO: readings????
         
@@ -142,6 +151,51 @@ class ProjectFormat(QObject):
         
         self.config[self.settingsDict['Program Name']]['Settings'][p['name']] = p
                 
+
+    def getDataConfig(self, sectionName="Aux Data", subsectionName=None):
+        """
+        Get all configuration sections of data type given in
+        __init__() call, and also matching the given sectionName.
+        e.g. if dataName='Aux Data' and sectionName='Frequency',
+        this would return a list of all sections of the type
+        'Aux Data NNNN - Frequency'.
+        """
+
+        sections = []
+
+        # Get all section names
+        for sname in self.config.keys():
+            # Find if starts with 'Aux Data'
+            if sname.startswith(sectionName):
+                # print "Found %s" % sname
+                # Find if module name matches if applicable
+                if subsectionName is None or sname.endswith(subsectionName):
+                    # print "Found %s" % sname
+                    sections.append(self.config[sname])
+
+        return sections
+
+
+    def addDataConfig(self, settings=None, sectionName="Aux Data", subsectionName=None):
+        # Check configuration file to find incrementing number
+        maxNumber = 0
+        for sname in self.config.keys():
+            # Find if starts with 'Aux Data'
+            if sname.startswith(sectionName):
+                maxNumber = int(re.findall(r'\d+', sname)[0]) + 1
+
+        cfgSectionName = "%s %04d" % (sectionName, maxNumber)
+        if subsectionName:
+            cfgSectionName += " - %s" % subsectionName
+
+        # Generate the configuration section
+        self.config[cfgSectionName] = {}
+
+        if settings is not None:
+            for k in settings.keys():
+                self.config[cfgSectionName][k] = settings[k]
+
+        return self.config[cfgSectionName]
         
     def save(self):
         if self.filename is None:
