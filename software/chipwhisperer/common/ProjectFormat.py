@@ -69,6 +69,15 @@ def delete_objects_from_dict(d):
     #for k in todel:
     #    del d[k]
 
+import collections
+
+def convert_to_str(data):
+    if isinstance(data, collections.Mapping):
+        return dict(map(convert_to_str, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+        return type(data)(map(str, data))
+    else:
+        return str(data)
 
 class ProjectFormat(QObject):
     def __init__(self):
@@ -150,9 +159,23 @@ class ProjectFormat(QObject):
             self.config[self.settingsDict['Program Name']]['Settings'] = {}
         
         self.config[self.settingsDict['Program Name']]['Settings'][p['name']] = p
-                
 
-    def getDataConfig(self, sectionName="Aux Data", subsectionName=None):
+    def getDataFilepath(self, filename, subdirectory='analysis'):
+        datadir = os.path.join(self.datadirectory, 'analysis')
+        fname = os.path.join(datadir, filename)
+        relfname = os.path.relpath(fname, os.path.split(self.config.filename)[0])
+        return {"abs":fname, "rel":relfname}
+
+    def convertDataFilepathAbs(self, relativepath):
+        return os.path.join(os.path.split(self.filename)[0], relativepath)
+                
+    def checkDataConfig(self, config, requiredSettings):
+        """Check a configuration section for various settings"""
+        requiredSettings = convert_to_str(requiredSettings)
+        config = convert_to_str(config)
+        return set(requiredSettings.items()).issubset(set(config.items()))
+
+    def getDataConfig(self, sectionName="Aux Data", subsectionName=None, requiredSettings=None):
         """
         Get all configuration sections of data type given in
         __init__() call, and also matching the given sectionName.
@@ -171,7 +194,11 @@ class ProjectFormat(QObject):
                 # Find if module name matches if applicable
                 if subsectionName is None or sname.endswith(subsectionName):
                     # print "Found %s" % sname
-                    sections.append(self.config[sname])
+
+                    if requiredSettings is None:
+                        sections.append(self.config[sname])
+                    else:
+                        self.checkDataConfig(self.config[sname], requiredSettings)
 
         return sections
 
