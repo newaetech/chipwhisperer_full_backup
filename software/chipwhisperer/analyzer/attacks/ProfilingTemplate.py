@@ -60,8 +60,8 @@ class TemplateBasic(object):
     Template using Multivariate Stats (mean + covariance matrix)
     """
     def __init__(self, tmanager=None):
-        self.partObject = Partition(None)
         self._tmanager = None
+        self.partObject = Partition(self)
     
     def traceManager(self):
         return self._tmanager
@@ -200,8 +200,7 @@ class ProfilingTemplate(QObject):
         cfgsec["tracestart"] = tRange[0]
         cfgsec["traceend"] = tRange[1]
         
-        datadir = os.path.join(self.parent.parent.proj.datadirectory, 'analysis')
-        fname = os.path.join(datadir, 'templates-%d-%d.npz' % (tRange[0], tRange[1]))
+        fname = self.project.getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
 
         # Save template file
         np.savez(fname, mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
@@ -210,9 +209,6 @@ class ProfilingTemplate(QObject):
 
     def loadTemplates(self):
         template = np.load(r'C:/E/Documents/academic/sidechannel/eclipse-workspace/chipwhisperer/chipwhisperer/software/chipwhisperer/capture/mega328p_aes128_100k/mega328p_aes128_100k_data/analysis\templates-0-12000.npz')
-        # templateCov = template['cov']
-        # templateMean = template['mean']
-
         return template
 
     def loadPOI(self):
@@ -231,11 +227,18 @@ class ProfilingTemplate(QObject):
         template = self.loadTemplates()
         pois = self.loadPOI()
 
-        trace = traces[0]
+        results = np.zeros((16, 256))
 
-        for bnum in range(0, 16):
-            results = [multivariate_normal.logpdf(trace[pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, 256)]
-            self.stats.updateSubkey(bnum, results, tnum=0)
+        trace = np.mean(traces, axis=0)
+
+        print np.shape(trace)
+
+        #for trace in traces:
+        if True:
+            for bnum in range(0, 16):
+                newresults = [multivariate_normal.logpdf(trace[pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, 256)]
+                results[bnum] += newresults
+                self.stats.updateSubkey(bnum, results[bnum], tnum=0)
     
     def getStatistics(self):
         return self.stats
