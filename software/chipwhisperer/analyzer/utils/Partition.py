@@ -95,7 +95,7 @@ class Partition(QObject):
                 "module":None,
                 "values":{
                     "round":{"value":0, "desc":"Round", "changed":False, "definesunique":True},
-                    "partfile":{"value":None, "desc":"Partition File", "changed":False, "headerLabel":"Partition Data"},
+                    "filename":{"value":None, "desc":"Partition File", "changed":False, "headerLabel":"Partition Data"},
                     },
                 }
 
@@ -107,8 +107,9 @@ class Partition(QObject):
         self.console = console
         self.showScriptParameter = showScriptParameter
         self.parent = parent
+        self._tmanager = None
         if parent is not None:
-            self.setTraceSource(parent.manageTraces.iface)
+            self.setTraceManager(parent.traceManager())
         self.setupParameters()
 
     def setupParameters(self):
@@ -135,9 +136,14 @@ class Partition(QObject):
         """Do any initilization required once all traces are loaded"""
         pass
 
-    def setTraceSource(self, tmanager):
+    def setTraceManager(self, tmanager):
         """Set the input trace source"""
-        self.trace = tmanager
+        self._tmanager = tmanager
+
+    def traceManager(self):
+        if self._tmanager is None and self.parent is not None:
+            self._tmanager = self.parent.traceManager()
+        return self._tmanager
         
     def createBlankTable(self, t):
         # Create storage for partition information
@@ -152,13 +158,13 @@ class Partition(QObject):
     def loadPartitions(self, start=0, end=-1):
         """Load partitions from trace files, convert to mapped range"""
         if end == -1:
-            end = self.trace.NumTrace
+            end = self.traceManager().NumTrace
 
         partitionTable = None
 
         tnum = start
         while tnum < end:
-            t = self.trace.findMappedTrace(tnum)
+            t = self.traceManager().findMappedTrace(tnum)
             # Discover where this trace starts & ends
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
@@ -187,16 +193,16 @@ class Partition(QObject):
         """Run partioning & save results to .npz file"""
         
         if end == -1:
-            end = self.trace.NumTrace
+            end = self.traceManager().NumTrace
         
         tnum = start
         while tnum < end:
-            t = self.trace.findMappedTrace(tnum)
+            t = self.traceManager().findMappedTrace(tnum)
             #Discover where this trace starts & ends
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
                         
-            partitionTable = self.createBlankTable()
+            partitionTable = self.createBlankTable(t)
                 
             for tnum in range(tmapstart, tmapend+1):
                 #Check each trace, write partition number
@@ -209,13 +215,9 @@ class Partition(QObject):
             
             # Save partition table, reference it in config file
             newCfgDict = copy.deepcopy(self.attrDictPartition)
-            fname = t.saveAuxiliaryData(self.partMethod.moduleName, partitionTable)
-            newCfgDict["values"]["partfile"]["value"] = fname
-            
-            # Add auxilary data to configuration file
-            t.addAuxData(newCfgDict)
-            t.config.saveTrace()
-            
+            updatedDict = t.addAuxDataConfig(newCfgDict)
+            t.saveAuxData(partitionTable, updatedDict)
+
             # Debug - Dump Table
             # for t in range(0, self.partMethod.getNumPartitions()):
             #    print "Traces in %d:" % t
