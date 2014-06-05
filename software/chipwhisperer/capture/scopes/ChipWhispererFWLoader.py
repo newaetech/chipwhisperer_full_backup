@@ -29,6 +29,7 @@
 import sys
 import importlib
 from functools import partial
+import platform
 
 try:
     from PySide.QtCore import *
@@ -86,6 +87,12 @@ class FWLoaderConfig(QDialog):
 
         self.javaCmd = 'java'
 
+        # Windows only seems to require this
+        if platform.system() == 'Windows':
+            self.shellRequired = True
+        else:
+            self.shellRequired = False
+
         # Override this if path-specific java required, e.g.:
         # self.javaCmd = '"C:/Program Files/Java/jre7/bin/java"'
 
@@ -141,7 +148,7 @@ class FWLoaderConfig(QDialog):
         # Check Status
         cmd = '%s -cp %s FWLoader -c -i' % (self.javaCmd, self.fwLocation.text())
         # print shlex.split(cmd)
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
         stdout, stderr = process.communicate()
         process.wait()
 
@@ -172,7 +179,7 @@ class FWLoaderConfig(QDialog):
         """Load the USB microcontroller firmware file setup in the dialog"""
         cmd = "%s -cp %s FWLoader -c -f -uu %s" % (self.javaCmd, self.fwLocation.text(), self.firmwareLocation.text())
         # print shlex.split(cmd)
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
         stdout, stderr = process.communicate()
         exit_code = process.wait()
         if self.console:
@@ -187,11 +194,11 @@ class FWLoaderConfig(QDialog):
         # Get bitstream date, print for user
         bsdate = os.path.getmtime(self.bitLocation.text())
         print "FPGA Bitstream Created: %s" % time.ctime(bsdate)
-        
+
         # Save last loaded FPGA bitstream
         QSettings().setValue("bitstream-date", bsdate)
 
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=True)
+        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
         stdout, stderr = process.communicate()
         exit_code = process.wait()
         if self.console:
