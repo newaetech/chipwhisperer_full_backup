@@ -94,7 +94,7 @@ class PreprocessingBase(QObject):
 
     def getKnownKey(self, n=None):
         """Get known-key number n"""
-        return self.trace.getKnownKey()
+        return self.trace.getKnownKey(n)
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
