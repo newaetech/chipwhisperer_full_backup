@@ -59,6 +59,7 @@ class TraceManager(object):
         self.dlg = parent
         self.NumTrace = 0
         self.NumPoint = 0
+        self.lastMapped = None
 
     def getTraceList(self, start=0, end=-1):
         """
@@ -82,11 +83,20 @@ class TraceManager(object):
         return dataDict
 
     def findMappedTrace(self, n):
+        if self.lastMapped is not None:
+            if self.lastMapped.mappedRange is not None and n >= self.lastMapped.mappedRange[0] and n <= self.lastMapped.mappedRange[1]:
+                return self.lastMapped
+            else:
+                # Only load one segment at a time for memory reasons
+                self.lastMapped.unloadAllTraces()
+                self.lastMapped = None
+
         for t in self.dlg.traceList:
             if t.mappedRange:
                 if n >= t.mappedRange[0] and n <= t.mappedRange[1]:
                     if not t.isLoaded():
                         t.loadAllTraces(None, None)
+                    self.lastMapped = t
                     return t
 
         raise ValueError("n = %d not in mapped range"%n)
@@ -219,7 +229,7 @@ class TraceManagerDialog(QDialog):
         for t in alltraces:
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
-                print "Opening %s"%fname
+                # print "Opening %s"%fname
                 ti = TraceContainerNative.TraceContainerNative()
                 ti.config.loadTrace(fname)
                 self.traceList.append(ti)
@@ -228,6 +238,8 @@ class TraceManagerDialog(QDialog):
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
                 self.table.cellWidget(int(tnum[0]), self.findCol("Enabled")).setChecked(t[1] == "True")
+
+        self.validateTable()
 
     def findCol(self, name):
         """ Function is a hack/cheat to deal with movable headers if they become enabled """

@@ -53,6 +53,9 @@ class TraceExplorerDialog(QDialog):
         self.qwindow = QMainWindow()
         self.parent = parent
 
+        self._tmanager = None
+        self._project = None
+
         # We want to use dock widgets, but need a QMainWindow for this to work
         # thus we place a QMainWindow inside the QDialog. Great Success.
         layout = QVBoxLayout()
@@ -70,7 +73,8 @@ class TraceExplorerDialog(QDialog):
         self.graphDockList = []
         self.getGraphWidgets(["Basic Plot"])
 
-        self.progressBar = QProgressBar()
+        self.progressBar = QProgressDialog(self)
+        self.progressBar.setWindowModality(Qt.WindowModal)
 
 
 
@@ -110,13 +114,19 @@ class TraceExplorerDialog(QDialog):
 
     def setTraceSource(self, tmanager):
         """Set the input trace source"""
-        self.trace = tmanager
+        self._tmanager = tmanager
         
+    def setProject(self, project):
+        self._project = project
+
+    def project(self):
+        return self._project
+
 ####COMMON SCRIPTING STUFF
 
-    def getTraceSource(self):
+    def traceManager(self):
         """Get the trace information"""
-        return self.trace
+        return self._tmanager
     
     def getGraphWidgets(self, nameList=["Unknown"]):
         """Setup graph widgets (e.g. graphs) in the Window, and return a reference to them"""

@@ -83,7 +83,7 @@ import chipwhisperer.common.ParameterTypesCustom
 #TEMP
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
-from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
+# from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 
 class ChipWhispererAnalyzer(MainChip):
@@ -103,11 +103,6 @@ class ChipWhispererAnalyzer(MainChip):
         
         
         self.utilList = []
-
-        partGen = Partition(self)
-        self.PartitionDialog = PartitionDialog(self, partGen)
-        self.utilList.append(partGen)
-
         self.traceExplorerDialog = TraceExplorerDialog(self)
         self.utilList.append(self.traceExplorerDialog)
 
@@ -201,17 +196,14 @@ class ChipWhispererAnalyzer(MainChip):
                                statusTip='Get information on traces',
                                triggered=self.traceExplorerDialog.show)
 
-        self.UtilitiesPartition = QAction('Generate Partitions', self,
-                               statusTip='Generate Partitions for Template Attacks',
-                               triggered=self.PartitionDialog.exec_)
+        # self.UtilitiesPartition = QAction('Generate Partitions', self,
+        #                       statusTip='Generate Partitions for Template Attacks',
+        #                       triggered=self.PartitionDialog.exec_)
 
         self.toolMenu.addSeparator()
         self.toolMenu.addAction(self.UtilitiesTraceExplorer)
-        self.toolMenu.addAction(self.UtilitiesPartition)
+        # self.toolMenu.addAction(self.UtilitiesPartition)
         self.toolMenu.addSeparator()
-
-    def generatePartitions(self):
-        pass
 
     def setPreprocessing(self, num, module):
         self.preprocessingList[num] = module
@@ -394,6 +386,7 @@ class ChipWhispererAnalyzer(MainChip):
 
         # Ensure attack knows about this project
         self.attack.setProject(self.proj)
+        self.traceExplorerDialog.setProject(self.proj)
 
   
     def newProject(self):        
@@ -404,6 +397,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.proj.addParamTree(self)    
         self.proj.setTraceManager(self.manageTraces)  
         self.setCurrentFile(None)
+        self.traceExplorerDialog.setProject(self.proj)
   
     def saveProject(self):
         #TODO: Move to MainChip
