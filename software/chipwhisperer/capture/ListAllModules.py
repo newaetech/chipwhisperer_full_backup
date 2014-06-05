@@ -35,7 +35,7 @@ except ImportError, e:
     err = str(e)
 finally:
     modList.append(["scopes.OpenADC", ok, err])
-    
+
 try:
     import chipwhisperer.capture.scopes.VisaScope
     ok = True
@@ -65,7 +65,7 @@ except ImportError, e:
     err = str(e)
 finally:
     modList.append(["scopes.PartialReconfiguration", ok, err])
-    
+
 try:
     import chipwhisperer.capture.scopes.ChipWhispererExtra
     ok = True
@@ -75,7 +75,7 @@ except ImportError, e:
     err = str(e)
 finally:
     modList.append(["scopes.ChipWhispererExtra", ok, err])
-    
+
 try:
     import chipwhisperer.capture.scopes.ChipWhispererGlitch
     ok = True
@@ -128,6 +128,16 @@ finally:
     modList.append(["targets.SmartCard", ok, err])
 
 try:
+    import chipwhisperer.capture.targets.ChipWhispererSPI
+    ok = True
+    err = ""
+except ImportError, e:
+    ok = False
+    err = str(e)
+finally:
+    modList.append(["targets.ChipWhispererSPI", ok, err])
+
+try:
     import chipwhisperer.common.traces.TraceContainerNative
     ok = True
     err = ""
@@ -158,6 +168,6 @@ finally:
     modList.append(["traces.TraceContainerMySQL", ok, err])
 
 
-def ListAllModules():   
+def ListAllModules():
     return modList
-    
+
