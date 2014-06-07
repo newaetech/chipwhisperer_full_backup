@@ -61,21 +61,18 @@ class TraceManager(object):
         self.NumPoint = 0
         self.lastMapped = None
 
-    def getTraceList(self, start=0, end=-1):
+    def getSegmentList(self, start=0, end=-1):
         """
-        Get a list of pointers to trace objects that spans from start to end. Useful when capture
-        has occured as a number of segments (as it usually will), and you want to apply analysis
-        over certain segments at a time.
+        Get a list of segments.
         """
         tnum = start
         if end == -1:
             end = self.NumTrace
             
-        dataDict = {'traceList':[], 'offsetList':[], 'lengthList':[]}
+        dataDict = {'offsetList':[], 'lengthList':[]}
             
         while(tnum < end):
             t = self.findMappedTrace(tnum)
-            dataDict['traceList'].append(t)
             dataDict['offsetList'].append(t.mappedRange[0])
             dataDict['lengthList'].append(t.mappedRange[1] - t.mappedRange[0] + 1)
             tnum = t.mappedRange[1] + 1
@@ -147,6 +144,12 @@ class TraceManager(object):
         else:
             self.NumPoint = max(pts)
         
+    def numPoint(self):
+        return self.NumPoint
+
+    def numTrace(self):
+        return self.NumTrace
+
 class TraceManagerDialog(QDialog):
     """Manages traces associated with some project"""
     tracesChanged = Signal()
