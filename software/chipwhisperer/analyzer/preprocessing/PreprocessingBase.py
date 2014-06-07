@@ -94,7 +94,7 @@ class PreprocessingBase(QObject):
 
     def getKnownKey(self, n=None):
         """Get known-key number n"""
-        return self.trace.getKnownKey()
+        return self.trace.getKnownKey(n)
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
@@ -103,6 +103,18 @@ class PreprocessingBase(QObject):
     def setTraceSource(self, tmanager):
         """Set the input trace source"""
         self.trace = tmanager
+
+    def numPoint(self):
+        return self.trace.numPoint()
+
+    def numTrace(self):
+        return self.trace.numTrace()
+
+    def getSegmentList(self):
+        return self.trace.getSegmentList()
+
+    def getAuxData(self, n, auxDic):
+        return self.trace.getAuxData(n, auxDic)
 
 
 

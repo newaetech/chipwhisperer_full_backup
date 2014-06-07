@@ -63,7 +63,7 @@ class PartitionDialog(QDialog):
 
         # TODO: Partition generation doesn't work
         pb.setMinimum(0)
-        pb.setMinimum(self.part.trace.NumTrace)
+        pb.setMinimum(self.part.trace.numTrace())
 
         self.part.runPartitions(report=pb.setValue)
 
@@ -158,7 +158,7 @@ class Partition(QObject):
     def loadPartitions(self, start=0, end=-1):
         """Load partitions from trace files, convert to mapped range"""
         if end == -1:
-            end = self.traceManager().NumTrace
+            end = self.traceManager().numTrace()
 
         partitionTable = None
 
@@ -193,7 +193,7 @@ class Partition(QObject):
         """Run partioning & save results to .npz file"""
         
         if end == -1:
-            end = self.traceManager().NumTrace
+            end = self.traceManager().numTrace()
         
         tnum = start
         while tnum < end:

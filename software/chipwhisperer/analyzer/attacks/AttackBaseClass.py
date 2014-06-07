@@ -55,10 +55,7 @@ class AttackBaseClass(QObject):
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
         return inpkey
-    
-    def setTraceManager(self, tmanager):
-        self.trace = tmanager
-    
+
     def doAttack(self):
         self.attackDone.emit()
 
