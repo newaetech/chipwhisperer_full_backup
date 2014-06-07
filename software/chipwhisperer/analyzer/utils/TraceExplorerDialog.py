@@ -96,6 +96,8 @@ class TraceExplorerDialog(QDialog):
         self.commonScriptsDock = self.addDock(self.paramTreeCommonScripts, "Common Scripts")
 
 
+        self.params = self.paramCommonScripts
+
     def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea):
         """Add a dockwidget to the main window"""
         # Configure dock
@@ -135,6 +137,8 @@ class TraceExplorerDialog(QDialog):
         for gd in self.graphDockList:
             gd.close()
             gd.widget().clearPushed()
+            gd.widget().clearCustomWidgets()
+            gd.widget().setDefaults()
 
         for i in range(0, min(len(self.graphDockList), len(nameList))):
             self.graphDockList[i].show()
