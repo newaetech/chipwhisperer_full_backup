@@ -43,11 +43,17 @@ class ColorDialog(QDialog):
     """
     Simple dialog to pick colours for the trace data.
     """
-    def __init__(self, color,  auto):
+    def __init__(self, colorInt=None, auto=None):
         super(ColorDialog, self).__init__()
         layout = QVBoxLayout()
         self.setLayout(layout)
                 
+        if colorInt is None:
+            colorInt = 0
+
+        if auto is None:
+            auto = True
+
         self.cbAuto = QCheckBox("Auto-Increment Persistant Colours")
         self.cbAuto.setChecked(auto)
         
@@ -64,12 +70,13 @@ class ColorDialog(QDialog):
         self.cbColor.addItem("Purple",  6)
         self.cbColor.addItem("Magenta",  7)          
         self.cbColor.currentIndexChanged.connect(self.currentIndexChanged)
-        self.cbColor.setCurrentIndex(color)
+        self.cbColor.setCurrentIndex(colorInt)
         
         clayout.addWidget(QLabel("Color: "))
         clayout.addWidget(self.cbColor)
         clayout.addStretch()
-        self.color = color        
+
+        self.color = colorInt
         
         layout.addLayout(clayout)
         
@@ -79,10 +86,10 @@ class ColorDialog(QDialog):
         layout.addWidget(buttonBox)
         
     def currentIndexChanged(self, indx):
-        self.color = self.cbColor.itemData(indx)
+        self.colorInt = self.cbColor.itemData(indx)
         
     def getValues(self):
-        return (self.color,  self.cbAuto.isChecked())
+        return (self.colorInt, self.cbAuto.isChecked())
 
 class GraphWidget(QWidget):
     """
@@ -100,6 +107,9 @@ class GraphWidget(QWidget):
         self.imagepath = ":/images/"
 
         self.persistantItems = []
+        self._customWidgets = []
+
+        self.colorDialog = ColorDialog()
 
         QWidget.__init__(self)
         layout = QVBoxLayout()
@@ -112,7 +122,7 @@ class GraphWidget(QWidget):
         vb.setMouseMode(vb.RectMode)
         vb.sigStateChanged.connect(self.VBStateChanged)
         vb.sigXRangeChanged.connect(self.VBXRangeChanged)
-        
+
         ###Toolbar
         xLockedAction = QAction(QIcon(self.imagepath+'xlock.png'), 'Lock X Axis', self)
         xLockedAction.setCheckable(True)
@@ -132,12 +142,12 @@ class GraphWidget(QWidget):
         yDefault = QAction(QIcon(self.imagepath+'ydefault.png'), 'Default Y Axis', self)
         yDefault.triggered.connect(self.YDefault)
         
-        persistance = QAction(QIcon(self.imagepath+'persistance.png'), 'Enable Persistance',  self)
-        persistance.setCheckable(True)
-        persistance.triggered[bool].connect(self.setPersistance)
+        self.actionPersistance = QAction(QIcon(self.imagepath+'persistance.png'), 'Enable Persistance',  self)
+        self.actionPersistance.setCheckable(True)
+        self.actionPersistance.triggered[bool].connect(self.setPersistance)
         
         setColour = QAction(QIcon(self.imagepath+'wavecol.png'),  'Set Colour',  self)
-        setColour.triggered[bool].connect(self.setColour)
+        setColour.triggered[bool].connect(self.colorPrompt)
         
         clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
         clear.triggered.connect(self.clearPushed)
@@ -148,15 +158,18 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(xAutoScale)
         self.GraphToolbar.addAction(yAutoScale)
         self.GraphToolbar.addAction(yDefault)
-        self.GraphToolbar.addAction(persistance)
+        self.GraphToolbar.addAction(self.actionPersistance)
         self.GraphToolbar.addAction(setColour)
         self.GraphToolbar.addAction(clear)
         layout.addWidget(self.GraphToolbar)
         
         layout.addWidget(self.pw)        
         self.setLayout(layout)
-        
-        self.persistant = False
+
+        self.setDefaults()
+
+    def setDefaults(self):
+        self.setPersistance(False)
         self.color = 0
         self.acolor = 0
         self.autocolor = True
@@ -164,14 +177,20 @@ class GraphWidget(QWidget):
 
     def setPersistance(self, enabled):
         """Enable Persistance mode, which means display NOT cleared before new traces added"""
+        self.actionPersistance.setChecked(enabled)
         self.persistant = enabled
         
-    def setColour(self, enabled):
+    def setColorInt(self, colorint, numcolors=16):
+
+        # See http://www.pyqtgraph.org/documentation/functions.html#pyqtgraph.mkColor
+        self.color = pg.intColor(colorint, hues=numcolors)
+
+    def colorPrompt(self, enabled):
         """Prompt user to set colours"""
-        cd = ColorDialog(self.color, self.autocolor)
-        if cd.exec_():        
-            data = cd.getValues()
-            self.color = data[0]
+
+        if self.colorDialog.exec_():
+            data = self.colorDialog.getValues()
+            self.color = self.setColorInt(data[0], 9)
             self.acolor = data[0]
             self.autocolor = data[1]
         
@@ -237,7 +256,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
         
-    def passTrace(self, trace, startoffset=0, ghostTrace=False):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
@@ -263,7 +282,10 @@ class GraphWidget(QWidget):
             
         xaxis = range(startoffset, len(trace)+startoffset)
             
-        self.pw.plot(xaxis, trace, pen=(self.acolor,8)) 
+        if pen is None:
+            pen = pg.mkPen(self.acolor)
+
+        self.pw.plot(xaxis, trace, pen=pen)
 
         if ghostTrace is False:
             self.dataChanged.emit(trace, startoffset)
@@ -285,3 +307,13 @@ class GraphWidget(QWidget):
         for t in self.persistantItems:
             if t not in self.pw.items():
                 self.pw.addItem(t)
+
+    def addWidget(self, widget):
+        self._customWidgets.append(widget)
+        self.layout().addWidget(widget)
+
+    def clearCustomWidgets(self):
+        for wid in self._customWidgets:
+            self.layout().removeWidget(wid)
+        self._customWidgets = []
+
