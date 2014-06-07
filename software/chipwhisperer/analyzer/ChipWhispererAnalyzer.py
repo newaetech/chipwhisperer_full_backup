@@ -278,8 +278,6 @@ class ChipWhispererAnalyzer(MainChip):
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         self.waveformDock.widget().clearPushed()
-        self.waveformDock.widget().setPersistance(True)
-        
         self.setupPreprocessorChain()
         
         tstart = self.findParam('tracerng').value()[0]
@@ -289,6 +287,9 @@ class ChipWhispererAnalyzer(MainChip):
         
         ttotal = 0
         
+        if tend - tstart > 1:
+            self.waveformDock.widget().setPersistance(True)
+
         for tnum in range(tstart, tend):
             trace = self.traces.getTrace(tnum)
             
