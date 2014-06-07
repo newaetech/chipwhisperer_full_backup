@@ -173,6 +173,7 @@ class ProfilingTemplate(QObject):
         return self._tmanager
 
     def setTraceManager(self, tmanager):
+        print tmanager
         self._tmanager = tmanager
         # Set for children
         self.profiling.setTraceManager(tmanager)
@@ -194,22 +195,32 @@ class ProfilingTemplate(QObject):
         poiList = self.loadPOI()
 
         # Generate templates
-        self.profiling.generate(self.traceManager(), tRange, poiList , numParts)
+        self.profiling.generate(tRange, poiList , numParts)
 
         cfgsec = self.project().addDataConfig(sectionName="Template Data", subsectionName="Templates")
         cfgsec["tracestart"] = tRange[0]
         cfgsec["traceend"] = tRange[1]
         
-        fname = self.project.getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
+        fname = self.project().getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
 
         # Save template file
-        np.savez(fname, mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
+        np.savez(fname["abs"], mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
         
-        cfgsec["filename"] = fname
+        cfgsec["filename"] = fname["rel"]
 
     def loadTemplates(self):
-        template = np.load(r'C:/E/Documents/academic/sidechannel/eclipse-workspace/chipwhisperer/chipwhisperer/software/chipwhisperer/capture/mega328p_aes128_100k/mega328p_aes128_100k_data/analysis\templates-0-12000.npz')
-        return template
+        # template = np.load(r'C:/E/Documents/academic/sidechannel/eclipse-workspace/chipwhisperer/chipwhisperer/software/chipwhisperer/capture/mega328p_aes128_100k/mega328p_aes128_100k_data/analysis\templates-0-12000.npz')
+
+        # Load Template
+        foundsecs = self.parent.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
+        if len(foundsecs) > 1:
+            IOError("Too many sections!!!")
+        elif len(foundsecs) == 1:
+            fname = self.parent.project().convertDataFilepathAbs(foundsecs[0]["filename"])
+            return np.load(fname)
+        else:
+            IOError("Templates")
+
 
     def loadPOI(self):
         section = self.project().getDataConfig("Template Data", "Points of Interest")
@@ -229,12 +240,11 @@ class ProfilingTemplate(QObject):
 
         results = np.zeros((16, 256))
 
-        trace = np.mean(traces, axis=0)
+        # trace = np.mean(traces, axis=0)
+        # print np.shape(trace)
 
-        print np.shape(trace)
-
-        #for trace in traces:
-        if True:
+        for trace in traces:
+        # if True:
             for bnum in range(0, 16):
                 newresults = [multivariate_normal.logpdf(trace[pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, 256)]
                 results[bnum] += newresults
