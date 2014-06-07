@@ -36,25 +36,25 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         self.textins = np.zeros([self.NumTrace, 16], dtype=np.uint8)
         for n in range(0, self.NumTrace):
             tin = srcTraces.textins[n]
-            self.textins[n] = map(int, tin, [16]*len(tin))
-        
+            self.textins[n] = map(int, tin, [16] * len(tin))
+
 
         self.textouts = np.zeros([self.NumTrace, 16], dtype=np.uint8)
         for n in range(0, self.NumTrace):
             tout = srcTraces.textouts[n]
-            self.textouts[n] = map(int, tout, [16]*len(tout))
+            self.textouts[n] = map(int, tout, [16] * len(tout))
 
         if srcTraces.tracedtype:
             userdtype = srcTraces.tracedtype
         else:
             userdtype = np.float
-            
+
         self.traces = np.array(srcTraces.traces, dtype=userdtype)
 
-        #Traces copied in means not saved
+        # Traces copied in means not saved
         self.setDirty(True)
-        
-        
+
+
     def loadAllTraces(self, directory=None, prefix=""):
         """Load all traces into memory"""
 
@@ -64,10 +64,10 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         if prefix is None:
             prefix = self.prefix
 
-        self.traces = np.load(directory + "/%straces.npy"%prefix, mmap_mode='r')
-        self.textins = np.load(directory + "/%stextin.npy"%prefix)
-        self.textouts = np.load(directory + "/%stextout.npy"%prefix)
-        self.knownkey = np.load(directory + "/%sknownkey.npy"%prefix)
+        self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
+        self.textins = np.load(directory + "/%stextin.npy" % prefix)
+        self.textouts = np.load(directory + "/%stextout.npy" % prefix)
+        self.knownkey = np.load(directory + "/%sknownkey.npy" % prefix)
 
         # OK if this fails
         try:
@@ -75,8 +75,9 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         except IOError:
             self.keylist = None
 
-        #Traces loaded means saved
+        # Traces loaded means saved
         self.setDirty(False)
+        self._isloaded = True
 
     def unloadAllTraces(self):
         """Drop traces from memory to save space """
@@ -85,6 +86,7 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         self.textouts = None
         self.knownkey = None
         self.keylist = None
+        self._isloaded = False
 
     def saveAuxData(self, data, configDict, filenameKey="filename"):
         path = os.path.dirname(self.config.configFilename())
@@ -108,16 +110,16 @@ class TraceContainerNative(TraceContainer.TraceContainer):
 
     def saveAllTraces(self, directory, prefix=""):
         self.config.saveTrace()
-        np.save(directory + "/%straces.npy"%prefix, self.traces)
-        np.save(directory + "/%stextin.npy"%prefix, self.textins)
-        np.save(directory + "/%stextout.npy"%prefix, self.textouts)
-        np.save(directory + "/%skeylist.npy"%prefix, self.keylist)    
-        np.save(directory + "/%sknownkey.npy"%prefix, self.knownkey)
+        np.save(directory + "/%straces.npy" % prefix, self.traces)
+        np.save(directory + "/%stextin.npy" % prefix, self.textins)
+        np.save(directory + "/%stextout.npy" % prefix, self.textouts)
+        np.save(directory + "/%skeylist.npy" % prefix, self.keylist)
+        np.save(directory + "/%sknownkey.npy" % prefix, self.knownkey)
         self.setDirty(False)
-        
+
     def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
-        self.saveAllTraces( os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
-        
+        self.saveAllTraces(os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
+
         # Release memory associated with data in case this isn't deleted
         if clearTrace:
             self.traces = None

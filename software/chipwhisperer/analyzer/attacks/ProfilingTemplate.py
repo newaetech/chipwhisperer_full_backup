@@ -34,7 +34,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 import os
 import numpy as np
 from openadc.ExtendedParameter import ExtendedParameter
@@ -49,8 +49,8 @@ import scipy
 try:
     from scipy.stats import multivariate_normal
 except ImportError:
-    print "ERROR: Version of SciPy too old, require > 0.14, have %s" % (scipy.version.version)
-    sys.exit()
+    print "WARNING: Version of SciPy too old, require > 0.14, have %s" % (scipy.version.version)
+    # sys.exit()
 
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.utils.Partition import Partition
@@ -62,7 +62,7 @@ class TemplateBasic(object):
     def __init__(self, tmanager=None):
         self._tmanager = None
         self.partObject = Partition(self)
-    
+
     def traceManager(self):
         return self._tmanager
 
@@ -77,22 +77,22 @@ class TemplateBasic(object):
 
     def generate(self, trange, poiList, numPartitions):
         """Generate templates for all partitions over entire trace range"""
-        
-        #Number of subkeys
+
+        # Number of subkeys
         subkeys = len(poiList)
-        
+
         tstart = trange[0]
         tend = trange[1]
-        
+
         templateTraces = [ [ [] for j in range(0, numPartitions) ] for i in range(0, subkeys) ]
 
         templateMeans = [ np.zeros((numPartitions, len(poiList[i]))) for i in range (0, subkeys) ]
         templateCovs = [ np.zeros((numPartitions, len(poiList[i]), len(poiList[i]))) for i in range (0, subkeys) ]
-        
+
         for tnum in range(tstart, tend):
             partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
-                  
-            for bnum in range(0, subkeys):                       
+
+            for bnum in range(0, subkeys):
                 for i in range(0, numPartitions):
 
                     # Trace part of this partition?
@@ -142,21 +142,21 @@ class ProfilingTemplate(QObject):
                             {'name':'POI Selection'},
                             {'name':'Generate Templates', 'type':'action', 'action':self.generateTemplates}
                             ]},
-                         
+
                          {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
                          {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},                         
+                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
         self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
         if showScriptParameter is not None:
             self.showScriptParameter = showScriptParameter
-            #print self.showScriptParameter        
+            # print self.showScriptParameter
         ExtendedParameter.setupExtended(self.params, self)
-        
+
         self.sr = None
-        
+
         self.stats = DataTypeDiffs()
-        
+
     def paramList(self):
         return [self.params]
 
@@ -165,10 +165,10 @@ class ProfilingTemplate(QObject):
 
     def setKeyround(self, keyround):
         self.keyround = keyround
-    
+
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
-    
+
     def traceManager(self):
         return self._tmanager
 
@@ -200,12 +200,12 @@ class ProfilingTemplate(QObject):
         cfgsec = self.project().addDataConfig(sectionName="Template Data", subsectionName="Templates")
         cfgsec["tracestart"] = tRange[0]
         cfgsec["traceend"] = tRange[1]
-        
+
         fname = self.project().getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
 
         # Save template file
         np.savez(fname["abs"], mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
-        
+
         cfgsec["filename"] = fname["rel"]
 
     def loadTemplates(self):
@@ -233,7 +233,7 @@ class ProfilingTemplate(QObject):
             print "Failed to convert %s to list" % (poistr)
 
         return poiList
-            
+
     def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
         template = self.loadTemplates()
         pois = self.loadPOI()
@@ -249,10 +249,10 @@ class ProfilingTemplate(QObject):
                 newresults = [multivariate_normal.logpdf(trace[pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, 256)]
                 results[bnum] += newresults
                 self.stats.updateSubkey(bnum, results[bnum], tnum=0)
-    
+
     def getStatistics(self):
         return self.stats
-    
+
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
