@@ -35,6 +35,11 @@ except ImportError:
     
 from openadc.ExtendedParameter import ExtendedParameter
 
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    AES = None
+
 class TargetTemplate(QObject):
     paramListUpdated = Signal(list)
     
@@ -108,11 +113,11 @@ class TargetTemplate(QObject):
 
     def loadEncryptionKey(self, key):
         """Load desired encryption key"""        
-        pass
+        self.key = key
 
     def loadInput(self, inputtext):
         """Load input plaintext"""
-        pass
+        self.input = inputtext
 
     def isDone(self):
         """If encryption takes some time after 'go' called, lets user poll if done"""
@@ -127,3 +132,16 @@ class TargetTemplate(QObject):
     def keyLen(self):
         """Length of key system is using"""
         return 16
+    
+    def getExpected(self):
+        """Based on key & text get expected if known, otherwise returns None"""
+        
+        # e.g. for AES we can do this:
+        if AES and hasattr(self, 'key') and hasattr(self, 'input') and self.input and self.key:
+            cipher = AES.new(str(self.key), AES.MODE_ECB)
+            ct = cipher.encrypt(str(self.input))
+            ct = bytearray(ct)
+            return ct
+        else:
+            "nothing..."
+            return None

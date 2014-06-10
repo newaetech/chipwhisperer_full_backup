@@ -60,13 +60,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-try:
-    from Crypto.Cipher import AES
-except ImportError:
-    AES = None    
-
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
-
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 
@@ -129,206 +123,7 @@ except ImportError:
 from chipwhisperer.capture.ListAllModules import ListAllModules
 from chipwhisperer.common.ValidationDialog import ValidationDialog
 from chipwhisperer.capture.CaptureProgressDialog import CaptureProgressDialog
-
-class acquisitionController(QObject):
-    traceDone = Signal(int, list, int)
-    captureDone = Signal(bool)
-    
-    def __init__(self, scope, target=None, writer=None, aux=None, fixedPlain=None, updateData=None, esm=None, newKeyPerTrace=False):
-        super(acquisitionController, self).__init__()
-
-        self.target = target
-        self.scope = scope
-        self.writer = writer
-        self.aux = aux
-        self.running = False
-        self.fixedPlainText = fixedPlain
-        self.maxtraces = 1
-        self.updateData = updateData
-
-        if esm:
-            self.textInLabel = esm.textInLine
-            self.textOutLabel = esm.textOutLine
-            self.textExpectedLabel = esm.textOutExpected
-            self.textKeyLabel = esm.textEncKey
-        else:
-            self.textInLabel = None
-            self.textOutLabel = None
-            self.textExpectedLabel = None
-            self.textKeyLabel = None
-
-        self.newKeyPerTrace=newKeyPerTrace
-
-        self.textin = bytearray(16)
-        for i in range(0,16):
-            self.textin[i] = i  # random.randint(0, 255)
-
-        if self.aux is not None:
-            self.aux.captureInit()
-
-    def TargetDoTrace(self, plaintext, key=None):
-        if self.target is None:
-            return
-           
-        self.target.loadInput(plaintext)
-        self.target.go()
-        
-        while self.target.isDone() == False:
-            continue
-
-        #print "DEBUG: Target go()"
-
-        resp = self.target.readOutput()
-        #print "DEBUG: Target readOutput()"
-
-        #print "pt:",
-        #for i in plaintext:
-        #    print " %02X"%i,
-        #print ""
-
-        #print "sc:",
-        #for i in resp:
-        #    print " %02X"%i,
-        #print ""
-
-        return resp
-
-    def newKey(self):
-        newkey = bytearray(self.target.keyLen())
-        for i in range(0,self.target.keyLen()):
-            newkey[i] = random.randint(0,255)
-        return newkey
-
-    def newPlain(self, textIn=None):      
-
-        if textIn:
-            self.textin = textIn
-        else:
-            self.textin = bytearray(16)
-            for i in range(0,16):
-                self.textin[i] = random.randint(0, 255)
-                #self.textin[i] = i
-        #Do AES if setup
-        if AES and (self.textExpectedLabel != None):
-            if self.key == None:
-                self.textExpectedLabel.setText("")
-            else:
-                cipher = AES.new(str(self.key), AES.MODE_ECB)
-                ct = cipher.encrypt(str(self.textin))
-                if self.textExpectedLabel != None:
-                    ct = bytearray(ct)
-                    text = ""
-                    for t in ct: text += "%02X "%t                                             
-                    self.textExpectedLabel.setText(text)
-
-
-    def doSingleReading(self, update=True, N=None, key=None):       
-        self.key = key
-        self.newPlain(self.fixedPlainText)
-
-        if self.key is not None:
-            if self.target is not None:
-                self.key = self.target.checkEncryptionKey(key)
-                if (self.target.keyLen() != len(self.key)):
-                    print "Key length WRONG for given target"
-                    raise IOError("Key Length Wrong for Given Target, %d != %d" % (self.target.keyLen(), len(self.key)))
-
-        if self.textKeyLabel is not None:
-            txtlabel = ""
-            for t in self.key: txtlabel += "%02X "%t
-            self.textKeyLabel.setText(txtlabel)
-
-        ## Start target now
-        if self.textInLabel is not None:
-            text = ""
-            for t in self.textin: text += "%02X "%t                                             
-            self.textInLabel.setText(text)
-           
-        #Set mode
-        if self.target is not None:
-            self.target.reinit()
-            self.target.setModeEncrypt()
-            self.target.loadEncryptionKey(self.key)  
-        
-        if self.scope is not None:
-            self.scope.arm()
-
-        if self.aux is not None:
-            self.aux.traceArm()
-        
-        if self.target is not None:            
-            #Load input, start encryption, get output
-            self.textout = self.TargetDoTrace(self.textin, key)
-
-            if self.textout is not None:
-                if len(self.textout) >= 16:  
-                    text = ""
-                    for t in self.textout: text += "%02X "%t                                             
-                    self.textOutLabel.setText(text)
-
-        #Get ADC reading
-        if self.scope is not None:
-            try:
-                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
-                    print "Timeout"
-                    return False       
-            except IOError,e:
-                print "IOError: %s"%str(e)
-                return False
-
-        if self.aux is not None:
-            self.aux.traceDone()
-        
-        return True
-
-    def setMaxtraces(self, maxtraces):
-        self.maxtraces = maxtraces
-
-    def abortCapture(self, doAbort=True):
-        if doAbort:
-            self.running = False
-
-    def doReadings(self, addToList=None, key=None):
-        self.running = True
-        
-        self.key = key
-        
-        if self.writer is not None:
-            self.writer.prepareDisk()
-            self.writer.setKnownKey(self.key)
-
-        if self.aux is not None:
-            self.aux.captureInit()
-
-        nt = 0
-
-        while (nt < self.maxtraces) and self.running:
-            if self.newKeyPerTrace:
-                self.key = self.newKey()
-
-            if self.doSingleReading(True, None, key=self.key) == True:
-                if self.writer is not None:
-                    self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)            
-    
-                nt = nt + 1
-                self.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
-            QCoreApplication.processEvents()
-            
-
-        if self.aux is not None:
-            self.aux.captureComplete()
-
-        if self.writer is not None:
-            # Don't clear trace as we re-use the buffer
-            self.writer.closeAll(clearTrace=False)
-        
-        if addToList is not None:
-            if self.writer is not None:
-                addToList.append(self.writer)
-        
-        self.captureDone.emit(self.running)
-        
-        self.running = False      
+from chipwhisperer.capture.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic
 
 class TargetInterface(QObject):
     """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
@@ -420,7 +215,21 @@ class EncryptionStatusMonitor(QDialog):
 
         self.setLayout(self.textResultsLayout)  
         self.hide()
-               
+
+    def setHexText(self, lineedit, data):
+        if data is not None:
+            text = ""
+            for t in data: text += "%02X " % t
+            lineedit.setText(text)
+        else:
+            lineedit.setText("?")
+
+    def newData(self, key, pt, ct, expected):
+        self.setHexText(self.textOutLine, ct)
+        self.setHexText(self.textInLine, pt)
+        self.setHexText(self.textEncKey, key)
+        self.setHexText(self.textOutExpected, expected)
+                     
 
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
@@ -431,9 +240,6 @@ class ChipWhispererCapture(MainChip):
         self.scope = None        
         self.trace = None
         self.aux = None
-        self.setKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
-        self.setPlaintext('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
-        #self.setKey('9B A5 A3 14 40 32 37 C8 CD 06 13 AA 88 62 49 6A')
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
     
@@ -461,6 +267,10 @@ class ChipWhispererCapture(MainChip):
         self.esm = EncryptionStatusMonitor(self)
         
         self.serialTerminal = SerialTerminalDialog(self)
+        
+        valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(console=self.console, showScriptParameter=self.showScriptParameter)}
+        # self.acqPattern = valid_acqPatterns['Basic']
+        self.setAcqPattern(valid_acqPatterns['Basic'], reloadList=False)
 
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
@@ -469,11 +279,11 @@ class ChipWhispererCapture(MainChip):
                 
                 {'name':'Auxilary Module', 'type':'list', 'values':valid_aux, 'value':valid_aux["None"], 'set':self.auxChanged },
 
-                {'name':'Key Settings', 'type':'group', 'children':[
-                        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
-                        {'name':'Send Key to Target', 'type':'bool', 'value':True},
-                        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
-                    ]},   
+                # {'name':'Key Settings', 'type':'group', 'children':[
+                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
+                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
+                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
+                #    ]},
                          
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
@@ -481,9 +291,12 @@ class ChipWhispererCapture(MainChip):
                          'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
                          'as each segment is buffered into RAM before being written to disk.'},
                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
-                        {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
-                        {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
-                    ]}             
+                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':valid_acqPatterns['Basic'], 'set':self.setAcqPattern},
+                        # {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
+                        # {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
+                    ]},
+
+                # {'name':''}
                 ]
         
         self.da = None
@@ -507,14 +320,28 @@ class ChipWhispererCapture(MainChip):
         self.saveFile.connect(self.saveProject)   
         
         self.fixedPlain = False 
-        self.target.targetUpdated.connect(self.TargetToolbar.setEnabled)
+        self.target.targetUpdated.connect(self.targetUpdated)
         self.target.connectStatus.connect(self.targetStatusChanged)
 
         self.targetConnected = False
+        self.reloadParamList()
   
     def listModules(self):
         """Overload this to test imports"""
         return ListAllModules()
+
+    def targetUpdated(self, enabled):
+        self.TargetToolbar.setEnabled(enabled)
+
+        if enabled:
+            self.acqPattern.setTarget(self.target.driver)
+
+    def setAcqPattern(self, pat, reloadList=True):
+        self.acqPattern = pat
+        self.acqPattern.setTarget(self.target.driver)
+
+        if reloadList:
+            self.reloadParamList()
      
     def setFixedPlain(self, x):
         self.fixedPlain = x
@@ -530,34 +357,7 @@ class ChipWhispererCapture(MainChip):
 
     def getNumSegments(self):
         return self.numSegments
-
-    def setKey(self, key, binary=False, updateParamList=False):
-        
-        if binary:
-            self.textkey = ''
-            for s in key:
-                self.textkey += '%02x '%s
-            self.key = bytearray(key)
-        else:        
-            self.textkey = key       
-            self.key = bytearray()
-            for s in key.split():
-                self.key.append(int(s, 16))
-
-    def setPlaintext(self, key, binary=False, updateParamList=False):
-        
-        if binary:
-            self.plaintextStr = ''
-            for s in key:
-                self.plaintextStr += '%02x '%s
-            self.plaintext = bytearray(key)
-        else:        
-            self.plaintextStr = key       
-            self.plaintext = bytearray()
-            for s in key.split():
-                self.plaintext.append(int(s, 16))
-
-        
+       
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
     
@@ -683,7 +483,12 @@ class ChipWhispererCapture(MainChip):
         
     def paramList(self):
         p = []
-        p.append(self.params)     
+        p.append(self.params)
+        
+        if self.acqPattern is not None:
+            acqParams = self.acqPattern.paramList()
+            for ap in acqParams:
+                p.append(ap)
         return p   
 
     def newScopeData(self,  data=None, offset=0):
@@ -856,34 +661,25 @@ class ChipWhispererCapture(MainChip):
             self.doConDisTarget(False)
 
     def capture1(self):
+
         if self.target.driver and self.targetConnected:
             target = self.target.driver
         else:
             target = None
-                     
-        #Check key with target
-        if target:
-            self.setKey(target.checkEncryptionKey(self.key), True, True)
-                     
-        if self.fixedPlain:
-            ptInput = self.plaintext
-        else:
-            ptInput = None
 
+        ac = AcquisitionController(self.scope, target, writer=None, aux=self.aux, keyTextPattern=self.acqPattern)
+        ac.newTextResponse.connect(self.esm.newData)
+                     
         self.capture1Act.setEnabled(False)
         self.captureMAct.setEnabled(False)
 
-        ac = acquisitionController(self.scope, target, writer=None, aux=self.aux, fixedPlain=ptInput, esm=self.esm)
-        ac.doSingleReading(key=self.key)
+        ac.doSingleReading()
         self.statusBar().showMessage("One Capture Complete")
 
         self.capture1Act.setChecked(False)
         self.capture1Act.setEnabled(True)
         self.captureMAct.setEnabled(True)
 
-    # def printTraceNum(self, num, data, offset=0):
-    #    self.statusBar().showMessage("Trace %d done"%num)
-    #    #self.newScopeData(data, offset)
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
@@ -942,11 +738,7 @@ class ChipWhispererCapture(MainChip):
             target = self.target.driver
         else:
             target = None
-            
-        #Check key with target
-        if target:
-            self.setKey(target.checkEncryptionKey(self.key), True, True)
-            
+
         if self.validateSettings(True) == False:
             return
 
@@ -992,20 +784,11 @@ class ChipWhispererCapture(MainChip):
                     writer.setTraceBuffer(waveBuffer)
 
 
-            if self.fixedPlain:
-                ptInput = self.plaintext
-            else:
-                ptInput = None
-
-            rndKey = self.findParam('newKeyAlways').value()
-
             if self.aux is not None:
                 self.aux.setPrefix(baseprefix)
 
-            ac = acquisitionController(self.scope, target, writer, aux=self.aux,
-                                       esm=self.esm, fixedPlain=ptInput,
-                                       newKeyPerTrace=rndKey)
-
+            ac = AcquisitionController(self.scope, target, writer, aux=self.aux, keyTextPattern=self.acqPattern)
+            ac.newTextResponse.connect(self.esm.newData)
             ac.traceDone.connect(cprog.traceDoneSlot)
             ac.setMaxtraces(tracesPerRun)
             cprog.abortCapture.connect(ac.abortCapture)
@@ -1013,7 +796,7 @@ class ChipWhispererCapture(MainChip):
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
 
-            ac.doReadings(addToList=self.manageTraces, key=self.key)
+            ac.doReadings(addToList=self.manageTraces)
 
             tcnt += tracesPerRun
             self.statusBar().showMessage("%d Captures Completed" % tcnt)
