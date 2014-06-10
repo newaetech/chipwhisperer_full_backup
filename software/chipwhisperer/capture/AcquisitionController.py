@@ -49,11 +49,6 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-try:
-    from Crypto.Cipher import AES
-except ImportError:
-    AES = None
-
 from chipwhisperer.common.MainChip import MainChip
 from chipwhisperer.common.ProjectFormat import ProjectFormat
 
@@ -82,6 +77,8 @@ class AcquisitionController(QObject):
 
     def setKeyTextPattern(self, pat):
         self._keyTextPattern = pat
+        if pat:
+            self._keyTextPattern.initPair()
 
     def TargetDoTrace(self, plaintext, key=None):
         if self.target is None:
@@ -117,7 +114,6 @@ class AcquisitionController(QObject):
     def doSingleReading(self, update=True, N=None):
 
         # Get key / plaintext now
-        self._keyTextPattern.initPair()
         data = self._keyTextPattern.newPair()
         self.key = data[0]
         self.textin = data[1]
@@ -203,6 +199,11 @@ class AcquisitionController(QObject):
 
         self.running = False
 
+def hexStrToByteArray(hexStr):
+    ba = bytearray()
+    for s in hexStr.split():
+        ba.append(int(s, 16))
+    return ba
 
 class AcqKeyTextPattern_Base(QObject):
 
@@ -309,10 +310,8 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                     keyStr += '%02x ' % s
                 self._key = bytearray(initialKey)
             else:
-                keyStr = initialKey
-                self._key = bytearray()
-                for s in initialKey.split():
-                    self._key.append(int(s, 16))
+                keyStr = initialKey                  
+                self._key = hexStrToByteArray(initialKey)
 
             self.findParam('initkey').setValue(keyStr)
 
@@ -325,9 +324,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin = bytearray(initialText)
             else:
                 textStr = initialText
-                self._textin = bytearray()
-                for s in initialText.split():
-                    self._textin.append(int(s, 16))
+                self._textin = hexStrToByteArray(initialText)
 
             self.findParam('inittext').setValue(textStr)
             
@@ -345,6 +342,73 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             self._textin = bytearray(16)
             for i in range(0, 16):
                 self._textin[i] = random.randint(0, 255)
+
+        # Check key works with target
+        self.validateKey()
+
+        return (self._key, self._textin)
+
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    AES = None
+
+class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
+
+    def setupParams(self):
+
+        self._fixedPlain = False
+        self._fixedKey = True
+
+        basicParams = [
+                      # {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
+                  ]
+        return basicParams
+
+    def _initPattern(self):
+        pass
+
+    def initPair(self):
+        if self.keyLen() == 16:
+            self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
+        elif self.keyLen() == 24:
+            self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
+        elif self.keyLen() == 32:
+            self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
+        else:
+            raise ValueError("Invalid key length: %d bytes" % self.keyLen())
+        
+        self._textin1 = hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        
+        if self.keyLen() == 16:
+            self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
+        elif self.keyLen() == 24:
+            self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
+        elif self.keyLen() == 32:
+            self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
+        else:
+            raise ValueError("Invalid key length: %d bytes" % self.keyLen())
+
+        self.group1 = True
+
+    def newPair(self):
+
+        if self.group1:
+            self.group1 = False
+            self._textin = self._textin1
+
+            if AES:
+                cipher = AES.new(str(self._key), AES.MODE_ECB)
+                self._textin1 = bytearray(cipher.encrypt(str(self._textin1)))
+            else:
+                print "No AES Module, Using rand() instead!"
+                self._textin1 = bytearray(16)
+                for i in range(0, 16):
+                    self._textin1[i] = random.randint(0, 255)
+
+        else:
+            self.group1 = True
+            self._textin = self._textin2
 
         # Check key works with target
         self.validateKey()

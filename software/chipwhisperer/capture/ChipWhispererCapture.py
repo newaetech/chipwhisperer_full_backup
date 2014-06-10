@@ -123,7 +123,7 @@ except ImportError:
 from chipwhisperer.capture.ListAllModules import ListAllModules
 from chipwhisperer.common.ValidationDialog import ValidationDialog
 from chipwhisperer.capture.CaptureProgressDialog import CaptureProgressDialog
-from chipwhisperer.capture.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic
+from chipwhisperer.capture.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
 class TargetInterface(QObject):
     """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
@@ -269,7 +269,10 @@ class ChipWhispererCapture(MainChip):
         self.serialTerminal = SerialTerminalDialog(self)
         
         valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(console=self.console, showScriptParameter=self.showScriptParameter)}
-        # self.acqPattern = valid_acqPatterns['Basic']
+
+        if AcqKeyTextPattern_CRITTest:
+            valid_acqPatterns['CRI T-Test'] = AcqKeyTextPattern_CRITTest(console=self.console, showScriptParameter=self.showScriptParameter)
+
         self.setAcqPattern(valid_acqPatterns['Basic'], reloadList=False)
 
         self.cwParams = [
