@@ -35,10 +35,10 @@ Full Table of Contents:
     
     installing    
     tutorialsbasic
-    tutorialsadvanced
-    chipwhisperer
+    tutorialsadvanced    
     hardware
     fpgamain
+    chipwhisperer
 
 Indices and tables
 ==================

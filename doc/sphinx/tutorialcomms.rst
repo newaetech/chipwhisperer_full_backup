@@ -233,7 +233,7 @@ Issues with compilation:
   1. You may have to generate the `.dep` and `objdir` directories manually before `make` will work::
   
        mkdir .dep
-	   mkdir objdir
+       mkdir objdir
 	   
   2. On Windows 8, you may get an error like `fork: resource temporarily unavailable`. This requires you to install an updated mysys.dll.
      Download from http://www.madwizard.org/download/electronics/msys-1.0-vista64.zip, unzip file, and copy the .dll to `C:\WinAVR-20100110\utils\bin`,
