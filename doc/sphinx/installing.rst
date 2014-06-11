@@ -44,6 +44,7 @@ click the following link (assuming you've already installed Python!) and let it 
 	easy_install pyside
 	easy_install pyqtgraph
 	easy_install configobj
+    easy_install pyserial
 
 
 .. sidebar:: Python Path Settings
