@@ -127,15 +127,15 @@ Number          Name           Dir     Description
 1                +5V            N/C     Not Connected
 2                GND             I      System GND.
 3                +3.3V           I      +3.3V Power Supply
-4                FPGA-HS1        O     Clock output from Target Board (connected to FPGAOUT)
+4                FPGA-HS1        I     Clock input to Target Board (connected to FPGAIN)
 5                PROG-RESET      I     Target RESET Pin (AVR Programmer).
-6                FPGA-HS2        I     Clock input to Target Board, connected to FPGAIN.
+6                FPGA-HS2        O     Clock output from Target Board, connected to FPGAOUT.
 7                PROG-MISO       O     MISO for AVR Programmer.
 8                VTarget         O     Connected to JP20 'IO VREF', normally 3.3V but can vary for SmartCards.
 9                PROG-MOSI       I     MOSI for AVR Programmer.
-10               FPGA-TARG1     I/O    TargetIO Pin 1 - Usually UART TX.
+10               FPGA-TARG1     I/O    TargetIO Pin 1 - Usually UART RX.
 11               PROG-SCK        I     SCK for AVR Programmer.
-12               FPGA-TARG2     I/O    TargetIO Pin 2 - Usually UART RX.
+12               FPGA-TARG2     I/O    TargetIO Pin 2 - Usually UART TX.
 13               PROG-PDIC       I     PDI Programming Clock (XMEGA Programmer)
 14               FPGA-TARG3     I/O    TargetIO Pin 3 - Usually bidirectional IO for smartcard.
 15               PROG-PDID      I/O    PDI Programming Data (XMEGA Programmer).
