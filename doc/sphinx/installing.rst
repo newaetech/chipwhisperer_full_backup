@@ -1,7 +1,9 @@
+.. |ChipWhisperer| unicode:: ChipWhisperer U+2122
+
 .. _installing:
 
-Installing Python, ChipWhisperer, Drivers & Building Target Firmware
-====================================================================
+Installing Python, |ChipWhisperer|, Drivers & Building Target Firmware
+========================================================================
 
 Windows XP/7
 ------------
