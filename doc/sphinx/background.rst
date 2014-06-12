@@ -9,6 +9,8 @@ ChipWhisperer was started by Colin O'Flynn as a PhD student at Dalhousie Univers
 Authors
 ^^^^^^^^^^^^^
 
-Colin O'Flynn
+Main authors:
+ * Colin O'Flynn
 
-Tobias Schneider 
+Thanks to contributions by:
+ * Tobias Schneider

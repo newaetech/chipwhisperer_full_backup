@@ -8,6 +8,7 @@ Advanced Tutorials
     
     tutorialresync
     tutorialglitch
+    tutorialglitchvcc
     tutorialsadtrigger
 
 

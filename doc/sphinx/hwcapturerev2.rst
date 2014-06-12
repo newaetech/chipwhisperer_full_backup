@@ -102,15 +102,15 @@ The sequence of steps to program a new ``.hex`` file into the AVR are as follows
        :width: 35 %
 
 3. Force the AVR-USB Bootloader to run before the next step. Note the bootloader will automatically time out if
-   no command is received, so you should only force it to run once you are ready for step 4. See the next two 
-   subsections of this section for details.
+   no command is received, so once you have the bootloader running proceed to step 4. For details of getting the
+   bootloader running see :ref:`bootloader-normal`.
    
 4. Press the USB button, and hit the *USB* option:
 
     .. image:: /images/cwrev2/flip3.png
        :width: 35 %
     
-5. Press the *Open* button:
+5. Press the *Open* button, if this fails you are not in bootloader mode.
 
     .. image:: /images/cwrev2/flip4.png
        :width: 35 %
@@ -143,6 +143,8 @@ The sequence of steps to program a new ``.hex`` file into the AVR are as follows
        
     .. image:: /images/cwrev2/flip9.png
        :width: 35 %
+
+.. _bootloader-normal:
 
 Jumping to Bootloader
 """""""""""""""""""""""
