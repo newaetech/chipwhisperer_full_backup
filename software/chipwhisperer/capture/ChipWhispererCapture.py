@@ -64,9 +64,15 @@ from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialo
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 
+if not getattr(__builtins__, "WindowsError", None):
+    class WindowsError(OSError): pass
+
 try:
     from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
 except ImportError:
+    VisaScopeInterface = None
+except WindowsError:
+    # VISA Scope uses WindowsError it seems?
     VisaScopeInterface = None
 
 try:
@@ -670,14 +676,20 @@ class ChipWhispererCapture(MainChip):
         else:
             target = None
 
-        ac = AcquisitionController(self.scope, target, writer=None, aux=self.aux, keyTextPattern=self.acqPattern)
-        ac.newTextResponse.connect(self.esm.newData)
-                     
-        self.capture1Act.setEnabled(False)
-        self.captureMAct.setEnabled(False)
+        try:
 
-        ac.doSingleReading()
-        self.statusBar().showMessage("One Capture Complete")
+            ac = AcquisitionController(self.scope, target, writer=None, aux=self.aux, keyTextPattern=self.acqPattern)
+            ac.newTextResponse.connect(self.esm.newData)
+
+            self.capture1Act.setEnabled(False)
+            self.captureMAct.setEnabled(False)
+
+            ac.doSingleReading()
+            self.statusBar().showMessage("One Capture Complete")
+
+        except IOError, e:
+
+            self.statusBar().showMessage("Error: %s" % str(e))
 
         self.capture1Act.setChecked(False)
         self.capture1Act.setEnabled(True)
