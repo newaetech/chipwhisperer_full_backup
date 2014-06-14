@@ -26,6 +26,9 @@
 
 modList = []
 
+if not getattr(__builtins__, "WindowsError", None):
+    class WindowsError(OSError): pass
+
 try:
     import chipwhisperer.capture.scopes.OpenADC
     ok = True
@@ -41,6 +44,9 @@ try:
     ok = True
     err = ""
 except ImportError, e:
+    ok = False
+    err = str(e)
+except WindowsError, e:
     ok = False
     err = str(e)
 finally:
