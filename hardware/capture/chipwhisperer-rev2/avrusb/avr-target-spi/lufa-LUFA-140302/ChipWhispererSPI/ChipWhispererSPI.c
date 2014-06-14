@@ -30,7 +30,7 @@
 #include "ChipWhispererSPI.h"
 
 typedef void (*BootPtr_t)(void) __attribute__ ((noreturn));
-BootPtr_t BootPtr = (BootPtr_t)0x1800;
+BootPtr_t BootPtr = (BootPtr_t)BOOT_ADDR;
 
 //Use PD5 (PDIC Pin) as CS
 #define SETUP_CS()  (DDRD |= 1<<5)
