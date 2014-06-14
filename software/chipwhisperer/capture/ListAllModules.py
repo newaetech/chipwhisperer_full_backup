@@ -26,8 +26,7 @@
 
 modList = []
 
-if not getattr(__builtins__, "WindowsError", None):
-    class WindowsError(OSError): pass
+import sys
 
 try:
     import chipwhisperer.capture.scopes.OpenADC
@@ -43,12 +42,9 @@ try:
     import chipwhisperer.capture.scopes.VisaScope
     ok = True
     err = ""
-except ImportError, e:
+except:
     ok = False
-    err = str(e)
-except WindowsError, e:
-    ok = False
-    err = str(e)
+    err = str(sys.exc_info())
 finally:
     modList.append(["scopes.VisaScope", ok, err])
 

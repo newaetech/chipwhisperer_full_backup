@@ -64,14 +64,10 @@ from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialo
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 
-if not getattr(__builtins__, "WindowsError", None):
-    class WindowsError(OSError): pass
 
 try:
     from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
-except ImportError:
-    VisaScopeInterface = None
-except WindowsError:
+except:
     # VISA Scope uses WindowsError it seems?
     VisaScopeInterface = None
 
