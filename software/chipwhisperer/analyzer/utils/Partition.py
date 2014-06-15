@@ -36,6 +36,7 @@ except ImportError:
     sys.exit()
 
 import numpy as np
+import random
 
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
@@ -80,6 +81,29 @@ class PartitionEncKey(object):
         key = trace.getKnownKey(tnum)
         return key
         
+class PartitionRandvsFixed(object):
+
+    sectionName = "Partition Based on Rand vs Fixed "
+    moduleName = "PartitionRandFixed"
+    partitionType = "Rand vs Fixed"
+
+    def getNumPartitions(self):
+        return 2
+
+    def getPartitionNum(self, trace, tnum):
+        return [tnum % 2]
+
+class PartitionRandDebug(object):
+
+    sectionName = "Partition Randomly (debug)"
+    moduleName = "PartitionRandDebug"
+    partitionType = "Randomly (debug)"
+
+    def getNumPartitions(self):
+        return 2
+
+    def getPartitionNum(self, trace, tnum):
+        return [random.randint(0, 1)]
 
 class Partition(QObject):
     """
@@ -99,7 +123,7 @@ class Partition(QObject):
                     },
                 }
 
-    supportedMethods = [PartitionEncKey]
+    supportedMethods = [PartitionEncKey, PartitionRandvsFixed, PartitionRandDebug]
 
     def __init__(self, parent, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
@@ -148,7 +172,8 @@ class Partition(QObject):
     def createBlankTable(self, t):
         # Create storage for partition information
         partitionTable = []
-        for j in range(0, len(t.getKnownKey())):
+        #for j in range(0, len(t.getKnownKey())):
+        for j in range(0, len(self.partMethod.getPartitionNum(t, 0))):
             partitionTable.append([])
             for i in range(0, self.partMethod.getNumPartitions()):
                 partitionTable[j].append([])
@@ -176,7 +201,7 @@ class Partition(QObject):
                 partitionTable = self.createBlankTable(t)
 
             # Merge tables now - better way to do this?
-            for j in range(0, len(t.getKnownKey())):
+            for j in range(0, len(self.partMethod.getPartitionNum(t, 0))):
                 for i in range(0, self.partMethod.getNumPartitions()):
                     # for pd in partdata[j][i]:
                     #    partitionTable[j][i].append(pd + tmapstart)
@@ -189,7 +214,7 @@ class Partition(QObject):
         
         return partitionTable
 
-    def runPartitions(self, start=0, end=-1, report=None):
+    def runPartitions(self, start=0, end=-1, report=None, save=False):
         """Run partioning & save results to .npz file"""
         
         if end == -1:
@@ -213,10 +238,11 @@ class Partition(QObject):
                 if report:
                     report(tnum)
             
-            # Save partition table, reference it in config file
-            newCfgDict = copy.deepcopy(self.attrDictPartition)
-            updatedDict = t.addAuxDataConfig(newCfgDict)
-            t.saveAuxData(partitionTable, updatedDict)
+            if save:
+                # Save partition table, reference it in config file
+                newCfgDict = copy.deepcopy(self.attrDictPartition)
+                updatedDict = t.addAuxDataConfig(newCfgDict)
+                t.saveAuxData(partitionTable, updatedDict)
 
             # Debug - Dump Table
             # for t in range(0, self.partMethod.getNumPartitions()):

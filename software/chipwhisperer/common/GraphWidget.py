@@ -314,6 +314,8 @@ class GraphWidget(QWidget):
 
     def clearCustomWidgets(self):
         for wid in self._customWidgets:
+            wid.setVisible(False)
             self.layout().removeWidget(wid)
+            del wid
         self._customWidgets = []
 

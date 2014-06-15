@@ -26,6 +26,8 @@
 
 modList = []
 
+import sys
+
 try:
     import chipwhisperer.capture.scopes.OpenADC
     ok = True
@@ -40,9 +42,9 @@ try:
     import chipwhisperer.capture.scopes.VisaScope
     ok = True
     err = ""
-except ImportError, e:
+except:
     ok = False
-    err = str(e)
+    err = str(sys.exc_info())
 finally:
     modList.append(["scopes.VisaScope", ok, err])
 

@@ -23,12 +23,8 @@ You should have already completed :ref:`tutorialtimingsimple` to gain a better u
 Finally program the microcontroller with the file used here:
 
 7. Program the file ``tsb_m328p_d0d1_20140331.hex`` which is found at ``chipwhisperer\hardware\victims\firmware\tinysafeboot-20140331`` into
-   the AVR microcontroller. You can find instructions for using the programming software in the ref:`tutorialcomms` examples.
+   the AVR microcontroller. You can find instructions for using the programming software in the :ref:`tutorialcomms` examples.
  
-   At this point we want to modify the system to check a provided password.
-   To do so, open the file ``c:\chipwhisperer\user\timing\avr-serial-nocrypto\simpleserial_nocrypt.c`` with a text
-   editor such as Programmer's Notepad (which ships with WinAVR).
-
 .. _testingserialbasic:
 
 Testing the Serial Connection & Observing Power

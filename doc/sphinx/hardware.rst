@@ -10,6 +10,7 @@ Contents:
     
     hwcapturerev2
     hwmultitarget
+    hwchipwhispererspi
     hwftdi
     hwvisascope
     hwpicoscope

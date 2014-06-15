@@ -3,13 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-ChipWhisperer Main Documentation
+.. |ChipWhisperer| unicode:: ChipWhisperer U+2122
+
+|ChipWhisperer| Main Documentation
 ================================
 
 .. image:: /images/cw_banner_tagline.png
 
-Welcome to the ChipWhisperer documentation. This documentation is auto-generated from the ChipWhisperer
-source, and includes information about the hardware and software making up the ChipWhisperer project.
+Welcome to the |ChipWhisperer| documentation. This documentation is auto-generated from the |ChipWhisperer|
+source, and includes information about the hardware and software making up the |ChipWhisperer| project.
 
 Additionally, there is a `ChipWhisperer Wiki <https://www.assembla.com/spaces/chipwhisperer/wiki>`__ which has 
 information such as notes on building your own hardware and various other tid-bits. Generally the more mature
@@ -33,12 +35,14 @@ Full Table of Contents:
     :maxdepth: 3
     :numbered: 
     
+    background
     installing    
+    theory
     tutorialsbasic
     tutorialsadvanced
-    chipwhisperer
     hardware
     fpgamain
+    chipwhisperer
 
 Indices and tables
 ==================

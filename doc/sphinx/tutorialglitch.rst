@@ -1,9 +1,10 @@
 .. _tutorialglitch:
 
-Tutorial: Glitch Attacks
+Tutorial: Clock Glitch Attacks
 =====================================
 
-This advanced tutorial will demonstrate glitch attacks using the ChipWhisperer system. There is a video which briefly outlines some of the attacks on this page too:
+This advanced tutorial will demonstrate clock glitch attacks using the ChipWhisperer system. There is a video which briefly outlines
+some of the attacks on this page too:
 
 |YouTubeGlitch|_
 
@@ -11,8 +12,8 @@ This advanced tutorial will demonstrate glitch attacks using the ChipWhisperer s
 .. _YouTubeGlitch: http://www.youtube.com/watch?v=Ib8qvAlU8xo&hd=1
 
 
-Background on Glitching
--------------------------
+Background on Clock Glitching
+-------------------------------
 
 Digital hardware devices almost always expect some form of reliable clock. We can manipulate the clock being presented to the device
 to cause unintended behaviour. We'll be concentrating on microcontrollers here, however other digital devices (e.g. hardware encryption

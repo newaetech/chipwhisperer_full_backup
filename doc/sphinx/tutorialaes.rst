@@ -1,7 +1,7 @@
 .. _tutorialaes:
 
-Tutorial: Breaking AES (Straightforward)
-=========================================
+Tutorial #5: Breaking AES (Straightforward)
+============================================
 
 This tutorial will take you through a complete attack on a software AES implementation.
 The specific implementation being attacked is a well-known AES implementation written
@@ -134,7 +134,8 @@ Analyzing the Traces
 Next Steps
 -----------
 
-This has only briefly outlined how to perform a CPA attack.
+This has only briefly outlined how to perform a CPA attack. You can move onto more advanced tutorials, especially showing you how the actual
+attack works when performed manually.
 
 
 

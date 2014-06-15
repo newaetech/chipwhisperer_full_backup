@@ -303,6 +303,7 @@ class SimpleSerial(TargetTemplate):
             self.ser.flushInput()
             self.ser.write(cmd)            
             #self.ser.read(1)
+        self.key = key
       
     def loadInput(self, inputtext):
         self.input = inputtext
