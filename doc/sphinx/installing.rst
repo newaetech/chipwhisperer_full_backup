@@ -17,12 +17,47 @@ You may already have Python installed, in which case you can skip some of these 
 the correct version (2.7.x). Python 3.x will not work with this codebase.
 
 
-Python & Required Packages
-""""""""""""""""""""""""""
+Installing Python via WinPython
+""""""""""""""""""""""""""""""""
+The recommend method of installing Python is to use a distribution called `WinPython <http://winpython.sourceforge.net/>`__. This setup avoids
+installing Python globally, and includes most of the software you will need. In addition it makes it possible to install 32-bit and 64-bit
+Python on the same system with minimal problems. This can be very useful as the 64-bit version is handy for doing analysis on large data sets.
 
-Windows does not (normally) come with Python installed. Download the latest release of Python 2.7 (NOT Python 3.x). It
-is highly recommended to use 32-bit Python, as several of the dependant libraries only have 32-bit versions. First, install
-Python:
+1. Install WinPython 2.7.x. Download the latest release in the 2.7.x branch from the `WinPython <http://winpython.sourceforge.net/>`__ site. It's recommended
+   to use the 32-bit version, but you can also use the 64-bit version. Note that certain drivers (such as the SmartCard driver) *do not* work on the 64-bit version.
+   Choose a reasonable location to install this to - note the default is simply in the download directory. Instead it's recommended to find a directory such as
+   ``c:\WinPython32bit-2.7.6.4``, or into your local directory such as ``c:\Users\yourname\WinPython-32bit-2.7.6.4``.
+   
+2. Go to your installation directory for WinPython, and run the shortcut called **WinPython Command Prompt.exe**. This will give you a command prompt which
+   is setup to run Python along with associated scripts.
+   
+3. Run the following commands to get needed packages::
+
+    pip install pyqtgraph
+    pip install configobj
+    
+   Assuming you are planning on using the ChipWhisperer Capture Rev2 hardware, you also require `PyUSB <http://sourceforge.net/projects/pyusb/>`_.
+   The easiest method is to again use pip::
+
+    pip install pyusb
+    
+   If that command fails, you may need to specify a version. Note the latest version printed by the command, and try:
+   
+    pip install pyusb==1.0.0b1
+    
+4. Optional: You can add the python.exe you just installed to your path. To do so navigate to your installation folder, and run the **WinPython Control Panel.exe**
+   program. Then select *Advanced -> Register distribution...*. If you do not do this, you will have to run all commands in this document via the **WinPython Command Prompt.exe**.
+   
+   If you plan on running both 32-bit and 64-bit Python, you should not register them. Instead explicitly call the correct Python by always running the **WinPython Command Prompt.exe**,
+   and then calling specific programs (such as CW Capture or Analyzer) from that command prompt.
+
+Installing Python Regularly
+"""""""""""""""""""""""""""""
+Rather than using the previous distribution, you can install Python into your system path. **DO NOT** follow both of these directions, again
+it's recommended to use the WinPython distribution above.
+
+Download the latest release of Python 2.7 (NOT Python 3.x). It is highly recommended to use 32-bit Python, as several of the dependant
+libraries only have 32-bit versions. First, install Python:
 
 1. `Python 2.7.6 <http://www.python.org/download/releases/2.7.6/>`_
 
@@ -43,9 +78,9 @@ click the following link (assuming you've already installed Python!) and let it 
    
    If easy_install *is not* working, you need to modify your system path (see sidebar). Assuming it is, continue to install other required packages::
 
-	easy_install pyside
-	easy_install pyqtgraph
-	easy_install configobj
+    easy_install pyside
+    easy_install pyqtgraph
+    easy_install configobj
     easy_install pyserial
 
 
@@ -66,9 +101,6 @@ click the following link (assuming you've already installed Python!) and let it 
 	.. image:: /images/pathmodify.png
         
         
-
-
-
 Next, you have to install NumPy & SciPy which don't work with easy_install. Run the following Windows binary installers - Be sure you are downloading the
 *win32-py2.7.exe* version. The *Direct Link for Windows* should be the correct version, but they may get changed in the future to default to another Python
 (e.g. 3.x which we don't use) version. The installer itself will validate you downloaded the correct version of NumPy/SciPy for your python installation, so
@@ -81,7 +113,6 @@ Assuming you are planning on using the ChipWhisperer Capture Rev2 hardware, you 
 The easiest method is to again use easy_install, by opening a terminal and running::
 
     easy_install pyusb
-
 
 .. _optional-ftdi:
 
@@ -130,7 +161,7 @@ If you wish to confirm the installation worked, you can run ChipWhispererAnalyze
     python ChipWhispererAnalyzer.py
     
 Alternatively you can just double-click on ``ChipWhispererAnalyzer.py`` from Windows explorer, which should run the file using
-Python.
+Python, *provided you've registered Python to execute the .py extension*.
 
 You can see a `Video <http://www.youtube.com/watch?v=qd86cUD8iBs&hd=1>`__ of the Installation Procedure:
 
@@ -221,8 +252,8 @@ external code changes, this may eventually be instead rolled into the main codeb
     that you have copied all files to the ``avr-crypto-lib\aes directory``, in particular did you copy the two *gf256mul* files? 
 
 5.  Next, you will need to program the AVR itself. On Windows we will make use of the free `AVR Studio 4.19 <www.atmel.com/tools/STUDIOARCHIVE.aspx>`_. You can find a direct link here:
-    `Direct Link to AVR Studio 4.19 Binary <http://www.atmel.com/System/BaseForm.aspx?target=tcm:26-17924>`_ which will require you to enter an email address to receive the
-    download link.  Note it is possible to use ``avrdude``, a command-line program which is part of WinAVR instead if you wish. However since many people find the graphical interface
+    `Direct Link to AVR Studio 4.19 Binary <http://www.atmel.com/forms/software-download.aspx?target=tcm:26-17924>`_.  Note it is possible to use ``avrdude``, a command-line program
+    which is part of WinAVR instead if you wish. However since many people find the graphical interface
     of AVRStudio easier, this guide will use AVRStudio. Be sure to install the USB drivers as part of the package.
 
 6.  Plug in the USB-A Connector on the rear side of the ChipWhisperer Rev2. This should trigger the driver installation, which will detect the device as a *AVR-ISP MK2*.

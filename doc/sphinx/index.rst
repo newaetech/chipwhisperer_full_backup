@@ -37,8 +37,9 @@ Full Table of Contents:
     
     background
     installing    
+    theory
     tutorialsbasic
-    tutorialsadvanced    
+    tutorialsadvanced
     hardware
     fpgamain
     chipwhisperer
