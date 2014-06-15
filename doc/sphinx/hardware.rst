@@ -13,3 +13,6 @@ Contents:
     hwftdi
     hwvisascope
     hwpicoscope
+	hwlna
+	hwdiffprobe
+	

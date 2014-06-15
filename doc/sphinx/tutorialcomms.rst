@@ -238,4 +238,7 @@ Issues with compilation:
   2. On Windows 8, you may get an error like `fork: resource temporarily unavailable`. This requires you to install an updated mysys.dll.
      Download from http://www.madwizard.org/download/electronics/msys-1.0-vista64.zip, unzip file, and copy the .dll to `C:\WinAVR-20100110\utils\bin`,
 	 replacing the existing file.
+	 
+  3. For the AVR Studio USB Drivers, you'll need to download a `Special Update <https://gallery.atmel.com/Products/Details/004ccabd-e18e-431a-8557-83deaea23341>`_
+     from Atmel.
 
