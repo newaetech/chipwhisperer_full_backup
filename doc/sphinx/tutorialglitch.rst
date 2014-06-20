@@ -618,3 +618,7 @@ in embedded hardware devices. There are many ways to expand your knowledge with 
 * Download some example source code (bootloaders, login prompts, etc) and port them to the AVR. See how you can
   glitch past security checks.
   
+  
+  
+
+  

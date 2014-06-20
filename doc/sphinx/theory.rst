@@ -3,7 +3,6 @@
 Theory
 =========
 
-
 Correlation Power Analysis
 -----------------------------
 
@@ -53,4 +52,13 @@ This is simply Pearson's correlation coefficient, given below, where :math:`X = 
 The problem of finding a known signal in a noisy measurement exists in many other fields beyond side-channel analysis. These two equations are
 referred to as the \emph{normalized cross-correlation}, and frequently used in digital imaging for matching a known `template' to an image, e.g.
 finding the location of some specific item in a photo of a room.
+
+
+Template Attacks
+------------------
+
+
+T-Test Analysis
+------------------
+
 

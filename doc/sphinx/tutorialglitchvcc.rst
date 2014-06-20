@@ -7,3 +7,12 @@ This advanced tutorial will demonstrate power glitch attacks using the ChipWhisp
 
 Background on VCC (Power) Glitching
 -----------------------------------------
+
+
+Using the VCC Glitching Add-On
+---------------------------------
+
+
+Adjustable VCC Glitches
+--------------------------
+
