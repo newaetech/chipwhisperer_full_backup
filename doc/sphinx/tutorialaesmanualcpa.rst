@@ -6,6 +6,8 @@ Tutorial #6: Breaking AES (Manual CPA Attack)
 This tutorial will demonstrate how to perform a CPA attack using a simple Python script. This will bring you through an entire
 CPA attack *without* using the ChipWhisperer system. 
 
+This tutorial is not yet complete.
+
 The CPA Attack Theory
 ----------------------
 
