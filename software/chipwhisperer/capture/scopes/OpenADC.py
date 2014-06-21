@@ -54,7 +54,7 @@ except ImportError:
 
 try:
     import ftd2xx as ft
-except (ImportError, WindowsError):
+except:
     ft = None
     ft_str = sys.exc_info()
 
