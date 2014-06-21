@@ -1,6 +1,6 @@
 .. _tutorialglitch:
 
-Tutorial: Clock Glitch Attacks
+Tutorial #8: Clock Glitch Attacks
 =====================================
 
 This advanced tutorial will demonstrate clock glitch attacks using the ChipWhisperer system. There is a video which briefly outlines

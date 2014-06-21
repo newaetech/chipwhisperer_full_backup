@@ -1,6 +1,6 @@
 .. _tutorialsadtrigger:
 
-Tutorial: SAD Trigger for SCA and Glitch
+Tutorial #10: SAD Trigger for SCA and Glitch
 ===========================================
 
 This advanced tutorial will demonstrate the use of analog Sum of Absolute Difference (SAD) triggering system. The SAD trigger can be used to

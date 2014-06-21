@@ -1,6 +1,6 @@
 .. _tutorialresync:
 
-Tutorial: Synchronization to Serial Protocol 
+Tutorial #7: Synchronization to Serial Protocol 
 =============================================
 
 This tutorial will introduce the use of syncronization to a simple serial IO line. When looking
