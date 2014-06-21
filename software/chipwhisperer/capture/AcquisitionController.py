@@ -124,11 +124,11 @@ class AcquisitionController(QObject):
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
 
-        if self.scope is not None:
-            self.scope.arm()
-
         if self.aux is not None:
             self.aux.traceArm()
+
+        if self.scope is not None:
+            self.scope.arm()
 
         if self.target is not None:
             # Load input, start encryption, get output
