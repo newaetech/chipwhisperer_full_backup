@@ -112,6 +112,11 @@ try:
 except ImportError:
     aux_FrequencyMeasure = None
 
+try:
+    import  chipwhisperer.capture.auxiliary.ResetAVR as aux_ResetAVR
+except ImportError:
+    aux_ResetAVR = None
+
 from chipwhisperer.common.MainChip import MainChip
 from chipwhisperer.common.ProjectFormat import ProjectFormat
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
@@ -256,6 +261,9 @@ class ChipWhispererCapture(MainChip):
 
         if aux_FrequencyMeasure is not None:
             valid_aux["Frequency Counter"] = aux_FrequencyMeasure.FrequencyMeasure(console=self.console, showScriptParameter=self.showScriptParameter)
+
+        if aux_ResetAVR is not None:
+            valid_aux["Reset AVR via ISP-MKII"] = aux_ResetAVR.ResetAVR(console=self.console, showScriptParameter=self.showScriptParameter)
 
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
