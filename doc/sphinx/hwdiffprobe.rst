@@ -9,13 +9,12 @@ the drop across the resistor, you will also measure any *variation* in the power
 noise, or voltage variations from other areas of the circuit switching.
  
 Rather than use a single-ended probe, a differential probe ignores that variation in voltage that is common to both sides of the resistor,
-also called ‘common mode’ voltage. The measurement is now *only* the voltage drop across the resistor.
-
+also called *common mode* voltage. The measurement is now *only* the voltage drop across the resistor.
 
 Hardware Diagram
 --------------------
 
-
+.. image:: /images/diffprobe/diffprobe-top.jpg
 
 Features
 --------------------
@@ -27,7 +26,7 @@ Features
 
 * Adjustable DC offset to compensate for null constant differential voltage
 
-* XXX MHz Bandwidth
+* 200+ MHz Bandwidth
 
 * 10x gain
 
@@ -40,14 +39,18 @@ The supply voltages of the differential probe must be at least 2V above/below (f
 Hardware provides a +/- 8V supply for you, allowing you to use the probe on any reasonable shunt inserted into VCC and GND. If measuring the power on a 3.3V system
 for example, you should power the probe with at least +5V on the positive rail!
 
-Be aware that if powering the probe via a single-ended supply (see below), you can only use the probe on a VCC shunt.
+Be aware that if powering the probe via a single-ended supply (see below), you can only use the probe on a VCC shunt. The following shows the
+pinout of the 6-pin connector:
+
+.. image:: /images/diffprobe/pinout.jpg
+
 
 Single-Ended Supply Usage
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Using a single-ended supply means connecting the -V input to the GND pad. This is done via a jumper mounted as shown on the 6-pin connector:
 
-TODO
+.. image:: /images/diffprobe/gndshunt.jpg
 
 Note again the common-mode limits still apply. This means the common-mode voltage must be at least +2V since the -V supply is 0V. Thus you can
 **only use the single-ended power supply for a VCC shunt**. 
@@ -56,7 +59,7 @@ Common Mode Reference
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The common-mode reference point can be used to connect your system ground to the probe ground.
-Note you need to ensure the common-mode input voltage is with-in the ‘allowed’ range (e.g. at least 2V away from either supply voltage).
+Note you need to ensure the common-mode input voltage is with-in the allowed range (e.g. at least 2V away from either supply voltage).
 If you are powering the differential probe with another power supply, you must make sure they are referenced to each other by connecting the
 0V/GND points together. Using a resistor reduces a small differential from causing a large current to flow if you accidently have ground loops
 (multiple connections of system grounds).
