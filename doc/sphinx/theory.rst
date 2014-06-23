@@ -3,6 +3,8 @@
 Theory
 =========
 
+.. _theorycpa:
+
 Correlation Power Analysis
 -----------------------------
 
