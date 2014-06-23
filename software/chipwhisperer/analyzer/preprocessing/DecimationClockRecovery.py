@@ -40,10 +40,22 @@ from pyqtgraph.parametertree import Parameter
 
 # from functools import partial
 import scipy as sp
+import scipy.fftpack
 import numpy as np
 
 from matplotlib.mlab import find
         
+def fft(signal, freq=None):
+    FFT = abs(scipy.fft(signal))
+    # FFTdb = 20*scipy.log10(FFT)
+    # freqs = scipy.fftpack.fftfreq(len(signal), 1/freq)
+
+    # FFTdb = FFTdb[2:len(freqs)/2]
+    # freqs = freqs[2:len(freqs)/2]
+    # return (freqs, FFTdb)
+
+    print FFT
+
 class DecimationClockRecovery(PreprocessingBase):
     """
     Attempts Clock recovery & then decimates based on that
@@ -57,9 +69,11 @@ class DecimationClockRecovery(PreprocessingBase):
         resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                          {'name':'Filter Design', 'type':'group', 'children':[
                                 {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateFilter},
-                                {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'low', 'set':self.updateFilter},
-                                {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.035, 'set':self.updateFilter},
-                                {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.055, 'set':self.updateFilter},
+                                {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateFilter},
+                                #{'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.035, 'set':self.updateFilter},
+                                #{'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.055, 'set':self.updateFilter},
+                                {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'value':20, 'set':self.updateFilter},
+                                {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'value':False},
                                 {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateFilter}, ]},
                          {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True},
                          {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True},
@@ -70,20 +84,41 @@ class DecimationClockRecovery(PreprocessingBase):
 
         self.updateFilter()
    
-    def updateFilter(self, param1=None):
+    def updateFilter(self, param1=None, tnum=0):
         filt = self.findParam('form').value()
         N = self.findParam('order').value()
         ftype = self.findParam('type').value()
-        freq1 = self.findParam('freq1').value()
-        freq2 = self.findParam('freq2').value()
         
-        if ftype == "bandpass":
-            self.findParam('freq2').show()
-            freq = [freq1, freq2]
-        else:
-            self.findParam('freq2').hide()
-            freq = freq1
+        # freq1 = self.findParam('freq1').value()
+        # freq2 = self.findParam('freq2').value()
+
+        # if ftype == "bandpass":
+        #    self.findParam('freq2').show()
+        #    freq = [freq1, freq2]
+        # else:
+        #    self.findParam('freq2').hide()
+        #    freq = freq1
         
+        freqbw = self.findParam('freqbw').value() / 100
+
+        try:
+            fftdata = scipy.fft(self.trace.getTrace(tnum))
+            fftdata = abs(fftdata[2:(len(fftdata) / 2)])
+            maxindx = fftdata.argmax() + 2
+            centerfreq = float(maxindx) / float(len(fftdata) + 2)
+
+            # centerfreq in range 0 - 1 now
+
+        except:
+            print "FFT FAILED!!!"
+            self.b = None
+            self.a = None
+            return
+
+        freq = ((centerfreq - (centerfreq * freqbw) / 2), (centerfreq + (centerfreq * freqbw) / 2))
+
+        print "Designing filter for passband: %f-%f" % (freq[0], freq[1])
+
         b, a = filt(N, freq, ftype)
         self.b = b
         self.a = a
@@ -94,6 +129,12 @@ class DecimationClockRecovery(PreprocessingBase):
             if trace is None:
                 return None
             
+            if self.a is None:
+                self.updateFilter()
+                
+            if self.findParam('recalcpertrace').value():
+                self.updateFilter(tnum=n)
+
             # Filter Trace
             inputtrace = sp.signal.lfilter(self.b, self.a, trace)
             
