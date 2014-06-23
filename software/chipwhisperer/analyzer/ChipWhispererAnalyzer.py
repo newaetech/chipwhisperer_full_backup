@@ -98,7 +98,7 @@ class ChipWhispererAnalyzer(MainChip):
         
         self.addWaveforms()
         
-        numPreprocessingStep = 3
+        numPreprocessingStep = 4
         self.preprocessingList = [None]*numPreprocessingStep
         
         
