@@ -128,12 +128,19 @@ class Normalize(PreprocessingBase):
                          {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateF1Coeffs},
                          {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateF2Coeffs},
                          {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateZFile},
+                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updatePointRange},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
         self.params = Parameter.create(name='Normalize Traces', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.updateNormClass(normmean)
+        self.ptStart = 0
+        self.ptEnd = 0
+
+    def updatePointRange(self, r):
+        self.ptStart = r[0]
+        self.ptEnd = r[1]
 
     def updateF1Coeffs(self, f):
         if f is not None:
@@ -184,11 +191,25 @@ class Normalize(PreprocessingBase):
     def getTrace(self, n):
         if self.enabled:
             trace = self.trace.getTrace(n)
+
             if trace is None:
                 return None
-            return self.norm.processTrace(trace, n)
+            proc = self.norm.processTrace(trace[self.ptStart:self.ptEnd], n)
+
+            return proc
         else:
-            return self.trace.getTrace(n)       
+            return self.trace.getTrace(n)
+
+    def init(self):
+
+        if self.ptEnd == 0:
+            points = np.shape(self.trace.getTrace(0))[0]
+            self.findParam('ptrange').setLimits((0, points))
+            self.findParam('ptrange').setValue((0, points))
+            self.ptStart = 0
+            self.ptEnd = points
+
+
 
 
         
