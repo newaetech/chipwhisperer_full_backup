@@ -487,8 +487,12 @@ Assuming you've used the usual **2B 7E ...**  encryption key in your traces, run
 Calculating The PGE
 ---------------------------------
 
+
+
 Using Online CPA Attack
 -------------------------
+
+
 
 Next Steps
 -----------
