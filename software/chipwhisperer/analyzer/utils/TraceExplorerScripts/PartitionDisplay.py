@@ -122,7 +122,7 @@ class DifferenceMode(QObject):
                     },
                 }
 
-    supportedMethods = [DifferenceModeSAD, DifferenceModeTTest]
+    supportedMethods = [DifferenceModeTTest, DifferenceModeSAD]
 
     def __init__(self):
         super(DifferenceMode, self).__init__()
@@ -374,6 +374,8 @@ class PartitionDisplay(QObject):
         self.graph.setPersistance(True)
 
         numPoints = traces.numPoint()
+
+
         tRange = (0, traces.numTrace())
 
         if loadInts:

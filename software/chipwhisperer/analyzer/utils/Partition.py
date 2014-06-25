@@ -99,11 +99,13 @@ class PartitionRandDebug(object):
     moduleName = "PartitionRandDebug"
     partitionType = "Randomly (debug)"
 
+    numRand = 2
+
     def getNumPartitions(self):
-        return 2
+        return self.numRand
 
     def getPartitionNum(self, trace, tnum):
-        return [random.randint(0, 1)]
+        return [random.randint(0, self.numRand - 1)]
 
 class Partition(QObject):
     """
@@ -123,7 +125,7 @@ class Partition(QObject):
                     },
                 }
 
-    supportedMethods = [PartitionEncKey, PartitionRandvsFixed, PartitionRandDebug]
+    supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug]
 
     def __init__(self, parent, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
@@ -144,7 +146,7 @@ class Partition(QObject):
         # self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
         # ExtendedParameter.setupExtended(self.params, self)
         
-        self.setPartMethod(PartitionEncKey)
+        self.setPartMethod(PartitionRandvsFixed)
 
     def setPartMethod(self, method):
         self.partMethodClass = method
