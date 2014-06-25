@@ -104,8 +104,8 @@ class ChipWhispererSAD(QObject):
     def getCaptueTraceRef(self):
         """ Get the reference data for SAD algorithm from the capture trace window """
 
-        pstart = self.findParam('pointrng').value()[0]
-        pend = self.findParam('pointrng').value()[1]
+        pstart = self.findParam('pointrng').value()[0] - self.waveformDock.widget().lastStartOffset
+        pend = self.findParam('pointrng').value()[1] - self.waveformDock.widget().lastStartOffset
         data = self.waveformDock.widget().lastTraceData[pstart:pend]
         data = np.array(data)
         data = (data + 0.5) * 1024

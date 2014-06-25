@@ -269,6 +269,7 @@ class GraphWidget(QWidget):
 
         if ghostTrace is False:
             self.lastTraceData = trace
+            self.lastStartOffset = startoffset
 
         if self.persistant:
             if self.autocolor:
