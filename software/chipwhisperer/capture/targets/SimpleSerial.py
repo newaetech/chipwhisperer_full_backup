@@ -43,7 +43,7 @@ import openadc.scan as scan
 
 class SimpleSerial_serial(TargetTemplate):
     def setupParameters(self):
-        ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400}, 'value':38400},
+        ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
                     {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
                     {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
                     ]      
@@ -325,7 +325,7 @@ class SimpleSerial(TargetTemplate):
         data = bytearray(16)
 
         for i in range(0,16):
-            data[i] = int(response[(i*2+1):(i*2+3)], 16)
+            data[i] = int(response[(i * 2 + 1):(i * 2 + 3)], 16)
 
         return data
 
