@@ -50,6 +50,7 @@ except ImportError:
 
 from picoscope import ps6000
 from picoscope import ps5000a
+from picoscope import ps2000
 
 import collections
 
@@ -167,13 +168,14 @@ class PicoScope(QWidget):
     def arm(self):       
         self.ps.runBlock()
         
-    def capture(self, Update=False, N=None):
+    def capture(self, Update=False, N=None, waitingCallback=None):
         while(self.ps.isReady() == False): time.sleep(0.01)
         data = self.ps.getDataV(self.findParam('tracesource').value(), self.findParam('samplelength').value(), startIndex=self.findParam('sampleoffset').value(), returnOverflow=True)
         if data[1] is True:
             print "WARNING: OVERFLOW IN DATA"
         self.datapoints = data[0]
         self.dataUpdated.emit(self.datapoints, 0)
+        waitingCallback()
 
         # No timeout?
         return False
@@ -193,6 +195,7 @@ class PicoScopeInterface(QObject):
         
         scope_cons["PS6000"] = ps6000.PS6000(connect=False)
         scope_cons["PS5000a"] = ps5000a.PS5000a(connect=False)
+        scope_cons["PS2000"] = ps2000.PS2000(connect=False)
         defscope = scope_cons["PS5000a"]
 
         self.advancedSettings = None
@@ -246,9 +249,9 @@ class PicoScopeInterface(QObject):
     def arm(self):
         self.scopetype.arm()
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
-        return self.scopetype.capture(update, NumberPoints)    
+        return self.scopetype.capture(update, NumberPoints, waitingCallback)
         
     def paramList(self):
         p = []       
