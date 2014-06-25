@@ -83,6 +83,7 @@ class ChipWhispererGlitch(QObject):
         self.glitchPR = pr.PartialReconfigDataMulti()
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
+        self.showScriptParameter = showScriptParameter
         
         try:            
             twidth = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchwidth.p")
@@ -133,7 +134,6 @@ class ChipWhispererGlitch(QObject):
                 
         self.params = Parameter.create(name='Glitch Module', type='group', children=paramSS)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
         
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:

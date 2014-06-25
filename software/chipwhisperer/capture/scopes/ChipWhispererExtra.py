@@ -70,7 +70,7 @@ class ChipWhispererExtra(QObject):
         self.enableGlitch = True
         
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch()
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(showScriptParameter)
         
         
     def paramTreeChanged(self, param, changes):
