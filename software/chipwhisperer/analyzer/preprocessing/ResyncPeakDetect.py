@@ -56,7 +56,7 @@ class ResyncPeakDetect(PreprocessingBase):
                          {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
                          {'name':'Peak Type', 'type':'list', 'value':'Max', 'values':['Max', 'Min'],  'set':self.setType},
                          {'name':'Point Range', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setPointRange},
-                         {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0,10), 'set':self.setValidLimit}, 
+                         {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.setValidLimit},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
