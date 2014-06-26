@@ -237,12 +237,22 @@ class SimpleSerial(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
-                    {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'}
+                 #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
+                    {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
+                    {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
+                    {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
+                    {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
+                    {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
+                    {'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
+                                                                                     'DE AD BE EF':' ',
+                                                                                     'DE:AD:BE:EF':':',
+                                                                                     'DE-AD-BE-EF':'-'}, 'value':''},
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ser = None   
         self.keylength = 16
+        self.input = ""
         
         self.setConnection(self.findParam('con').value())
       
@@ -286,7 +296,7 @@ class SimpleSerial(TargetTemplate):
         return
         
     def init(self):
-        return
+        self.runCommand(self.findParam('cmdinit').value())
       
     def setModeEncrypt(self):
         return
@@ -294,54 +304,103 @@ class SimpleSerial(TargetTemplate):
     def setModeDecrypt(self):
         return
 
-    def loadEncryptionKey(self, key):
-        if key != None:            
-            cmd = "k"
-            for b in key:
-                cmd = cmd + "%2x"%b
-            cmd = cmd + "\n"
+    def convertVarToString(self, var):
+        
+        if isinstance(var, str):
+            return var
+        
+        sep = ""
+        s = sep.join(["%02x"%b for b in var])
+        return s
+
+    def runCommand(self, cmdstr, flushInputBefore=True):
+        
+        if cmdstr is None or len(cmdstr) == 0:
+            return
+        
+        varList = [("$KEY$",self.key, "Hex Encryption Key"),
+                   ("$TEXT$",self.input, "Input Plaintext")]
+        
+        newstr = cmdstr
+        
+        #Find variables to insert
+        for v in varList:        
+            newstr = newstr.replace(v[0], self.convertVarToString(v[1]))
+            
+        #This is dumb
+        newstr = newstr.replace("\\n", "\n")
+        newstr = newstr.replace("\\r", "\r")
+   
+        if flushInputBefore:
             self.ser.flushInput()
-            self.ser.write(cmd)            
-            #self.ser.read(1)
+            
+        #print newstr
+   
+        self.ser.write(newstr)        
+
+    def loadEncryptionKey(self, key):
         self.key = key
+        if self.key:
+            self.runCommand(self.findParam('cmdkey').value())
       
     def loadInput(self, inputtext):
         self.input = inputtext
+        self.runCommand(self.findParam('cmdinput').value())
 
     def isDone(self):
         return True
 
-    def readOutput(self):        
-        response = self.ser.read(33)
+    def readOutput(self):
+        
+        dataLen= 32
+        
+        fmt = self.findParam('cmdout').value()
+        #This is dumb
+        fmt = fmt.replace("\\n", "\n")
+        fmt = fmt.replace("\\r", "\r")
+        
+        if len(fmt) == 0:
+            return None
 
-        if len(response) < 33:
+        dataLen += len(fmt.replace("$RESPONSE$", ""))
+        expected = fmt.split("$RESPONSE$")
+                
+        #Read data from serial port
+        response = self.ser.read(dataLen)
+
+        if len(response) < dataLen:
             self.log("WARNING: Response too short (len=%d): %s"%(len(response), response))
             return None
 
-        if response[0] != 'r':
-            self.log("Sync Error: %s"%response)
-            return None
+        #Go through...skipping expected if applicable
+        #Check expected first
+        
+        #Is a beginning part
+        if len(expected[0]) > 0:
+            if response[0:len(expected[0])] != expected[0]:
+                self.log("Sync Error: %s"%response)
+                return None
 
+        startindx = len(expected[0])
+
+        #Is middle part?
         data = bytearray(16)
-
-        for i in range(0,16):
-            data[i] = int(response[(i * 2 + 1):(i * 2 + 3)], 16)
+        if len(expected) == 2:
+            for i in range(0,16):
+                data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)          
+        
+            startindx += 32 
+        
+        #Is end part?
+        if len(expected[1]) > 0:
+            if response[startindx:startindx+len(expected[1])] != expected[1]:
+                self.log("Sync Error: %s"%response)
+                return None
 
         return data
 
     def go(self):
-        self.ser.flushInput()
-
-        cmd = self.findParam('ptcmd').value()
-
-        # cmd = "p"
-
-        for b in self.input:
-            cmd = cmd + "%2x"%b
-        cmd = cmd + "\n"
-        self.ser.flushInput()
-        self.ser.write(cmd)
-        #self.ser.read(1)       
+        self.runCommand(self.findParam('cmdgo').value())       
         
     def checkEncryptionKey(self, kin):
         blen = self.keyLen()
