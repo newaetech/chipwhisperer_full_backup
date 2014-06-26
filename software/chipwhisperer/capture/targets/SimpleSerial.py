@@ -243,10 +243,10 @@ class SimpleSerial(TargetTemplate):
                     {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
                     {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
                     {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
-                    {'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
-                                                                                     'DE AD BE EF':' ',
-                                                                                     'DE:AD:BE:EF':':',
-                                                                                     'DE-AD-BE-EF':'-'}, 'value':''},
+                    #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
+                    #                                                                 'DE AD BE EF':' ',
+                    #                                                                 'DE:AD:BE:EF':':',
+                    #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
