@@ -143,7 +143,7 @@ class Normalize(PreprocessingBase):
         self.ptEnd = r[1]
 
     def updateF1Coeffs(self, f):
-        if f is not None:
+        if f:
             if f is 5:
                 self.norm.loadF1File(None)
             else:
@@ -151,14 +151,14 @@ class Normalize(PreprocessingBase):
                 self.norm.loadF1File(f)
 
     def updateF2Coeffs(self, f):
-        if f is not None:
+        if f:
             if f is 5:
                 self.norm.loadF2File(None)
             else:
                 self.norm.loadF2File(f)
 
     def updateZFile(self, f):
-        if f is not None:
+        if f:
             if f is 5:
                 self.norm.loadZFile(None)
             else:

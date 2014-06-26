@@ -228,7 +228,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
         
         # Sometimes required
-        if hasattr(self, "traces") and self.traces is not None:
+        if hasattr(self, "traces") and self.traces:
             self.attack.setTraceManager(self.traces)
 
         self.attack.setProject(self.proj)
@@ -246,10 +246,10 @@ class ChipWhispererAnalyzer(MainChip):
             
         self.console.append("Attack Started")
         
-        if self.results is not None:
+        if self.results:
             self.results.setTraceManager(self.traces)
         
-        if self.attack is not None:
+        if self.attack:
             self.attack.setTraceManager(self.traces)
             self.attack.doAttack()
             
@@ -325,7 +325,7 @@ class ChipWhispererAnalyzer(MainChip):
             self.findParam('tracerng').setValue((0, min(traces, deftrace)))
             
         
-        if points is not None:
+        if points:
             self.findParam('pointrng').setLimits((0, points))
             self.findParam('pointrng').setValue((0, defpoint))
 

@@ -214,7 +214,7 @@ class ResultsPlotData(GraphWidget):
         highlights = self.knownkey
         
         for i in range(0, self.numKeys):
-            if highlights is not None:
+            if highlights:
                 self.highlights.append([highlights[i]])
             else:
                 self.highlights.append([None])
@@ -580,7 +580,7 @@ class ResultsTable(QObject):
     
                         highlights = self.knownkey
     
-                        if highlights is not None:
+                        if highlights:
                             try:
                                 if maxes[j]['hyp'] == highlights[bnum]:
                                     itm = self.table.item(j+1, bnum)
