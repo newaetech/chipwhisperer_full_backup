@@ -32,6 +32,8 @@ import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 from openadc.ExtendedParameter import ExtendedParameter
 
+from datetime import datetime
+
 class GlitchExplorerDialog(QDialog):
     def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
@@ -41,6 +43,8 @@ class GlitchExplorerDialog(QDialog):
         self.parent = parent
 
         self.mainLayout = QVBoxLayout()
+        
+        self.tableList = []
         
         #Add default table
         self.table = QTableWidget(1,1)
@@ -70,9 +74,18 @@ class GlitchExplorerDialog(QDialog):
 
         self.setLayout(self.mainLayout)
         self.hide()
+        
+        #Do an update
+        self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)  # setStretchLastSection(True)
+        self.clearTable()
+        
     
     def clearTable(self, ignored=None):
-        pass
+        self.tableList = []
+        self.table.clear()
+        self.table.setRowCount(0)
+        self.updateTableHeaders()
     
     def updateParameters(self, ignored=None):
         
@@ -82,11 +95,30 @@ class GlitchExplorerDialog(QDialog):
         
     def updateTableHeaders(self, ignored=None):
         
-        headerlist = ["Sent", "Received"]
+        headerlist = ["Sent", "Received", "Date"]
+        
+        #TODO: Add Parameters
+        
+        self.table.setColumnCount(len(headerlist))
+        self.table.setHorizontalHeaderLabels(headerlist)
         
         
+    def appendToTable(self, newdata):
+        self.table.insertRow(0)
+    
+        
+        outdata = QTableWidgetItem(newdata["output"])
+               
+        if newdata["success"]:
+            outdata.setBackground(QBrush(QColor(0,255,0)))
+        
+        elif newdata["normal"] == False:
+            outdata.setBackground(QBrush(QColor(255,0,0)))
+        
+        self.table.setItem(0, 1, outdata)
+        self.table.setItem(0, 2, QTableWidgetItem(newdata["date"].strftime('%H:%M:%S')))
+
     def addResponse(self, resp):
-        
         
         normeval = self.findParam('normalresp').value()
         succeval = self.findParam('successresp').value()
@@ -98,9 +130,9 @@ class GlitchExplorerDialog(QDialog):
             normresult = False
         
         #Check if Successful
-        if len(normeval) > 0:
+        if len(succeval) > 0:
             #Check if Normal
-            succresult = eval(normeval, {'s':resp}, {})
+            succresult = eval(succeval, {'s':resp}, {})
         else:
             succresult = False
         
@@ -115,8 +147,10 @@ class GlitchExplorerDialog(QDialog):
         if normresult and succresult:
             print "WARNING: Both normresult and succresult True!"
             
-            
-        
+        starttime = datetime.now()           
+        newdata = {"input":"", "output":str(resp), "normal":normresult, "success":succresult, "settings":{},"date":starttime}
+        self.tableList.append(newdata)
+        self.appendToTable(newdata)
 
 
 def main():

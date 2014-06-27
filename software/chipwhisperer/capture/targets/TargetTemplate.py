@@ -42,6 +42,7 @@ except ImportError:
 
 class TargetTemplate(QObject):
     paramListUpdated = Signal(list)
+    newInputData = Signal(list)
     
     def __init__(self, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""

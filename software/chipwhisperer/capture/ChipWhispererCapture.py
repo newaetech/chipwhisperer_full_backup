@@ -61,6 +61,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 
@@ -137,6 +138,7 @@ class TargetInterface(QObject):
     paramListUpdated = Signal(list)
     targetUpdated = Signal(bool)
     connectStatus = Signal(bool)
+    newInputData = Signal(list)
     
     def __init__(self, parent=None, log=None,showScriptParameter=None):
         super(TargetInterface, self).__init__(parent)
@@ -189,6 +191,7 @@ class TargetInterface(QObject):
             self.targetUpdated.emit(False)
         else:
             self.driver.paramListUpdated.connect(self.paramListUpdated.emit)
+            self.driver.newInputData.connect(self.newInputData.emit)
             self.paramListUpdated.emit(self.driver.paramList())
             self.targetUpdated.emit(True)
             
@@ -249,6 +252,7 @@ class ChipWhispererCapture(MainChip):
         self.aux = None
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
+        self.target.newInputData.connect(self.newTargetData)
     
         valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}        
         valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}    
@@ -277,6 +281,8 @@ class ChipWhispererCapture(MainChip):
         self.esm = EncryptionStatusMonitor(self)
         
         self.serialTerminal = SerialTerminalDialog(self)
+        
+        self.glitchMonitor = GlitchExplorerDialog(self)
         
         valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(console=self.console, showScriptParameter=self.showScriptParameter)}
 
@@ -342,6 +348,9 @@ class ChipWhispererCapture(MainChip):
     def listModules(self):
         """Overload this to test imports"""
         return ListAllModules()
+
+    def newTargetData(self, data):
+        self.glitchMonitor.addResponse(data)
 
     def targetUpdated(self, enabled):
         self.TargetToolbar.setEnabled(enabled)
@@ -437,7 +446,13 @@ class ChipWhispererCapture(MainChip):
                                    triggered=self.serialTerminal.show)
 
         self.toolMenu.addAction(self.TerminalAct)
+        
+        
+        self.GlitchMonitorAct = QAction('Open Glitch Monitor', self,
+                                     statusTip='Open Glitch Monitor Table',
+                                     triggered=self.glitchMonitor.show)
 
+        self.toolMenu.addAction(self.GlitchMonitorAct)
         
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
@@ -820,12 +835,12 @@ class ChipWhispererCapture(MainChip):
             tcnt += tracesPerRun
             self.statusBar().showMessage("%d Captures Completed" % tcnt)
             
-            # Re-use the wave buffer for later segments
-            waveBuffer = writer.traces
-
             stoptime = datetime.now()
 
-            writerlist.append(writer)
+            # Re-use the wave buffer for later segments
+            if writer is not None:
+                waveBuffer = writer.traces
+                writerlist.append(writer)
         
         self.console.append("Capture delta time: %s" % str(stoptime - overallstarttime))
         

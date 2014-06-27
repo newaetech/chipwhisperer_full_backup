@@ -361,6 +361,17 @@ class SimpleSerial(TargetTemplate):
         
         if len(fmt) == 0:
             return None
+        
+        if fmt.startswith("$GLITCH$"):
+            
+            try:
+                databytes = int(fmt.replace("$GLITCH$",""))
+            except ValueError:
+                databytes = 64
+            
+            
+            self.newInputData.emit(self.ser.read(databytes))
+            return None
 
         dataLen += len(fmt.replace("$RESPONSE$", ""))
         expected = fmt.split("$RESPONSE$")
