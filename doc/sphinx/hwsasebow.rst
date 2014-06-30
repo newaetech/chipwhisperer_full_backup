@@ -3,8 +3,11 @@
 SASEBO-W Target
 ===============
 
+Using the SASEBO-W With the OpenADC
+---------------------------------------
+
 Preparing the SASEBO-W Hardware
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The SASEBO-W must be prepared for use with the ChipWhisperer system. This requires a few steps:
 
@@ -37,7 +40,7 @@ The SASEBO-W must be prepared for use with the ChipWhisperer system. This requir
    .. image:: /images/sasebow/ft245fifo.png
 
 Running the SASEBO-W Example
-------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The SASEBO-W example assumes you are using the SASEBO-W CardOS, and attacking the AES implementation. In this case:
 
@@ -53,10 +56,36 @@ The SASEBO-W example assumes you are using the SASEBO-W CardOS, and attacking th
    
 
 More Information
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Additional information is currently posted on the ChipWhisperer Wiki at these pages:
 
 * https://www.assembla.com/spaces/chipwhisperer/wiki/SASEBO-W
 * https://www.assembla.com/wiki/show/chipwhisperer/SASEBO-W_Programming_Information
+
+Connecting to a ChipWhisperer-Capture Rev2
+-----------------------------------------------
+
+.. _sasebowmultitarget:
+
+Connecting the Multi-Target Board to the SASEBO-W
+-----------------------------------------------------
+
+.. warning::
+
+    It is completely possible to use the **EXT.** IO voltage, allowing the ChipWhisperer to interface with 5V SmartCards. Before doing
+    this follow all warnings in section :ref:`vref`, or you may **DESTROY THE CHIPWHISPERER DEVICE** by shunting the external power supply
+    onto internal 3.3V rails.
+
+It is possible to use the AVR microcontroller on the Multi-Target board to connect to the SASEBO-W. This
+requires the use of the SASEBO-W adapter, a small PCB with the pinout of the connector used on the SASEBO-W
+board.
+
+This is advantageous as it allows the continued use of AVR-based code without needing to find old AVR type
+SmartCards. Instead the modern AtMega328P (or similar) is programmed, which can typically be made to run
+existing AVR code targetting the Mega163 or similar (i.e. the FunCard type device).
+
+
+
+
 

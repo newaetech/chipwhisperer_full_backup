@@ -256,6 +256,8 @@ Pass-Thru/SASEBO-W Adapator
     It is completely possible to use the **EXT.** IO voltage, allowing the ChipWhisperer to interface with 5V SmartCards. Before doing
     this follow all warnings in section :ref:`vref`, or you may **DESTROY THE CHIPWHISPERER DEVICE** by shunting the external power supply
     onto internal 3.3V rails.
+	
+See :ref:`sasebowmultitarget`. 
     
 Low Noise Amplifier
 --------------------
