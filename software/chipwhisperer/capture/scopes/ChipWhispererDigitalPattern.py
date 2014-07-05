@@ -61,7 +61,7 @@ class CWAdvTrigger(object):
     def setExtPin(self, line):
         return
 
-    def setIOPattern(self, pattern, form='units', clkdiv=None):
+    def setIOPattern(self, pattern, form='units', clkdiv=None, hackit=3):
         ''' Setup the IO trigger pattern.'''
         "Form can be 'units' or 'seconds'. If set to 'units' you"
         "must also set the clkdiv parameter properly"
@@ -101,8 +101,8 @@ class CWAdvTrigger(object):
             # at high speeds this might be wrong.
             # TODO: This might require us to know oversample rate for properly doing this
             if addr == 0:
-                low += 3
-                high += 3
+                low += hackit
+                high += hackit
 
                 if (low >= 510) or (high >= 510):
                     raise ValueError("low or high for addr=0 too large!")
@@ -163,7 +163,7 @@ class CWAdvTrigger(object):
 
         return [state, low, high]
 
-    def bitsToPattern(self, bits):
+    def bitsToPattern(self, bits, osRate=3, threshold=1):
         pattern = []
         lastbit = 2
         bitcnt = 0
@@ -174,7 +174,7 @@ class CWAdvTrigger(object):
             else:
                 if bitcnt > 0:
                     # print "%d %d"%(lastbit, bitcnt)
-                    pattern.append(self.processBit(lastbit, bitcnt, first=first))
+                    pattern.append(self.processBit(lastbit, bitcnt, first=first, var=threshold, osRate=osRate))
                 lastbit = b
                 bitcnt = 1
 
@@ -183,7 +183,6 @@ class CWAdvTrigger(object):
         return pattern
 
     def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
-        totalpat = strToBits(string, startbits, stopbits, parity)
         return self.bitsToPattern(totalpat)
 
 class ChipWhispererDigitalPattern(QObject):
@@ -200,16 +199,24 @@ class ChipWhispererDigitalPattern(QObject):
 
         paramSS = [
                  {'name':'Serial Settings', 'type':'group', 'children':[
-                      {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(100, 500000), 'value':38400, 'step':100},
+                      {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(100, 500000), 'value':38400, 'step':100, 'set':self.updateSampleRate},
                       {'name':'Start Bits', 'key':'startbits', 'type':'int', 'limits':(1, 10), 'value':1},
                       {'name':'Stop Bits', 'key':'stopbits', 'type':'int', 'limits':(1, 10), 'value':1},
+                      {'name':'Parity', 'key':'parity', 'type':'list', 'values':['none', 'even'], 'value':'none'},
                     ]},
 
                  # TODO: Need to confirm oversample rate stuff
-                 {'name':'Oversample Rate', 'key':'osrate', 'type':'int', 'limits':(3, 3), 'value':3, 'set':self.updateSampleRate},
+                 {'name':'Oversample Rate', 'key':'osrate', 'type':'int', 'limits':(2, 5), 'value':3, 'set':self.updateSampleRate},
                  {'name':'Calculated Clkdiv', 'key':'calcclkdiv', 'type':'int', 'readonly':True},
                  {'name':'Calculated Error', 'key':'calcerror', 'type':'int', 'suffix':'%', 'readonly':True},
-                 {'name':'Trigger Character', 'key':'trigpatt', 'type':'str', 'value':'', 'set':self.setPattern},
+                 {'name':'Trigger Character', 'key':'trigpatt', 'type':'str', 'value':'""', 'set':self.setPattern},
+                 {'name':'Binary Pattern', 'key':'binarypatt', 'type':'str', 'value':''},
+                 {'name':'Reset Module', 'type':'action', 'action':self.reset},
+                 
+                {'name':'Advanced Settings', 'type':'group', 'children':[
+                 {'name':'Threshold', 'key':'threshold', 'type':'int', 'value':1, 'limits':(1, 10), 'set':self.reset},
+                 {'name':'Initial Bit Correction', 'key':'initialcorrect', 'type':'int', 'value':3, 'limits':(0, 10), 'set':self.reset},
+                 ]}
                 ]
             
         self.oa = None
@@ -221,21 +228,44 @@ class ChipWhispererDigitalPattern(QObject):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
 
-    def updateSampleRate(self, srate):
-        res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam('baud').value() * srate)
+    def reset(self, ignored=None):
+        # Reload pattern
+        self.setPattern(self.findParam('trigpatt').value())
+
+    def updateSampleRate(self, ignored=None):
+        res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam('baud').value() * self.findParam('osrate').value())
         self.findParam('calcclkdiv').setValue(res[0])
-        self.findParam('calcerror').setValue(res[1])
+        self.findParam('calcerror').setValue(res[1] * 100)
         self.clkdiv = res[0]
+        self.reset()
 
     def setPattern(self, patt):
+        patt = eval(patt, {}, {})
+
         if len(patt) > 1:
             print "WARNING: IO Pattern too large! Restricted."
             self.findParam('trigpatt').setValue(patt[0])
             return
 
-        pat = self.cwAdv.strToPattern(patt)
-        self.cwAdv.setIOPattern(pat, clkdiv=self.clkdiv)
-        print "Pattern Loaded: %s" % patt
+        # Convert to bits
+        bitpattern = strToBits(patt, startbits=self.findParam('startbits').value(),
+                               stopbits=self.findParam('stopbits').value(),
+                               parity=self.findParam('parity').value())
+
+        # Convert to pattern & Download
+        try:
+            pat = self.cwAdv.bitsToPattern(bitpattern, osRate=self.findParam('osrate').value(),
+                                                       threshold=self.findParam('threshold').value())
+            self.cwAdv.setIOPattern(pat, clkdiv=self.clkdiv, hackit=self.findParam('initialcorrect').value())
+
+            bitstr = ""
+            for t in bitpattern: bitstr += "%d" % t
+
+        except ValueError, s:
+            bitstr = "Error: %s" % s
+
+        self.findParam('binarypatt').setValue(bitstr)
+
 
     def setOpenADC(self, oa):
         """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
@@ -244,7 +274,7 @@ class ChipWhispererDigitalPattern(QObject):
 
         self.cwAdv.con(oa.sc)
         self.params.getAllParameters()
-        self.updateSampleRate(self.findParam('osrate').value())
+        self.updateSampleRate()
 
     def paramList(self):
         p = []

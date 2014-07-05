@@ -2,7 +2,10 @@
 def CWCalcClkDiv(sysclk, targfreq):
     clkdivider = int((sysclk / (2 * targfreq)) + 1)   
     
-    actual = sysclk / (2*(clkdivider-1))
+    try:
+        actual = sysclk / (2 * (clkdivider - 1))
+    except ZeroDivisionError:
+        actual = 0
     error = (float(actual - targfreq) / targfreq)*100.0        
     
     return (clkdivider, error)
