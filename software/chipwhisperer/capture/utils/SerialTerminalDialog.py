@@ -167,7 +167,7 @@ class SerialTerminalDialog(QDialog):
     def closeEvent(self, ev):
         self.tryDis()
 
-        QDialog.closeEvent(ev)
+        QDialog.closeEvent(self, ev)
 
 
 def main():
