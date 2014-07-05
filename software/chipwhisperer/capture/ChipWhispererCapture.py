@@ -282,7 +282,8 @@ class ChipWhispererCapture(MainChip):
         
         self.serialTerminal = SerialTerminalDialog(self)
         
-        self.glitchMonitor = GlitchExplorerDialog(self)
+        self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
+        self.paramTrees.append(self.glitchMonitor.paramTree)
         
         valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(console=self.console, showScriptParameter=self.showScriptParameter)}
 
