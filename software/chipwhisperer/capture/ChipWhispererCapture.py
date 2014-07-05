@@ -825,6 +825,7 @@ class ChipWhispererCapture(MainChip):
             ac = AcquisitionController(self.scope, target, writer, aux=self.aux, keyTextPattern=self.acqPattern)
             ac.newTextResponse.connect(self.esm.newData)
             ac.traceDone.connect(cprog.traceDoneSlot)
+            ac.traceDone.connect(self.glitchMonitor.traceDone)
             ac.setMaxtraces(tracesPerRun)
             cprog.abortCapture.connect(ac.abortCapture)
 
