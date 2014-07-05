@@ -35,8 +35,10 @@ from openadc.ExtendedParameter import ExtendedParameter
 from datetime import datetime
 
 class GlitchExplorerDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, showScriptParameter=None):
         super(GlitchExplorerDialog, self).__init__(parent)
+
+        self.showScriptParameter = showScriptParameter
 
         self.setWindowTitle("Glitch Explorer")
 
@@ -72,6 +74,10 @@ class GlitchExplorerDialog(QDialog):
         
         self.mainLayout.addWidget(self.paramTree)
 
+        self.statusLabel = QLabel("")
+
+        self.mainLayout.addWidget(self.statusLabel)
+
         self.setLayout(self.mainLayout)
         self.hide()
         
@@ -81,6 +87,15 @@ class GlitchExplorerDialog(QDialog):
         self.clearTable()
         
     
+    def updateStatus(self):
+        okcnt = 0
+        for t in self.tableList:
+            if t["success"]:
+                okcnt += 1
+        
+        lbl = "Total %d, Glitches Successful %d" % (len(self.tableList), okcnt)
+        self.statusLabel.setText(lbl)
+
     def clearTable(self, ignored=None):
         self.tableList = []
         self.table.clear()
@@ -105,7 +120,6 @@ class GlitchExplorerDialog(QDialog):
         
     def appendToTable(self, newdata):
         self.table.insertRow(0)
-    
         
         outdata = QTableWidgetItem(newdata["output"])
                
@@ -151,6 +165,7 @@ class GlitchExplorerDialog(QDialog):
         newdata = {"input":"", "output":str(resp), "normal":normresult, "success":succresult, "settings":{},"date":starttime}
         self.tableList.append(newdata)
         self.appendToTable(newdata)
+        self.updateStatus()
 
 
 def main():
