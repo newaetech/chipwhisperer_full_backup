@@ -46,6 +46,7 @@ module clockglitch_s6(
 		   001 = Glitch is ORd with Clock (Positive going glitch only)
 			010 = Glitch Only
 			011 = Clock Only	 
+			100 = Glitch only, based on enable reg only (output active during entire clock cycle)
 	 */
  
 	 /* ??? */
@@ -138,6 +139,7 @@ module clockglitch_s6(
 	                      (glitch_type == 3'b001) ? source_clk | glitchstream :
 								 (glitch_type == 3'b010) ? glitchstream :
 								 (glitch_type == 3'b011) ? source_clk :
+								 (glitch_type == 3'b100) ? glitch_next_reg :
 								 1'b0;
 
 	// DCM_SP: Digital Clock Manager
@@ -186,7 +188,7 @@ module clockglitch_s6(
 	.CLKOUT_PHASE_SHIFT("VARIABLE"), // Output phase shift (NONE, FIXED, VARIABLE)
 	.CLK_FEEDBACK("2X"), // Feedback source (NONE, 1X, 2X)
 	.DESKEW_ADJUST("SYSTEM_SYNCHRONOUS"), // SYSTEM_SYNCHRNOUS or SOURCE_SYNCHRONOUS
-	.PHASE_SHIFT(15), // Amount of fixed phase shift (-255 to 255)
+	.PHASE_SHIFT(63), // Amount of fixed phase shift (-255 to 255)
 	.STARTUP_WAIT("FALSE") // Delay config DONE until DCM_SP LOCKED (TRUE/FALSE)
 	)
 	DCM_extclock_gen2 (

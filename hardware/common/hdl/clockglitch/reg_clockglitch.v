@@ -30,8 +30,6 @@ INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
 CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
-
-
 *************************************************************************/
 module reg_clockglitch(
 	input 			reset_i,
@@ -89,9 +87,13 @@ module reg_clockglitch(
 			  
 	 `define CLOCKGLITCH_SETTINGS	51
 	 `define CLOCKGLITCH_LEN      8
+	 `define CLOCKGLITCH_OFFSET    25
+	 `define CLOCKGLITCH_OFFSET_LEN 4
 	 
 	 reg [63:0]  clockglitch_settings_reg;
-	 wire [63:0] clockglitch_settings_read; 	 	 
+	 wire [63:0] clockglitch_settings_read; 	
+
+	 reg [31:0] clockglitch_offset_reg;
   
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;
@@ -99,6 +101,7 @@ module reg_clockglitch(
 	 always @(reg_hypaddress) begin
 		case (reg_hypaddress)
             `CLOCKGLITCH_SETTINGS: reg_hyplen_reg <= `CLOCKGLITCH_LEN;
+				`CLOCKGLITCH_OFFSET: reg_hyplen_reg <= `CLOCKGLITCH_OFFSET_LEN;
 				default: reg_hyplen_reg<= 0;
 		endcase
 	 end    
@@ -148,6 +151,8 @@ module reg_clockglitch(
 		   001 = Glitch is ORd with Clock (Positive going glitch only)
 			010 = Glitch Only
 			011 = Clock Only	 
+			100 = Glitch only based on enable, does not use phase-based difference.
+			      Can generate very long glitch pulses.
 
 	 [47] (Byte 5, Bit 7) = Manual Glitch. Set to 1 then 0, glitch on rising edge
 	 
@@ -177,23 +182,18 @@ module reg_clockglitch(
 	 reg manual_dly;
 	 always @(posedge sourceclk)
 		manual_dly <= manual;
-		
-	 reg exttrigger_resync;
-	 reg exttrigger_resync_dly;
-	 always @(posedge sourceclk)
-		exttrigger_resync <= exttrigger;
-	 
-	 always @(posedge sourceclk)
-		exttrigger_resync_dly <= exttrigger_resync;
-	 
+		 
 	 reg glitch_trigger;
+	 wire exttrigger_resync;
+	 //reg exttrigger_resync_dly;
+	 
 	 always @(posedge sourceclk) begin
 		if (glitch_trigger_src == 2'b10)
 			glitch_trigger <= 1'b1;
 		else if (glitch_trigger_src == 2'b00)
 			glitch_trigger <= manual & ~manual_dly;
 		else if (glitch_trigger_src == 2'b01)
-			glitch_trigger <= exttrigger_resync & ~exttrigger_resync_dly;
+			glitch_trigger <= exttrigger_resync; //exttrigger_resync & ~exttrigger_resync_dly;
 		else
 			glitch_trigger <= 1'b0;
 	 end	 
@@ -241,6 +241,7 @@ module reg_clockglitch(
 		if (reg_read) begin
 			case (reg_address)		
 				`CLOCKGLITCH_SETTINGS: begin reg_datao_reg <= clockglitch_settings_read[reg_bytecnt*8 +: 8]; end
+				`CLOCKGLITCH_OFFSET: begin reg_datao_reg <= clockglitch_offset_reg[reg_bytecnt*8 +: 8]; end
 				default: begin reg_datao_reg <= 0; end
 			endcase
 		end
@@ -252,6 +253,7 @@ module reg_clockglitch(
 	 always @(posedge clk) begin
 		if (reset) begin
 			clockglitch_settings_reg <= 0;
+			clockglitch_offset_reg <= 0;
 			
 		end else if (clockglitch_settings_reg[18]) begin
 			clockglitch_settings_reg[18] <= 0;
@@ -259,12 +261,22 @@ module reg_clockglitch(
 		end else if (reg_write) begin
 			case (reg_address)
 				`CLOCKGLITCH_SETTINGS: clockglitch_settings_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
+				`CLOCKGLITCH_OFFSET: clockglitch_offset_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
 				default: ;
 			endcase
 		end
 	 end	 	 
-			 
-	 /* Glitch Delay */
+
+//   always @(posedge sourceclk)
+//	  exttrigger_resync_dly <= exttrigger_resync;
+
+	trigger_resync resync(
+	.reset(reset),
+	.clk(sourceclk),
+	.exttrig(exttrigger),	
+	.offset(clockglitch_offset_reg),
+	.exttrigger_resync(exttrigger_resync)
+	);
 
 	 /* Glitch Hardware */
 	 clockglitch_s6 gc(
