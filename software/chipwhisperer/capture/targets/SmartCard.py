@@ -38,6 +38,7 @@ except ImportError:
     
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
+from TargetTemplate import TargetTemplate
 
 class ReaderTemplate(QObject):
     paramListUpdated = Signal(list)
@@ -229,6 +230,7 @@ class ReaderChipWhispererSCard(ReaderTemplate):
       
 from smartcard.CardType import AnyCardType
 from smartcard.CardRequest import CardRequest
+from smartcard.CardConnection import CardConnection
 from smartcard.util import toHexString
 
 class ReaderPCSC(ReaderTemplate):
@@ -274,7 +276,7 @@ class ReaderPCSC(ReaderTemplate):
         if rxdatalen != 0:
             data.append(rxdatalen)
         
-        response, sw1, sw2 = self.scserv.connection.transmit( data )
+        response, sw1, sw2 = self.scserv.connection.transmit(data , CardConnection.T1_protocol)
             
         status = (sw1 << 8) | sw2;
         
@@ -396,33 +398,64 @@ class ProtocolSASEBOWCardOS(ProtocolTemplate):
         #print resp
         return pay    
                
-class SmartCard(QObject):   
+
+class ProtocolJCardTest(ProtocolTemplate):
+
+    def setupParameters(self):
+        """No parameters"""
+        self.params = None
+
+    def loadEncryptionKey(self, key):
+        pass
+
+    def loadInput(self, inputtext):
+        pass
+
+    def go(self):
+
+        # self.hw.scserv.connection.disconnect()
+        # self.hw.con()
+
+        status = self.hw.sendAPDU(0x00, 0xA4, 0x04, 0x00, [0xD0, 0xD1, 0xD2, 0xD3, 0xD4, 0xD5, 0x01, 0x01])
+        if status != 0x9000:
+            raise IOError("Invalid Status: %x" % status)
+
+        (resp, pay) = self.hw.sendAPDU(0x80, 0x10, 0x01, 0x02, [0xAE], rxdatalen=6)
+        if  resp != 0x9000:
+            raise IOError("Invalid Status: %x" % status)
+
+        counter1 = (pay[5] << 8) | pay[6]
+        counter2 = (pay[7] << 8) | pay[8]
+        counter3 = (pay[9] << 8) | pay[10]
+
+        self.resp = (counter1, counter2, counter3)
+
+
+
+        print self.resp
+
+    def readOutput(self):
+        return self.resp
+
+class SmartCard(TargetTemplate):
     paramListUpdated = Signal(list) 
      
-    def __init__(self, console=None, showScriptParameter=None):
-        super(SmartCard, self).__init__()
-        
-        self.console = console
-        self.showScriptParameter = showScriptParameter
+    def setupParameters(self):
         self.oa=None
         self.driver = None
         ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':{"ChipWhisperer-USI":ReaderChipWhisperer(), "ChipWhisperer-SCARD":ReaderChipWhispererSCard(), "PC/SC Reader":ReaderPCSC(), "Cheapskate-Serial":None}, 'value':None, 'set':self.setConnection},
                     #"BasicCard v7.5 (INCOMPLETE"):None, 
                     #"Custom (INCOMPLETE)":None, "DPAContestv4 (INCOMPLETE)":None
-                    {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(), "ChipWhisperer-Dumb":None}, 'value':None, 'set':self.setProtocol}                    
+                    {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(),
+                                                                           "ChipWhisperer-Dumb":None,
+                                                                           "JCard Test":ProtocolJCardTest()}, 'value':None, 'set':self.setProtocol}
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
     def __del__(self):
         self.close()
-        
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
-            
+
     def setOpenADC(self, oadc):
         try:
             self.oa=oadc
