@@ -30,6 +30,7 @@ from chipwhisperer.analyzer.preprocessing.ResyncPeakDetect import ResyncPeakDete
 from chipwhisperer.analyzer.preprocessing.ResyncSAD import ResyncSAD
 from chipwhisperer.analyzer.preprocessing.Filter import Filter
 from chipwhisperer.analyzer.preprocessing.AddNoiseJitter import AddNoiseJitter
+from chipwhisperer.analyzer.preprocessing.AddNoiseRandom import AddNoiseRandom
 from chipwhisperer.analyzer.preprocessing.Normalize import Normalize
 
 
@@ -50,6 +51,7 @@ def listAll(parent):
     valid_targets["Digital Filter"] = Filter(parent)
     valid_targets["Normalize"] = Normalize(parent)
     valid_targets["Add Noise: Jitter"] = AddNoiseJitter(parent)
+    valid_targets["AddNoiseRandom"] = AddNoiseRandom(parent)
     if DecimationClockRecovery:
         valid_targets["Decimation: Clock Recovery"] = DecimationClockRecovery(parent)
     if DecimationFixed:
