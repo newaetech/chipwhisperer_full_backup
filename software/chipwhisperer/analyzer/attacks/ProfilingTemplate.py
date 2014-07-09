@@ -55,6 +55,8 @@ except ImportError:
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.utils.Partition import Partition
 
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import HypHW
+
 class TemplateBasic(object):
     """
     Template using Multivariate Stats (mean + covariance matrix)
@@ -187,12 +189,13 @@ class ProfilingTemplate(QObject):
         return self._project
 
     def generateTemplates(self):
-        self.loadPOI()
 
         tRange = (self.findParam('tgenstart').value(), self.findParam('tgenstop').value())
-        numParts = 256
 
-        poiList = self.loadPOI()
+        # TODO - Fix this
+        # numParts = 256
+        numParts = 9
+        poiList = self.loadPOIs()[0]["poi"]
 
         # Generate templates
         self.profiling.generate(tRange, poiList , numParts)
@@ -209,46 +212,86 @@ class ProfilingTemplate(QObject):
         cfgsec["filename"] = fname["rel"]
 
     def loadTemplates(self):
-        # template = np.load(r'C:/E/Documents/academic/sidechannel/eclipse-workspace/chipwhisperer/chipwhisperer/software/chipwhisperer/capture/mega328p_aes128_100k/mega328p_aes128_100k_data/analysis\templates-0-12000.npz')
-
         # Load Template
         foundsecs = self.parent.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
-        if len(foundsecs) > 1:
-            IOError("Too many sections!!!")
-        elif len(foundsecs) == 1:
-            fname = self.parent.project().convertDataFilepathAbs(foundsecs[0]["filename"])
-            return np.load(fname)
-        else:
-            IOError("Templates")
 
+        templates = []
 
-    def loadPOI(self):
+        for f in foundsecs:
+            fname = self.parent.project().convertDataFilepathAbs(f["filename"])
+            templates.append(np.load(fname))
+
+        return templates
+
+    def loadPOIs(self):
         section = self.project().getDataConfig("Template Data", "Points of Interest")
-        poistr = str(section[0]["poi"])
-        poistr = poistr.replace('"', '')
-        poistr = poistr.replace("'", "")
-        try:
-            poiList = ast.literal_eval(poistr)
-        except ValueError:
-            print "Failed to convert %s to list" % (poistr)
+
+        poiList = []
+
+        for s in section:
+            poistr = str(s["poi"])
+            poistr = poistr.replace('"', '')
+            poistr = poistr.replace("'", "")
+            try:
+                poieval = ast.literal_eval(poistr)
+            except ValueError:
+                raise ValueError("Failed to convert %s to list" % (poistr))
+            
+            poiList.append(s.copy())
+            poiList[-1]["poi"] = poieval
 
         return poiList
 
     def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
-        template = self.loadTemplates()
-        pois = self.loadPOI()
+
+        # Hack for now - just use first template & POI list found
+        template = self.loadTemplates()[0]
+        pois = self.loadPOIs()[0]
+
+        numparts = len(template['mean'][0])
 
         results = np.zeros((16, 256))
 
         # trace = np.mean(traces, axis=0)
         # print np.shape(trace)
 
-        for trace in traces:
-        # if True:
+        tdiff = self.findParam('reportinterval').value()
+
+        if progressBar:
+            progressBar.setMinimum(0)
+            progressBar.setMaximum(16 * len(traces))
+            pcnt = 0
+
+        for tnum in range(0, len(traces)):
             for bnum in range(0, 16):
-                newresults = [multivariate_normal.logpdf(trace[pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, 256)]
+                newresultsint = [multivariate_normal.logpdf(traces[tnum][pois['poi'][bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, numparts)]
+                
+                #TODO: call out HW/HW method?
+                if numparts == 9:
+                    newresults = []
+                    # Map to key guess format
+                    for i in range(0, 256):
+                        # Get hypothetical hamming weight
+                        hypint = HypHW(plaintexts[tnum], None, i, bnum);
+                        newresults.append(newresultsint[ hypint ])
+                else:
+                    newresults = newresultsint
+                
                 results[bnum] += newresults
-                self.stats.updateSubkey(bnum, results[bnum], tnum=0)
+                self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
+
+                if progressBar:
+                    progressBar.setValue(pcnt)
+                    progressBar.updateStatus((tnum, len(traces)), bnum)
+                    pcnt += 1
+
+                    if progressBar.wasCanceled():
+                        raise KeyboardInterrupt
+
+
+            # Do plotting if required
+            if (tnum % tdiff) == 0 and self.sr:
+                self.sr()
 
     def getStatistics(self):
         return self.stats
