@@ -191,7 +191,7 @@ class CPAExperimentalChannelinfo(QObject):
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, model,showScriptParameter=None):
+    def __init__(self, model, showScriptParameter=None, parent=None):
         super(CPAExperimentalChannelinfo, self).__init__()
         
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
@@ -203,7 +203,10 @@ class CPAExperimentalChannelinfo(QObject):
         
         self.model = model
         self.sr = None
+        self.parent = parent
         
+        print self.parent.parent
+
         self.stats = DataTypeDiffs()
         
     def paramList(self):
@@ -274,7 +277,12 @@ class CPAExperimentalChannelinfo(QObject):
         #H = np.load('channelinfo.npy')
         #mio = sio.loadmat('equalizer.mat')
         #H = mio['equaltotal']
-        H = np.load('equalization.npy')
+        # H = np.load('equalization.npy')
+        # self.project() ?
+        project = self.parent.parent.proj
+        section = project.getDataConfig("Template Data", "Equalization Matrix")
+        fname = project.convertDataFilepathAbs(section[0]["filename"])
+        H = np.load(fname)
 
         #for j in range(0, 16):
             #4 = 500-800

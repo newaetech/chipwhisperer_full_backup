@@ -191,7 +191,7 @@ class CPAProgressive(QObject):
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, model, showScriptParameter=None):
+    def __init__(self, model, showScriptParameter=None, parent=None):
         super(CPAProgressive, self).__init__()
         
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},

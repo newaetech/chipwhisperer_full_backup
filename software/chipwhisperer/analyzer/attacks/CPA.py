@@ -110,7 +110,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateBytesVisible()
 
     def setAlgo(self, algo):        
-        self.attack = algo(self.findParam('hw_algo').value(), showScriptParameter=self.showScriptParameter)
+        self.attack = algo(self.findParam('hw_algo').value(), showScriptParameter=self.showScriptParameter, parent=self)
         try:
             self.attackParams = self.attack.paramList()[0]
         except:
