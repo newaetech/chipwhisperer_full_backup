@@ -40,6 +40,27 @@ import random
 
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+import chipwhisperer.common.aes_tables as aes_tables
+
+class PartitionHWIntermediate(object):
+
+    sectionName = "Partition Based on HW of Intermediate"
+    moduleName = "PartitionHWIntermediate"
+    partitionType = "HW Intermediate"
+
+    def getNumPartitions(self):
+        return 9
+
+    def getPartitionNum(self, trace, tnum):
+        key = trace.getKnownKey(tnum)
+        text = trace.getTextin(tnum)
+
+        guess = [0] * 16
+        for i in range(0, 16):
+            guess[i] = getHW(aes_tables.sbox[text[i] ^ key[i]])
+
+        return guess
 
 class PartitionDialog(QDialog):
     """Open dialog to run partioning"""
@@ -125,7 +146,7 @@ class Partition(QObject):
                     },
                 }
 
-    supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug]
+    supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate]
 
     def __init__(self, parent, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
