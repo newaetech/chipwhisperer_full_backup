@@ -180,6 +180,7 @@ class ChipWhispererGlitch(QObject):
         # print "Partial: %d %d"%(widthint, offsetint)
 
     def setTriggerOffset(self, offset):
+        """Set offset between trigger event and glitch in clock cycles"""
         cmd = bytearray(4)
         cmd[0] = ((offset >> 0) & 0xFF)
         cmd[1] = ((offset >> 8) & 0xFF)
@@ -188,6 +189,7 @@ class ChipWhispererGlitch(QObject):
         self.oa.sendMessage(CODE_WRITE, glitchoffsetaddr, cmd)
 
     def triggerOffset(self):
+        """Get offset between trigger event and glitch in clock cycles"""
         cmd = self.oa.sendMessage(CODE_READ, glitchoffsetaddr, maxResp=4)
         offset = cmd[0]
         offset |= cmd[1] << 8
