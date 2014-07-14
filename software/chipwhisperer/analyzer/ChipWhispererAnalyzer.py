@@ -86,6 +86,25 @@ from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 
+class MainScriptEditor(QWidget):
+    def __init__(self, parent):
+        super(MainScriptEditor, self).__init__(parent)
+
+        self.editWindow = QTextEdit()
+
+        mainLayout = QHBoxLayout()
+        mainLayout.addWidget(self.editWindow)
+
+        self.setLayout(mainLayout)
+        self.lastLevel = 0
+        
+    def append(self, statement, level=2):
+        if self.lastLevel > level:
+            self.editWindow.append("")
+        self.lastLevel = level
+        self.editWindow.append(" "*(level * 4) + statement)
+
+
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
@@ -149,6 +168,10 @@ class ChipWhispererAnalyzer(MainChip):
             self.addDockWidget(Qt.RightDockWidgetArea, d)
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
             self.enforceMenuOrder()
+
+
+        self.mse = MainScriptEditor(self)
+        self.addDock(self.mse, name="Scripting", area=Qt.RightDockWidgetArea)
         
         self.restoreDockGeometry()
         
@@ -209,8 +232,43 @@ class ChipWhispererAnalyzer(MainChip):
         self.preprocessingList[num] = module
         if module:
             module.paramListUpdated.connect(self.reloadParamListPreprocessing)
+            module.ScriptsUpdated.connect(self.reloadScripts)
         self.reloadParamListPreprocessing() 
         self.setupPreprocessorChain()   
+
+    def reloadScripts(self):
+        self.mse.editWindow.clear()
+
+        # Get imports from preprocessing
+        for p in self.preprocessingList:
+            if p:
+                imports = p.getImportStatements()
+                for i in imports: self.mse.editWindow.append(i)
+
+
+        # Add main class
+        self.mse.append("class analyzerScript(object):", 0)
+        self.mse.append("preProcessingList = []", 1)
+
+        self.mse.append("def initProject(self):", 1)
+        self.mse.append("pass")
+
+
+        self.mse.append("def initPreprocessing(self):", 1)
+
+        # Get init from preprocessing
+        instNames = ""
+        for i, p in enumerate(self.preprocessingList):
+            if p:
+                plistEmpty = False
+                classname = type(p).__name__
+                instname = "self.preProcessing%s%d" % (classname, i)
+                self.mse.append("%s = preprocessing.%s()" % (instname, classname))
+                for i in p.getInitStatements(): self.mse.append(instname + "." + i)
+                instNames += instname + ","
+
+        self.mse.append("self.preProcessingList = [%s]" % instNames)
+        self.mse.append("return self.preProcessingList")
 
     def reloadParamListPreprocessing(self, list=None):        
         plist = []
@@ -273,6 +331,8 @@ class ChipWhispererAnalyzer(MainChip):
 
         for item in self.utilList:
             item.setTraceSource(self.traces)
+
+        self.reloadScripts()
 
         
     def plotInputTrace(self):

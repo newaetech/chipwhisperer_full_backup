@@ -36,8 +36,9 @@ except ImportError:
 
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.autoscript import AutoScript
 
-class PreprocessingBase(QObject):
+class PreprocessingBase(AutoScript, QObject):
     """
     Base Class for all preprocessing modules
     """

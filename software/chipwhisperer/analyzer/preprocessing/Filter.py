@@ -49,7 +49,7 @@ class Filter(PreprocessingBase):
      
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateFilter},
+                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateFilter},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateFilter},
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateFilter},
                          {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateFilter},
@@ -60,24 +60,36 @@ class Filter(PreprocessingBase):
         ExtendedParameter.setupExtended(self.params, self)
 
         self.updateFilter()
+        
+        # Setup imports required
+        self.importsAppend("import scipy as sp")
+
+    def setFilterForm(self, filtform=sp.signal.butter):
+        """Set the filter type in object"""
+        self.filterForm = filtform
+
+    def setFilterParams(self, form='low', freq=0.8, order=5):
+        self.b, self.a = self.filterForm(order, freq, form)
 
     def updateFilter(self, param1=None):
-        filt = self.findParam('form').value()
-        N = self.findParam('order').value()
+        
         ftype = self.findParam('type').value()
         freq1 = self.findParam('freq1').value()
         freq2 = self.findParam('freq2').value()
         
         if ftype == "bandpass":
             self.findParam('freq2').show()
-            freq = [freq1, freq2]
+            freqs = "(%f, %f)" % (freq1, freq2)
         else:
             self.findParam('freq2').hide()
-            freq = freq1
-        
-        b, a = filt(N, freq, ftype)
-        self.b = b
-        self.a = a
+            freqs = "%f" % freq1
+
+        self.addInitFunction("setFilterForm", self.findParam('form').value())
+        self.addInitFunction("setFilterParams", "type='%s', freq=%s, order=%d" % (
+                                ftype,
+                                freqs,
+                                self.findParam('order').value()
+                            ))
    
     def getTrace(self, n):
         if self.enabled:
@@ -86,9 +98,6 @@ class Filter(PreprocessingBase):
                 return None
             
             filttrace = sp.signal.lfilter(self.b, self.a, trace)
-            
-            #print len(trace)
-            #print len(filttrace)
             
             return filttrace
             
