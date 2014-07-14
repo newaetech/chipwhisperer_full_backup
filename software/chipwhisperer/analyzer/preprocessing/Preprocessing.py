@@ -34,6 +34,8 @@ from chipwhisperer.analyzer.preprocessing.AddNoiseRandom import AddNoiseRandom
 from chipwhisperer.analyzer.preprocessing.Normalize import Normalize
 
 
+
+
 try:
     from chipwhisperer.analyzer.preprocessing.DecimationClockRecovery import DecimationClockRecovery
 except ImportError:
@@ -51,7 +53,7 @@ def listAll(parent):
     valid_targets["Digital Filter"] = Filter(parent)
     valid_targets["Normalize"] = Normalize(parent)
     valid_targets["Add Noise: Jitter"] = AddNoiseJitter(parent)
-    valid_targets["AddNoiseRandom"] = AddNoiseRandom(parent)
+    valid_targets["Add Noise: Random"] = AddNoiseRandom(parent)
     if DecimationClockRecovery:
         valid_targets["Decimation: Clock Recovery"] = DecimationClockRecovery(parent)
     if DecimationFixed:
