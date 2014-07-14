@@ -128,9 +128,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         
         self.attack.getStatistics().clear()
         
-        for itNum in range(1, self.getIterations()+1):
-            startingTrace = self.getTraceNum()*(itNum-1) + self.getTraceStart()
-            endingTrace = self.getTraceNum()*itNum + self.getTraceStart()
+        for itNum in range(1, self.getIterations() + 1):
+            startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
+            endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
             
             #print "%d-%d"%(startingPoint, endingPoint)            
             data = []

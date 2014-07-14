@@ -64,3 +64,29 @@ class AttackBaseClass(QObject):
     
     def getStatistics(self):
         return None
+
+    def setTraceStart(self, tnum):
+        self._traceStart = tnum
+
+    def setIterations(self, its):
+        self._iterations = its
+
+    def setTracesPerAttack(self, trace):
+        self._tracePerAttack = trace
+
+    def getTraceStart(self):
+        return self._traceStart
+
+    def getTraceNum(self):
+        return self._tracePerAttack
+
+    def getIterations(self):
+        return self._iterations
+
+    def setPointRange(self, rng, bnum=None):
+        if bnum is None:
+            self._pointRange = rng
+
+    def getPointRange(self, bnum=None):
+        return self._pointRange
+

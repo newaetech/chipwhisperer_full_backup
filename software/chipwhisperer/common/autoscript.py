@@ -38,7 +38,7 @@ class SmartStatements(object):
     def __init__(self):
         self._statements = list()
         
-    def addFunctionCall(self, methodname, arguments):
+    def addFunctionCall(self, methodname, arguments, loc=None):
         """
         Will add a python statement of the format 'methodname(arguments)'
         to the list of Python commands. If you already have a statement
@@ -52,7 +52,11 @@ class SmartStatements(object):
         mstr = "%s(%s)" % (methodname, arguments)
 
         if statementIndex == -1:
-            self._statements.append({"method":methodname, "command":mstr})
+            d = {"method":methodname, "command":mstr}
+            if loc:
+                self._statements.insert(loc, d)
+            else:
+                self._statements.append(d)
         else:
             self._statements[statementIndex]["command"] = mstr
             
@@ -65,7 +69,7 @@ class SmartStatements(object):
 class AutoScript(QObject):
     """Base functions for getting/setting stuff to make main script file"""
 
-    ScriptsUpdated = Signal()
+    scriptsUpdated = Signal()
 
     def __init__(self, parent=None, console=None):
         super(AutoScript, self).__init__(parent)
@@ -78,28 +82,63 @@ class AutoScript(QObject):
     def importsAppend(self, statement):
         if statement not in self.importStatements:
             self.importStatements.append(statement)
-        self.ScriptsUpdated.emit()
+        self.scriptsUpdated.emit()
 
     def getImportStatements(self):
         return self.importStatements
 
-    def addInitFunction(self, funcstr, argstr):
-        self.initStatements.addFunctionCall(funcstr, argstr)
-        self.ScriptsUpdated.emit()
+    def addInitFunction(self, funcstr, argstr, loc=None):
+        self.initStatements.addFunctionCall(funcstr, argstr, loc)
+        self.scriptsUpdated.emit()
 
     def getInitStatements(self):
         return self.initStatements.statements()
 
     def addGoFunction(self, funcstr, argstr):
         self.goStatements.addFunctionCall(funcstr, argstr)
-        self.ScriptsUpdated.emit()
+        self.scriptsUpdated.emit()
 
     def getDoStatements(self):
         return self.goStatements.statements()
 
     def addDoneFunction(self, funcstr, argstr):
         self.doneStatements.addFunctionCall(funcstr, argstr)
-        self.ScriptsUpdated.emit()
+        self.scriptsUpdated.emit()
 
     def getDoneStatements(self):
         return self.doneStatements.statements()
+
+class AutoScriptBase(object):
+
+    def __init__(self, parent=None, console=None, showScriptParameter=None):
+        super(AutoScriptBase, self).__init__()
+        self.parent = parent
+        self.console = console
+        self.showScriptParameter = showScriptParameter
+
+    def initProject(self):
+        pass
+
+    def initPreprocessing(self):
+        pass
+
+    def initAnalysis(self):
+        pass
+
+    def initReporting(self):
+        pass
+
+    def doAnalysis(self):
+        pass
+
+    def setTraceManager(self, tmanager):
+        self._tmanager = tmanager
+
+    def traceManager(self):
+        return self._tmanager
+
+    def setProject(self, project):
+        self._project = project
+
+    def project(self):
+        return self._project

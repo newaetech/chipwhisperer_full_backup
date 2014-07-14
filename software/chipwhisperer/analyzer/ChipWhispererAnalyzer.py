@@ -86,6 +86,12 @@ from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 
+
+# For MainScriptEditor
+import imp
+import uuid
+import tempfile
+
 class MainScriptEditor(QWidget):
     def __init__(self, parent):
         super(MainScriptEditor, self).__init__(parent)
@@ -98,11 +104,29 @@ class MainScriptEditor(QWidget):
         self.setLayout(mainLayout)
         self.lastLevel = 0
         
+        self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
+        self.tfile.close()
+        print self.tfile.name
+
     def append(self, statement, level=2):
         if self.lastLevel > level:
             self.editWindow.append("")
         self.lastLevel = level
         self.editWindow.append(" "*(level * 4) + statement)
+        
+    def loadModule(self):
+        # Save text editor somewhere
+        f = open(self.tfile.name, 'w')
+        filecontents = self.editWindow.toPlainText()
+        f.write(filecontents)
+        f.close()
+
+        modulename = str(uuid.uuid1())
+        self.scriptModule = imp.load_source(modulename, self.tfile.name)
+
+        print self.scriptModule
+        return self.scriptModule
+
 
 
 class ChipWhispererAnalyzer(MainChip):
@@ -232,22 +256,33 @@ class ChipWhispererAnalyzer(MainChip):
         self.preprocessingList[num] = module
         if module:
             module.paramListUpdated.connect(self.reloadParamListPreprocessing)
-            module.ScriptsUpdated.connect(self.reloadScripts)
+            module.scriptsUpdated.connect(self.reloadScripts)
         self.reloadParamListPreprocessing() 
         self.setupPreprocessorChain()   
 
     def reloadScripts(self):
         self.mse.editWindow.clear()
 
+        self.mse.append("# Date Auto-Generated: Yes Please", 0)
+
+        self.mse.append("from chipwhisperer.common.autoscript import AutoScriptBase", 0)
+
         # Get imports from preprocessing
+        self.mse.append("#Imports from Preprocessing", 0)
         for p in self.preprocessingList:
             if p:
                 imports = p.getImportStatements()
-                for i in imports: self.mse.editWindow.append(i)
+                for i in imports: self.mse.append(i, 0)
 
+        # Get imports from capture
+        self.mse.append("#Imports from Capture", 0)
+        for i in self.attack.getImportStatements():
+            self.mse.append(i, 0)
+
+        self.mse.append("", 0)
 
         # Add main class
-        self.mse.append("class analyzerScript(object):", 0)
+        self.mse.append("class analyzerScript(AutoScriptBase):", 0)
         self.mse.append("preProcessingList = []", 1)
 
         self.mse.append("def initProject(self):", 1)
@@ -260,15 +295,35 @@ class ChipWhispererAnalyzer(MainChip):
         instNames = ""
         for i, p in enumerate(self.preprocessingList):
             if p:
-                plistEmpty = False
                 classname = type(p).__name__
                 instname = "self.preProcessing%s%d" % (classname, i)
                 self.mse.append("%s = preprocessing.%s()" % (instname, classname))
-                for i in p.getInitStatements(): self.mse.append(instname + "." + i)
+                for s in p.getInitStatements(): self.mse.append(instname + "." + s)
                 instNames += instname + ","
 
         self.mse.append("self.preProcessingList = [%s]" % instNames)
         self.mse.append("return self.preProcessingList")
+
+
+        self.mse.append("def initAnalysis(self):", 1)
+
+        # Get init from analysis
+        self.mse.append('self.attack = %s(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)' % "CPA")
+        for s in self.attack.getInitStatements():
+            self.mse.append('self.attack.' + s)
+
+        self.mse.append('return self.attack')
+
+        # Get init from reporting
+
+        # Get go command from analysis
+        self.mse.append("def initReporting(self):", 1)
+        self.mse.append("pass")
+
+        self.mse.append("def doAnalysis(self):", 1)
+        self.mse.append("self.attack.doAttack()")
+
+
 
     def reloadParamListPreprocessing(self, list=None):        
         plist = []
@@ -290,8 +345,12 @@ class ChipWhispererAnalyzer(MainChip):
             self.attack.setTraceManager(self.traces)
 
         self.attack.setProject(self.proj)
+        self.attack.scriptsUpdated.connect(self.reloadScripts)
+        self.reloadScripts()
 
-    def doAttack(self):        
+    def doAttack(self):
+        mod = self.mse.loadModule().analyzerScript(self, self.console, self.showScriptParameter)
+
         #Check if traces enabled
         if self.traces.NumTrace == 0:
             msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project - open Trace Manager?",
@@ -301,17 +360,25 @@ class ChipWhispererAnalyzer(MainChip):
             if msgBox.exec_() == QMessageBox.AcceptRole:
                 self.manageTraces.show()
             return
-            
-        self.console.append("Attack Started")
         
-        if self.results:
-            self.results.setTraceManager(self.traces)
+        self.console.append("Loading...")
+        # mod.initProject()
+        mod.setTraceManager(self.traces)
+        mod.initPreprocessing()
+        mod.initAnalysis()
+        mod.initReporting()
         
-        if self.attack:
-            self.attack.setTraceManager(self.traces)
-            self.attack.doAttack()
+        mod.doAnalysis()
+
+        # self.console.append("Attack Started")
+        # if self.results:
+        #    self.results.setTraceManager(self.traces)
+        #
+        # if self.attack:
+        #    self.attack.setTraceManager(self.traces)
+        #    self.attack.doAttack()
             
-        self.console.append("Attack Done")
+        # self.console.append("Attack Done")
         
     def reloadAttackParamList(self, list=None):
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)

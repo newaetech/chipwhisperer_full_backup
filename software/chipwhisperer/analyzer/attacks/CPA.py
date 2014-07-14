@@ -80,44 +80,81 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         
     def setupParameters(self):      
         cpaalgos = {'Progressive':CPAProgressive,
-                    'Simple':CPASimpleLoop,
-                    'Channel Info':CPAExperimentalChannelinfo}
-        
+                    'Simple':CPASimpleLoop}
+
         #if CPACython is not None:
         #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
         
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.setAlgo},                   
+        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateScript},
                         {'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit, 'AES-256 (8-bit)':models_AES256_8bit}, 'value':'AES-128', 'set':self.setHWAlgo},
-                        {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first'},
-                        {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':['Hamming Weight', 'Hamming Distance', 'Hamming Weight (inverse)'], 'value':'Hamming Weight'},
+                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit, 'AES-256 (8-bit)':models_AES256_8bit}, 'value':'AES-128', 'set':self.updateScript},
+                        {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first', 'set':self.updateScript},
+                        {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':{'Hamming Weight':'HypHW', 'Hamming Distance':'HypHD'}, 'value':'Hamming Weight', 'set':self.updateScript},
                         ]},
-                       {'name':'Take Absolute', 'type':'bool', 'value':True},
                        
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
                          self.getByteList()                                                 
                         },                    
                       ]
+
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params, self)
         
-        self.setAlgo(self.findParam('CPA_algo').value())
+        self.setAnalysisAlgorithm(CPAProgressive, None, None)
         self.updateBytesVisible()
-            
-    def setHWAlgo(self, algo):
-        self.numsubkeys = algo.numSubKeys
-        self.updateBytesVisible()
+        self.updateScript()
 
-    def setAlgo(self, algo):        
-        self.attack = algo(self.findParam('hw_algo').value(), showScriptParameter=self.showScriptParameter, parent=self)
+    def setHardwareModel(self, model):
+        self.numsubkeys = model.numSubKeys
+        self.updateBytesVisible()
+        self.updateScript()
+
+    def setKeyround(self, rnd):
+        self._keyround = rnd
+
+    def keyround(self):
+        return self._keyround
+
+    def setTargetBytes(self, blist):
+        self._targetbytes = blist
+
+    def targetBytes(self):
+        return self._targetbytes
+
+    def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
+        self.attack = analysisAlgorithm(hardwareModel, leakageModel, showScriptParameter=self.showScriptParameter, parent=self)
+
         try:
             self.attackParams = self.attack.paramList()[0]
         except:
             self.attackParams = None
 
         self.paramListUpdated.emit(self.paramList())
-                                                
+        
+        if hasattr(self.attack, 'scriptsUpdated'):
+            self.attack.scriptsUpdated.connect(self.updateScript)
+            
+    def updateScript(self, ignored=None):
+
+        self.importsAppend("from chipwhisperer.analyzer.attacks.CPA import CPA")
+
+        analysAlgoStr = self.findParam('CPA_algo').value().__name__
+        hardwareStr = self.findParam('hw_algo').value().__name__
+        leakModelStr = hardwareStr + "." + self.findParam('hw_pwrmodel').value()
+
+        self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
+        self.importsAppend("import %s" % hardwareStr)
+
+        self.addInitFunction("setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
+        self.addInitFunction("setKeyround", "0")
+
+        if hasattr(self.attack, 'initFuncs'):
+            for f in self.attack.initFuncs:
+                self.addInitFunction("attack.%s" % f[0], f[1])
+
+        self.addInitFunction("setTraceManager", "self.traceManager()")
+
     def processKnownKey(self, inpkey):
         if inpkey is None:
             return None
@@ -134,11 +171,15 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         #TODO: support start/end point different per byte
         (startingPoint, endingPoint) = self.getPointRange(None)
         
+        self.attack.setTargetBytes(self.targetBytes())
+        self.attack.setKeyround(self.keyround())
+
         self.attack.getStatistics().clear()
-        
+        self.attack.setStatsReadyCallback(self.statsReady)
+
         for itNum in range(1, self.getIterations()+1):
-            startingTrace = self.getTraceNum()*(itNum-1) + self.getTraceStart()
-            endingTrace = self.getTraceNum()*itNum + self.getTraceStart()
+            startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
+            endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
             
             #print "%d-%d"%(startingPoint, endingPoint)            
             data = []
@@ -157,13 +198,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 
                 data.append(d)
                 textins.append(self.trace.getTextin(i))
-                textouts.append(self.trace.getTextout(i)) 
-            
-            #self.attack.clearStats()
-            self.attack.setByteList(self.bytesEnabled())
-            self.attack.setKeyround(self.findParam('hw_round').value())
-            self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
-            self.attack.setStatsReadyCallback(self.statsReady)
+                textouts.append(self.trace.getTextout(i))
             
             progress = AttackProgressDialog()
             progress.setWindowModality(Qt.WindowModal)
