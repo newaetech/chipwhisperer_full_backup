@@ -154,6 +154,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 self.addInitFunction("attack.%s" % f[0], f[1])
 
         self.addInitFunction("setTraceManager", "self.traceManager()")
+        self.addInitFunction("setProject", "self.project()")
 
     def processKnownKey(self, inpkey):
         if inpkey is None:

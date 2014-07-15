@@ -115,6 +115,7 @@ class AutoScriptBase(object):
         self.parent = parent
         self.console = console
         self.showScriptParameter = showScriptParameter
+        self._project = None
 
     def initProject(self):
         pass
@@ -129,6 +130,12 @@ class AutoScriptBase(object):
         pass
 
     def doAnalysis(self):
+        pass
+
+    def doneAnalysis(self):
+        pass
+
+    def doneReporting(self):
         pass
 
     def setTraceManager(self, tmanager):

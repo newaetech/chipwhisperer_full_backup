@@ -317,8 +317,11 @@ class ChipWhispererAnalyzer(MainChip):
         # Get init from reporting
 
         # Get go command from analysis
-        self.mse.append("def initReporting(self):", 1)
-        self.mse.append("pass")
+        self.mse.append("def initReporting(self, results):", 1)
+        # self.mse.append("results.clear()")
+        self.mse.append("results.setAttack(self.attack)")
+        self.mse.append("results.setTraceManager(self.traceManager())")
+        self.mse.append("self.results = results")
 
         self.mse.append("def doAnalysis(self):", 1)
         self.mse.append("self.attack.doAttack()")
@@ -366,9 +369,12 @@ class ChipWhispererAnalyzer(MainChip):
         mod.setTraceManager(self.traces)
         mod.initPreprocessing()
         mod.initAnalysis()
-        mod.initReporting()
+        mod.initReporting(self.results)
         
         mod.doAnalysis()
+
+        mod.doneAnalysis()
+        mod.doneReporting()
 
         # self.console.append("Attack Started")
         # if self.results:
