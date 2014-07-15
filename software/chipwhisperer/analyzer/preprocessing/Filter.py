@@ -85,7 +85,7 @@ class Filter(PreprocessingBase):
             freqs = "%f" % freq1
 
         self.addInitFunction("setFilterForm", self.findParam('form').value())
-        self.addInitFunction("setFilterParams", "type='%s', freq=%s, order=%d" % (
+        self.addInitFunction("setFilterParams", "form='%s', freq=%s, order=%d" % (
                                 ftype,
                                 freqs,
                                 self.findParam('order').value()

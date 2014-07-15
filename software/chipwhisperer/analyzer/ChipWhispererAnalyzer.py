@@ -106,7 +106,7 @@ class MainScriptEditor(QWidget):
         
         self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
         self.tfile.close()
-        print self.tfile.name
+        # print self.tfile.name
 
     def append(self, statement, level=2):
         if self.lastLevel > level:
@@ -124,7 +124,7 @@ class MainScriptEditor(QWidget):
         modulename = str(uuid.uuid1())
         self.scriptModule = imp.load_source(modulename, self.tfile.name)
 
-        print self.scriptModule
+        # print self.scriptModule
         return self.scriptModule
 
 
@@ -142,7 +142,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.addWaveforms()
         
         numPreprocessingStep = 4
-        self.preprocessingList = [None]*numPreprocessingStep
+        self.preprocessingListGUI = [None] * numPreprocessingStep
         
         
         self.utilList = []
@@ -253,12 +253,12 @@ class ChipWhispererAnalyzer(MainChip):
         self.toolMenu.addSeparator()
 
     def setPreprocessing(self, num, module):
-        self.preprocessingList[num] = module
+        self.preprocessingListGUI[num] = module
         if module:
             module.paramListUpdated.connect(self.reloadParamListPreprocessing)
             module.scriptsUpdated.connect(self.reloadScripts)
         self.reloadParamListPreprocessing() 
-        self.setupPreprocessorChain()   
+        self.reloadScripts()
 
     def reloadScripts(self):
         self.mse.editWindow.clear()
@@ -269,7 +269,8 @@ class ChipWhispererAnalyzer(MainChip):
 
         # Get imports from preprocessing
         self.mse.append("#Imports from Preprocessing", 0)
-        for p in self.preprocessingList:
+        self.mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
+        for p in self.preprocessingListGUI:
             if p:
                 imports = p.getImportStatements()
                 for i in imports: self.mse.append(i, 0)
@@ -293,11 +294,11 @@ class ChipWhispererAnalyzer(MainChip):
 
         # Get init from preprocessing
         instNames = ""
-        for i, p in enumerate(self.preprocessingList):
+        for i, p in enumerate(self.preprocessingListGUI):
             if p:
                 classname = type(p).__name__
                 instname = "self.preProcessing%s%d" % (classname, i)
-                self.mse.append("%s = preprocessing.%s()" % (instname, classname))
+                self.mse.append("%s = preprocessing.%s.%s(self.parent)" % (instname, classname, classname))
                 for s in p.getInitStatements(): self.mse.append(instname + "." + s)
                 instNames += instname + ","
 
@@ -330,7 +331,7 @@ class ChipWhispererAnalyzer(MainChip):
 
     def reloadParamListPreprocessing(self, list=None):        
         plist = []
-        for p in self.preprocessingList:
+        for p in self.preprocessingListGUI:
             if p:
                 for item in p.paramList():
                     plist.append(item)
@@ -351,9 +352,13 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.scriptsUpdated.connect(self.reloadScripts)
         self.reloadScripts()
 
-    def doAttack(self):
+    def setupScriptModule(self):
         mod = self.mse.loadModule().analyzerScript(self, self.console, self.showScriptParameter)
+        if hasattr(self, "traces") and self.traces:
+            mod.setTraceManager(self.traces)
+        return mod
 
+    def doAttack(self):
         #Check if traces enabled
         if self.traces.NumTrace == 0:
             msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project - open Trace Manager?",
@@ -365,9 +370,15 @@ class ChipWhispererAnalyzer(MainChip):
             return
         
         self.console.append("Loading...")
+        mod = self.setupScriptModule()
         # mod.initProject()
-        mod.setTraceManager(self.traces)
-        mod.initPreprocessing()
+
+        # Setup trace sources etc, this calls the
+        # .initPreprocessing itself
+        # it also resets the setTraces in the passed 'mod',
+        # which is REQUIRED for proper functioning!
+        self.setupPreprocessorChain(mod)
+
         mod.initAnalysis()
         mod.initReporting(self.results)
         
@@ -393,7 +404,11 @@ class ChipWhispererAnalyzer(MainChip):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
         self.plotInputTrace()
 
-    def setupPreprocessorChain(self):
+    def setupPreprocessorChain(self, mod=None):
+        if mod is None:
+            mod = self.setupScriptModule()
+        self.preprocessingList = mod.initPreprocessing()
+
         self.lastoutput = self.manageTraces.iface
         for t in self.preprocessingList:
             if t:
@@ -405,8 +420,9 @@ class ChipWhispererAnalyzer(MainChip):
         for item in self.utilList:
             item.setTraceSource(self.traces)
 
-        self.reloadScripts()
+        mod.setTraceManager(self.traces)
 
+        # self.reloadScripts()
         
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
