@@ -85,7 +85,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         #if CPACython is not None:
         #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
         
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateScript},
+        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit, 'AES-256 (8-bit)':models_AES256_8bit}, 'value':'AES-128', 'set':self.updateScript},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first', 'set':self.updateScript},
@@ -102,6 +102,14 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         ExtendedParameter.setupExtended(self.params, self)
         
         self.setAnalysisAlgorithm(CPAProgressive, None, None)
+        self.updateBytesVisible()
+        self.updateScript()
+
+    def updateAlgorithm(self, algo):
+        # TODO: this hack required in case don't have setReportingInterval
+        self.delInitFunction('attack.setReportingInterval')
+
+        self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
         self.updateScript()
 

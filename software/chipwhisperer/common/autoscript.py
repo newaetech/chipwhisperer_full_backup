@@ -84,15 +84,18 @@ class AutoScript(QObject):
 
     def __init__(self, parent=None, console=None):
         super(AutoScript, self).__init__(parent)
-        self.importStatements = []
-        self.initStatements = SmartStatements()
-        self.goStatements = SmartStatements()
-        self.doneStatements = SmartStatements()
+        self.clearStatements()
         
         self.updateDelayTimer = QTimer(self)
         self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
         self.updateDelayTimer.setSingleShot(True)
         self.updateDelayTimer.setInterval(250)
+
+    def clearStatements(self):
+        self.importStatements = []
+        self.initStatements = SmartStatements()
+        self.goStatements = SmartStatements()
+        self.doneStatements = SmartStatements()
 
     def importsAppend(self, statement):
         if statement not in self.importStatements:
