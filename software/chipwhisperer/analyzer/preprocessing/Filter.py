@@ -48,18 +48,18 @@ class Filter(PreprocessingBase):
     """
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateFilter},
-                         {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateFilter},
-                         {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateFilter},
-                         {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateFilter},
-                         {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateFilter},
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateScript},
+                         {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
+                         {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
+                         {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
+                         {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         self.params = Parameter.create(name='Filter', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
-        self.updateFilter()
+        self.updateScript()
         
         # Setup imports required
         self.importsAppend("import scipy as sp")
@@ -71,7 +71,8 @@ class Filter(PreprocessingBase):
     def setFilterParams(self, form='low', freq=0.8, order=5):
         self.b, self.a = self.filterForm(order, freq, form)
 
-    def updateFilter(self, param1=None):
+    def updateScript(self, param1=None):
+        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
         
         ftype = self.findParam('type').value()
         freq1 = self.findParam('freq1').value()

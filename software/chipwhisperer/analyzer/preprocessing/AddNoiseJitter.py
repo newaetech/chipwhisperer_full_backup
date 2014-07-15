@@ -51,13 +51,19 @@ class AddNoiseJitter(PreprocessingBase):
                   "in actual analysis."
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'limits':(0, 1000), 'set':self.setMaxJitter},
+        ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':True, 'set':self.updateScript},
+                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':0, 'limits':(0, 1000), 'set':self.updateScript},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         self.params = Parameter.create(name='Add Random Jitter', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.maxJitter = 0
+        self.updateScript()
+
+    def updateScript(self, ignored=None):
+        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+        jit = self.findParam('jitter').value()
+        self.addInitFunction("setMaxJitter", "%d" % jit)
    
     def setMaxJitter(self, jit):
         self.maxJitter = jit

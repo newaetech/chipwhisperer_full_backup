@@ -50,16 +50,21 @@ class AddNoiseRandom(PreprocessingBase):
     descrString = "Add random noise"
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Noise Std-Dev', 'key':'noise std-dev', 'type':'float', 'limits':(0, 1.0), 'set':self.setMaxNoise},
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         self.params = Parameter.create(name='Add Random Noise', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.maxJitter = 0
-   
+        self._maxNoise = 0
+        self.updateScript()
+
+    def updateScript(self, ignored=None):
+        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+        self.addInitFunction("setMaxNoise", '%f' % self.findParam('noisestddev').value())
+
     def setMaxNoise(self, maxNoise):
-        self.maxNoise = maxNoise
+        self._maxNoise = maxNoise
    
     def getTrace(self, n):
         if self.enabled:
@@ -67,7 +72,10 @@ class AddNoiseRandom(PreprocessingBase):
             if trace is None:
                 return None
             
-            return trace + np.random.normal(scale=self.maxNoise, size=len(trace))
+            if self._maxNoise == 0:
+                return trace
+            else:
+                return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
             
         else:
             return self.trace.getTrace(n)

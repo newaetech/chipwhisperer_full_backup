@@ -52,11 +52,11 @@ class ResyncPeakDetect(PreprocessingBase):
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Ref Trace #', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Peak Type', 'type':'list', 'value':'Max', 'values':['Max', 'Min'],  'set':self.setType},
-                         {'name':'Point Range', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setPointRange},
-                         {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.setValidLimit},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+                         {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
+                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
@@ -66,19 +66,30 @@ class ResyncPeakDetect(PreprocessingBase):
         self.ccEnd = 0
         self.limit = 0
         self.type = max
+        self.updateScript()
         
-    def setValidLimit(self, limit):
-        self.limit = limit
-        
-    def setType(self, t):
-        self.type = t
-    
-    def setPointRange(self, val):
-        self.ccStart = val[0]
-        self.ccEnd = val[1]
-   
-    def setOutputCorr(self, enabled):
-        self.debugReturnCorr = enabled
+    def updateScript(self, ignored=None):
+        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+
+
+        pt = self.findParam('ptrange').value()
+        if pt is None: pt = (0, 0)
+
+        self.addInitFunction("setReference", "rtraceno=%d, peaktype='%s', refrange=(%d, %d), validlimit=%f" % (
+                            self.findParam('reftrace').value(),
+                            self.findParam('peaktype').value(),
+                            pt[0], pt[1],
+                            self.findParam('vlimit').value()
+                            ))
+
+    def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):
+        self.rtrace = rtraceno
+        self.limit = validlimit
+        self.type = peaktype
+        self.ccStart = refrange[0]
+        self.ccEnd = refrange[1]
+        self.init()
+
    
     def getTrace(self, n):
         if self.enabled:
@@ -86,7 +97,7 @@ class ResyncPeakDetect(PreprocessingBase):
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
-            if self.type == 'Max':
+            if str.tolower(self.type) == 'max':
                 newmaxloc = np.argmax(trace[self.ccStart:self.ccEnd])
                 maxval = max(trace[self.ccStart:self.ccEnd])                    
             else:
@@ -112,10 +123,7 @@ class ResyncPeakDetect(PreprocessingBase):
             self.calcRefTrace(self.rtrace)
         except ValueError:
             self.findParam('enabled').setValue(False)
-   
-    def setRefTrace(self, tnum):
-        self.rtrace = tnum
-        
+
     def calcRefTrace(self, tnum):
         reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
         if self.type == 'Max':

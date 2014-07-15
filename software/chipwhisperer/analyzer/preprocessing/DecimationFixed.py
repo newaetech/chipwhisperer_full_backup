@@ -52,13 +52,21 @@ class DecimationFixed(PreprocessingBase):
      
     def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000)},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
                       ]
         
         self.params = Parameter.create(name='Fixed Decimation', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
+        self.setDecimationFactor(1)
+        self.updateScript()
 
+    def updateScript(self, ignored=None):
+        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+        self.addInitFunction("setDecimationFactor", self.findParam('decfactor').value())
+
+    def setDecimationFactor(self, decfactor=1):
+        self._decfactor = decfactor
 
     def getTrace(self, n):
         if self.enabled:
@@ -69,7 +77,7 @@ class DecimationFixed(PreprocessingBase):
             
             outtrace = np.zeros(len(trace))
 
-            decfactor = self.findParam('decfactor').value()
+            decfactor = self._decfactor
             for idx, val in enumerate(range(0, len(trace), decfactor)):
                 outtrace[idx] = trace[val]
 

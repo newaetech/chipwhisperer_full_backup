@@ -52,12 +52,12 @@ class ResyncSAD(PreprocessingBase):
 
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Reference Points', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setRefPointRange},
-                         {'name':'Input Window', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setWindowPointRange},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
                          # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
-                         {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
+                         # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
@@ -67,15 +67,32 @@ class ResyncSAD(PreprocessingBase):
         self.ccEnd = 1
         self.wdStart = 0
         self.wdEnd = 1
-    
-    def setWindowPointRange(self, rng):
-        self.wdStart = rng[0]
-        self.wdEnd = rng[1]
-    
-    def setRefPointRange(self, rng):
-        self.ccStart = rng[0]
-        self.ccEnd = rng[1]
-    
+
+        self.updateScript()
+
+    def updateScript(self, ignored=None):
+        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+
+        refpt = self.findParam('refpts').value()
+        windowpt = self.findParam('windowpt').value()
+
+        if refpt is None: refpt = (0, 0)
+        if windowpt is None: windowpt = (0, 0)
+
+        self.addInitFunction("setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" % (
+                            self.findParam('reftrace').value(),
+                            refpt[0], refpt[1],
+                            windowpt[0], windowpt[1]
+                            ))
+
+    def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
+        self.rtrace = rtraceno
+        self.wdStart = inputwindow[0]
+        self.wdEnd = inputwindow[1]
+        self.ccStart = refpoints[0]
+        self.ccEnd = refpoints[1]
+        self.init()
+
     def setOutputSad(self, enabled):
         self.debugReturnSad = enabled
    
@@ -117,9 +134,6 @@ class ResyncSAD(PreprocessingBase):
         #before trace management setup
         except ValueError:
             pass
-    
-    def setRefTrace(self, tnum):
-        self.rtrace = tnum
         
     def findSAD(self, inputtrace):
         reflen = self.ccEnd-self.ccStart

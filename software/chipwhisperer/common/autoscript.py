@@ -60,6 +60,17 @@ class SmartStatements(object):
         else:
             self._statements[statementIndex]["command"] = mstr
             
+    def delFunctionCall(self, methodname):
+        """Remove a function call or silently fail"""
+        statementIndex = -1
+        for i, s in enumerate(self._statements):
+            if s["method"] == methodname:
+                statementIndex = i
+
+        if statementIndex >= 0:
+            del self._statements[statementIndex]
+
+
     def statements(self):
         cmdlist = list()
         for s in self._statements:
@@ -73,37 +84,45 @@ class AutoScript(QObject):
 
     def __init__(self, parent=None, console=None):
         super(AutoScript, self).__init__(parent)
-
         self.importStatements = []
         self.initStatements = SmartStatements()
         self.goStatements = SmartStatements()
         self.doneStatements = SmartStatements()
         
+        self.updateDelayTimer = QTimer(self)
+        self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
+        self.updateDelayTimer.setSingleShot(True)
+        self.updateDelayTimer.setInterval(250)
+
     def importsAppend(self, statement):
         if statement not in self.importStatements:
             self.importStatements.append(statement)
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
 
     def getImportStatements(self):
         return self.importStatements
 
     def addInitFunction(self, funcstr, argstr, loc=None):
         self.initStatements.addFunctionCall(funcstr, argstr, loc)
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
+
+    def delInitFunction(self, funcstr):
+        self.initStatements.delFunctionCall(funcstr)
+        self.updateDelayTimer.start()
 
     def getInitStatements(self):
         return self.initStatements.statements()
 
     def addGoFunction(self, funcstr, argstr):
         self.goStatements.addFunctionCall(funcstr, argstr)
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
 
     def getDoStatements(self):
         return self.goStatements.statements()
 
     def addDoneFunction(self, funcstr, argstr):
         self.doneStatements.addFunctionCall(funcstr, argstr)
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
 
     def getDoneStatements(self):
         return self.doneStatements.statements()
