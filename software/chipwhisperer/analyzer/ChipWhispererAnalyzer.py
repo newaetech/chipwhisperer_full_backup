@@ -97,6 +97,21 @@ class CodeEditor(QTextEdit):
     runFunction = Signal(str)
     assignFunction = Signal(str)
 
+    def __init__(self, parent=None):
+        super(CodeEditor, self).__init__(parent)
+        
+        font = QFont()
+        font.setFamily("Courier")
+        font.setStyleHint(QFont.Monospace)
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Tab:
+            self.insertPlainText("    ")
+        else:
+            return QTextEdit.keyPressEvent(self, event)
+
     def contextMenuEvent(self, event):
         menu = self.createStandardContextMenu()
         menu.insertAction(menu.actions()[0], QAction("Run Function", self, triggered=self.rFuncAct))
