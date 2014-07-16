@@ -57,11 +57,16 @@ from chipwhisperer.analyzer.utils.Partition import Partition
 
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import HypHW
 
-class TemplateBasic(object):
+from chipwhisperer.common.autoscript import SmartStatements
+
+class TemplateBasic(QObject):
     """
     Template using Multivariate Stats (mean + covariance matrix)
     """
+    scriptsUpdated = Signal()
+
     def __init__(self, tmanager=None):
+        super(TemplateBasic, self).__init__()
         self._tmanager = None
         self.partObject = Partition(self)
 
@@ -130,13 +135,14 @@ class ProfilingTemplate(QObject):
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     paramListUpdated = Signal(list)
+    scriptsUpdated = Signal()
 
     def __init__(self, parent, showScriptParameter=None, tmanager=None):
         super(ProfilingTemplate, self).__init__()
 
         self.parent = parent
-        self.profiling = TemplateBasic()
         self._tmanager = None
+        self._project = None
 
         resultsParams = [{'name':'Template Generation', 'type':'group', 'children':[
                             {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int'},
@@ -145,9 +151,7 @@ class ProfilingTemplate(QObject):
                             {'name':'Generate Templates', 'type':'action', 'action':self.generateTemplates}
                             ]},
 
-                         {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
-                         {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                         {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100, 'set':self.updateScript},
                          ]
         self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
         if showScriptParameter is not None:
@@ -158,6 +162,37 @@ class ProfilingTemplate(QObject):
         self.sr = None
 
         self.stats = DataTypeDiffs()
+        self.setProfileAlgorithm(TemplateBasic)
+
+        # Not needed as setProfileAlgorithm calls this
+        # self.updateScript()
+
+    def setProfileAlgorithm(self, algo):
+        self.profiling = algo()
+        self.profiling.setTraceManager(self._tmanager)
+        self.profiling.setProject(self._project)
+        self.profiling.scriptsUpdated.connect(self.updateScript)
+        self.updateScript()
+
+    def updateScript(self, ignored=None):
+
+        self.functionList = {"init":SmartStatements(),
+                             "generateTemplates":SmartStatements()}
+
+
+        self.functionList["init"].addFunctionCall('setReportingInterval', '%d' % self.findParam('reportinterval').value())
+
+        # Get children
+        #if hasattr(self.profiling, 'initFuncs'):
+        #    for f in self.profiling.initFuncs:
+        #        self.initFuncs.append("profiling.%s" % f[0], f[1])
+
+        # Make functions for extra stuff
+        self.functionList["generateTemplates"].addVariableAssignment('tRange', '(0, 1000)')
+        self.functionList["generateTemplates"].addVariableAssignment('numPartitions', '9')
+        self.functionList["generateTemplates"].addVariableAssignment('poiList', '[(1,2,3),(3,3,3)]')
+
+        self.scriptsUpdated.emit()
 
     def paramList(self):
         return [self.params]
@@ -175,7 +210,6 @@ class ProfilingTemplate(QObject):
         return self._tmanager
 
     def setTraceManager(self, tmanager):
-        print tmanager
         self._tmanager = tmanager
         # Set for children
         self.profiling.setTraceManager(tmanager)
@@ -189,7 +223,6 @@ class ProfilingTemplate(QObject):
         return self._project
 
     def generateTemplates(self):
-
         tRange = (self.findParam('tgenstart').value(), self.findParam('tgenstop').value())
 
         # TODO - Fix this

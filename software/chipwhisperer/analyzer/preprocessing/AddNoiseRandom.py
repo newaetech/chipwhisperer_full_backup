@@ -60,8 +60,8 @@ class AddNoiseRandom(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
-        self.addInitFunction("setMaxNoise", '%f' % self.findParam('noisestddev').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setMaxNoise", '%f' % self.findParam('noisestddev').value())
 
     def setMaxNoise(self, maxNoise):
         self._maxNoise = maxNoise

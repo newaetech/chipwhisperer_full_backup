@@ -61,9 +61,9 @@ class AddNoiseJitter(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
         jit = self.findParam('jitter').value()
-        self.addInitFunction("setMaxJitter", "%d" % jit)
+        self.addFunction("init", "setMaxJitter", "%d" % jit)
    
     def setMaxJitter(self, jit):
         self.maxJitter = jit

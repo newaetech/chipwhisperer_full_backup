@@ -299,7 +299,8 @@ class ChipWhispererAnalyzer(MainChip):
                 classname = type(p).__name__
                 instname = "self.preProcessing%s%d" % (classname, i)
                 self.mse.append("%s = preprocessing.%s.%s(self.parent)" % (instname, classname, classname))
-                for s in p.getInitStatements(): self.mse.append(instname + "." + s)
+                for s in p.getStatements('init'):
+                    self.mse.append(s.replace("self.", instname + ".").replace("userScript.", "self."))
                 instNames += instname + ","
 
         self.mse.append("self.preProcessingList = [%s]" % instNames)
@@ -309,9 +310,9 @@ class ChipWhispererAnalyzer(MainChip):
         self.mse.append("def initAnalysis(self):", 1)
 
         # Get init from analysis
-        self.mse.append('self.attack = %s(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)' % "CPA")
-        for s in self.attack.getInitStatements():
-            self.mse.append('self.attack.' + s)
+        self.mse.append('self.attack = %s(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)' % type(self.attack).__name__)
+        for s in self.attack.getStatements('init'):
+            self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
 
         self.mse.append('return self.attack')
 
@@ -326,6 +327,17 @@ class ChipWhispererAnalyzer(MainChip):
 
         self.mse.append("def doAnalysis(self):", 1)
         self.mse.append("self.attack.doAttack()")
+
+        # Get other commands
+        for k in self.attack._smartstatements:
+            if k == 'init' or k == 'go' or k == 'done':
+                pass
+            else:
+                self.mse.append("def %s(self):" % k, 1)
+                for s in self.attack.getStatements(k):
+                    self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
+
+
 
 
 

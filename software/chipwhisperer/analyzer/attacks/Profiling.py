@@ -71,7 +71,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def setupParameters(self):      
         profalgos = {'Basic':ProfilingTemplate}
 
-        attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.setAlgo},
+        attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
                        
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
@@ -81,7 +81,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params, self)
         
-        self.setAlgo(self.findParam('Prof_algo').value())
+        self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
 
         self.traceManagerChanged.connect(self.attack.setTraceManager)
@@ -89,17 +89,37 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
         self.setAbsoluteMode(False)
             
-    def setHWAlgo(self, algo):
-        self.numsubkeys = algo.numSubKeys
+    def updateAlgorithm(self, algo):
+        self.setAnalysisAlgorithm(algo)
         self.updateBytesVisible()
+        self.updateScript()
 
-    def setAlgo(self, algo):        
-        self.attack = algo(self, showScriptParameter=self.showScriptParameter)
-        if self.traceManager() is not None:
-            self.attack.setTraceManager(self.traceManager())
+    def updateScript(self, ignored=None):
 
-        if self.project() is not None:
-            self.attack.setProject(self.project())
+        self.importsAppend("from chipwhisperer.analyzer.attacks.Profiling import Profiling")
+
+        analysAlgoStr = self.findParam('Prof_algo').value().__name__
+        self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
+
+        self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
+        # self.addFunction("init", "setKeyround", "0")
+
+        if hasattr(self.attack, 'functionList'):
+            for k in self.attack.functionList:
+                if k == "init":
+                    self._smartstatements['init']._statements.extend(self.attack.functionList["init"]._statements)
+                else:
+                    self._smartstatements[k] = self.attack.functionList[k]
+
+            # for f in self.attack.functionList:
+                # self.addFunction("init", "attack.%s" % f[0], f[1])
+
+        self.addFunction("init", "setTraceManager", "userScript.traceManager()")
+        self.addFunction("init", "setProject", "userScript.project()")
+
+
+    def setAnalysisAlgorithm(self, analysisAlgorithm):
+        self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self)
 
         try:
             self.attackParams = self.attack.paramList()[0]
@@ -107,6 +127,36 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             self.attackParams = None
 
         self.paramListUpdated.emit(self.paramList())
+
+        if hasattr(self.attack, 'scriptsUpdated'):
+            self.attack.scriptsUpdated.connect(self.updateScript)
+
+#    def setAlgo(self, algo):
+#        self.attack = algo(self, showScriptParameter=self.showScriptParameter)
+#        if self.traceManager() is not None:
+#            self.attack.setTraceManager(self.traceManager())
+#
+#        if self.project() is not None:
+#            self.attack.setProject(self.project())
+#
+#        try:
+#            self.attackParams = self.attack.paramList()[0]
+#        except:
+#            self.attackParams = None
+#
+#        self.paramListUpdated.emit(self.paramList())
+
+    def setKeyround(self, rnd):
+        self._keyround = rnd
+
+    def keyround(self):
+        return self._keyround
+
+    def setTargetBytes(self, blist):
+        self._targetbytes = blist
+
+    def targetBytes(self):
+        return self._targetbytes
                                                 
     def processKnownKey(self, inpkey):
         return inpkey

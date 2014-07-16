@@ -72,7 +72,7 @@ class Filter(PreprocessingBase):
         self.b, self.a = self.filterForm(order, freq, form)
 
     def updateScript(self, param1=None):
-        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
         
         ftype = self.findParam('type').value()
         freq1 = self.findParam('freq1').value()
@@ -85,8 +85,8 @@ class Filter(PreprocessingBase):
             self.findParam('freq2').hide()
             freqs = "%f" % freq1
 
-        self.addInitFunction("setFilterForm", self.findParam('form').value())
-        self.addInitFunction("setFilterParams", "form='%s', freq=%s, order=%d" % (
+        self.addFunction("init", "setFilterForm", self.findParam('form').value())
+        self.addFunction("init", "setFilterParams", "form='%s', freq=%s, order=%d" % (
                                 ftype,
                                 freqs,
                                 self.findParam('order').value()

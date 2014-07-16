@@ -142,27 +142,27 @@ class Normalize(PreprocessingBase):
         self.updateScript()
         
     def updateScript(self, ignored=None):
-        self.addInitFunction("setEnabled", "%s" % self.findParam('enabled').value())
-        self.addInitFunction("setNormFunc", "%s" % self.findParam('type').value().__name__)
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').value().__name__)
         
         f1src = self.findParam('f1coeff').value()
         if f1src is not None:
             if f1src == 5: f1src = None
-            self.addInitFunction("norm.loadF1File", "%s" % str(f1src))
+            self.addFunction("init", "norm.loadF1File", "%s" % str(f1src))
 
         f2src = self.findParam('f2coeff').value()
         if f2src is not None:
             if f2src == 5: f2src = None
-            self.addInitFunction("norm.loadF2File", "%s" % str(f2src))
+            self.addFunction("init", "norm.loadF2File", "%s" % str(f2src))
 
         zsrc = self.findParam('zsource').value()
         if zsrc is not None:
             if zsrc == 5: zsrc = None
-            self.addInitFunction("norm.loadZFile", "%s" % str(zsrc))
+            self.addFunction("init", "norm.loadZFile", "%s" % str(zsrc))
 
     #    rng = self.findParam('ptrange').value()
     #    if rng:
-    #        self.addInitFunction("setPointRange", " (%d, %d) " % (rng[0], rng[1]))
+    #        self.addFunction("init", "setPointRange", " (%d, %d) " % (rng[0], rng[1]))
 
 
     # def setPointRange(self, r):
@@ -202,7 +202,7 @@ class Normalize(PreprocessingBase):
         else:
             self.findParam('f1coeff').setValue(None)
             self.findParam('f1coeff').setReadonly(True)
-            self.delInitFunction('norm.loadF1File')
+            self.delFunction('init', 'norm.loadF1File')
 
         if self.norm.UseF2Coeff:
             self.findParam('f2coeff').setValue(1)
@@ -210,7 +210,7 @@ class Normalize(PreprocessingBase):
         else:
             self.findParam('f2coeff').setValue(None)
             self.findParam('f2coeff').setReadonly(True)
-            self.delInitFunction('norm.loadF2File')
+            self.delFunction('init', 'norm.loadF2File')
 
         if self.norm.UseZSource:
             self.findParam('zsource').setValue(None)
@@ -218,7 +218,7 @@ class Normalize(PreprocessingBase):
         else:
             self.findParam('zsource').setValue(None)
             self.findParam('zsource').setReadonly(True)
-            self.delInitFunction('norm.loadZFile')
+            self.delFunction('init', 'norm.loadZFile')
 
         self.updateScript()
 

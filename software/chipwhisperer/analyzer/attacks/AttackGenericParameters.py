@@ -109,7 +109,7 @@ class AttackGenericParameters(AutoScript, QObject):
         return init
     
     def updateScriptBytesEnabled(self, ignored=None):
-        self.addInitFunction("setTargetBytes", str(self.bytesEnabled()))
+        self.addFunction("init", "setTargetBytes", str(self.bytesEnabled()))
 
     def updateBytesVisible(self):
         for i,t in enumerate(self.bytesParameters()):
@@ -170,9 +170,9 @@ class AttackGenericParameters(AutoScript, QObject):
             ])
         ExtendedParameter.setupExtended(self.traceParams, self)
         
-        self.addInitFunction("setTraceStart", "0")
-        self.addInitFunction("setTracesPerAttack", "1")
-        self.addInitFunction("setIterations", "1")
+        self.addFunction("init", "setTraceStart", "0")
+        self.addFunction("init", "setTracesPerAttack", "1")
+        self.addFunction("init", "setIterations", "1")
         
     
         self.singleEmit = True   
@@ -197,9 +197,9 @@ class AttackGenericParameters(AutoScript, QObject):
                 self.singleEmit = False 
                 atraces.sigLimitsChanged.emit(atraces, lim)                           
 
-        self.addInitFunction("setTraceStart", "%d" % strace.value())
-        self.addInitFunction("setTracesPerAttack", "%d" % atraces.value())
-        self.addInitFunction("setIterations", "%d" % runs.value())
+        self.addFunction("init", "setTraceStart", "%d" % strace.value())
+        self.addFunction("init", "setTracesPerAttack", "%d" % atraces.value())
+        self.addFunction("init", "setIterations", "%d" % runs.value())
 
 ############# Points-Specific
     def setupPointsParam(self):
@@ -252,11 +252,11 @@ class AttackGenericParameters(AutoScript, QObject):
         # self.setPointRange(0, points, setlimits=True)
         self.traceMax = traces
 
-        self.addInitFunction("setPointRange", "(%d,%d)" % (0, points))
+        self.addFunction("init", "setPointRange", "(%d,%d)" % (0, points))
     
-        # self.addInitFunction("setTraceStart", "%d" % 0)
-        # self.addInitFunction("setTracesPerAttack", "%d" % traces)
-        # self.addInitFunction("setIterations", "%d" % 1)
+        # self.addFunction("init", "setTraceStart", "%d" % 0)
+        # self.addFunction("init", "setTracesPerAttack", "%d" % traces)
+        # self.addFunction("init", "setIterations", "%d" % 1)
     
         strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
         ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams).setValue(1)

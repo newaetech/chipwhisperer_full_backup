@@ -38,7 +38,24 @@ class SmartStatements(object):
     def __init__(self):
         self._statements = list()
         
-    def addFunctionCall(self, methodname, arguments, loc=None):
+    def addVariableAssignment(self, varname, values, loc=None):
+        statementIndex = -1
+        for i, s in enumerate(self._statements):
+            if s["objname"] == varname:
+                statementIndex = i
+
+        mstr = "%s = %s" % (varname, values)
+
+        if statementIndex == -1:
+            d = {"objname":varname, "type":"variable", "command":mstr}
+            if loc is not None:
+                self._statements.insert(loc, d)
+            else:
+                self._statements.append(d)
+        else:
+            self._statements[statementIndex]["command"] = mstr
+        
+    def addFunctionCall(self, methodname, arguments, varassignment=None, functionprefix="self.", loc=None):
         """
         Will add a python statement of the format 'methodname(arguments)'
         to the list of Python commands. If you already have a statement
@@ -46,14 +63,17 @@ class SmartStatements(object):
         """
         statementIndex = -1
         for i,s in enumerate(self._statements):
-            if s["method"] == methodname:
+            if s["objname"] == methodname:
                 statementIndex = i
 
-        mstr = "%s(%s)" % (methodname, arguments)
+        mstr = "%s%s(%s)" % (functionprefix, methodname, arguments)
+
+        if varassignment:
+            mstr = varassignment + " = " + mstr
 
         if statementIndex == -1:
-            d = {"method":methodname, "command":mstr}
-            if loc:
+            d = {"objname":methodname, "type":"function", "command":mstr}
+            if loc is not None:
                 self._statements.insert(loc, d)
             else:
                 self._statements.append(d)
@@ -64,7 +84,7 @@ class SmartStatements(object):
         """Remove a function call or silently fail"""
         statementIndex = -1
         for i, s in enumerate(self._statements):
-            if s["method"] == methodname:
+            if s["objname"] == methodname:
                 statementIndex = i
 
         if statementIndex >= 0:
@@ -93,9 +113,9 @@ class AutoScript(QObject):
 
     def clearStatements(self):
         self.importStatements = []
-        self.initStatements = SmartStatements()
-        self.goStatements = SmartStatements()
-        self.doneStatements = SmartStatements()
+        self._smartstatements = {"init":SmartStatements(),
+                           "go":SmartStatements(),
+                           "done":SmartStatements()}
 
     def importsAppend(self, statement):
         if statement not in self.importStatements:
@@ -105,30 +125,16 @@ class AutoScript(QObject):
     def getImportStatements(self):
         return self.importStatements
 
-    def addInitFunction(self, funcstr, argstr, loc=None):
-        self.initStatements.addFunctionCall(funcstr, argstr, loc)
+    def addFunction(self, key, funcstr, argstr, loc=None):
+        self._smartstatements[key].addFunctionCall(funcstr, argstr, loc)
         self.updateDelayTimer.start()
 
-    def delInitFunction(self, funcstr):
-        self.initStatements.delFunctionCall(funcstr)
+    def delFunction(self, key, funcstr):
+        self._smartstatements[key].delFunctionCall(funcstr)
         self.updateDelayTimer.start()
 
-    def getInitStatements(self):
-        return self.initStatements.statements()
-
-    def addGoFunction(self, funcstr, argstr):
-        self.goStatements.addFunctionCall(funcstr, argstr)
-        self.updateDelayTimer.start()
-
-    def getDoStatements(self):
-        return self.goStatements.statements()
-
-    def addDoneFunction(self, funcstr, argstr):
-        self.doneStatements.addFunctionCall(funcstr, argstr)
-        self.updateDelayTimer.start()
-
-    def getDoneStatements(self):
-        return self.doneStatements.statements()
+    def getStatements(self, key):
+        return self._smartstatements[key].statements()
 
 class AutoScriptBase(object):
 

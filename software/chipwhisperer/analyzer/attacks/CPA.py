@@ -107,7 +107,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
     def updateAlgorithm(self, algo):
         # TODO: this hack required in case don't have setReportingInterval
-        self.delInitFunction('attack.setReportingInterval')
+        self.delFunction('init', 'attack.setReportingInterval')
 
         self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
@@ -154,15 +154,15 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
-        self.addInitFunction("setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
-        self.addInitFunction("setKeyround", "0")
+        self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
+        self.addFunction("init", "setKeyround", "0")
 
         if hasattr(self.attack, 'initFuncs'):
             for f in self.attack.initFuncs:
-                self.addInitFunction("attack.%s" % f[0], f[1])
+                self.addFunction("init", "attack.%s" % f[0], f[1])
 
-        self.addInitFunction("setTraceManager", "self.traceManager()")
-        self.addInitFunction("setProject", "self.project()")
+        self.addFunction("init", "setTraceManager", "userScript.traceManager()")
+        self.addFunction("init", "setProject", "userScript.project()")
 
     def processKnownKey(self, inpkey):
         if inpkey is None:
