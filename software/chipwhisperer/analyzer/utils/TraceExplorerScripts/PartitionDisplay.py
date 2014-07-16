@@ -267,13 +267,12 @@ class PartitionDisplay(AutoScript, QObject):
         self.poidock.hide()
 
         self.params = [
-              {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'set':self.diffObject.setDiffMethod},
-              {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'set':self.partObject.setPartMethod},
-              # {'name':'Combination Mode', 'key':'combomode', 'type':'list', 'values':combModeList, 'value':self.combObject.combMethodClass, 'set':self.combObject.setCombMethod},
+              {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'set':self.updateScript},
+              {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'set':self.updateScript},
               {'name':'Display', 'type':'action', 'action':self.runAction},
 
-              {'name':'Auto-Save Data to Project', 'key':'part-saveints', 'type':'bool', 'value':False},
-              {'name':'Auto-Load Data from Project', 'key':'part-loadints', 'type':'bool', 'value':False},
+              {'name':'Auto-Save Data to Project', 'key':'part-saveints', 'type':'bool', 'value':False, 'set':self.updateScript},
+              {'name':'Auto-Load Data from Project', 'key':'part-loadints', 'type':'bool', 'value':False, 'set':self.updateScript},
 
               {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
                  {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
@@ -315,9 +314,6 @@ class PartitionDisplay(AutoScript, QObject):
                 self.graph.setColorInt(bnum, self.numKeys)
                 self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)))
 
-    # def setTraceManager(self, tmanager):
-    #    self._tmanager = tmanager
-
     def traceManager(self):
         return self.parent.traceManager()
     #    if self._tmanager is None and self.parent is not None:
@@ -325,45 +321,32 @@ class PartitionDisplay(AutoScript, QObject):
 #        return self._tmanager
 
 
-    def updateScript(self):
-        # return
-        # numsubkeys = ??
-        #
+    def updateScript(self, ignored=None):
 
-
-        # displayPartitions(?, partitionMethod=self.partObject.partMethod,
-        # Figure out if want to load
-        # loadInts = self.parent.findParam('part-loadints').value()
-        # saveInts = self.parent.findParam('part-saveints').value()
-        # progressBar=self.parent.getProgressIndicator()
-        # generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None, tRange=(0, -1)):
-        
-        partMethodStr = 'PartitionHWIntermediate'
-        diffMethodStr = 'DifferenceModeTTest'
+        try:
+            diffMethodStr = self.parent.findParam('diffmode').value().__name__
+            partMethodStr = self.parent.findParam('partmode').value().__name__
+        except AttributeError as e:
+            diffMethodStr = self.diffObject.mode.__class__.__name__
+            partMethodStr = self.partObject.partMethod.__class__.__name__
 
         self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate')
         self.importsAppend('from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD')
         
-        # self.addFunction('generatePartitions', 'partObject.setPartMethod', partMethodStr)
-        # self.addFunction('generatePartitions', 'partObject.generatePartitions', 'saveFile=True, loadFile=False', 'partData')
-
-        # self.addFunction('generatePartitionStats')
         self.addGroup("displayPartitionStats")
-        # self.addGroup("generatePartitionDiffs")
-        # self.addGroup("displayPartitionDiffs")
-        # self.addFunction('displayPartitionStats')
 
-        self.addFunction('displayPartitionStats', 'parent.getProgressIndicator', '', 'progressBar')
-        self.addFunction('displayPartitionStats', 'partObject.setPartMethod', partMethodStr)
-        self.addFunction('displayPartitionStats', 'partObject.generatePartitions', 'saveFile=True, loadFile=False', 'partData')
+        self.addVariable('displayPartitionStats', 'ted', 'self.')
+        self.addFunction('displayPartitionStats', 'parent.getProgressIndicator', '', 'progressBar', obj='ted')
+        self.addFunction('displayPartitionStats', 'partObject.setPartMethod', partMethodStr, obj='ted')
+        self.addFunction('displayPartitionStats', 'partObject.generatePartitions', 'saveFile=True, loadFile=False', 'partData', obj='ted')
         self.addFunction('displayPartitionStats', 'generatePartitionStats',
                             'partitionData={"partclass":%s, "partdata":partData}, saveFile=True, progressBar=progressBar' % partMethodStr,
-                            'partStats')
+                            'partStats', obj='ted')
         self.addFunction('displayPartitionStats', 'generatePartitionDiffs',
                             '%s, statsInfo={"partclass":%s, "stats":partStats}, saveFile=True, loadFile=False, progressBar=progressBar'%
                             (diffMethodStr, partMethodStr),
-                            'partDiffs')
-        self.addFunction('displayPartitionStats', 'displayPartitions', 'differences={"partclass":%s, "diffs":partDiffs}' % partMethodStr)
+                            'partDiffs', obj='ted')
+        self.addFunction('displayPartitionStats', 'displayPartitions', 'differences={"partclass":%s, "diffs":partDiffs}' % partMethodStr, obj='ted')
 
 
     def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False, traces=None, tRange=(0, -1), progressBar=None):
@@ -602,7 +585,7 @@ class PartitionDisplay(AutoScript, QObject):
 
 
     def runAction(self):
-        pass
+        self.runScriptFunction.emit('displayPartitionStats')
 
 
 

@@ -88,6 +88,7 @@ class TraceExplorerDialog(QDialog, AutoScript):
         for example in self.exampleScripts:
             self.commonScriptParams.append({'name':example.name, 'type':'group', 'children':example.params})
             example.scriptsUpdated.connect(self.updateScripts)
+            example.runScriptFunction.connect(self.runScriptFunction.emit)
         
 
         self.paramCommonScripts = Parameter.create(name='Common Scripts', type='group', children=self.commonScriptParams)
@@ -174,6 +175,8 @@ class TraceExplorerDialog(QDialog, AutoScript):
                         
                 for k in example.getImportStatements():
                     self.importsAppend(k)
+
+        self.scriptsUpdated.emit()
         
         
 

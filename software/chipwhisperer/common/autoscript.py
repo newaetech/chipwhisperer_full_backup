@@ -56,7 +56,7 @@ class SmartStatements(object):
         else:
             self._statements[statementIndex]["command"] = mstr
         
-    def addFunctionCall(self, methodname, arguments, varassignment=None, functionprefix="self.", loc=None):
+    def addFunctionCall(self, methodname, arguments, varassignment=None, obj="self", loc=None):
         """
         Will add a python statement of the format 'methodname(arguments)'
         to the list of Python commands. If you already have a statement
@@ -67,7 +67,9 @@ class SmartStatements(object):
             if s["objname"] == methodname:
                 statementIndex = i
 
-        mstr = "%s%s(%s)" % (functionprefix, methodname, arguments)
+        if len(obj) > 0: obj += "."
+
+        mstr = "%s%s(%s)" % (obj, methodname, arguments)
 
         if varassignment:
             mstr = varassignment + " = " + mstr
@@ -95,9 +97,9 @@ class SmartStatements(object):
         cmdlist = list()
         for s in self._statements:
             if replaceSelf:
-                cmdlist.append(s["command"].replace("self.", self._selfreplacement))
-            else:
-                cmdlist.append(s["command"])
+                s = s["command"].replace("self.", self._selfreplacement)
+                s = s.rstrip('.')
+            cmdlist.append(s)
         return cmdlist
     
     def selfReplacement(self):
@@ -119,6 +121,7 @@ class AutoScript(QObject):
     """Base functions for getting/setting stuff to make main script file"""
 
     scriptsUpdated = Signal()
+    runScriptFunction = Signal(str)
 
     def __init__(self, parent=None):
         super(AutoScript, self).__init__(parent)
@@ -149,13 +152,16 @@ class AutoScript(QObject):
         if key not in self._smartstatements:
             self._smartstatements[key] = SmartStatements()
 
-    def addFunction(self, key, funcstr, argstr, varassignment=None, loc=None):
-        self._smartstatements[key].addFunctionCall(funcstr, argstr, varassignment=varassignment, loc=loc)
+    def addFunction(self, key, funcstr, argstr, varassignment=None, obj='self', loc=None):
+        self._smartstatements[key].addFunctionCall(funcstr, argstr, varassignment=varassignment, obj=obj, loc=loc)
         self.updateDelayTimer.start()
 
     def delFunction(self, key, funcstr):
         self._smartstatements[key].delFunctionCall(funcstr)
         self.updateDelayTimer.start()
+
+    def addVariable(self, key, varname, values, loc=None):
+        self._smartstatements[key].addVariableAssignment(varname, values, loc=None)
 
     def getStatements(self, key):
         return self._smartstatements[key].statements()

@@ -179,6 +179,8 @@ class ChipWhispererAnalyzer(MainChip):
         
         self.utilList = []
         self.traceExplorerDialog = TraceExplorerDialog(self)
+        self.traceExplorerDialog.scriptsUpdated.connect(self.reloadScripts)
+        self.traceExplorerDialog.runScriptFunction.connect(self.runFunc)
         self.utilList.append(self.traceExplorerDialog)
 
         self.cwParams = [
@@ -293,6 +295,12 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadParamListPreprocessing() 
         self.reloadScripts()
 
+    def runFunc(self, name):
+        # TODO: We should be doing this correctly, this hack is bad ;_;
+        fname = "TraceExplorerDialog_PartitionDisplay_" + name
+        self.runScriptFunction(fname)
+
+
     def reloadScripts(self):
         self.mse.editWindow.clear()
 
@@ -390,10 +398,6 @@ class ChipWhispererAnalyzer(MainChip):
                         self.mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
                         for s in statements:
                             self.mse.append(s.replace("userScript.", "self."))
-                            
-                    
-
-
 
     def reloadParamListPreprocessing(self, list=None):        
         plist = []
