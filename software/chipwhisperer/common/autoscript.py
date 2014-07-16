@@ -37,6 +37,7 @@ class SmartStatements(object):
 
     def __init__(self):
         self._statements = list()
+        self._selfreplacement = "self."
         
     def addVariableAssignment(self, varname, values, loc=None):
         statementIndex = -1
@@ -90,22 +91,41 @@ class SmartStatements(object):
         if statementIndex >= 0:
             del self._statements[statementIndex]
 
-
-    def statements(self):
+    def statements(self, replaceSelf=True):
         cmdlist = list()
         for s in self._statements:
-            cmdlist.append(s["command"])
+            if replaceSelf:
+                cmdlist.append(s["command"].replace("self.", self._selfreplacement))
+            else:
+                cmdlist.append(s["command"])
         return cmdlist
+    
+    def selfReplacement(self):
+        return self._selfreplacement
+
+    def addSelfReplacement(self, newstr, force=False):
+        if force or newstr not in self._selfreplacement:
+            # print newstr not in self._selfreplacement
+            # print "%s: %s" % (self._selfreplacement, newstr)
+             
+            sp = self._selfreplacement.split(".", 1)
+            self._selfreplacement = sp[0] + "." + newstr + sp[1]
+
+           
+
+
 
 class AutoScript(QObject):
     """Base functions for getting/setting stuff to make main script file"""
 
     scriptsUpdated = Signal()
 
-    def __init__(self, parent=None, console=None):
+    def __init__(self, parent=None):
         super(AutoScript, self).__init__(parent)
-        self.clearStatements()
+        self.autoScriptInit()
         
+    def autoScriptInit(self):
+        self.clearStatements()
         self.updateDelayTimer = QTimer(self)
         self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
         self.updateDelayTimer.setSingleShot(True)
@@ -125,8 +145,12 @@ class AutoScript(QObject):
     def getImportStatements(self):
         return self.importStatements
 
-    def addFunction(self, key, funcstr, argstr, loc=None):
-        self._smartstatements[key].addFunctionCall(funcstr, argstr, loc)
+    def addGroup(self, key):
+        if key not in self._smartstatements:
+            self._smartstatements[key] = SmartStatements()
+
+    def addFunction(self, key, funcstr, argstr, varassignment=None, loc=None):
+        self._smartstatements[key].addFunctionCall(funcstr, argstr, varassignment=varassignment, loc=loc)
         self.updateDelayTimer.start()
 
     def delFunction(self, key, funcstr):

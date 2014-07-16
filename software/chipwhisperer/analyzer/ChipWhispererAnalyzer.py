@@ -92,11 +92,29 @@ import imp
 import uuid
 import tempfile
 
+class CodeEditor(QTextEdit):
+
+    runFunction = Signal(str)
+    assignFunction = Signal(str)
+
+    def contextMenuEvent(self, event):
+        menu = self.createStandardContextMenu()
+        menu.insertAction(menu.actions()[0], QAction("Run Function", self, triggered=self.rFuncAct))
+        # menu.insertAction(menu.actions()[1], QAction("Assign to Toolbar", self, triggered=self.assFuncAct))
+        menu.insertSeparator(menu.actions()[1])
+        menu.exec_(event.globalPos())
+
+    def rFuncAct(self):
+        self.runFunction.emit(self.textCursor().selectedText())
+
+    def assFuncAct(self):
+        self.assignFunction.emit(self.textCursor().selectedText())
+
 class MainScriptEditor(QWidget):
     def __init__(self, parent):
         super(MainScriptEditor, self).__init__(parent)
 
-        self.editWindow = QTextEdit()
+        self.editWindow = CodeEditor()
 
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.editWindow)
@@ -126,7 +144,6 @@ class MainScriptEditor(QWidget):
 
         # print self.scriptModule
         return self.scriptModule
-
 
 
 class ChipWhispererAnalyzer(MainChip):
@@ -195,6 +212,7 @@ class ChipWhispererAnalyzer(MainChip):
 
 
         self.mse = MainScriptEditor(self)
+        self.mse.editWindow.runFunction.connect(self.runScriptFunction)
         self.addDock(self.mse, name="Scripting", area=Qt.RightDockWidgetArea)
         
         self.restoreDockGeometry()
@@ -280,10 +298,17 @@ class ChipWhispererAnalyzer(MainChip):
         for i in self.attack.getImportStatements():
             self.mse.append(i, 0)
 
+        # Some other imports
+        self.mse.append("#Imports from utilList", 0)
+        for index, util in enumerate(self.utilList):
+            if hasattr(util, '_smartstatements'):
+                for i in util.getImportStatements(): self.mse.append(i, 0)
+            
+
         self.mse.append("", 0)
 
         # Add main class
-        self.mse.append("class analyzerScript(AutoScriptBase):", 0)
+        self.mse.append("class userScript(AutoScriptBase):", 0)
         self.mse.append("preProcessingList = []", 1)
 
         self.mse.append("def initProject(self):", 1)
@@ -328,7 +353,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.mse.append("def doAnalysis(self):", 1)
         self.mse.append("self.attack.doAttack()")
 
-        # Get other commands
+        # Get other commands from attack module
         for k in self.attack._smartstatements:
             if k == 'init' or k == 'go' or k == 'done':
                 pass
@@ -338,6 +363,20 @@ class ChipWhispererAnalyzer(MainChip):
                     self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
 
 
+        # Get other commands from other utilities
+        for index, util in enumerate(self.utilList):
+            if hasattr(util, '_smartstatements'):
+                for k in util._smartstatements:
+                    util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
+                    util._smartstatements[k].addSelfReplacement("parent.")
+                    statements = util.getStatements(k)
+                    
+                    if len(statements) > 0:
+                        self.mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
+                        for s in statements:
+                            self.mse.append(s.replace("userScript.", "self."))
+                            
+                    
 
 
 
@@ -365,10 +404,14 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadScripts()
 
     def setupScriptModule(self):
-        mod = self.mse.loadModule().analyzerScript(self, self.console, self.showScriptParameter)
+        mod = self.mse.loadModule().userScript(self, self.console, self.showScriptParameter)
         if hasattr(self, "traces") and self.traces:
             mod.setTraceManager(self.traces)
         return mod
+
+    def runScriptFunction(self, funcname):
+        mod = self.setupScriptModule()
+        eval('mod.%s()' % funcname)
 
     def doAttack(self):
         #Check if traces enabled

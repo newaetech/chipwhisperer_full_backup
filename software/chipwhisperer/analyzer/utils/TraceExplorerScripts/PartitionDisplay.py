@@ -25,24 +25,16 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-try:
-    import pyqtgraph as pg
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.analyzer.utils.Partition import Partition
 from functools import partial
 import numpy as np
 import copy
-import os
+
+from PySide.QtCore import *
+from PySide.QtGui import *
+import pyqtgraph as pg
+
+from chipwhisperer.analyzer.utils.Partition import Partition
+from chipwhisperer.common.autoscript import AutoScript
 
 class DifferenceModeTTest(QObject):
     sectionName = "Difference of Partitions using Welch's T-Test"
@@ -245,7 +237,7 @@ class POI(QWidget):
             self.mainTable.setItem(bnum, 0, QTableWidgetItem("%d" % bnum))
             self.mainTable.setCellWidget(bnum, 1, QLineEdit(str(maxarray)))
 
-class PartitionDisplay(QObject):
+class PartitionDisplay(AutoScript, QObject):
 
     def __init__(self, parent):
         super(PartitionDisplay, self).__init__(parent)
@@ -264,6 +256,9 @@ class PartitionDisplay(QObject):
         diffModeList = {}
         for a in self.diffObject.supportedMethods:
             diffModeList[a.differenceType] = a
+
+        self.addGroup("generatePartitions")
+        self.addGroup("displayPartitionDifferences")
 
         self.poi = POI(self)
         self.poidock = self.parent.addDock(self.poi, "Points of Interest", area=Qt.RightDockWidgetArea)
@@ -290,6 +285,12 @@ class PartitionDisplay(QObject):
 
         self.poi.setNumMax(1)
         self.poi.setMinSpace(1)
+
+        self.updateScript()
+
+    def setComparisonMode(self, mode):
+
+        self.updateScript()
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -321,64 +322,42 @@ class PartitionDisplay(QObject):
     #        self._tmanager = self.parent.traceManager()
 #        return self._tmanager
 
-    def runAction(self):
-        # Get traces
-        traces = self.traceManager()
-        # self.numKeys = len(traces.getKnownKey(0))
-        self.numKeys = len(self.partObject.partMethod.getPartitionNum(traces, 0))
 
-        # Get Plotting Figure
-        self.graph = self.parent.getGraphWidgets(["Partition Differences"])[0]
+    def updateScript(self):
+        # return
+        # numsubkeys = ??
+        #
 
-        # Get progress indicator
-        progressBar = self.parent.getProgressIndicator()
 
+        # displayPartitions(?, partitionMethod=self.partObject.partMethod,
         # Figure out if want to load
-        loadInts = self.parent.findParam('part-loadints').value()
-        saveInts = self.parent.findParam('part-saveints').value()
+        # loadInts = self.parent.findParam('part-loadints').value()
+        # saveInts = self.parent.findParam('part-saveints').value()
+        # progressBar=self.parent.getProgressIndicator()
+        #generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None, tRange=(0, -1)):
+        
+        self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate')
+        
+        self.addFunction('generatePartitions', 'partObject.setPartMethod', 'PartitionHWIntermediate')
+        self.addFunction('generatePartitions', 'partObject.generatePartitions', 'saveFile=True, loadFile=True', 'partData')
+        # self.addFunction('generatePartitions', 'partObject.generatePartitions', 'saveFile=True, loadFile=True', 'partData')
+        # self.addFunction('generatePartitions', 'partObject.generatePartitions', 'saveFile=True, loadFile=True', 'partData')
+        
 
-        if hasattr(self, 'enabledbytes') and len(self.enabledbytes) == self.numKeys:
-            pass
-        else:
-            self.enabledbytes = [False] * self.numKeys
+    def generatePartitionStats(self, partitionClass, saveCache=False, loadCache=False, traces=None, tRange=(0, -1), progressBar=None):
+        # TODO
+        # if traces is None:
+        #    traces = self.traceManager()
 
-        self.doRedraw = True
+        if tRange[1] < 0:
+            tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
 
-        self.byteNumAct = []
-        for i in range(0, self.numKeys):
-            ql = QToolButton()
-            ql.setText('%d' % i)
-            color = pg.intColor(i, self.numKeys)
-            ql.setStyleSheet("color: rgb(%d, %d, %d)" % (color.red(), color.green(), color.blue()))
-            qa = QWidgetAction(self)
-            qa.setDefaultWidget(ql)
-            qa.setStatusTip('%d' % i)
-            ql.setCheckable(True)
-            ql.setChecked(self.enabledbytes[i])
-            ql.clicked[bool].connect(partial(self.setBytePlot, i))
-            self.byteNumAct.append(qa)
-
-        byteNumAllOn = QAction('All On', self)
-        byteNumAllOff = QAction('All Off', self)
-        byteNumAllOn.triggered.connect(partial(self.setByteAll, True))
-        byteNumAllOff.triggered.connect(partial(self.setByteAll, False))
-
-        bselection = QToolBar()
-
-        for i in range(0, self.numKeys):
-            bselection.addAction(self.byteNumAct[i])
-        bselection.addAction(byteNumAllOn)
-        bselection.addAction(byteNumAllOff)
-        self.graph.addWidget(bselection)
-
-        self.graph.setPersistance(True)
+        if partitionClass is not None:
+            self.partObject.setPartMethod(partitionClass)
 
         numPoints = traces.numPoint()
 
-
-        tRange = (0, traces.numTrace())
-
-        if loadInts:
+        if loadCache:
             cfgsecs = self.parent.project().getDataConfig(sectionName="Trace Statistics", subsectionName="Total Trace Statistics")
             foundsecs = []
             for cfg in cfgsecs:
@@ -411,22 +390,22 @@ class PartitionDisplay(QObject):
                     for d in dataArrays:
                         d[bnum].append(np.zeros(numPoints))
                     ACnt[bnum].append(0)
-    
+
             # Get segment list
             segList = traces.getSegmentList()
 
-            progressBar.setWindowTitle("Phase 1: Trace Statistics")
-            progressBar.setMaximum(len(segList['offsetList']) * self.numKeys)
-            progressBar.show()
-    
+            if progressBar:
+                progressBar.setWindowTitle("Phase 1: Trace Statistics")
+                progressBar.setMaximum(len(segList['offsetList']) * self.numKeys)
+                progressBar.show()
+
             for tsegn in segList['offsetList']:
-    
-                progressBar.setLabelText("Segment %d" % tsegn)
-    
-    
+
+                if progressBar: progressBar.setLabelText("Segment %d" % tsegn)
+
                 # Average data needs to be calculated
                 # Require partition list
-                if loadInts:
+                if loadCache:
                     cfgdata = traces.getAuxData(tsegn, self.partObject.attrDictPartition)
                 else:
                     cfgdata = None
@@ -440,8 +419,8 @@ class PartitionDisplay(QObject):
                     self.partObject.runPartitions(save=True)
                     cfgdata = traces.getAuxData(tsegn, self.partObject.attrDictPartition)
                     partData = cfgdata['filedata']
-    
-    
+
+
                 # print "Calculating Average + Std-Dev"
                 # Std-Dev calculation:
                 # A[0] = 0
@@ -475,7 +454,7 @@ class PartitionDisplay(QObject):
                         #      Since this is taken over very large sample sizes I imagine it won't matter
                         #      ultimately.
                         Q_k[bnum][i] = Q_k[bnum][i] / max(ACnt[bnum][i] - 1, 1)
-    
+
             # Average is in A_k
             stats = {"mean":A_k, "variance":Q_k, "number":ACnt}
 
@@ -526,7 +505,7 @@ class PartitionDisplay(QObject):
                 fname = self.parent.project().getDataFilepath('partdiffs-%s-%s-%d-%s.npy' % (cfgsec["partitiontype"], cfgsec["comparetype"], tRange[0], tRange[1]), 'analysis')
                 np.save(fname["abs"], SADList)
                 cfgsec["filename"] = fname["rel"]
-       
+
         progressBar.setValue(progressBar.maximum())
         progressBar.setWindowTitle('Debug Fail')
         progressBar.setLabelText('You should never see this text')
@@ -534,6 +513,68 @@ class PartitionDisplay(QObject):
             return
 
         self.SADList = SADList
+
+    def displayPartitions(self, partinfo, partitionMethod, differences, traces=None, tRange=(0, -1), progressBar=None):
+        if traces is None:
+            traces = self.traceManager()
+
+        if tRange[1] < 0:
+            tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
+
+        numPoints = traces.numPoint()
+
+        self.numKeys = len(partitionMethod.getPartitionNum(traces, 0))
+        self.graph = self.parent.getGraphWidgets(["Partition Differences"])[0]
+
+        # Place byte selection option on graph
+        if hasattr(self, 'enabledbytes') and len(self.enabledbytes) == self.numKeys:
+            pass
+        else:
+            self.enabledbytes = [False] * self.numKeys
+
+        self.doRedraw = True
+
+        self.byteNumAct = []
+        for i in range(0, self.numKeys):
+            ql = QToolButton()
+            ql.setText('%d' % i)
+            color = pg.intColor(i, self.numKeys)
+            ql.setStyleSheet("color: rgb(%d, %d, %d)" % (color.red(), color.green(), color.blue()))
+            qa = QWidgetAction(self)
+            qa.setDefaultWidget(ql)
+            qa.setStatusTip('%d' % i)
+            ql.setCheckable(True)
+            ql.setChecked(self.enabledbytes[i])
+            ql.clicked[bool].connect(partial(self.setBytePlot, i))
+            self.byteNumAct.append(qa)
+
+        byteNumAllOn = QAction('All On', self)
+        byteNumAllOff = QAction('All Off', self)
+        byteNumAllOn.triggered.connect(partial(self.setByteAll, True))
+        byteNumAllOff.triggered.connect(partial(self.setByteAll, False))
+
+        bselection = QToolBar()
+
+        for i in range(0, self.numKeys):
+            bselection.addAction(self.byteNumAct[i])
+        bselection.addAction(byteNumAllOn)
+        bselection.addAction(byteNumAllOff)
+        self.graph.addWidget(bselection)
+
+        self.graph.setPersistance(True)
+
+
+    def runAction(self):
+        # Get traces
+        traces = self.traceManager()
+        # self.numKeys = len(traces.getKnownKey(0))
+        self.numKeys = len(self.partObject.partMethod.getPartitionNum(traces, 0))
+
+
+
+
+
+
         self.poi.setDifferences(self.SADList)
 
         self.parent.findParam('poi-pointrng').setLimits((0, len(SADList[0])))
