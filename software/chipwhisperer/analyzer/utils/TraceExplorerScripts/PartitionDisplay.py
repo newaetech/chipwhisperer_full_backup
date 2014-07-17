@@ -172,6 +172,7 @@ class POI(QWidget):
         layout.addLayout(pbLayout)
         self.setLayout(layout)
         self.diffs = []
+        self.poiArray = []
 
     def setDifferences(self, diffs):
         self.diffs = diffs
@@ -279,7 +280,7 @@ class PartitionDisplay(AutoScript, QObject):
         self.updateScript()
         # Some sort of race condition - applying Therac-25 type engineering and just
         # randomly hope this is enough delay
-        QTimer.singleShot(200, lambda:self.runScriptFunction.emit('findPOI'))
+        QTimer.singleShot(200, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -582,7 +583,7 @@ class PartitionDisplay(AutoScript, QObject):
 
 
     def runAction(self):
-        self.runScriptFunction.emit('displayPartitionStats')
+        self.runScriptFunction.emit('TraceExplorerDialog_PartitionDisplay_displayPartitionStats')
 
 
 

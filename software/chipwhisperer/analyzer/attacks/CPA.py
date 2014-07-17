@@ -66,6 +66,7 @@ from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperim
 
 from AttackGenericParameters import AttackGenericParameters
 
+
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
             
@@ -157,9 +158,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
         self.addFunction("init", "setKeyround", "0")
 
-        if hasattr(self.attack, 'initFuncs'):
-            for f in self.attack.initFuncs:
-                self.addFunction("init", "attack.%s" % f[0], f[1])
+        if hasattr(self.attack, '_smartstatements'):
+            self.mergeGroups('init', self.attack, prefix='attack')
 
         self.addFunction("init", "setTraceManager", "userScript.traceManager()")
         self.addFunction("init", "setProject", "userScript.project()")

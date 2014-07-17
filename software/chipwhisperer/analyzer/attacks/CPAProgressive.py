@@ -24,34 +24,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
+from PySide.QtCore import *
+from PySide.QtGui import *
 import numpy as np
-import scipy as sp
+from pyqtgraph.parametertree import Parameter
+
 from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-
-from functools import partial
-
-try:
-    import pyximport; pyximport.install()
-    import attacks.CPACython as CPACython
-except ImportError:
-    CPACython = None
+from chipwhisperer.common.autoscript import AutoScript
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -176,12 +157,11 @@ class CPAProgressiveOneSubkey(object):
         
         return (diffs, pbcnt)
 
-class CPAProgressive(QObject):
+class CPAProgressive(AutoScript, QObject):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     paramListUpdated = Signal(list)
-    scriptsUpdated = Signal()
 
     def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
         super(CPAProgressive, self).__init__()
@@ -204,9 +184,7 @@ class CPAProgressive(QObject):
         self.updateScript()
         
     def updateScript(self, ignored=None):
-        self.initFuncs = []
-        self.initFuncs.append(('setReportingInterval', '%d' % self.findParam('reportinterval').value()))
-        self.scriptsUpdated.emit()
+        self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
 
     def paramList(self):
         return [self.params]

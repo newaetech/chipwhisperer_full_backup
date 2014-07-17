@@ -48,13 +48,17 @@ class SmartStatements(object):
         mstr = "%s = %s" % (varname, values)
 
         if statementIndex == -1:
-            d = {"objname":varname, "type":"variable", "command":mstr}
+            d = {"objname":varname,
+                 "type":"variable",
+                 "values":values,
+                 "command":mstr}
             if loc is not None:
                 self._statements.insert(loc, d)
             else:
                 self._statements.append(d)
         else:
             self._statements[statementIndex]["command"] = mstr
+            self._statements[statementIndex]["values"] = values
         
     def addFunctionCall(self, methodname, arguments, varassignment=None, obj="self", loc=None):
         """
@@ -75,13 +79,21 @@ class SmartStatements(object):
             mstr = varassignment + " = " + mstr
 
         if statementIndex == -1:
-            d = {"objname":methodname, "type":"function", "command":mstr}
+            d = {"objname":methodname,
+                 "type":"function",
+                 "args":arguments,
+                 "varassignment":varassignment,
+                 "obj":obj,
+                 "command":mstr}
             if loc is not None:
                 self._statements.insert(loc, d)
             else:
                 self._statements.append(d)
         else:
             self._statements[statementIndex]["command"] = mstr
+            self._statements[statementIndex]["args"] = arguments
+            self._statements[statementIndex]["varassignment"] = varassignment
+            self._statements[statementIndex]["obj"] = obj
             
     def delFunctionCall(self, methodname):
         """Remove a function call or silently fail"""
@@ -112,8 +124,6 @@ class SmartStatements(object):
              
             sp = self._selfreplacement.split(".", 1)
             self._selfreplacement = sp[0] + "." + newstr + sp[1]
-
-           
 
 
 
@@ -154,6 +164,21 @@ class AutoScript(QObject):
 
     def addFunction(self, key, funcstr, argstr, varassignment=None, obj='self', loc=None):
         self._smartstatements[key].addFunctionCall(funcstr, argstr, varassignment=varassignment, obj=obj, loc=loc)
+        self.updateDelayTimer.start()
+
+    def mergeGroups(self, key, otherscript, prefix=""):
+        for k in otherscript._smartstatements[key]._statements:
+            if key not in self._smartstatements:
+                self.addGroup(key)
+            if k["type"] == "function":
+                if len(prefix) > 0 and k["obj"] != "userScript.":
+                    obj = k["obj"] + prefix
+                else:
+                    obj = k["obj"].rstrip('.')
+                # print k["args"]
+                self.addFunction(key, k["objname"], k["args"], k["varassignment"], obj)
+            if k["type"] == "variable":
+                self.addVariable(key, k["objname"], k["values"])
         self.updateDelayTimer.start()
 
     def delFunction(self, key, funcstr):

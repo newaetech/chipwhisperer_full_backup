@@ -297,8 +297,8 @@ class ChipWhispererAnalyzer(MainChip):
 
     def runFunc(self, name):
         # TODO: We should be doing this correctly, this hack is bad ;_;
-        fname = "TraceExplorerDialog_PartitionDisplay_" + name
-        self.runScriptFunction(fname)
+        # name = "TraceExplorerDialog_PartitionDisplay_" + name
+        self.runScriptFunction(name)
 
 
     def reloadScripts(self):
@@ -419,6 +419,7 @@ class ChipWhispererAnalyzer(MainChip):
 
         self.attack.setProject(self.proj)
         self.attack.scriptsUpdated.connect(self.reloadScripts)
+        self.attack.runScriptFunction.connect(self.runScriptFunction)
         self.reloadScripts()
 
     def setupScriptModule(self):

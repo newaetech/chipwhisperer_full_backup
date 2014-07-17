@@ -104,22 +104,22 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
         # self.addFunction("init", "setKeyround", "0")
 
-        if hasattr(self.attack, 'functionList'):
-            for k in self.attack.functionList:
-                if k == "init":
-                    self._smartstatements['init']._statements.extend(self.attack.functionList["init"]._statements)
-                else:
-                    self._smartstatements[k] = self.attack.functionList[k]
-
-            # for f in self.attack.functionList:
-                # self.addFunction("init", "attack.%s" % f[0], f[1])
+        # Add attack 'other' functions
+        if hasattr(self.attack, '_smartstatements'):
+            for k in self.attack._smartstatements:
+                self.mergeGroups(k, self.attack, prefix='attack')
 
         self.addFunction("init", "setTraceManager", "userScript.traceManager()")
         self.addFunction("init", "setProject", "userScript.project()")
 
+        # Add extra functions (generation, etc)
+
+
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self)
+        self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
+        self.traceManagerChanged.connect(self.attack.setTraceManager)
 
         try:
             self.attackParams = self.attack.paramList()[0]
