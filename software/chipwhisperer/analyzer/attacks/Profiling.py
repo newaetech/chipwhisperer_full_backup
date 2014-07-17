@@ -109,6 +109,11 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack._smartstatements:
                 self.mergeGroups(k, self.attack, prefix='attack')
 
+            for k in self.attack.getImportStatements():
+                self.importsAppend(k)
+
+
+
         self.addFunction("init", "setTraceManager", "userScript.traceManager()")
         self.addFunction("init", "setProject", "userScript.project()")
 

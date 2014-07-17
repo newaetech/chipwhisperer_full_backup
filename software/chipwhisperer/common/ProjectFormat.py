@@ -164,6 +164,8 @@ class ProjectFormat(QObject):
         datadir = os.path.join(self.datadirectory, 'analysis')
         fname = os.path.join(datadir, filename)
         relfname = os.path.relpath(fname, os.path.split(self.config.filename)[0])
+        fname = os.path.normpath(fname)
+        relfname = os.path.normpath(relfname)
         return {"abs":fname, "rel":relfname}
 
     def convertDataFilepathAbs(self, relativepath):

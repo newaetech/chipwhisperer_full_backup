@@ -612,7 +612,10 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.setProject(self.proj)
         self.traceExplorerDialog.setProject(self.proj)
 
-  
+
+    def project(self):
+        return self.proj
+
     def newProject(self):        
         #TODO: Move this to MainChip
         self.proj = ProjectFormat()

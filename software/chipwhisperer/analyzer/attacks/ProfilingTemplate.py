@@ -213,11 +213,31 @@ class ProfilingTemplate(AutoScript, QObject):
         self.profiling.setProject(self._project)
         self.profiling.scriptsUpdated.connect(self.updateScript)
         self.updateScript()
+        
+    def saveTemplatesToProject(self, trange, templatedata):
+        cfgsec = self.project().addDataConfig(sectionName="Template Data", subsectionName="Templates")
+        cfgsec["tracestart"] = trange[0]
+        cfgsec["traceend"] = trange[1]
+        cfgsec["poi"] = templatedata["poi"]
+        cfgsec["partitiontype"] = templatedata["partitiontype"].__name__
+
+        fname = self.project().getDataFilepath('templates-%s-%d-%d.npz' % (cfgsec["partitiontype"], trange[0], trange[1]), 'analysis')
+
+        # Save template file
+        np.savez(fname["abs"], **templatedata)  # mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
+        cfgsec["filename"] = fname["rel"]
+        return fname["abs"]
+
+        
+    def loadTemplatesFromFile(self, fname):
+        pass
+
+    def makeLoadScript(self, fname):
+        self.addGroup('loadTemplateAbsolute')
+        self.addVariable('loadTemplateAbsolute', 'template', 'np.load(r"%s")' % fname)
+        self.scriptsUpdated.emit()
 
     def updateScript(self, ignored=None):
-
-
-
         self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
         try:
             ted = self.parent.parent.utilList[0].exampleScripts[0]
@@ -239,21 +259,14 @@ class ProfilingTemplate(AutoScript, QObject):
             self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
             self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
 
-        self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod')
+        self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
+        
+        #Save template data to project
+        self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
 
-        # Generate templates
-        # self.profiling.generate(tRange, poiList , numParts)
-
-        # cfgsec = self.project().addDataConfig(sectionName="Template Data", subsectionName="Templates")
-        # cfgsec["tracestart"] = tRange[0]
-        # cfgsec["traceend"] = tRange[1]
-
-        # fname = self.project().getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
-
-        # Save template file
-        # np.savez(fname["abs"], mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
-
-        # cfgsec["filename"] = fname["rel"]
+        self.addFunction('generateTemplates', 'makeLoadScript', 'tfname')
+        
+        # Make function to load template data (absolute)
 
         self.scriptsUpdated.emit()
 
@@ -286,30 +299,9 @@ class ProfilingTemplate(AutoScript, QObject):
         self.profiling.setProject(proj)
 
     def project(self):
+        if self._project is None:
+            self.setProject(self.parent.project())
         return self._project
-
-    def generateTemplates(self, numParts, tRange, poiList):
-        tRange = (self.findParam('tgenstart').value(), self.findParam('tgenstop').value())
-
-        # TODO - Fix this
-        # numParts = 256
-        numParts = 9
-        poiList = self.loadPOIs()[0]["poi"]
-
-        # Generate templates
-        self.profiling.generate(tRange, poiList , numParts)
-
-        cfgsec = self.project().addDataConfig(sectionName="Template Data", subsectionName="Templates")
-        cfgsec["tracestart"] = tRange[0]
-        cfgsec["traceend"] = tRange[1]
-
-        fname = self.project().getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
-
-        # Save template file
-        np.savez(fname["abs"], mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
-
-        cfgsec["filename"] = fname["rel"]
-
 
     def loadTemplates(self):
         # Load Template
@@ -323,6 +315,16 @@ class ProfilingTemplate(AutoScript, QObject):
 
         return templates
 
+    def strListToList(self, strlist):
+        
+        strlist = strlist.replace('"', '')
+        strlist = strlist.replace("'", "")
+        try:
+            listeval = ast.literal_eval(strlist)
+            return listeval
+        except ValueError:
+            raise ValueError("Failed to convert %s to list" % (strlist))
+
     def loadPOIs(self):
         section = self.project().getDataConfig("Template Data", "Points of Interest")
 
@@ -330,13 +332,7 @@ class ProfilingTemplate(AutoScript, QObject):
 
         for s in section:
             poistr = str(s["poi"])
-            poistr = poistr.replace('"', '')
-            poistr = poistr.replace("'", "")
-            try:
-                poieval = ast.literal_eval(poistr)
-            except ValueError:
-                raise ValueError("Failed to convert %s to list" % (poistr))
-            
+            poieval = self.strListToList(poistr)
             poiList.append(s.copy())
             poiList[-1]["poi"] = poieval
 

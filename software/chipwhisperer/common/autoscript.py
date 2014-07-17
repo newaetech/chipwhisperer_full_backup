@@ -231,4 +231,6 @@ class AutoScriptBase(object):
         self._project = project
 
     def project(self):
+        if self._project is None and self.parent:
+            self._project = self.parent.project()
         return self._project
