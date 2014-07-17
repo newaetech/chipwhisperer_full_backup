@@ -304,7 +304,7 @@ class ChipWhispererAnalyzer(MainChip):
     def reloadScripts(self):
         self.mse.editWindow.clear()
 
-        self.mse.append("# Date Auto-Generated: Yes Please", 0)
+        self.mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
 
         self.mse.append("from chipwhisperer.common.autoscript import AutoScriptBase", 0)
 
@@ -324,9 +324,8 @@ class ChipWhispererAnalyzer(MainChip):
         # Some other imports
         self.mse.append("#Imports from utilList", 0)
         for index, util in enumerate(self.utilList):
-            if hasattr(util, '_smartstatements'):
+            if hasattr(util, '_smartstatements') and util.isVisible():
                 for i in util.getImportStatements(): self.mse.append(i, 0)
-            
 
         self.mse.append("", 0)
 
@@ -388,7 +387,7 @@ class ChipWhispererAnalyzer(MainChip):
 
         # Get other commands from other utilities
         for index, util in enumerate(self.utilList):
-            if hasattr(util, '_smartstatements'):
+            if hasattr(util, '_smartstatements') and util.isVisible():
                 for k in util._smartstatements:
                     util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
                     util._smartstatements[k].addSelfReplacement("parent.")

@@ -79,6 +79,9 @@ class TraceExplorerDialog(QDialog, AutoScript):
         self.progressBar = QProgressDialog(self)
         self.progressBar.setWindowModality(Qt.WindowModal)
 
+    def showEvent(self, event):
+        QDialog.showEvent(self, event)
+        self.updateChildren()
 
     def setupCommonScripts(self):
         # Setup parameter tree
@@ -163,6 +166,12 @@ class TraceExplorerDialog(QDialog, AutoScript):
     def getProgressIndicator(self):
         return self.progressBar
 
+    def updateChildren(self):
+        for example in self.exampleScripts:
+            if hasattr(example, 'updateScript'):
+                example.updateScript()
+        self.updateScripts()
+
     def updateScripts(self):
         for index, example in enumerate(self.exampleScripts):
             if hasattr(example, "_smartstatements"):
@@ -177,7 +186,7 @@ class TraceExplorerDialog(QDialog, AutoScript):
                     self.importsAppend(k)
 
         self.scriptsUpdated.emit()
-        
+
         
 
                 

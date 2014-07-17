@@ -159,44 +159,32 @@ class POI(QWidget):
         pbSave = QPushButton('Set as POI in Project')
         pbSave.clicked.connect(self.savePOI)
         pbCalc = QPushButton('Recalc POI Values')
-        pbCalc.clicked.connect(self.calcPOI)
-        pbSaveNPY = QPushButton('Save to NPY File')
-        pbLoadNPY = QPushButton('Load NPY File')
+        pbCalc.clicked.connect(self.parent.updatePOI)
+        # pbSaveNPY = QPushButton('Save to NPY File')
+        # pbLoadNPY = QPushButton('Load NPY File')
 
         pbLayout = QHBoxLayout()
         pbLayout.addWidget(pbSave)
         pbLayout.addWidget(pbCalc)
-        pbLayout.addWidget(pbSaveNPY)
-        pbLayout.addWidget(pbLoadNPY)
+        # pbLayout.addWidget(pbSaveNPY)
+        # pbLayout.addWidget(pbLoadNPY)
 
         layout.addLayout(pbLayout)
-
         self.setLayout(layout)
-
         self.diffs = []
-        self.pointRange = (0, 1)
 
     def setDifferences(self, diffs):
         self.diffs = diffs
-        self.calcPOI()
-
-    def setMinSpace(self, minspace):
-        self.minSpace = minspace
-        self.calcPOI()
-
-    def setNumMax(self, nummax):
-        self.numMax = nummax
-        self.calcPOI()
-
-    def setPointRange(self, rng):
-        self.pointRange = rng
-        self.calcPOI()
+        self.parent.parent.findParam('poi-pointrng').setValue((0, len(self.parent.SADList[0])))
 
     def savePOI(self):
         poiDict = {"poi":self.poiArray}
         self.parent.parent.parent.proj.addDataConfig(poiDict, "Template Data", "Points of Interest")
 
-    def calcPOI(self):
+    def calcPOI(self, numMax, pointRange, minSpace, diffs=None):
+        if diffs:
+            self.setDifferences(diffs)
+
         # Setup Table for current stuff
         self.mainTable.setRowCount(len(self.diffs))
         self.mainTable.setColumnCount(2)
@@ -205,8 +193,8 @@ class POI(QWidget):
 
         self.poiArray = []
 
-        startPoint = self.pointRange[0]
-        endPoint = self.pointRange[1]
+        startPoint = pointRange[0]
+        endPoint = pointRange[1]
 
         if startPoint == endPoint:
             endPoint += 1
@@ -219,7 +207,7 @@ class POI(QWidget):
             # Copy since we will be overwriting it a bunch
             data = copy.deepcopy(self.diffs[bnum][startPoint:endPoint])
 
-            while len(maxarray) < self.numMax:
+            while len(maxarray) < numMax:
                 # Find maximum location
                 mloc = np.argmax(data)
 
@@ -227,8 +215,8 @@ class POI(QWidget):
                 maxarray.append(mloc + startPoint)
 
                 # set to -INF data within +/- the minspace
-                mstart = max(0, mloc - self.minSpace)
-                mend = min(mloc + self.minSpace, len(data))
+                mstart = max(0, mloc - minSpace)
+                mend = min(mloc + minSpace, len(data))
                 data[mstart:mend] = -np.inf
 
             # print maxarray
@@ -236,6 +224,7 @@ class POI(QWidget):
 
             self.mainTable.setItem(bnum, 0, QTableWidgetItem("%d" % bnum))
             self.mainTable.setCellWidget(bnum, 1, QLineEdit(str(maxarray)))
+        return {"poi":self.poiArray}
 
 class PartitionDisplay(AutoScript, QObject):
 
@@ -276,22 +265,21 @@ class PartitionDisplay(AutoScript, QObject):
 
               {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
                  {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
-                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'set':self.poi.setPointRange},
-                 {'name':'Num POI/Subkey', 'key':'pointskey', 'type':'int', 'limits':(1, 200), 'value':1, 'set':self.poi.setNumMax},
-                 {'name':'Min Spacing between POI', 'key':'minspacing', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'set':self.poi.setMinSpace},
-                 {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
+                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'set':self.updatePOI},
+                 {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'set':self.updatePOI},
+                 {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'set':self.updatePOI},
+                 # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
                  {'name':'Open POI Table', 'type':'action', 'action':self.poidock.show},
               ]},
              ]
 
-        self.poi.setNumMax(1)
-        self.poi.setMinSpace(1)
-
         self.updateScript()
-
-    def setComparisonMode(self, mode):
-
+        
+    def updatePOI(self, ignored=None):
         self.updateScript()
+        # Some sort of race condition - applying Therac-25 type engineering and just
+        # randomly hope this is enough delay
+        QTimer.singleShot(200, lambda:self.runScriptFunction.emit('findPOI'))
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -322,19 +310,18 @@ class PartitionDisplay(AutoScript, QObject):
 
 
     def updateScript(self, ignored=None):
-
+        ##Partitioning & Differences
         try:
             diffMethodStr = self.parent.findParam('diffmode').value().__name__
             partMethodStr = self.parent.findParam('partmode').value().__name__
         except AttributeError as e:
-            diffMethodStr = self.diffObject.mode.__class__.__name__
-            partMethodStr = self.partObject.partMethod.__class__.__name__
+            print "TraceExplorer: Script Not Yet Ready"
+            return
 
         self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate')
         self.importsAppend('from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD')
         
         self.addGroup("displayPartitionStats")
-
         self.addVariable('displayPartitionStats', 'ted', 'self.')
         self.addFunction('displayPartitionStats', 'parent.getProgressIndicator', '', 'progressBar', obj='ted')
         self.addFunction('displayPartitionStats', 'partObject.setPartMethod', partMethodStr, obj='ted')
@@ -347,7 +334,17 @@ class PartitionDisplay(AutoScript, QObject):
                             (diffMethodStr, partMethodStr),
                             'partDiffs', obj='ted')
         self.addFunction('displayPartitionStats', 'displayPartitions', 'differences={"partclass":%s, "diffs":partDiffs}' % partMethodStr, obj='ted')
+        self.addFunction('displayPartitionStats', 'poi.setDifferences', 'partDiffs', obj='ted')
 
+        ##Points of Interest
+        ptrng = self.parent.findParam('poi-pointrng').value()
+        self.addGroup("findPOI")
+        self.addVariable('findPOI', 'ted', 'self.')
+        self.addFunction('findPOI', 'poi.calcPOI', 'numMax=%d, pointRange=(%d, %d), minSpace=%d' % (
+                            self.parent.findParam('poi-nummax').value(),
+                            ptrng[0], ptrng[1],
+                            self.parent.findParam('poi-minspace').value()),
+                          obj='ted')
 
     def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False, traces=None, tRange=(0, -1), progressBar=None):
 
