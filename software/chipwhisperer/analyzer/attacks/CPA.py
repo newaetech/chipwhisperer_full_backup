@@ -74,11 +74,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.console=console
         self.showScriptParameter=showScriptParameter
         super(CPA, self).__init__(parent)
-        
-    def debug(self, sr):
-        if self.console is not None:
-            self.console.append(sr)
-        
+
     def setupParameters(self):      
         cpaalgos = {'Progressive':CPAProgressive,
                     'Simple':CPASimpleLoop}

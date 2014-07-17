@@ -63,11 +63,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.showScriptParameter=showScriptParameter
         self.trace = None
         super(Profiling, self).__init__(parent)
-        
-    def debug(self, sr):
-        if self.console is not None:
-            self.console.append(sr)
-        
+
     def setupParameters(self):      
         profalgos = {'Basic':ProfilingTemplate}
 
@@ -122,7 +118,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
-        self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self)
+        self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self, console=self.console)
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceManagerChanged.connect(self.attack.setTraceManager)
 

@@ -46,11 +46,13 @@ class AttackBaseClass(QObject):
     #double-processing data
     attackDone = Signal()
     
-    def __init__(self, parent=None, log=None):
+    def __init__(self, parent=None, console=None):
         super(AttackBaseClass, self).__init__(parent)
         self.parent = parent
-        self.log=log
+        if console: self.console = console
 
+    def log(self, sr, level=None):
+        if hasattr(self, 'console') and self.console: self.console.append(sr)
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""

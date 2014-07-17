@@ -430,7 +430,17 @@ class ChipWhispererAnalyzer(MainChip):
 
     def runScriptFunction(self, funcname):
         mod = self.setupScriptModule()
-        eval('mod.%s()' % funcname)
+        try:
+            eval('mod.%s()' % funcname)
+        except AttributeError as e:
+            # TODO fix this hack - this function will not exist before the
+            # traceexplorer dialog has been opended, but will still be
+            # called once
+            if funcname == 'TraceExplorerDialog_PartitionDisplay_findPOI':
+                pass
+            else:
+                # Continue with exception
+                raise
 
     def doAttack(self):
         #Check if traces enabled

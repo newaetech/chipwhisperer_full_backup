@@ -200,6 +200,9 @@ class AutoScriptBase(object):
         self.showScriptParameter = showScriptParameter
         self._project = None
 
+    def log(self, sr, level=None):
+        if hasattr(self, 'console') and self.console: self.console.append(sr)
+
     def initProject(self):
         pass
 

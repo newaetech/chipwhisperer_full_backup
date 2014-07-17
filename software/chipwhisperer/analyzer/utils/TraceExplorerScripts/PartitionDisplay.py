@@ -280,7 +280,7 @@ class PartitionDisplay(AutoScript, QObject):
         self.updateScript()
         # Some sort of race condition - applying Therac-25 type engineering and just
         # randomly hope this is enough delay
-        QTimer.singleShot(200, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
+        QTimer.singleShot(250, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -316,7 +316,6 @@ class PartitionDisplay(AutoScript, QObject):
             diffMethodStr = self.parent.findParam('diffmode').value().__name__
             partMethodStr = self.parent.findParam('partmode').value().__name__
         except AttributeError as e:
-            print "TraceExplorer: Script Not Yet Ready"
             return
 
         self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate')
@@ -368,7 +367,7 @@ class PartitionDisplay(AutoScript, QObject):
                 desiredsettings = {}
                 desiredsettings["tracestart"] = tRange[0]
                 desiredsettings["traceend"] = tRange[1]
-                desiredsettings["partitiontype"] = self.partObject.partMethod.moduleName
+                desiredsettings["partitiontype"] = self.partObject.partMethod.__class__.__name__
                 if self.parent.project().checkDataConfig(cfg, desiredsettings):
                     foundsecs.append(cfg)
         else:
@@ -455,7 +454,7 @@ class PartitionDisplay(AutoScript, QObject):
                 cfgsec = self.parent.project().addDataConfig(sectionName="Trace Statistics", subsectionName="Total Trace Statistics")
                 cfgsec["tracestart"] = tRange[0]
                 cfgsec["traceend"] = tRange[1]
-                cfgsec["partitiontype"] = self.partObject.partMethod.moduleName
+                cfgsec["partitiontype"] = self.partObject.partMethod.__class__.__name__
                 fname = self.parent.project().getDataFilepath('tracestats-%s-%d-%s.npz' % (cfgsec["partitiontype"], tRange[0], tRange[1]), 'analysis')
 
                 # Save mean/variance for trace
@@ -487,7 +486,7 @@ class PartitionDisplay(AutoScript, QObject):
                 desiredsettings = {}
                 desiredsettings["tracestart"] = tRange[0]
                 desiredsettings["traceend"] = tRange[1]
-                desiredsettings["partitiontype"] = self.partObject.partMethod.moduleName
+                desiredsettings["partitiontype"] = self.partObject.partMethod.__class__.__name__
                 desiredsettings["comparetype"] = self.diffObject.mode.moduleName
                 if self.parent.project().checkDataConfig(cfg, desiredsettings):
                     foundsecs.append(cfg)
@@ -508,7 +507,7 @@ class PartitionDisplay(AutoScript, QObject):
                 cfgsec = self.parent.project().addDataConfig(sectionName="Trace Statistics", subsectionName="Partition Differences")
                 cfgsec["tracestart"] = tRange[0]
                 cfgsec["traceend"] = tRange[1]
-                cfgsec["partitiontype"] = self.partObject.partMethod.moduleName
+                cfgsec["partitiontype"] = self.partObject.partMethod.__class__.__name__
                 cfgsec["comparetype"] = self.diffObject.mode.moduleName
                 fname = self.parent.project().getDataFilepath('partdiffs-%s-%s-%d-%s.npy' % (cfgsec["partitiontype"], cfgsec["comparetype"], tRange[0], tRange[1]), 'analysis')
                 np.save(fname["abs"], SADList)

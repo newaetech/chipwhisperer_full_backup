@@ -43,11 +43,10 @@ from pyqtgraph.parametertree import Parameter
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 import chipwhisperer.common.aes_tables as aes_tables
 
-class PartitionHWIntermediate(object):
+class PartitionHDLastRound(object):
 
-    sectionName = "Partition Based on HW of Intermediate"
-    moduleName = "PartitionHWIntermediate"
-    partitionType = "HW Intermediate"
+    sectionName = "Partition Based on HD of Last Round"
+    partitionType = "HD AES Last-Round"
 
     def getNumPartitions(self):
         return 9
@@ -62,37 +61,27 @@ class PartitionHWIntermediate(object):
 
         return guess
 
-class PartitionDialog(QDialog):
-    """Open dialog to run partioning"""
-    
-    def __init__(self, parent, partInst):
-        super(PartitionDialog, self).__init__(parent)
-        
-        self.part = partInst
+class PartitionHWIntermediate(object):
 
-        self.setWindowTitle("Partition Traces")
-        self.setObjectName("Partition Traces")
-        
-        layoutPart = QHBoxLayout()
-        
-        pbStart = QPushButton("Generate Partitions")
-        pbStart.clicked.connect(self.runGenerate)
-        layoutPart.addWidget(pbStart)
-        self.setLayout(layoutPart)
-        
-    def runGenerate(self):
-        pb = QProgressBar(self)
+    sectionName = "Partition Based on HW of Intermediate"
+    partitionType = "HW AES Intermediate"
 
-        # TODO: Partition generation doesn't work
-        pb.setMinimum(0)
-        pb.setMinimum(self.part.trace.numTrace())
+    def getNumPartitions(self):
+        return 9
 
-        self.part.runPartitions(report=pb.setValue)
+    def getPartitionNum(self, trace, tnum):
+        key = trace.getKnownKey(tnum)
+        text = trace.getTextin(tnum)
+
+        guess = [0] * 16
+        for i in range(0, 16):
+            guess[i] = getHW(aes_tables.sbox[text[i] ^ key[i]])
+
+        return guess
 
 class PartitionEncKey(object):
 
     sectionName = "Partition Based on Key Value"
-    moduleName = "PartitionKeyValue"
     partitionType = "Key Value"
 
     def getNumPartitions(self):
@@ -105,7 +94,6 @@ class PartitionEncKey(object):
 class PartitionRandvsFixed(object):
 
     sectionName = "Partition Based on Rand vs Fixed "
-    moduleName = "PartitionRandFixed"
     partitionType = "Rand vs Fixed"
 
     def getNumPartitions(self):
@@ -117,7 +105,6 @@ class PartitionRandvsFixed(object):
 class PartitionRandDebug(object):
 
     sectionName = "Partition Randomly (debug)"
-    moduleName = "PartitionRandDebug"
     partitionType = "Randomly (debug)"
 
     numRand = 2
@@ -127,6 +114,33 @@ class PartitionRandDebug(object):
 
     def getPartitionNum(self, trace, tnum):
         return [random.randint(0, self.numRand - 1)]
+
+class PartitionDialog(QDialog):
+    """Open dialog to run partioning"""
+
+    def __init__(self, parent, partInst):
+        super(PartitionDialog, self).__init__(parent)
+
+        self.part = partInst
+
+        self.setWindowTitle("Partition Traces")
+        self.setObjectName("Partition Traces")
+
+        layoutPart = QHBoxLayout()
+
+        pbStart = QPushButton("Generate Partitions")
+        pbStart.clicked.connect(self.runGenerate)
+        layoutPart.addWidget(pbStart)
+        self.setLayout(layoutPart)
+
+    def runGenerate(self):
+        pb = QProgressBar(self)
+
+        # TODO: Partition generation doesn't work
+        pb.setMinimum(0)
+        pb.setMinimum(self.part.trace.numTrace())
+
+        self.part.runPartitions(report=pb.setValue)
 
 class Partition(QObject):
     """
@@ -175,7 +189,7 @@ class Partition(QObject):
         self.partMethodClass = method
         self.partMethod = method()
         self.attrDictPartition["sectionName"] = self.partMethod.sectionName
-        self.attrDictPartition["moduleName"] = self.partMethod.moduleName
+        self.attrDictPartition["moduleName"] = self.partMethod.__class__.__name__
 
     def paramList(self):
         """Returns the parameter list"""
@@ -225,7 +239,7 @@ class Partition(QObject):
             tmapend = t.mappedRange[1]
             tmapend = min(tmapend, end)
 
-            partdata = t.loadAuxiliaryData(self.partMethod.moduleName)
+            partdata = t.loadAuxiliaryData(self.partMethod.__class__.__name__)
 
             # Merge tables now - better way to do this?
             for j in range(0, len(self.partMethod.getPartitionNum(t, 0))):
