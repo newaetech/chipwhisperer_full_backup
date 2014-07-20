@@ -54,6 +54,7 @@ class DecimationFixed(PreprocessingBase):
 
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
+                         # {'name':'Decimation Type', 'values':''}
                       ]
         
         self.params = Parameter.create(name='Fixed Decimation', type='group', children=resultsParams)
@@ -74,10 +75,13 @@ class DecimationFixed(PreprocessingBase):
             if trace is None:
                 return None
             
-            
-            outtrace = np.zeros(len(trace))
-
             decfactor = self._decfactor
+
+            # outtrace = np.zeros(len(trace))
+
+            outtrace = np.zeros(len(range(0, len(trace), decfactor)))
+
+
             for idx, val in enumerate(range(0, len(trace), decfactor)):
                 outtrace[idx] = trace[val]
 
