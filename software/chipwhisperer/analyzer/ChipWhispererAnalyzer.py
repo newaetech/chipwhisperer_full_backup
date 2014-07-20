@@ -106,6 +106,8 @@ class CodeEditor(QTextEdit):
         font.setFixedPitch(True)
         font.setPointSize(10)
 
+        self.setFont(font)
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Tab:
             self.insertPlainText("    ")
