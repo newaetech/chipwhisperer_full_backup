@@ -133,9 +133,10 @@ class MainChip(QMainWindow):
         self.name = name        
         self.filename = None
         self.dirty = True
+        self.projEditWidget = ProjectTextEditor(self)
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        self.lastMenuActionSection = None
+        self.lastMenuActionSection = None        
         self.initUI()
         self.paramTrees = []
         self.originalStdout = None
@@ -356,8 +357,7 @@ class MainChip(QMainWindow):
         self.setWindowTitle(self.name)
         self.setWindowIcon(QIcon(":/images/cwicon.png"))
         
-        #Project editor dock
-        self.projEditWidget = ProjectTextEditor(self)
+        #Project editor dock        
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.RightDockWidgetArea, visible=False, addToWindows=False)
         
         self.recentFileActs = []
@@ -466,7 +466,9 @@ class MainChip(QMainWindow):
 
     def setProject(self, proj):
         self._project = proj
+        self.projEditWidget.setFilename(self._project.filename)
         self.projectChanged.emit(self._project)
+        self._project.filenameChanged.connect(self.projEditWidget.setFilename)
                 
     def openRecentFile(self):
         action = self.sender()

@@ -80,6 +80,9 @@ def convert_to_str(data):
         return str(data)
 
 class ProjectFormat(QObject):
+
+    filenameChanged = Signal(str)
+
     def __init__(self):
         super(ProjectFormat, self).__init__()
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
@@ -130,6 +133,7 @@ class ProjectFormat(QObject):
         self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
         self.checkDataDirectory()
         self.dataDirIsDefault = False
+        self.filenameChanged.emit(self.filename)
         
     def checkDataDirectory(self):
         # Check if data-directory exists?
@@ -149,10 +153,6 @@ class ProjectFormat(QObject):
             self.setFilename(f)
 
         self.config = ConfigObj(self.filename)
-
-        print self.filename
-            
-
 
         #TODO: readings????
         
