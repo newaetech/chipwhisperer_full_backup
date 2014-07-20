@@ -169,7 +169,7 @@ class ChipWhispererAnalyzer(MainChip):
         for d in self.results.dockList():
             self.tabifyDockWidget(self.waveformDock, d)
 
-        self.newProject()   
+        self.newProject()
         
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
@@ -346,7 +346,7 @@ class ChipWhispererAnalyzer(MainChip):
         if hasattr(self, "traces") and self.traces:
             self.attack.setTraceManager(self.traces)
 
-        self.attack.setProject(self.proj)
+        self.attack.setProject(self.project())
         self.attack.scriptsUpdated.connect(self.reloadScripts)
         self.attack.runScriptFunction.connect(self.runScriptFunction)
         self.reloadScripts()
@@ -536,47 +536,43 @@ class ChipWhispererAnalyzer(MainChip):
         return p        
     
     def openProject(self, fname):
-        self.proj = ProjectFormat()
-        self.proj.setProgramName("ChipWhisperer-Analyzer")
-        self.proj.setProgramVersion("2.00")
-        self.proj.setTraceManager(self.manageTraces)  
+        self.setProject(ProjectFormat())
+        self.project().setProgramName("ChipWhisperer-Analyzer")
+        self.project().setProgramVersion("2.00")
+        self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(fname)
-        self.proj.setFilename(fname)
-        self.proj.load()
+        self.project().setFilename(fname)
+        self.project().load()
         
         #Open project file & read in everything
-        self.proj.traceManager.loadProject(fname)
+        self.project().traceManager.loadProject(fname)
 
         # Ensure attack knows about this project
-        self.attack.setProject(self.proj)
-        self.traceExplorerDialog.setProject(self.proj)
-
-
-    def project(self):
-        return self.proj
+        self.attack.setProject(self.project())
+        self.traceExplorerDialog.setProject(self.project())
 
     def newProject(self):        
         #TODO: Move this to MainChip
-        self.proj = ProjectFormat()
-        self.proj.setProgramName("ChipWhisperer-Analyzer")
-        self.proj.setProgramVersion("2.00")
-        self.proj.addParamTree(self)    
-        self.proj.setTraceManager(self.manageTraces)  
+        self.setProject(ProjectFormat())
+        self.project().setProgramName("ChipWhisperer-Analyzer")
+        self.project().setProgramVersion("2.00")
+        self.project().addParamTree(self)
+        self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
-        self.traceExplorerDialog.setProject(self.proj)
+        self.projectChanged.connect(self.traceExplorerDialog.setProject)
   
     def saveProject(self):
         #TODO: Move to MainChip
-        if self.proj.hasFilename() == False:
+        if self.project().hasFilename() == False:
             fname, _ = QFileDialog.getSaveFileName(self, 'Save New File','.','*.cwp')
             
             if fname is None:
                 return
             
-            self.proj.setFilename(fname)
+            self.project().setFilename(fname)
             self.setCurrentFile(fname)
             
-        self.proj.save()
+        self.project().save()
         self.dirty = False
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")

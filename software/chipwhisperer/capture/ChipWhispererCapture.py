@@ -755,7 +755,7 @@ class ChipWhispererCapture(MainChip):
             except AttributeError:
                 vw.addMessage("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae")
 
-        if self.proj.dataDirIsDefault:
+        if self.project().dataDirIsDefault:
             vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
         tracesPerRun = int(self.numTraces / self.numSegments)
@@ -811,7 +811,7 @@ class ChipWhispererCapture(MainChip):
             # Load trace writer information
             if writer:
                 writer.config.setAttr("prefix", prefix)
-                writer.config.setConfigFilename(self.proj.datadirectory + "traces/config_" + prefix + ".cfg")
+                writer.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
                 writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
                 writer.setTraceHint(tracesPerRun)
 
@@ -887,26 +887,26 @@ class ChipWhispererCapture(MainChip):
             self.settingsAuxDock.setVisible(False)
   
     def newProject(self):        
-        self.proj = ProjectFormat()
-        self.proj.setProgramName("ChipWhisperer-Capture")
-        self.proj.setProgramVersion("2.00")
-        self.proj.addParamTree(self)
-        self.proj.addParamTree(self.scope)
-        self.proj.addParamTree(self.target)      
-        self.proj.setTraceManager(self.manageTraces)  
+        self.setProject(ProjectFormat())
+        self.project().setProgramName("ChipWhisperer-Capture")
+        self.project().setProgramVersion("2.00")
+        self.project().addParamTree(self)
+        self.project().addParamTree(self.scope)
+        self.project().addParamTree(self.target)
+        self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
   
     def saveProject(self):
-        if self.proj.hasFilename() == False:
+        if self.project().hasFilename() == False:
             fname, _ = QFileDialog.getSaveFileName(self, 'Save New File','.','*.cwp')
             
             if fname is None:
                 return
             
-            self.proj.setFilename(fname)
+            self.project().setFilename(fname)
             self.setCurrentFile(fname)
             
-        self.proj.save()
+        self.project().save()
         self.dirty = False
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")

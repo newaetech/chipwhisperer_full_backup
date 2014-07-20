@@ -180,7 +180,7 @@ class POI(QWidget):
 
     def savePOI(self):
         poiDict = {"poi":self.poiArray}
-        self.parent.parent.parent.proj.addDataConfig(poiDict, "Template Data", "Points of Interest")
+        self.parent.parent.parent.project().addDataConfig(poiDict, "Template Data", "Points of Interest")
 
     def calcPOI(self, numMax, pointRange, minSpace, diffs=None):
         if diffs:

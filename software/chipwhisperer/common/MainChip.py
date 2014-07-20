@@ -45,6 +45,7 @@ from GraphWidget import GraphWidget
 import PythonConsole
 
 from traces.TraceManager import TraceManagerDialog
+from chipwhisperer.common.project_text_editor import ProjectTextEditor
 
 class ModuleListDialog(QDialog):
     def __init__(self, lmFunc):
@@ -122,6 +123,8 @@ class MainChip(QMainWindow):
     saveFile = Signal()
     newFile = Signal()
     
+    projectChanged = Signal(object)
+
     
     def __init__(self, name="Demo"):
         super(MainChip, self).__init__()
@@ -132,8 +135,8 @@ class MainChip(QMainWindow):
         self.dirty = True
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        self.initUI()
         self.lastMenuActionSection = None
+        self.initUI()
         self.paramTrees = []
         self.originalStdout = None
         
@@ -176,7 +179,9 @@ class MainChip(QMainWindow):
         self.lastMenuActionSection = section                
         self.windowMenu.addAction(action)
         
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea |Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea, visible=True):
+    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea,
+                allowedAreas=Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea,
+                visible=True, addToWindows=True):
         """Add a dockwidget to the main window, which also adds it to the 'Windows' menu"""
         #Configure dock
         dock = QDockWidget(name)
@@ -189,8 +194,9 @@ class MainChip(QMainWindow):
             dock.toggleViewAction()
         
         #Add to "Windows" menu
-        self.addWindowMenuAction(dock.toggleViewAction(), None)
-        self.enforceMenuOrder()
+        if addToWindows:
+            self.addWindowMenuAction(dock.toggleViewAction(), None)
+            self.enforceMenuOrder()
         
         return dock
     
@@ -321,6 +327,8 @@ class MainChip(QMainWindow):
         self.projectMenu = self.menuBar().addMenu("&Project")
         self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.manageTraces.show)
         self.projectMenu.addAction(self.traceManageAct)
+        self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit Project File', triggered=self.projEditDock.show)
+        self.projectMenu.addAction(self.showProjFileAct)
             
         self.toolMenu= self.menuBar().addMenu("&Tools")
             
@@ -347,6 +355,10 @@ class MainChip(QMainWindow):
         self.statusBar()
         self.setWindowTitle(self.name)
         self.setWindowIcon(QIcon(":/images/cwicon.png"))
+        
+        #Project editor dock
+        self.projEditWidget = ProjectTextEditor(self)
+        self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.RightDockWidgetArea, visible=False, addToWindows=False)
         
         self.recentFileActs = []
         self.createFileActions()
@@ -448,6 +460,13 @@ class MainChip(QMainWindow):
 
     def _saveProject(self):
         self.saveFile.emit()
+        
+    def project(self):
+        return self._project
+
+    def setProject(self, proj):
+        self._project = proj
+        self.projectChanged.emit(self._project)
                 
     def openRecentFile(self):
         action = self.sender()

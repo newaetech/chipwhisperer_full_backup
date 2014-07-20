@@ -90,7 +90,7 @@ class ProjectFormat(QObject):
         self.config = ConfigObj()
         self.traceManager = None
         self.checkDataDirectory()
-        
+
         self.dataDirIsDefault = True
 
         
@@ -99,7 +99,7 @@ class ProjectFormat(QObject):
             return False
         else:
             return True
-    
+
     def setTraceManager(self, manager):
         self.traceManager = manager
     
@@ -149,7 +149,11 @@ class ProjectFormat(QObject):
             self.setFilename(f)
 
         self.config = ConfigObj(self.filename)
+
+        print self.filename
             
+
+
         #TODO: readings????
         
     def saveparam(self, p):
@@ -245,12 +249,11 @@ class ProjectFormat(QObject):
         self.config[pn] = {}
         self.config[pn]['General Settings'] =  self.settingsDict
                 
-        for p in self.paramListList:
-            if p is not None:
-                for a in p.paramList():
-                    if a is not None:
-                        self.saveparam( a.saveState() )
-        
+        # for p in self.paramListList:
+        #    if p is not None:
+        #        for a in p.paramList():
+        #            if a is not None:
+        #                self.saveparam( a.saveState() )
                 
-        self.config.write()        
+        self.config.write()
     
