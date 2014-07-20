@@ -48,11 +48,15 @@ class AttackBaseClass(QObject):
     
     def __init__(self, parent=None, console=None):
         super(AttackBaseClass, self).__init__(parent)
-        self.parent = parent
+        self._parent = parent
         if console: self.console = console
 
     def log(self, sr, level=None):
-        if hasattr(self, 'console') and self.console: self.console.append(sr)
+        if hasattr(self, 'console') and self.console:
+            self.console.append(sr)
+        else:
+            print sr
+
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""

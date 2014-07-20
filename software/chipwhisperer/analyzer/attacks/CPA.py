@@ -214,10 +214,10 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             try:
                 self.attack.addTraces(data, textins, textouts, progress)
             except KeyboardInterrupt:
-                self.debug("Attack ABORTED... stopping")
+                self.log("Attack ABORTED... stopping")
         
         end = datetime.now()
-        self.debug("Attack Time: %s"%str(end-start)) 
+        self.log("Attack Time: %s" % str(end - start))
         self.attackDone.emit()
         
         

@@ -55,7 +55,7 @@ class AttackGenericParameters(AutoScript, QObject):
     projectChanged = Signal(QObject)
     settingsChanged = Signal(QObject)
         
-    def __init__(self, MainWindow=None, log=None, showScriptParameter=None):
+    def __init__(self, MainWindow=None, console=None, showScriptParameter=None):
         super(AttackGenericParameters, self).__init__(MainWindow)
         self._tmanager = None
         self._project = None
@@ -72,7 +72,7 @@ class AttackGenericParameters(AutoScript, QObject):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.log=log      
+        self.console = console
         #if showScriptParameter is not None:
         #    self.showScriptParameter = showScriptParameter
                 
