@@ -80,88 +80,12 @@ from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 import chipwhisperer.analyzer.preprocessing.Preprocessing as Preprocessing
 import chipwhisperer.common.ParameterTypesCustom
 
-#TEMP
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 
-
-# For MainScriptEditor
-import imp
-import uuid
-import tempfile
-
-class CodeEditor(QTextEdit):
-
-    runFunction = Signal(str)
-    assignFunction = Signal(str)
-
-    def __init__(self, parent=None):
-        super(CodeEditor, self).__init__(parent)
-        
-        font = QFont()
-        font.setFamily("Courier")
-        font.setStyleHint(QFont.Monospace)
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-
-        self.setFont(font)
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Tab:
-            self.insertPlainText("    ")
-        else:
-            return QTextEdit.keyPressEvent(self, event)
-
-    def contextMenuEvent(self, event):
-        menu = self.createStandardContextMenu()
-        menu.insertAction(menu.actions()[0], QAction("Run Function", self, triggered=self.rFuncAct))
-        # menu.insertAction(menu.actions()[1], QAction("Assign to Toolbar", self, triggered=self.assFuncAct))
-        menu.insertSeparator(menu.actions()[1])
-        menu.exec_(event.globalPos())
-
-    def rFuncAct(self):
-        self.runFunction.emit(self.textCursor().selectedText())
-
-    def assFuncAct(self):
-        self.assignFunction.emit(self.textCursor().selectedText())
-
-class MainScriptEditor(QWidget):
-    def __init__(self, parent):
-        super(MainScriptEditor, self).__init__(parent)
-
-        self.editWindow = CodeEditor()
-
-        mainLayout = QHBoxLayout()
-        mainLayout.addWidget(self.editWindow)
-
-        self.setLayout(mainLayout)
-        self.lastLevel = 0
-        
-        self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
-        self.tfile.close()
-        # print self.tfile.name
-
-    def append(self, statement, level=2):
-        if self.lastLevel > level:
-            self.editWindow.append("")
-        self.lastLevel = level
-        self.editWindow.append(" "*(level * 4) + statement)
-        
-    def loadModule(self):
-        # Save text editor somewhere
-        f = open(self.tfile.name, 'w')
-        filecontents = self.editWindow.toPlainText()
-        f.write(filecontents)
-        f.close()
-
-        modulename = str(uuid.uuid1())
-        self.scriptModule = imp.load_source(modulename, self.tfile.name)
-
-        # print self.scriptModule
-        return self.scriptModule
-
+from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
