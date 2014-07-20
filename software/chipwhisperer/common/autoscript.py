@@ -177,8 +177,10 @@ class AutoScript(QObject):
                     obj = k["obj"].rstrip('.')
                 # print k["args"]
                 self.addFunction(key, k["objname"], k["args"], k["varassignment"], obj)
-            if k["type"] == "variable":
+            elif k["type"] == "variable":
                 self.addVariable(key, k["objname"], k["values"])
+            else:
+                raise ValueError("Invalid type: %s" % k["type"])
         self.updateDelayTimer.start()
 
     def delFunction(self, key, funcstr):

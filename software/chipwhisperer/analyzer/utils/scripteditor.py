@@ -42,14 +42,15 @@ class CodeEditor(QTextEdit):
     def __init__(self, parent=None):
         super(CodeEditor, self).__init__(parent)
 
+        # Use fixed-space font
         font = QFont()
         font.setFamily("Courier")
         font.setStyleHint(QFont.Monospace)
         font.setFixedPitch(True)
         font.setPointSize(10)
-
         self.setFont(font)
 
+        # Setup code highlighter
         self.highlighter = PythonHighlighter(self.document())
 
     def keyPressEvent(self, event):
@@ -86,6 +87,14 @@ class MainScriptEditor(QWidget):
         self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
         self.tfile.close()
         # print self.tfile.name
+        
+        self.saveSliderPosition()
+        
+    def saveSliderPosition(self):
+        self._sliderPosition = self.editWindow.verticalScrollBar().value()
+        
+    def restoreSliderPosition(self):
+        self.editWindow.verticalScrollBar().setValue(self._sliderPosition)
 
     def append(self, statement, level=2):
         if self.lastLevel > level:

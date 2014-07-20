@@ -180,7 +180,7 @@ class ProfilingTemplate(AutoScript, QObject):
         super(ProfilingTemplate, self).__init__()
         if console:
             self.console = console
-        self.parent = parent
+        self.setParent(parent)
         self._tmanager = None
         self._project = None
 
@@ -223,10 +223,8 @@ class ProfilingTemplate(AutoScript, QObject):
         
     def updateScript(self, ignored=None):
         self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
-        try:
-            ted = self.parent.parent.utilList[0].exampleScripts[0]
-        except AttributeError:
-            return
+
+        ted = self.parent().parent().utilList[0].exampleScripts[0]
 
         self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
         self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
@@ -278,7 +276,7 @@ class ProfilingTemplate(AutoScript, QObject):
 
     def project(self):
         if self._project is None:
-            self.setProject(self.parent.project())
+            self.setProject(self.parent().project())
         return self._project
 
     def saveTemplatesToProject(self, trange, templatedata):
@@ -300,11 +298,11 @@ class ProfilingTemplate(AutoScript, QObject):
 
     def loadTemplatesFromProject(self):
         # Load Template
-        foundsecs = self.parent.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
+        foundsecs = self.parent().project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
         templates = []
 
         for f in foundsecs:
-            fname = self.parent.project().convertDataFilepathAbs(f["filename"])
+            fname = self.parent().project().convertDataFilepathAbs(f["filename"])
             templates.append(np.load(fname))
 
         return templates

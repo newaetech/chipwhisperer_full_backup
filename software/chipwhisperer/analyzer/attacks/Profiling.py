@@ -100,7 +100,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
         # self.addFunction("init", "setKeyround", "0")
 
-        # Add attack 'other' functions
+        # Add attack 'other' functions such as template generators etc
         if hasattr(self.attack, '_smartstatements'):
             for k in self.attack._smartstatements:
                 self.mergeGroups(k, self.attack, prefix='attack')
@@ -108,14 +108,8 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-
-
         self.addFunction("init", "setTraceManager", "userScript.traceManager()")
         self.addFunction("init", "setProject", "userScript.project()")
-
-        # Add extra functions (generation, etc)
-
-
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self, console=self.console)

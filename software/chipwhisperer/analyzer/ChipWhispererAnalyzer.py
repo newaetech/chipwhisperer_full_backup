@@ -228,6 +228,7 @@ class ChipWhispererAnalyzer(MainChip):
 
 
     def reloadScripts(self):
+        self.mse.saveSliderPosition()
         self.mse.editWindow.clear()
 
         self.mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
@@ -323,6 +324,8 @@ class ChipWhispererAnalyzer(MainChip):
                         self.mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
                         for s in statements:
                             self.mse.append(s.replace("userScript.", "self."))
+
+        self.mse.restoreSliderPosition()
 
     def reloadParamListPreprocessing(self, list=None):        
         plist = []
@@ -461,7 +464,7 @@ class ChipWhispererAnalyzer(MainChip):
             if self.plotInputEach:
                 QCoreApplication.processEvents()
 
-        print ttotal
+        # print ttotal
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         """When traces is loaded, Tell everything default point/trace range"""
