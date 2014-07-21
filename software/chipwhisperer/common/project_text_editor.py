@@ -25,9 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import imp
-import uuid
-import tempfile
+import os
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -63,22 +61,103 @@ class ProjectEditor(QTextEdit):
 
 
 class ProjectTextEditor(QWidget):
+
+    fileChanged = Signal()
+
+
     def __init__(self, parent=None):
         super(ProjectTextEditor, self).__init__(parent)
 
+        self._status = None
+        self._project = None
+
         self.editWindow = ProjectEditor()
 
-        mainLayout = QHBoxLayout()
+        mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.editWindow)
+
+        pbSaveFile = QPushButton("Save Editor to Disk")
+        pbSaveFile.clicked.connect(self.writeToDisk)
+        pbReloadFile = QPushButton("Reload Editor from Disk")
+        pbReloadFile.clicked.connect(self.readFromDisk)
+
+        self.statusTextbox = QLineEdit("")
+        statusLayout = QHBoxLayout()
+        statusLayout.addWidget(QLabel("Status:"))
+        statusLayout.addWidget(self.statusTextbox)
+        statusLayout.addWidget(pbSaveFile)
+        statusLayout.addWidget(pbReloadFile)
+        mainLayout.addLayout(statusLayout)
+
+        self.fnameTextBox = QLineEdit("")
+        self.fnameTextBox.setReadOnly(True)
+        barLayout = QHBoxLayout()
+        barLayout.addWidget(QLabel("Filename:"))
+        barLayout.addWidget(self.fnameTextBox)
+        # barLayout.addStretch()
+
+        pbOpenFolder = QPushButton("Open Folder Location")
+        pbOpenFolder.clicked.connect(self.openFolderProject)
+        # pbOpen
+        barLayout.addWidget(pbOpenFolder)
+        # barLayout.addStretch()
+
+        mainLayout.addLayout(barLayout)
 
         self.setLayout(mainLayout)
         self.lastLevel = 0
 
         self.saveSliderPosition()
+        self.editWindow.textChanged.connect(lambda:self.setStatus("editchange"))
+        
+    def setProject(self, proj):
+        self._project = proj
+
+    def project(self):
+        return self._project
+
+    def projectChangedGUI(self, keychanged=None):
+        self.setStatus("guichange")
+
+    def setStatus(self, status):
+        if self._status == status:
+            return
+
+        self._status = status
+
+        p = self.statusTextbox.palette()
+
+        if status == "nofile":
+            p.setColor(QPalette.Base, QColor("yellow"))
+            self.statusTextbox.setText("No File Loaded")
+        elif status == "sync":
+            p.setColor(QPalette.Base, QColor(0, 255, 0))
+            self.statusTextbox.setText("Text Editor <--> GUI Sync'd")
+        elif status == "diskchange":
+            p.setColor(QPalette.Base, QColor(255, 0, 0))
+            self.statusTextbox.setText("Project file changed on disk, SYNC LOST")
+        elif status == "guichange":
+            p.setColor(QPalette.Base, QColor(255, 0, 0))
+            self.statusTextbox.setText("Project file changed by GUI, SYNC LOST")
+        elif status == "editchange":
+            p.setColor(QPalette.Base, QColor(255, 0, 0))
+            self.statusTextbox.setText("Project file changed by Text Editor, SYNC LOST")
+        else:
+            raise AttributeError("Invalid option: %s", status)
+
+        self.statusTextbox.setPalette(p)
 
     def setFilename(self, fname):
+        fname = os.path.normpath(fname)
         self._filename = fname
+        self.fnameTextBox.setText(fname)
         self.readFromDisk()
+
+    def checkGUIChanged(self):
+        if self.project().diffWidget.checkDiff() == False:
+            self.setStatus("sync")
+        else:
+            self.setStatus("guichange")
 
     def readFromDisk(self):
         self.editWindow.clear()
@@ -88,11 +167,22 @@ class ProjectTextEditor(QWidget):
                     self.editWindow.moveCursor(QTextCursor.End)
                     self.editWindow.insertPlainText(line)
                     self.editWindow.moveCursor(QTextCursor.End)
+            self.checkGUIChanged()
         except IOError as e:
             self.editWindow.append("Failed to Open File, Exception:\n%s" % e)
+            self.setStatus("nofile")
 
     def writeToDisk(self):
-        pass
+        f = open(self._filename, 'w')
+        filecontents = self.editWindow.toPlainText()
+        f.write(filecontents)
+        f.close()
+
+        self.fileChanged.emit()
+        self.checkGUIChanged()
+
+    def openFolderProject(self):
+        QDesktopServices.openUrl(QUrl("file:///%s" % os.path.dirname(self._filename), QUrl.TolerantMode))
 
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()

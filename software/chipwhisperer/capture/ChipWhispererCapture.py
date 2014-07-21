@@ -887,7 +887,7 @@ class ChipWhispererCapture(MainChip):
             self.settingsAuxDock.setVisible(False)
   
     def newProject(self):        
-        self.setProject(ProjectFormat())
+        self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Capture")
         self.project().setProgramVersion("2.00")
         self.project().addParamTree(self)

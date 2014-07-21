@@ -536,7 +536,7 @@ class ChipWhispererAnalyzer(MainChip):
         return p        
     
     def openProject(self, fname):
-        self.setProject(ProjectFormat())
+        self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Analyzer")
         self.project().setProgramVersion("2.00")
         self.project().setTraceManager(self.manageTraces)
@@ -553,7 +553,7 @@ class ChipWhispererAnalyzer(MainChip):
 
     def newProject(self):        
         #TODO: Move this to MainChip
-        self.setProject(ProjectFormat())
+        self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Analyzer")
         self.project().setProgramVersion("2.00")
         self.project().addParamTree(self)

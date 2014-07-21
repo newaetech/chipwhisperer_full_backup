@@ -47,6 +47,57 @@ import PythonConsole
 from traces.TraceManager import TraceManagerDialog
 from chipwhisperer.common.project_text_editor import ProjectTextEditor
 
+class saveProjectDialog(QDialog):
+    def __init__(self, parent=None):
+        super(saveProjectDialog, self).__init__(parent)
+        self.setModal(True)
+        layout = QVBoxLayout()
+        layout.addWidget(QLabel("Save unsaved changes?"))
+        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
+        layout.addWidget(self.buttonBox)
+               
+        self.setWindowTitle("Unsaved Changes Detected")
+        self._lastpushed = QDialogButtonBox.RejectRole
+
+        if self.parent() and self.parent().project():
+                detailedWidget = self.parent().project().diffWidget
+
+                if detailedWidget.checkDiff(updateGUI=True) == False:
+                    self._lastpushed = QDialogButtonBox.NoRole
+                    QTimer.singleShot(0, self.reject)
+                    return
+
+                detailedLayout = QVBoxLayout()
+                detailedLayout.addWidget(detailedWidget)
+                detailedHidableWidget = QWidget()
+                detailedHidableWidget.setLayout(detailedLayout)
+
+                detailedHidableWidget.hide()
+            
+                pbShowDetails = QPushButton("Show Details")
+                pbShowDetails.clicked.connect(detailedHidableWidget.show)
+                detailpblayout = QHBoxLayout()
+                detailpblayout.addWidget(pbShowDetails)
+                detailpblayout.addStretch()
+                layout.addLayout(detailpblayout)
+                layout.addWidget(detailedHidableWidget)
+        
+        self.setLayout(layout)
+
+        self.buttonBox.clicked.connect(self.setValue)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+    def setValue(self, but):
+        self._lastpushed = self.buttonBox.buttonRole(but)
+
+    def value(self):
+        return self._lastpushed
+
+#     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+#     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+
+
 class ModuleListDialog(QDialog):
     def __init__(self, lmFunc):
         super(ModuleListDialog, self).__init__()
@@ -134,6 +185,7 @@ class MainChip(QMainWindow):
         self.filename = None
         self.dirty = True
         self.projEditWidget = ProjectTextEditor(self)
+        self.projectChanged.connect(self.projEditWidget.setProject)
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.lastMenuActionSection = None        
@@ -467,8 +519,10 @@ class MainChip(QMainWindow):
     def setProject(self, proj):
         self._project = proj
         self.projEditWidget.setFilename(self._project.filename)
+        self._project.valueChanged.connect(self.projEditWidget.projectChangedGUI)
         self.projectChanged.emit(self._project)
         self._project.filenameChanged.connect(self.projEditWidget.setFilename)
+
                 
     def openRecentFile(self):
         action = self.sender()
@@ -477,10 +531,13 @@ class MainChip(QMainWindow):
 
     def okToContinue(self):
         if self.dirty:
-            reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
-            if reply == QMessageBox.Cancel:
+            # reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
+            savedialog = saveProjectDialog(self)
+            savedialog.exec_()
+            reply = savedialog.value()
+            if reply == QDialogButtonBox.RejectRole:
                 return False
-            elif reply == QMessageBox.Yes:
+            elif reply == QDialogButtonBox.AcceptRole:
                 self.saveProject()
         return True
            
