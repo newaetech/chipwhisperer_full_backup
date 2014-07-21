@@ -61,8 +61,10 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def __init__(self, parent=None, console=None, showScriptParameter=None):
         self.console=console
         self.showScriptParameter=showScriptParameter
-        self.trace = None
         super(Profiling, self).__init__(parent)
+
+        # Do not use absolute
+        self.useAbs = False
 
     def setupParameters(self):      
         profalgos = {'Basic':ProfilingTemplate}

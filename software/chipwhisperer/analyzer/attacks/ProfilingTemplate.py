@@ -163,7 +163,7 @@ class TemplateBasic(AutoScript, QObject):
          "cov":templateCovs,
          "trange":(tstart, tend),
          "poi":poiList,
-         "partitiontype":partMethod.__class__
+         "partitiontype":partMethod.__class__.__name__
         }
 
         return self.template
@@ -284,7 +284,7 @@ class ProfilingTemplate(AutoScript, QObject):
         cfgsec["tracestart"] = trange[0]
         cfgsec["traceend"] = trange[1]
         cfgsec["poi"] = templatedata["poi"]
-        cfgsec["partitiontype"] = templatedata["partitiontype"].__name__
+        cfgsec["partitiontype"] = templatedata["partitiontype"]
 
         fname = self.project().getDataFilepath('templates-%s-%d-%d.npz' % (cfgsec["partitiontype"], trange[0], trange[1]), 'analysis')
 
@@ -303,7 +303,15 @@ class ProfilingTemplate(AutoScript, QObject):
 
         for f in foundsecs:
             fname = self.parent().project().convertDataFilepathAbs(f["filename"])
-            templates.append(np.load(fname))
+            t = np.load(fname)
+            templates.append(t)
+
+            # Validate in case someone tries to change via project file
+            if f["partitiontype"] != t["partitiontype"]:
+                print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
+
+            if (strListToList(str(f["poi"])) != t["poi"]).any():
+                print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
 
         return templates
 
@@ -338,16 +346,17 @@ class ProfilingTemplate(AutoScript, QObject):
         for tnum in range(0, len(traces)):
             for bnum in range(0, 16):
                 newresultsint = [multivariate_normal.logpdf(traces[tnum][pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, numparts)]
-                
-                                
-                if template["partitiontype"] == "PartitionHWIntermediate":
+
+                ptype = template["partitiontype"]
+
+                if ptype == "PartitionHWIntermediate":
                     newresults = []
                     # Map to key guess format
                     for i in range(0, 256):
                         # Get hypothetical hamming weight
                         hypint = HypHW(plaintexts[tnum], None, i, bnum)
                         newresults.append(newresultsint[ hypint ])
-                elif template["partitiontype"] == "PartitionHDLastRound":
+                elif ptype == "PartitionHDLastRound":
                     newresults = []
                     # Map to key guess format
                     for i in range(0, 256):

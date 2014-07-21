@@ -60,14 +60,6 @@ class ResultsPlotting(QObject):
     def __init__(self):
         super(ResultsPlotting, self).__init__()
 
-       
-        #No generic ones
-        #resultsParams = [
-        #              ]
-
-        #self.params = Parameter.create(name='Results', type='group', children=resultsParams)
-        #ExtendedParameter.setupExtended(self.params)
-        
         #ResultsTable manages class
         self.table = ResultsTable()
         
@@ -102,7 +94,6 @@ class ResultsPlotting(QObject):
         self.attack.settingsChanged.connect(self.attackSettingsChanged)
         self.graphoutput.setAttack(attack)
         self.pgegraph.setAttack(attack)
-        
         self.attackSettingsChanged()
         
     def attackSettingsChanged(self):
