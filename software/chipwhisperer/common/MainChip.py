@@ -181,6 +181,7 @@ class MainChip(QMainWindow):
         super(MainChip, self).__init__()
         
         self.manageTraces = TraceManagerDialog(self)
+        # self.manageTraces.tracesChanged.
         self.name = name        
         self.filename = None
         self.dirty = True
@@ -530,15 +531,15 @@ class MainChip(QMainWindow):
             self.openFile.emit(action.data())      
 
     def okToContinue(self):
-        if self.dirty:
-            # reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
-            savedialog = saveProjectDialog(self)
-            savedialog.exec_()
-            reply = savedialog.value()
-            if reply == QDialogButtonBox.RejectRole:
-                return False
-            elif reply == QDialogButtonBox.AcceptRole:
-                self.saveProject()
+        # reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
+        savedialog = saveProjectDialog(self)
+        savedialog.exec_()
+        reply = savedialog.value()
+        if reply == QDialogButtonBox.RejectRole:
+            return False
+        elif reply == QDialogButtonBox.AcceptRole:
+            self.saveProject()
+
         return True
            
     def _setParameter_children(self, top, path, value, echo):

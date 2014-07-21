@@ -155,6 +155,9 @@ class ProjectDiffWidget(QWidget):
         if no changes present. Also updates widget with overview of the
         differences if requested with updateGUI
         """
+        if self._project.traceManager:
+            self._project.saveTraceManager()
+
         disk = convert_to_str(ConfigObjProj(infile=self._project.filename))
         ram = convert_to_str(self._project.config)
         diff = DictDiffer(ram, disk)
@@ -327,16 +330,19 @@ class ProjectFormat(QObject):
 
         return self.config[cfgSectionName]
         
-    def save(self):
-        if self.filename is None:
-            return
-
+    def saveTraceManager(self):
         #Waveform list is Universal across ALL types
         if 'Trace Management' not in self.config:
             self.config['Trace Management'] = {}
             
         if self.traceManager:
             self.traceManager.saveProject(self.config, self.filename)
+
+    def save(self):
+        if self.filename is None:
+            return
+
+        self.saveTraceManager()
             
         #self.config['Waveform List'] = self.config['Waveform List'] + self.waveList
 
