@@ -258,6 +258,22 @@ class OutputVsTime(ResultsPlotData):
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         
+    def getPrange(self, bnum, diffs):
+
+        prange = self.attack.getPointRange(bnum)
+        prange = list(prange)
+
+        if len(diffs[0]) == 1:
+            prange[0] = prange[0] + bnum
+
+        # Certain attack types (e.g. template) don't generate an output
+        # for each point value
+        if (prange[1] - prange[0]) != len(diffs[0]):
+            prange[1] = prange[0] + len(diffs[0])
+
+        prange = range(prange[0], prange[1])
+
+        return prange
                   
     def redrawPlot(self):
         data = self.attack.getStatistics()
@@ -290,10 +306,16 @@ class OutputVsTime(ResultsPlotData):
                 progress.setValue(pvalue)
                 if self.enabledbytes[bnum]:
                     diffs = data[bnum]
+
+                    pointargsg = {}
+
+                    if not hasattr(diffs[0], '__iter__'):
+                        diffs = [[t] for t in diffs]
+                        pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
                                         
-                    prange = self.attack.getPointRange(bnum)
-                    prange = range(prange[0], prange[1])                    
-                    
+                    prange = self.getPrange(bnum, diffs)
+
+
                     if fastDraw:             
                         if self.highlightTop:
                             newdiff = np.array(diffs)
@@ -305,29 +327,38 @@ class OutputVsTime(ResultsPlotData):
                                   
                         maxlimit = np.amax(newdiff, 0)
                         minlimit = np.amin(newdiff, 0)
-                        self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g')
-                        self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g')
+                        self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
+                        if len(pointargsg) > 0:
+                            pointargsg["symbol"] = 'd'
+                        self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
                         pvalue += self.numPerms
                         progress.setValue(pvalue)
                     else:
                         for i in range(0,256):
-                            self.pw.plot(prange, diffs[i], pen='g')     
+                            self.pw.plot(prange, diffs[i], pen='g', **pointargsg)
                             pvalue += 1
                             progress.setValue(pvalue)                  
                         
                 if self.highlightTop:
                     #Plot the highlighted byte(s) on top
                     for bnum in range(0, self.numKeys):
-                        prange = self.attack.getPointRange(bnum)
-                        prange = range(prange[0], prange[1])  
                     
                         if self.enabledbytes[bnum]:
                             diffs = data[bnum]
-                            
+
+                            pointargsr = {}
+
+                            if not hasattr(diffs[0], '__iter__'):
+                                diffs = [[t] for t in diffs]
+                                pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
+                                
+
+                            prange = self.getPrange(bnum, diffs)
+
                             for i in range(0,256):   
                                 if i in self.highlights[bnum]:
                                     penclr = self.highlightColour( self.highlights[bnum].index(i) )
-                                    self.pw.plot(prange, diffs[i], pen=penclr )
+                                    self.pw.plot(prange, diffs[i], pen=penclr, **pointargsr)
         except StopIteration:
             pass
         
