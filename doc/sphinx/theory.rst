@@ -1,12 +1,12 @@
 .. _theory:
 
 Theory
-=========
+======
 
 .. _theorycpa:
 
 Correlation Power Analysis
------------------------------
+--------------------------
 
 Here we will assume the attack has a power trace :math:`t_{d,j}`, where :math:`j = 1,2,\cdots,T` is the time index in the trace, 
 and :math:`d = 1,2,\cdots,D` is the trace number. Thus the attacker makes :math:`D` measurements, each one :math:`T` points long. If the attacker knew
@@ -55,12 +55,11 @@ The problem of finding a known signal in a noisy measurement exists in many othe
 referred to as the \emph{normalized cross-correlation}, and frequently used in digital imaging for matching a known `template' to an image, e.g.
 finding the location of some specific item in a photo of a room.
 
-
 Template Attacks
-------------------
+----------------
 
 
 T-Test Analysis
-------------------
+---------------
 
 

@@ -1,12 +1,12 @@
 .. _tutorialglitchvcc:
 
-Tutorial #9: VCC Glitch Attacks
-=====================================
+Tutorial #A3: VCC Glitch Attacks
+================================
 
 This advanced tutorial will demonstrate power glitch attacks using the ChipWhisperer system. 
 
 Background on VCC (Power) Glitching
------------------------------------------
+-----------------------------------
 
 The previous clock glitching tutorials looked into the assumption of a constant clock. But instead we can modify
 the voltage of the device, causing for example a failure to correctly read a memory location or otherwise cause
@@ -27,7 +27,7 @@ havoc with the proper functioning.
     to discover the value for offset, glitch width, and number of glitches.
 
 Background on Glitch Generation
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For more details, please see :ref:`tutorialglitch`, this tutorials assumes you have already read (at least) or
 preformed (ideally) the clock glitching tutorial.
@@ -55,7 +55,7 @@ VCC lines already. The downside of this method is that it can only generate shor
 through the shunt resistor will short out the resistor.
 
 The VCC Glitching Add-On
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 The VCC glitching add-on can be added to the AVR or SmartCard 6-pin headers, or connected to the XMEGA by a few additional
 jumper wires. An example of the connection is shown in the :ref:`vccglitchhwsetup` section.
@@ -71,13 +71,13 @@ GND, the power dissipation of the resistor may cause it to burn out.
 
 
 Adjustable VCC Glitches
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 Setting up Glitch Example
----------------------------
+-------------------------
 
 Firmware Setup
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 Just as in the clock glitching example, you will be required to program the AVR microcontroller with an example you can glitch.
 Once again program in the glitch example code to use the ``glitch1()`` function, as described in :ref:`tutorialglitch`.
@@ -85,7 +85,7 @@ Once again program in the glitch example code to use the ``glitch1()`` function,
 .. _vccglitchhwsetup:
 
 Hardware Setup
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 The hardware is almost as in previous incarnations. Note that unlike the :ref:`tutorialglitch` you do not connect the FPGAOUT to the AVR Clock,
 instead you use the 7.37 MHz oscillator bridged to both the AVR clock and FPGAIN. This is the *same clock setup as in the side-channel power analysis
@@ -108,7 +108,7 @@ pin on the VCC glitcher board connected to the FPGAOUT pin. This is done via a j
    
 
 Software Setup
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 1. Connect to the ChipWhisperer device:
 
@@ -185,7 +185,7 @@ Using VCC glitching we'll escape from this loop!
 .. _vccglitch-manual1:
 
 Manual Glitch Trigger
-----------------------
+---------------------
 
 To begin with, you'll simply use the manual glitch triggering, just as the clock glitching example. Once again it is recommended to only use the
 *glitch width (as % of period)* option, and not the fine adjust. For power glitching this is more prominent than with clock glitching (e.g. you will
@@ -217,7 +217,7 @@ however, or even enter invalid states. Again use the `Signature Read` option in 
 appear like the AVR was never glitched, whereas in reality it was glitched into some invalid state.
 
 Automatic Glitch Trigger
--------------------------
+------------------------
 
 Much in the same way you can try automatic glitch triggering in :ref:`tutorialglitch`, you can also perform this
 with the VCC glitch triggering. 

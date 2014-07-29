@@ -1,7 +1,7 @@
 .. _tutorialsadvanced:
 
 Advanced Tutorials
-===================
+==================
 
 .. toctree::
     :maxdepth: 3    
@@ -10,6 +10,7 @@ Advanced Tutorials
     tutorialglitch
     tutorialglitchvcc
     tutorialsadtrigger
+    
 
 
 

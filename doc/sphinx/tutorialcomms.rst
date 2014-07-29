@@ -1,6 +1,6 @@
 .. _tutorialcomms:
 
-Tutorial #1: Building a SimpleSerial Project
+Tutorial #B1: Building a SimpleSerial Project
 =============================================
 
 This tutorial will introduce you to the 'simpleserial' communications system. It will show you how to
@@ -8,7 +8,7 @@ perform different operations on data based on input from the ChipWhisperer softw
 for building your own system which you wish to 'break'.
 
 What is SimpleSerial
----------------------
+--------------------
 
 SimpleSerial is the communications protocol used for almost all of the ChipWhisperer demo project. It's a very
 basic serial protocol which can be easily implemented on most systems. This system communicates using a standard
@@ -38,7 +38,7 @@ rCBBD4A2B34F2571758FF6A797E09859D\\n
     was ``cbbd4a2b34f2571758ff6a797e09859d``.
 
 Building the Basic Example
----------------------------
+--------------------------
 
 You'll need to have installed WinAVR. You may have already done this by following the installation guide, if not perform the following step:
 
@@ -79,7 +79,7 @@ You'll need to have installed WinAVR. You may have already done this by followin
     (.data + .bss + .noinit)
 
 Modifying the Basic Example
-----------------------------
+---------------------------
 
 At this point we want to modify the system to perform 'something' with the data, such that we can confirm the system is
 working. To do so, open the file ``c:\chipwhisperer\user\comm\avr-serial-nocrypto\simpleserial_nocrypt.c`` with a text
@@ -131,7 +131,7 @@ editor such as Programmer's Notepad (which ships with WinAVR).
 .. include:: tutorialbasic_setup.rsti
       
 Programming the Example
-----------------------------
+-----------------------
 
 1.  We assume the hardware is already connected as at the beginning of this tutorial. If not go back & confirm this hardware setup.
 
@@ -218,7 +218,7 @@ Now, download the FPGA Firmware:
     *Text Out* field.
 
 Conclusion
----------------
+----------
 
 In this tutorial you have learned how to build a custom program for the AtMega328p microcontroller on the Multi-Target board.
 You have programmed the built .hex file into the microcontroller, and confirmed communications with the ChipWhisperer device.
@@ -226,7 +226,7 @@ You have programmed the built .hex file into the microcontroller, and confirmed 
 In future labs you will build on this knowledge.
 
 Troubleshooting
-----------------
+---------------
 
 Issues with compilation:
 

@@ -1,7 +1,7 @@
 .. _tutorialglitch:
 
-Tutorial #8: Clock Glitch Attacks
-=====================================
+Tutorial #A2: Clock Glitch Attacks
+==================================
 
 This advanced tutorial will demonstrate clock glitch attacks using the ChipWhisperer system. There is a video which briefly outlines
 some of the attacks on this page too:
@@ -13,7 +13,7 @@ some of the attacks on this page too:
 
 
 Background on Clock Glitching
--------------------------------
+-----------------------------
 
 Digital hardware devices almost always expect some form of reliable clock. We can manipulate the clock being presented to the device
 to cause unintended behaviour. We'll be concentrating on microcontrollers here, however other digital devices (e.g. hardware encryption
@@ -89,7 +89,7 @@ avoid having to enter a password. This is the power of glitch attacks - not that
 authentication module!
 
 Glitch Hardware
-------------------
+---------------
 
 The ChipWhisperer Glitch system uses the same synchronous methodology as it's Side Channel Analysis (SCA) capture. A system clock (which can come
 from either the ChipWhisperer or the Device Under Test (DUT)) is used to generate the glitches. These glitches are then inserted back into the clock,
@@ -105,7 +105,7 @@ some event. The following figure shows how the glitch can be muxd to output to t
 .. figure:: /images/tutorials/advanced/glitching/glitchgen-mux.png
 
 Hardware Support
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 
 The phase shift blocks use the Digital Clock Manager (DCM) blocks within the FPGA. These blocks have
 limited support for run-time configuration of parameters such as phase delay and frequency generation, and for maximum performance
@@ -130,7 +130,7 @@ If the PR data is inconsistent with the FPGA file, the system will print a messa
     Partial Reconfiguration DISABLED: FPGA File too old, > 12 hours difference from PR files
 
 Python GUI Interface
-^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^
 
 The portion of the GUI of interest to us is primarily located in this section:
 
@@ -140,10 +140,10 @@ If the `Partial Reconfiguration` system has been disabled (due to missing PR fil
 marked that say `(as % of period)` will be disabled. Only the fields labeled `(fine adjust)` will be available.
 
 Setting up Glitch Example
----------------------------
+-------------------------
 
 Firmware Setup
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 The glitch examples requires you to program the AtMega328P. The software is located at ``chipwhisperer\hardware\victims\firmware\avr-glitch-examples``
 of your ChipWhisperer release or GIT. You can build the software by running the make command as follows::
@@ -229,7 +229,7 @@ wrong subroutine has been setup previously::
 One the AVR is programmed (see previous tutorials), you need to setup a few jumpers on the board.
 
 Hardware Setup
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 The hardware is almost as in previous incarnations. The difference is the 'FPGAOUT' is bridged to the AVR clock. You can either choose to use the
 7.37MHz clock on the multi-target board, or use the CLKGEN feature to generate a suitable 7.37MHz clock. This example will use the CLKGEN feature.
@@ -239,7 +239,7 @@ The AVR is being used as the glitch target. The following figure shows the expec
 .. image:: /images/tutorials/advanced/glitching/glitchhw.jpg
 
 Software Setup
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 1. Connect to the ChipWhisperer device:
 
@@ -318,7 +318,7 @@ Using clock glitching we'll escape from this loop!
 .. _glitch-manual1:
 
 Manual Glitch Trigger
-----------------------
+---------------------
 
 To begin with, you'll simply use the manual glitch triggering. This works well in the examples where we have a simple loop we are breaking
 out of. Doing so requires modifying the `glitch width` and `glitch offset` experimentally. The exact values will vary for every device and setup.
@@ -357,7 +357,7 @@ however, or even enter invalid states. Again use the `Signature Read` option in 
 appear like the AVR was never glitched, whereas in reality it was glitched into some invalid state.
 
 Automatic Glitch Triggering
----------------------------------
+---------------------------
 
 The manual trigger used previously is suitable when the embedded system is waiting for further input. For example if the embedded system is waiting for
 a password, you could insert glitches without requiring accurate timing. We'll explore the use of the capture trigger for glitching here, which also improves
@@ -372,7 +372,7 @@ Note in particular that if using an external IO pin, you only have a *rising edg
 set 'High' at critical moments, allowing you to experiment with this basic IO trigger. 
 
 Basic Trigger on ``glitch1()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This first example will use the automatic trigger to attack the existing system.
 
@@ -398,7 +398,7 @@ This first example will use the automatic trigger to attack the existing system.
 
 
 Serial IO Line Trigger on ``glitch1()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We'll now attack the same system as before, but using an automatic digital pattern trigger. This will detect
 when the DUT sends the ``A`` character indicating the infinite loop is going to happen.
@@ -450,7 +450,7 @@ Finally - we can check both the triggering and the glitches. To check the trigge
 .. _basic-glitch2:
 
 Basic Trigger on ``glitch2()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In this module we'll be glitching a new function, which compares a received character to some known character. 
 The ``glitch2()`` function looks as follows::
@@ -523,7 +523,7 @@ example, however if you've completed the serial triggering tutorial you can also
    
 
 Basic Trigger on ``glitch3()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this module we'll be glitching a new function, which compares a received password to some known password. 
 The ``glitch3()`` function looks as follows::
 
@@ -609,7 +609,7 @@ The following assumes you have already completed the setup in the :ref:`basic-gl
    .. image:: /images/tutorials/advanced/glitching/glitchexample-basic3-success.png
    
 Glitching Onward
--------------------
+----------------
 
 This basic tutorial has introduced you to glitch attacks. They are a powerful tool for bypassing authentication
 in embedded hardware devices. There are many ways to expand your knowledge with additional practice, such as:

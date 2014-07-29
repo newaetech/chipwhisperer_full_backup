@@ -1,14 +1,14 @@
 .. _tutorialaesmanualcpa:
 
-Tutorial #6: Breaking AES (Manual CPA Attack)
-===============================================
+Tutorial #B6: Breaking AES (Manual CPA Attack)
+==============================================
 
 This tutorial will demonstrate how to perform a CPA attack using a simple Python script. This will bring you through an entire
 CPA attack *without* using the ChipWhisperer Analyzer program, which will greatly improve your understanding of the actual
 attack method.
 
 The CPA Attack Theory
-----------------------
+---------------------
 
 As a background on the CPA attack, please see the section :ref:`theorycpa`. It's assumed you've read that section and come back
 to this. Ok, you've done that? Good let's continue.
@@ -21,7 +21,7 @@ Assuming you *actually* read that, it should be apparant that there is a few thi
  4. Ranking the output of the correlation equation to determine the most likely key
 
 Setting Up the Project
------------------------
+----------------------
 
 It is assumed you are experienced with Python development, or have at least run a Python program! If you are on Windows you'll
 probably use IDLE for as a code editor, although you can use any code editor you wish.
@@ -39,7 +39,7 @@ you can get from the `Pre-Built Windows Binaries<http://www.lfd.uci.edu/~gohlke/
 	six
 
 Exploring the Trace Data
--------------------------
+------------------------
 
 The next step is to read the trace data. I assume you've already have performed a capture. You need to find the source trace
 files, which have a ``.npy`` extension. You can follow the path of a ``.cwp`` (ChipWhisperer Project) file to find the associated
@@ -95,7 +95,7 @@ And finally plot a single power trace::
 After executing ``plot.show()`` you should get a window to pop up with the single power trace.
 
 Reading the Trace Data in a Script
-------------------------------------
+----------------------------------
 
 Enough fooling around. Now let's make a script that loads the trace and tries to step through them. Make a new file called
 for example ``simplecpa.py``, starting with this simple example::
@@ -148,8 +148,8 @@ later to breaking the whole thing. That part of the file now looks like::
             print "Subkey %d, trace %d"%(bnum, tnum)
 
 
-Performing the Guess 
------------------------
+Performing the Guess
+--------------------
 
 Next, we need to guess every possibility for the subkey. This is done with another loop - we'll first *remove* the
 loop going through each trace, and simply loop through each hypothetical value for each subkey::
@@ -305,7 +305,7 @@ Which we can insert into the guessing routine, such that our complete file now l
 
 
 Performing the Check
------------------------
+--------------------
 
 Remember the objective is to calculate the following:
 
@@ -501,7 +501,7 @@ Assuming you've used the usual **2B 7E ...**  encryption key in your traces, run
     2b  00  00  00  00  00  00  00  00  00  00  00  00  00  00  00 
 
 Calculating The PGE
----------------------------------
+-------------------
 
 The Partial Guessing Entropy (PGE) is a useful metric of where the correct answer is ranked. This requires us to know the actual
 encryption key used during operation. If you've recorded traces with the regular ChipWhisperer system, this is stored alongside
@@ -578,7 +578,7 @@ see the PGE increase when you don't use all possible traces. You may also wish t
 this slows down the program.
 
 Future Changes
----------------------
+--------------
 
 The implementation of the correlation function runs as a loop over all traces. Ideally we'd like to implement this as a 'online'
 calculation; that is we can add a trace in, observe the output, add another trace in, observe the output, etc. When generating plots
@@ -594,7 +594,7 @@ perform online calculation with, since when adding a new trace it's simple to up
 
 
 Complete Program
----------------------
+----------------
 
 For reference here is the complete program. Before running you might want to make a
 few adjustments:
@@ -696,7 +696,7 @@ Here is the code::
 
 
 Conversion of Correlation Equation
--------------------------------------
+----------------------------------
 
 The following shows the derivation of the online correlation equation from the original form:
 

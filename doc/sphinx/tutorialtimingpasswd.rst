@@ -1,7 +1,7 @@
 .. _tutorialtimingpasswd:
 
-Tutorial #3: Timing Analysis with Power
-===========================================
+Tutorial #B3: Timing Analysis with Power
+========================================
 
 This tutorial will introduce you to breaking devices by determining when a device is performing certain operations. It will
 break simple bootloaders which may otherwise seem 'secure' against password attacks. In particular this uses the excellent
@@ -14,7 +14,7 @@ be required when attacking new devices which you have not yet added to the core 
 Note this is not a prerequisite to the tutorial on breaking AES. You can skip this tutorial if you wish.
 
 Prerequisites
---------------
+-------------
 
 You should have already completed :ref:`tutorialtimingsimple` to gain a better understanding of the ChipWhisperer interface.
 
@@ -28,7 +28,7 @@ Finally program the microcontroller with the file used here:
 .. _testingserialbasic:
 
 Testing the Serial Connection & Observing Power
-------------------------------------------------
+-----------------------------------------------
 
 These steps differ from previous steps, as we are not going to be using a built-in target. However you can refer to :ref:`tutorialcomms`
 for general informationon using the ChipWhisperer-Capture Interface.
@@ -168,7 +168,7 @@ for general informationon using the ChipWhisperer-Capture Interface.
 
 
 Setting a Password on the Bootloader
---------------------------------------
+------------------------------------
 
 The TinySafeBoot bootloader allows us to set a password. Doing so requires us to send a binary blob to the device - something which we cannot do
 through a normal ASCII serial interface. This section will demonstrate how to use the command-line interface of the ChipWhisperer-Capture software
@@ -284,7 +284,7 @@ need to configure the OpenADC settings).
    only after sending ``ce`` that the bootloader works.
 
 Running External Tools
-------------------------
+----------------------
 
 The next step of this tutorial runs external tools. In particular we want to use the built-in AVR programmer to reset the AVR device, since we have
 no other method of asserting reset on the target.
@@ -326,7 +326,7 @@ tool of your choice, such as ``avrdude``.
   Attempt to run this file & confirm it works as expected.
   
 Scripting the Setup
--------------------------------
+-------------------
 
 At this point we want to script the setup of the ChipWhisperer-Capture tool, along with pulling in our special utility which is capable
 of resetting the AVR microcontroller. 
@@ -544,7 +544,7 @@ Thus by looking at the power consumption, we can determine the wrong password ch
 can simply guess a single digit of the password at a time.
 
 Scripting the Complete Attack
-------------------------------
+-----------------------------
 
 The current script sets up the application, then runs the GUI normally at this line::
 
@@ -592,7 +592,7 @@ You will need to adjust the thresholds and possibly data point locations based o
 which brute-forces the password by breaking the first byte and then the second byte.
 
 Conclusion
----------------
+----------
 
 This tutorial has demonstrated the use of the power side-channel for performing timing attacks. A bootloader with a simple password-based security
 system is broken. In addition you have learned about the scripting support in the ChipWhisperer-Capture software.
