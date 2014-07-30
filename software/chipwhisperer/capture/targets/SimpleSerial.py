@@ -177,7 +177,10 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
     def write(self, string):
         for s in string:
-            d = bytearray(s, 'latin-1')
+            if isinstance(string, basestring):
+                d = bytearray(s, 'latin-1')
+            else:
+                d = [s]
             #print "%x"%d[0]
             self.oa.sendMessage(self.CODE_WRITE, self.ADDR_DATA, d, Validate=False)
             
