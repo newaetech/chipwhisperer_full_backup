@@ -47,7 +47,7 @@ class CPAProgressiveOneSubkey(object):
         self.sumht = [0]*256
         self.totalTraces = 0
     
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt, direction):
     
         diffs = [0]*256
         self.totalTraces += numtraces
@@ -87,9 +87,21 @@ class CPAProgressiveOneSubkey(object):
                     ct = ciphertexts[tnum]
     
                 if (keyround == "first") or (keyround == 0):
-                    ct = None
+                    if direction == "enc":
+                        ct = None
+                    elif direction == "dec":
+                        ct = pt
+                        pt = None
+                    else:
+                        raise ValueError("Direction invalid: %s" % str(direction))
                 elif keyround == "last" or keyround == -1:
-                    pt = None
+                    if direction == "enc":
+                        pt = None
+                    elif direction == "dec":
+                        pt = ct
+                        ct = None
+                    else:
+                        raise ValueError("Direction invalid: %s" % str(direction))
                 else:
                     raise ValueError("keyround invalid: %s" % str(keyround))
                 
@@ -194,6 +206,9 @@ class CPAProgressive(AutoScript, QObject):
 
     def setKeyround(self, keyround):
         self.keyround = keyround
+
+    def setDirection(self, dir):
+        self._direction = dir
     
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
@@ -274,7 +289,7 @@ class CPAProgressive(AutoScript, QObject):
                     
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):                    
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt, self._direction)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:  
                         skip = True

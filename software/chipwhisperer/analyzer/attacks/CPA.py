@@ -87,6 +87,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit, 'AES-256 (8-bit)':models_AES256_8bit}, 'value':'AES-128', 'set':self.updateScript},
                         {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':['first', 'last'], 'value':'first', 'set':self.updateScript},
                         {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':{'Hamming Weight':'HypHW', 'Hamming Distance':'HypHD'}, 'value':'Hamming Weight', 'set':self.updateScript},
+                        {'name':'Direction', 'key':'aes_dir', 'type':'list', 'values':{'Encryption (PT=Input)':'enc', 'Decryption (PT=Input)':'dec'}, 'value':'enc', 'set':self.updateScript},
                         ]},
                        
                        #TODO: Should be called from the AES module to figure out # of bytes
@@ -127,6 +128,12 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def targetBytes(self):
         return self._targetbytes
 
+    def setDirection(self, dir):
+        self._direction = dir
+
+    def direction(self):
+        return self._direction
+
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
         self.attack = analysisAlgorithm(hardwareModel, leakageModel, showScriptParameter=self.showScriptParameter, parent=self)
 
@@ -153,6 +160,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
         self.addFunction("init", "setKeyround", "0")
+        self.addFunction("init", "setDirection", "'%s'" % self.findParam('aes_dir').value())
 
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
@@ -178,6 +186,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         
         self.attack.setTargetBytes(self.targetBytes())
         self.attack.setKeyround(self.keyround())
+        self.attack.setDirection(self.direction())
 
         self.attack.getStatistics().clear()
         self.attack.setStatsReadyCallback(self.statsReady)
