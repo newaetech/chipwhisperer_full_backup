@@ -143,8 +143,9 @@ module reg_clockglitch(
 	 [41] (Byte 5, Bit 1)  = DCM Reset
 	 [43..42] (Byte 5, Bit [3..2]) = Glitch trigger source
 	      00 = Manual
-			01 = Capture Trigger (with offset)
+			01 = Capture Trigger (with offset, continous)
 			10 = Continous
+			11 = Capture Trigger (with offset, single-shot when manual glitch is '1')
 	 
 	 [46..44] (Byte 5, Bit [6..4]) = Glitch Type
 			000 = Glitch is XORd with Clock (Positive or Negative going glitch)
@@ -187,6 +188,8 @@ module reg_clockglitch(
 	 wire exttrigger_resync;
 	 //reg exttrigger_resync_dly;
 	 
+	 reg oneshot;
+	 
 	 always @(posedge sourceclk) begin
 		if (glitch_trigger_src == 2'b10)
 			glitch_trigger <= 1'b1;
@@ -194,9 +197,16 @@ module reg_clockglitch(
 			glitch_trigger <= manual & ~manual_dly;
 		else if (glitch_trigger_src == 2'b01)
 			glitch_trigger <= exttrigger_resync; //exttrigger_resync & ~exttrigger_resync_dly;
-		else
-			glitch_trigger <= 1'b0;
+		else if (glitch_trigger_src == 2'b11)
+			glitch_trigger <= exttrigger_resync & oneshot;
 	 end	 
+	 
+	 always @(posedge sourceclk) begin
+		if (manual & ~manual_dly)
+			oneshot <= 1'b1;
+		else if (exttrigger_resync)
+			oneshot <= 1'b0;		
+	 end
 	
 	 reg [8:0] glitch_cnt;
 	 reg glitch_go;
