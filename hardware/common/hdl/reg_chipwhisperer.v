@@ -153,7 +153,7 @@ module reg_chipwhisperer(
 		  [ E G   X     X  USII USIO RX TX ]
 		  
 		GPIO3:
-		  [ E G   X     X  USII USIO RX TX ]
+		  [ E G   X  USOC  USII USIO RX TX ]  --> USOC means USIO but with Open Collector drive
 		  
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
@@ -316,20 +316,20 @@ module reg_chipwhisperer(
 								  
 	 assign targetio3_io = registers_iorouting[16 + 0] ? uart_tx_i :
 								  registers_iorouting[16 + 2] ? usi_out_i :
-								  registers_iorouting[16 + 4] ? usi_out_i :
-								  registers_iorouting[8 + 7] ? registers_iorouting[8 + 6] :
+								  registers_iorouting[16 + 4] ? (usi_out_i ? 1'bZ : 1'b0) :
+								  registers_iorouting[16 + 7] ? registers_iorouting[16 + 6] :
 								  1'bZ;
 								  
 	 assign targetio4_io = 1'bZ;
 	 
 	 assign uart_rx_o = registers_iorouting[0 + 1] ? targetio1_io :
 							registers_iorouting[8 + 1] ? targetio2_io :
-							registers_iorouting[16 + 1] ? targetio2_io :
+							registers_iorouting[16 + 1] ? targetio3_io :
 							1'b1;
 							
 	assign usi_in_o = registers_iorouting[0 + 3] ? targetio1_io :
 							registers_iorouting[8 + 3] ? targetio2_io :
-							registers_iorouting[16 + 3] ? targetio2_io :
+							registers_iorouting[16 + 3] ? targetio3_io :
 							1'b1;	 
 	 
 	 reg [15:0] reg_hyplen_reg;
