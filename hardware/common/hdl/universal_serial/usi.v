@@ -306,9 +306,9 @@ module usirx#(
 	always @(posedge clk)
 		if (prevclkdiv)
 			if (bitcnt == 3'b000)
-				ram_wr <= 'b1;
+				ram_wr <= go;
 			else
-				ram_wr <= 'b0;
+				ram_wr <= 1'b0;
 	
 	wire[7:0] read_data;
 	
