@@ -3,7 +3,7 @@
 .. _installing:
 
 Installing Python, |ChipWhisperer|, Drivers & Building Target Firmware
-========================================================================
+======================================================================
 
 Windows XP/7
 ------------
@@ -11,14 +11,14 @@ Windows XP/7
 Installing on Windows requires a few extra steps compared to Linux, as Linux normally comes with most of the required tools.
 
 Python Setup
-^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 You may already have Python installed, in which case you can skip some of these steps. If you already have Python installed make sure it is
 the correct version (2.7.x). Python 3.x will not work with this codebase.
 
 
 Installing Python via WinPython
-""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""""""
 The recommend method of installing Python is to use a distribution called `WinPython <http://winpython.sourceforge.net/>`__. This setup avoids
 installing Python globally, and includes most of the software you will need. In addition it makes it possible to install 32-bit and 64-bit
 Python on the same system with minimal problems. This can be very useful as the 64-bit version is handy for doing analysis on large data sets.
@@ -52,7 +52,7 @@ Python on the same system with minimal problems. This can be very useful as the 
    and then calling specific programs (such as CW Capture or Analyzer) from that command prompt.
 
 Installing Python Regularly
-"""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""
 Rather than using the previous distribution, you can install Python into your system path. **DO NOT** follow both of these directions, again
 it's recommended to use the WinPython distribution above.
 
@@ -211,6 +211,7 @@ You can see a `Video <http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1>`__ of the
 .. |YouTubeWin7Driver| image:: /images/youtube-win7-driver.png
 .. _YouTubeWin7Driver: http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1
 
+.. _buildprogrammingavr:
     
 Building & Programming Example Targets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -280,10 +281,10 @@ You can see a `Video <http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1>`__ of the
 .. _YouTubeWin7Target: http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1
 
 Linux
--------
+-----
 
 Python Setup
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 On Linux, installing Python & all the associated packages is much easier than on Windows. Typically you can install them from a package manager, if you are
 using Fedora Core or similar, just type::
@@ -299,7 +300,7 @@ You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not n
 for either a Debian/Ubuntu package, or information about installing from source.
 
 Getting ChipWhisperer
-^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 As in the Windows release, you can download a complete ChipWhisperer software release. Alternatively you can clone the
 ChipWhisperer repository with git, which is very simple on Linux:
@@ -320,7 +321,7 @@ once you have the `chipwhisperer` directory somewhere, do the following from wit
 as the command instead of python to force this.
 
 ChipWhisperer Rev2 Capture Hardware Driver
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The *driver* for Linux is built in, however you need to allow your user account to access the peripheral. To do so, 
 you'll have to make a file called ``/etc/udev/rules.d/99-ztex.rules`` . The contents of this file should be::
@@ -341,7 +342,7 @@ Finally log out & in again for the group change to take effect.
 
 
 FTDI Hardware Driver (SASEBO-W, SAKURA-G, SASEBO-GII)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 **This is only required for supporting FTDI-connected hardware** such as the SASEBO-W, SAKURA-G, SASEBO-GII. This is NOT
 required for the ChipWhisperer Capture Rev2.
 

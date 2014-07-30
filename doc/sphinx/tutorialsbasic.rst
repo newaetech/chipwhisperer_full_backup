@@ -17,6 +17,7 @@ The basic tutorials show you the basics of power analysis. All tutorials use the
     tutorialprofilinghw
     tutorialprofilingvalue
     tutorialpreprocessing
+    tutorialsasebowcard
     
 
 
