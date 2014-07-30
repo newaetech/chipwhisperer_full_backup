@@ -46,10 +46,16 @@ class AttackBaseClass(QObject):
     #double-processing data
     attackDone = Signal()
     
-    def __init__(self, parent=None, log=None):
+    def __init__(self, parent=None, console=None):
         super(AttackBaseClass, self).__init__(parent)
-        self.parent = parent
-        self.log=log
+        self._parent = parent
+        if console: self.console = console
+
+    def log(self, sr, level=None):
+        if hasattr(self, 'console') and self.console:
+            self.console.append(sr)
+        else:
+            print sr
 
 
     def processKnownKey(self, inpkey):
@@ -64,3 +70,29 @@ class AttackBaseClass(QObject):
     
     def getStatistics(self):
         return None
+
+    def setTraceStart(self, tnum):
+        self._traceStart = tnum
+
+    def setIterations(self, its):
+        self._iterations = its
+
+    def setTracesPerAttack(self, trace):
+        self._tracePerAttack = trace
+
+    def getTraceStart(self):
+        return self._traceStart
+
+    def getTraceNum(self):
+        return self._tracePerAttack
+
+    def getIterations(self):
+        return self._iterations
+
+    def setPointRange(self, rng, bnum=None):
+        if bnum is None:
+            self._pointRange = rng
+
+    def getPointRange(self, bnum=None):
+        return self._pointRange
+

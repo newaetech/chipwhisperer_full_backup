@@ -33,61 +33,49 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-
-# from functools import partial
-import scipy as sp
+    
+import random
 import numpy as np
 
-        
-class DecimationFixed(PreprocessingBase):
+from pyqtgraph.parametertree import Parameter
+from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
+
+
+class AddNoiseRandom(PreprocessingBase):
     """
-    Decimate by fixed amount
+    Does some crap
     """
 
-    descrString = "Decimate by a fixed factor"
+    descrString = "Add random noise"
      
     def setupParameters(self):
-
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
-                         # {'name':'Decimation Type', 'values':''}
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
+                         {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
-        
-        self.params = Parameter.create(name='Fixed Decimation', type='group', children=resultsParams)
+        self.params = Parameter.create(name='Add Random Noise', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.setDecimationFactor(1)
+        self._maxNoise = 0
         self.updateScript()
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        self.addFunction("init", "setDecimationFactor", self.findParam('decfactor').value())
+        self.addFunction("init", "setMaxNoise", '%f' % self.findParam('noisestddev').value())
 
-    def setDecimationFactor(self, decfactor=1):
-        self._decfactor = decfactor
-
+    def setMaxNoise(self, maxNoise):
+        self._maxNoise = maxNoise
+   
     def getTrace(self, n):
         if self.enabled:
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
             
-            decfactor = self._decfactor
-
-            # outtrace = np.zeros(len(trace))
-
-            outtrace = np.zeros(len(range(0, len(trace), decfactor)))
-
-
-            for idx, val in enumerate(range(0, len(trace), decfactor)):
-                outtrace[idx] = trace[val]
-
-            return outtrace
+            if self._maxNoise == 0:
+                return trace
+            else:
+                return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
             
         else:
-            return self.trace.getTrace(n)       
-    
-   
+            return self.trace.getTrace(n)

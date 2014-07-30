@@ -52,10 +52,10 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-                         {'name':'Ref Trace', 'type':'int', 'value':0, 'set':self.setRefTrace},
-                         {'name':'Window', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.setRefPointRange},
-                         {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
@@ -63,13 +63,28 @@ class ResyncCrossCorrelation(PreprocessingBase):
 
         self.ccStart = 0
         self.ccEnd = 0
+        
+        self.updateScript()
 
-    def setRefPointRange(self, rng):
-        self.ccStart = rng[0]
-        self.ccEnd = rng[1]
-    
-    def setOutputCorr(self, enabled):
-        self.debugReturnCorr = enabled
+        
+    def updateScript(self, ignored=None):
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        rtrace = self.findParam('reftrace').value()
+        rrange = self.findParam('rwindow').value()
+
+        if rrange is None:
+            rrange = (0, 0)
+
+        self.addFunction("init", "setReference", "refno=%d, refWindow=(%d, %d)" % (rtrace, rrange[0], rrange[1]))
+
+    def setReference(self, refno=0, refWindow=(0, 0)):
+        self.ccStart = refWindow[0]
+        self.ccEnd = refWindow[1]
+        self.rtrace = refno
+        self.init()
+
+    # def setOutputCorr(self, enabled):
+    #    self.debugReturnCorr = enabled
    
     def getTrace(self, n):
         if self.enabled:
@@ -100,9 +115,6 @@ class ResyncCrossCorrelation(PreprocessingBase):
             self.calcRefTrace(self.rtrace)
         except ValueError:
             self.findParam('enabled').setValue(False)
-    
-    def setRefTrace(self, tnum):
-        self.rtrace = tnum
         
     def calcRefTrace(self, tnum):
         # If not enabled stop

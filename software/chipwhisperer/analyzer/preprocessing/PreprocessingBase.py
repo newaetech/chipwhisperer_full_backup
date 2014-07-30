@@ -36,8 +36,9 @@ except ImportError:
 
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.autoscript import AutoScript
 
-class PreprocessingBase(QObject):
+class PreprocessingBase(AutoScript, QObject):
     """
     Base Class for all preprocessing modules
     """
@@ -116,5 +117,7 @@ class PreprocessingBase(QObject):
     def getAuxData(self, n, auxDic):
         return self.trace.getAuxData(n, auxDic)
 
+    def findMappedTrace(self, n):
+        return self.trace.findMappedTrace(n)
 
 

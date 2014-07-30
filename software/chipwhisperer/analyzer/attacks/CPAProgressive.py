@@ -24,35 +24,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
+from PySide.QtCore import *
+from PySide.QtGui import *
 import numpy as np
-import scipy as sp
+from pyqtgraph.parametertree import Parameter
+
 from openadc.ExtendedParameter import ExtendedParameter
-
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-
-from functools import partial
-
-try:
-    import pyximport; pyximport.install()
-    import attacks.CPACython as CPACython
-except ImportError:
-    CPACython = None
+from chipwhisperer.common.autoscript import AutoScript
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -67,7 +47,7 @@ class CPAProgressiveOneSubkey(object):
         self.sumht = [0]*256
         self.totalTraces = 0
     
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt):
     
         diffs = [0]*256
         self.totalTraces += numtraces
@@ -106,23 +86,15 @@ class CPAProgressiveOneSubkey(object):
                 if len(ciphertexts) > 0:
                     ct = ciphertexts[tnum]
     
-                if keyround == "first":
+                if (keyround == "first") or (keyround == 0):
                     ct = None
-                elif keyround == "last":
+                elif keyround == "last" or keyround == -1:
                     pt = None
                 else:
-                    raise ValueError("keyround invalid")
+                    raise ValueError("keyround invalid: %s" % str(keyround))
                 
                 #Generate the output of the SBOX
-                if modeltype == "Hamming Weight":
-                    hypint = model.HypHW(pt, ct, key, bnum);
-                elif modeltype == "Hamming Weight (inverse)":
-                    hypint = model.HypHW(pt, ct, key, bnum);
-                    hypint = 8 - hypint
-                elif modeltype == "Hamming Distance":
-                    hypint = model.HypHD(pt, ct, key, bnum);
-                else:
-                    raise ValueError("modeltype invalid")
+                hypint = leakagetype(pt, ct, key, bnum)
                 hyp[tnum] = hypint
                 
             hyp = np.array(hyp)                                
@@ -185,16 +157,16 @@ class CPAProgressiveOneSubkey(object):
         
         return (diffs, pbcnt)
 
-class CPAProgressive(QObject):
+class CPAProgressive(AutoScript, QObject):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, model, showScriptParameter=None):
+    def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
         super(CPAProgressive, self).__init__()
         
-        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
+        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100, 'set':self.updateScript},
                          {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},                         
                          ]
@@ -204,15 +176,20 @@ class CPAProgressive(QObject):
             #print self.showScriptParameter        
         ExtendedParameter.setupExtended(self.params, self)
         
-        self.model = model
+        self.model = targetModel
+        self.leakage = leakageFunction
         self.sr = None
         
         self.stats = DataTypeDiffs()
+        self.updateScript()
         
+    def updateScript(self, ignored=None):
+        self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+
     def paramList(self):
         return [self.params]
 
-    def setByteList(self, brange):
+    def setTargetBytes(self, brange):
         self.brange = brange
 
     def setKeyround(self, keyround):
@@ -220,10 +197,12 @@ class CPAProgressive(QObject):
     
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
+
+    def setReportingInterval(self, ri):
+        self._reportingInterval = ri
     
     def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
         keyround=self.keyround
-        modeltype=self.modeltype
         brange=self.brange
                                                                    
         traces_all = np.array(traces)
@@ -234,15 +213,12 @@ class CPAProgressive(QObject):
 
         self.all_diffs = range(0,16)
 
-
-        tdiff = self.findParam('reportinterval').value()
-
         numtraces = len(traces_all[:,0])
 
         if progressBar:
             pbcnt = 0
             progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256 * (numtraces/tdiff + 1))
+            progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
 
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
@@ -258,8 +234,8 @@ class CPAProgressive(QObject):
             brangeMap[bnum] = i
             i += 1
             
-        skipPGE = self.findParam('checkpge').value()
-        bf = self.findParam('itmode').value() == 'bf'
+        skipPGE = False  # self.findParam('checkpge').value()
+        bf = True  # self.findParam('itmode').value() == 'bf'
         
         #bf specifies a 'breadth-first' search. bf means we search across each
         #subkey by only the amount of traces specified. Depth-First means we
@@ -278,7 +254,7 @@ class CPAProgressive(QObject):
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
             
             tstart = 0
-            tend = tdiff
+            tend = self._reportingInterval
             
             while tstart < numtraces:                                       
                 if tend > numtraces:
@@ -298,20 +274,20 @@ class CPAProgressive(QObject):
                     
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):                    
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:  
                         skip = True
                     
                     if progressBar.wasSkipped() or skip:
                         progressBar.clearSkipped()
-                        pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
+                        pbcnt = brangeMap[bnum] * 256 * (numtraces / self._reportingInterval + 1)
                         
                         if bf is False:
                             tstart = numtraces
                 
-                tend += tdiff
-                tstart += tdiff
+                tend += self._reportingInterval
+                tstart += self._reportingInterval
                 
                 if self.sr is not None:
                     self.sr()

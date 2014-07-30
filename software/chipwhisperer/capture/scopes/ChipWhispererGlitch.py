@@ -43,6 +43,7 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 
 glitchaddr = 51    
+glitchoffsetaddr = 25
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -72,9 +73,10 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
                 {'name':'Glitch Trigger', 'type':'list', 'values':{'External Trigger':1, 'Manual':0, 'Continuous':2}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
+                {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'value':0, 'set':self.setTriggerOffset, 'get':self.triggerOffset},
                 {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
                 {'name':'Manual Trigger', 'type':'action', 'action':self.glitchManual},
-                {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3}, 'set':self.setGlitchType, 'get':self.glitchType},
+                {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
                 {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
                 {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
                 ]
@@ -104,7 +106,6 @@ class ChipWhispererGlitch(QObject):
             except TypeError:
                 self.prEnabled = False
                 print "Partial Reconfiguration DISABLED: Unknown FPGA Date"
-
 
         except IOError, e:
             print str(e)
@@ -177,7 +178,25 @@ class ChipWhispererGlitch(QObject):
                 self.resetDCMs()   
             
         # print "Partial: %d %d"%(widthint, offsetint)
-       
+
+    def setTriggerOffset(self, offset):
+        """Set offset between trigger event and glitch in clock cycles"""
+        cmd = bytearray(4)
+        cmd[0] = ((offset >> 0) & 0xFF)
+        cmd[1] = ((offset >> 8) & 0xFF)
+        cmd[2] = ((offset >> 16) & 0xFF)
+        cmd[3] = ((offset >> 24) & 0xFF)
+        self.oa.sendMessage(CODE_WRITE, glitchoffsetaddr, cmd)
+
+    def triggerOffset(self):
+        """Get offset between trigger event and glitch in clock cycles"""
+        cmd = self.oa.sendMessage(CODE_READ, glitchoffsetaddr, maxResp=4)
+        offset = cmd[0]
+        offset |= cmd[1] << 8
+        offset |= cmd[2] << 16
+        offset |= cmd[3] << 24
+        return offset
+
     def setGlitchOffsetFine(self, fine):
         """Set the fine glitch offset adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               

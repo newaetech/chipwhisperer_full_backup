@@ -123,12 +123,12 @@ class Normalize(PreprocessingBase):
      
     def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":normmean, "y=(x-mean(x))/stddev(x)":normmeanstd, "y=(x-f1(z))/f2(z)":normlinfunc}, 'set':self.updateNormClass},
-                         {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateF1Coeffs},
-                         {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateF2Coeffs},
-                         {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateZFile},
-                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updatePointRange},
+                         {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
+                         {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
+                         {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
+     #                    {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
                          {'name':'Desc', 'type':'text', 'value':self.descrString}
                       ]
         
@@ -137,32 +137,61 @@ class Normalize(PreprocessingBase):
         self.updateNormClass(normmean)
         self.ptStart = 0
         self.ptEnd = 0
+        
+        self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import normmean,normmeanstd,normlinfunc")
+        self.updateScript()
+        
+    def updateScript(self, ignored=None):
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').value().__name__)
+        
+        f1src = self.findParam('f1coeff').value()
+        if f1src is not None:
+            if f1src == 5: f1src = None
+            self.addFunction("init", "norm.loadF1File", "%s" % str(f1src))
 
-    def updatePointRange(self, r):
-        self.ptStart = r[0]
-        self.ptEnd = r[1]
+        f2src = self.findParam('f2coeff').value()
+        if f2src is not None:
+            if f2src == 5: f2src = None
+            self.addFunction("init", "norm.loadF2File", "%s" % str(f2src))
 
-    def updateF1Coeffs(self, f):
-        if f:
-            if f is 5:
-                self.norm.loadF1File(None)
-            else:
-                print f
-                self.norm.loadF1File(f)
+        zsrc = self.findParam('zsource').value()
+        if zsrc is not None:
+            if zsrc == 5: zsrc = None
+            self.addFunction("init", "norm.loadZFile", "%s" % str(zsrc))
 
-    def updateF2Coeffs(self, f):
-        if f:
-            if f is 5:
-                self.norm.loadF2File(None)
-            else:
-                self.norm.loadF2File(f)
+    #    rng = self.findParam('ptrange').value()
+    #    if rng:
+    #        self.addFunction("init", "setPointRange", " (%d, %d) " % (rng[0], rng[1]))
 
-    def updateZFile(self, f):
-        if f:
-            if f is 5:
-                self.norm.loadZFile(None)
-            else:
-                self.norm.loadZFile(f)
+
+    # def setPointRange(self, r):
+    #    self.ptStart = r[0]
+    #    self.ptEnd = r[1]
+
+    # def updateF1Coeffs(self, f):
+    #    if f is not None:
+    #        if f is 5:
+    #            self.norm.loadF1File(None)
+    #        else:
+    #            self.norm.loadF1File(f)
+
+    # def updateF2Coeffs(self, f):
+    #    if f is not None:
+    #        if f is 5:
+    #            self.norm.loadF2File(None)
+    #        else:
+    #            self.norm.loadF2File(f)
+
+    # def updateZFile(self, f):
+    #    if f is not None:
+    #        if f is 5:
+    #            self.norm.loadZFile(None)
+    #        else:
+    #            self.norm.loadZFile(f)
+
+    def setNormFunc(self, cl):
+        self.norm = cl()
 
     def updateNormClass(self, cl):
         self.norm = cl()
@@ -173,6 +202,7 @@ class Normalize(PreprocessingBase):
         else:
             self.findParam('f1coeff').setValue(None)
             self.findParam('f1coeff').setReadonly(True)
+            self.delFunction('init', 'norm.loadF1File')
 
         if self.norm.UseF2Coeff:
             self.findParam('f2coeff').setValue(1)
@@ -180,6 +210,7 @@ class Normalize(PreprocessingBase):
         else:
             self.findParam('f2coeff').setValue(None)
             self.findParam('f2coeff').setReadonly(True)
+            self.delFunction('init', 'norm.loadF2File')
 
         if self.norm.UseZSource:
             self.findParam('zsource').setValue(None)
@@ -187,6 +218,9 @@ class Normalize(PreprocessingBase):
         else:
             self.findParam('zsource').setValue(None)
             self.findParam('zsource').setReadonly(True)
+            self.delFunction('init', 'norm.loadZFile')
+
+        self.updateScript()
 
     def getTrace(self, n):
         if self.enabled:
@@ -194,20 +228,19 @@ class Normalize(PreprocessingBase):
 
             if trace is None:
                 return None
-            proc = self.norm.processTrace(trace[self.ptStart:self.ptEnd], n)
+            proc = self.norm.processTrace(trace, n)
 
             return proc
         else:
             return self.trace.getTrace(n)
 
-    def init(self):
-
-        if self.ptEnd == 0:
-            points = np.shape(self.trace.getTrace(0))[0]
-            self.findParam('ptrange').setLimits((0, points))
-            self.findParam('ptrange').setValue((0, points))
-            self.ptStart = 0
-            self.ptEnd = points
+    # def init(self):
+    #    if self.ptEnd == 0:
+    #        points = np.shape(self.trace.getTrace(0))[0]
+    #        self.findParam('ptrange').setLimits((0, points))
+    #        self.findParam('ptrange').setValue((0, points))
+    #        self.ptStart = 0
+    #        self.ptEnd = points
 
 
 

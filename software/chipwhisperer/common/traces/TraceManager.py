@@ -216,9 +216,7 @@ class TraceManagerDialog(QDialog):
     def saveProject(self, config, configfilename):
         for indx, t in enumerate(self.traceList):
             config[self.secName]['tracefile%d'%indx] = os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0])
-
-            # TODO: Fix me - this whole system is too much of a hack. Just enable everythign on save for now...
-            config[self.secName]['enabled%d' % indx] = "True"  # str(t.config.enabled)
+            config[self.secName]['enabled%d' % indx] = str(t.enabled)
 
     def loadProject(self, configfilename):
         config = ConfigParser.RawConfigParser()
@@ -262,7 +260,7 @@ class TraceManagerDialog(QDialog):
         self.table.insertRow(location)
         row = self.table.rowCount()-1
         cb = QCheckBox()
-        cb.setChecked(False)
+        cb.setChecked(True)
         cb.clicked.connect(self.validateTable)
         self.table.setCellWidget(row, self.findCol("Enabled"), cb)
 
@@ -291,6 +289,10 @@ class TraceManagerDialog(QDialog):
         startTrace = 0
         for i in range(0, self.table.rowCount()):
             if self.table.cellWidget(i, self.findCol("Enabled")).isChecked():
+                if not hasattr(self.traceList[i], 'enabled'):
+                    self.tracesChanged.emit()
+                elif self.traceList[i].enabled == False:
+                    self.tracesChanged.emit()
                 self.traceList[i].enabled = True
                 tlen = self.traceList[i].numTraces()
                 self.traceList[i].mappedRange = [startTrace, startTrace+tlen-1]
@@ -309,6 +311,10 @@ class TraceManagerDialog(QDialog):
                     # self.traceList[i].loadAllTraces(path, pref)
                 
             else:
+                if not hasattr(self.traceList[i], 'enabled'):
+                    self.tracesChanged.emit()
+                elif self.traceList[i].enabled == True:
+                    self.tracesChanged.emit()
                 self.traceList[i].enabled = False
                 self.traceList[i].mappedRange = None
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
@@ -326,6 +332,7 @@ class TraceManagerDialog(QDialog):
     def append(self, ti):
         self.traceList.append(ti)
         self.addRow(ti)
+        self.tracesChanged.emit()
         #self.updatePreview()
 
     def importExisting(self, fname=None):

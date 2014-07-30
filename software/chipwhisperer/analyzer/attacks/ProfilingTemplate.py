@@ -38,7 +38,7 @@ except ImportError:
 import os
 import numpy as np
 from openadc.ExtendedParameter import ExtendedParameter
-import ast
+
 try:
     from pyqtgraph.parametertree import Parameter
 except ImportError:
@@ -52,16 +52,22 @@ except ImportError:
     print "WARNING: Version of SciPy too old, require > 0.14, have %s" % (scipy.version.version)
     # sys.exit()
 
+from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.traces.utils import strListToList
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import HypHW, HypHD
+from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.utils.Partition import Partition
 
-class TemplateBasic(object):
+class TemplateBasic(AutoScript, QObject):
     """
     Template using Multivariate Stats (mean + covariance matrix)
     """
+    scriptsUpdated = Signal()
+
     def __init__(self, tmanager=None):
+        super(TemplateBasic, self).__init__()
         self._tmanager = None
-        self.partObject = Partition(self)
 
     def traceManager(self):
         return self._tmanager
@@ -75,11 +81,21 @@ class TemplateBasic(object):
     def project(self):
         return self._project
 
-    def generate(self, trange, poiList, numPartitions):
+    def generate(self, trange, poiList, partMethod, showProgressBar=True):
         """Generate templates for all partitions over entire trace range"""
+
+        if showProgressBar:
+            progressBar = QProgressDialog()
+            # progressBar.setWindowModality(Qt.WindowModal)
+            # progressBar.setMinimumDuration(1000)
+            # progressBar.offset = trange[0]
+        else:
+            progressBar = None
 
         # Number of subkeys
         subkeys = len(poiList)
+
+        numPartitions = partMethod.getNumPartitions()
 
         tstart = trange[0]
         tend = trange[1]
@@ -89,19 +105,30 @@ class TemplateBasic(object):
         templateMeans = [ np.zeros((numPartitions, len(poiList[i]))) for i in range (0, subkeys) ]
         templateCovs = [ np.zeros((numPartitions, len(poiList[i]), len(poiList[i]))) for i in range (0, subkeys) ]
 
+        # partData = generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None)
+        # partData = partObj.loadPartitions(trange)
+
+        if progressBar:
+            progressBar.setWindowTitle('Generating Templates')
+            progressBar.setLabelText('Generating Trace Matrix')
+            progressBar.setMinimum(0)
+            progressBar.setMaximum(tend - tstart + subkeys)
+
         for tnum in range(tstart, tend):
-            partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
-
+            # partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+            pnum = partMethod.getPartitionNum(self.traceManager(), tnum)
+            t = self.traceManager().getTrace(tnum)
             for bnum in range(0, subkeys):
-                for i in range(0, numPartitions):
+                templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
 
-                    # Trace part of this partition?
-                    if tnum in partData[bnum][i]:
-                        # templateMeans[bnum][i] += tmanager.getTrace(tnum)[poiList[bnum]]
-                        templateTraces[bnum][i].append(self.traceManager().getTrace(tnum)[poiList[bnum]])
+            if progressBar:
+                progressBar.setValue(tnum - tstart)
+                if progressBar.wasCanceled():
+                    progressBar.setValue(progressBar.maximum())
+                    return None
 
-            if tnum % 100 == 0:
-                print tnum
+        if progressBar:
+            progressBar.setLabelText('Generating Trace Covariance and Mean Matrices')
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
@@ -115,37 +142,57 @@ class TemplateBasic(object):
                     print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
                     templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
 
+            if progressBar:
+                progressBar.setValue(tend + bnum)
+                if progressBar.wasCanceled():
+                    progressBar.setValue(progressBar.maximum())
+                    return None
+
+
                 # except ValueError:
                 #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
 
-        self.templateMeans = templateMeans
-        self.templateCovs = templateCovs
-        self.templateSource = (tstart, tend)
+        # self.templateMeans = templateMeans
+        # self.templateCovs = templateCovs
+        # self.templateSource = (tstart, tend)
+        # self.templatePoiList = poiList
+        # self.templatePartMethod = partMethod
+
+        self.template = {
+         "mean":templateMeans,
+         "cov":templateCovs,
+         "trange":(tstart, tend),
+         "poi":poiList,
+         "partitiontype":partMethod.__class__.__name__
+        }
+
+        return self.template
 
 
-class ProfilingTemplate(QObject):
+class ProfilingTemplate(AutoScript, QObject):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     paramListUpdated = Signal(list)
+    notifyUser = Signal(str, str)
 
-    def __init__(self, parent, showScriptParameter=None, tmanager=None):
+    def __init__(self, parent, showScriptParameter=None, tmanager=None, console=None):
         super(ProfilingTemplate, self).__init__()
-
-        self.parent = parent
-        self.profiling = TemplateBasic()
+        if console:
+            self.console = console
+        self.setParent(parent)
         self._tmanager = None
+        self._project = None
 
         resultsParams = [{'name':'Template Generation', 'type':'group', 'children':[
-                            {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int'},
-                            {'name':'Trace End', 'key':'tgenstop', 'value':1000, 'type':'int'},
-                            {'name':'POI Selection'},
-                            {'name':'Generate Templates', 'type':'action', 'action':self.generateTemplates}
+                            {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
+                            {'name':'Trace End', 'key':'tgenstop', 'value':1000, 'type':'int', 'set':self.updateScript},
+                            {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
+                            {'name':'Read POI', 'type':'action', 'action':self.updateScript},
+                            {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
                             ]},
 
-                         {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
-                         {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                         {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100, 'set':self.updateScript},
                          ]
         self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
         if showScriptParameter is not None:
@@ -153,9 +200,51 @@ class ProfilingTemplate(QObject):
             # print self.showScriptParameter
         ExtendedParameter.setupExtended(self.params, self)
 
+        self.addGroup("generateTemplates")
+
         self.sr = None
 
         self.stats = DataTypeDiffs()
+        self.setProfileAlgorithm(TemplateBasic)
+
+        # Not needed as setProfileAlgorithm calls this
+        # self.updateScript()
+
+    def log(self, s):
+        if hasattr(self, 'console') and self.console:
+            self.console.append(s)
+
+    def setProfileAlgorithm(self, algo):
+        self.profiling = algo()
+        self.profiling.setTraceManager(self._tmanager)
+        self.profiling.setProject(self._project)
+        self.profiling.scriptsUpdated.connect(self.updateScript)
+        self.updateScript()
+        
+    def updateScript(self, ignored=None):
+        self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+
+        ted = self.parent().parent().utilList[0].exampleScripts[0]
+
+        self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
+        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+
+        if self.findParam('poimode').value() == 0:
+            self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
+            self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
+            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
+        else:
+            poidata = self.loadPOIs()[-1]
+            self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
+            self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
+            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
+
+        self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
+        
+        #Save template data to project
+        self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
+
+        self.scriptsUpdated.emit()
 
     def paramList(self):
         return [self.params]
@@ -166,6 +255,9 @@ class ProfilingTemplate(QObject):
     def setKeyround(self, keyround):
         self.keyround = keyround
 
+    def setReportingInterval(self, intv):
+        self._reportinginterval = intv
+
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
 
@@ -173,7 +265,6 @@ class ProfilingTemplate(QObject):
         return self._tmanager
 
     def setTraceManager(self, tmanager):
-        print tmanager
         self._tmanager = tmanager
         # Set for children
         self.profiling.setTraceManager(tmanager)
@@ -184,71 +275,113 @@ class ProfilingTemplate(QObject):
         self.profiling.setProject(proj)
 
     def project(self):
+        if self._project is None:
+            self.setProject(self.parent().project())
         return self._project
 
-    def generateTemplates(self):
-        self.loadPOI()
-
-        tRange = (self.findParam('tgenstart').value(), self.findParam('tgenstop').value())
-        numParts = 256
-
-        poiList = self.loadPOI()
-
-        # Generate templates
-        self.profiling.generate(tRange, poiList , numParts)
-
+    def saveTemplatesToProject(self, trange, templatedata):
         cfgsec = self.project().addDataConfig(sectionName="Template Data", subsectionName="Templates")
-        cfgsec["tracestart"] = tRange[0]
-        cfgsec["traceend"] = tRange[1]
+        cfgsec["tracestart"] = trange[0]
+        cfgsec["traceend"] = trange[1]
+        cfgsec["poi"] = templatedata["poi"]
+        cfgsec["partitiontype"] = templatedata["partitiontype"]
 
-        fname = self.project().getDataFilepath('templates-%d-%d.npz' % (tRange[0], tRange[1]), 'analysis')
+        fname = self.project().getDataFilepath('templates-%s-%d-%d.npz' % (cfgsec["partitiontype"], trange[0], trange[1]), 'analysis')
 
         # Save template file
-        np.savez(fname["abs"], mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
-
+        np.savez(fname["abs"], **templatedata)  # mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
         cfgsec["filename"] = fname["rel"]
 
-    def loadTemplates(self):
-        # template = np.load(r'C:/E/Documents/academic/sidechannel/eclipse-workspace/chipwhisperer/chipwhisperer/software/chipwhisperer/capture/mega328p_aes128_100k/mega328p_aes128_100k_data/analysis\templates-0-12000.npz')
+        print "Saved template to: %s" % fname["abs"]
 
+        return fname["abs"]
+
+    def loadTemplatesFromProject(self):
         # Load Template
-        foundsecs = self.parent.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
-        if len(foundsecs) > 1:
-            IOError("Too many sections!!!")
-        elif len(foundsecs) == 1:
-            fname = self.parent.project().convertDataFilepathAbs(foundsecs[0]["filename"])
-            return np.load(fname)
-        else:
-            IOError("Templates")
+        foundsecs = self.parent().project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
+        templates = []
 
+        for f in foundsecs:
+            fname = self.parent().project().convertDataFilepathAbs(f["filename"])
+            t = np.load(fname)
+            templates.append(t)
 
-    def loadPOI(self):
+            # Validate in case someone tries to change via project file
+            if f["partitiontype"] != t["partitiontype"]:
+                print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
+
+            if (strListToList(str(f["poi"])) != t["poi"]).any():
+                print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
+
+        return templates
+
+    def loadPOIs(self):
         section = self.project().getDataConfig("Template Data", "Points of Interest")
-        poistr = str(section[0]["poi"])
-        poistr = poistr.replace('"', '')
-        poistr = poistr.replace("'", "")
-        try:
-            poiList = ast.literal_eval(poistr)
-        except ValueError:
-            print "Failed to convert %s to list" % (poistr)
+
+        poiList = []
+
+        for s in section:
+            poistr = str(s["poi"])
+            poieval = strListToList(poistr)
+            poiList.append(s.copy())
+            poiList[-1]["poi"] = poieval
 
         return poiList
 
     def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
-        template = self.loadTemplates()
-        pois = self.loadPOI()
 
+        # Hack for now - just use last template found
+        template = self.loadTemplatesFromProject()[-1]
+        pois = template["poi"]
+        numparts = len(template['mean'][0])
         results = np.zeros((16, 256))
 
-        # trace = np.mean(traces, axis=0)
-        # print np.shape(trace)
+        tdiff = self._reportinginterval
 
-        for trace in traces:
-        # if True:
+        if progressBar:
+            progressBar.setMinimum(0)
+            progressBar.setMaximum(16 * len(traces))
+            pcnt = 0
+
+        for tnum in range(0, len(traces)):
             for bnum in range(0, 16):
-                newresults = [multivariate_normal.logpdf(trace[pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, 256)]
+                newresultsint = [multivariate_normal.logpdf(traces[tnum][pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, numparts)]
+
+                ptype = template["partitiontype"]
+
+                if ptype == "PartitionHWIntermediate":
+                    newresults = []
+                    # Map to key guess format
+                    for i in range(0, 256):
+                        # Get hypothetical hamming weight
+                        hypint = HypHW(plaintexts[tnum], None, i, bnum)
+                        newresults.append(newresultsint[ hypint ])
+                elif ptype == "PartitionHDLastRound":
+                    newresults = []
+                    # Map to key guess format
+                    for i in range(0, 256):
+                        # Get hypothetical hamming distance
+                        # hypint = HypHD(plaintexts[tnum], None, i, bnum)
+                        hypint = HypHD(None, ciphertexts[tnum], i, bnum)
+                        newresults.append(newresultsint[ hypint ])
+                else:
+                    newresults = newresultsint
+                
                 results[bnum] += newresults
-                self.stats.updateSubkey(bnum, results[bnum], tnum=0)
+                self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
+
+                if progressBar:
+                    progressBar.setValue(pcnt)
+                    progressBar.updateStatus((tnum, len(traces)), bnum)
+                    pcnt += 1
+
+                    if progressBar.wasCanceled():
+                        raise KeyboardInterrupt
+
+
+            # Do plotting if required
+            if (tnum % tdiff) == 0 and self.sr:
+                self.sr()
 
     def getStatistics(self):
         return self.stats

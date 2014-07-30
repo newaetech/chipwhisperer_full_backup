@@ -80,11 +80,12 @@ from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 import chipwhisperer.analyzer.preprocessing.Preprocessing as Preprocessing
 import chipwhisperer.common.ParameterTypesCustom
 
-#TEMP
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotData
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
+
+from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
@@ -99,11 +100,13 @@ class ChipWhispererAnalyzer(MainChip):
         self.addWaveforms()
         
         numPreprocessingStep = 4
-        self.preprocessingList = [None]*numPreprocessingStep
+        self.preprocessingListGUI = [None] * numPreprocessingStep
         
         
         self.utilList = []
         self.traceExplorerDialog = TraceExplorerDialog(self)
+        self.traceExplorerDialog.scriptsUpdated.connect(self.reloadScripts)
+        self.traceExplorerDialog.runScriptFunction.connect(self.runFunc)
         self.utilList.append(self.traceExplorerDialog)
 
         self.cwParams = [
@@ -149,6 +152,11 @@ class ChipWhispererAnalyzer(MainChip):
             self.addDockWidget(Qt.RightDockWidgetArea, d)
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
             self.enforceMenuOrder()
+
+
+        self.mse = MainScriptEditor(self)
+        self.mse.editWindow.runFunction.connect(self.runScriptFunction)
+        self.addDock(self.mse, name="Scripting", area=Qt.RightDockWidgetArea)
         
         self.restoreDockGeometry()
         
@@ -161,7 +169,7 @@ class ChipWhispererAnalyzer(MainChip):
         for d in self.results.dockList():
             self.tabifyDockWidget(self.waveformDock, d)
 
-        self.newProject()   
+        self.newProject()
         
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
@@ -206,15 +214,122 @@ class ChipWhispererAnalyzer(MainChip):
         self.toolMenu.addSeparator()
 
     def setPreprocessing(self, num, module):
-        self.preprocessingList[num] = module
+        self.preprocessingListGUI[num] = module
         if module:
             module.paramListUpdated.connect(self.reloadParamListPreprocessing)
+            module.scriptsUpdated.connect(self.reloadScripts)
         self.reloadParamListPreprocessing() 
-        self.setupPreprocessorChain()   
+        self.reloadScripts()
+
+    def runFunc(self, name):
+        # TODO: We should be doing this correctly, this hack is bad ;_;
+        # name = "TraceExplorerDialog_PartitionDisplay_" + name
+        self.runScriptFunction(name)
+
+
+    def reloadScripts(self):
+        self.mse.saveSliderPosition()
+        self.mse.editWindow.clear()
+
+        self.mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
+
+        self.mse.append("from chipwhisperer.common.autoscript import AutoScriptBase", 0)
+
+        # Get imports from preprocessing
+        self.mse.append("#Imports from Preprocessing", 0)
+        self.mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
+        for p in self.preprocessingListGUI:
+            if p:
+                imports = p.getImportStatements()
+                for i in imports: self.mse.append(i, 0)
+
+        # Get imports from capture
+        self.mse.append("#Imports from Capture", 0)
+        for i in self.attack.getImportStatements():
+            self.mse.append(i, 0)
+
+        # Some other imports
+        self.mse.append("#Imports from utilList", 0)
+        for index, util in enumerate(self.utilList):
+            if hasattr(util, '_smartstatements') and util.isVisible():
+                for i in util.getImportStatements(): self.mse.append(i, 0)
+
+        self.mse.append("", 0)
+
+        # Add main class
+        self.mse.append("class userScript(AutoScriptBase):", 0)
+        self.mse.append("preProcessingList = []", 1)
+
+        self.mse.append("def initProject(self):", 1)
+        self.mse.append("pass")
+
+
+        self.mse.append("def initPreprocessing(self):", 1)
+
+        # Get init from preprocessing
+        instNames = ""
+        for i, p in enumerate(self.preprocessingListGUI):
+            if p:
+                classname = type(p).__name__
+                instname = "self.preProcessing%s%d" % (classname, i)
+                self.mse.append("%s = preprocessing.%s.%s(self.parent)" % (instname, classname, classname))
+                for s in p.getStatements('init'):
+                    self.mse.append(s.replace("self.", instname + ".").replace("userScript.", "self."))
+                instNames += instname + ","
+
+        self.mse.append("self.preProcessingList = [%s]" % instNames)
+        self.mse.append("return self.preProcessingList")
+
+
+        self.mse.append("def initAnalysis(self):", 1)
+
+        # Get init from analysis
+        self.mse.append('self.attack = %s(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)' % type(self.attack).__name__)
+        for s in self.attack.getStatements('init'):
+            self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
+
+        self.mse.append('return self.attack')
+
+        # Get init from reporting
+
+        # Get go command from analysis
+        self.mse.append("def initReporting(self, results):", 1)
+        # self.mse.append("results.clear()")
+        self.mse.append("results.setAttack(self.attack)")
+        self.mse.append("results.setTraceManager(self.traceManager())")
+        self.mse.append("self.results = results")
+
+        self.mse.append("def doAnalysis(self):", 1)
+        self.mse.append("self.attack.doAttack()")
+
+        # Get other commands from attack module
+        for k in self.attack._smartstatements:
+            if k == 'init' or k == 'go' or k == 'done':
+                pass
+            else:
+                self.mse.append("def %s(self):" % k, 1)
+                for s in self.attack.getStatements(k):
+                    self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
+
+
+        # Get other commands from other utilities
+        for index, util in enumerate(self.utilList):
+            if hasattr(util, '_smartstatements') and util.isVisible():
+                for k in util._smartstatements:
+                    util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
+                    util._smartstatements[k].addSelfReplacement("parent.")
+                    statements = util.getStatements(k)
+                    
+                    if len(statements) > 0:
+                        self.mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
+                        for s in statements:
+                            self.mse.append(s.replace("userScript.", "self."))
+
+        self.mse.restoreSliderPosition()
 
     def reloadParamListPreprocessing(self, list=None):        
         plist = []
-        for p in self.preprocessingList:
+        for p in self.preprocessingListGUI:
             if p:
                 for item in p.paramList():
                     plist.append(item)
@@ -231,9 +346,32 @@ class ChipWhispererAnalyzer(MainChip):
         if hasattr(self, "traces") and self.traces:
             self.attack.setTraceManager(self.traces)
 
-        self.attack.setProject(self.proj)
+        self.attack.setProject(self.project())
+        self.attack.scriptsUpdated.connect(self.reloadScripts)
+        self.attack.runScriptFunction.connect(self.runScriptFunction)
+        self.reloadScripts()
 
-    def doAttack(self):        
+    def setupScriptModule(self):
+        mod = self.mse.loadModule().userScript(self, self.console, self.showScriptParameter)
+        if hasattr(self, "traces") and self.traces:
+            mod.setTraceManager(self.traces)
+        return mod
+
+    def runScriptFunction(self, funcname):
+        mod = self.setupScriptModule()
+        try:
+            eval('mod.%s()' % funcname)
+        except AttributeError as e:
+            # TODO fix this hack - this function will not exist before the
+            # traceexplorer dialog has been opended, but will still be
+            # called once
+            if funcname == 'TraceExplorerDialog_PartitionDisplay_findPOI':
+                pass
+            else:
+                # Continue with exception
+                raise
+
+    def doAttack(self):
         #Check if traces enabled
         if self.traces.NumTrace == 0:
             msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project - open Trace Manager?",
@@ -243,17 +381,34 @@ class ChipWhispererAnalyzer(MainChip):
             if msgBox.exec_() == QMessageBox.AcceptRole:
                 self.manageTraces.show()
             return
-            
-        self.console.append("Attack Started")
         
-        if self.results:
-            self.results.setTraceManager(self.traces)
+        self.console.append("Loading...")
+        mod = self.setupScriptModule()
+        # mod.initProject()
+
+        # Setup trace sources etc, this calls the
+        # .initPreprocessing itself
+        # it also resets the setTraces in the passed 'mod',
+        # which is REQUIRED for proper functioning!
+        self.setupPreprocessorChain(mod)
+
+        mod.initAnalysis()
+        mod.initReporting(self.results)
         
-        if self.attack:
-            self.attack.setTraceManager(self.traces)
-            self.attack.doAttack()
+        mod.doAnalysis()
+
+        mod.doneAnalysis()
+        mod.doneReporting()
+
+        # self.console.append("Attack Started")
+        # if self.results:
+        #    self.results.setTraceManager(self.traces)
+        #
+        # if self.attack:
+        #    self.attack.setTraceManager(self.traces)
+        #    self.attack.doAttack()
             
-        self.console.append("Attack Done")
+        # self.console.append("Attack Done")
         
     def reloadAttackParamList(self, list=None):
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
@@ -262,7 +417,11 @@ class ChipWhispererAnalyzer(MainChip):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
         self.plotInputTrace()
 
-    def setupPreprocessorChain(self):
+    def setupPreprocessorChain(self, mod=None):
+        if mod is None:
+            mod = self.setupScriptModule()
+        self.preprocessingList = mod.initPreprocessing()
+
         self.lastoutput = self.manageTraces.iface
         for t in self.preprocessingList:
             if t:
@@ -274,6 +433,9 @@ class ChipWhispererAnalyzer(MainChip):
         for item in self.utilList:
             item.setTraceSource(self.traces)
 
+        mod.setTraceManager(self.traces)
+
+        # self.reloadScripts()
         
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
@@ -302,7 +464,7 @@ class ChipWhispererAnalyzer(MainChip):
             if self.plotInputEach:
                 QCoreApplication.processEvents()
 
-        print ttotal
+        # print ttotal
         
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         """When traces is loaded, Tell everything default point/trace range"""
@@ -374,44 +536,43 @@ class ChipWhispererAnalyzer(MainChip):
         return p        
     
     def openProject(self, fname):
-        self.proj = ProjectFormat()
-        self.proj.setProgramName("ChipWhisperer-Analyzer")
-        self.proj.setProgramVersion("2.00")
-        self.proj.setTraceManager(self.manageTraces)  
+        self.setProject(ProjectFormat(self))
+        self.project().setProgramName("ChipWhisperer-Analyzer")
+        self.project().setProgramVersion("2.00")
+        self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(fname)
-        self.proj.setFilename(fname)
-        self.proj.load()
+        self.project().setFilename(fname)
+        self.project().load()
         
         #Open project file & read in everything
-        self.proj.traceManager.loadProject(fname)
+        self.project().traceManager.loadProject(fname)
 
         # Ensure attack knows about this project
-        self.attack.setProject(self.proj)
-        self.traceExplorerDialog.setProject(self.proj)
+        self.attack.setProject(self.project())
+        self.traceExplorerDialog.setProject(self.project())
 
-  
     def newProject(self):        
         #TODO: Move this to MainChip
-        self.proj = ProjectFormat()
-        self.proj.setProgramName("ChipWhisperer-Analyzer")
-        self.proj.setProgramVersion("2.00")
-        self.proj.addParamTree(self)    
-        self.proj.setTraceManager(self.manageTraces)  
+        self.setProject(ProjectFormat(self))
+        self.project().setProgramName("ChipWhisperer-Analyzer")
+        self.project().setProgramVersion("2.00")
+        self.project().addParamTree(self)
+        self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
-        self.traceExplorerDialog.setProject(self.proj)
+        self.projectChanged.connect(self.traceExplorerDialog.setProject)
   
     def saveProject(self):
         #TODO: Move to MainChip
-        if self.proj.hasFilename() == False:
+        if self.project().hasFilename() == False:
             fname, _ = QFileDialog.getSaveFileName(self, 'Save New File','.','*.cwp')
             
             if fname is None:
                 return
             
-            self.proj.setFilename(fname)
+            self.project().setFilename(fname)
             self.setCurrentFile(fname)
             
-        self.proj.save()
+        self.project().save()
         self.dirty = False
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")

@@ -81,7 +81,7 @@ class CPAProgressiveOneSubkey(object):
             padbefore = pointRange[bnum][0]
             padafter = len(traces_all[0,:]) - pointRange[bnum][1]
             #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
-    
+
         #For each 0..0xFF possible value of the key byte
         for key in range(0, 256):                
             #Initialize arrays & variables to zero
@@ -115,12 +115,12 @@ class CPAProgressiveOneSubkey(object):
                 
                 #Generate the output of the SBOX
                 if modeltype == "Hamming Weight":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                 elif modeltype == "Hamming Weight (inverse)":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                     hypint = 8 - hypint
                 elif modeltype == "Hamming Distance":
-                    hypint = model.HypHD(pt, ct, key, bnum);
+                    hypint = model.HypHD(pt, ct, key, bnum)
                 else:
                     raise ValueError("modeltype invalid")
                 hyp[tnum] = hypint
@@ -185,13 +185,141 @@ class CPAProgressiveOneSubkey(object):
         
         return (diffs, pbcnt)
 
+class MinDistOneSubkey(object):
+    """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
+    def __init__(self):
+        self.clearStats()
+#        self.template = np.load(r'Y:\channelestimate\july2014\A_atmega328p_1318\randplain_randkey_key0_data\analysis\templates-0-2499-csi.npz')["mean"]
+        self.template = np.load(r'Y:\channelestimate\july2014\A_atmega328p_1318\randplain_fixedkey_key1_data\analysis\templates-0-2499-csi.npz')["mean"]
+
+    def clearStats(self):
+        self.diff = [0] * 256
+        self.totalTraces = 0
+
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+        self.totalTraces += numtraces
+
+        traces = traces_all
+
+        # For each 0..0xFF possible value of the key byte
+        for key in range(0, 256):
+
+            # Generate hypotheticals
+            for tnum in range(numtraces):
+
+                if len(plaintexts) > 0:
+                    pt = plaintexts[tnum]
+
+                if len(ciphertexts) > 0:
+                    ct = ciphertexts[tnum]
+
+                if keyround == "first":
+                    ct = None
+                elif keyround == "last":
+                    pt = None
+                else:
+                    raise ValueError("keyround invalid")
+
+                # Generate the output of the SBOX
+                if modeltype == "Hamming Weight":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                elif modeltype == "Hamming Weight (inverse)":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = 8 - hypint
+                elif modeltype == "Hamming Distance":
+                    hypint = model.HypHD(pt, ct, key, bnum);
+                else:
+                    raise ValueError("modeltype invalid")
+
+                self.diff[key] += -abs(traces[tnum] - self.template[bnum][hypint])
+
+            if progressBar:
+                progressBar.setValue(pbcnt)
+                progressBar.updateStatus((self.totalTraces - numtraces, self.totalTraces), bnum)
+                pbcnt = pbcnt + 1
+                if progressBar.wasCanceled():
+                    raise KeyboardInterrupt
+
+                if progressBar.wasSkipped():
+                    return (self.diff, pbcnt)
+
+        return (self.diff, pbcnt)
+
+import scipy
+from scipy.stats import norm
+
+class TemplateOneSubkey(object):
+    """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
+    def __init__(self):
+        self.clearStats()
+        self.template = np.load(r'Y:\channelestimate\july2014\A_atmega328p_1318\randplain_fixedkey_key1_data\analysis\templates-0-2499-csi.npz')
+
+    def clearStats(self):
+        self.diff = [0] * 256
+        self.totalTraces = 0
+
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
+        self.totalTraces += numtraces
+
+        traces = traces_all
+        
+        logpdf = []
+        for tnum in range(0, numtraces):
+            hdata = [norm.logpdf(traces[tnum], loc=self.template['mean'][bnum][hypint], scale=self.template['cov'][bnum][hypint]) for hypint in range(0, 9)]
+            logpdf.append(hdata)
+
+        # For each 0..0xFF possible value of the key byte
+        for key in range(0, 256):
+
+            # Generate hypotheticals
+            for tnum in range(numtraces):
+
+                if len(plaintexts) > 0:
+                    pt = plaintexts[tnum]
+
+                if len(ciphertexts) > 0:
+                    ct = ciphertexts[tnum]
+
+                if keyround == "first":
+                    ct = None
+                elif keyround == "last":
+                    pt = None
+                else:
+                    raise ValueError("keyround invalid")
+
+                # Generate the output of the SBOX
+                if modeltype == "Hamming Weight":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                elif modeltype == "Hamming Weight (inverse)":
+                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = 8 - hypint
+                elif modeltype == "Hamming Distance":
+                    hypint = model.HypHD(pt, ct, key, bnum);
+                else:
+                    raise ValueError("modeltype invalid")
+
+                self.diff[key] += logpdf[tnum][hypint]
+
+            if progressBar:
+                progressBar.setValue(pbcnt)
+                progressBar.updateStatus((self.totalTraces - numtraces, self.totalTraces), bnum)
+                pbcnt = pbcnt + 1
+                if progressBar.wasCanceled():
+                    raise KeyboardInterrupt
+
+                if progressBar.wasSkipped():
+                    return (self.diff, pbcnt)
+
+        return (self.diff, pbcnt)
+
+
 class CPAExperimentalChannelinfo(QObject):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, model,showScriptParameter=None):
+    def __init__(self, model, showScriptParameter=None, parent=None):
         super(CPAExperimentalChannelinfo, self).__init__()
         
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
@@ -203,7 +331,10 @@ class CPAExperimentalChannelinfo(QObject):
         
         self.model = model
         self.sr = None
+        self.parent = parent
         
+        print self.parent.parent
+
         self.stats = DataTypeDiffs()
         
     def paramList(self):
@@ -248,6 +379,8 @@ class CPAExperimentalChannelinfo(QObject):
         cpa = [None]*(max(brange)+1)
         for bnum in brange:
             cpa[bnum] = CPAProgressiveOneSubkey()
+            # cpa[bnum] = MinDistOneSubkey()
+            # cpa[bnum] = TemplateOneSubkey()
             
         brangeMap = [None]*(max(brange)+1)
         i = 1
@@ -274,7 +407,13 @@ class CPAExperimentalChannelinfo(QObject):
         #H = np.load('channelinfo.npy')
         #mio = sio.loadmat('equalizer.mat')
         #H = mio['equaltotal']
-        H = np.load('equalization.npy')
+        # H = np.load('equalization.npy')
+        # self.project() ?
+        project = self.parent.parent.proj
+        section = project.getDataConfig("Template Data", "Equalization Matrix")
+       # section = project.getDataConfig("Template Data", "AOF Matrix")
+        fname = project.convertDataFilepathAbs(section[0]["filename"])
+        H = np.load(fname)
 
         #for j in range(0, 16):
             #4 = 500-800
@@ -342,3 +481,76 @@ class CPAExperimentalChannelinfo(QObject):
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
+from chipwhisperer.analyzer.utils.Partition import Partition
+
+# This is actually used by ProfilingTemplate via a hack, which requires more work...
+class TemplateCSI(object):
+    """
+    Template using Multivariate Stats (mean + covariance matrix)
+    """
+    def __init__(self, tmanager=None):
+        self._tmanager = None
+        self.partObject = Partition(self)
+
+    def traceManager(self):
+        return self._tmanager
+
+    def setTraceManager(self, tmanager):
+        self._tmanager = tmanager
+
+    def setProject(self, proj):
+        self._project = proj
+
+    def project(self):
+        return self._project
+
+    def generate(self, trange, poiList, numPartitions):
+        """Generate templates for all partitions over entire trace range"""
+
+        section = self.project().getDataConfig("Template Data", "Equalization Matrix")
+        fname = self.project().convertDataFilepathAbs(section[0]["filename"])
+        H = np.load(fname)
+
+        # Number of subkeys
+        subkeys = len(poiList)
+
+        tstart = trange[0]
+        tend = trange[1]
+
+        templateTraces = [ [ [] for j in range(0, numPartitions) ] for i in range(0, subkeys) ]
+
+        templateMeans = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
+        templateCovs = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
+
+        for tnum in range(tstart, tend):
+            partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+
+            for bnum in range(0, subkeys):
+                for i in range(0, numPartitions):
+
+                    if tnum in partData[bnum][i]:
+                        trace = self.traceManager().getTrace(tnum)
+                        trace_fixed = np.dot(trace - trace.mean(), H[bnum]) + 4
+                        templateTraces[bnum][i].append(trace_fixed)
+
+            if tnum % 100 == 0:
+                print tnum
+
+        for bnum in range(0, subkeys):
+            for i in range(0, numPartitions):
+                templateMeans[bnum][i] = np.mean(templateTraces[bnum][i], axis=0)
+                cov = np.cov(templateTraces[bnum][i], rowvar=0)
+                # print "templateTraces[%d][%d] = %d" % (bnum, i, len(templateTraces[bnum][i]))
+
+                if len(templateTraces[bnum][i]) > 0:
+                    templateCovs[bnum][i] = cov
+                else:
+                    print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
+                    templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
+
+                # except ValueError:
+                #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
+
+        self.templateMeans = templateMeans
+        self.templateCovs = templateCovs
+        self.templateSource = (tstart, tend)
