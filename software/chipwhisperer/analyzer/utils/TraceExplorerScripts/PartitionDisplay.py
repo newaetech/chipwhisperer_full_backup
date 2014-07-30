@@ -402,7 +402,7 @@ class PartitionDisplay(AutoScript, QObject):
                 progressBar.setMaximum(len(segList['offsetList']) * self.numKeys)
                 progressBar.show()
 
-            for tsegn in segList['offsetList']:
+            for tsegn, segtrace in enumerate(segList['offsetList']):
 
                 if progressBar: progressBar.setLabelText("Segment %d" % tsegn)
 
