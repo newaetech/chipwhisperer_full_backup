@@ -51,7 +51,10 @@ class ReaderTemplate(QObject):
         self.setupParameters()
         
     def log(self, message):
-        self.console.append(message)
+        if self.console:
+            self.console.append(message)
+        else:
+            print message
                 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
@@ -142,7 +145,26 @@ class ReaderChipWhisperer(ReaderTemplate):
         #Start RX to catch response
         self.usi.read(2+rxdatalen+txdatalen+proctime, startonly=True)
         self.usi.write(data)
-        p = bytearray(self.usi.read(2+rxdatalen+txdatalen+proctime, waitonly=True))
+        temprx = bytearray(self.usi.read(2 + rxdatalen + txdatalen + proctime, waitonly=True))
+
+        # Uncomment to print data stream on RX pin
+        print "APDU: ",
+        for t in temprx: print "%02x " % t,
+        print ""
+
+        # We've actually read entire sent + received data in
+        # Strip header
+        del temprx[0:5]
+
+        # Strip transmitted data
+        if txdatalen > 0:
+            del temprx[1:(txdatalen + 1)]
+
+        # Strip receive data length, present only if TX + RX happened
+        if rxdatalen > 0 and txdatalen > 0:
+            del temprx[1]
+
+        p = temprx
         
         if p[0] != ins:
             self.log("ACK Error: %x != %x"%(ins, p[0]))
