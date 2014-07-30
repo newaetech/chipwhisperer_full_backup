@@ -80,6 +80,9 @@ class AttackBaseClass(QObject):
     def setTracesPerAttack(self, trace):
         self._tracePerAttack = trace
 
+    def setReportingInterval(self, ri):
+        self._reportinginterval = ri
+
     def getTraceStart(self):
         return self._traceStart
 
@@ -88,6 +91,9 @@ class AttackBaseClass(QObject):
 
     def getIterations(self):
         return self._iterations
+
+    def getReportingInterval(self):
+        return self._reportinginterval
 
     def setPointRange(self, rng, bnum=None):
         if bnum is None:

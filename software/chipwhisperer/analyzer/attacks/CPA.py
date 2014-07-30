@@ -105,7 +105,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
     def updateAlgorithm(self, algo):
         # TODO: this hack required in case don't have setReportingInterval
-        self.delFunction('init', 'attack.setReportingInterval')
+        # self.delFunction('init', 'attack.setReportingInterval')
 
         self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
@@ -187,6 +187,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.attack.setTargetBytes(self.targetBytes())
         self.attack.setKeyround(self.keyround())
         self.attack.setDirection(self.direction())
+        self.attack.setReportingInterval(self.getReportingInterval())
 
         self.attack.getStatistics().clear()
         self.attack.setStatsReadyCallback(self.statsReady)

@@ -169,6 +169,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def doAttack(self):        
         
         start = datetime.now()
+        self.attack.setReportingInterval(self.getReportingInterval())
         
         #TODO: support start/end point different per byte
         (startingPoint, endingPoint) = self.getPointRange(None)

@@ -178,8 +178,7 @@ class CPAProgressive(AutoScript, QObject):
     def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
         super(CPAProgressive, self).__init__()
         
-        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100, 'set':self.updateScript},
-                         {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+        resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},                         
                          ]
         self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
@@ -196,7 +195,8 @@ class CPAProgressive(AutoScript, QObject):
         self.updateScript()
         
     def updateScript(self, ignored=None):
-        self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+        # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+        pass
 
     def paramList(self):
         return [self.params]

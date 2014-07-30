@@ -164,23 +164,26 @@ class AttackGenericParameters(AutoScript, QObject):
 ############ Trace-Specific
     def setupTraceParam(self):
         self.traceParams = Parameter.create(name='Trace Setup', type='group', children=[
-            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.validateTraceSettings},
-            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings},
-            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1,1E6), 'value':1, 'set':self.validateTraceSettings}
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.updateGenericScript},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
+            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'set':self.updateGenericScript},
             ])
         ExtendedParameter.setupExtended(self.traceParams, self)
         
         self.addFunction("init", "setTraceStart", "0")
         self.addFunction("init", "setTracesPerAttack", "1")
         self.addFunction("init", "setIterations", "1")
+        self.addFunction("init", "setReportingInterval", "10")
         
     
         self.singleEmit = True   
     
-    def validateTraceSettings(self, ignored=None):
+    def updateGenericScript(self, ignored=None):
         runs = ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams)
         atraces = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
         strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
+        ri = ExtendedParameter.findParam(ExtendedParameter, 'reportinterval', self.traceParams)
         
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
         
@@ -200,6 +203,7 @@ class AttackGenericParameters(AutoScript, QObject):
         self.addFunction("init", "setTraceStart", "%d" % strace.value())
         self.addFunction("init", "setTracesPerAttack", "%d" % atraces.value())
         self.addFunction("init", "setIterations", "%d" % runs.value())
+        self.addFunction("init", "setReportingInterval", "%d" % ri.value())
 
 ############# Points-Specific
     def setupPointsParam(self):

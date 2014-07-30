@@ -184,15 +184,15 @@ class ProfilingTemplate(AutoScript, QObject):
         self._tmanager = None
         self._project = None
 
-        resultsParams = [{'name':'Template Generation', 'type':'group', 'children':[
+        resultsParams = [{'name':'Load Template', 'type':'group', 'children':[
+                            ]},
+                         {'name':'Generate New Template', 'type':'group', 'children':[
                             {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
                             {'name':'Trace End', 'key':'tgenstop', 'value':1000, 'type':'int', 'set':self.updateScript},
                             {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
                             {'name':'Read POI', 'type':'action', 'action':self.updateScript},
                             {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
                             ]},
-
-                         {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100, 'set':self.updateScript},
                          ]
         self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
         if showScriptParameter is not None:
@@ -222,7 +222,7 @@ class ProfilingTemplate(AutoScript, QObject):
         self.updateScript()
         
     def updateScript(self, ignored=None):
-        self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+       # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
 
         ted = self.parent().parent().utilList[0].exampleScripts[0]
 
