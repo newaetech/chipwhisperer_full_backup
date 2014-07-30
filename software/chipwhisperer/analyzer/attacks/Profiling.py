@@ -116,6 +116,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self, console=self.console)
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
+        self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
         self.traceManagerChanged.connect(self.attack.setTraceManager)
 
         try:

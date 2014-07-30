@@ -54,6 +54,7 @@ class AttackGenericParameters(AutoScript, QObject):
     traceManagerChanged = Signal(object)
     projectChanged = Signal(QObject)
     settingsChanged = Signal(QObject)
+    traceLimitsChanged = Signal(int, int)
         
     def __init__(self, MainWindow=None, console=None, showScriptParameter=None):
         super(AttackGenericParameters, self).__init__(MainWindow)
@@ -269,7 +270,9 @@ class AttackGenericParameters(AutoScript, QObject):
         strace.setValue(0)
         strace.setLimits((0,traces))
         atrace.setValue(traces)
-        atrace.setLimits((1, traces))  
+        atrace.setLimits((1, traces))
+
+        self.traceLimitsChanged.emit(traces, points)
     
     # def setPointRange(self, start, end, bnum=None, setlimits=False):
     #    start = int(start)

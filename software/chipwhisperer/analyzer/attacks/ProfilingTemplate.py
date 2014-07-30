@@ -188,7 +188,7 @@ class ProfilingTemplate(AutoScript, QObject):
                             ]},
                          {'name':'Generate New Template', 'type':'group', 'children':[
                             {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                            {'name':'Trace End', 'key':'tgenstop', 'value':1000, 'type':'int', 'set':self.updateScript},
+                            {'name':'Trace End', 'key':'tgenstop', 'value':self.parent().traceMax, 'type':'int', 'set':self.updateScript},
                             {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
                             {'name':'Read POI', 'type':'action', 'action':self.updateScript},
                             {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
@@ -248,6 +248,14 @@ class ProfilingTemplate(AutoScript, QObject):
 
     def paramList(self):
         return [self.params]
+
+    def traceLimitsChanged(self, traces, points):
+        tstart = self.findParam('tgenstart')
+        tend = self.findParam('tgenstop')
+        tstart.setLimits((0, traces))
+        tend.setValue(traces)
+        tend.setLimits((1, traces))
+
 
     def setByteList(self, brange):
         self.brange = brange
