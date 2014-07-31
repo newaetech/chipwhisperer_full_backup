@@ -239,7 +239,7 @@ class GraphWidget(QWidget):
         """Auto-fit X axis to data"""
         vb = self.pw.getPlotItem().getViewBox()
         bounds = vb.childrenBoundingRect(None)
-        print bounds
+        # print bounds
         vb.setXRange(bounds.left(), bounds.right())
         
     def yAutoScale(self, enabled):
