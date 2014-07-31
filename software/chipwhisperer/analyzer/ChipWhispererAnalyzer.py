@@ -564,9 +564,13 @@ class ChipWhispererAnalyzer(MainChip):
     def saveProject(self):
         #TODO: Move to MainChip
         if self.project().hasFilename() == False:
-            fname, _ = QFileDialog.getSaveFileName(self, 'Save New File','.','*.cwp')
-            
-            if fname is None:
+            fd = QFileDialog(self, 'Save New File', '.', '*.cwp')
+            fd.setDefaultSuffix('cwp')
+            fd.setAcceptMode(QFileDialog.AcceptSave)
+            fd.setViewMode(QFileDialog.Detail)
+            if fd.exec_() == QDialog.Accepted:
+                fname = fd.selectedFiles()[0]
+            else:
                 return
             
             self.project().setFilename(fname)
