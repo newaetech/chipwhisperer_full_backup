@@ -1,6 +1,8 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
 <file>images/cwicon.png</file>
+<file>images/cwiconA.png</file>
+<file>images/cwiconC.png</file>
 <file>images/attack_transp.png</file>
 <file>images/attack.png</file>
 <file>images/clear.png</file>

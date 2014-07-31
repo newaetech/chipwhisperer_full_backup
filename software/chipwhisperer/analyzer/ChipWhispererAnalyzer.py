@@ -90,7 +90,7 @@ from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 class ChipWhispererAnalyzer(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer" + u"\u2122" + " Analyzer V2")
+        super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer" + u"\u2122" + " Analyzer V2", icon="cwiconA")
         self.console = self.addConsole()   
         
         self.results = ResultsPlotting()

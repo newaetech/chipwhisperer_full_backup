@@ -177,7 +177,7 @@ class MainChip(QMainWindow):
     projectChanged = Signal(object)
 
     
-    def __init__(self, name="Demo"):
+    def __init__(self, name="Demo", icon="cwicon"):
         super(MainChip, self).__init__()
         
         self.manageTraces = TraceManagerDialog(self)
@@ -190,7 +190,7 @@ class MainChip(QMainWindow):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.lastMenuActionSection = None        
-        self.initUI()
+        self.initUI(icon)
         self.paramTrees = []
         self.originalStdout = None
         
@@ -407,11 +407,11 @@ class MainChip(QMainWindow):
         fakeAction = QAction('Does Nothing', self, visible=False)
         self.helpMenu.addAction(fakeAction)
             
-    def initUI(self):
+    def initUI(self, icon="cwicon"):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
         self.setWindowTitle(self.name)
-        self.setWindowIcon(QIcon(":/images/cwicon.png"))
+        self.setWindowIcon(QIcon(":/images/%s.png" % icon))
         
         #Project editor dock        
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.RightDockWidgetArea, visible=False, addToWindows=False)

@@ -244,7 +244,7 @@ class EncryptionStatusMonitor(QDialog):
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4    
     def __init__(self):
-        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"))
+        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"), icon="cwiconC")
         self.console = self.addConsole()
     
         self.scope = None        
