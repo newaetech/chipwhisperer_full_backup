@@ -72,7 +72,7 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
                 {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
-                {'name':'Glitch Trigger', 'type':'list', 'values':{'External Trigger':1, 'Manual':0, 'Continuous':2}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
+                {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
                 {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'value':0, 'set':self.setTriggerOffset, 'get':self.triggerOffset},
                 {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
                 {'name':'Manual Trigger', 'type':'action', 'action':self.glitchManual},
