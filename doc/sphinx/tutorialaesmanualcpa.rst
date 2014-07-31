@@ -31,7 +31,7 @@ into the window. Later we'll move onto writing a simple script which executes th
 
 Note if you want to use matplotlib, and are running a native Python installation, you may need to install that package. If
 the ``import matplotlib`` command listed in the next section fails, you'll need to install these, which again for Windows
-you can get from the `Pre-Built Windows Binaries<http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyparsing>`__.
+you can get from the `Pre-Built Windows Binaries <http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyparsing>`_.
 
 	matplotlib
 	python-dateutil

@@ -52,7 +52,7 @@ This is simply Pearson's correlation coefficient, given below, where :math:`X = 
         {\rho _{X,Y}} = \frac{{{\mathop{\rm cov}} \left( {X,Y} \right)}}{{{\sigma _X}{\sigma _Y}}} = \frac{{E\left[ {\left( {X - {\mu _X}} \right)\left( {Y - {\mu _Y}} \right)} \right]}}{{\sqrt {E\left[ {{{\left( {X - {\mu _X}} \right)}^2}} \right]} \sqrt {E\left[ {{{\left( {Y - {\mu _Y}} \right)}^2}} \right]} }}
 
 The problem of finding a known signal in a noisy measurement exists in many other fields beyond side-channel analysis. These two equations are
-referred to as the \emph{normalized cross-correlation}, and frequently used in digital imaging for matching a known `template' to an image, e.g.
+referred to as the *normalized cross-correlation*, and frequently used in digital imaging for matching a known `template' to an image, e.g.
 finding the location of some specific item in a photo of a room.
 
 Template Attacks

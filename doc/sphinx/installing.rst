@@ -293,7 +293,8 @@ using Fedora Core or similar, just type::
 
 On Ubuntu or similar:
 
-    $ sudo apt-get install python2.7 python2.7-dev python2.7-libs python-numpy python-scipy python-pyside python-configobj python-usb python-setuptools
+    $ sudo apt-get install python2.7 python2.7-dev python2.7-libs python-numpy python-scipy python-pyside python-configobj python-setuptools python-pip
+    $ sudo pip install pyusb-1.0.0b1
 
     
 You also need to install `PyQtGraph <http://www.pyqtgraph.org/>`_ which is not normally in those repositories. See the PyQtGraph website
@@ -303,14 +304,14 @@ Getting ChipWhisperer
 ^^^^^^^^^^^^^^^^^^^^^
 
 As in the Windows release, you can download a complete ChipWhisperer software release. Alternatively you can clone the
-ChipWhisperer repository with git, which is very simple on Linux:
+ChipWhisperer repository with git, which is very simple on Linux::
 
-    $ git clone
+    $ git clone git://git.assembla.com/chipwhisperer.git
     $ cd chipwhisperer
-    $ git clone 
+    $ git clone git://git.assembla.com/openadc.git
     
 Be aware that the git code may be broken, although we try not to commit completely untested code to the master branch. Either way
-once you have the `chipwhisperer` directory somewhere, do the following from within that directory:
+once you have the `chipwhisperer` directory somewhere, do the following from within that directory::
 
     $ cd software
     $ sudo python setup.py develop
@@ -340,6 +341,25 @@ And reset the udev system::
 
 Finally log out & in again for the group change to take effect. 
 
+AVR-USB Programmer
+^^^^^^^^^^^^^^^^^^
+
+To use the AVR Programmer from Linux, you again need to pass control of the device to a special group. Create
+a file called ``/etc/udev/rules.d/99-avrisp.rules`` . The contents of this file should be::
+
+    # allow users to claim the device
+    SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2104", MODE="0664", GROUP="plugdev"
+
+You'll have to add yourself to the plugdev group if you haven't already::
+
+    $ sudo usermod -a -G plugdev YOUR-USERNAME
+
+And reset the udev system::
+
+    $ sudo udevadm control --reload-rules
+
+Finally log out & in again for the group change to take effect. 
+
 
 FTDI Hardware Driver (SASEBO-W, SAKURA-G, SASEBO-GII)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -354,7 +374,7 @@ The following modifications will cause **any FTDI-serial device to stop working*
     SUBSYSTEM=="usb", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", MODE="0664", GROUP="plugdev"
     ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6010", RUN+="/bin/sh -c 'echo $kernel > /sys/bus/usb/drivers/ftdi_sio/unbind'"
 
-Then add your username to the plugdev group::
+Then add your username to the plugdev group (if not already done)::
 
     $ sudo usermod -a -G plugdev YOUR-USERNAME
 
