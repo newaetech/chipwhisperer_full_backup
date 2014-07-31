@@ -398,10 +398,13 @@ class MainChip(QMainWindow):
             
     def enforceMenuOrder(self):
         """Makes sure menus appear in correct order, required as they get reordered when we add a new item to one"""
-        self.fakeAction = QAction('Does Nothing', self, visible=False)        
+        fakeAction = QAction('Does Nothing', self, visible=False)
         self.projectMenu.addAction(self.fakeAction)
+        fakeAction = QAction('Does Nothing', self, visible=False)
         self.toolMenu.addAction(self.fakeAction)
+        fakeAction = QAction('Does Nothing', self, visible=False)
         self.windowMenu.addAction(self.fakeAction)
+        fakeAction = QAction('Does Nothing', self, visible=False)
         self.helpMenu.addAction(self.fakeAction)
             
     def initUI(self):
