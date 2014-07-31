@@ -39,7 +39,7 @@ from TargetTemplate import TargetTemplate
 
 try:
     import ftd2xx as ft
-except WindowsError:
+except OSError:  # Also catches WindowsError
     raise ImportError
 
 class ChipWhispererComm(object):

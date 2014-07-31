@@ -30,7 +30,7 @@ from PySide.QtGui import *
 
 try:
     import ftd2xx as ft
-except WindowsError:
+except OSError:  # also catches WindowsError
     raise ImportError
 
 try:

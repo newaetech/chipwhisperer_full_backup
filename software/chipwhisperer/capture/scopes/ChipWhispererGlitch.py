@@ -113,7 +113,7 @@ class ChipWhispererGlitch(QObject):
         except ValueError, e:
             print str(e)
             self.prEnabled = False
-        except WindowsError, e:
+        except OSError, e:  # Also catches WindowsError
             print str(e)
             self.prEnabled = False
 

@@ -69,7 +69,7 @@ from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 try:
     from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
 except:
-    # VISA Scope uses WindowsError it seems?
+    # VISA Scope uses WindowsError it seems? If so catch on OSError to work on Linux too
     VisaScopeInterface = None
 
 try:
