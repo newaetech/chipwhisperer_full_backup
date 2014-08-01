@@ -37,21 +37,21 @@ try:
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
-    
+
 from openadc.ExtendedParameter import ExtendedParameter
-import openadc.scan as scan    
+import openadc.scan as scan
 
 class SimpleSerial_serial(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
                     {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
                     {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
-                    ]      
+                    ]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        
-        ExtendedParameter.setupExtended(self.params, self)      
+
+        ExtendedParameter.setupExtended(self.params, self)
         self.ser = None
-            
+
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
@@ -76,18 +76,18 @@ class SimpleSerial_serial(TargetTemplate):
 
     def flush(self):
         self.ser.flushInput()
-            
+
     def flushInput(self):
         self.ser.flushInput()
-            
+
     def close(self):
         if self.ser is not None:
             self.ser.close()
             self.ser = None
-            
+
     def con(self):
         if self.ser == None:
-            
+
             # Open serial port if not already
             self.ser = serial.Serial()
             self.ser.port     = self.findParam('port').value()
@@ -95,7 +95,7 @@ class SimpleSerial_serial(TargetTemplate):
             self.ser.timeout  = 2     # 2 second timeout
             self.ser.open()
 
-class SimpleSerial_ChipWhisperer(TargetTemplate):    
+class SimpleSerial_ChipWhisperer(TargetTemplate):
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
 
@@ -110,8 +110,8 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                     {'name':'RX Baud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
                     ]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
-            
+        ExtendedParameter.setupExtended(self.params, self)
+
 
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
@@ -153,7 +153,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         data[0] = breg & 0xff
         data[1] = (breg >> 8) & 0xff
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
-    
+
     def txBaudReg(self):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         breg = data[2] | (data[3] << 8)
@@ -166,7 +166,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
     def paramList(self):
         return [self.params]
-    
+
     def setOpenADC(self, oa):
         self.oa = oa
 
@@ -183,14 +183,14 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                 d = [s]
             #print "%x"%d[0]
             self.oa.sendMessage(self.CODE_WRITE, self.ADDR_DATA, d, Validate=False)
-            
+
             self.debugInfo(s)
-            
+
     def inWaiting(self):
         resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_LEN, Validate=False, maxResp=2)
         resp = resp[1]
-        #print "%d waiting"%resp       
-        return resp 
+        # print "%d waiting"%resp
+        return resp
 
     def read(self, num=0, timeout=100):
         waiting = self.inWaiting()
@@ -208,7 +208,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                 time.sleep(0.01)
                 timeout = timeout - 1
             waiting = self.inWaiting()
-            
+
         if timeout <= 0:
             self.log("CW Serial timed out")
 
@@ -223,19 +223,19 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         waiting = self.inWaiting()
         while waiting > 0:
             self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, Validate=False, maxResp=1)
-            waiting = self.inWaiting()  
-            
+            waiting = self.inWaiting()
+
     def flushInput(self):
         self.flush()
-            
+
     def close(self):
         pass
-    
+
     def con(self):
         self.params.getAllParameters()
-       
-class SimpleSerial(TargetTemplate):   
-    paramListUpdated = Signal(list)     
+
+class SimpleSerial(TargetTemplate):
+    paramListUpdated = Signal(list)
 
     def setupParameters(self):
         ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection},
@@ -250,40 +250,48 @@ class SimpleSerial(TargetTemplate):
                     #                                                                 'DE AD BE EF':' ',
                     #                                                                 'DE:AD:BE:EF':':',
                     #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
-                    ]        
+                    ]
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.ser = None   
+        self.ser = None
         self.keylength = 16
         self.input = ""
-        
+
+        self.oa = None
         self.setConnection(self.findParam('con').value())
-      
+
+
     def setOpenADC(self, oadc):
+        self.oa = oadc
         try:
             self.ser.setOpenADC(oadc)
         except:
             pass
-        
+
     def setKeyLen(self, klen):
         """ Set key length in BITS """
         self.keylength = klen / 8
-        
+
     def keyLen(self):
         """ Return key length in BYTES """
         return self.keylength
 
     def setConnection(self, con):
-        self.ser = con        
+        self.ser = con
         self.paramListUpdated.emit(self.paramList)
-        
+        if self.oa:
+            try:
+                self.ser.setOpenADC(self.oa)
+            except:
+                pass
+
     def paramList(self):
         p = [self.params]
         if self.ser is not None:
             for a in self.ser.paramList(): p.append(a)
         return p
-    
-    def con(self):        
+
+    def con(self):
         self.ser.con()
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
@@ -291,16 +299,16 @@ class SimpleSerial(TargetTemplate):
 
     def dis(self):
         self.close()
-    
+
     def close(self):
         if self.ser != None:
             self.ser.close()
             self.ser = None
         return
-        
+
     def init(self):
         self.runCommand(self.findParam('cmdinit').value())
-      
+
     def setModeEncrypt(self):
         return
 
@@ -308,44 +316,44 @@ class SimpleSerial(TargetTemplate):
         return
 
     def convertVarToString(self, var):
-        
+
         if isinstance(var, str):
             return var
-        
+
         sep = ""
         s = sep.join(["%02x"%b for b in var])
         return s
 
     def runCommand(self, cmdstr, flushInputBefore=True):
-        
+
         if cmdstr is None or len(cmdstr) == 0:
             return
-        
+
         varList = [("$KEY$",self.key, "Hex Encryption Key"),
                    ("$TEXT$",self.input, "Input Plaintext")]
-        
+
         newstr = cmdstr
-        
+
         #Find variables to insert
-        for v in varList:        
+        for v in varList:
             newstr = newstr.replace(v[0], self.convertVarToString(v[1]))
-            
+
         #This is dumb
         newstr = newstr.replace("\\n", "\n")
         newstr = newstr.replace("\\r", "\r")
-   
+
         if flushInputBefore:
             self.ser.flushInput()
-            
+
         #print newstr
-   
-        self.ser.write(newstr)        
+
+        self.ser.write(newstr)
 
     def loadEncryptionKey(self, key):
         self.key = key
         if self.key:
             self.runCommand(self.findParam('cmdkey').value())
-      
+
     def loadInput(self, inputtext):
         self.input = inputtext
         self.runCommand(self.findParam('cmdinput').value())
@@ -354,31 +362,31 @@ class SimpleSerial(TargetTemplate):
         return True
 
     def readOutput(self):
-        
+
         dataLen= 32
-        
+
         fmt = self.findParam('cmdout').value()
         #This is dumb
         fmt = fmt.replace("\\n", "\n")
         fmt = fmt.replace("\\r", "\r")
-        
+
         if len(fmt) == 0:
             return None
-        
+
         if fmt.startswith("$GLITCH$"):
-            
+
             try:
                 databytes = int(fmt.replace("$GLITCH$",""))
             except ValueError:
                 databytes = 64
-            
-            
+
+
             self.newInputData.emit(self.ser.read(databytes))
             return None
 
         dataLen += len(fmt.replace("$RESPONSE$", ""))
         expected = fmt.split("$RESPONSE$")
-                
+
         #Read data from serial port
         response = self.ser.read(dataLen)
 
@@ -388,7 +396,7 @@ class SimpleSerial(TargetTemplate):
 
         #Go through...skipping expected if applicable
         #Check expected first
-        
+
         #Is a beginning part
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
@@ -401,10 +409,10 @@ class SimpleSerial(TargetTemplate):
         data = bytearray(16)
         if len(expected) == 2:
             for i in range(0,16):
-                data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)          
-        
-            startindx += 32 
-        
+                data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)
+
+            startindx += 32
+
         #Is end part?
         if len(expected[1]) > 0:
             if response[startindx:startindx+len(expected[1])] != expected[1]:
@@ -414,11 +422,11 @@ class SimpleSerial(TargetTemplate):
         return data
 
     def go(self):
-        self.runCommand(self.findParam('cmdgo').value())       
-        
+        self.runCommand(self.findParam('cmdgo').value())
+
     def checkEncryptionKey(self, kin):
         blen = self.keyLen()
-        
+
         if len(kin) < blen:
             print "note: Padding key..."
             newkey = bytearray(kin)
@@ -427,11 +435,11 @@ class SimpleSerial(TargetTemplate):
         elif len(kin) > blen:
             print "note: Trunacating key..."
             return kin[0:blen]
-                        
+
         return kin
-        
-        
-        
+
+
+
 class SimpleSerialWidget(SimpleSerial, QWidget):
     def __init__(self):
         super(SimpleSerialWidget, self).__init__()
@@ -443,47 +451,47 @@ class SimpleSerialWidget(SimpleSerial, QWidget):
         gbSerial = QGroupBox("Serial Settings")
         gbSerialLayout = QVBoxLayout()
         gbSerial.setLayout(gbSerialLayout)
-        
+
         #Protocol Setup
         cbProtocol = QGroupBox("Protocol Information")
         cbProtocolLayout = QVBoxLayout()
         cbProtocol.setLayout(cbProtocolLayout)
-        
+
         cbProtocolLayout.addWidget(QLabel("Set Key:       kXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
         cbProtocolLayout.addWidget(QLabel( "Do Encryption: pXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
         cbProtocolLayout.addWidget(QLabel( "Response:      rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-        
+
         layout.addWidget(cbProtocol)
-        
+
         #Debug Stuff
         cbDebug = QGroupBox("Debug Information")
         cbDebugLayout = QGridLayout()
         cbDebug.setLayout(cbDebugLayout)
-        
+
         self.txDebugASCII = QLabel()
         self.txDebugHEX = QLabel()
         self.rxDebugASCII = QLabel()
         self.rxDebugHEX = QLabel()
-        
+
         cbDebugLayout.addWidget(QLabel("Last TX(ASCII)"), 1, 1)
         cbDebugLayout.addWidget(self.txDebugASCII, 1,  2)
         cbDebugLayout.addWidget(self.txDebugHEX, 2,  2)
         cbDebugLayout.addWidget(QLabel("Last RX"), 3, 1)
         cbDebugLayout.addWidget(self.rxDebugASCII, 3,  2)
         cbDebugLayout.addWidget(self.rxDebugHEX, 4,  2)
-        
+
         layout.addWidget(cbDebug)
-        
+
     def setDebugInfo(self,  lastSent=None,  lastResponse=None):
         if lastSent:
             self.txDebugASCII.setText(lastSent)
             string = ""
-            for s in lastSent:                
+            for s in lastSent:
                 string = string + "%02x "%ord(s)
             self.txDebugHEX.setText(string)
         if lastResponse:
             self.rxDebugASCII.setText(lastResponse)
             string = ""
-            for s in lastResponse:                
+            for s in lastResponse:
                 string = string + "%02x "%ord(s)
-            self.rxDebugHEX.setText(string)     
+            self.rxDebugHEX.setText(string)

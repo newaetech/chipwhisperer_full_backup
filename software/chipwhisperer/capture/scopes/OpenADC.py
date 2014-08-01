@@ -346,7 +346,7 @@ class OpenADCInterface_ZTEX(QWidget):
 
     def read(self, N=0, debug=False):
         try:
-            data = self.dev.read(self.readEP, N, self.interface, 500)
+            data = self.dev.read(self.readEP, N, self.interface, 100)
         except IOError:
             return []
         
@@ -506,6 +506,7 @@ class OpenADCInterface(QObject):
             self.dataUpdated.emit(l, offset)
 
     def arm(self):
+        self.advancedSettings.glitch.resetDCMs()
         self.qtadc.arm()
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):

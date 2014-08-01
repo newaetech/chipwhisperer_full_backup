@@ -304,6 +304,7 @@ class CWUniversalSerial(object):
         d.append((addr >> 16) & 0xff)
         self.oa.sendMessage(CODE_WRITE, self.ADDR_USIPROG, d, Validate=False)
         rv = self.oa.sendMessage(CODE_READ, self.ADDR_USIPROG, Validate=False, maxResp=4)
+        # print "%x %x %x %x" % (rv[0], rv[1], rv[2], rv[3])
         return rv[0]
         
     def test(self):
@@ -391,7 +392,7 @@ class CWUniversalSerial(object):
             result.append(self.readSequence(t))
             
         self.setRunRx(False)
-            
+
         return self.proc.rxPatternToString(result, self.oversamplerate, startbits=self.startbits, stopbits=1, parity=self.parity) #self.stopbits
         
         
