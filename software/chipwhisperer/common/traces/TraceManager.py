@@ -230,7 +230,7 @@ class TraceManagerDialog(QDialog):
         for t in alltraces:
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
-                fname = os.path.normpath(fname.replace("/", "\\"))
+                fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
                 ti = TraceContainerNative.TraceContainerNative()
                 ti.config.loadTrace(fname)
