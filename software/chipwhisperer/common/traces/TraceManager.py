@@ -54,7 +54,7 @@ class TraceManager(object):
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
     block of traces. This class is used to handle the remapping.
     """
-    
+
     def __init__(self, parent):
         self.dlg = parent
         self.NumTrace = 0
@@ -68,9 +68,9 @@ class TraceManager(object):
         tnum = start
         if end == -1:
             end = self.NumTrace
-            
+
         dataDict = {'offsetList':[], 'lengthList':[]}
-            
+
         while(tnum < end):
             t = self.findMappedTrace(tnum)
             dataDict['offsetList'].append(t.mappedRange[0])
@@ -111,7 +111,7 @@ class TraceManager(object):
     def getTrace(self, n):
         t = self.findMappedTrace(n)
         return t.getTrace(n - t.mappedRange[0])
-    
+
     def getTextin(self, n):
         t = self.findMappedTrace(n)
         return t.getTextin(n - t.mappedRange[0])
@@ -138,12 +138,12 @@ class TraceManager(object):
             self.NumTrace = 0
         else:
             self.NumTrace = max(num)
-            
+
         if not pts:
             self.NumPoint = 0
         else:
             self.NumPoint = max(pts)
-        
+
     def numPoint(self):
         return self.NumPoint
 
@@ -153,7 +153,7 @@ class TraceManager(object):
 class TraceManagerDialog(QDialog):
     """Manages traces associated with some project"""
     tracesChanged = Signal()
-    
+
     secName = "Trace Management"
     def __init__(self, parent=None):
         super(TraceManagerDialog, self).__init__(parent)
@@ -161,18 +161,18 @@ class TraceManagerDialog(QDialog):
 
         #This module is interface for others
         self.iface = TraceManager(self)
-        
+
         layout = QVBoxLayout()
 
         #Get labels in use
         exampleConfig = TraceContainerConfig.TraceContainerConfig()
-        attrs = exampleConfig.attrHeaderValues()      
+        attrs = exampleConfig.attrHeaderValues()
         attrHeaders = [i["header"] for i in attrs]
         attrHeaders.insert(0, "Mapped Range")
-        attrHeaders.insert(0, "Enabled")        
-        self.table = QTableWidget(0, len(attrHeaders))     
+        attrHeaders.insert(0, "Enabled")
+        self.table = QTableWidget(0, len(attrHeaders))
         self.table.setHorizontalHeaderLabels(attrHeaders)
-       
+
         layout.addWidget(self.table)
 
         #temp = QPushButton("Add Blank")
@@ -202,8 +202,8 @@ class TraceManagerDialog(QDialog):
     #    if self.parent is not None:
     #        self.parent.updatePreview()
 
-    def newProject(self):        
-        self.traceList = []    
+    def newProject(self):
+        self.traceList = []
         return
 
     def checkProject(self, ask=True):
@@ -215,7 +215,7 @@ class TraceManagerDialog(QDialog):
 
     def saveProject(self, config, configfilename):
         for indx, t in enumerate(self.traceList):
-            config[self.secName]['tracefile%d'%indx] = os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0])
+            config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.secName]['enabled%d' % indx] = str(t.enabled)
 
     def loadProject(self, configfilename):
@@ -230,6 +230,7 @@ class TraceManagerDialog(QDialog):
         for t in alltraces:
             if t[0].startswith("tracefile"):
                 fname = fdir + t[1]
+                fname = os.path.normpath(fname.replace("/", "\\"))
                 # print "Opening %s"%fname
                 ti = TraceContainerNative.TraceContainerNative()
                 ti.config.loadTrace(fname)
@@ -252,11 +253,11 @@ class TraceManagerDialog(QDialog):
 
         raise ValueError("findCol argument not in table: %s"%name)
 
-        
+
     def addRow(self, trace=None, location=None):
         if location == None:
             location = self.table.rowCount()
-            
+
         self.table.insertRow(location)
         row = self.table.rowCount()-1
         cb = QCheckBox()
@@ -269,17 +270,17 @@ class TraceManagerDialog(QDialog):
                 try:
                     col = self.findCol(t["header"])
                     wid = QTableWidgetItem("%s"%trace.config.attr(t["name"]))
-                    attrDict = trace.config.attrDict(t["name"])                    
-                    try:        
+                    attrDict = trace.config.attrDict(t["name"])
+                    try:
                         isEditable = attrDict["editable"]
                     except KeyError:
                         isEditable = False
-                        
+
                     if isEditable == False:
                         wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
-                        
+
                     self.table.setItem(row, col, wid)
-                                          
+
                 except ValueError:
                     pass
 
@@ -302,14 +303,14 @@ class TraceManagerDialog(QDialog):
                 if self.traceList[i].traces is None:
                     if self.traceList[i].config.configFilename() is not None:
                         path = os.path.split(self.traceList[i].config.configFilename())[0]
-                        pref = self.traceList[i].config.attr("prefix")                        
+                        pref = self.traceList[i].config.attr("prefix")
                     else:
                         path = None
                         pref = None
                     self.traceList[i].directory = path
                     self.traceList[i].prefix = pref
                     # self.traceList[i].loadAllTraces(path, pref)
-                
+
             else:
                 if not hasattr(self.traceList[i], 'enabled'):
                     self.tracesChanged.emit()
@@ -319,16 +320,16 @@ class TraceManagerDialog(QDialog):
                 self.traceList[i].mappedRange = None
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
 
-        self.iface.UpdateTraces()    
+        self.iface.UpdateTraces()
         #self.updatePreview()
         self.tracesChanged.emit()
-        
+
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)
         imp.exec_()
         self.importExisting(imp.getTraceCfgFile())
         #self.updatePreview()
-        
+
     def append(self, ti):
         self.traceList.append(ti)
         self.addRow(ti)
@@ -336,10 +337,10 @@ class TraceManagerDialog(QDialog):
         #self.updatePreview()
 
     def importExisting(self, fname=None):
-        
+
         tmi = TraceManagerImport(self)
         tmi.exec_()
-        
+
         if tmi.getTrace() is not None:
             tmi.updateConfigData()
             self.append(tmi.getTrace())
@@ -354,7 +355,7 @@ class TraceManagerDialog(QDialog):
             #Get our project directory
             targetdir = self.parent.cwp.traceslocation + "/"
             cfgname = os.path.split(fname)[1]
-            srcdir = os.path.split(fname)[0] + "/"            
+            srcdir = os.path.split(fname)[0] + "/"
             newcfgname = targetdir + cfgname
 
             #Get prefix from config file
@@ -373,22 +374,22 @@ class TraceManagerDialog(QDialog):
                     newprefix = newprefix[0] + "_"
                 else:
                     return
-                
+
             #Change prefix in config file & write new one
             config.set("Trace Config", "prefix", newprefix)
             configfile = open(newcfgname, 'wb')
-            config.write(configfile)        
+            config.write(configfile)
             configfile.close()
-            
-            #Copy anything with same prefix, changing as 
+
+            # Copy anything with same prefix, changing as
             for filename in glob.glob(os.path.join(srcdir, '%s*'%prefix)):
                 if os.path.isfile(filename):
                     targetfile = os.path.split(filename)[1].replace(prefix, newprefix)
                     shutil.copy(filename, targetdir + targetfile)
-            
+
             #Add new trace to file list
             ti = TraceFormatNative()
             ti.config.loadTrace(newcfgname)
             self.append(ti)
-        
+
 
