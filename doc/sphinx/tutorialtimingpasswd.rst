@@ -24,7 +24,7 @@ Finally program the microcontroller with the file used here:
 
 7. Program the file ``tsb_m328p_d0d1_20140331.hex`` which is found at ``chipwhisperer\hardware\victims\firmware\tinysafeboot-20140331`` into
    the AVR microcontroller. You can find instructions for using the programming software in the :ref:`tutorialcomms` examples.
- 
+
 .. _testingserialbasic:
 
 Testing the Serial Connection & Observing Power
@@ -43,19 +43,17 @@ for general informationon using the ChipWhisperer-Capture Interface.
 
 5. Run the *Download CW Firmware* tool. You should see the FPGA being programmed if required.
 
-
-
 6. Run the scope connect (click the button labeled *Scope: DIS*). Only the scope should switch to
    *CON* and be green circles. *Do not press the master button like last time.*:
-   
+
    .. image:: /images/tutorials/basic/timingpower/connectscope_1.png
-   
+
    When you are done the software should look as follows:
-   
+
    .. image:: /images/tutorials/basic/timingpower/connectscope_2.png
-   
-   Now press the target connect (click the button labeled *Target: DIS*). The scope & target should
-   now both be breen circles.
+
+   We do not connect the 'target' as that would cause data to be sent to it, whereas we just want
+   to listen on the power line while we manually send data.
 
 7. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
 
@@ -66,30 +64,30 @@ for general informationon using the ChipWhisperer-Capture Interface.
    the actual baud rates in use (the hardware can only generate certain baud rates). You cannot use
    higher bauds for this tutorial as the combined error from the AVR code & ChipWhisperer serial port
    causes communications failures.
-   
+
    .. image:: /images/tutorials/basic/timingpower/termbaud.png
-     
+
 9. In the *ChipWhisperer-Serial Terminal*, change the *TX on Enter* to *None*, as we don't want to
    send any character to terminate a string.
-      
+
 10. In the *ChipWhisperer-Serial Terminal*, check the *Show non-ASCII as hex* if not clicked.
 
     .. image:: /images/tutorials/basic/timingpower/term_settingssimple.png
 
 11. Finally send the command ``@@@``, which is the login sequence for the TinySafeBoot bootloader. Simply type
-    this in the input line, and press 'enter' to send. You will see the ``@@@`` echoed on the received data in 
+    this in the input line, and press 'enter' to send. You will see the ``@@@`` echoed on the received data in
     a blue font.
-    
+
 12. The objective is to get the login response. You may have to send ``@@@`` a few times for this to be successful,
     the following figure shows an example where the the login worked after sending a second round of ``@@@``. You might
     get an invalid response your first time for example. The response should start with ``TSB``:
-    
+
     .. image:: /images/tutorials/basic/timingpower/term_tsbresponse.png
-    
+
     Note the red bytes are hexadecimal responses, which were converted since they were outside of valid range for ASCII
     data. The response from TinySafeBoot has the following meaning, with example values given for our implementation,
     note certain values may change if you use different versions of TSB:
-       
+
     ==========   ============  =============================
      Byte Num      Value        Description
     ==========   ============  =============================
@@ -105,17 +103,18 @@ for general informationon using the ChipWhisperer-Capture Interface.
      15-16          0xAAAA     Fixed Byte Sequence
      17             '!'        Confirmation Character
     ==========   ============  =============================
-    
-    
+
+
 13. Finally, we want to monitor power when sending this sequence to the device. We'll need to configure a number of OpenADC
     settings for this. The following table shows these settings, please carefully go though and set each of these as given.
     Pay attention to the 'notes' section which has some additional information.
-    
+
     =============================  ================  =====================  ==============================================================
      Group                             Item               Value                   Note
     =============================  ================  =====================  ==============================================================
      Gain Setting                    Setting          40
      Trigger Setup                   Mode             falling edge
+     Trigger Setup                   Timeout          7                      Adjust as needed - gives you time to type in the other window
      ADC Clock                       Source           EXTCLK x1 via DCM      Will need to reset DCM later
      CW-Extra --> Trigger Pins       Front Panel A    Unchecked
      CW-Extra --> Trigger Pins       Target IO1       Checked                Only 'Target IO1 (Serial TXD)' should be checked
@@ -126,43 +125,44 @@ for general informationon using the ChipWhisperer-Capture Interface.
 
 14. Before attacking the real system, we'll need to confirm these settings will work. To do so we'll monitor the power consumption whilst
     operating the bootloader under normal conditions.
-    
+
     With our system running, push the 'Capture 1' button. Notice it will go grey indicating the system is waiting for the trigger to occur:
-    
+
     .. image:: /images/tutorials/basic/timingpower/captrig_wait.png
-    
+
     The trigger in this case is when the 'TXD' line goes low, which means when we send data to the bootloader. At this time we'll monitor
     the power when sending the sequence of ``@@@`` used before. This is described in steps 15-17.
-    
+
 15. Prepare the serial window by typing ``@@@`` as before, but do not hit enter yet. We'll need to hit enter only after we arm the system.
 
 16. Arm the system by pressing the 'Capture 1' button.
 
 17. Before the capture times out (e.g. before the button stops being gray), quickly click on the serial terminal output line and press 'Enter'
-    to send the command, or press the 'Send' button beside the terminal output line to send the ``@@@`` command.
-    
+    to send the command, or press the 'Send' button beside the terminal output line to send the ``@@@`` command. Note you can adjust the timeout
+    in the *Trigger Setup* group of the *Scope Settings*.
+
     .. image:: /images/tutorials/basic/timingpower/captrig_example.png
-    
+
 18. If this works, you will see the power consumption on receiving the command. You'll notice two distinct power signatures, which may look something
     like this:
-    
+
     .. image:: /images/tutorials/basic/timingpower/powertrace1.png
-    
+
     Or:
-    
+
     .. image:: /images/tutorials/basic/timingpower/powertrace2.png
-    
+
     The scale on the bottom is in samples. Remember we set the sample clock to 7.37 MHz (same speed of the device), meaning each sample represents
     1 / 7.37E6 = 135.6nS. Our serial interface is running at approximately 9600 baud, meaning a single bit takes 1/9600 = 0.1042mS. Every byte requires
-    10 bits (1 start bit, 8 data bits, 1 stop bit), meaning a single byte over the UART represents 1.042mS, or 7684 samples. Note that in the second 
+    10 bits (1 start bit, 8 data bits, 1 stop bit), meaning a single byte over the UART represents 1.042mS, or 7684 samples. Note that in the second
     figure the power consumption drops dramatically after 7000 samples, which would correspond to a single byte being received (remember we triggered
     the capture based on the start bit).
-    
+
     The two power traces represent two different modes in the bootloader. In the first power trace the bootloader is waiting for the login sequence,
     and receives all three bytes of it before awaiting the next command. In the second power trace the bootloader is already waiting the command byte.
     Since ``@`` is not a valid command, when the bootloader receives the first ``@`` it simply jumps to the user program. The flash here is empty, which
     effectively performs ``nop`` type operations. You can see a dramatic reduction in power as soon as the microcontroller stops receiving the data.
-    
+
     Be aware that the data begin sent in both cases is the exact same! The power consumption differences are solely because the microcontroller stops
     processing the incomming data. We'll exploit this to break a secret password in the final part of this experiment.
 
@@ -177,43 +177,43 @@ to perform advanced operations with Python.
 This section assums you still have the setup from the previous part running. If you have closed the program, perform steps 1 - 11 again (you don't
 need to configure the OpenADC settings).
 
-1. Close the *ChipWhisperer-Serial Terminal* window. 
+1. Close the *ChipWhisperer-Serial Terminal* window.
 
 2. Switch to the *Python Console* on the bottom. You can enter commands in the bottom line & hit enter to have them executed:
 
     .. image:: /images/tutorials/basic/timingpower/console.png
-    
+
    As a test try just entering ``self``, which is a Python reference to the ChipWhisperer object. You can explore other options & Python will report
    the data-type, for example::
-   
+
         >>> self
         <__main__.ChipWhispererCapture object at 0x05E27800>
         >>> self.target.driver.ser
         <chipwhisperer.capture.targets.SimpleSerial.SimpleSerial_ChipWhisperer object at 0x05E2BAF8>
-        
+
 3. You can also call methods. For example we can send a string with the following::
 
         >>> self.target.driver.ser.write("@@@")
 
 4. And to retreive the data we would call the read() function, where we specify the number of bytes to attempt to read. As before if we fail to get
    a response you may need to resend the "@@@" prompt::
-   
+
     >>> self.target.driver.ser.write("@@@")
     >>> self.target.driver.ser.read(255)
     u''
     >>> self.target.driver.ser.write("@@@")
     >>> self.target.driver.ser.read(255)
     u'TSB\x7f\x1c\xf0\x1e\x95\x0f@\xc0>\xff\x03\xaa\xaa!'
-    
+
 5. To make typing easier, create variables that point to the read and write functions::
-    
+
     >>> read =  self.target.driver.ser.read
     >>> write =  self.target.driver.ser.write
-    
+
 6. To set the bootloader on TSB, we need to modify a special page of FLASH memory. First, ensure you've recently (e.g. within < 30 seconds) received the
    ``TSB`` signon prompt. If not resend the ``@@@`` string until the call to ``read(255)`` returns the ``TSB`` prompt. You should read the next step before
    doing this however.
-   
+
 7. Send the command 'c' to read the last page of flash. Rather than printing to console, simply save this to a variable::
 
     >>> write('c')
@@ -227,28 +227,28 @@ need to configure the OpenADC settings).
 
    Success! You've managed to read the space where we'll store the user password. First, we need to now remove the trailing 'CONFIRM' character from the
    end, leaving us with a complete page::
-   
+
     >>> lastpage = lastpage[:-1]
-    
+
    Next, you should convert this to a bytearray which will make modifications easier. When converting we need to specify a character set as well::
-   
+
     >>> lastpage = bytearray(lastpage, 'latin-1')
-   
+
    You can now retreive individual bytes of the array & get the associated value::
-   
+
     >>> lastpage[2]
     255
 
    Finally, let's set a two-character password of 'ce'. The password starts at offset 3, and is terminated by a 0xFF::
-   
+
     >>> lastpage[3] = ord('c')
     >>> lastpage[4] = ord('e')
     >>> lastpage[5] = 255
-    
+
    Because we are using bytearrays, we needed to use the ``ord()`` function to get the integer value associated with each character. We could have more
-   directly written the password in if we had kept the original encoding. But often you need to modify byte-level values, meaning the ``bytearray()`` 
+   directly written the password in if we had kept the original encoding. But often you need to modify byte-level values, meaning the ``bytearray()``
    conversion is a useful tool to know.
-   
+
 8. Finally we can write this back to the system. We need to send two commands to do this::
 
     >>> write('C')
@@ -270,7 +270,7 @@ need to configure the OpenADC settings).
 
 9. We now have a bootloader with a password protection. Be aware that if you enter the wrong password you will cause the bootloader to spin into
    an infinite loop! You can check the password (carefully) by executing the following commands:
-   
+
     >>> write('q')
     >>> write('@@@')
     >>> read(255)
@@ -278,7 +278,7 @@ need to configure the OpenADC settings).
     >>> write('ce')
     >>> read(255)
     u'TSB\x7f\x1c\xf0\x1e\x95\x0f@\xc0>\xff\x03\xaa\xaa!'
-   
+
    The ``q`` command causes the bootloader to quit & jump to the application. Since there is no application it re-enters the bootloader. The ``@@@``
    is our standard sign-on sequence. However the bootloader waits for the secret password before transmitting the sign-on sequence. Note how it's
    only after sending ``ce`` that the bootloader works.
@@ -294,7 +294,7 @@ tool of your choice, such as ``avrdude``.
 
 1. First, ensure the USB-A cable is plugged into the rear of the ChipWhisperer. You will have both the USB-A and USB-Mini connections on the ChipWhisperer
    connected to your computer.
-   
+
 2. Open a terminal, and attempt to run the command-line AVR tools. You may have to adjust the path for your specific machine binary location::
 
     cd "C:\Program Files (x86)\Atmel\AVR Tools\STK500"
@@ -307,9 +307,9 @@ tool of your choice, such as ``avrdude``.
         Signature is 0x1E 0x95 0x0F
         Programming mode left
         Connection to AVRISP mkII closed
-        
+
    Note the signature was correctly read. As part of reading the signature the AVR device will be reset.
-   
+
 3. Next, we will run the programmer from a Python program. This will provide us with a method of resetting the AVR progmatically.
 
 4. Create a new file named something like ``test_bootloader.py`` with the following contents. Again adjust path as required to point to your
@@ -324,12 +324,12 @@ tool of your choice, such as ``avrdude``.
     resetAVR()
 
   Attempt to run this file & confirm it works as expected.
-  
+
 Scripting the Setup
 -------------------
 
 At this point we want to script the setup of the ChipWhisperer-Capture tool, along with pulling in our special utility which is capable
-of resetting the AVR microcontroller. 
+of resetting the AVR microcontroller.
 
 1. Create a Python file with a structure such as the following::
 
@@ -374,7 +374,7 @@ of resetting the AVR microcontroller.
 
     #Load FW (must be configured in GUI first)
     cap.FWLoaderGo()
-                    
+
     #NOTE: You MUST add this call to pe() to process events. This is done automatically
     #for setParameter() calls, but everything else REQUIRES this, since if you don't
     #signals will NOT be processed correctly
@@ -424,8 +424,8 @@ of resetting the AVR microcontroller.
     ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None]
 
    Note the format __changes slightly between releases__, and using the wrong format will cause errors. Thus you should copy the output from your specific
-   application and note the exact list used here. 
-   
+   application and note the exact list used here.
+
 3. Insert these commands into our master script such we don't need to perform any manual configuration. Close the ChipWhisperer-Capture window, and find
    the following line in your script::
 
@@ -434,11 +434,11 @@ of resetting the AVR microcontroller.
     pe()
 
 4. Copy and paste the list of commands into the script just below that::
-   
+
     #Connect to scope
     cap.doConDisScope(True)
     pe()
-    
+
     ['OpenADC', 'Gain Setting', 'Setting', 45]
     ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge']
     ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM']
@@ -446,14 +446,14 @@ of resetting the AVR microcontroller.
     ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO1 (Serial TXD)', True]
     ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN']
     ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None]
-    
+
 5. Convert the list into a Python list variable with a name, which is done by inserting a ``cmds = [`` on the line above, a ``,`` after each line, and a
    ``]`` after the final line::
 
     #Connect to scope
     cap.doConDisScope(True)
     pe()
-    
+
     cmds = [
     ['OpenADC', 'Gain Setting', 'Setting', 45],
     ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge'],
@@ -469,7 +469,7 @@ of resetting the AVR microcontroller.
     #Connect to scope
     cap.doConDisScope(True)
     pe()
-    
+
     cmds = [
     ['OpenADC', 'Gain Setting', 'Setting', 45],
     ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge'],
@@ -479,12 +479,12 @@ of resetting the AVR microcontroller.
     ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
     ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
     ]
-    
+
     for cmd in cmds: cap.setParameter(cmd)
 
 7. Run your script again. You should see the system connect to the target, and also configure the OpenADC settings. You can confirm this by hitting the
    **Capture 1** button. You won't yet get very useful information, but it should give you some analog data after the timeout period.
-   
+
 8. Switch to the Python console in the running ChipWhisperer-Capture application. First create a shortcut for the serial port::
 
     >>> ser = self.target.driver.ser
@@ -493,26 +493,26 @@ of resetting the AVR microcontroller.
 
     >>> self.resetAVR()
     >>> ser.write("@@@")
-    
+
    At this point the system is waiting for a correct password. Put the following text into the Python console but do not hit enter yet::
-   
+
     ser.write("ce")
-    
+
 9. With the ``ser.write("ce")`` still not yet sent, hit the **Capture 1** button. Then hit enter on the Python console to send the ``ser.write("ce")``
    command. The system should trigger immediatly and capture a power trace, which might look something like this:
-   
+
    .. image:: /images/tutorials/basic/timingpower/trace_passwordok.png
-   
+
    To re-run the capture, perform the same sequence of commands in steps 8 & 9. You should get an almost identical trace each time you do this.
-    
+
 10. Now perform the same sequence (e.g. ``self.resetAVR()``, ``ser.write("@@@")``). But instead of sending the correct password "ce", send an incorrect
     password such as "ff". You should now see a power trace such as this:
-    
+
     .. image:: /images/tutorials/basic/timingpower/trace_password_firstwrong.png
-    
+
     Notice the start difference! You can examin the bootloader source to get an idea why this occurs. In particular the portion dealing with the
     password check looks like this::
-    
+
         CheckPW:
         chpw1:
                 lpm tmp3, z+                    ; load character from Flash
@@ -525,20 +525,20 @@ of resetting the AVR microcontroller.
                 cpi tmp1, 0                     ; or was it 0 (emergency erase)
         chpwl:  brne chpwl                      ; if not, loop infinitely
                 rcall RequestConfirmation       ; if yes, request confirm
-                
+
     Note as soon as you get a wrong character, the reception of characters stops.
-    
+
 11. Perform the same experiment, but send the first character right and the second character wrong. So send "cf" for example as the password::
 
      >>> self.resetAVR()
      >>> ser.write("@@@")
      ---Push Capture 1 Button---
      >>> ser.write("cf")
-    
+
     The results will again have a sharp drop in power after the reception of the second character:
-    
+
     .. image:: /images/tutorials/basic/timingpower/trace_password_secondwrong.png
-    
+
 
 Thus by looking at the power consumption, we can determine the wrong password character. This makes it possible to brute-force the password, since we
 can simply guess a single digit of the password at a time.
