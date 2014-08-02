@@ -34,7 +34,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
@@ -49,13 +49,13 @@ def enforceLimits(value, limits):
 
 from functools import partial
 
-class AttackGenericParameters(AutoScript, QObject):       
+class AttackGenericParameters(AutoScript, QObject):
     paramListUpdated = Signal(list)
     traceManagerChanged = Signal(object)
     projectChanged = Signal(QObject)
     settingsChanged = Signal(QObject)
     traceLimitsChanged = Signal(int, int)
-        
+
     def __init__(self, MainWindow=None, console=None, showScriptParameter=None):
         super(AttackGenericParameters, self).__init__(MainWindow)
         self._tmanager = None
@@ -76,7 +76,7 @@ class AttackGenericParameters(AutoScript, QObject):
         self.console = console
         #if showScriptParameter is not None:
         #    self.showScriptParameter = showScriptParameter
-                
+
         self.setupTraceParam()
         self.setupPointsParam()
         self.setupParameters()
@@ -88,11 +88,11 @@ class AttackGenericParameters(AutoScript, QObject):
                         {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'}
                         ]},
                        {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
-                       
+
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()                                                 
-                        },                 
+                         self.getByteList()
+                        },
                       ]
 
         self.params = Parameter.create(name='Attack Settings', type='group', children=attackParams)
@@ -108,7 +108,7 @@ class AttackGenericParameters(AutoScript, QObject):
         init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
         init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
         return init
-    
+
     def updateScriptBytesEnabled(self, ignored=None):
         self.addFunction("init", "setTargetBytes", str(self.bytesEnabled()))
 
@@ -131,19 +131,19 @@ class AttackGenericParameters(AutoScript, QObject):
     def allBytesOn(self):
         for t in self.bytesParameters():
             t.setValue(True)
-    
+
     def allBytesOff(self):
         for t in self.bytesParameters():
-            t.setValue(False)    
+            t.setValue(False)
 
-    def bytesParameters(self):        
+    def bytesParameters(self):
         blist = []
         for i in range(0, 64):
             p = self.findParam('bnumenabled%d' % i)
             if p:
                 blist.append(p)
         return blist
-    
+
     def traceManager(self):
         return self._tmanager
 
@@ -161,7 +161,7 @@ class AttackGenericParameters(AutoScript, QObject):
 
     def project(self):
         return self._project
-        
+
 ############ Trace-Specific
     def setupTraceParam(self):
         self.traceParams = Parameter.create(name='Trace Setup', type='group', children=[
@@ -171,50 +171,50 @@ class AttackGenericParameters(AutoScript, QObject):
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'set':self.updateGenericScript},
             ])
         ExtendedParameter.setupExtended(self.traceParams, self)
-        
+
         self.addFunction("init", "setTraceStart", "0")
         self.addFunction("init", "setTracesPerAttack", "1")
         self.addFunction("init", "setIterations", "1")
         self.addFunction("init", "setReportingInterval", "10")
-        
-    
-        self.singleEmit = True   
-    
+
+
+        self.singleEmit = True
+
     def updateGenericScript(self, ignored=None):
         runs = ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams)
         atraces = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
         strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
         ri = ExtendedParameter.findParam(ExtendedParameter, 'reportinterval', self.traceParams)
-        
+
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
-        
+
         if (runs.value() * atraces.value() + strace.value()) > (self.traceMax):
             solv = (self.traceMax - strace.value()) / runs.value()
-            solv = int(solv)            
+            solv = int(solv)
             atraces.setValue(solv)
             atraces.setLimits((1, solv))
-            self.singleEmit = True           
+            self.singleEmit = True
         else:
             lim = (1, self.traceMax)
             #WORK-AROUND: need to emit an extra sigLimitsChanged???
             if atraces.setLimits(lim) is None and self.singleEmit:
-                self.singleEmit = False 
-                atraces.sigLimitsChanged.emit(atraces, lim)                           
+                self.singleEmit = False
+                atraces.sigLimitsChanged.emit(atraces, lim)
+
+        pointrng = (self.findParam('startpoint', self.pointsParams).value(), self.findParam('endpoint', self.pointsParams).value())
 
         self.addFunction("init", "setTraceStart", "%d" % strace.value())
         self.addFunction("init", "setTracesPerAttack", "%d" % atraces.value())
         self.addFunction("init", "setIterations", "%d" % runs.value())
         self.addFunction("init", "setReportingInterval", "%d" % ri.value())
+        self.addFunction("init", "setPointRange", "(%d,%d)" % (pointrng[0], pointrng[1]))
 
 ############# Points-Specific
     def setupPointsParam(self):
-        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=[])
+        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
+        ExtendedParameter.setupExtended(self.pointsParams, self)
 
-    # def setupPointsParam(self):
-    #    self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
-    #    ExtendedParameter.setupExtended(self.pointsParams, self)
-
-    # def getPointList(self):
+    def getPointList(self):
     #    if self.allPointsSame == False:
     #        init = [{'name':'Byte %d'%bnum, 'type':'group', 'children': [
     #                    {'name':'Starting Point', 'type':'int', 'value':self.startPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
@@ -223,16 +223,16 @@ class AttackGenericParameters(AutoScript, QObject):
     #                    {'name':'Copy from Trace Graph', 'type':'action', 'action':partial(self.copyPointsFromTrace, bnum)},
     #                    ]} for bnum in range(0, 16)]
     #    else:
-    #        init = [{'name':'Starting Point', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0],self.endPoint[0])},
-    #                {'name':'Ending Point', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0],self.endPoint[0])},
+        init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
+                    {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
     #                {'name':'Copy from Output Graph', 'type':'action', 'action':self.copyPointsFromOutput},
     #                {'name':'Copy from Trace Graph', 'type':'action', 'action':self.copyPointsFromTrace},
-    #                ]
+                    ]
     #
     #    #NOT ACTUALLY SUPPORTED
     #    init.insert(0,{'name':'Points Same across Subkeys', 'type':'bool', 'value':self.allPointsSame, 'set':self.setAllPointsSame, 'readonly':True})
-    #    return init
-    
+        return init
+
     # def updatePointRange(self, bnum):
     #    (startparam, endparam) = self.findPointParam(self.pointsParams, bnum)
     #
@@ -242,96 +242,77 @@ class AttackGenericParameters(AutoScript, QObject):
     #
     #    val = (startparam.value(), endparam.value())
     #    return val
-    
+
     # def copyPointsFromOutput(self, bnum=None):
     #    if self.MainWindow is not None:
     #        xran = self.MainWindow.results.graphoutput.xRange()
     #        self.setPointRange(xran[0],xran[1], bnum)
-    
+
     # def copyPointsFromTrace(self, bnum=None):
     #    if self.MainWindow is not None:
     #        xran = self.MainWindow.waveformDock.widget().xRange()
     #        self.setPointRange(xran[0],xran[1], bnum)
-    
+
     def setTraceLimits(self, traces, points):
-        # self.setPointRange(0, points, setlimits=True)
+        self.setGenericPointRange(0, points, setlimits=True)
         self.traceMax = traces
 
         self.addFunction("init", "setPointRange", "(%d,%d)" % (0, points))
-    
+
         # self.addFunction("init", "setTraceStart", "%d" % 0)
         # self.addFunction("init", "setTracesPerAttack", "%d" % traces)
         # self.addFunction("init", "setIterations", "%d" % 1)
-    
+
         strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
         ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams).setValue(1)
         atrace = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
-        
+
         strace.setValue(0)
         strace.setLimits((0,traces))
         atrace.setValue(traces)
         atrace.setLimits((1, traces))
 
         self.traceLimitsChanged.emit(traces, points)
-    
-    # def setPointRange(self, start, end, bnum=None, setlimits=False):
-    #    start = int(start)
-    #    end = int(end)
-    #
-    #    (startparam, endparam) = self.findPointParam(self.pointsParams, bnum)
-    #    if startparam is not None:
-    #        if setlimits:
-    #            startparam.setLimits((start, end))
-    #            startparam.setDefault(start)
-    #            self.startPointLimits = (start, end)
-    #
-    #        start = enforceLimits(start, self.startPointLimits)
-    #        startparam.setValue(start)
-    #
-    #    if endparam is not None:
-    #        if setlimits:
-    #            endparam.setLimits((start, end))
-    #            endparam.setDefault(end)
-    #            self.endPointLimits = (start, end)
-    #        end = enforceLimits(end, self.endPointLimits)
-    #        endparam.setValue(end)
-    #
-    #    if bnum is None:
-    #        self.startPoint[:] = [start] * len(self.startPoint)
-    #        self.endPoint[:] = [end] * len(self.endPoint)
-    #    else:
-    #        self.startPoint[bnum] = start
-    #        self.endPoint[bnum] = end
-    #    self.paramListUpdated.emit(None)
-    
-    # def findPointParam(self, paramtree, bnum=None):
-    #    """Find parameters dealing with input trace plotting"""
-    #    #TODO: Use 'key' & .findParam in ExtendedParameter
-    #    pointstart = None
-    #    pointend = None
-    #
-    #    for t in paramtree.children():
-    #        if bnum is None:
-    #            if t.name() == 'Starting Point':
-    #                pointstart = t
-    #
-    #            if t.name() == 'Ending Point':
-    #                pointend = t
-    #        else:
-    #            if t.name() == 'Byte %d'%bnum:
-    #                for q in t.children():
-    #                    if q.name() == 'Starting Point':
-    #                        pointstart = q
-    #
-    #                    if q.name() == 'Ending Point':
-    #                        pointend = q
-    #
-    #    return (pointstart, pointend)
-    
+
+    def setGenericPointRange(self, start, end, bnum=None, setlimits=False):
+        start = int(start)
+        end = int(end)
+
+        startparam = self.findParam('startpoint', self.pointsParams)
+        endparam = self.findParam('endpoint', self.pointsParams)
+
+        if startparam:
+            if setlimits:
+                startparam.setLimits((start, end))
+                startparam.setDefault(start)
+                self.startPointLimits = (start, end)
+
+            start = enforceLimits(start, self.startPointLimits)
+            startparam.setValue(start)
+
+        if endparam:
+            if setlimits:
+                endparam.setLimits((start, end))
+                endparam.setDefault(end)
+                self.endPointLimits = (start, end)
+            end = enforceLimits(end, self.endPointLimits)
+            endparam.setValue(end)
+
+
+        if bnum is None:
+            self.startPoint[:] = [start] * len(self.startPoint)
+            self.endPoint[:] = [end] * len(self.endPoint)
+        else:
+            self.startPoint[bnum] = start
+            self.endPoint[bnum] = end
+        self.paramListUpdated.emit(None)
+
+
+
     # def setAllPointsSame(self, val):
     #    self.allPointsSame = val
     #    self.setupPointsParam()
     #    self.paramListUpdated.emit(None)
-                
+
     def paramList(self):
         return [self.params, self.pointsParams, self.traceParams]
