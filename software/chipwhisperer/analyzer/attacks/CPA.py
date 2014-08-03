@@ -172,7 +172,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if inpkey is None:
             return None
 
-        if self.findParam('hw_round').value() == 'last':
+        if self.keyround() == -1:
             return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
         else:
             return inpkey
