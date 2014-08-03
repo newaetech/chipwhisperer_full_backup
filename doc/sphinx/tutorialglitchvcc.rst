@@ -3,7 +3,7 @@
 Tutorial #A3: VCC Glitch Attacks
 ================================
 
-This advanced tutorial will demonstrate power glitch attacks using the ChipWhisperer system. 
+This advanced tutorial will demonstrate power glitch attacks using the ChipWhisperer system.
 
 Background on VCC (Power) Glitching
 -----------------------------------
@@ -20,7 +20,7 @@ havoc with the proper functioning.
 .. figure:: /images/tutorials/advanced/vccglitching/vccglitch_working_zoom.png
 
     A zoom in of the previous figure, showing the offset between the clock and the glitches.
-    
+
 .. figure:: /images/tutorials/advanced/vccglitching/vccglitch_notworking_zoom.png
 
     Changing the offset means the glitches are ineffective - this requries considerable experimentation
@@ -40,7 +40,7 @@ The generation of glitches is done with two variable phase shift modules, config
 
 .. figure:: /images/tutorials/advanced/glitching/glitchgen-phaseshift.png
 
-The enable line is used to determine when glitches are inserted. Glitches can be inserted continuously or triggered by 
+The enable line is used to determine when glitches are inserted. Glitches can be inserted continuously or triggered by
 some event. The following figure shows the generation of two glitches:
 
 .. figure:: /images/tutorials/advanced/vccglitching/glitchgen-mux-glitchonly.png
@@ -94,18 +94,18 @@ tutorials*.
 The following figure shows the clock jumper configuration, which are the same as the settings from :ref:`tutorialaes`.
 
     .. image:: /images/tutorials/basic/aes/hw-2.jpg
-   
+
 In addition the VCC glitcher board must be mounted, which means removing the jumpers on the 6-pin header around the AVR. Also the 'IN'
 pin on the VCC glitcher board connected to the FPGAOUT pin. This is done via a jumper wire. Both of these are shown in the following figure:
 
    .. figure:: /images/tutorials/advanced/vccglitching/vccglitcher_routing.jpg
-   
+
     The control line for the VCC glitcher board comes from the FPGAOUT pin.
-   
+
    .. figure:: /images/tutorials/advanced/vccglitching/vccglitcher_mounted.jpg
-   
+
     The VCC glitcher board must be mounted with ``GND`` at the bottom matching, exactly as shown here.
-   
+
 
 Software Setup
 ^^^^^^^^^^^^^^
@@ -126,11 +126,11 @@ Software Setup
 
     1. Under the *Glitch Module* set the *Output Mode* as *Glitch Only*, this is the step
        that insurances **you do not cause constant glitches**:
-    
+
         .. image:: /images/tutorials/advanced/vccglitching/glitchexample-capsetup1.png
-       
+
     2. Under the *Glitch Module* set the *Clock Source* as *TargetIO-IN*:
-    
+
         .. image:: /images/tutorials/advanced/vccglitching/glitchexample-capsetup2.png
 
     3. Under the *Target HS IO-Out* option select the *Glitch Module*, ensuring you've already set the
@@ -139,21 +139,21 @@ Software Setup
        .. image:: /images/tutorials/advanced/glitching/targioout.png
 
 3. Connect the Serial Port
-    
+
     1. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
 
         .. image:: /images/tutorials/basic/timingpower/termconn.png
 
-    2. The baud rate for this system is 38400, which should be the default for the ChipWhisperer serial port. 
+    2. The baud rate for this system is 38400, which should be the default for the ChipWhisperer serial port.
 
     3. Connect the USB-A cable (if not already connected) to the back of the ChipWhisperer device. Start AVRStudio and open the
        programmer dialog. We will use the `Read Signature` button to reset the AVR every time we want to restart the program. Confirm
        this works by pressing the `Read Signature` button:
-   
+
        .. image:: /images/tutorials/advanced/glitching/readsig.png
-   
+
        When you press this button the AVR will display the `Hello` message, which should look something like this:
-   
+
        .. image:: /images/tutorials/advanced/glitching/termhello.png
 
 
@@ -161,16 +161,16 @@ We'll now look at glitching this routine. You should inspect the source code to 
 an infinite loop::
 
         output_ch_0('A');
-        
+
         //External trigger logic
         trigger_high();
         trigger_low();
-        
+
         //Should be an infinite loop
         while(a != 2){
         ;
         }
-        
+
         //Several examples in case glitching skips a few instructions
         PORTC = 0;
         PORTC = 0;
@@ -201,17 +201,17 @@ With some background, let's now check some glitches. Assuming you've setup the e
 6. See if you end up with either the AVR resetting (reprints ``hello\nA``), or glitches out of the loop (prints ``1234``). It may do both. You may need to
    press the *Manual Trigger* button several times quickly.
 7. To force a reset of the AVR, use the `Signature Read` option in AVRStudio.
-8. Adjust the glith width & offset as needed. 
+8. Adjust the glith width & offset as needed.
 9. You may also adjust the *Repeat* option, or cause it to glitch several instructions.
 
 The following figure shows several successul glitches:
 
     .. image:: /images/tutorials/advanced/vccglitching/vccglitch-examplesettings.png
-    
+
 The glitches on the power line will look something like this with the given settings:
 
    .. image:: /images/tutorials/advanced/vccglitching/vccglitch_working_zoom.png
-    
+
 **Be aware that you may crash the AVR!** In the previous examples the AVR had reset after each glitch. It may simply go into another infinite loop
 however, or even enter invalid states. Again use the `Signature Read` option in AVRStudio to force a hardware reset of the AVR in these cases. It may
 appear like the AVR was never glitched, whereas in reality it was glitched into some invalid state.
@@ -220,7 +220,7 @@ Automatic Glitch Trigger
 ------------------------
 
 Much in the same way you can try automatic glitch triggering in :ref:`tutorialglitch`, you can also perform this
-with the VCC glitch triggering. 
+with the VCC glitch triggering.
 
 You may need larger *Repeat* values compared to clock glitching - as an example tests of glitching past the password
 check for ``glitch3()`` required the following values:
@@ -231,8 +231,61 @@ check for ``glitch3()`` required the following values:
   * **Repeat:** 55
   * **Output Mode:** Glitch Only
 
-  
-  
+Glitching More Advanced Targets: Raspberry Pi
+---------------------------------------------
+
+It is also possible to glitch more advanced targets, such as the Raspberry Pi
+development board! This requires some additional hardware setup which will be
+discussed here.
+
+The Raspberry Pi is a small ARM-based computer that runs Linux. This tutorial
+will show you how to influence a program running in userland via voltage
+glitching.
+
+Hardware Setup
+^^^^^^^^^^^^^^
+
+.. warning::
+
+    This tutorial can cause permanent damage to your Raspberry Pi board.
+    The generation of glitches means driving the power supply and device beyond
+    limits specified in the absolute maximum ratings. Only perform this tutorial
+    if you are not too attached to your board.
+
+    YOU PERFORM THIS TUTORIAL AT YOUR OWN RISK. NEWAE TECHNOLOGY INC. IS NOT
+    RESPONSIBLE FOR DAMAGE CAUSED BY FOLLOWING THIS TUTORIAL.
+
+To glitch the board, you must solder a wire onto the *VDD_CORE* power supply,
+ideally as close to the BGA power pin as possible. To do this identify the
+power plane by looking at the schematic:
+
+TODO
+
+And then solder a wire onto the appropriate side of a decoupling capacitor, such
+as C65:
+
+TODO
+
+You will need to build a circuit with a logic-level MOSFET. The provided glitching
+board has too low-power of a MOSFET to work, and you will
+*damage the VCC glitching board if you attempt to use it*. The following shows
+the basic example used here:
+
+TODO
+
+Finally connect the drive pin of the MOSFET to the *FPGAOUT* pin on the
+ChipWhisperer. Note you should to do this *after* the ChipWhisperer software
+is configured (see next section), as it is possible to damage the Raspberry Pi by
+driving the MOSFET incorrectly. If the ChipWhisperer is not yet configured it
+may *accidently drive the MOSFET causing damage*.
+
+
+Glitch Parameters
+^^^^^^^^^^^^^^^^^
+
+Triggering
+^^^^^^^^^^
+
 
 
 
