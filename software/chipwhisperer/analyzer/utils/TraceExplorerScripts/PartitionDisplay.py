@@ -63,10 +63,10 @@ class DifferenceModeTTest(QObject):
                         return SADSeg
                 for j in range(0, numparts):
                     if means[bnum][i] is not None and means[bnum][j] is not None:
-                                                                        
+
                         ttest = np.subtract(means[bnum][i], means[bnum][j])
                         ttest /= np.sqrt((var[bnum][i]/num[bnum][i]) + (var[bnum][j]/num[bnum][j]))
-                        
+
                         SADSeg[bnum] = np.add(SADSeg[bnum], np.abs(ttest) * scalingFactor)
 
         if pbDialog:
@@ -236,7 +236,7 @@ class PartitionDisplay(AutoScript, QObject):
 
     def defineName(self):
         self.name = 'Partition Comparison'
-        
+
         self.partObject = Partition(self)
         partModeList = {}
         for a in self.partObject.supportedMethods:
@@ -275,7 +275,7 @@ class PartitionDisplay(AutoScript, QObject):
              ]
 
         self.updateScript()
-        
+
     def updatePOI(self, ignored=None):
         self.updateScript()
         # Some sort of race condition - applying Therac-25 type engineering and just
@@ -318,9 +318,9 @@ class PartitionDisplay(AutoScript, QObject):
         except AttributeError as e:
             return
 
-        self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate')
+        self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate, PartitionHDLastRound')
         self.importsAppend('from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD')
-        
+
         self.addGroup("displayPartitionStats")
         self.addVariable('displayPartitionStats', 'ted', 'self.')
         self.addFunction('displayPartitionStats', 'parent.getProgressIndicator', '', 'progressBar', obj='ted')

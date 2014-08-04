@@ -41,6 +41,8 @@ import random
 from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
+from chipwhisperer.analyzer.attacks.models.AES_RoundKeys import AES_RoundKeys
 import chipwhisperer.common.aes_tables as aes_tables
 
 class PartitionHDLastRound(object):
@@ -53,12 +55,21 @@ class PartitionHDLastRound(object):
 
     def getPartitionNum(self, trace, tnum):
         key = trace.getKnownKey(tnum)
-        text = trace.getTextin(tnum)
+        ct = trace.getTextout(tnum)
+
+        #Convert from initial key to final-round key, currently
+        #this assumes AES
+        if len(key) == 16:
+            rounds = 10
+        else:
+            raise ValueError("Need to implement for selected AES")
+        key = AES_RoundKeys().getFinalKey(key, rounds)
 
         guess = [0] * 16
         for i in range(0, 16):
-            guess[i] = getHW(aes_tables.sbox[text[i] ^ key[i]])
-
+            st10 = ct[INVSHIFT[i]]
+            st9 =  aes_tables.i_sbox[ct[i] ^ key[i]]
+            guess[i] = getHW(st9 ^ st10)
         return guess
 
 class PartitionHWIntermediate(object):
@@ -90,7 +101,7 @@ class PartitionEncKey(object):
     def getPartitionNum(self, trace, tnum):
         key = trace.getKnownKey(tnum)
         return key
-        
+
 class PartitionRandvsFixed(object):
 
     sectionName = "Partition Based on Rand vs Fixed "
@@ -161,7 +172,7 @@ class Partition(QObject):
                     },
                 }
 
-    supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate]
+    supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
     def __init__(self, parent, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
@@ -182,7 +193,7 @@ class Partition(QObject):
         #            {'name':'Desc', 'type':'text', 'value':self.descrString}]
         # self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
         # ExtendedParameter.setupExtended(self.params, self)
-        
+
         self.setPartMethod(PartitionRandvsFixed)
 
     def setPartMethod(self, method):
@@ -207,7 +218,7 @@ class Partition(QObject):
         if self._tmanager is None and self.parent is not None:
             self._tmanager = self.parent.traceManager()
         return self._tmanager
-        
+
     def createBlankTable(self, t):
         # Create storage for partition information
         partitionTable = []
@@ -250,7 +261,7 @@ class Partition(QObject):
 
             # Next trace round
             tnum = tmapend + 1
-        
+
         return partitionTable
 
     def getPartitionData(self):
@@ -264,7 +275,7 @@ class Partition(QObject):
 
         if traces:
             self.setTraceManager(traces)
-            
+
         if partitionClass:
             self.setPartMethod(partitionClass)
 
@@ -275,13 +286,13 @@ class Partition(QObject):
 
         start = tRange[0]
         end = tRange[1]
-        
+
         if partitionTable is None:
             partitionTable = self.createBlankTable(self.traceManager().findMappedTrace(start))
 
             if end == -1:
                 end = self.traceManager().numTrace()
-            
+
             tnum = start
             while tnum < end:
                 t = self.traceManager().findMappedTrace(tnum)
@@ -294,9 +305,9 @@ class Partition(QObject):
                     partNum = self.partMethod.getPartitionNum(t, tnum - tmapstart)
                     for i, pn in enumerate(partNum):
                         partitionTable[i][pn].append(tnum - tmapstart)
-    
+
                     # self.traceDone.emit(tnum)
-                
+
                 if saveFile:
                     # Save partition table, reference it in config file
                     newCfgDict = copy.deepcopy(self.attrDictPartition)
