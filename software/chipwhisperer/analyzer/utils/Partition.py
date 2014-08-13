@@ -241,6 +241,7 @@ class Partition(QObject):
 
         # Generate blank partition table
         partitionTable = self.createBlankTable(self.traceManager().findMappedTrace(start))
+        print np.shape(partitionTable)
 
         tnum = start
         while tnum < end:
@@ -250,7 +251,10 @@ class Partition(QObject):
             tmapend = t.mappedRange[1]
             tmapend = min(tmapend, end)
 
-            partdata = t.loadAuxiliaryData(self.partMethod.__class__.__name__)
+            partcfg = t.getAuxDataConfig(self.attrDictPartition)
+            # print partcfg
+            # print partcfg["filename"]
+            partdata = t.loadAuxData(partcfg["filename"])
 
             # Merge tables now - better way to do this?
             for j in range(0, len(self.partMethod.getPartitionNum(t, 0))):
