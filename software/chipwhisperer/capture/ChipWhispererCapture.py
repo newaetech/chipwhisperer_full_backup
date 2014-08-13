@@ -34,7 +34,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from datetime import datetime
 import random
 import os.path
@@ -55,7 +55,7 @@ try:
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
     #print pg.systemInfo()
-    
+
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
@@ -82,20 +82,20 @@ try:
 except ImportError:
     target_SimpleSerial = None
     target_SimpleSerial_str = sys.exc_info()
-    
+
 try:
     import  chipwhisperer.capture.targets.SmartCard as target_SmartCard
 except ImportError:
     target_SmartCard = None
     target_SmartCard_str = sys.exc_info()
     print "SmartCard targets disabled: %s"%str(target_SmartCard_str)
-    
+
 try:
     import  chipwhisperer.capture.targets.SASEBOGII as target_SASEBOGII
 except ImportError:
     target_SASEBOGII = None
     target_SASEBOGII_str = sys.exc_info()
-    
+
 try:
     import  chipwhisperer.capture.targets.SAKURAG as target_SAKURAG
 except ImportError:
@@ -139,41 +139,41 @@ class TargetInterface(QObject):
     targetUpdated = Signal(bool)
     connectStatus = Signal(bool)
     newInputData = Signal(list)
-    
+
     def __init__(self, parent=None, log=None,showScriptParameter=None):
         super(TargetInterface, self).__init__(parent)
         valid_targets = {"None":None}
         self.driver = None
         self.log=log
         self.showScriptParameter = showScriptParameter
-                
+
         if target_SimpleSerial is not None:
             valid_targets["Simple Serial"] = target_SimpleSerial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
-            
+
         if target_SmartCard is not None:
             valid_targets["Smart Card"] = target_SmartCard.SmartCard(self.log, showScriptParameter=showScriptParameter)
-            
+
         if target_SASEBOGII is not None:
             valid_targets["SASEBO GII"] = target_SASEBOGII.SaseboGII(self.log, showScriptParameter=showScriptParameter)
-            
+
         if target_SAKURAG is not None:
             valid_targets["SAKURA G"] = target_SAKURAG.SakuraG(self.log, showScriptParameter=showScriptParameter)
 
         if target_CWSPI is not None:
             valid_targets["ChipWhisperer SPI"] = target_CWSPI.ChipWhispererSPI(self.log, showScriptParameter=showScriptParameter)
-        
-        self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}     
+
+        self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
         self.oadc = oadc.scope.sc
         self.driver.setOpenADC(self.oadc)
-        
+
     def con(self):
         if self.driver is not None:
             self.driver.con()
             self.connectStatus.emit(True)
-        
+
     def dis(self):
         if self.driver is not None:
             self.driver.dis()
@@ -184,8 +184,8 @@ class TargetInterface(QObject):
         try:
             self.driver.setOpenADC(self.oadc)
         except:
-            pass        
-        
+            pass
+
         if self.driver is None:
             self.paramListUpdated.emit(None)
             self.targetUpdated.emit(False)
@@ -194,7 +194,7 @@ class TargetInterface(QObject):
             self.driver.newInputData.connect(self.newInputData.emit)
             self.paramListUpdated.emit(self.driver.paramList())
             self.targetUpdated.emit(True)
-            
+
     def paramList(self):
         if self.driver is None:
             return [None]
@@ -215,15 +215,15 @@ class EncryptionStatusMonitor(QDialog):
         self.textResultsLayout.addWidget(self.textOutLine, 1, 1)
         self.textResultsLayout.addWidget(QLabel("Expected"), 2, 0)
         self.textOutExpected = QLineEdit()
-        self.textOutExpected.setReadOnly(True)        
+        self.textOutExpected.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
 
         self.textResultsLayout.addWidget(QLabel("Enc. Key"), 3, 0)
         self.textEncKey = QLineEdit()
-        self.textEncKey.setReadOnly(True)        
+        self.textEncKey.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textEncKey, 3, 1)
 
-        self.setLayout(self.textResultsLayout)  
+        self.setLayout(self.textResultsLayout)
         self.hide()
 
     def setHexText(self, lineedit, data):
@@ -239,25 +239,25 @@ class EncryptionStatusMonitor(QDialog):
         self.setHexText(self.textInLine, pt)
         self.setHexText(self.textEncKey, key)
         self.setHexText(self.textOutExpected, expected)
-                     
+
 
 class ChipWhispererCapture(MainChip):
-    MaxRecentFiles = 4    
+    MaxRecentFiles = 4
     def __init__(self):
         super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"), icon="cwiconC")
         self.console = self.addConsole()
-    
-        self.scope = None        
+
+        self.scope = None
         self.trace = None
         self.aux = None
-        self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)        
+        self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
         self.target.newInputData.connect(self.newTargetData)
-    
-        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}        
-        valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}    
+
+        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}
+        valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}
         valid_aux = {"None":None}
-        
+
         # If you want to add a 'hacked-in' module, you can do that in the 'aux' system. The aux system is designed to make
         # it very easy to add some code that does something like measure an external instrument, or control some other
         # system. Useful if you are wanting to do something like script different core voltages, frequencies, or otherwise
@@ -271,20 +271,20 @@ class ChipWhispererCapture(MainChip):
 
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
-            
+
         if VisaScopeInterface is not None:
             valid_scopes["VISA Scope"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
 
         if PicoScopeInterface is not None:
             valid_scopes["PicoScope"] = PicoScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
-        
+
         self.esm = EncryptionStatusMonitor(self)
-        
+
         self.serialTerminal = SerialTerminalDialog(self)
-        
+
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
         self.paramTrees.append(self.glitchMonitor.paramTree)
-        
+
         valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(console=self.console, showScriptParameter=self.showScriptParameter)}
 
         if AcqKeyTextPattern_CRITTest:
@@ -296,7 +296,7 @@ class ChipWhispererCapture(MainChip):
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
                 self.target.toplevel_param,
                 {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"], 'set':self.traceChanged},
-                
+
                 {'name':'Auxilary Module', 'type':'list', 'values':valid_aux, 'value':valid_aux["None"], 'set':self.auxChanged },
 
                 # {'name':'Key Settings', 'type':'group', 'children':[
@@ -304,7 +304,7 @@ class ChipWhispererCapture(MainChip):
                 #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
                 #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
                 #    ]},
-                         
+
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
                         {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
                         {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.setNumSegments, 'get':self.getNumSegments, 'tip':'Break capture into N segments, '
@@ -318,7 +318,7 @@ class ChipWhispererCapture(MainChip):
 
                 # {'name':''}
                 ]
-        
+
         self.da = None
         self.numTraces = 100
         self.numSegments = 1
@@ -329,23 +329,23 @@ class ChipWhispererCapture(MainChip):
         self.addToolMenu()
 
         self.addExampleScripts()
-        
+
         self.restoreDockGeometry()
         self.dockifySettings()
         self.settingsAuxDock.setVisible(False)
 
-        self.newProject()   
-        
+        self.newProject()
+
         self.newFile.connect(self.newProject)
-        self.saveFile.connect(self.saveProject)   
-        
-        self.fixedPlain = False 
+        self.saveFile.connect(self.saveProject)
+
+        self.fixedPlain = False
         self.target.targetUpdated.connect(self.targetUpdated)
         self.target.connectStatus.connect(self.targetStatusChanged)
 
         self.targetConnected = False
         self.reloadParamList()
-  
+
     def listModules(self):
         """Overload this to test imports"""
         return ListAllModules()
@@ -365,38 +365,38 @@ class ChipWhispererCapture(MainChip):
 
         if reloadList:
             self.reloadParamList()
-     
+
     def setFixedPlain(self, x):
         self.fixedPlain = x
-        
+
     def getNumTraces(self):
         return self.numTraces
-        
+
     def setNumTraces(self, t):
-        self.numTraces = t      
+        self.numTraces = t
 
     def setNumSegments(self, s):
         self.numSegments = s
 
     def getNumSegments(self):
         return self.numSegments
-       
+
     def FWLoaderConfig(self):
         self.CWFirmwareConfig.show()
-    
+
     def FWLoaderGo(self):
         self.CWFirmwareConfig.loadRequired()
-        
+
     def addExampleScripts(self):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
-        
+
         self.projectMenu.addSeparator()
         self.projectMenu.addAction(self.exampleScriptAct)
-        
+
         subMenu = QMenu("Submenu", self)
-              
+
         self.scriptList = []
-              
+
         if os.path.isdir("scripts"):
             for fn in os.listdir('scripts/.'):
                 fnfull = 'scripts/'+fn
@@ -409,35 +409,35 @@ class ChipWhispererCapture(MainChip):
                         #for debugging uncomment this:
                         #print str(e)
                         pass
-                    
+
                     except AttributeError,e:
                         #for debugging uncomment this:
                         #print str(e)
                         pass
-                    
+
         for t in self.scriptList:
             subMenu.addAction(QAction(t.name(), self, statusTip=t.tip(), triggered=partial(self.runScript, t)))
-            
+
         self.exampleScriptAct.setMenu(subMenu)
-        
+
     def runScript(self, mod):
         self.console.append( "****Running Script: %s"%mod.name() )
         m = mod.userScript(self)
         m.run()
         self.console.append( "****Finished Script: %s"%mod.name() )
-        
+
 
     def addToolMenu(self):
         self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
-        
-        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,                               
+
+        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
                                statusTip='Configure ChipWhisperer FW Paths',
                                triggered=self.FWLoaderConfig)
 
-        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,                               
+        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
                                statusTip='Download Firmware+FPGA To Hardware',
                                triggered=self.FWLoaderGo)
-        
+
         self.toolMenu.addAction(self.CWFirmwareConfigAct)
         self.toolMenu.addAction(self.CWFirmwareGoAct)
         self.toolMenu.addSeparator()
@@ -447,24 +447,24 @@ class ChipWhispererCapture(MainChip):
                                    triggered=self.serialTerminal.show)
 
         self.toolMenu.addAction(self.TerminalAct)
-        
-        
+
+
         self.GlitchMonitorAct = QAction('Open Glitch Monitor', self,
                                      statusTip='Open Glitch Monitor Table',
                                      triggered=self.glitchMonitor.show)
 
         self.toolMenu.addAction(self.GlitchMonitorAct)
-        
+
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
-        
+
         #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()       
-        
-    def addSettingsDocks(self):      
-        self.setupParametersTree()        
+        self.waveformDock.widget().YDefault()
+
+    def addSettingsDocks(self):
+        self.setupParametersTree()
         self.settingsNormalDock = self.addSettings(self.paramTree, "General Settings")
         self.settingsScopeDock = self.addSettings(self.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
@@ -477,20 +477,20 @@ class ChipWhispererCapture(MainChip):
         ExtendedParameter.setupExtended(self.params, self)
         self.paramTree = ParameterTree()
         self.paramTree.setParameters(self.params, showTop=False)
-        
+
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
 
-    def reloadScopeParamList(self, lst=None): 
+    def reloadScopeParamList(self, lst=None):
         if self.scope is not None:
             ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)
-        
+
     def reloadTargetParamList(self, lst=None):
         if self.target is not None:
             ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
-        
+
     def reloadTraceParamList(self, lst=None):
         if self.traceparams is not None:
             try:
@@ -506,19 +506,19 @@ class ChipWhispererCapture(MainChip):
             except AttributeError:
                 # Some trace writers have no configuration options
                 pass
-        
+
     def reloadParamList(self, lst=None):
         ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
-        
+
     def paramList(self):
         p = []
         p.append(self.params)
-        
+
         if self.acqPattern is not None:
             acqParams = self.acqPattern.paramList()
             for ap in acqParams:
                 p.append(ap)
-        return p   
+        return p
 
     def newScopeData(self,  data=None, offset=0):
         self.waveformDock.widget().passTrace(data, offset)
@@ -536,7 +536,7 @@ class ChipWhispererCapture(MainChip):
         self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
         self.captureMAct.triggered.connect(self.captureM)
         self.captureMAct.setCheckable(True)
-        
+
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
         self.captureStatusActionDis.triggered.connect(self.doConDis)
@@ -550,7 +550,7 @@ class ChipWhispererCapture(MainChip):
         self.CaptureToolbar.addWidget(QLabel('Master:'))
         self.CaptureToolbar.addWidget(self.captureStatus)
         #self.CaptureToolbar.setEnabled(False)
-        
+
         # Scope Toolbar
         self.scopeStatus = QToolButton()
         self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self)
@@ -570,7 +570,7 @@ class ChipWhispererCapture(MainChip):
         self.targetStatusActionDis.triggered.connect(self.doConDisTarget)
         self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self)
         self.targetStatus.setDefaultAction(self.targetStatusActionDis)
-        
+
         self.TargetToolbar = self.addToolBar('Target Toolbar')
         self.TargetToolbar.setObjectName('Target Toolbar')
         self.TargetToolbar.addWidget(QLabel('Target:'))
@@ -618,7 +618,7 @@ class ChipWhispererCapture(MainChip):
     def targetStatusChanged(self, status=True, text=None):
         """Callback when target connection successful"""
         #self.CaptureToolbar.setEnabled(status)
-        
+
         self.targetConnected = status
 
         if status:
@@ -633,14 +633,14 @@ class ChipWhispererCapture(MainChip):
 
         if self.target is None:
             return
-        
+
         #Triggered from GUI
         if con is None:
             if self.targetStatus.defaultAction() == self.targetStatusActionDis:
                 con = True
             else:
                 con = False
-        
+
         #Triggered from API
         try:
             if con:
@@ -650,8 +650,8 @@ class ChipWhispererCapture(MainChip):
                 self.target.dis()
         except IOError, e:
             self.console.append("Target Error: %s"%str(e))
-            
-        
+
+
     def doConDisScope(self, con=None):
         """Toggle connect button pushed (scope), alternatively can use via API by setting 'con' to True or False"""
         if self.scope is None:
@@ -663,7 +663,7 @@ class ChipWhispererCapture(MainChip):
                 con = True
             else:
                 con = False
-        
+
         # Triggered from API
         try:
             if con:
@@ -673,7 +673,7 @@ class ChipWhispererCapture(MainChip):
                 try:
                     self.target.setOpenADC(self.scope.qtadc.ser)
                 except:
-                    pass      
+                    pass
             else:
                 self.scope.dis()
         except IOError, e:
@@ -682,7 +682,7 @@ class ChipWhispererCapture(MainChip):
 
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
-        if self.captureStatus.defaultAction() == self.captureStatusActionDis:      
+        if self.captureStatus.defaultAction() == self.captureStatusActionDis:
             self.doConDisScope(True)
             self.doConDisTarget(True)
         else:
@@ -719,7 +719,7 @@ class ChipWhispererCapture(MainChip):
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog(onlyOkButton=not warnOnly)
-        
+
         if self.target.driver:
             target = self.target.driver
         else:
@@ -836,26 +836,26 @@ class ChipWhispererCapture(MainChip):
 
             tcnt += tracesPerRun
             self.statusBar().showMessage("%d Captures Completed" % tcnt)
-            
+
             stoptime = datetime.now()
 
             # Re-use the wave buffer for later segments
             if writer is not None:
                 waveBuffer = writer.traces
                 writerlist.append(writer)
-        
+
         self.console.append("Capture delta time: %s" % str(stoptime - overallstarttime))
-        
+
         self.capture1Act.setEnabled(True)
         self.captureMAct.setChecked(False)
         self.captureMAct.setEnabled(True)
 
         return writerlist
-        
-    def scopeChanged(self, newscope):        
+
+    def scopeChanged(self, newscope):
         self.scope = newscope
         if self.scope is not None:
-            self.scope.paramListUpdated.connect(self.reloadScopeParamList)                     
+            self.scope.paramListUpdated.connect(self.reloadScopeParamList)
             self.scope.dataUpdated.connect(self.newScopeData)
             self.scope.connectStatus.connect(self.scopeStatusChanged)
             self.reloadScopeParamList()
@@ -871,7 +871,7 @@ class ChipWhispererCapture(MainChip):
             self.traceparams = None
         except TypeError:
             self.traceparams = None
-            
+
         self.reloadTraceParamList()
 
     def auxChanged(self, newaux):
@@ -885,8 +885,8 @@ class ChipWhispererCapture(MainChip):
             self.settingsAuxDock.setVisible(False)
         except TypeError:
             self.settingsAuxDock.setVisible(False)
-  
-    def newProject(self):        
+
+    def newProject(self):
         self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Capture")
         self.project().setProgramVersion("2.00")
@@ -895,7 +895,7 @@ class ChipWhispererCapture(MainChip):
         self.project().addParamTree(self.target)
         self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
-  
+
     def saveProject(self):
         if self.project().hasFilename() == False:
             fd = QFileDialog(self, 'Save New File', '.', '*.cwp')
@@ -906,28 +906,28 @@ class ChipWhispererCapture(MainChip):
                 fname = fd.selectedFiles()[0]
             else:
                 return
-            
+
             self.project().setFilename(fname)
             self.setCurrentFile(fname)
-            
+
         self.project().save()
         self.dirty = False
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")
-  
+
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Capture V2")
     return app
-  
+
 if __name__ == '__main__':
     app = makeApplication()
-    
+
     # Create and show the form
     window = ChipWhispererCapture()
     window.show()
-   
+
     # Run the main Qt loop
     sys.exit(app.exec_())

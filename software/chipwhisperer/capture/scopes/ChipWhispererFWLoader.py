@@ -43,6 +43,8 @@ import time
 from subprocess import Popen, PIPE
 import shlex
 
+from chipwhisperer.capture.scopes.ztex_fwloader import Ztex1v1, IhxFile
+
 class FWLoaderConfig(QDialog):
     def __init__(self, parent=None, console=None):
         super(FWLoaderConfig, self).__init__(parent)
@@ -54,13 +56,6 @@ class FWLoaderConfig(QDialog):
         layout = QVBoxLayout()
 
         layoutFWLoader = QHBoxLayout()
-        self.fwLocation = QLineEdit()
-        fwButton = QPushButton("Find")
-        fwButton.clicked.connect(self.findFWLoader)
-        layoutFWLoader.addWidget(QLabel("FWLoader Location"))
-        layoutFWLoader.addWidget(self.fwLocation)
-        layoutFWLoader.addWidget(fwButton)
-        layout.addLayout(layoutFWLoader)
 
         layoutBit = QHBoxLayout()
         self.bitLocation = QLineEdit()
@@ -83,31 +78,15 @@ class FWLoaderConfig(QDialog):
         # Set dialog layout
         self.setLayout(layout)
 
+        self.ztex = Ztex1v1()
+
         settings = QSettings()
 
-        self.javaCmd = 'java'
-
-        # Windows only seems to require this
-        if platform.system() == 'Windows':
-            self.shellRequired = True
-        else:
-            self.shellRequired = False
-
-        # Override this if path-specific java required, e.g.:
-        # self.javaCmd = '"C:/Program Files/Java/jre7/bin/java"'
-
-        fwLLoc = settings.value("fwloader-location")
         bsLoc = settings.value("bitstream-location")
         fwFLoc = settings.value("firmware-location")
 
         # Defaults?
         # print os.getcwd()
-
-        if not fwLLoc:
-            defLocfwL = "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/fwloader/FWLoader.jar"
-            # defLocfwL = os.path.realpath(defLocfwL)
-            if os.path.isfile(defLocfwL):
-                fwLLoc = str(defLocfwL)
 
         if not fwFLoc:
             defLocfwF = "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"
@@ -121,15 +100,8 @@ class FWLoaderConfig(QDialog):
             if os.path.isfile(defLocbs):
                 bsLoc = str(defLocbs)
 
-        self.fwLocation.setText(fwLLoc)
         self.bitLocation.setText(bsLoc)
         self.firmwareLocation.setText(fwFLoc)
-
-    def findFWLoader(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find FWLoader', '.', 'FWLoader.jar')
-        if fname:
-            self.fwLocation.setText(fname)
-            QSettings().setValue("fwloader-location", fname)
 
     def findBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', '.', '*.bit')
@@ -143,64 +115,47 @@ class FWLoaderConfig(QDialog):
             self.firmwareLocation.setText(fname)
             QSettings().setValue("firmware-location", fname)
 
-    def getStatus(self):
-        """Get the output of the FWLoader command with the -i (info) option"""
-        # Check Status
-        cmd = '%s -cp %s FWLoader -c -i' % (self.javaCmd, self.fwLocation.text())
-        # print shlex.split(cmd)
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
-        stdout, stderr = process.communicate()
-        process.wait()
-
-        if "devices" in stderr:
-            if self.console:
-                self.console.append(stderr)
-        return stdout
-
     def loadRequired(self, forceFirmware=False):
         """Load firmware file or FPGA file only as required, skip otherwise"""
-        stdout = self.getStatus()
+        self.ztex.probe(True)
 
-        if "OpenADC" not in stdout or forceFirmware:
+        if self.ztex.firmwareProgrammed == False or forceFirmware:
             # Load firmware
             self.loadFirmware()
-            stdout = self.getStatus()
         else:
             if self.console:
                 self.console.append("Skipped firmware download")
 
-        if "FPGA configured" not in stdout:
+        if self.ztex.deviceInfo["interfaceVersion"] != 1:
+            raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(self.ztex.deviceInfo))
+
+        if self.ztex.deviceInfo["productId"] != [10, 12, 0, 0]:
+            raise IOError("Unknown productId, invalid ZTEX Firmware/Module?. Device info: %s" % str(self.ztex.deviceInfo))
+
+        self.ztex.getFpgaState()
+        if self.ztex.fpgaConfigured == False:
             self.loadFPGA()
+            self.ztex.getFpgaState()
+            print "Programmed FPGA bistream"
         else:
-            if self.console:
-                self.console.append("Skipped FPGA download")
+            print "FPGA already configured, skipped configuration"
 
     def loadFirmware(self):
         """Load the USB microcontroller firmware file setup in the dialog"""
-        cmd = "%s -cp %s FWLoader -c -f -uu %s" % (self.javaCmd, self.fwLocation.text(), self.firmwareLocation.text())
-        # print shlex.split(cmd)
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
-        stdout, stderr = process.communicate()
-        exit_code = process.wait()
-        if self.console:
-            self.console.append(stdout)
-            self.console.append(stderr)
+        f = IhxFile(self.firmwareLocation.text())
+        self.ztex.uploadFirmware(f)
+        time.sleep(1)
+        self.ztex.probe()
+
 
     def loadFPGA(self):
-        """Load the FPGA bitfile set up in the dialog"""
-        cmd = "%s -cp %s FWLoader -f -uf %s" % (self.javaCmd, self.fwLocation.text(), self.bitLocation.text())
-        # print shlex.split(cmd)
+        """Load the FPGA bitstream"""
 
         # Get bitstream date, print for user
         bsdate = os.path.getmtime(self.bitLocation.text())
         print "FPGA Bitstream Created: %s" % time.ctime(bsdate)
-
         # Save last loaded FPGA bitstream
         QSettings().setValue("bitstream-date", bsdate)
 
-        process = Popen(shlex.split(cmd), stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
-        stdout, stderr = process.communicate()
-        exit_code = process.wait()
-        if self.console:
-            self.console.append(stdout)
-            self.console.append(stderr)
+        self.ztex.configureFpgaLS(self.bitLocation.text())
+
