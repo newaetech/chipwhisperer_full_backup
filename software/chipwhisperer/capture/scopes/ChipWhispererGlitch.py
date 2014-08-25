@@ -42,7 +42,7 @@ except ImportError:
 
 from openadc.ExtendedParameter import ExtendedParameter
 
-glitchaddr = 51    
+glitchaddr = 51
 glitchoffsetaddr = 25
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -64,7 +64,7 @@ class ChipWhispererGlitch(QObject):
     CLKSOURCE_MASK = 0b00000011
 
     paramListUpdated = Signal(list)
-             
+
     def __init__(self, showScriptParameter=None):
         paramSS = [
                 {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
@@ -80,14 +80,14 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
                 {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
                 ]
-            
+
         #Load FPGA partial configuration data
         self.glitchPR = pr.PartialReconfigDataMulti()
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
         self.showScriptParameter = showScriptParameter
-        
-        try:            
+
+        try:
             twidth = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchwidth.p")
             toffset = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchoffset.p")
 
@@ -118,7 +118,7 @@ class ChipWhispererGlitch(QObject):
             self.prEnabled = False
 
         #self.prEnabled = False
-            
+
         if self.prEnabled:
             #Enable glitch width, check what we've got access to
             paramSS[1]['readonly'] = False
@@ -126,38 +126,38 @@ class ChipWhispererGlitch(QObject):
             #if lim[0] < 0:
             #    lim = (0, lim[1])
             paramSS[1]['limits'] = lim
-            
+
             paramSS[3]['readonly'] = False
             lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55 )
             #if lim[0] < 0:
             #    lim = (0, lim[1])
             paramSS[3]['limits'] = lim
-                
+
         self.params = Parameter.create(name='Glitch Module', type='group', children=paramSS)
         ExtendedParameter.setupExtended(self.params, self)
-        
+
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oa):
         if self.prEnabled:
-            self.prCon.con(oa)            
+            self.prCon.con(oa)
             #Reset FPGA back to defaults in case previous bitstreams loaded
             self.updatePartialReconfig()
-            
+
         self.oa = oa
-            
+
         try:
             self.params.getAllParameters()
         except TypeError:
             return
-        
+
     def paramList(self):
         p = []
-        p.append(self.params)            
+        p.append(self.params)
         return p
-    
+
     def updatePartialReconfig(self, anything=None):
         """
         Reads the values set via the GUI & updates the hardware settings for partial reconfiguration. Checks that PR
@@ -166,17 +166,17 @@ class ChipWhispererGlitch(QObject):
 
         width = self.findParam('width').value()
         offset = self.findParam('offset').value()
-        
+
         widthint = round((width/100) * 256)
         offsetint = round((offset/100) * 256)
-                    
+
         bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
-                 
+
         if self.prEnabled:
             self.prCon.program(bs)
             if self.oa is not None:
-                self.resetDCMs()   
-            
+                self.resetDCMs()
+
         # print "Partial: %d %d"%(widthint, offsetint)
 
     def setTriggerOffset(self, offset):
@@ -199,118 +199,131 @@ class ChipWhispererGlitch(QObject):
 
     def setGlitchOffsetFine(self, fine):
         """Set the fine glitch offset adjust, range -255 to 255"""
-        current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               
+        current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+
+        if current is None or len(current) < 8:
+            print "Glitch Module not present?"
+            return
 
         LSB = fine & 0x00FF;
         MSB = (fine & 0x0100) >> 8;
-       
+
         current[0] = LSB #7..0
         current[1] = (current[1] & ~0x01) | MSB #15..8
 
         #Start adjust
-        current[2] = current[2] | 0x04 #23..16    
+        current[2] = current[2] | 0x04  # 23..16
         #assign clockglitch_settings_read[37] = phase1_done_reg;
         #assign clockglitch_settings_read[38] = phase2_done_reg;
-     
+
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
-        
+
     def getGlitchWidthFine(self):
         return self.getDCMStatus()[0]
 
     def setGlitchWidthFine(self, fine):
         """Set the fine glitch width adjust, range -255 to 255"""
-        current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)               
+        current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+
+        if current is None or len(current) < 8:
+            print "Glitch Module not present?"
+            return
 
         LSB = fine & 0x00FF;
         MSB = (fine & 0x0100) >> 8;
-       
+
         current[1] = (current[1] & 0x01) | ((LSB & 0x7F) << 1);
         current[2] = (current[2] & ~0x03) | ((LSB >> 7) | (MSB << 1));
 
         #Start adjust
-        current[2] = current[2] | 0x04 #23..16    
+        current[2] = current[2] | 0x04  # 23..16
         #assign clockglitch_settings_read[37] = phase1_done_reg;
-        #assign clockglitch_settings_read[38] = phase2_done_reg;     
+        # assign clockglitch_settings_read[38] = phase2_done_reg;
         self.oa.sendMessage(CODE_WRITE, glitchaddr, current, Validate=False)
-                
+
     def getGlitchOffsetFine(self):
-        return self.getDCMStatus()[1] 
+        return self.getDCMStatus()[1]
 
     def getDCMStatus(self):
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
-        
+
         phase1 = current[2] >> 3
-        phase1 |= (current[3] & 0x0F) << 5        
+        phase1 |= (current[3] & 0x0F) << 5
         phase1 = SIGNEXT(phase1, 9)
-        
+
         phase2 = (current[3] & 0xF0) >> 4
         phase2 |= (current[4] & 0x1F) << 4
         phase2 = SIGNEXT(phase2, 9)
-        
+
         dcm1Lock = False
         dcm2Lock = False
-        
+
         if current[4] & 0x80:
             dcm1Lock = True
-            
+
         if current[5] & 0x01:
             dcm2Lock = True
-        
+
         return (phase1, phase2, dcm1Lock, dcm2Lock)
-        
+
     def resetDCMs(self):
         """Reset the DCMs for the Glitch width & Glitch offset. Required after doing a PR operation"""
 
-        reset = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8) 
+        reset = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         reset[5] |= (1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
         reset[5] &= ~(1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
-        
+
         self.findParam('widthfine').setValue(0)
         self.findParam('offsetfine').setValue(0)
-        
+
     def checkLocked(self):
         """Check if the DCMs are locked and print results """
 
         stat = self.getDCMStatus()
         print "DCM1: Phase %d, Locked %r"%(stat[0], stat[2])
-        print "DCM2: Phase %d, Locked %r"%(stat[1], stat[3])  
-        
+        print "DCM2: Phase %d, Locked %r" % (stat[1], stat[3])
+
     def setNumGlitches(self, num):
         """Set number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
+
+        if resp is None or len(resp) < 8:
+            print "Glitch Module not present?"
+            return
+
         if num < 1:
             num = 1
         resp[6] = num-1
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
-        
+
     def numGlitches(self):
         """Get number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return resp[6]+1
-    
+
     def setGlitchTrigger(self, trigger):
         """Set glitch trigger type (manual, continous, adc-trigger)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = (resp[5] & ~(0x0C)) | (trigger << 2)
-        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)        
-        
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+
     def glitchTrigger(self):
         """Get glitch trigger type"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[5] & 0x0C) >> 2
-    
+
     def setGlitchType(self, t):
         """Set glitch output type (ORd with clock, XORd with clock, clock only, glitch only)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = (resp[5] & ~(0x70)) | (t << 4)
-        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)        
-        
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+
     def glitchType(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[5] & 0x70) >> 4
-        
+
     def glitchManual(self):
         """
         Cause a single glitch event to occur. Depending on setting of numGlitches() this may mean
@@ -319,16 +332,16 @@ class ChipWhispererGlitch(QObject):
 
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = resp[5] | (1<<7)
-        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)           
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
         resp[5] = resp[5] & ~(1<<7)
-        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False) 
-        
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+
     def setGlitchClkSource(self, source):
         """Set the source of the glitched clock, either the HS1-In or the CLKGEN Module"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[7] = (resp[7] & ~self.CLKSOURCE_MASK) | source
-        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False) 
-        
+        self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+
     def glitchClkSource(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[7] & self.CLKSOURCE_MASK)
