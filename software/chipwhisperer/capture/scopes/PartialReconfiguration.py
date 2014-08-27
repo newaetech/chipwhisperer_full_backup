@@ -56,19 +56,11 @@ class PartialReconfigDataMulti(object):
         self.dataList = []
         self.limitList = []
 
-    def load(self, fname):
-
-        #TODO: Should use something else, hack for now since user does't generate partial files
-        ptime = os.path.getmtime(fname)
-        # print "Partial Data Created: %s" % time.ctime(ptime)
-
-
-        data = pickle.load(open(fname, 'r'))
+    def load(self, filelike):
+        data = pickle.load(filelike)
         self.dataList.append(data)
         klist = list(data['values'].keys())
         self.limitList.append((min(klist), max(klist)))
-
-        return ptime
 
     def getPartialBitstream(self, indxlst):
 

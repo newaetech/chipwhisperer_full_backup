@@ -26,8 +26,7 @@
 #=================================================
 
 import sys
-from functools import partial
-import time
+import zipfile
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -88,24 +87,20 @@ class ChipWhispererGlitch(QObject):
         self.showScriptParameter = showScriptParameter
 
         try:
-            twidth = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchwidth.p")
-            toffset = self.glitchPR.load("scopes/cw-partial-files/s6lx25-glitchoffset.p")
+            if QSettings().value("fpga-bitstream-mode") == "zip":
+                fileloc = QSettings().value("zipbitstream-location")
 
-            tfpga = QSettings().value("bitstream-date")
-            self.prEnabled = True
-
-            # TODO: Should save MD5SUM/CRC of FPGA Bitstream inside .p files instead, and confirm
-            #      the MD5SUM/CRC of bitstream. For now have hack that checks date/time & confirms
-            #      files were probably generated from bitstream files.
-            try:
-                tfpga = int(tfpga)
-                if abs(twidth - tfpga) > 40000 or abs(toffset - tfpga) > 40000:
+                if fileloc:
+                    zfile = zipfile.ZipFile(fileloc, "r")
+                    self.glitchPR.load(zfile.open("s6lx25-glitchwidth.p"))
+                    self.glitchPR.load(zfile.open("s6lx25-glitchoffset.p"))
+                    self.prEnabled = True
+                else:
+                    print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
                     self.prEnabled = False
-                    print "Partial Reconfiguration DISABLED: FPGA File too old, > 12 hours difference from PR files"
-
-            except TypeError:
+            else:
+                print "Partial Reconfiguration DISABLED: Debug bitstream mode"
                 self.prEnabled = False
-                print "Partial Reconfiguration DISABLED: Unknown FPGA Date"
 
         except IOError, e:
             print str(e)

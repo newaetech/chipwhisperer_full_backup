@@ -311,7 +311,7 @@ class Ztex1v1(object):
         self.checkCapability(self.CAPABILITY_FPGA)
         self.vendorCommand(0x31, "resetFpga")
 
-    def configureFpgaLS(self, fwFileName, force=False, bs=-1):
+    def configureFpgaLS(self, fwFileLike, force=False, bs=-1):
         """ generated source for method configureFpgaLS """
         transactionBytes = 2048  # 256 if certainWorkarounds else 2048
         t0 = 0
@@ -323,7 +323,7 @@ class Ztex1v1(object):
         size = 0
         try:
             # Read entire thing in
-            with open(fwFileName, "rb") as f: inputStream = f.read()
+            with fwFileLike as f: inputStream = f.read()
             streamCnt = 0
 
             j = transactionBytes
@@ -447,7 +447,7 @@ if __name__ == '__main__':
     ztex.getFpgaState()
     if ztex.fpgaConfigured == False:
         print "Programming FPGA..."
-        ztex.configureFpgaLS(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-rev2\hdl\ztex_rev2_1.11c_ise\interface.bit")
+        ztex.configureFpgaLS(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-rev2\hdl\ztex_rev2_1.11c_ise\interface.bit", "rb"))
 
     else:
         print "FPGA Configuration skipped"
