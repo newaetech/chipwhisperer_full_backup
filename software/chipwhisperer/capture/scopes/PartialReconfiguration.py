@@ -92,6 +92,13 @@ class PartialReconfigConnection(object):
     def dis(self):
         self.oa = None
 
+    def isPresent(self):
+        resp = self.oa.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
+        if resp is None:
+            return False
+
+        return True
+
     def program(self, cfgdata):
 
         if self.oa is None:
