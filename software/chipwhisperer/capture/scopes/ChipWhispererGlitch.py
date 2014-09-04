@@ -138,7 +138,15 @@ class ChipWhispererGlitch(QObject):
     def setOpenADC(self, oa):
         if self.prEnabled:
             self.prCon.con(oa)
-            #Reset FPGA back to defaults in case previous bitstreams loaded
+
+            # Check this is actually working
+            if self.prCon.isPresent() == False:
+                self.prEnabled = False
+                print "WARNING: Partial Reconfiguration block not detected, PR disabled"
+                return
+
+
+            # Reset FPGA back to defaults in case previous bitstreams loaded
             self.updatePartialReconfig()
 
         self.oa = oa
