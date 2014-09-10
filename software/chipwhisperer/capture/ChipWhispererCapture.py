@@ -118,6 +118,11 @@ try:
 except ImportError:
     aux_ResetAVR = None
 
+try:
+    import  chipwhisperer.capture.auxiliary.GPIOToggle as aux_GPIOToggle
+except ImportError:
+    aux_GPIOToggle = None
+
 from chipwhisperer.common.MainChip import MainChip
 from chipwhisperer.common.ProjectFormat import ProjectFormat
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
@@ -268,6 +273,9 @@ class ChipWhispererCapture(MainChip):
 
         if aux_ResetAVR is not None:
             valid_aux["Reset AVR via ISP-MKII"] = aux_ResetAVR.ResetAVR(console=self.console, showScriptParameter=self.showScriptParameter)
+
+        if aux_GPIOToggle is not None:
+            valid_aux["Toggle FPGA-GPIO Pins"] = aux_GPIOToggle.GPIOToggle(self, console=self.console, showScriptParameter=self.showScriptParameter)
 
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
