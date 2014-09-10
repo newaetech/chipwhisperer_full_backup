@@ -60,20 +60,21 @@ class AcquisitionController(QObject):
     # (key, plaintext, response)
     newTextResponse = Signal(list, list, list, list)
 
-    def __init__(self, scope, target=None, writer=None, aux=None, keyTextPattern=None):
+    def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
         super(AcquisitionController, self).__init__()
 
         self.target = target
         self.scope = scope
         self.writer = writer
-        self.aux = aux
+        self.auxList = auxList
         self.running = False
         self.setKeyTextPattern(keyTextPattern)
 
         self.maxtraces = 1
 
-        if self.aux is not None:
-            self.aux.captureInit()
+        if self.auxList is not None:
+            for aux in auxList:
+                aux.captureInit()
 
     def setKeyTextPattern(self, pat):
         self._keyTextPattern = pat
@@ -124,8 +125,9 @@ class AcquisitionController(QObject):
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
 
-        if self.aux is not None:
-            self.aux.traceArm()
+        if self.auxList is not None:
+            for aux in self.auxList:
+                aux.traceArm()
 
         if self.scope is not None:
             self.scope.arm()
@@ -144,8 +146,9 @@ class AcquisitionController(QObject):
                 print "IOError: %s" % str(e)
                 return False
 
-        if self.aux is not None:
-            self.aux.traceDone()
+        if self.auxList is not None:
+            for aux in self.auxList:
+                aux.traceDone()
 
         return True
 
@@ -168,8 +171,10 @@ class AcquisitionController(QObject):
             self.writer.prepareDisk()
             self.writer.setKnownKey(self.key)
 
-        if self.aux is not None:
-            self.aux.captureInit()
+        # TODO, what should this call be??
+        if self.auxList is not None:
+            for aux in self.auxList:
+                aux.traceArm()
 
         nt = 0
 
@@ -184,8 +189,9 @@ class AcquisitionController(QObject):
             QCoreApplication.processEvents()
 
 
-        if self.aux is not None:
-            self.aux.captureComplete()
+        if self.auxList is not None:
+            for aux in self.auxList:
+                aux.captureComplete()
 
         if self.writer is not None:
             # Don't clear trace as we re-use the buffer
@@ -248,7 +254,7 @@ class AcqKeyTextPattern_Base(QObject):
     def paramList(self):
         p = [self.params]
         return p
-    
+
     def _initPattern(self):
         """Perform any extra init stuff required. Called at the end of main init() & when target changed."""
         pass
@@ -258,7 +264,7 @@ class AcqKeyTextPattern_Base(QObject):
 
     def setInitialText(self, initialText, binaryText=False):
         pass
-    
+
     def initPair(self):
         """Called before a capture run, does not return anything"""
         raise AttributeError("This needs to be reimplemented")
@@ -270,10 +276,10 @@ class AcqKeyTextPattern_Base(QObject):
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
 
     def setupParams(self):
-        
+
         self._fixedPlain = False
         self._fixedKey = True
-        
+
         basicParams = [
                       {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
                       {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
@@ -281,7 +287,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                       {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
                   ]
         return basicParams
-    
+
     def setKeyType(self, t):
         if t == 'Fixed':
             self._fixedKey = True
@@ -289,7 +295,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             self._fixedKey = False
         else:
             raise ValueError("Invalid value for Key Type: %s" % t)
-        
+
     def setPlainType(self, t):
         if t == 'Fixed':
             self._fixedPlain = True
@@ -310,7 +316,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                     keyStr += '%02x ' % s
                 self._key = bytearray(initialKey)
             else:
-                keyStr = initialKey                  
+                keyStr = initialKey
                 self._key = hexStrToByteArray(initialKey)
 
             self.findParam('initkey').setValue(keyStr)
@@ -327,11 +333,11 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin = hexStrToByteArray(initialText)
 
             self.findParam('inittext').setValue(textStr)
-            
+
     def initPair(self):
         self.setInitialKey(self.findParam('initkey').value())
         self.setInitialText(self.findParam('inittext').value())
-   
+
     def newPair(self):
         if self._fixedKey is False:
             self._key = bytearray(self.keyLen())
@@ -377,9 +383,9 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
             self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
-        
+
         self._textin1 = hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
-        
+
         if self.keyLen() == 16:
             self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
         elif self.keyLen() == 24:

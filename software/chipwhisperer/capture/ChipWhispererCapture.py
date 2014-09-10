@@ -706,7 +706,7 @@ class ChipWhispererCapture(MainChip):
 
         try:
 
-            ac = AcquisitionController(self.scope, target, writer=None, aux=self.aux, keyTextPattern=self.acqPattern)
+            ac = AcquisitionController(self.scope, target, writer=None, auxList=[self.aux], keyTextPattern=self.acqPattern)
             ac.newTextResponse.connect(self.esm.newData)
 
             self.capture1Act.setEnabled(False)
