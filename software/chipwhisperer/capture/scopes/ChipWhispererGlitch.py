@@ -332,12 +332,15 @@ class ChipWhispererGlitch(QObject):
         Cause a single glitch event to occur. Depending on setting of numGlitches() this may mean
         multiple glitches in a row
         """
-
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         resp[5] = resp[5] | (1<<7)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
         resp[5] = resp[5] & ~(1<<7)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
+
+    def glitchArm(self):
+        """If trigger is set to single-shot mode, this must be called before the selected trigger occurs"""
+        self.glitchManual()
 
     def setGlitchClkSource(self, source):
         """Set the source of the glitched clock, either the HS1-In or the CLKGEN Module"""
