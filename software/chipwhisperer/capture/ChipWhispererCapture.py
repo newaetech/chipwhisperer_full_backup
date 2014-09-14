@@ -118,6 +118,11 @@ try:
 except ImportError:
     aux_ResetAVR = None
 
+try:
+    import  chipwhisperer.capture.auxiliary.GPIOToggle as aux_GPIOToggle
+except ImportError:
+    aux_GPIOToggle = None
+
 from chipwhisperer.common.MainChip import MainChip
 from chipwhisperer.common.ProjectFormat import ProjectFormat
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
@@ -249,7 +254,7 @@ class ChipWhispererCapture(MainChip):
 
         self.scope = None
         self.trace = None
-        self.aux = None
+        self.auxList = None
         self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
         self.target.newInputData.connect(self.newTargetData)
@@ -268,6 +273,9 @@ class ChipWhispererCapture(MainChip):
 
         if aux_ResetAVR is not None:
             valid_aux["Reset AVR via ISP-MKII"] = aux_ResetAVR.ResetAVR(console=self.console, showScriptParameter=self.showScriptParameter)
+
+        if aux_GPIOToggle is not None:
+            valid_aux["Toggle FPGA-GPIO Pins"] = aux_GPIOToggle.GPIOToggle(self, console=self.console, showScriptParameter=self.showScriptParameter)
 
         if TraceContainerMySQL is not None:
             valid_traces["MySQL"] = TraceContainerMySQL
@@ -500,9 +508,9 @@ class ChipWhispererCapture(MainChip):
                 pass
 
     def reloadAuxParamList(self, lst=None):
-        if self.aux is not None:
+        if self.auxList is not None:
             try:
-                ExtendedParameter.reloadParams(self.aux.paramList(), self.auxParamTree)
+                ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree)
             except AttributeError:
                 # Some trace writers have no configuration options
                 pass
@@ -697,8 +705,7 @@ class ChipWhispererCapture(MainChip):
             target = None
 
         try:
-
-            ac = AcquisitionController(self.scope, target, writer=None, aux=self.aux, keyTextPattern=self.acqPattern)
+            ac = AcquisitionController(self.scope, target, writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
             ac.newTextResponse.connect(self.esm.newData)
 
             self.capture1Act.setEnabled(False)
@@ -819,10 +826,11 @@ class ChipWhispererCapture(MainChip):
                     writer.setTraceBuffer(waveBuffer)
 
 
-            if self.aux is not None:
-                self.aux.setPrefix(baseprefix)
+            if self.auxList is not None:
+                for aux in self.auxList:
+                    aux.setPrefix(baseprefix)
 
-            ac = AcquisitionController(self.scope, target, writer, aux=self.aux, keyTextPattern=self.acqPattern)
+            ac = AcquisitionController(self.scope, target, writer, auxList=self.auxList, keyTextPattern=self.acqPattern)
             ac.newTextResponse.connect(self.esm.newData)
             ac.traceDone.connect(cprog.traceDoneSlot)
             ac.traceDone.connect(self.glitchMonitor.traceDone)
@@ -875,7 +883,7 @@ class ChipWhispererCapture(MainChip):
         self.reloadTraceParamList()
 
     def auxChanged(self, newaux):
-        self.aux = newaux
+        self.auxList = [newaux]
         try:
             newaux.paramList()
             newaux.paramListUpdated.connect(self.reloadAuxParamList)

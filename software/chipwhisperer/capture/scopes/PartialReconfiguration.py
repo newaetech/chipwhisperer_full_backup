@@ -29,23 +29,23 @@ import pickle
 import os.path
 import time
 
-class PartialReconfigData(object):   
+class PartialReconfigData(object):
     def load(self, fname):
-        self.configData = pickle.load(open(fname, 'rb'))        
+        self.configData = pickle.load(open(fname, 'r'))
         klist = list(self.configData['values'].keys())
         self.limits = (min(klist), max(klist))
 
     def getParamSpec(self, name):
-        spec = {}        
+        spec = {}
         spec['name'] = name
         spec['type'] = 'int'
         spec['limits'] = self.limits
         spec['reconfigData'] = self.configData
-        
+
     def getPartialBitstream(self, indx):
-        diffs = self.configData['values'][indx]        
+        diffs = self.configData['values'][indx]
         data = list(self.configData['base'])
-        
+
         #Update base
         for diff in diffs:
             data[diff[0]] = diff[1]
@@ -55,63 +55,62 @@ class PartialReconfigDataMulti(object):
     def __init__(self):
         self.dataList = []
         self.limitList = []
-       
-    def load(self, fname):
 
-        #TODO: Should use something else, hack for now since user does't generate partial files
-        ptime = os.path.getmtime(fname)
-        # print "Partial Data Created: %s" % time.ctime(ptime)
-
-
-        data =  pickle.load(open(fname, 'rb')) 
-        self.dataList.append(data )        
+    def load(self, filelike):
+        data = pickle.load(filelike)
+        self.dataList.append(data)
         klist = list(data['values'].keys())
         self.limitList.append((min(klist), max(klist)))
 
-        return ptime
-        
     def getPartialBitstream(self, indxlst):
-        
+
         data = list(self.dataList[0]['base'])
-        
+
         diffs = []
         for i, cfg in enumerate(self.dataList):
             diff = cfg['values'][indxlst[i]]
-                        
-            diffs.append( diff )        
-        
+
+            diffs.append(diff)
+
             #Update base
             for d in diff:
-                data[d[0]] = d[1]             
-                
+                data[d[0]] = d[1]
+
         return data
 
 class PartialReconfigConnection(object):
-    reconfig = 52        
+    reconfig = 52
     CODE_READ       = 0x80
-    CODE_WRITE      = 0xC0        
-    
+    CODE_WRITE = 0xC0
+
     def __init__(self):
         self.oa = None
-    
+
     def con(self, oadc):
         self.oa = oadc
-    
+
     def dis(self):
         self.oa = None
-    
+
+    def isPresent(self):
+        resp = self.oa.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
+        if resp is None:
+            return False
+
+        return True
+
     def program(self, cfgdata):
-       
-        if self.oa is None:            
+
+        if self.oa is None:
             return
 
         # Reset PR System
         self.oa.sendMessage(self.CODE_WRITE, self.reconfig, [0x20], Validate=False)
         self.oa.sendMessage(self.CODE_WRITE, self.reconfig, [0x00], Validate=False)
-       
+
         # Load Data
         dataarray = [0x00]
-       
+
         # print len(cfgdata)
         if len(cfgdata) > 512:
             raise IOError("PR Data too long!")
@@ -119,7 +118,7 @@ class PartialReconfigConnection(object):
         for data in cfgdata:
             #data = int(t, 2)
             msb = data >> 8;
-            lsb = data & 0xff;    
+            lsb = data & 0xff;
             dataarray.append(msb)
             dataarray.append(lsb)
 
@@ -131,7 +130,7 @@ class PartialReconfigConnection(object):
 
         # Write Data
         self.oa.sendMessage(self.CODE_WRITE, self.reconfig, [0x1A], Validate=False)
-        
+
         # Check PR Loaded OK
         stat = self.oa.sendMessage(self.CODE_READ, self.reconfig, Validate=False, maxResp=1)
 

@@ -27,9 +27,6 @@
 
 
 import sys
-import importlib
-from functools import partial
-import platform
 
 try:
     from PySide.QtCore import *
@@ -40,8 +37,7 @@ except ImportError:
 
 import os.path
 import time
-from subprocess import Popen, PIPE
-import shlex
+import zipfile
 
 from chipwhisperer.capture.scopes.ztex_fwloader import Ztex1v1, IhxFile
 
@@ -52,37 +48,64 @@ class FWLoaderConfig(QDialog):
         self.console = console
 
         self.setWindowTitle("ChipWhisperer Firmware Loader Configuration")
+        settings = QSettings()
 
         layout = QVBoxLayout()
 
-        layoutFWLoader = QHBoxLayout()
-
-        layoutBit = QHBoxLayout()
-        self.bitLocation = QLineEdit()
-        bitButton = QPushButton("Find")
-        bitButton.clicked.connect(self.findBitstream)
-        layoutBit.addWidget(QLabel("FPGA Bitstream Location"))
-        layoutBit.addWidget(self.bitLocation)
-        layoutBit.addWidget(bitButton)
-        layout.addLayout(layoutBit)
+        gbFPGAMode = QGroupBox("FPGA Mode Selection")
+        radioOfficial = QRadioButton("Official Release (.zip)")
+        radioDebug = QRadioButton("Debug - no Partial Reconfig (.bit)")
+        layoutGB = QHBoxLayout()
+        layoutGB.addWidget(radioOfficial)
+        layoutGB.addWidget(radioDebug)
+        layoutGB.addStretch(1)
+        gbFPGAMode.setLayout(layoutGB)
+        layout.addWidget(gbFPGAMode)
+        radioOfficial.clicked.connect(self.setFPGAModeZip)
+        radioDebug.clicked.connect(self.setFPGAModeDebug)
 
         layoutFW = QHBoxLayout()
         self.firmwareLocation = QLineEdit()
         firmwareButton = QPushButton("Find")
         firmwareButton.clicked.connect(self.findFirmware)
-        layoutFW.addWidget(QLabel("Firmware Location"))
+        layoutFW.addWidget(QLabel("USB Firmware"))
         layoutFW.addWidget(self.firmwareLocation)
         layoutFW.addWidget(firmwareButton)
         layout.addLayout(layoutFW)
+
+        layoutBitZip = QHBoxLayout()
+        self.bitZipLocation = QLineEdit()
+        bitZipButton = QPushButton("Find")
+        bitZipButton.clicked.connect(self.findZipBitstream)
+        layoutBitZip.addWidget(QLabel("FPGA .zip (Release)"))
+        layoutBitZip.addWidget(self.bitZipLocation)
+        layoutBitZip.addWidget(bitZipButton)
+        layout.addLayout(layoutBitZip)
+
+        layoutBit = QHBoxLayout()
+        self.bitLocation = QLineEdit()
+        bitButton = QPushButton("Find")
+        bitButton.clicked.connect(self.findDebugBitstream)
+        layoutBit.addWidget(QLabel("FPGA .bit file (DEBUG ONLY)"))
+        layoutBit.addWidget(self.bitLocation)
+        layoutBit.addWidget(bitButton)
+        layout.addLayout(layoutBit)
+
+        mode = settings.value("fpga-bitstream-mode")
+        if mode is not None and mode == "debug":
+            radioDebug.setChecked(True)
+            self.setFPGAModeDebug()
+        else:
+            radioOfficial.setChecked(True)
+            self.setFPGAModeZip()
 
         # Set dialog layout
         self.setLayout(layout)
 
         self.ztex = Ztex1v1()
 
-        settings = QSettings()
-
-        bsLoc = settings.value("bitstream-location")
+        bsLoc = settings.value("debugbitstream-location")
+        bsZipLoc = settings.value("zipbitstream-location")
         fwFLoc = settings.value("firmware-location")
 
         # Defaults?
@@ -94,6 +117,12 @@ class FWLoaderConfig(QDialog):
             if os.path.isfile(defLocfwF):
                 fwFLoc = str(defLocfwF)
 
+        if not bsZipLoc:
+            defLocZipBS = "../../../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"
+            if os.path.isfile(defLocZipBS):
+                bsZipLoc = str(defLocZipBS)
+                settings.setValue("zipbitstream-location", bsZipLoc)
+
         if not bsLoc:
             defLocbs = "../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"
             # defLocbs = os.path.realpath(defLocbs)
@@ -101,13 +130,32 @@ class FWLoaderConfig(QDialog):
                 bsLoc = str(defLocbs)
 
         self.bitLocation.setText(bsLoc)
+        self.bitZipLocation.setText(bsZipLoc)
         self.firmwareLocation.setText(fwFLoc)
 
-    def findBitstream(self):
+    def setFPGAModeZip(self):
+        self.bitZipLocation.setEnabled(True)
+        self.bitLocation.setEnabled(False)
+        self.useFPGAZip = True
+        QSettings().setValue("fpga-bitstream-mode", "zip")
+
+    def setFPGAModeDebug(self):
+        self.bitZipLocation.setEnabled(False)
+        self.bitLocation.setEnabled(True)
+        self.useFPGAZip = False
+        QSettings().setValue("fpga-bitstream-mode", "debug")
+
+    def findDebugBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', '.', '*.bit')
         if fname:
             self.bitLocation.setText(fname)
-            QSettings().setValue("bitstream-location", fname)
+            QSettings().setValue("debugbitstream-location", fname)
+
+    def findZipBitstream(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find Zip Firmware', '.', '*.zip')
+        if fname:
+            self.bitZipLocation.setText(fname)
+            QSettings().setValue("zipbitstream-location", fname)
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware', '.', '*.ihx')
@@ -151,11 +199,12 @@ class FWLoaderConfig(QDialog):
     def loadFPGA(self):
         """Load the FPGA bitstream"""
 
-        # Get bitstream date, print for user
-        bsdate = os.path.getmtime(self.bitLocation.text())
-        print "FPGA Bitstream Created: %s" % time.ctime(bsdate)
-        # Save last loaded FPGA bitstream
-        QSettings().setValue("bitstream-date", bsdate)
-
-        self.ztex.configureFpgaLS(self.bitLocation.text())
+        if self.useFPGAZip:
+            zfile = zipfile.ZipFile(self.bitZipLocation.text(), "r")
+            self.ztex.configureFpgaLS(zfile.open("interface.bit"))
+        else:
+            # Get bitstream date, print for user
+            bsdate = os.path.getmtime(self.bitLocation.text())
+            print "Using FPGA Bitstream, date: %s" % time.ctime(bsdate)
+            self.ztex.configureFpgaLS(open(self.bitLocation.text(), "rb"))
 

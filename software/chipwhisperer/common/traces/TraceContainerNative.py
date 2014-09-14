@@ -108,7 +108,7 @@ class TraceContainerNative(TraceContainer.TraceContainer):
 
     def loadAuxData(self, fname):
         path = os.path.dirname(self.config.configFilename())
-        prefix = self.config.attr("prefix")
+        # prefix = self.config.attr("prefix")
         # fname = "%s%s.npy" % (prefix, extraname)
         return np.load(path + "/" + fname)
 

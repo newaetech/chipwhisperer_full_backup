@@ -81,10 +81,7 @@ def HypHD(pt, ct, key, bnum):
     """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming distance of result"""
     #Get output
     if pt != None:
-        # TODO: Is this correct, should st1 = pt[bnum]?
-        st2 = aes_tables.sbox[pt[bnum] ^ key]
-        st1 = pt[bnum] ^ key
-        return getHW(st1 ^ st2)
+        raise ValueError("First-Round HD isn't possible")
     elif ct != None:
         st10 = ct[INVSHIFT[bnum]]
         st9 =  aes_tables.i_sbox[ct[bnum] ^ key]

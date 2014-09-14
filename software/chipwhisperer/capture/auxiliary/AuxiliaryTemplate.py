@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -38,9 +40,9 @@ from openadc.ExtendedParameter import ExtendedParameter
 class AuxiliaryTemplate(QObject):
     paramListUpdated = Signal(list)
 
-    def __init__(self, console=None, showScriptParameter=None):
+    def __init__(self, parent=None, console=None, showScriptParameter=None):
         """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(AuxiliaryTemplate, self).__init__()
+        super(AuxiliaryTemplate, self).__init__(parent)
         self.console = console
         self.showScriptParameter = showScriptParameter
         self.setupParameters()
