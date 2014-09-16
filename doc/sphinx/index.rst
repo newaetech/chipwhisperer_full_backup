@@ -3,17 +3,17 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. |ChipWhisperer| unicode:: ChipWhisperer U+2122
+.. |ChipWhisperer| unicode:: ChipWhisperer U+00AE
 
 |ChipWhisperer| Main Documentation
-================================
+==================================
 
 .. image:: /images/cw_banner_tagline.png
 
 Welcome to the |ChipWhisperer| documentation. This documentation is auto-generated from the |ChipWhisperer|
 source, and includes information about the hardware and software making up the |ChipWhisperer| project.
 
-Additionally, there is a `ChipWhisperer Wiki <https://www.assembla.com/spaces/chipwhisperer/wiki>`__ which has 
+Additionally, there is a `ChipWhisperer Wiki <https://www.assembla.com/spaces/chipwhisperer/wiki>`__ which has
 information such as notes on building your own hardware and various other tid-bits. Generally the more mature
 documentation is here, and the wiki is used to hold notes which may change frequently (e.g. building guides,
 latest errata, release information, latest conferences CW is being demoed at, etc).
@@ -29,14 +29,14 @@ this is a community project you are free to have your own PCBs made too. Remembe
 to work, and can be used with almost any oscilloscope along with a microcontroller target.
 
 Full Table of Contents:
-------------------------
+-----------------------
 
 .. toctree::
     :maxdepth: 3
-    :numbered: 
-    
+    :numbered:
+
     background
-    installing    
+    installing
     theory
     tutorialsbasic
     tutorialsadvanced

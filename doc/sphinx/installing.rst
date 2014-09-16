@@ -1,4 +1,4 @@
-.. |ChipWhisperer| unicode:: ChipWhisperer U+2122
+.. |ChipWhisperer| unicode:: ChipWhisperer U+00AE
 
 .. _installing:
 

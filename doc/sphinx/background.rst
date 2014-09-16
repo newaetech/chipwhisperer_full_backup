@@ -1,14 +1,14 @@
-.. |ChipWhisperer| unicode:: ChipWhisperer U+2122
+.. |ChipWhisperer| unicode:: ChipWhisperer U+00AE
 
 .. _background:
 
 Background
-===========
+==========
 
 |ChipWhisperer| was started by Colin O'Flynn as a PhD student at Dalhousie University.
 
 Authors
-^^^^^^^^^^^^^
+^^^^^^^
 
 Main authors:
 
@@ -25,13 +25,13 @@ Additional Thanks to:
    were the initial inspiration for this entire project!
 
 Legal
-^^^^^^^^^^^^^
+^^^^^
 
 |ChipWhisperer| software is released under the GPLv3 License, see `License Details <http://www.gnu.org/copyleft/gpl.html>`__. Note various
 subprojects (such as the OpenADC interface) may be released under different open-source licenses such as BSD or LGPL. Check the source code
 for specific license information.
 
-|ChipWhisperer| is built on or otherwise uses a number of open-source projects. Many thanks are given to the following 
+|ChipWhisperer| is built on or otherwise uses a number of open-source projects. Many thanks are given to the following
 projects, which may also have additional license restrictions or information:
 
  * `Python <http://qt-project.org/>`__
@@ -44,7 +44,8 @@ projects, which may also have additional license restrictions or information:
  * `ZTEX EZ-USB SDK <http://www.ztex.de/downloads/#firmware_kit>`__
  * `libusb-1.0 <http://www.libusb.org/wiki/libusb-1.0>`__
  * `WinAVR <http://winavr.sourceforge.net/>`__
-                                        
+
 Some projects may be missing from the above list - please let us know, any omission is a mistake!
 
-*ChipWhisperer* and *Listen to Your Inner Hardware* are Trademarks of NewAE Technology Inc. 
+*ChipWhisperer* is a Trademark of NewAE Technology Inc., registered in the U.S.
+*Listen to Your Inner Hardware* is a Trademarks of NewAE Technology Inc.
