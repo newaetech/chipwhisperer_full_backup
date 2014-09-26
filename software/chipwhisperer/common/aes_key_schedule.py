@@ -159,8 +159,16 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
                 raise ValueError("Input round must be divisible by 2")
             inputround = int(inputround / 2)
         else:
-            if inputround < desiredfull:
-                raise ValueError("Round = 13 only permissible for reverse")
+            if inputround <= desiredfull:
+                if desiredfull < 13:
+                    raise ValueError("Round = 13 only permissible for reverse")
+
+                if desiredfull == 13:
+                    return inputkey[0:16]
+                else:
+                    return inputkey[16:32]
+
+
     else:
         raise ValueError("Invalid keylength: %d"%n)
 
@@ -170,6 +178,7 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
     #Check if we are going forward or backwards
     while rnd < desiredround:
         rnd += 1
+
         #Forward algorithm, thus need at least one round
         state[0:4] = xor(state[0:4], g_func(state[(n-4):n], rcon[rnd]))
         for i in range(4, n, 4):
@@ -191,6 +200,9 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
             for i in range(12, 0, -4):
                 state[i:(i+4)] = xor(oldstate[i:(i+4)], oldstate[(i-4):i])
             state[0:4] = xor(oldstate[0:4], g_func(state[(n - 4):n], rcon[7]))
+
+        if rnd == desiredround:
+            break
 
 
         # Reverse algorithm, thus need at least one round
@@ -269,6 +281,7 @@ def test():
     # e7 b0 e8 9c 43 47 78 8b 16 76 0b 7b 8e b9 1a 62
     # 74 ed 0b a1 73 9b 7e 25 22 51 ad 14 ce 20 d4 3b
     #10 f8 0a 17 53 bf 72 9c 45 c9 79 e7 cb 70 63 85
+
 
     print ""
 

@@ -53,11 +53,14 @@ class KeyScheduleDialog(QDialog):
         self.outmode.currentIndexChanged.connect(self.inTextChanged)
 
         self.indata = QLineEdit("")
+        self.indata.setFont(QFont("Courier"))
 
-        keysched = QTextEdit("")
+        self.keysched = QTextEdit("")
+        self.keysched.setFont(QFont("Courier"))
 
         self.outkey = QLineEdit("")
         self.outkey.setReadOnly(True)
+        self.outkey.setFont(QFont("Courier"))
 
 
         outmodeL = QHBoxLayout()
@@ -83,6 +86,7 @@ class KeyScheduleDialog(QDialog):
         layout.addLayout(indataL)
         layout.addLayout(outmodeL)
         layout.addLayout(outdataL)
+        layout.addWidget(self.keysched)
 
         self.setWindowTitle("AES Key Schedule")
         self.setObjectName("AES Key Schedule")
@@ -139,17 +143,39 @@ class KeyScheduleDialog(QDialog):
             except ValueError:
                 self.outkey.setText("ERR in HEX: %s" % newdata)
 
-            desired = 0
-            result = keyScheduleRounds(key, self.inprnd.itemData(self.inprnd.currentIndex()), desired)
-            if len(newdata) == 64:
-                result.extend(keyScheduleRounds(key, self.inprnd.itemData(self.inprnd.currentIndex()), desired + 1))
-
+            #Read settings
             delim = self.outmode.itemData(self.outmode.currentIndex())
+            desired = 0
+            inpround = self.inprnd.itemData(self.inprnd.currentIndex())
+
+            # Get initial key
+            result = keyScheduleRounds(key, inpround, desired)
+            if len(newdata) == 64:
+                result.extend(keyScheduleRounds(key, inpround, desired + 1))
+
             rstr = ["%02x" % t for t in result]
             rstr = (delim[1] + delim[0]).join(rstr)
             rstr = delim[0] + rstr
 
             self.outkey.setText(rstr)
+
+            # Get entire key schedule
+            if len(newdata) == 32:
+                rnds = 10
+            elif len(newdata)== 64:
+                rnds = 14
+
+            totalrndstr = ""
+            for r in range(0, rnds+1):
+                result = keyScheduleRounds(key, inpround, r)
+                rstr = ["%02x" % t for t in result]
+                rstr = (delim[1] + delim[0]).join(rstr)
+                rstr = delim[0] + rstr
+                totalrndstr += rstr + "\n"
+
+            self.keysched.setText(totalrndstr)
+
+
 
 if __name__ == '__main__':
     # Create the Qt Application
