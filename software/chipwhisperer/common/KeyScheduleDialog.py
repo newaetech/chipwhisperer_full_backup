@@ -64,7 +64,7 @@ class KeyScheduleDialog(QDialog):
 
 
         outmodeL = QHBoxLayout()
-        outmodeL.addWidget(QLabel("Desired Format:"))
+        outmodeL.addWidget(QLabel("Format:"))
         outmodeL.addWidget(self.outmode)
         outmodeL.addStretch()
 
@@ -74,19 +74,32 @@ class KeyScheduleDialog(QDialog):
         self.setKeyLength(128)
 
         indataL = QHBoxLayout()
-        indataL.addWidget(QLabel("Known Key:"))
+        indataL.addWidget(QLabel("Key:"))
         indataL.addWidget(self.indata)
         indataL.addWidget(self.inprnd)
         self.indata.textChanged.connect(self.inTextChanged)
 
         outdataL = QHBoxLayout()
-        outdataL.addWidget(QLabel("Desired Key:"))
+        outdataL.addWidget(QLabel("Key:"))
         outdataL.addWidget(self.outkey)
 
-        layout.addLayout(indataL)
-        layout.addLayout(outmodeL)
-        layout.addLayout(outdataL)
-        layout.addWidget(self.keysched)
+        gbIndata = QGroupBox("Input Known Key")
+        gbIndata.setLayout(indataL)
+        layout.addWidget(gbIndata)
+
+        gbOutdata = QGroupBox("Output Desired Key")
+        outdataTotalL = QVBoxLayout()
+        outdataTotalL.addLayout(outmodeL)
+        outdataTotalL.addLayout(outdataL)
+        gbOutdata.setLayout(outdataTotalL)
+        layout.addWidget(gbOutdata)
+
+        gbKeySched = QGroupBox("Full Key Schedule")
+        keyschedL = QVBoxLayout()
+        keyschedL.addWidget(self.keysched)
+        gbKeySched.setLayout(keyschedL)
+
+        layout.addWidget(gbKeySched)
 
         self.setWindowTitle("AES Key Schedule")
         self.setObjectName("AES Key Schedule")
@@ -130,7 +143,9 @@ class KeyScheduleDialog(QDialog):
         newdata = newdata.replace("-", "")
 
         if len(newdata) != 32 and len(newdata) != 64:
-            self.outkey.setText("ERR: Len=%d: %s" % (len(newdata), newdata))
+            err = "ERR: Len=%d: %s" % (len(newdata), newdata)
+            self.outkey.setText(err)
+            self.keysched.setText(err)
         else:
             if len(newdata) == 32:
                 self.setKeyLength(128)
