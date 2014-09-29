@@ -34,7 +34,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from datetime import datetime
 import random
 import os.path
@@ -44,6 +44,7 @@ from subprocess import Popen, PIPE
 import scipy
 import numpy as np
 import chipwhisperer.common.qrc_resources
+from chipwhisperer.common.KeyScheduleDialog import KeyScheduleDialog
 from functools import partial
 
 from openadc.ExtendedParameter import ExtendedParameter
@@ -60,7 +61,7 @@ try:
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
     #print pg.systemInfo()
-    
+
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
@@ -68,7 +69,7 @@ except ImportError:
 try:
     from Crypto.Cipher import AES
 except ImportError:
-    AES = None    
+    AES = None
 
 from chipwhisperer.common.MainChip import MainChip
 #from ResultsDialog import ResultsDialog
@@ -88,44 +89,46 @@ from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 
 class ChipWhispererAnalyzer(MainChip):
-    MaxRecentFiles = 4    
+    MaxRecentFiles = 4
     def __init__(self):
         super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer" + u"\u2122" + " Analyzer V2", icon="cwiconA")
-        self.console = self.addConsole()   
-        
+        self.console = self.addConsole()
+
         self.results = ResultsPlotting()
         #self.resultsDialog = ResultsDialog(self)
         #self.addShowStats()
-        
+
         self.addWaveforms()
-        
+
         numPreprocessingStep = 4
         self.preprocessingListGUI = [None] * numPreprocessingStep
-        
-        
+
+
         self.utilList = []
         self.traceExplorerDialog = TraceExplorerDialog(self)
         self.traceExplorerDialog.scriptsUpdated.connect(self.reloadScripts)
         self.traceExplorerDialog.runScriptFunction.connect(self.runFunc)
         self.utilList.append(self.traceExplorerDialog)
 
+        self.keyScheduleDialog = KeyScheduleDialog(self)
+
         self.cwParams = [
                 {'name':'Traces', 'type':'group', 'children':[
                     {'name':'Points', 'type':'int', 'value':0, 'readonly':True},
                     {'name':'Traces', 'type':'int', 'value':0, 'readonly':True}
                     ]},
-                    
+
                 {'name':'Pre-Processing', 'type':'group', 'children':
                     [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':Preprocessing.listAll(self), 'set':partial(self.setPreprocessing, step)} for step in range(0, numPreprocessingStep)]},
-                         
+
                 {'name':'Attack', 'type':'group', 'children':[
                     {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self, console=self.console, showScriptParameter=self.showScriptParameter),
                                                                'Profiling':Profiling(self, console=self.console, showScriptParameter=self.showScriptParameter),
                                                                }, 'value':'CPA', 'set':self.setAttack},
                     ]},
-                         
+
                 {'name':'Post-Processing', 'type':'group'},
-                
+
                 {'name':'Result Collection', 'type':'group', 'children':[
                     {'name':'Input Trace Plot', 'type':'group', 'children':[
                         {'name':'Enabled', 'type':'bool', 'value':True},
@@ -133,21 +136,21 @@ class ChipWhispererAnalyzer(MainChip):
                         {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0)},
                         {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'graphwidget':self.waveformDock.widget()},
                         {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
-                        ]}                                                     
-                    ]},                        
+                        ]}
+                    ]},
                 ]
-        
+
         self.plotInputEach = False
-        
+
         self.da = None
         self.numTraces = 100
-        
+
         self.traceLimits = 0
         self.pointLimits = 0
 
         self.addToolbars()
         self.addSettingsDocks()
-        
+
         for d in self.results.dockList():
             self.addDockWidget(Qt.RightDockWidgetArea, d)
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
@@ -157,20 +160,20 @@ class ChipWhispererAnalyzer(MainChip):
         self.mse = MainScriptEditor(self)
         self.mse.editWindow.runFunction.connect(self.runScriptFunction)
         self.addDock(self.mse, name="Scripting", area=Qt.RightDockWidgetArea)
-        
+
         self.restoreDockGeometry()
-        
+
         #Generate correct tab order now that we've restored
         self.tabifyDockWidget(self.settingsNormalDock, self.settingsPreprocessingDock)
         self.tabifyDockWidget(self.settingsNormalDock, self.settingsAttackDock)
         self.tabifyDockWidget(self.settingsNormalDock, self.settingsPostProcessingDock)
         self.tabifyDockWidget(self.settingsNormalDock, self.settingsResultsDock)
-        
+
         for d in self.results.dockList():
             self.tabifyDockWidget(self.waveformDock, d)
 
         self.newProject()
-        
+
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
         self.openFile.connect(self.openProject)
@@ -178,25 +181,25 @@ class ChipWhispererAnalyzer(MainChip):
         self.manageTraces.tracesChanged.connect(self.tracesChanged)
         cpaTemp = CPA(self, console=self.console, showScriptParameter=self.showScriptParameter)
         self.setAttack(cpaTemp)
-        
+
         self.setupPreprocessorChain()
-        
+
     def listModules(self):
         """Overload this to test imports"""
         return ListAllModules()
-     
-        
+
+
     def setPlotInputEach(self, enabled):
         self.plotInputEach = enabled
-        
+
     def addToolbars(self):
         attack = QAction(QIcon(':/images/attack.png'), 'Start Attack', self)
         attack.triggered.connect(self.doAttack)
 
         self.AttackToolbar = self.addToolBar('Attack Tools')
         self.AttackToolbar.setObjectName('Attack Tools')
-        self.AttackToolbar.addAction(attack)  
-        
+        self.AttackToolbar.addAction(attack)
+
 
         # Add utilities
 
@@ -204,12 +207,17 @@ class ChipWhispererAnalyzer(MainChip):
                                statusTip='Get information on traces',
                                triggered=self.traceExplorerDialog.show)
 
+        self.UtilitiesAESSchedule = QAction('AES Key Schedule', self,
+                               statusTip='Show AES Key Schedule calculator',
+                               triggered=self.keyScheduleDialog.show)
+
         # self.UtilitiesPartition = QAction('Generate Partitions', self,
         #                       statusTip='Generate Partitions for Template Attacks',
         #                       triggered=self.PartitionDialog.exec_)
 
         self.toolMenu.addSeparator()
         self.toolMenu.addAction(self.UtilitiesTraceExplorer)
+        self.toolMenu.addAction(self.UtilitiesAESSchedule)
         # self.toolMenu.addAction(self.UtilitiesPartition)
         self.toolMenu.addSeparator()
 
@@ -218,7 +226,7 @@ class ChipWhispererAnalyzer(MainChip):
         if module:
             module.paramListUpdated.connect(self.reloadParamListPreprocessing)
             module.scriptsUpdated.connect(self.reloadScripts)
-        self.reloadParamListPreprocessing() 
+        self.reloadParamListPreprocessing()
         self.reloadScripts()
 
     def runFunc(self, name):
@@ -319,7 +327,7 @@ class ChipWhispererAnalyzer(MainChip):
                     util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
                     util._smartstatements[k].addSelfReplacement("parent.")
                     statements = util.getStatements(k)
-                    
+
                     if len(statements) > 0:
                         self.mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
                         for s in statements:
@@ -327,7 +335,7 @@ class ChipWhispererAnalyzer(MainChip):
 
         self.mse.restoreSliderPosition()
 
-    def reloadParamListPreprocessing(self, list=None):        
+    def reloadParamListPreprocessing(self, list=None):
         plist = []
         for p in self.preprocessingListGUI:
             if p:
@@ -341,7 +349,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.results.setAttack(self.attack)
         self.attack.paramListUpdated.connect(self.reloadAttackParamList)
         self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
-        
+
         # Sometimes required
         if hasattr(self, "traces") and self.traces:
             self.attack.setTraceManager(self.traces)
@@ -381,7 +389,7 @@ class ChipWhispererAnalyzer(MainChip):
             if msgBox.exec_() == QMessageBox.AcceptRole:
                 self.manageTraces.show()
             return
-        
+
         self.console.append("Loading...")
         mod = self.setupScriptModule()
         # mod.initProject()
@@ -394,7 +402,7 @@ class ChipWhispererAnalyzer(MainChip):
 
         mod.initAnalysis()
         mod.initReporting(self.results)
-        
+
         mod.doAnalysis()
 
         mod.doneAnalysis()
@@ -407,12 +415,12 @@ class ChipWhispererAnalyzer(MainChip):
         # if self.attack:
         #    self.attack.setTraceManager(self.traces)
         #    self.attack.doAttack()
-            
+
         # self.console.append("Attack Done")
-        
+
     def reloadAttackParamList(self, list=None):
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
-        
+
     def tracesChanged(self):
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
         self.plotInputTrace()
@@ -427,7 +435,7 @@ class ChipWhispererAnalyzer(MainChip):
             if t:
                 t.setTraceSource(self.lastoutput)
                 t.init()
-                self.lastoutput = t           
+                self.lastoutput = t
         self.traces = self.lastoutput
 
         for item in self.utilList:
@@ -436,57 +444,57 @@ class ChipWhispererAnalyzer(MainChip):
         mod.setTraceManager(self.traces)
 
         # self.reloadScripts()
-        
+
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         self.waveformDock.widget().clearPushed()
         self.setupPreprocessorChain()
-        
+
         tstart = self.findParam('tracerng').value()[0]
         tend = self.findParam('tracerng').value()[1]
         pstart = self.findParam('pointrng').value()[0]
         pend = self.findParam('pointrng').value()[1]
-        
+
         ttotal = 0
-        
+
         if tend - tstart > 1:
             self.waveformDock.widget().setPersistance(True)
 
         for tnum in range(tstart, tend):
             trace = self.traces.getTrace(tnum)
-            
+
             if trace is None:
                 continue
-                  
-            ttotal += 1                
+
+            ttotal += 1
             self.waveformDock.widget().passTrace(trace[pstart:pend], pstart)
-            
+
             if self.plotInputEach:
                 QCoreApplication.processEvents()
 
         # print ttotal
-        
+
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         """When traces is loaded, Tell everything default point/trace range"""
         if defpoint == -1:
             defpoint = points
-            
+
         #Set parameters for attack
         self.traceLimits = traces
         self.pointLimits = points
         self.attack.setTraceLimits(traces, points)
-            
+
         # Set local parameters for trace viewer
         if traces is not None:
             self.findParam('tracerng').setLimits((0, traces))
-            #TODO: Bug in pyqtgraph maybe - if call with just deftrace & 
+            # TODO: Bug in pyqtgraph maybe - if call with just deftrace &
             #setLimits was called with (0,0), the setValue(1) is ignored which is OK,
             #but then calling setLimits with higher value followed by setValue still
             #has no effect??
             #WORKAROUND: use min(traces,deftrace) to ensure don't set value beyond limit for now
             self.findParam('tracerng').setValue((0, min(traces, deftrace)))
-            
-        
+
+
         if points:
             self.findParam('pointrng').setLimits((0, points))
             self.findParam('pointrng').setValue((0, defpoint))
@@ -496,45 +504,45 @@ class ChipWhispererAnalyzer(MainChip):
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
         self.waveformDock.widget().YDefault()
- 
+
     #def addShowStats(self):
     #    self.statsShowAct = QAction('&Results Monitor', self, statusTip='Plot/Save PGE etc', triggered=self.resultsDialog.show)
     #    self.projectMenu.addAction(self.statsShowAct)
-        
-    def addSettingsDocks(self):      
-        self.setupParametersTree()        
+
+    def addSettingsDocks(self):
+        self.setupParametersTree()
         self.settingsNormalDock = self.addSettings(self.paramTree, "General")
         self.settingsPreprocessingDock = self.addSettings(self.preprocessingParamTree, "Preprocessing")
         self.settingsAttackDock = self.addSettings(self.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.postprocessingParamTree, "Postprocessing")
         self.settingsResultsDock = self.addSettings(self.resultsParamTree, "Results")
-        
+
 
     def setupParametersTree(self):
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.paramTree = ParameterTree()
         self.paramTree.setParameters(self.params, showTop=False)
-        
+
         self.preprocessingParamTree = ParameterTree()
         self.attackParamTree = ParameterTree()
         self.postprocessingParamTree = ParameterTree()
         self.resultsParamTree = ParameterTree()
-        
+
         self.results.paramListUpdated.connect(self.reloadParamListResults)
         self.reloadParamListResults()
-        
+
     def reloadParamListResults(self, lst=None):
         ExtendedParameter.reloadParams(self.results.paramList(), self.resultsParamTree)
-        
+
     def reloadParamList(self, lst=None):
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)  
-        
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
+
     def paramList(self):
         p = []
-        p.append(self.params)     
-        return p        
-    
+        p.append(self.params)
+        return p
+
     def openProject(self, fname):
         self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Analyzer")
@@ -543,7 +551,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.setCurrentFile(fname)
         self.project().setFilename(fname)
         self.project().load()
-        
+
         #Open project file & read in everything
         self.project().traceManager.loadProject(fname)
 
@@ -551,7 +559,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.setProject(self.project())
         self.traceExplorerDialog.setProject(self.project())
 
-    def newProject(self):        
+    def newProject(self):
         #TODO: Move this to MainChip
         self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Analyzer")
@@ -560,7 +568,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
         self.projectChanged.connect(self.traceExplorerDialog.setProject)
-  
+
     def saveProject(self):
         #TODO: Move to MainChip
         if self.project().hasFilename() == False:
@@ -572,29 +580,29 @@ class ChipWhispererAnalyzer(MainChip):
                 fname = fd.selectedFiles()[0]
             else:
                 return
-            
+
             self.project().setFilename(fname)
             self.setCurrentFile(fname)
-            
+
         self.project().save()
         self.dirty = False
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")
-  
+
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Analyzer V2")
     return app
-  
+
 def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
     window = ChipWhispererAnalyzer()
     window.show()
-   
+
     # Run the main Qt loop
     sys.exit(app.exec_())
 

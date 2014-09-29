@@ -101,8 +101,13 @@ class KeyScheduleDialog(QDialog):
 
         layout.addWidget(gbKeySched)
 
-        self.setWindowTitle("AES Key Schedule")
+        self.setWindowTitle("AES-128/AES-256 Key Schedule Calculator")
         self.setObjectName("AES Key Schedule")
+
+        # try:
+        self.setWindowIcon(QIcon(":/images/cwiconA.png"))
+        # except:
+        #    pass
 
     def aesmodeChanged(self, indx):
         self.setKeyLength(self.aesmode.itemData(indx))
