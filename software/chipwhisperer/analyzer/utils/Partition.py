@@ -42,8 +42,8 @@ from openadc.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
-from chipwhisperer.analyzer.attacks.models.AES_RoundKeys import AES_RoundKeys
-import chipwhisperer.common.aes_tables as aes_tables
+from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
+from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 
 class PartitionHDLastRound(object):
 
@@ -63,12 +63,12 @@ class PartitionHDLastRound(object):
             rounds = 10
         else:
             raise ValueError("Need to implement for selected AES")
-        key = AES_RoundKeys().getFinalKey(key, rounds)
+        key = keyScheduleRounds(key, 0, rounds)
 
         guess = [0] * 16
         for i in range(0, 16):
             st10 = ct[INVSHIFT[i]]
-            st9 =  aes_tables.i_sbox[ct[i] ^ key[i]]
+            st9 = inv_sbox(ct[i] ^ key[i])
             guess[i] = getHW(st9 ^ st10)
         return guess
 
@@ -86,7 +86,7 @@ class PartitionHWIntermediate(object):
 
         guess = [0] * 16
         for i in range(0, 16):
-            guess[i] = getHW(aes_tables.sbox[text[i] ^ key[i]])
+            guess[i] = getHW(sbox(text[i] ^ key[i]))
 
         return guess
 
