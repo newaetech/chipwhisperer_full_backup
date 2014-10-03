@@ -34,7 +34,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from chipwhisperer.common.aes_key_schedule import keyScheduleRounds
+from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 
 class KeyScheduleDialog(QDialog):
 
