@@ -320,6 +320,19 @@ class FilelistItem(WidgetParameterItem):
             if self.editor:
                 self.editor(filename=fname, filedesc=desc)
 
+    def removeFile(self):
+        if self.table.currentRow() < 0:
+            QtGui.QMessageBox.warning(None, "Remove File", "No item selected")
+        else:
+            rnum = self.table.currentRow()
+            self.table.removeRow(rnum)
+
+    def addFile(self):
+        fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Add File to Project', '.', '*.py')
+
+        if fname is not None:
+            self.addFileToList("Default Name", fname)
+
     def setDefault(self, rnum=None):
         if rnum is None and self.table.currentRow() < 0:
             QtGui.QMessageBox.warning(None, "Set Default", "No item selected")
@@ -372,9 +385,7 @@ class FilelistItem(WidgetParameterItem):
         self.setRows(0)
 
         buttonAdd = QtGui.QPushButton('Add')
-        buttonAdd.setEnabled(False)
         buttonRemove = QtGui.QPushButton('Remove')
-        buttonRemove.setEnabled(False)
         buttonEdit = QtGui.QPushButton('Edit')
         buttonCopy = QtGui.QPushButton('Copy')
         buttonActive = QtGui.QPushButton('Set Active')
@@ -382,6 +393,8 @@ class FilelistItem(WidgetParameterItem):
         buttonCopy.clicked.connect(self.copyFile)
         buttonEdit.clicked.connect(self.editFile)
         buttonActive.clicked.connect(self.setDefault)
+        buttonAdd.clicked.connect(self.addFile)
+        buttonRemove.clicked.connect(self.removeFile)
 
         buttonL = QtGui.QGridLayout()
         buttonL.addWidget(buttonAdd, 0, 0)
