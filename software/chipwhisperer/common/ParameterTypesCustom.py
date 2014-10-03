@@ -344,7 +344,7 @@ class FilelistItem(WidgetParameterItem):
             if self.editor:
                 desc = self.table.item(rnum, 0).text()
                 fname = self.table.item(rnum, 1).text()
-                self.editor(filename=fname, filedesc=desc)
+                self.editor(filename=fname, filedesc=desc, default=True)
 
     def makeLayout(self):
         self.sigs = SigStuff()

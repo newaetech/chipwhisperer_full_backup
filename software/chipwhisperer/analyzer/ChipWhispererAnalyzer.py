@@ -116,6 +116,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.scriptList.append({'widget':MainScriptEditor(self)})
         self.scriptList[0]['filename'] = self.scriptList[0]['widget'].filename
         self.scriptList[0]['dockname'] = 'Auto-Generated'
+        self.defaultEditor = self.scriptList[0]
         autogen = (self.scriptList[0]['dockname'], self.scriptList[0]['filename'])
 
         self.cwParams = [
@@ -211,7 +212,7 @@ class ChipWhispererAnalyzer(MainChip):
                 script['dock'].setWindowTitle(dockname)
 
 
-    def editorControl(self, filename, filedesc, visible=True, default=False):
+    def editorControl(self, filename, filedesc, default=False, bringToFront=True):
         # Find filename
         thisEditor = None
 
@@ -230,8 +231,13 @@ class ChipWhispererAnalyzer(MainChip):
         thisEditor['dockname'] = filedesc
         self.editorDocks()
 
-        thisEditor['dock'].show()
-        thisEditor['dock'].raise_()
+        if bringToFront:
+            thisEditor['dock'].show()
+            thisEditor['dock'].raise_()
+
+        if default:
+            # Set as default for attacks etc
+            self.defaultEditor = thisEditor
 
 
     def setPlotInputEach(self, enabled):
@@ -409,7 +415,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadScripts()
 
     def setupScriptModule(self):
-        mod = self.scriptList[0]['widget'].loadModule().userScript(self, self.console, self.showScriptParameter)
+        mod = self.defaultEditor['widget'].loadModule().userScript(self, self.console, self.showScriptParameter)
         if hasattr(self, "traces") and self.traces:
             mod.setTraceManager(self.traces)
         return mod
