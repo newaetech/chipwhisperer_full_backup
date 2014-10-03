@@ -362,12 +362,6 @@ class FilelistItem(WidgetParameterItem):
     def makeLayout(self):
         self.sigs = SigStuff()
         opts = self.param.opts
-        # defs = {
-        #        'value': 0, 'min': None, 'max': None, 'int': True,
-        #        'step': 1.0, 'minStep': 1.0, 'dec': False, 'fixedsize':0,
-        #        'siPrefix': False, 'suffix': ''
-        #    }
-        # defs.update(opts)
 
         if 'editor' in opts.keys():
             self.editor = opts['editor']
@@ -403,7 +397,6 @@ class FilelistItem(WidgetParameterItem):
         buttonL.addWidget(buttonCopy, 1, 0)
         buttonL.addWidget(buttonActive, 1, 1, 1, 2)
         # buttonL.addStretch()
-
 
         l = QtGui.QVBoxLayout()
         l.setContentsMargins(0, 0, 0, 0)
@@ -444,17 +437,10 @@ class FilelistItem(WidgetParameterItem):
 
         self.setDefault(0)
 
-
-        # self.wlow.setOpts(bounds=limits)
-        # self.whigh.setOpts(bounds=limits)
-
 class FilelistParameter(Parameter):
     itemClass = FilelistItem
 
     def __init__(self, **opts):
-    #    self.forward = OrderedDict()  # # name: value
-    #    self.reverse = OrderedDict()  # # value: name#
-
         # # Parameter uses 'limits' option to define the set of allowed values
         if 'values' in opts:
             opts['limits'] = opts['values']
