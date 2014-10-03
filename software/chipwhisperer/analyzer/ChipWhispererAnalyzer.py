@@ -204,7 +204,7 @@ class ChipWhispererAnalyzer(MainChip):
 
             # No previous dock, do setup
             if 'dock' not in script.keys():
-                script['widget'].editWindow.runFunction.connect(self.runScriptFunction)
+                script['widget'].editWindow.runFunction.connect(partial(self.runScriptFunction, filename=script['filename']))
                 script['dock'] = self.addDock(script['widget'], name=dockname, area=Qt.RightDockWidgetArea)
 
             # Dock present, check if name changed
@@ -414,25 +414,32 @@ class ChipWhispererAnalyzer(MainChip):
         self.attack.runScriptFunction.connect(self.runScriptFunction)
         self.reloadScripts()
 
-    def setupScriptModule(self):
+    def setupScriptModule(self, filename=None):
+
+        if filename and filename != self.defaultEditor['filename']:
+            QMessageBox.warning(None, "Script Error", "Cannot run script from non-default function")
+            return None
+
         mod = self.defaultEditor['widget'].loadModule().userScript(self, self.console, self.showScriptParameter)
         if hasattr(self, "traces") and self.traces:
             mod.setTraceManager(self.traces)
         return mod
 
-    def runScriptFunction(self, funcname):
-        mod = self.setupScriptModule()
-        try:
-            eval('mod.%s()' % funcname)
-        except AttributeError as e:
-            # TODO fix this hack - this function will not exist before the
-            # traceexplorer dialog has been opended, but will still be
-            # called once
-            if funcname == 'TraceExplorerDialog_PartitionDisplay_findPOI':
-                pass
-            else:
-                # Continue with exception
-                raise
+    def runScriptFunction(self, funcname, filename=None):
+        mod = self.setupScriptModule(filename)
+
+        if mod:
+            try:
+                eval('mod.%s()' % funcname)
+            except AttributeError as e:
+                # TODO fix this hack - this function will not exist before the
+                # traceexplorer dialog has been opended, but will still be
+                # called once
+                if funcname == 'TraceExplorerDialog_PartitionDisplay_findPOI':
+                    pass
+                else:
+                    # Continue with exception
+                    raise
 
     def doAttack(self):
         #Check if traces enabled
