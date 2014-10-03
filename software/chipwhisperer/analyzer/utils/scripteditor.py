@@ -73,7 +73,7 @@ class CodeEditor(QTextEdit):
         self.assignFunction.emit(self.textCursor().selectedText())
 
 class MainScriptEditor(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, filename=None):
         super(MainScriptEditor, self).__init__(parent)
 
         self.editWindow = CodeEditor()
@@ -84,15 +84,32 @@ class MainScriptEditor(QWidget):
         self.setLayout(mainLayout)
         self.lastLevel = 0
 
-        self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
-        self.tfile.close()
-        # print self.tfile.name
-        
+        # If no file, we generate a temporary file
+        if filename is None:
+            self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
+            self.tfile.close()
+            self.filename = self.tfile.name
+        else:
+            self.filename = filename
+            self.reloadFile()
+
         self.saveSliderPosition()
-        
+
+    def reloadFile(self):
+        # todo: check if changed locally?
+        self.saveSliderPosition()
+        self.editWindow.clear()
+
+        with open(self.filename) as f:
+            content = f.readlines()
+            for line in content:
+                self.editWindow.append(line.rstrip())
+
+        self.restoreSliderPosition()
+
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()
-        
+
     def restoreSliderPosition(self):
         self.editWindow.verticalScrollBar().setValue(self._sliderPosition)
 
@@ -104,13 +121,13 @@ class MainScriptEditor(QWidget):
 
     def loadModule(self):
         # Save text editor somewhere
-        f = open(self.tfile.name, 'w')
+        f = open(self.filename, 'w')
         filecontents = self.editWindow.toPlainText()
         f.write(filecontents)
         f.close()
 
         modulename = str(uuid.uuid1())
-        self.scriptModule = imp.load_source(modulename, self.tfile.name)
+        self.scriptModule = imp.load_source(modulename, self.filename)
 
         # print self.scriptModule
         return self.scriptModule

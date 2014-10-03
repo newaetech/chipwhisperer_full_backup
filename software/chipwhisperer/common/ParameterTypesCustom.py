@@ -15,13 +15,13 @@ import chipwhisperer.common.qrc_resources
 
 class SigStuff(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)
-    sigValueChanging = QtCore.Signal(object, object)  # (self, value)  sent immediately; no delay.    
+    sigValueChanging = QtCore.Signal(object, object)  # (self, value)  sent immediately; no delay.
 
 class RangeParameterItem(WidgetParameterItem):
     """
-    WidgetParameterItem subclass providing two int selection for range    
+    WidgetParameterItem subclass providing two int selection for range
     """
-   
+
     def __init__(self, param, depth):
         self.targetValue = None
         WidgetParameterItem.__init__(self, param, depth)
@@ -29,29 +29,29 @@ class RangeParameterItem(WidgetParameterItem):
     def svChangedEmit(self):
         if self.validateLimits():
             self.sigs.sigValueChanged.emit(self)
-        
+
     def svChangingEmit(self, val):
         self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
-        
+
     def svLowChanging(self):
         if self.validateLimits("high"):
             self.svChangingEmit(None)
-        
+
     def svHighChanging(self):
         if self.validateLimits("low"):
             self.svChangingEmit(None)
-        
+
     def validateLimits(self, change=0):
         try:
             fixedsize = self.param.opts['fixedsize']
         except KeyError:
             return True
-        
+
         if fixedsize == 0:
             return True
-        
+
         if (self.whigh.value() - self.wlow.value()) != fixedsize:
-            
+
             # Limits wrong! Adjust as needed
 
             attempts = 0
@@ -89,13 +89,13 @@ class RangeParameterItem(WidgetParameterItem):
             return False
         else:
             return True
-        
-        
+
+
     def makeLayout(self):
         self.sigs = SigStuff()
-        opts = self.param.opts        
+        opts = self.param.opts
         defs = {
-                'value': 0, 'min': None, 'max': None, 'int': True, 
+                'value': 0, 'min': None, 'max': None, 'int': True,
                 'step': 1.0, 'minStep': 1.0, 'dec': False, 'fixedsize':0,
                 'siPrefix': False, 'suffix': ''
             }
@@ -104,41 +104,41 @@ class RangeParameterItem(WidgetParameterItem):
             defs['bounds'] = opts['limits']
         wlow = SpinBox()
         wlow.setOpts(**defs)
-        
+
         whigh = SpinBox()
         whigh.setOpts(**defs)
-        
+
         whigh.sigValueChanged.connect(self.svChangedEmit)
         whigh.sigValueChanging.connect(self.svHighChanging)
         wlow.sigValueChanged.connect(self.svChangedEmit)
-        wlow.sigValueChanging.connect(self.svLowChanging)        
-        
+        wlow.sigValueChanging.connect(self.svLowChanging)
+
         l = QtGui.QHBoxLayout()
         l.setContentsMargins(0,0,0,0)
-           
+
         l.addWidget(wlow)
         l.addWidget(QtGui.QLabel(" : "))
-        l.addWidget(whigh)      
-        
+        l.addWidget(whigh)
+
         self.wlow = wlow
         self.whigh = whigh
         return l
-    
+
     def makeWidget(self):
         l = self.makeLayout()
 
         w = QtGui.QWidget()
         w.setLayout(l)
-        
+
         w.sigChanged = self.sigs.sigValueChanged
         w.sigChanging = self.sigs.sigValueChanging
         w.value = self.value
-        w.setValue = self.setValue        
+        w.setValue = self.setValue
         return w
 
     def value(self):
         return (self.wlow.value(), self.whigh.value())
-            
+
     def setValue(self, val):
         self.wlow.setValue(val[0])
         self.whigh.setValue(val[1])
@@ -161,31 +161,31 @@ registerParameterType('range', RangeParameter, override=True)
 class RangeParameterGraphItem(RangeParameterItem):
     def makeWidget(self):
         l = self.makeLayout()
-        
+
         graphIcon = QtGui.QIcon()
         graphIcon.addFile(':/images/wavelimits.png', state=QtGui.QIcon.On)
         graphIcon.addFile(':/images/wavelimitsoff.png', state=QtGui.QIcon.Off)
-        
+
         self.graphBtn = QtGui.QPushButton()
         self.graphBtn.setFixedWidth(20)
         self.graphBtn.setFixedHeight(20)
         self.graphBtn.setIcon(graphIcon)
         self.graphBtn.setCheckable(True)
         self.graphBtn.clicked[bool].connect(self.buttonPressed)
-        
+
         l.addWidget(self.graphBtn)
 
         w = QtGui.QWidget()
         w.setLayout(l)
-        
+
         w.sigChanged = self.sigs.sigValueChanged
         w.sigChanging = self.sigs.sigValueChanging
         w.value = self.value
         w.setValue = self.setValue
-        
+
         self.wlow.sigValueChanged.connect(self.sbChanged)
         self.whigh.sigValueChanged.connect(self.sbChanged)
-                
+
         opts = self.param.opts
         self.pg = opts['graphwidget']
         self.lri = pg.LinearRegionItem(values=(self.wlow.value(), self.whigh.value()))
@@ -193,18 +193,18 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.lri.setVisible(False)
         self.lri.sigRegionChanged.connect(self.lriChanged)
         return w
-    
+
     def buttonPressed(self, status):
         self.lri.setVisible(status)
-        
+
     def lriChanged(self):
         new = self.lri.getRegion()
         self.wlow.setValue(new[0])
         self.whigh.setValue(new[1])
-        
+
     def sbChanged(self):
         self.lri.setRegion((self.wlow.value(), self.whigh.value()))
-        
+
     def limitsChanged(self, param, limits):
         """Called when the parameter's limits have changed"""
         # Do we need this? copied from example
@@ -225,8 +225,196 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.displayLabel.show()
         self.lri.setVisible(self.graphBtn.isChecked())
 
-    
+
 class RangeParameterGraph(Parameter):
     itemClass = RangeParameterGraphItem
 
 registerParameterType('rangegraph', RangeParameterGraph, override=True)
+
+class FilelistItem(WidgetParameterItem):
+    """
+    WidgetParameterItem subclass providing list of files with copy/add/remove
+    """
+
+    def __init__(self, param, depth):
+        self.targetValue = None
+        WidgetParameterItem.__init__(self, param, depth)
+        self.hideWidget = False
+
+    def svChangedEmit(self):
+        if self.validateLimits():
+            self.sigs.sigValueChanged.emit(self)
+
+    def svChangingEmit(self, val):
+        self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()))
+
+    def setRows(self, rows):
+        self.table.setRowCount(rows)
+
+        height = 0
+        for i in range(0, self.table.rowCount()):
+            height += self.table.rowHeight(i)
+
+        self.table.setMaximumHeight(height + 10)
+        self.table.setMinimumHeight(height + 10)
+
+    def addFileToList(self, desc, filename, fixedName=False):
+        rnum = self.table.rowCount()
+        self.setRows(rnum + 1)
+
+        descitem = QtGui.QTableWidgetItem(desc)
+        if fixedName:
+            descitem.setFlags(descitem.flags() & ~QtCore.Qt.ItemIsEditable)
+        self.table.setItem(rnum, 0, descitem)
+
+        fnameitem = QtGui.QTableWidgetItem(filename)
+        fnameitem.setFlags(fnameitem.flags() & ~QtCore.Qt.ItemIsEditable)
+        self.table.setItem(rnum, 1, fnameitem)
+
+        if hasattr(self, 'widget'):
+            self.treeWidgetChanged()
+
+    def copyFile(self):
+        if self.table.currentRow() < 0:
+            QtGui.QMessageBox.warning(None, "Copy Selection", "No item selected")
+        else:
+            rnum = self.table.currentRow()
+            desc = self.table.item(rnum, 0).text() + " Copy"
+            file = self.table.item(rnum, 1).text()
+
+            # Get new filename
+            fname, _ = QtGui.QFileDialog.getSaveFileName(None, 'Save Copy as', file, '*.py')
+
+            if fname and len(fname) > 0:
+
+                # New files
+                newfile = open(fname, 'w')
+                oldfile = open(file, 'r')
+
+                # Copy text data
+                newfile.write(oldfile.read())
+
+                # Close files
+                newfile.close()
+                oldfile.close()
+
+                # Add to list
+                self.addFileToList(desc, fname)
+
+    def editFile(self):
+        if self.table.currentRow() < 0:
+            QtGui.QMessageBox.warning(None, "Edit Selection", "No item selected")
+        else:
+            rnum = self.table.currentRow()
+            desc = self.table.item(rnum, 0).text()
+            fname = self.table.item(rnum, 1).text()
+
+            if self.editor:
+                self.editor(filename=fname, filedesc=desc)
+
+
+    def makeLayout(self):
+        self.sigs = SigStuff()
+        opts = self.param.opts
+        # defs = {
+        #        'value': 0, 'min': None, 'max': None, 'int': True,
+        #        'step': 1.0, 'minStep': 1.0, 'dec': False, 'fixedsize':0,
+        #        'siPrefix': False, 'suffix': ''
+        #    }
+        # defs.update(opts)
+
+        if 'editor' in opts.keys():
+            self.editor = opts['editor']
+        else:
+            self.editor = None
+
+        self.table = QtGui.QTableWidget()
+        self.table.setColumnCount(2)
+        self.table.horizontalHeader().hide()
+        self.table.verticalHeader().hide()
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        # self.table.horizontalHeader().setResizeMode(QtGui.QHeaderView.Interactive)
+
+        self.setRows(0)
+
+        buttonAdd = QtGui.QPushButton('Add')
+        buttonAdd.setEnabled(False)
+        buttonRemove = QtGui.QPushButton('Remove')
+        buttonRemove.setEnabled(False)
+        buttonEdit = QtGui.QPushButton('Edit')
+        buttonCopy = QtGui.QPushButton('Copy')
+        # buttonRename = QtGui.QPushButton('Rename/Move')
+
+        buttonCopy.clicked.connect(self.copyFile)
+        buttonEdit.clicked.connect(self.editFile)
+
+        buttonL = QtGui.QGridLayout()
+        buttonL.addWidget(buttonAdd, 0, 0)
+        buttonL.addWidget(buttonRemove, 0, 1)
+        buttonL.addWidget(buttonEdit, 0, 2)
+        buttonL.addWidget(buttonCopy, 1, 0)
+        # buttonL.addWidget(buttonRename, 1, 1, 1, 2)
+        # buttonL.addStretch()
+
+
+        l = QtGui.QVBoxLayout()
+        l.setContentsMargins(0, 0, 0, 0)
+
+        l.addWidget(self.table)
+        l.addLayout(buttonL)
+        self.layout = l
+        return l
+
+    def makeWidget(self):
+        l = self.makeLayout()
+
+        w = QtGui.QWidget()
+        w.setLayout(l)
+
+        w.sigChanged = self.sigs.sigValueChanged
+        w.sigChanging = self.sigs.sigValueChanging
+        w.value = self.value
+        w.setValue = self.setValue
+
+        self.limitsChanged(self.param, self.param.opts['limits'])
+
+        return w
+
+    def value(self):
+        return 0
+
+    def setValue(self, val):
+        pass
+
+    def limitsChanged(self, param, limits):
+        """Called when the parameter's limits have changed"""
+        # Do we need this? copied from example
+        ParameterItem.limitsChanged(self, param, limits)
+
+        for l in limits:
+            self.addFileToList(l[0], l[1])
+
+
+        # self.wlow.setOpts(bounds=limits)
+        # self.whigh.setOpts(bounds=limits)
+
+class FilelistParameter(Parameter):
+    itemClass = FilelistItem
+
+    def __init__(self, **opts):
+    #    self.forward = OrderedDict()  # # name: value
+    #    self.reverse = OrderedDict()  # # value: name#
+
+        # # Parameter uses 'limits' option to define the set of allowed values
+        if 'values' in opts:
+            opts['limits'] = opts['values']
+        if opts.get('limits', None) is None:
+            opts['limits'] = []
+        Parameter.__init__(self, **opts)
+        self.setLimits(opts['limits'])
+
+    def setLimits(self, limits):
+        Parameter.setLimits(self, limits)
+
+registerParameterType('filelist', FilelistParameter, override=True)

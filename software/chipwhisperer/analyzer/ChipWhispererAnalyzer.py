@@ -112,7 +112,16 @@ class ChipWhispererAnalyzer(MainChip):
 
         self.keyScheduleDialog = KeyScheduleDialog(self)
 
+        self.scriptList = []
+        self.scriptList.append({'widget':MainScriptEditor(self)})
+        self.scriptList[0]['filename'] = self.scriptList[0]['widget'].filename
+        self.scriptList[0]['dockname'] = 'Auto-Generated'
+        autogen = (self.scriptList[0]['dockname'], self.scriptList[0]['filename'])
+
         self.cwParams = [
+                {'name':'Attack Script', 'type':'group', 'children':[
+                    {'name':'Filename', 'key':'attackfilelist', 'type':'filelist', 'values':{autogen:0}, 'value':0, 'editor':self.editorControl,},# , 'values':self.attackscripts, 'value':None
+                    ]},
                 {'name':'Traces', 'type':'group', 'children':[
                     {'name':'Points', 'type':'int', 'value':0, 'readonly':True},
                     {'name':'Traces', 'type':'int', 'value':0, 'readonly':True}
@@ -123,7 +132,7 @@ class ChipWhispererAnalyzer(MainChip):
 
                 {'name':'Attack', 'type':'group', 'children':[
                     {'name':'Module', 'type':'list', 'values':{'CPA':CPA(self, console=self.console, showScriptParameter=self.showScriptParameter),
-                                                               'Profiling':Profiling(self, console=self.console, showScriptParameter=self.showScriptParameter),
+                                                               'Profiling':Profiling(self, console=self.console, showScriptParameter=self.showScriptParameter)
                                                                }, 'value':'CPA', 'set':self.setAttack},
                     ]},
 
@@ -156,11 +165,7 @@ class ChipWhispererAnalyzer(MainChip):
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
             self.enforceMenuOrder()
 
-
-        self.mse = MainScriptEditor(self)
-        self.mse.editWindow.runFunction.connect(self.runScriptFunction)
-        self.addDock(self.mse, name="Scripting", area=Qt.RightDockWidgetArea)
-
+        self.editorDocks()
         self.restoreDockGeometry()
 
         #Generate correct tab order now that we've restored
@@ -184,9 +189,49 @@ class ChipWhispererAnalyzer(MainChip):
 
         self.setupPreprocessorChain()
 
+        # print self.findParam('attackfilelist').items
+
+
     def listModules(self):
         """Overload this to test imports"""
         return ListAllModules()
+
+    def editorDocks(self):
+        for script in self.scriptList:
+
+            dockname = "Analysis Script: %s" % script['dockname']
+
+            # No previous dock, do setup
+            if 'dock' not in script.keys():
+                script['widget'].editWindow.runFunction.connect(self.runScriptFunction)
+                script['dock'] = self.addDock(script['widget'], name=dockname, area=Qt.RightDockWidgetArea)
+
+            # Dock present, check if name changed
+            if script['dock'].windowTitle() != dockname:
+                script['dock'].setWindowTitle(dockname)
+
+
+    def editorControl(self, filename, filedesc, visible=True, default=False):
+        # Find filename
+        thisEditor = None
+
+        for e in self.scriptList:
+            if e['filename'] == filename:
+                thisEditor = e
+                break
+
+        if thisEditor is None:
+            thisEditor = {'widget':MainScriptEditor(parent=self, filename=filename)}
+            thisEditor['filename'] = filename
+            thisEditor['dockname'] = filedesc
+            self.scriptList.append(thisEditor)
+
+        # Update all docks if required
+        thisEditor['dockname'] = filedesc
+        self.editorDocks()
+
+        thisEditor['dock'].show()
+        thisEditor['dock'].raise_()
 
 
     def setPlotInputEach(self, enabled):
@@ -236,43 +281,47 @@ class ChipWhispererAnalyzer(MainChip):
 
 
     def reloadScripts(self):
-        self.mse.saveSliderPosition()
-        self.mse.editWindow.clear()
 
-        self.mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
+        # Auto-Generated is always first
+        mse = self.scriptList[0]['widget']
 
-        self.mse.append("from chipwhisperer.common.autoscript import AutoScriptBase", 0)
+        mse.saveSliderPosition()
+        mse.editWindow.clear()
+
+        mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
+
+        mse.append("from chipwhisperer.common.autoscript import AutoScriptBase", 0)
 
         # Get imports from preprocessing
-        self.mse.append("#Imports from Preprocessing", 0)
-        self.mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
+        mse.append("#Imports from Preprocessing", 0)
+        mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
         for p in self.preprocessingListGUI:
             if p:
                 imports = p.getImportStatements()
-                for i in imports: self.mse.append(i, 0)
+                for i in imports: mse.append(i, 0)
 
         # Get imports from capture
-        self.mse.append("#Imports from Capture", 0)
+        mse.append("#Imports from Capture", 0)
         for i in self.attack.getImportStatements():
-            self.mse.append(i, 0)
+            mse.append(i, 0)
 
         # Some other imports
-        self.mse.append("#Imports from utilList", 0)
+        mse.append("#Imports from utilList", 0)
         for index, util in enumerate(self.utilList):
             if hasattr(util, '_smartstatements') and util.isVisible():
                 for i in util.getImportStatements(): self.mse.append(i, 0)
 
-        self.mse.append("", 0)
+        mse.append("", 0)
 
         # Add main class
-        self.mse.append("class userScript(AutoScriptBase):", 0)
-        self.mse.append("preProcessingList = []", 1)
+        mse.append("class userScript(AutoScriptBase):", 0)
+        mse.append("preProcessingList = []", 1)
 
-        self.mse.append("def initProject(self):", 1)
-        self.mse.append("pass")
+        mse.append("def initProject(self):", 1)
+        mse.append("pass")
 
 
-        self.mse.append("def initPreprocessing(self):", 1)
+        mse.append("def initPreprocessing(self):", 1)
 
         # Get init from preprocessing
         instNames = ""
@@ -280,35 +329,35 @@ class ChipWhispererAnalyzer(MainChip):
             if p:
                 classname = type(p).__name__
                 instname = "self.preProcessing%s%d" % (classname, i)
-                self.mse.append("%s = preprocessing.%s.%s(self.parent)" % (instname, classname, classname))
+                mse.append("%s = preprocessing.%s.%s(self.parent)" % (instname, classname, classname))
                 for s in p.getStatements('init'):
-                    self.mse.append(s.replace("self.", instname + ".").replace("userScript.", "self."))
+                    mse.append(s.replace("self.", instname + ".").replace("userScript.", "self."))
                 instNames += instname + ","
 
-        self.mse.append("self.preProcessingList = [%s]" % instNames)
-        self.mse.append("return self.preProcessingList")
+        mse.append("self.preProcessingList = [%s]" % instNames)
+        mse.append("return self.preProcessingList")
 
 
-        self.mse.append("def initAnalysis(self):", 1)
+        mse.append("def initAnalysis(self):", 1)
 
         # Get init from analysis
-        self.mse.append('self.attack = %s(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)' % type(self.attack).__name__)
+        mse.append('self.attack = %s(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)' % type(self.attack).__name__)
         for s in self.attack.getStatements('init'):
-            self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
+            mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
 
-        self.mse.append('return self.attack')
+        mse.append('return self.attack')
 
         # Get init from reporting
 
         # Get go command from analysis
-        self.mse.append("def initReporting(self, results):", 1)
+        mse.append("def initReporting(self, results):", 1)
         # self.mse.append("results.clear()")
-        self.mse.append("results.setAttack(self.attack)")
-        self.mse.append("results.setTraceManager(self.traceManager())")
-        self.mse.append("self.results = results")
+        mse.append("results.setAttack(self.attack)")
+        mse.append("results.setTraceManager(self.traceManager())")
+        mse.append("self.results = results")
 
-        self.mse.append("def doAnalysis(self):", 1)
-        self.mse.append("self.attack.doAttack()")
+        mse.append("def doAnalysis(self):", 1)
+        mse.append("self.attack.doAttack()")
 
         # Get other commands from attack module
         for k in self.attack._smartstatements:
@@ -317,7 +366,7 @@ class ChipWhispererAnalyzer(MainChip):
             else:
                 self.mse.append("def %s(self):" % k, 1)
                 for s in self.attack.getStatements(k):
-                    self.mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
+                    mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
 
 
         # Get other commands from other utilities
@@ -329,11 +378,11 @@ class ChipWhispererAnalyzer(MainChip):
                     statements = util.getStatements(k)
 
                     if len(statements) > 0:
-                        self.mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
+                        mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
                         for s in statements:
-                            self.mse.append(s.replace("userScript.", "self."))
+                            mse.append(s.replace("userScript.", "self."))
 
-        self.mse.restoreSliderPosition()
+        mse.restoreSliderPosition()
 
     def reloadParamListPreprocessing(self, list=None):
         plist = []
@@ -360,7 +409,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadScripts()
 
     def setupScriptModule(self):
-        mod = self.mse.loadModule().userScript(self, self.console, self.showScriptParameter)
+        mod = self.scriptList[0]['widget'].loadModule().userScript(self, self.console, self.showScriptParameter)
         if hasattr(self, "traces") and self.traces:
             mod.setTraceManager(self.traces)
         return mod
