@@ -238,8 +238,10 @@ class FilelistItem(WidgetParameterItem):
 
     def __init__(self, param, depth):
         self.targetValue = None
+        self.oldbackgrounds = []
         WidgetParameterItem.__init__(self, param, depth)
         self.hideWidget = False
+
 
     def svChangedEmit(self):
         if self.validateLimits():
@@ -263,16 +265,22 @@ class FilelistItem(WidgetParameterItem):
         self.setRows(rnum + 1)
 
         descitem = QtGui.QTableWidgetItem(desc)
+        descitem.setFlags(descitem.flags() & ~QtCore.Qt.ItemIsSelectable)
         if fixedName:
             descitem.setFlags(descitem.flags() & ~QtCore.Qt.ItemIsEditable)
         self.table.setItem(rnum, 0, descitem)
 
         fnameitem = QtGui.QTableWidgetItem(filename)
         fnameitem.setFlags(fnameitem.flags() & ~QtCore.Qt.ItemIsEditable)
+        fnameitem.setFlags(fnameitem.flags() & ~QtCore.Qt.ItemIsSelectable)
         self.table.setItem(rnum, 1, fnameitem)
+
+        self.oldbackgrounds.append(self.table.item(rnum, 0).background())
+        self.table.resizeColumnsToContents()
 
         if hasattr(self, 'widget'):
             self.treeWidgetChanged()
+
 
     def copyFile(self):
         if self.table.currentRow() < 0:
@@ -280,16 +288,16 @@ class FilelistItem(WidgetParameterItem):
         else:
             rnum = self.table.currentRow()
             desc = self.table.item(rnum, 0).text() + " Copy"
-            file = self.table.item(rnum, 1).text()
+            oldfname = self.table.item(rnum, 1).text()
 
             # Get new filename
-            fname, _ = QtGui.QFileDialog.getSaveFileName(None, 'Save Copy as', file, '*.py')
+            fname, _ = QtGui.QFileDialog.getSaveFileName(None, 'Save Copy as', oldfname, '*.py')
 
             if fname and len(fname) > 0:
 
                 # New files
                 newfile = open(fname, 'w')
-                oldfile = open(file, 'r')
+                oldfile = open(oldfname, 'r')
 
                 # Copy text data
                 newfile.write(oldfile.read())
@@ -312,6 +320,31 @@ class FilelistItem(WidgetParameterItem):
             if self.editor:
                 self.editor(filename=fname, filedesc=desc)
 
+    def setDefault(self, rnum=None):
+        if rnum is None and self.table.currentRow() < 0:
+            QtGui.QMessageBox.warning(None, "Set Default", "No item selected")
+        else:
+            if rnum is None:
+                rnum = self.table.currentRow()
+            else:
+                self.table.setCurrentCell(rnum, 0)
+
+            highlight = QtGui.QBrush(QtGui.QColor(0, 255, 0))
+
+            for row in range(0, self.table.rowCount()):
+                for col in range(0, self.table.columnCount()):
+                    item = self.table.item(row, col)
+                    if row == rnum:
+                        self.table.item(row, col).setBackground(highlight)
+                        # item.setFlags(item.flags() | QtCore.Qt.ItemIsSelectable)
+                    else:
+                        self.table.item(row, col).setBackground(self.oldbackgrounds[row])
+                        # item.setFlags(item.flags() & ~QtCore.Qt.ItemIsSelectable)
+
+            if self.editor:
+                desc = self.table.item(rnum, 0).text()
+                fname = self.table.item(rnum, 1).text()
+                self.editor(filename=fname, filedesc=desc)
 
     def makeLayout(self):
         self.sigs = SigStuff()
@@ -344,17 +377,18 @@ class FilelistItem(WidgetParameterItem):
         buttonRemove.setEnabled(False)
         buttonEdit = QtGui.QPushButton('Edit')
         buttonCopy = QtGui.QPushButton('Copy')
-        # buttonRename = QtGui.QPushButton('Rename/Move')
+        buttonActive = QtGui.QPushButton('Set Active')
 
         buttonCopy.clicked.connect(self.copyFile)
         buttonEdit.clicked.connect(self.editFile)
+        buttonActive.clicked.connect(self.setDefault)
 
         buttonL = QtGui.QGridLayout()
         buttonL.addWidget(buttonAdd, 0, 0)
         buttonL.addWidget(buttonRemove, 0, 1)
         buttonL.addWidget(buttonEdit, 0, 2)
         buttonL.addWidget(buttonCopy, 1, 0)
-        # buttonL.addWidget(buttonRename, 1, 1, 1, 2)
+        buttonL.addWidget(buttonActive, 1, 1, 1, 2)
         # buttonL.addStretch()
 
 
@@ -394,6 +428,8 @@ class FilelistItem(WidgetParameterItem):
 
         for l in limits:
             self.addFileToList(l[0], l[1])
+
+        self.setDefault(0)
 
 
         # self.wlow.setOpts(bounds=limits)
