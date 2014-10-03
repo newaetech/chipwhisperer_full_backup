@@ -420,10 +420,16 @@ class ChipWhispererAnalyzer(MainChip):
             QMessageBox.warning(None, "Script Error", "Cannot run script from non-default function")
             return None
 
-        mod = self.defaultEditor['widget'].loadModule().userScript(self, self.console, self.showScriptParameter)
+        mod = self.defaultEditor['widget'].loadModule()
+
+        # Check if we aborted due to conflitcing edit
+        if mod is None:
+            return None
+
+        script = mod.userScript(self, self.console, self.showScriptParameter)
         if hasattr(self, "traces") and self.traces:
-            mod.setTraceManager(self.traces)
-        return mod
+            script.setTraceManager(self.traces)
+        return script
 
     def runScriptFunction(self, funcname, filename=None):
         mod = self.setupScriptModule(filename)

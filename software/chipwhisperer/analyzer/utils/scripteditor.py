@@ -28,6 +28,7 @@
 import imp
 import uuid
 import tempfile
+import os.path, time
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -93,6 +94,7 @@ class MainScriptEditor(QWidget):
             self.filename = filename
             self.reloadFile()
 
+        self.fileLastTime = os.path.getmtime(self.filename)
         self.saveSliderPosition()
 
     def reloadFile(self):
@@ -107,6 +109,11 @@ class MainScriptEditor(QWidget):
 
         self.restoreSliderPosition()
 
+        # Save time file was last modified
+        self.fileLastTime = os.path.getmtime(self.filename)
+
+        # print "last modified: %s" % time.ctime(os.path.getmtime(self.filename))
+
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()
 
@@ -120,11 +127,34 @@ class MainScriptEditor(QWidget):
         self.editWindow.append(" "*(level * 4) + statement)
 
     def loadModule(self):
+
+        # Check if file was modified outside of us
+        if self.fileLastTime != os.path.getmtime(self.filename):
+            msgBox = QMessageBox(self)
+            msgBox.setWindowTitle("Warning: Conflicting Edits")
+            msgBox.setText("File modified outside of ChipWhisperer Editor")
+            msgBox.setInformativeText("Filename: %s" % self.filename)
+            msgBox.addButton('Reload File from Disk, discard local changes', QMessageBox.YesRole)
+            msgBox.addButton('Overwrite file on disk with local changes', QMessageBox.NoRole)
+            msgBox.addButton('Cancel operation (do not discard any changes)', QMessageBox.RejectRole)
+
+            msgBox.exec_()
+            ret = msgBox.buttonRole(msgBox.clickedButton())
+
+            if ret == QMessageBox.YesRole:
+                self.reloadFile()
+            elif ret == QMessageBox.NoRole:
+                pass
+            else:
+                return None
+
         # Save text editor somewhere
         f = open(self.filename, 'w')
         filecontents = self.editWindow.toPlainText()
         f.write(filecontents)
         f.close()
+
+        self.fileLastTime = os.path.getmtime(self.filename)
 
         modulename = str(uuid.uuid1())
         self.scriptModule = imp.load_source(modulename, self.filename)
