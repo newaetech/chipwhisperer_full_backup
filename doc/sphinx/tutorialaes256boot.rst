@@ -104,20 +104,43 @@ a considerably more complicated operation! We can consider writing that last ste
 
     X^{13} &= SBytes^{-1}\left(MixCols^{-1}\left(ShiftRows^{-1}(X^{13} \oplus K^{13})\right)\right)
 
-The MixCols() operation is a linear function, meaning for example the following applies::
+The MixCols() operation is a linear function, meaning for example the following applies:
 
  .. math::
 
     A = MixCols(A + B) = MixCols(A) + MixCols(B)
 
 Which means instead of determining the encryption key, we can determine the encryption key modified
-by MixCols. Once we fully determine the encryption key we can perform the inverse mixcol operation.
+by the inverse MixCols.
 
  .. math::
 
     X^{13} = SBytes^{-1}\left(MixCols^{-1}\left(ShiftRows^{-1}(X^{13} \oplus K^{13})\right)\right) \\
     X^{13} = SBytes^{-1}\left(MixCols^{-1}\left(ShiftRows^{-1}(C)\right) \oplus Y^{13}\right) \\
     Y^{13} = MixCols^{-1}\left(ShiftRows^{-1}(K^{13})\right) \\
+
+Once we fully determine the encryption key we can perform the MixCol and ShiftRow operation to
+determine the correct key.
+
+ .. math::
+
+    K^{13} = MixCols\left(ShiftRows(Y^{13})\right) \\
+
+Performing the complete AES-256 side channel analysis attack will thus require the following steps:
+
+1. Perform a standard attack (as in AES-128 decryption) to determine the first 16 bytes of the key,
+   corresponding to the 14th round encryption key.
+
+2. Using the known 14th round key, calculate the hypothetical outputs of each S-Box from the 13th round
+   using the ciphertext processed by the 14th round, and determine the 16 bytes of the 13th round key
+   manipulated by inverse mixcols.
+
+3. Perform the mixcol and shift-row operation on the hypothetical key determined above, which will be
+   the 13th round key.
+
+4. Using the AES-256 key schedule, reverse the 13th and 14th round keys to determine the original AES-256
+   encryption key.
+
 
 Building/Programming the Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
