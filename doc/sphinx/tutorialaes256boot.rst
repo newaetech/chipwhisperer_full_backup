@@ -142,10 +142,6 @@ Performing the complete AES-256 side channel analysis attack will thus require t
    encryption key.
 
 
-Building/Programming the Bootloader
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-
 Setting up the Hardware
 -----------------------
 
@@ -180,6 +176,10 @@ Jumpers on the Multi-Target Victim board are as follows:
    For more information on these jumper settings see :ref:`hwmultitarget` .
 
 
+Building/Programming the Bootloader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
 Setting up the Software
 -----------------------
 
@@ -187,8 +187,16 @@ It is assumed that you've already followed the guide in :ref:`installing`. Thus 
 whatever capture hardware you are using). Note in particular you must have configured the FPGA bitstream in the ChipWhisperer-Capture software, all part of the
 description in the :ref:`installing` guide.
 
+
 Capturing the Traces
 --------------------
+
+
+Communication with the Bootloader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Capturing the Traces
+^^^^^^^^^^^^^^^^^^^^
 
 This tutorial uses a simple script that ships with the ChipWhisperer Capture software. The easiest method of accomplishing the trace capture is as follows:
 
@@ -214,6 +222,9 @@ This tutorial uses a simple script that ships with the ChipWhisperer Capture sof
 
 Analyzing the Traces
 --------------------
+
+14th Round Key
+^^^^^^^^^^^^^^
 
 1. Open the Analyzer software
 2. From the *File --> Open Project* option, navigate to the `.cwp` file you save previously. Open this file.
@@ -266,6 +277,29 @@ Analyzing the Traces
       can determine where exactly the attacked operation occured.
 
    .. image:: /images/tutorials/basic/aes/attack-done2.png
+
+13th Round Key
+^^^^^^^^^^^^^^
+
+class AES256_2nd_Round(object):
+    def Process(pt, ct, key, bnum):
+        """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
+        if pt != None:
+            raise ValueError("Not setup for that BS")
+        elif ct != None:
+            knownkey = [0xae, 0x83, 0xc1, 0xa5, 0x6b, 0xcb, 0xc6, 0x46, 0x55, 0xa3, 0xbf, 0x8d, 0x58, 0xfa, 0x20, 0x6d]
+            a = AES()
+            xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
+            block = a.mapin(xored)
+            block = a.shiftRows(block, True)
+            block = a.subBytes(block, True)
+            block = a.mixColumns(block, True)
+            block = a.shiftRows(block, True)
+            result = a.mapout(block)
+            return getHW(inv_sbox((result[bnum] ^ key)))
+        else:
+            raise ValueError("Must specify PT or CT")
+
 
 Next Steps
 ----------
