@@ -3,4 +3,225 @@
 Tutorial #A5: Breaking AES-256 Bootloader
 =========================================
 
-todo
+
+This tutorial will take you through a complete attack on an encrypted bootloader using AES-256.
+This demonstrates how to using side-channel power analysis on practical systems, along with
+discussing how to perform custom scripts along with custom analysis scripts.
+
+Whilst the tutorial assumes you will be performing the entire capture of traces along with the
+attack, it is possible to download the traces if you don't have the hardware, in which case skip
+to section TODO XREF.
+
+Background
+----------
+
+
+Bootloader Design
+^^^^^^^^^^^^^^^^^
+
+Details of AES-256 CBC
+^^^^^^^^^^^^^^^^^^^^^^
+
+The system is using the AES algorithm in Cipher Block Chaining (CBC) mode. In general one avoids using
+encryption 'as-is' (i.e. Electronic Code Book), since it means any piece of plaintext always maps to the
+same piece of ciphertext. Cipher Block Chaining ensures that if you encrypted the same thing a bunch of
+times it would always encrypt to a new piece of ciphertext.
+
+You can see another reference on the design of the encryption side, we'll be only talking about the
+decryption side here. In this case AES-256 CBC mode is used as follows, where the details of the AES-256
+Decryption block will be discussed in detail later.
+
+.. image:: /images/theory/aes256_cbc.png
+
+Specifics of the AES-256 Decryption algorithm are given below, where this AES-256 implementation was
+written by `http://www.literatecode.com/ <Ilya O. Levin>`__::
+
+    aes_addRoundKey_cpy(buf, ctx->deckey, ctx->key);
+    aes_shiftRows_inv(buf);
+    aes_subBytes_inv(buf);
+
+    for (i = 14, rcon = 0x80; --i;)
+    {
+        if( ( i & 1 ) )
+        {
+            aes_expandDecKey(ctx->key, &rcon);
+            aes_addRoundKey(buf, &ctx->key[16]);
+        }
+        else aes_addRoundKey(buf, ctx->key);
+        aes_mixColumns_inv(buf);
+        aes_shiftRows_inv(buf);
+        aes_subBytes_inv(buf);
+    }
+    aes_addRoundKey( buf, ctx->key);
+
+In an AES-128 implementation there is ten rounds (after 'initially' applying the key), each round applied to the
+16-byte state of the AES. With AES-256 the state is still 16 bytes, but is applied over 14 rounds (after
+initially applying the first part of the key).
+
+In AES-128 we can target the first output of the S-Box, which is sufficient to recover the entire encryption key. For
+AES-256 we can recover 16 bytes of the encryption key, as shown in the following figure of the initial setup of the
+decryption algorithm:
+
+.. image:: /images/theory/aes128_decrypted.png
+
+This corresponds to the first 3 lines of source code in the AES-256 decryption algorithm:
+
+    aes_addRoundKey_cpy(buf, ctx->deckey, ctx->key);
+    aes_shiftRows_inv(buf);
+    aes_subBytes_inv(buf);
+
+As the AES-256 key is 32 bytes, we need to extend the attack to one more AES round. Looking
+back at the next part of the source code, this corresponds to the first round through this loop::
+
+  for (i = 14, rcon = 0x80; --i;)
+    {
+        if( ( i & 1 ) )
+        {
+            aes_expandDecKey(ctx->key, &rcon);
+            aes_addRoundKey(buf, &ctx->key[16]);
+        }
+        else aes_addRoundKey(buf, ctx->key);
+        aes_mixColumns_inv(buf);
+        aes_shiftRows_inv(buf);
+        aes_subBytes_inv(buf);
+        //Attack will focus on state of 'buf' at this
+        //point in time
+    }
+    aes_addRoundKey( buf, ctx->key);
+
+Which is shown in this figure:
+
+.. image:: /images/theory/aes128_round2.png
+
+
+
+Building/Programming the Bootloader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Setting up the Hardware
+-----------------------
+
+This tutorial uses the :ref:`hwcapturerev2` hardware along with the :ref:`hwmultitarget`
+board. Note that you **don't need hardware** to complete the tutorial. Instead you can
+download `example traces from the ChipWhisperer Site <https://www.assembla.com/spaces/chipwhisperer/wiki/Example_Captures>`__.
+
+This example uses the Atmel AVR in 28-pin DIP programmed with a demo bootloader. You can see instructions for programming in the
+:ref:`installing` section, this tutorial assumes you have the programmer aspect working.
+
+The Multi-Target board should be plugged into the ChipWhisperer Capture Rev2 via the 20-pin target cable. The *VOUT* SMA connector is
+wired to the *LNA* input on the ChipWhisperer-Capture Rev2 front panel. The general hardware setup is as follows:
+
+   .. image:: /images/tutorials/basic/aes/hw-1.jpg
+
+   1. 20-Pin Header connects Multi-Target to Capture Hardware
+   2. VOUT Connects to SMA Cable
+   3. SMA Cable connects to 'LNA' on CHA input
+   4. USB-Mini connects to side (NB: Confirm jumper settings in next section first)
+
+Jumpers on the Multi-Target Victim board are as follows:
+
+   .. image:: /images/tutorials/basic/aes/hw-2.jpg
+
+   1. NO jumpers mounted in XMEGA Portion or SmartCard Portion (JP10-JP15, JP19, JP7-JP8, JP17)
+   2. 3.3V IO Level (JP20 set to INT.)
+   3. The 7.37 MHz oscillator is selected as the CLKOSC source (JP18)
+   4. The CLKOSC is connected to the AVR CLock Network, along with connected to the FPGAIN pin (JP4)
+   5. The TXD & RXD jumpers are set (JP5, JP6)
+   6. Power measurement taken from VCC shunt (JP1)
+
+   For more information on these jumper settings see :ref:`hwmultitarget` .
+
+
+Setting up the Software
+-----------------------
+
+It is assumed that you've already followed the guide in :ref:`installing`. Thus it is assumed you are able to communicate with the ChipWhisperer Capture Rev2 hardware (or
+whatever capture hardware you are using). Note in particular you must have configured the FPGA bitstream in the ChipWhisperer-Capture software, all part of the
+description in the :ref:`installing` guide.
+
+Capturing the Traces
+--------------------
+
+This tutorial uses a simple script that ships with the ChipWhisperer Capture software. The easiest method of accomplishing the trace capture is as follows:
+
+1. Close & reopen the capture software (to clear out any previous connection which may be invalid).
+2. From the *Project* menu elect the *Example Scripts* and then *ChipWhisperer-Rev2: SimpleSerial Target*
+
+   .. image:: /images/tutorials/basic/aes/runscript.png
+
+3. The script will automatically connect to the capture hardware and run 2 example traces. You should see something that looks like the following screen:
+
+   .. image:: /images/tutorials/basic/aes/capture.png
+
+   To complete the tutorial, follow these steps:
+
+       1. Switch to the *General Settings* tab
+       2. If you wish to change the number of traces, do so here. The default of 50 should be sufficient to break AES though!
+       3. Hit the *Capture Many* button (M in a green triangle) to start the capture process.
+       4. You will see each new trace plotted in the waveform display.
+       5. You'll see the trace count in the status bar. Once it says *Trace 50 done* (assuming you requested 50 traces) the capture process is complete.
+
+4. Finally save this project using the *File --> Save Project* option, give it any name you want.
+
+
+Analyzing the Traces
+--------------------
+
+1. Open the Analyzer software
+2. From the *File --> Open Project* option, navigate to the `.cwp` file you save previously. Open this file.
+3. Select the *Project --> Manage Traces* option to open the dialog, enable the captured traces by adding a check-mark in the box. Close the dialog with `ESC`:
+
+   .. image:: /images/tutorials/basic/aes/tracemanage.png
+
+4. If you wish to view the trace data, follow these steps:
+
+   1. Switch to the *Waveform Display* tab
+   2. Switch to the *General* parameter setting tab
+   3. You can choose to plot a specific range of traces
+   4. Hit the *Redraw* button when you change the trace plot range
+   5. You can right-click on the waveform to change options, or left-click and drag to zoom
+   6. (oops there is no 6)
+   7. Use the toolbar to quickly reset the zoom back to original
+
+   .. image:: /images/tutorials/basic/aes/traceplotting.png
+
+5. You can view or change the attack options on the *Attack* parameter settings tab:
+
+   1. The *Hardware Model* settings are correct for the software AES by default
+   2. The *Point Setup* makes the attack faster by looking over a more narrow range of points. Often you might have to characterize your device to determine
+      the location of specific attack points of interest.
+   3. *Traces per Attack* allows you to use only a subset of capture traces on each attack. Or if you have for example 1000 traces, you could average the results of attacking
+      50 traces over 200 attack runs.
+   4. *Reporting Interval* is how often data is generated. A smaller interval generates more useful output data, but greatly increases computational complexity (e.g. slows down attack).
+      If you only care about attacking the system, the reporting interval can be set to the number of traces. In which case the attack runs completely, and you get the results. For this
+      tutorial you can set to a smaller number (such as 5).
+
+   .. image:: /images/tutorials/basic/aes/attacksettings.png
+
+6. Finally run the attack by switching to the *Results Table* tab and then hitting the *Attack* button:
+
+   .. image:: /images/tutorials/basic/aes/attack.png
+
+7. If you adjusted the *Reporting Interval* to a smaller number such as 5, you'll see the progression of attack results as more traces are used.
+   If not you should simply see the final results, which should have the correct key highlighted in red. In the following case the correct key *was* recovered:
+
+   .. image:: /images/tutorials/basic/aes/attack-done.png
+
+8. You can also switch to the *Output vs Point Plot* window to see *where* exactly the data was recovered:
+
+   1. Switch to the *Output vs Point Plot* tab
+   2. Turn on one of the bytes to see results.
+   3. The *known correct* guess for the key is highlighted in red. The wrong guesses are plotted in green. You can see that the attacked operation appeared
+      to occur around sample 40 for key 0. Remember you can click-drag to zoom in, then right-click and select *View All* to zoom back out.
+   4. Turn on another byte to see results for it.
+   5. This byte occured much later - sample 1240. By exploring where the maximum correlation was found for the correct key-guess of each byte, you
+      can determine where exactly the attacked operation occured.
+
+   .. image:: /images/tutorials/basic/aes/attack-done2.png
+
+Next Steps
+----------
+
+This has only briefly outlined how to perform a CPA attack. You can move onto more advanced tutorials, especially showing you how the actual
+attack works when performed manually.
