@@ -28,6 +28,7 @@
 import imp
 import uuid
 import tempfile
+import os.path, time
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -73,10 +74,11 @@ class CodeEditor(QTextEdit):
         self.assignFunction.emit(self.textCursor().selectedText())
 
 class MainScriptEditor(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, filename=None):
         super(MainScriptEditor, self).__init__(parent)
 
         self.editWindow = CodeEditor()
+        self.editWindow.textChanged.connect(self.textChanged)
 
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.editWindow)
@@ -84,15 +86,40 @@ class MainScriptEditor(QWidget):
         self.setLayout(mainLayout)
         self.lastLevel = 0
 
-        self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
-        self.tfile.close()
-        # print self.tfile.name
-        
+        # If no file, we generate a temporary file
+        if filename is None:
+            self.tfile = tempfile.NamedTemporaryFile('w', suffix='.py', prefix='cwautoscript_', delete=False)
+            self.tfile.close()
+            self.filename = self.tfile.name
+        else:
+            self.filename = filename
+            self.reloadFile()
+
+        self.fileLastTime = os.path.getmtime(self.filename)
         self.saveSliderPosition()
-        
+
+    def textChanged(self):
+        self.dirty = True
+
+    def reloadFile(self):
+        # todo: check if changed locally?
+        self.saveSliderPosition()
+        self.editWindow.clear()
+
+        with open(self.filename) as f:
+            content = f.readlines()
+            for line in content:
+                self.editWindow.append(line.rstrip())
+
+        self.restoreSliderPosition()
+
+        # Save time file was last modified
+        self.markClean()
+
+
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()
-        
+
     def restoreSliderPosition(self):
         self.editWindow.verticalScrollBar().setValue(self._sliderPosition)
 
@@ -102,15 +129,47 @@ class MainScriptEditor(QWidget):
         self.lastLevel = level
         self.editWindow.append(" "*(level * 4) + statement)
 
+    def markClean(self):
+        self.dirty = False
+        self.fileLastTime = os.path.getmtime(self.filename)
+
     def loadModule(self):
+
+        # Check if file was modified outside of us
+        if self.fileLastTime != os.path.getmtime(self.filename):
+
+            # If dirty we've got a problem
+            if self.dirty:
+                msgBox = QMessageBox(self)
+                msgBox.setWindowTitle("Warning: Conflicting Edits")
+                msgBox.setText("File modified outside of ChipWhisperer Editor")
+                msgBox.setInformativeText("Filename: %s" % self.filename)
+                msgBox.addButton('Reload File from Disk, discard local changes', QMessageBox.YesRole)
+                msgBox.addButton('Overwrite file on disk with local changes', QMessageBox.NoRole)
+                msgBox.addButton('Cancel operation (do not discard any changes)', QMessageBox.RejectRole)
+
+                msgBox.exec_()
+                ret = msgBox.buttonRole(msgBox.clickedButton())
+
+                if ret == QMessageBox.YesRole:
+                    self.reloadFile()
+                elif ret == QMessageBox.NoRole:
+                    pass
+                else:
+                    return None
+            else:
+                self.reloadFile()
+
         # Save text editor somewhere
-        f = open(self.tfile.name, 'w')
+        f = open(self.filename, 'w')
         filecontents = self.editWindow.toPlainText()
         f.write(filecontents)
         f.close()
 
+        self.markClean()
+
         modulename = str(uuid.uuid1())
-        self.scriptModule = imp.load_source(modulename, self.tfile.name)
+        self.scriptModule = imp.load_source(modulename, self.filename)
 
         # print self.scriptModule
         return self.scriptModule

@@ -25,8 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import chipwhisperer.common.aes_tables as aes_tables
-
+from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 numSubKeys = 16
 
 ##Generate this table with:
@@ -64,16 +63,16 @@ def xtime(a):
 def HypHW(pt, ct, key, bnum):
     """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
     if pt != None:
-        return getHW(aes_tables.sbox[pt[bnum] ^ key])
+        return getHW(sbox(pt[bnum] ^ key))
     elif ct != None:
-        return getHW(aes_tables.i_sbox[ct[bnum] ^ key])
+        return getHW(inv_sbox(ct[bnum] ^ key))
     else:
         raise ValueError("Must specify PT or CT")
 
 def HypHWXtime(pt, keyguess, numguess, keyknown, bnumknown):
     """Given plaintext + a subkey guess + a known subkey + subkey numbers return xtime result"""
-    a = aes_tables.sbox[pt[numguess] ^ keyguess]
-    b = aes_tables.sbox[pt[bnumknown] ^ keyknown]
+    a = sbox(pt[numguess] ^ keyguess)
+    b = sbox(pt[bnumknown] ^ keyknown)
     raise ValueError("Should this be HW instead of just xtime()???")
     return getHW(xtime(a^b))
 
@@ -84,7 +83,7 @@ def HypHD(pt, ct, key, bnum):
         raise ValueError("First-Round HD isn't possible")
     elif ct != None:
         st10 = ct[INVSHIFT[bnum]]
-        st9 =  aes_tables.i_sbox[ct[bnum] ^ key]
+        st9 =  inv_sbox(ct[bnum] ^ key)
         return getHW(st9 ^ st10)
     else:
         raise ValueError("Must specify PT or CT")

@@ -36,19 +36,18 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from openadc.ExtendedParameter import ExtendedParameter
 
 try:
     from pyqtgraph.parametertree import Parameter
-    #print pg.systemInfo()    
+    # print pg.systemInfo()
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
-import chipwhisperer.analyzer.attacks.models.AES_RoundKeys as models_AES_RoundKeys
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.attacks.ProfilingTemplate import ProfilingTemplate
@@ -57,7 +56,7 @@ from AttackGenericParameters import AttackGenericParameters
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
-            
+
     def __init__(self, parent=None, console=None, showScriptParameter=None):
         self.console=console
         self.showScriptParameter=showScriptParameter
@@ -66,19 +65,19 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         # Do not use absolute
         self.useAbs = False
 
-    def setupParameters(self):      
+    def setupParameters(self):
         profalgos = {'Basic':ProfilingTemplate}
 
         attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
-                       
+
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()                                                 
-                        },                    
+                         self.getByteList()
+                        },
                       ]
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params, self)
-        
+
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
 
@@ -86,7 +85,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.projectChanged.connect(self.attack.setProject)
 
         self.setAbsoluteMode(False)
-            
+
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo)
         self.updateBytesVisible()
@@ -155,83 +154,83 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
     def targetBytes(self):
         return self._targetbytes
-                                                
+
     def processKnownKey(self, inpkey):
         return inpkey
 
         # if inpkey is None:
         #    return None
-        
+
         # if self.findParam('hw_round').value() == 'last':
         #    return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
         # else:
         #    return inpkey
-            
-    def doAttack(self):        
-        
+
+    def doAttack(self):
+
         start = datetime.now()
         self.attack.setReportingInterval(self.getReportingInterval())
-        
+
         #TODO: support start/end point different per byte
         (startingPoint, endingPoint) = self.getPointRange(None)
-        
+
         self.attack.getStatistics().clear()
-        
+
         for itNum in range(1, self.getIterations() + 1):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
             endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
-            
-            #print "%d-%d"%(startingPoint, endingPoint)            
+
+            # print "%d-%d"%(startingPoint, endingPoint)
             data = []
             textins = []
             textouts = []
 
             print "%d-%d"%(startingTrace, endingTrace)
-            
+
             for i in range(startingTrace, endingTrace):
                 d = self.trace.getTrace(i)
-                
+
                 if d is None:
                     continue
-                
+
                 d = d[startingPoint:endingPoint]
-                
+
                 data.append(d)
                 textins.append(self.trace.getTextin(i))
-                textouts.append(self.trace.getTextout(i)) 
-            
+                textouts.append(self.trace.getTextout(i))
+
             #self.attack.clearStats()
             self.attack.setByteList(self.bytesEnabled())
             # self.attack.setKeyround(self.findParam('hw_round').value())
             # self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
             self.attack.setStatsReadyCallback(self.statsReady)
-            
+
             progress = AttackProgressDialog()
             progress.setWindowModality(Qt.WindowModal)
             progress.setMinimumDuration(1000)
             progress.offset = startingTrace
-            
+
             #TODO:  pointRange=self.TraceRangeList[1:17]
             try:
                 self.attack.addTraces(data, textins, textouts, progress)
             except KeyboardInterrupt:
                 self.log("Attack ABORTED... stopping")
-        
+
         end = datetime.now()
         self.log("Attack Time: %s" % str(end - start))
         self.attackDone.emit()
-        
-        
+
+
     def statsReady(self):
         self.statsUpdated.emit()
         QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass
-    
+
     def getStatistics(self):
         return self.attack.getStatistics()
-            
+
     def paramList(self):
         l = [self.params, self.pointsParams, self.traceParams]
         if self.attackParams is not None:

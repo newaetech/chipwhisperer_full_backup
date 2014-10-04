@@ -54,7 +54,7 @@ except ImportError:
 
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
-import chipwhisperer.analyzer.attacks.models.AES_RoundKeys as models_AES_RoundKeys
+from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 
@@ -173,7 +173,14 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             return None
 
         if self.keyround() == -1:
-            return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
+            # return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
+            if len(inpkey) == 16:
+                rnds = 10
+            elif len(inpkey) == 32:
+                rnds = 14
+            else:
+                raise ValueError('unsupported key length: %d' % len(inpkey))
+            return keyScheduleRounds(inpkey, 0, rnds)
         else:
             return inpkey
 
