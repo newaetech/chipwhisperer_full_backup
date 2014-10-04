@@ -64,7 +64,7 @@ decryption algorithm:
 
 .. image:: /images/theory/aes128_decrypted.png
 
-This corresponds to the first 3 lines of source code in the AES-256 decryption algorithm:
+This corresponds to the first 3 lines of source code in the AES-256 decryption algorithm::
 
     aes_addRoundKey_cpy(buf, ctx->deckey, ctx->key);
     aes_shiftRows_inv(buf);
@@ -93,7 +93,31 @@ Which is shown in this figure:
 
 .. image:: /images/theory/aes128_round2.png
 
+The critical difference between the initial round and this round is the addition of the mixcols
+operation. This operation takes four bytes of input and generates four bytes of output - any change
+in a single byte will result in a change of all four bytes of output!
 
+It would at first appear we need to perform a guess over 4 bytes instead of 1 byte. This would be
+a considerably more complicated operation! We can consider writing that last step as an equation:
+
+ .. math::
+
+    X^{13} &= SBytes^{-1}\left(MixCols^{-1}\left(ShiftRows^{-1}(X^{13} \oplus K^{13})\right)\right)
+
+The MixCols() operation is a linear function, meaning for example the following applies::
+
+ .. math::
+
+    A = MixCols(A + B) = MixCols(A) + MixCols(B)
+
+Which means instead of determining the encryption key, we can determine the encryption key modified
+by MixCols. Once we fully determine the encryption key we can perform the inverse mixcol operation.
+
+ .. math::
+
+    X^{13} = SBytes^{-1}\left(MixCols^{-1}\left(ShiftRows^{-1}(X^{13} \oplus K^{13})\right)\right) \\
+    X^{13} = SBytes^{-1}\left(MixCols^{-1}\left(ShiftRows^{-1}(C)\right) \oplus Y^{13}\right) \\
+    Y^{13} = MixCols^{-1}\left(ShiftRows^{-1}(K^{13})\right) \\
 
 Building/Programming the Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
