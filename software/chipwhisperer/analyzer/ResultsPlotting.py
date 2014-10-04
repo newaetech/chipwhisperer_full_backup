@@ -45,220 +45,244 @@ try:
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    #print pg.systemInfo()    
+    # print pg.systemInfo()
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.qrc_resources
-   
+
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)
-    
+
     """Interface to main program, various routines for plotting output data"""
     def __init__(self):
         super(ResultsPlotting, self).__init__()
 
         #ResultsTable manages class
         self.table = ResultsTable()
-        
+
         self.graphoutput = OutputVsTime()
         self.GraphOutputDock = QDockWidget(self.graphoutput.name)
         self.GraphOutputDock.setObjectName(self.graphoutput.name)
         self.GraphOutputDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.GraphOutputDock.setWidget(self.graphoutput)
         self.graphoutput.setDock(self.GraphOutputDock)
-        
+
         self.pgegraph = PGEVsTrace()
         self.PGEGraphDock = QDockWidget(self.pgegraph.name)
         self.PGEGraphDock.setObjectName(self.pgegraph.name)
         self.PGEGraphDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.PGEGraphDock.setWidget(self.pgegraph)
         self.pgegraph.setDock(self.PGEGraphDock)
-        
-        
+
+
     def paramList(self):
-        p = [self.table.params, self.graphoutput.params, self.pgegraph.params] 
-        return p            
-            
+        """Returns list of parameters for parameter tree GUI display"""
+
+        p = [self.table.params, self.graphoutput.params, self.pgegraph.params]
+        return p
+
     def dockList(self):
+        """Return list of docks"""
+
         return [self.table.ResultsTable, self.GraphOutputDock, self.PGEGraphDock]
-    
+
     def setAttack(self, attack):
         """Pass the attack to all plotting devices. They pull stats from the attack directly, and listen to attackDone/statusUpdated signals."""
+
         self.attack = attack
-        self.table.setAttack(attack)        
+        self.table.setAttack(attack)
         self.attack.attackDone.connect(self.attackDone)
         self.attack.statsUpdated.connect(self.attackStatsUpdated)
         self.attack.settingsChanged.connect(self.attackSettingsChanged)
         self.graphoutput.setAttack(attack)
         self.pgegraph.setAttack(attack)
         self.attackSettingsChanged()
-        
+
     def attackSettingsChanged(self):
+        """Attack settings have changed, so pass required changes to other modules such as plotting"""
+
         # Update possible settings
         self.table.setAbsoluteMode(self.attack.useAbs)
 
-    def setTraceManager(self, tmanager):        
-        self.trace = tmanager       
-        
+    def setTraceManager(self, tmanager):
+        """Set the trace manager"""
+
+        self.trace = tmanager
+
     def updateKnownKey(self):
+        """Re-Read the Known Key from saved traces"""
+
         try:
             nk = self.trace.getKnownKey(self.startTrace)
             nk = self.attack.processKnownKey(nk)
             self.graphoutput.setKnownKey(nk)
         except AttributeError, e:
             print str(e)
-        
+
     def attackDone(self):
+        """Attack is done, update everything"""
+
         self.attackStatsUpdated()
         #self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.updateTable(attackDone=True)        
-    
+        self.table.updateTable(attackDone=True)
+
     def attackStatsUpdated(self):
+        """New attack statistics available, replot/redraw graphs"""
+
         self.startTrace = self.attack.getTraceStart()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
         self.table.setStartTrace(self.startTrace)
         self.table.updateTable()
         self.updateKnownKey()
-               
+
 class ResultsPlotData(GraphWidget):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
-     
+
     showDockSignal = Signal(bool)
     name = "Some Descriptive Name"
-     
+
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(ResultsPlotData, self).__init__()
-        
+
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
         self.knownkey = None
         self.enabledbytes = [False]*subkeys
         self.doRedraw = True
-        
+
         self.byteNumAct = []
         for i in range(0,self.numKeys):
             self.byteNumAct.append(QAction('%d'%i, self))
             self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
             self.byteNumAct[i].setCheckable(True)
-            
+
         byteNumAllOn = QAction('All On', self)
         byteNumAllOff = QAction('All Off', self)
         byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
         byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
-                
+
         self.bselection = QToolBar()
-        
+
         for i in range(0, self.numKeys):
             self.bselection.addAction(self.byteNumAct[i])
         self.bselection.addAction(byteNumAllOn)
         self.bselection.addAction(byteNumAllOff)
         self.layout().addWidget(self.bselection)
-        
+
         self.highlightTop = True
-        
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},                      
+
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)        
-        
+        ExtendedParameter.setupExtended(self.params, self)
+
     def paramList(self):
+        """Returns parameter list"""
         return [self.params]
-   
+
     def setDock(self, dock):
+        """Set the dock holding this widget, used for visibility control"""
         self.dock = dock
-        self.showDockSignal.connect(dock.setVisible)      
+        self.showDockSignal.connect(dock.setVisible)
         dock.visibilityChanged.connect(self.visibleChanged)
-        self.visibleChanged() 
-   
+        self.visibleChanged()
+
     def visibleChanged(self):
+        """Dock visability changed"""
         visible = self.dock.isVisible()
         self.findParam('show').setValue(visible)
-   
+
     def setKnownKey(self, knownkey):
+        """Set the known encryption key (used for highlighting)"""
         self.knownkey = knownkey
-   
+
     def setBytePlot(self, num, sel):
+        """Set which bytes to plot"""
         self.enabledbytes[num] = sel
         if self.doRedraw:
             self.redrawPlot()
-        
+
     def setByteAll(self, status):
+        """Enable all bytes in plot"""
         self.doRedraw = False
         for t in self.byteNumAct:
             t.setChecked(status)
             t.trigger()
         self.doRedraw = True
         self.redrawPlot()
-   
+
     def setAttack(self, attack):
+        """Set the source of statistics (i.e. the attack)"""
         self.attack = attack
-        
+
     def setupHighlights(self):
+        """Initialize the highlights based on the known key"""
         self.highlights = []
-        
+
         highlights = self.knownkey
-        
+
         for i in range(0, self.numKeys):
             if highlights is not None:
                 self.highlights.append([highlights[i]])
             else:
                 self.highlights.append([None])
- 
-    def highlightColour(self, index):
+
+    def _highlightColour(self, index):
         if index == 0:
             return 'r'
         else:
             return 'b'
-        
-    def backgroundplot(self, prange, data, pen=None, highres=False):
-        datalen =  max(prange)-min(prange)+1
-        if data is None:
-            #Setup call 
-            if highres is False:
-                if pen is None:
-                    #No pen specified - init call
-                    self.backgroundplotMax = np.empty((datalen,1))
-                    self.backgroundplotMax[:] = np.NAN
-                    self.backgroundplotMin = np.empty((datalen,1))
-                    self.backgroundplotMin[:] = np.NAN
-                else:
-                    print "Plotting"
-                    self.pw.plot(prange, self.backgroundplotMax, pen)
-                    self.pw.plot(prange, self.backgroundplotMin, pen)
-                    
-        else:
-            #Store min/max
-            self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
-            self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
-        
+
+    # def backgroundplot(self, prange, data, pen=None, highres=False):
+    #    datalen =  max(prange)-min(prange)+1
+    #    if data is None:
+    #        # Setup call
+    #        if highres is False:
+    #            if pen is None:
+    #                #No pen specified - init call
+    #                self.backgroundplotMax = np.empty((datalen,1))
+    #                self.backgroundplotMax[:] = np.NAN
+    #                self.backgroundplotMin = np.empty((datalen,1))
+    #                self.backgroundplotMin[:] = np.NAN
+    #            else:
+    #                print "Plotting"
+    #                self.pw.plot(prange, self.backgroundplotMax, pen)
+    #                self.pw.plot(prange, self.backgroundplotMin, pen)
+    #
+    #    else:
+    #        #Store min/max
+    #        self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
+    #        self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
+
 class OutputVsTime(ResultsPlotData):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
-    
+
     name = "Output vs Point Plot"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(OutputVsTime, self).__init__()
-        
+
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
-        
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},       
+
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
                          {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
-                         {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}                 
+                         {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        
+
     def getPrange(self, bnum, diffs):
+        """Get a list of all points for a given byte number statistic"""
 
         prange = self.attack.getPointRange(bnum)
         prange = list(prange)
@@ -274,31 +298,33 @@ class OutputVsTime(ResultsPlotData):
         prange = range(prange[0], prange[1])
 
         return prange
-                  
+
     def redrawPlot(self):
+        """Redraw the plot, loading data from attack"""
+
         data = self.attack.getStatistics()
         data = data.diffs
-       
+
         byteson = 0
         for i in range(0, self.numKeys):
             if self.enabledbytes[i]:
                 byteson += 1
-       
+
         #Do Redraw
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)
         progress.setWindowModality(Qt.WindowModal)
         progress.setMinimumDuration(1000) #_callSync='off'
         progress.setMinimum(0) #_callSync='off'
         progress.setMaximum(byteson*self.numPerms) #_callSync='off'
-        
+
         self.clearPushed()
         self.setupHighlights()
         #prange = range(self.pstart[bnum], self.pend[bnum])
-        
+
         fastDraw = self.findParam('fast').value()
-                
+
         pvalue = 0
-                
+
         if self.findParam('hide').value():
             self.pw.setVisible(False)
         try:
@@ -312,19 +338,19 @@ class OutputVsTime(ResultsPlotData):
                     if not hasattr(diffs[0], '__iter__'):
                         diffs = [[t] for t in diffs]
                         pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
-                                        
+
                     prange = self.getPrange(bnum, diffs)
 
 
-                    if fastDraw:             
+                    if fastDraw:
                         if self.highlightTop:
                             newdiff = np.array(diffs)
                             for j in self.highlights[bnum]:
                                 newdiff[j] = 0
                         else:
                             newdiff = diffs
-                                
-                                  
+
+
                         maxlimit = np.amax(newdiff, 0)
                         minlimit = np.amin(newdiff, 0)
                         self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
@@ -337,12 +363,12 @@ class OutputVsTime(ResultsPlotData):
                         for i in range(0,256):
                             self.pw.plot(prange, diffs[i], pen='g', **pointargsg)
                             pvalue += 1
-                            progress.setValue(pvalue)                  
-                        
+                            progress.setValue(pvalue)
+
                 if self.highlightTop:
                     #Plot the highlighted byte(s) on top
                     for bnum in range(0, self.numKeys):
-                    
+
                         if self.enabledbytes[bnum]:
                             diffs = data[bnum]
 
@@ -351,79 +377,81 @@ class OutputVsTime(ResultsPlotData):
                             if not hasattr(diffs[0], '__iter__'):
                                 diffs = [[t] for t in diffs]
                                 pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
-                                
+
 
                             prange = self.getPrange(bnum, diffs)
 
-                            for i in range(0,256):   
+                            for i in range(0, 256):
                                 if i in self.highlights[bnum]:
-                                    penclr = self.highlightColour( self.highlights[bnum].index(i) )
+                                    penclr = self._highlightColour(self.highlights[bnum].index(i))
                                     self.pw.plot(prange, diffs[i], pen=penclr, **pointargsr)
         except StopIteration:
             pass
-        
+
         self.pw.setVisible(True)
-      
+
 class PGEVsTrace(ResultsPlotData):
     """
     Plots Partial Guessing Entropy (PGE) vs Number of Traces in Attack
     """
-    
+
     name = "PGE vs Trace Plot"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(PGEVsTrace, self).__init__()
-        
+
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
-        
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},   
+
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
                          {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
-                         {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},               
+                         {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},
                       ]
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        
-    def copyPGE(self, dontCopy=False, addPlotMatlab=True):        
+
+    def copyPGE(self, dontCopy=False, addPlotMatlab=True):
+        """Copy the Partial Guessing Entropy (PGE) to clipboard for use in other programs"""
+
         allpge = self.calculatePGE()
         cb = QClipboard()
-        
+
         fmt = self.findParam('fmt').value()
-        
+
         if fmt == 'CSV':
             spge = "Trace Number, "
             for i in range(0,self.numKeys):
                 spge += "Subkey %d, "%i
             spge += "\n"
-            for (tnum, plist) in allpge.iteritems():                
+            for (tnum, plist) in allpge.iteritems():
                 spge += "%d, "%tnum
                 for j in plist:
                     if j['trials'] > 0:
                         spge += "%f, "%j['pge']
-                    else:                
+                    else:
                         spge += "NaN, "
                 spge += "\n"
         elif fmt == 'MATLAB':
-            tracestr = "tnum = ["       
-            spge = "pge = ["     
+            tracestr = "tnum = ["
+            spge = "pge = ["
             trials = 0
-            for (tnum, plist) in allpge.iteritems():                
+            for (tnum, plist) in allpge.iteritems():
                 tracestr += "%d "%tnum
                 for j in plist:
                     if j['trials'] > 0:
                         spge += "%f "%j['pge']
                         trials = max(trials, j['trials'])
-                    else:                
+                    else:
                         spge += "NaN, "
-                spge += ";\n"                
-            tracestr += "];\n"            
+                spge += ";\n"
+            tracestr += "];\n"
             spge += "];\n"
             spge += tracestr
             spge += "\n"
             if addPlotMatlab:
-                spge += "plot(tnum, pge)\n"  
+                spge += "plot(tnum, pge)\n"
                 spge += "xlabel('Trace Number')\n"
-                spge += "ylabel('Average PGE (%d Trials)')\n"%trials       
+                spge += "ylabel('Average PGE (%d Trials)')\n" % trials
                 spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')\n"
                 spge += "legend("
                 for k in range(0, self.numKeys):
@@ -433,108 +461,113 @@ class PGEVsTrace(ResultsPlotData):
                 spge += ")\n"
         else:
             raise ValueError("Invalid fmt: %s"%fmt)
-        
+
         if dontCopy is False:
-            cb.setText(spge)   
-        return spge     
-        
+            cb.setText(spge)
+        return spge
+
     def calculatePGE(self):
+        """Calculate the Partial Guessing Entropy (PGE)"""
+
         stats = self.attack.getStatistics()
         pge = stats.pge_total
         allpge = OrderedDict()
-                        
+
         for i in pge:
             tnum = i['trace']
             if not tnum in allpge:
                 allpge[tnum] = [{'pgesum':0, 'trials':0} for z in range(0,stats.numSubkeys)]
-                                                
+
             allpge[tnum][i['subkey']]['pgesum'] += i['pge']
-            allpge[tnum][i['subkey']]['trials'] += 1              
-                
+            allpge[tnum][i['subkey']]['trials'] += 1
+
         for (tnum, plist) in allpge.iteritems():
             for j in plist:
                 if j['trials'] > 0:
-                    j['pge'] = float(j['pgesum']) / float(j['trials'])       
-                    #print "%d "%j['trials'],             
+                    j['pge'] = float(j['pgesum']) / float(j['trials'])
+                    # print "%d "%j['trials'],
                 else:
                     j['pge'] = None
-                
+
         #print ""
-                
+
         return allpge
-                  
+
     def redrawPlot(self):
+        """Recalculate the PGE and redraw the PGE plot"""
+
         allpge = self.calculatePGE()
 
         self.clearPushed()
         self.setupHighlights()
         #prange = range(self.pstart[bnum], self.pend[bnum])
-                
+
         try:
-            for bnum in range(0, self.numKeys):                
+            for bnum in range(0, self.numKeys):
                 if self.enabledbytes[bnum]:
                     trace = []
-                    pge = []                                
+                    pge = []
                     for (tnum, plist) in allpge.iteritems():
                         trace.append(tnum)
                         pge.append(plist[bnum]['pge'])
-                    self.pw.plot(trace, pge, pen='r')                       
-                 
-                #penclr = self.highlightColour( self.highlights[bnum].index(i) )
+                    self.pw.plot(trace, pge, pen='r')
+
+                # penclr = self._highlightColour( self.highlights[bnum].index(i) )
                 #                   self.pw.plot(prange, diffs[i], pen=penclr )
-                        
+
                 #if self.highlightTop:
                 #    #Plot the highlighted byte(s) on top
                 #    for bnum in range(0, self.numKeys):
                 #        prange = self.attack.getPointRange(bnum)
-                #        prange = range(prange[0], prange[1])                                      
+                #        prange = range(prange[0], prange[1])
         except StopIteration:
-            pass       
-   
+            pass
+
 class ResultsTable(QObject):
     """Table of results, showing all guesses based on sorting output of attack"""
+
     def __init__(self, subkeys=16, permPerSubkey=256, useAbs=True):
         super(ResultsTable, self).__init__()
 
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        
+
         self.pgeBrush = QBrush(QColor(253,255,205))
-        pgehdr =  QTableWidgetItem("PGE")        
+        pgehdr = QTableWidgetItem("PGE")
         self.table.setVerticalHeaderItem(0,pgehdr)
         for i in range(1,permPerSubkey+1):
             self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d"%(i-1)))
-            
+
         for i in range(0,subkeys):
             fi = QTableWidgetItem("")
             fi.setBackground(self.pgeBrush)
             self.table.setItem(0,i,fi)
-            
+
         for i in range(0,subkeys):
             self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d"%i))
-            
+
         self.table.resizeColumnsToContents()
-        
+
         fullTable = QWidget()
         fullLayout = QVBoxLayout()
         fullTable.setLayout(fullLayout)
-        
+
         fullLayout.addWidget(self.table)
-        
+
         self.ResultsTable = QDockWidget("Results Table")
         self.ResultsTable.setObjectName("Results Table")
         self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.ResultsTable.setWidget(fullTable)       
+        self.ResultsTable.setWidget(fullTable)
         self.ResultsTable.setVisible(False)
         self.ResultsTable.visibilityChanged.connect(self.visibleChanged)
-        
+
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
         self.setBytesEnabled([])
         self.useAbs = useAbs
         self.knownkey = None
         self.useSingle = False
-        
+
         resultsParams = [
                          {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.ResultsTable.setVisible},
                          {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
@@ -544,64 +577,85 @@ class ResultsTable(QObject):
 
         self.params = Parameter.create(name='Ranked Table', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-   
+
         self.updateMode = self.findParam('updateMode').value()
-                
+
         #Update parameter tree
         self.visibleChanged()
-        
+
     def paramList(self):
+        """Returns list for parameter tree in settings dock"""
+
         return [self.params]
-        
+
     def visibleChanged(self):
+        """Called when visibility changed, ensures GUI matches real setting"""
+
         visible = self.ResultsTable.isVisible()
         self.findParam('show').setValue(visible)
-        
+
     def setUpdateMode(self, mode):
+        """Set if we update entire table or just PGE on every statistics update"""
+
         self.updateMode = mode
-        
+
     def setBytesEnabled(self, enabledbytes):
+        """Set what bytes to include in table"""
+
         self.enabledBytes = enabledbytes
-        
+
     def setStartTrace(self, starttrace):
+        """Set starting trace number"""
+
         self.startTrace = starttrace
 
     def setAttack(self, attack):
+        """Set source of statistics (i.e. attack)"""
+
         self.attack = attack
-        
+
     def setKnownKey(self, knownkey):
+        """Set the known encryption key, required for PGE calculation"""
+
         self.knownkey = knownkey
-        
+
     def setAbsoluteMode(self, enabled):
-        self.useAbs = enabled    
-        
+        """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
+
+        self.useAbs = enabled
+
     def setSingleMode(self, enabled):
-        self.useSingle = enabled    
+        """Single mode uses the same point across all traces, not useful normally"""
+
+        self.useSingle = enabled
 
     def updateTable(self, attackDone=False):
+        """Resort data and redraw the table. If update-mode is 'pge' we only redraw entire table
+        when 'attackDone' is True."""
+
         nk = self.attack.trace.getKnownKey(self.startTrace)
         nk = self.attack.processKnownKey(nk)
         self.setKnownKey(nk)
-                
+
         attackStats = self.attack.getStatistics()
         attackStats.setKnownkey(nk)
         attackStats.findMaximums(useAbsolute=self.useAbs)
-        
+
         for bnum in range(0, self.numKeys):
             if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
                 self.table.setColumnHidden(bnum, False)
-                maxes = attackStats.maxes[bnum]            
-                   
+                maxes = attackStats.maxes[bnum]
+
                 pgitm = QTableWidgetItem("%3d"%attackStats.pge[bnum])
                 pgitm.setBackground(self.pgeBrush)
                 self.table.setItem(0,bnum,pgitm)
-                
-                if (self.updateMode == 'all') or attackDone:    
+
+                if (self.updateMode == 'all') or attackDone:
                     for j in range(0,self.numPerms):
                         self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
-    
+
                         highlights = self.knownkey
-    
+
                         if highlights is not None:
                             try:
                                 if maxes[j]['hyp'] == highlights[bnum]:
