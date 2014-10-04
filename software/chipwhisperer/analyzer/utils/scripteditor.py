@@ -78,6 +78,7 @@ class MainScriptEditor(QWidget):
         super(MainScriptEditor, self).__init__(parent)
 
         self.editWindow = CodeEditor()
+        self.editWindow.textChanged.connect(self.textChanged)
 
         mainLayout = QHBoxLayout()
         mainLayout.addWidget(self.editWindow)
@@ -97,6 +98,9 @@ class MainScriptEditor(QWidget):
         self.fileLastTime = os.path.getmtime(self.filename)
         self.saveSliderPosition()
 
+    def textChanged(self):
+        self.dirty = True
+
     def reloadFile(self):
         # todo: check if changed locally?
         self.saveSliderPosition()
@@ -110,9 +114,8 @@ class MainScriptEditor(QWidget):
         self.restoreSliderPosition()
 
         # Save time file was last modified
-        self.fileLastTime = os.path.getmtime(self.filename)
+        self.markClean()
 
-        # print "last modified: %s" % time.ctime(os.path.getmtime(self.filename))
 
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()
@@ -126,27 +129,36 @@ class MainScriptEditor(QWidget):
         self.lastLevel = level
         self.editWindow.append(" "*(level * 4) + statement)
 
+    def markClean(self):
+        self.dirty = False
+        self.fileLastTime = os.path.getmtime(self.filename)
+
     def loadModule(self):
 
         # Check if file was modified outside of us
         if self.fileLastTime != os.path.getmtime(self.filename):
-            msgBox = QMessageBox(self)
-            msgBox.setWindowTitle("Warning: Conflicting Edits")
-            msgBox.setText("File modified outside of ChipWhisperer Editor")
-            msgBox.setInformativeText("Filename: %s" % self.filename)
-            msgBox.addButton('Reload File from Disk, discard local changes', QMessageBox.YesRole)
-            msgBox.addButton('Overwrite file on disk with local changes', QMessageBox.NoRole)
-            msgBox.addButton('Cancel operation (do not discard any changes)', QMessageBox.RejectRole)
 
-            msgBox.exec_()
-            ret = msgBox.buttonRole(msgBox.clickedButton())
+            # If dirty we've got a problem
+            if self.dirty:
+                msgBox = QMessageBox(self)
+                msgBox.setWindowTitle("Warning: Conflicting Edits")
+                msgBox.setText("File modified outside of ChipWhisperer Editor")
+                msgBox.setInformativeText("Filename: %s" % self.filename)
+                msgBox.addButton('Reload File from Disk, discard local changes', QMessageBox.YesRole)
+                msgBox.addButton('Overwrite file on disk with local changes', QMessageBox.NoRole)
+                msgBox.addButton('Cancel operation (do not discard any changes)', QMessageBox.RejectRole)
 
-            if ret == QMessageBox.YesRole:
-                self.reloadFile()
-            elif ret == QMessageBox.NoRole:
-                pass
+                msgBox.exec_()
+                ret = msgBox.buttonRole(msgBox.clickedButton())
+
+                if ret == QMessageBox.YesRole:
+                    self.reloadFile()
+                elif ret == QMessageBox.NoRole:
+                    pass
+                else:
+                    return None
             else:
-                return None
+                self.reloadFile()
 
         # Save text editor somewhere
         f = open(self.filename, 'w')
@@ -154,7 +166,7 @@ class MainScriptEditor(QWidget):
         f.write(filecontents)
         f.close()
 
-        self.fileLastTime = os.path.getmtime(self.filename)
+        self.markClean()
 
         modulename = str(uuid.uuid1())
         self.scriptModule = imp.load_source(modulename, self.filename)
