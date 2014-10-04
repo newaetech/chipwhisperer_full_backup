@@ -89,6 +89,14 @@ from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 
 class ChipWhispererAnalyzer(MainChip):
+    """ Main ChipWhisperer Analyzer GUI Window Class.
+
+    You can run this class from another Python script if you wish to, which gives you the ability
+    to drive the system from another Python script, and not be forced to do everything through
+    the GUI. Unfortunutly the GUI window still needs to open, as much of the program flow is
+    done through PySide signals/slots.
+    """
+
     MaxRecentFiles = 4
     def __init__(self):
         super(ChipWhispererAnalyzer, self).__init__(name="ChipWhisperer" + u"\u2122" + " Analyzer V2", icon="cwiconA")
@@ -198,6 +206,8 @@ class ChipWhispererAnalyzer(MainChip):
         return ListAllModules()
 
     def editorDocks(self):
+        """Ensure we have a script editor window for each referenced analyzer script file"""
+
         for script in self.scriptList:
 
             dockname = "Analysis Script: %s" % script['dockname']
@@ -213,6 +223,8 @@ class ChipWhispererAnalyzer(MainChip):
 
 
     def editorControl(self, filename, filedesc, default=False, bringToFront=True):
+        """This is the call-back from the script editor file list, which opens editors"""
+
         # Find filename
         thisEditor = None
 
@@ -244,6 +256,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.plotInputEach = enabled
 
     def addToolbars(self):
+        """Add toolbars and menus to the main window"""
+
         attack = QAction(QIcon(':/images/attack.png'), 'Start Attack', self)
         attack.triggered.connect(self.doAttack)
 
@@ -273,6 +287,11 @@ class ChipWhispererAnalyzer(MainChip):
         self.toolMenu.addSeparator()
 
     def setPreprocessing(self, num, module):
+        """Insert the preprocessing module selected from the GUI into the list of active modules.
+
+        This ensures that the options for that module are then displayed in the GUI, along with
+        writing the auto-generated script.
+        """
         self.preprocessingListGUI[num] = module
         if module:
             module.paramListUpdated.connect(self.reloadParamListPreprocessing)
@@ -287,6 +306,7 @@ class ChipWhispererAnalyzer(MainChip):
 
 
     def reloadScripts(self):
+        """Rewrite the auto-generated analyzer script, using settings from the GUI"""
 
         # Auto-Generated is always first
         mse = self.scriptList[0]['widget']
@@ -391,6 +411,8 @@ class ChipWhispererAnalyzer(MainChip):
         mse.restoreSliderPosition()
 
     def reloadParamListPreprocessing(self, list=None):
+        """Reload the parameter lists, ensuring GUI is showing correct options to user"""
+
         plist = []
         for p in self.preprocessingListGUI:
             if p:
@@ -399,6 +421,8 @@ class ChipWhispererAnalyzer(MainChip):
         ExtendedParameter.reloadParams(plist, self.preprocessingParamTree)
 
     def setAttack(self, attack):
+        """Set the attack module, reloading GUI and connecting appropriate signals"""
+
         self.attack = attack
         self.reloadAttackParamList()
         self.results.setAttack(self.attack)
@@ -415,6 +439,13 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadScripts()
 
     def setupScriptModule(self, filename=None):
+        """Loads a given script as a module for dynamic run-time insertion.
+
+        Args:
+            filename (str): The full filename to open. If None it opens the
+                            auto-generated script instead.
+
+        """
 
         if filename and filename != self.defaultEditor['filename']:
             QMessageBox.warning(None, "Script Error", "Cannot run script from non-default function")
@@ -432,6 +463,8 @@ class ChipWhispererAnalyzer(MainChip):
         return script
 
     def runScriptFunction(self, funcname, filename=None):
+        """Loads a given script and runs a specific function within it."""
+
         mod = self.setupScriptModule(filename)
 
         if mod:
@@ -448,6 +481,9 @@ class ChipWhispererAnalyzer(MainChip):
                     raise
 
     def doAttack(self):
+        """Called when the 'Do Attack' button is pressed, or can be called via API
+        to cause attack to run"""
+
         #Check if traces enabled
         if self.traces.NumTrace == 0:
             msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project - open Trace Manager?",
@@ -487,13 +523,21 @@ class ChipWhispererAnalyzer(MainChip):
         # self.console.append("Attack Done")
 
     def reloadAttackParamList(self, list=None):
+        """Reloads parameter tree in GUI when attack changes"""
+
         ExtendedParameter.reloadParams(self.attack.paramList(), self.attackParamTree)
 
     def tracesChanged(self):
+        """Traces changed due to loading new project or adjustment in trace manager,
+        so adjust limits displayed and re-plot the new input trace"""
+
         self.setTraceLimits(self.manageTraces.iface.NumTrace, self.manageTraces.iface.NumPoint)
         self.plotInputTrace()
 
     def setupPreprocessorChain(self, mod=None):
+        """Setup the preprocessor chain by chaining the first module input to the source
+        traces, the next module input to the previous module output, etc."""
+
         if mod is None:
             mod = self.setupScriptModule()
         self.preprocessingList = mod.initPreprocessing()
@@ -514,6 +558,8 @@ class ChipWhispererAnalyzer(MainChip):
         # self.reloadScripts()
 
     def plotInputTrace(self):
+        """Plot the input trace(s) as given by the GUI settings."""
+
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         self.waveformDock.widget().clearPushed()
         self.setupPreprocessorChain()
@@ -544,6 +590,7 @@ class ChipWhispererAnalyzer(MainChip):
 
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         """When traces is loaded, Tell everything default point/trace range"""
+
         if defpoint == -1:
             defpoint = points
 
@@ -568,6 +615,8 @@ class ChipWhispererAnalyzer(MainChip):
             self.findParam('pointrng').setValue((0, defpoint))
 
     def addWaveforms(self):
+        """Add waveform display dock to main window"""
+
         self.waveformDock = self.addTraceDock("Waveform Display")        #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
         self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
@@ -578,6 +627,8 @@ class ChipWhispererAnalyzer(MainChip):
     #    self.projectMenu.addAction(self.statsShowAct)
 
     def addSettingsDocks(self):
+        """Add settings dock to main window"""
+
         self.setupParametersTree()
         self.settingsNormalDock = self.addSettings(self.paramTree, "General")
         self.settingsPreprocessingDock = self.addSettings(self.preprocessingParamTree, "Preprocessing")
@@ -587,6 +638,8 @@ class ChipWhispererAnalyzer(MainChip):
 
 
     def setupParametersTree(self):
+        """Setup all parameter trees so they can be reloaded later with changes"""
+
         self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.paramTree = ParameterTree()
@@ -601,9 +654,13 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadParamListResults()
 
     def reloadParamListResults(self, lst=None):
+        """Reload parameter tree for results settings, ensuring GUI matches loaded modules."""
+
         ExtendedParameter.reloadParams(self.results.paramList(), self.resultsParamTree)
 
     def reloadParamList(self, lst=None):
+        """Reload parameter trees in a given list, ensuring GUI matches loaded modules."""
+
         ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
 
     def paramList(self):
@@ -612,6 +669,8 @@ class ChipWhispererAnalyzer(MainChip):
         return p
 
     def openProject(self, fname):
+        """Open a ChipWhisperer project file"""
+
         self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Analyzer")
         self.project().setProgramVersion("2.00")
@@ -628,6 +687,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.traceExplorerDialog.setProject(self.project())
 
     def newProject(self):
+        """Create a new ChipWhisperer project file"""
+
         #TODO: Move this to MainChip
         self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Analyzer")
@@ -638,6 +699,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.projectChanged.connect(self.traceExplorerDialog.setProject)
 
     def saveProject(self):
+        """Save a ChipWhisperer project file"""
+
         #TODO: Move to MainChip
         if self.project().hasFilename() == False:
             fd = QFileDialog(self, 'Save New File', '.', '*.cwp')
