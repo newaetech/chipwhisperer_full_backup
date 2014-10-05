@@ -19,6 +19,58 @@ Background
 Bootloader Design
 ^^^^^^^^^^^^^^^^^
 
+Communications Protocol
+:::::::::::::::::::::::
+
+The communications protocol operates over a serial port at 115200 baud rate. The bootloader is
+always waiting for new data to be sent in this example; in real life one would typically
+force the bootloader to enter through a command sequence.
+
+Commands sent to the bootloader look as follows::
+
+ +------+------+------+ ... +------+------+------+------+
+ | 0x00 |   Encrypted Block (16 Bytes)    |   CRC-16    |
+ +------+------+------+ ... +------+------+------+------+
+
+The CRC uses the 16-bit CRC-CCITT polynomial (0x1021). The LSB of the calculated CRC-16
+is sent first, followed by the MSB. The bootloader responds with a single byte indicating
+if the CRC-16 was OK or not::
+
+             +------+
+ CRC-OK:     | 0xA1 |
+             +------+
+
+             +------+
+ CRC Failed: | 0xA4 |
+             +------+
+
+
+Encrypted Block
+:::::::::::::::
+
+In this design each encrypted block is always 16 bytes long. In practical bootloaders
+a number of encrypted blocks might be sent as part of one message. To generate an
+encrypted block, the data is split into 12-byte chunks::
+
+  +------+------+------+------+ ...  +------+------+------+------+------+
+  |   Flash Data (many bytes)                                           |
+  +------+------+------+------+ ...  +------+------+------+------+------+
+
+  +------+------+ ...  +------+  +------+------+ ...  +------+  +---...
+  |   12 Bytes of Data        |  |   12 Bytes of Data        |  | 12...
+  +------+------+ ...  +------+  +------+------+ ...  +------+  +---...
+
+Each 12-byte chunk gets a 4-byte signature prepended to it. When the bootloader decrypts
+a chunk of data, it can verify the signature is as expected. This signature verification
+is required to ensure the correct encryption key was used, and the system is not just
+decrypting garbage::
+
+  +------+------+------+------+------+ ... +------+------+
+  |   Signature (4 Bytes)     | Up to 12 Bytes of Data   |
+  +------+------+------+------+------+ ... +------+------+
+
+Each of these blocks is then encrypted with AES-256 in CBC mode, discussed next.
+
 Details of AES-256 CBC
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -353,9 +405,12 @@ You should find the initial encryption key is::
 
    1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d
 
+Analysis of Encrypted Files
+---------------------------
 
-Next Steps
-----------
 
-This has only briefly outlined how to perform a CPA attack. You can move onto more advanced tutorials, especially showing you how the actual
-attack works when performed manually.
+Analysis of Traces for IV
+-------------------------
+
+Timing Attacks for Signature
+----------------------------
