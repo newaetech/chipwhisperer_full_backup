@@ -281,24 +281,77 @@ Analyzing the Traces
 13th Round Key
 ^^^^^^^^^^^^^^
 
-class AES256_2nd_Round(object):
-    def Process(pt, ct, key, bnum):
-        """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-        if pt != None:
-            raise ValueError("Not setup for that BS")
-        elif ct != None:
-            knownkey = [0xae, 0x83, 0xc1, 0xa5, 0x6b, 0xcb, 0xc6, 0x46, 0x55, 0xa3, 0xbf, 0x8d, 0x58, 0xfa, 0x20, 0x6d]
-            a = AES()
-            xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
-            block = a.mapin(xored)
-            block = a.shiftRows(block, True)
-            block = a.subBytes(block, True)
-            block = a.mixColumns(block, True)
-            block = a.shiftRows(block, True)
-            result = a.mapout(block)
-            return getHW(inv_sbox((result[bnum] ^ key)))
-        else:
-            raise ValueError("Must specify PT or CT")
+
+The following defines the required functions for our AES-256 attack on the 2nd part of the decryption key
+(i.e. the 13th round key)::
+
+   # Imports for AES256 Attack
+   from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+   from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox, inv_shiftrows, inv_mixcolumns, inv_subbytes
+
+
+   class AES256_ManualRound(object):
+       numSubKeys = 16
+
+   def AES256_13th_Round_HW(pt, ct, key, bnum):
+       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
+       if pt != None:
+           raise ValueError("Only setup for decryption attacks")
+       elif ct != None:
+           knownkey = [0xae, 0x83, 0xc1, 0xa5, 0x6b, 0xcb, 0xc6, 0x46, 0x55, 0xa3, 0xbf, 0x8d, 0x58, 0xfa, 0x20, 0x6d]
+           xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
+           block = xored
+           block = inv_shiftrows(block)
+           block = inv_subbytes(block)
+           block = inv_mixcolumns(block)
+           block = inv_shiftrows(block)
+           result = block
+           return getHW(inv_sbox((result[bnum] ^ key)))
+       else:
+           raise ValueError("Must specify PT or CT")
+
+You can look back at the C code of the AES-256 decryption to see how this is implementing the decryption code.
+Note that because of the Inverse MixCols operation, we need the entire input ciphertext, and cannot use just
+a single byte of the input ciphertext.
+
+Remember the key we determined was actually the key passed through inverse mixcols and
+inverse shiftrows. This means we need to pass the key through shiftrows and mixcols to
+remove the effect of those two functions, and determine the normal 13th round key. This
+can be done via the interactive Python console::
+
+   >>> from chipwhisperer.analyzer.models.aes.funcs import shiftrows,mixcolumns
+   >>> knownkey = [0x25, 0xA8, 0xD2, 0xDC, 0xE0, 0xA1, 0x0E, 0x7B, 0x7B, 0x59, 0xD8, 0x9C, 0x1D, 0xC0, 0x55, 0x2A]
+   >>> key = shiftrows(knownkey)
+   >>> key = mixcolumns(key)
+   >>> print " ".join(["%02x" % i for i in key])
+   40 25 51 42 b9 71 6c 94 04 f6 89 69 4b d8 16 a2
+
+At this point we have the 13th round key: ``40 25 51 42 b9 71 6c 94 04 f6 89 69 4b d8 16 a2``
+
+13th and 14th Round Keys to Initial Key
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you remember that AES decryption is just AES encryption performed in reverse, this means
+the two keys we recovered are the 13th and 14th round encryption keys. AES keys are given as
+an 'initial' key which is expanded to all round keys. In the case of AES-256 this initial key
+is directly used by the initial setup and 1st round of the algorithm.
+
+For this reason the initial key is referred to as the *0/1 Round Key* in this tutorial, and
+the key we've found is the *13/14 Round Key*. Writing out the key we do know gives us this::
+
+   40 25 51 42 B9 71 6C 94 04 F6 89 69 4B D8 16 A2 AE 83 C1 A5 6B CB C6 46 55 A3 BF 8D 58 FA 20 6D
+
+You can use the the AES key scheduling tool built into ChipWhisperer to reverse this key:
+
+.. image:: /images/tutorials/advanced/aes256/keyschedule_tool.png
+
+The tool is accessible from the *Tools* menu. Copy and paste the 32-byte known key into the
+input text line. Tell the tool this is the 13/14 round key, and it will automatically display
+the complete key schedule along with the initial encryption key.
+
+You should find the initial encryption key is::
+
+   1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d
 
 
 Next Steps

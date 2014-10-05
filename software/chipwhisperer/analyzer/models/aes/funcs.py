@@ -175,10 +175,10 @@ def inv_sbox(inp):
     return _i_sbox[inp]
 
 def subbytes(inp):
-    [sbox(i) for i in inp]
+    return [sbox(i) for i in inp]
 
 def inv_subbytes(inp):
-    [inv_sbox(i) for i in inp]
+    return [inv_sbox(i) for i in inp]
 
 
 def _shiftrow (row, shift):
@@ -198,12 +198,14 @@ def shiftrows (state):
     #Replace row with shift_row operation
     for i in 1,2,3:
         state[i::4] = _shiftrow(state[i::4],i)
+    return state
 
 def inv_shiftrows (state):
     #Extract rows as every 4th item starting at [1..3]
     #Replace row with inverse shift_row operation
     for i in 1,2,3:
         state[i::4] = _inv_shiftrow(state[i::4],-i)
+    return state
 
 def _mixcolumn (column, inverse):
     #Use galois lookup tables instead of performing complicated operations
@@ -217,13 +219,14 @@ def _mixcolumn (column, inverse):
             g1[c0]^g2[c1]^g3[c2]^g0[c3])
 
 def _mixcolumns (state, inverse):
-        #Perform mix_column for each column in the state
-        for i,j in (0,4),(4,8),(8,12),(12,16):
-            state[i:j] = _mixcolumn(state[i:j], inverse)
+    # Perform mix_column for each column in the state
+    for i, j in (0, 4), (4, 8), (8, 12), (12, 16):
+        state[i:j] = _mixcolumn(state[i:j], inverse)
+    return state
 
 def mixcolumns(state):
     return _mixcolumns(state, False)
 
 def inv_mixcolumns(state):
-    return inv_mixcolumns(state, True)
+    return _mixcolumns(state, True)
 
