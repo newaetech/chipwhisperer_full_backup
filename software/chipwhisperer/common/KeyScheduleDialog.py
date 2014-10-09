@@ -35,6 +35,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
+from chipwhisperer.common.utils import hexstrtolist
 
 class KeyScheduleDialog(QDialog):
 
@@ -134,67 +135,55 @@ class KeyScheduleDialog(QDialog):
 
         data = self.indata.text()
 
-        newdata = data.lower()
-        newdata = newdata.replace("0x", "")
-        newdata = newdata.replace(",", "")
-        newdata = newdata.replace(" ", "")
-        newdata = newdata.replace("[", "")
-        newdata = newdata.replace("]", "")
-        newdata = newdata.replace("(", "")
-        newdata = newdata.replace(")", "")
-        newdata = newdata.replace("{", "")
-        newdata = newdata.replace("}", "")
-        newdata = newdata.replace(":", "")
-        newdata = newdata.replace("-", "")
+        try:
+            newdata = hexstrtolist(data)
 
-        if len(newdata) != 32 and len(newdata) != 64:
-            err = "ERR: Len=%d: %s" % (len(newdata), newdata)
-            self.outkey.setText(err)
-            self.keysched.setText(err)
-        else:
-            if len(newdata) == 32:
-                self.setKeyLength(128)
-            elif len(newdata) == 64:
-                self.setKeyLength(256)
+            if len(newdata) != 16 and len(newdata) != 32:
+                err = "ERR: Len=%d: %s" % (len(newdata), newdata)
+                self.outkey.setText(err)
+                self.keysched.setText(err)
+            else:
+                if len(newdata) == 16:
+                    self.setKeyLength(128)
+                elif len(newdata) == 32:
+                    self.setKeyLength(256)
 
-            # Convert to hex
-            try:
-                key = [int(newdata[i:(i + 2)], 16) for i in range(0, len(newdata), 2)]
-            except ValueError:
-                self.outkey.setText("ERR in HEX: %s" % newdata)
+                #Read settings
+                delim = self.outmode.itemData(self.outmode.currentIndex())
+                desired = 0
+                inpround = self.inprnd.itemData(self.inprnd.currentIndex())
 
-            #Read settings
-            delim = self.outmode.itemData(self.outmode.currentIndex())
-            desired = 0
-            inpround = self.inprnd.itemData(self.inprnd.currentIndex())
+                key = newdata
 
-            # Get initial key
-            result = keyScheduleRounds(key, inpround, desired)
-            if len(newdata) == 64:
-                result.extend(keyScheduleRounds(key, inpround, desired + 1))
+                # Get initial key
+                result = keyScheduleRounds(key, inpround, desired)
+                if len(key) == 32:
+                    result.extend(keyScheduleRounds(key, inpround, desired + 1))
 
-            rstr = ["%02x" % t for t in result]
-            rstr = (delim[1] + delim[0]).join(rstr)
-            rstr = delim[0] + rstr
-
-            self.outkey.setText(rstr)
-
-            # Get entire key schedule
-            if len(newdata) == 32:
-                rnds = 10
-            elif len(newdata)== 64:
-                rnds = 14
-
-            totalrndstr = ""
-            for r in range(0, rnds+1):
-                result = keyScheduleRounds(key, inpround, r)
                 rstr = ["%02x" % t for t in result]
                 rstr = (delim[1] + delim[0]).join(rstr)
                 rstr = delim[0] + rstr
-                totalrndstr += rstr + "\n"
 
-            self.keysched.setText(totalrndstr)
+                self.outkey.setText(rstr)
 
+                # Get entire key schedule
+                if len(key) == 16:
+                    rnds = 10
+                elif len(key) == 32:
+                    rnds = 14
+
+                totalrndstr = ""
+                for r in range(0, rnds+1):
+                    result = keyScheduleRounds(key, inpround, r)
+                    rstr = ["%02x" % t for t in result]
+                    rstr = (delim[1] + delim[0]).join(rstr)
+                    rstr = delim[0] + rstr
+                    totalrndstr += rstr + "\n"
+
+                self.keysched.setText(totalrndstr)
+
+        except ValueError:
+            self.outkey.setText("ERR in HEX: %s" % data)
 
 
 if __name__ == '__main__':

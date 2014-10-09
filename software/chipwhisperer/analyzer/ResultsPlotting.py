@@ -35,6 +35,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.common.GraphWidget import GraphWidget
+from chipwhisperer.common.utils import hexstrtolist
 
 from functools import partial
 
@@ -60,8 +61,11 @@ class ResultsPlotting(QObject):
     def __init__(self):
         super(ResultsPlotting, self).__init__()
 
+        self.override = None
+
         #ResultsTable manages class
         self.table = ResultsTable()
+        self.table.setKeyOverride(self.processKnownKey)
 
         self.graphoutput = OutputVsTime()
         self.GraphOutputDock = QDockWidget(self.graphoutput.name)
@@ -69,6 +73,7 @@ class ResultsPlotting(QObject):
         self.GraphOutputDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.GraphOutputDock.setWidget(self.graphoutput)
         self.graphoutput.setDock(self.GraphOutputDock)
+        self.graphoutput.setKeyOverride(self.processKnownKey)
 
         self.pgegraph = PGEVsTrace()
         self.PGEGraphDock = QDockWidget(self.pgegraph.name)
@@ -76,12 +81,20 @@ class ResultsPlotting(QObject):
         self.PGEGraphDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.PGEGraphDock.setWidget(self.pgegraph)
         self.pgegraph.setDock(self.PGEGraphDock)
+        self.pgegraph.setKeyOverride(self.processKnownKey)
 
+        resultsParams = [{'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
+                                                    'value':'attack', 'set':self.setKnownKeySrc},
+
+                         {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKeyStr, 'readonly':True},
+                      ]
+        self.params = Parameter.create(name="General Parameters", type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params, self)
 
     def paramList(self):
         """Returns list of parameters for parameter tree GUI display"""
 
-        p = [self.table.params, self.graphoutput.params, self.pgegraph.params]
+        p = [self.table.params, self.graphoutput.params, self.pgegraph.params, self.params]
         return p
 
     def dockList(self):
@@ -138,6 +151,33 @@ class ResultsPlotting(QObject):
         self.table.updateTable()
         self.updateKnownKey()
 
+    def setKnownKeySrc(self, keysrc):
+        """Set key as 'attack' or 'override'"""
+        if keysrc == 'attack':
+            self.findParam('knownkey').setReadonly(True)
+            self.override = None
+        elif keysrc == 'gui':
+            self.findParam('knownkey').setReadonly(False)
+        else:
+            raise ValueError("Key Source Error")
+
+    def setKnownKeyStr(self, strkey):
+        """Override known key by user selection"""
+        try:
+            hexkey = hexstrtolist(strkey)
+            self.override = hexkey
+
+        except ValueError:
+            QMessageBox.warning(None, "Key Selection", "Could not convert '%s' to hex, key unchanged!" % strkey)
+
+    def processKnownKey(self, key):
+        """Process known key in case of override by user"""
+
+        if self.override:
+            return self.override
+        return key
+
+
 class ResultsPlotData(GraphWidget):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
@@ -152,9 +192,10 @@ class ResultsPlotData(GraphWidget):
 
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
-        self.knownkey = None
+        self._knownkey = None
         self.enabledbytes = [False]*subkeys
         self.doRedraw = True
+        self.orfunction = None
 
         self.byteNumAct = []
         for i in range(0,self.numKeys):
@@ -200,7 +241,14 @@ class ResultsPlotData(GraphWidget):
 
     def setKnownKey(self, knownkey):
         """Set the known encryption key (used for highlighting)"""
-        self.knownkey = knownkey
+        self._knownkey = knownkey
+
+    def knownkey(self):
+        """Get the known key"""
+        if self.orfunction:
+            return self.orfunction(self._knownkey)
+        else:
+            return self._knownkey
 
     def setBytePlot(self, num, sel):
         """Set which bytes to plot"""
@@ -225,13 +273,16 @@ class ResultsPlotData(GraphWidget):
         """Initialize the highlights based on the known key"""
         self.highlights = []
 
-        highlights = self.knownkey
+        highlights = self.knownkey()
 
         for i in range(0, self.numKeys):
             if highlights is not None:
                 self.highlights.append([highlights[i]])
             else:
                 self.highlights.append([None])
+
+    def setKeyOverride(self, orfunction):
+        self.orfunction = orfunction
 
     def _highlightColour(self, index):
         if index == 0:
@@ -529,6 +580,8 @@ class ResultsTable(QObject):
     def __init__(self, subkeys=16, permPerSubkey=256, useAbs=True):
         super(ResultsTable, self).__init__()
 
+        self.orfunction = None
+
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
@@ -565,7 +618,7 @@ class ResultsTable(QObject):
         self.numPerms = permPerSubkey
         self.setBytesEnabled([])
         self.useAbs = useAbs
-        self.knownkey = None
+        self._knownkey = None
         self.useSingle = False
 
         resultsParams = [
@@ -617,7 +670,21 @@ class ResultsTable(QObject):
     def setKnownKey(self, knownkey):
         """Set the known encryption key, required for PGE calculation"""
 
-        self.knownkey = knownkey
+        self._knownkey = knownkey
+
+
+    def knownkey(self):
+        """Get the known key"""
+        if self.orfunction:
+            return self.orfunction(self._knownkey)
+        else:
+            return self._knownkey
+
+    def setKeyOverride(self, orfunc):
+        """Set key override function in case we don't want to use one from attack"""
+
+        self.orfunction = orfunc
+
 
     def setAbsoluteMode(self, enabled):
         """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
@@ -633,9 +700,13 @@ class ResultsTable(QObject):
         """Resort data and redraw the table. If update-mode is 'pge' we only redraw entire table
         when 'attackDone' is True."""
 
+        # Process known key via attack
         nk = self.attack.trace.getKnownKey(self.startTrace)
         nk = self.attack.processKnownKey(nk)
+
+        # If GUI has override, process it too
         self.setKnownKey(nk)
+        nk = self.knownkey()
 
         attackStats = self.attack.getStatistics()
         attackStats.setKnownkey(nk)
@@ -654,7 +725,7 @@ class ResultsTable(QObject):
                     for j in range(0,self.numPerms):
                         self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
 
-                        highlights = self.knownkey
+                        highlights = self.knownkey()
 
                         if highlights is not None:
                             try:
