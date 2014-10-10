@@ -37,7 +37,9 @@ except ImportError:
 from chipwhisperer.common.GraphWidget import GraphWidget
 from chipwhisperer.common.utils import hexstrtolist
 
+from datetime import datetime
 from functools import partial
+import copy
 
 import numpy as np
 
@@ -83,10 +85,13 @@ class ResultsPlotting(QObject):
         self.pgegraph.setDock(self.PGEGraphDock)
         self.pgegraph.setKeyOverride(self.processKnownKey)
 
+        self.saveresults = ResultsSave()
+
         resultsParams = [{'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
                                                     'value':'attack', 'set':self.setKnownKeySrc},
 
                          {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKeyStr, 'readonly':True},
+                         {'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.saveresults.setEnabled}
                       ]
         self.params = Parameter.create(name="General Parameters", type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -112,7 +117,9 @@ class ResultsPlotting(QObject):
         self.attack.settingsChanged.connect(self.attackSettingsChanged)
         self.graphoutput.setAttack(attack)
         self.pgegraph.setAttack(attack)
+        self.saveresults.setAttack(attack)
         self.attackSettingsChanged()
+
 
     def attackSettingsChanged(self):
         """Attack settings have changed, so pass required changes to other modules such as plotting"""
@@ -740,3 +747,93 @@ class ResultsTable(QObject):
         self.table.resizeRowsToContents()
         self.table.resizeColumnsToContents()
         self.ResultsTable.setVisible(True)
+
+
+class ResultsSave(QObject):
+    """Save Correlation Output to Files"""
+
+    def __init__(self):
+        super(ResultsSave, self).__init__()
+
+        self._filename = None
+        self._enabled = False
+        self.dataarray = None
+
+
+    def paramList(self):
+        """Returns list for parameter tree in settings dock"""
+
+        return []
+
+    def setBytesEnabled(self, enabledbytes):
+        """Set what bytes to include in table"""
+
+        self.enabledBytes = enabledbytes
+
+    def setStartTrace(self, starttrace):
+        """Set starting trace number"""
+
+        self.startTrace = starttrace
+
+    def setAttack(self, attack):
+        """Set source of statistics (i.e. attack)"""
+
+        self.attack = attack
+        self.attack.attackDone.connect(self.attackDone)
+        self.attack.statsUpdated.connect(self.attackStatsUpdated)
+
+    def setKnownKey(self, knownkey):
+        """Set the known encryption key, required for PGE calculation"""
+
+        self._knownkey = knownkey
+
+    def attackStatsUpdated(self):
+        """Stats have been updated"""
+
+        if self._enabled == False:
+            return
+
+        attackStats = self.attack.getStatistics()
+        # attackStats.setKnownkey(nk)
+        # attackStats.findMaximums(useAbsolute=self.useAbs)
+
+        # attackStats.diffs[i][hypkey]
+        # attackStats.diffs_tnum[i]
+
+        if self._filename is None:
+
+            # Generate filename
+            self._filename = "tempstats_%s.npy" % datetime.now().strftime('%Y%m%d_%H%M%S')
+
+            # Generate Array
+            self.dataarray = []
+
+
+        # Record max & min, used as we don't know if user wanted absolute mode or not
+        numkeys = len(attackStats.diffs)
+        numhyps = len(attackStats.diffs[0])
+
+        tempmin = np.ndarray((numkeys, numhyps))
+        tempmax = np.ndarray((numkeys, numhyps))
+
+        for i in range(0, numkeys):
+            for j in range(0, numhyps):
+                tempmax[i][j] = np.nanmax(attackStats.diffs[i][j])
+                tempmin[i][j] = np.nanmin(attackStats.diffs[i][j])
+
+        newdata = {"tracecnt":copy.deepcopy(attackStats.diffs_tnum), "diffsmax":tempmax, "diffsmin":tempmin}
+
+        self.dataarray.append(newdata)
+        np.save(self._filename, self.dataarray)
+
+    def attackDone(self):
+        """Attack is done"""
+
+        self._filename = None
+        self.dataarray = None
+
+    def setEnabled(self, enabled):
+        self._enabled = enabled
+
+
+
