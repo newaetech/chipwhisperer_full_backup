@@ -272,19 +272,15 @@ This tutorial uses a simple script that ships with the ChipWhisperer Capture sof
 4. Finally save this project using the *File --> Save Project* option, give it any name you want.
 
 
-Analyzing the Traces
---------------------
+Analyzing of Power Traces for Key
+---------------------------------
 
 14th Round Key
 ^^^^^^^^^^^^^^
 
 1. Open the Analyzer software
 2. From the *File --> Open Project* option, navigate to the `.cwp` file you save previously. Open this file.
-3. Select the *Project --> Manage Traces* option to open the dialog, enable the captured traces by adding a check-mark in the box. Close the dialog with `ESC`:
-
-   .. image:: /images/tutorials/basic/aes/tracemanage.png
-
-4. If you wish to view the trace data, follow these steps:
+3. If you wish to view the trace data, follow these steps:
 
    1. Switch to the *Waveform Display* tab
    2. Switch to the *General* parameter setting tab
@@ -350,7 +346,7 @@ The following defines the required functions for our AES-256 attack on the 2nd p
        if pt != None:
            raise ValueError("Only setup for decryption attacks")
        elif ct != None:
-           knownkey = [0xae, 0x83, 0xc1, 0xa5, 0x6b, 0xcb, 0xc6, 0x46, 0x55, 0xa3, 0xbf, 0x8d, 0x58, 0xfa, 0x20, 0x6d]
+           knownkey = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
            xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
            block = xored
            block = inv_shiftrows(block)
@@ -372,13 +368,13 @@ remove the effect of those two functions, and determine the normal 13th round ke
 can be done via the interactive Python console::
 
    >>> from chipwhisperer.analyzer.models.aes.funcs import shiftrows,mixcolumns
-   >>> knownkey = [0x25, 0xA8, 0xD2, 0xDC, 0xE0, 0xA1, 0x0E, 0x7B, 0x7B, 0x59, 0xD8, 0x9C, 0x1D, 0xC0, 0x55, 0x2A]
+   >>> knownkey = [0xC6, 0xBD, 0x4E, 0x50, 0xAB, 0xCA, 0x75, 0x77, 0x79, 0x87, 0x96, 0xCA, 0x1C, 0x7F, 0xC5, 0x82]
    >>> key = shiftrows(knownkey)
    >>> key = mixcolumns(key)
    >>> print " ".join(["%02x" % i for i in key])
-   40 25 51 42 b9 71 6c 94 04 f6 89 69 4b d8 16 a2
+   c6 6a a6 12 4a ba 4d 04 4a 22 03 54 5b 28 0e 63
 
-At this point we have the 13th round key: ``40 25 51 42 b9 71 6c 94 04 f6 89 69 4b d8 16 a2``
+At this point we have the 13th round key: ``c6 6a a6 12 4a ba 4d 04 4a 22 03 54 5b 28 0e 63``
 
 13th and 14th Round Keys to Initial Key
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -391,7 +387,7 @@ is directly used by the initial setup and 1st round of the algorithm.
 For this reason the initial key is referred to as the *0/1 Round Key* in this tutorial, and
 the key we've found is the *13/14 Round Key*. Writing out the key we do know gives us this::
 
-   40 25 51 42 B9 71 6C 94 04 F6 89 69 4B D8 16 A2 AE 83 C1 A5 6B CB C6 46 55 A3 BF 8D 58 FA 20 6D
+   c6 6a a6 12 4a ba 4d 04 4a 22 03 54 5b 28 0e 63 ea 79 79 20 c8 71 44 7d 46 62 5f 51 85 c1 3b cb
 
 You can use the the AES key scheduling tool built into ChipWhisperer to reverse this key:
 
@@ -403,14 +399,46 @@ the complete key schedule along with the initial encryption key.
 
 You should find the initial encryption key is::
 
-   1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d 1a 2b 3c 4d
+   94 28 5d 4d 6d cf ec 08 d8 ac dd f6 be 25 a4 99 c4 d9 d0 1e c3 40 7e d7 d5 28 d4 09 e9 f0 88 a1
 
 Analysis of Encrypted Files
 ---------------------------
 
+Analysis of Power Traces for IV
+-------------------------------
 
-Analysis of Traces for IV
--------------------------
+Example::
+
+   #Imports for IV Attack
+   from Crypto.Cipher import AES
+
+    def initPreprocessing(self):
+        self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+        self.preProcessingResyncSAD0.setEnabled(True)
+        self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(6300,6800), inputwindow=(6000,7200))
+        self.preProcessingResyncSAD1 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+        self.preProcessingResyncSAD1.setEnabled(True)
+        self.preProcessingResyncSAD1.setReference(rtraceno=0, refpoints=(4800,5100), inputwindow=(4700,5200))
+        self.preProcessingList = [self.preProcessingResyncSAD0,self.preProcessingResyncSAD1,]
+        return self.preProcessingList
+
+   def AES256_IV_HW(pt, ct, key, bnum):
+       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
+       if pt != None:
+           raise ValueError("Only setup for decryption attacks")
+       elif ct != None:
+           knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,
+                       0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]
+           knownkey = str(bytearray(knownkey))
+           ct = str(bytearray(ct))
+
+           aes = AES.new(knownkey, AES.MODE_ECB)
+           pt = aes.decrypt(ct)
+           return getHW(bytearray(pt)[bnum] ^ key)
+       else:
+           raise ValueError("Must specify PT or CT")
+
+
 
 Timing Attacks for Signature
 ----------------------------
