@@ -3,6 +3,7 @@
 Tutorial #A5: Breaking AES-256 Bootloader
 =========================================
 
+***THIS TUTORIAL IS INCOMPLETE AND STILL BEING UPDATED***
 
 This tutorial will take you through a complete attack on an encrypted bootloader using AES-256.
 This demonstrates how to using side-channel power analysis on practical systems, along with
@@ -442,3 +443,543 @@ Example::
 
 Timing Attacks for Signature
 ----------------------------
+
+Appendix A: Capture Script
+--------------------------
+
+The following::
+
+   #!/usr/bin/python
+   # -*- coding: utf-8 -*-
+   #
+   # Copyright (c) 2013-2014, NewAE Technology Inc
+   # All rights reserved.
+   #
+   # Authors: Colin O'Flynn
+   #
+   # Find this and more at newae.com - this file is part of the chipwhisperer
+   # project, http://www.assembla.com/spaces/chipwhisperer
+   #
+   #    This file is part of chipwhisperer.
+   #
+   #    chipwhisperer is free software: you can redistribute it and/or modify
+   #    it under the terms of the GNU General Public License as published by
+   #    the Free Software Foundation, either version 3 of the License, or
+   #    (at your option) any later version.
+   #
+   #    chipwhisperer is distributed in the hope that it will be useful,
+   #    but WITHOUT ANY WARRANTY; without even the implied warranty of
+   #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   #    GNU Lesser General Public License for more details.
+   #
+   #    You should have received a copy of the GNU General Public License
+   #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+   #=================================================
+   #
+   #
+   #
+   # This example captures data using the ChipWhisperer Rev2 capture hardware.
+   # The target is a SimpleSerial board attached to the ChipWhisperer.
+   #
+   # Data is saved into both a project file and a MATLAB array
+   #
+
+   #Setup path
+   import sys
+
+   import time
+
+   #Import the ChipWhispererCapture module
+   import chipwhisperer.capture.ChipWhispererCapture as cwc
+   from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
+   from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial_ChipWhisperer
+
+   #Check for PySide
+   try:
+       from PySide.QtCore import *
+       from PySide.QtGui import *
+   except ImportError:
+       print "ERROR: PySide is required for this program"
+       sys.exit()
+
+   import thread
+
+   import scipy.io as sio
+
+   exitWhenDone=False
+
+   def pe():
+       QCoreApplication.processEvents()
+
+   # Class Crc
+   #############################################################
+   # These CRC routines are copy-pasted from pycrc, which are:
+   # Copyright (c) 2006-2013 Thomas Pircher <tehpeh@gmx.net>
+   #
+   class Crc(object):
+       """
+       A base class for CRC routines.
+       """
+
+       def __init__(self, width, poly):
+           """The Crc constructor.
+
+           The parameters are as follows:
+               width
+               poly
+               reflect_in
+               xor_in
+               reflect_out
+               xor_out
+           """
+           self.Width = width
+           self.Poly = poly
+
+
+           self.MSB_Mask = 0x1 << (self.Width - 1)
+           self.Mask = ((self.MSB_Mask - 1) << 1) | 1
+
+           self.XorIn = 0x0000
+           self.XorOut = 0x0000
+
+           self.DirectInit = self.XorIn
+           self.NonDirectInit = self.__get_nondirect_init(self.XorIn)
+           if self.Width < 8:
+               self.CrcShift = 8 - self.Width
+           else:
+               self.CrcShift = 0
+
+       def __get_nondirect_init(self, init):
+           """
+           return the non-direct init if the direct algorithm has been selected.
+           """
+           crc = init
+           for i in range(self.Width):
+               bit = crc & 0x01
+               if bit:
+                   crc ^= self.Poly
+               crc >>= 1
+               if bit:
+                   crc |= self.MSB_Mask
+           return crc & self.Mask
+
+
+       def bit_by_bit(self, in_data):
+           """
+           Classic simple and slow CRC implementation.  This function iterates bit
+           by bit over the augmented input message and returns the calculated CRC
+           value at the end.
+           """
+           # If the input data is a string, convert to bytes.
+           if isinstance(in_data, str):
+               in_data = [ord(c) for c in in_data]
+
+           register = self.NonDirectInit
+           for octet in in_data:
+               for i in range(8):
+                   topbit = register & self.MSB_Mask
+                   register = ((register << 1) & self.Mask) | ((octet >> (7 - i)) & 0x01)
+                   if topbit:
+                       register ^= self.Poly
+
+           for i in range(self.Width):
+               topbit = register & self.MSB_Mask
+               register = ((register << 1) & self.Mask)
+               if topbit:
+                   register ^= self.Poly
+
+           return register ^ self.XorOut
+
+   class BootloaderTarget(TargetTemplate):
+       paramListUpdated = Signal(list)
+
+       def setupParameters(self):
+           self.ser = SimpleSerial_ChipWhisperer()
+           self.keylength = 16
+           self.input = ""
+           self.crc = Crc(width=16, poly=0x1021)
+
+       def setOpenADC(self, oadc):
+           try:
+               self.ser.setOpenADC(oadc)
+           except:
+               pass
+
+       def setKeyLen(self, klen):
+           """ Set key length in BITS """
+           self.keylength = klen / 8
+
+       def keyLen(self):
+           """ Return key length in BYTES """
+           return self.keylength
+
+
+       def paramList(self):
+           return []
+
+       def con(self):
+           self.ser.con()
+           self.ser.flush()
+
+       def dis(self):
+           self.close()
+
+       def close(self):
+           if self.ser != None:
+               self.ser.close()
+               self.ser = None
+           return
+
+       def init(self):
+           pass
+
+       def setModeEncrypt(self):
+           return
+
+       def setModeDecrypt(self):
+           return
+
+       def loadEncryptionKey(self, key):
+           pass
+
+       def loadInput(self, inputtext):
+           self.input = inputtext
+
+       def isDone(self):
+           return True
+
+       def readOutput(self):
+           #No actual output
+           return [0] * 16
+
+       def go(self):
+           # Starting byte is 0x00
+           message = [0x00]
+
+           # Append 16 bytes of data
+           message.extend(self.input)
+
+           # Append 2 bytes of CRC for input only (not including 0x00)
+           crcdata = self.crc.bit_by_bit(self.input)
+
+           message.append(crcdata >> 8)
+           message.append(crcdata & 0xff)
+
+           # Write message
+           for i in range(0, 5):
+               self.ser.flush()
+               self.ser.write(message)
+               time.sleep(0.1)
+               data = self.ser.read(1)
+
+               if len(data) > 0:
+                   resp = ord(data[0])
+
+                   if resp == 0xA4:
+                       # Encryption run OK
+                       break
+
+                   if resp != 0xA1:
+                       raise IOError("Bad Response %x" % resp)
+
+           if len(data) > 0:
+               if resp != 0xA4:
+                   raise IOError("Failed to communicate, last response: %x" % resp)
+           else:
+               raise IOError("Failed to communicate, no response")
+
+       def checkEncryptionKey(self, kin):
+           return kin
+
+   class userScript(QObject):
+
+       def __init__(self, capture):
+           super(userScript, self).__init__()
+           self.capture = capture
+
+
+       def run(self):
+           cap = self.capture
+
+           #User commands here
+           print "***** Starting User Script *****"
+
+           tbootloader = BootloaderTarget()
+
+           cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
+           cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
+
+           cap.target.setDriver(tbootloader)
+
+           #Load FW (must be configured in GUI first)
+           cap.FWLoaderGo()
+
+           #NOTE: You MUST add this call to pe() to process events. This is done automatically
+           #for setParameter() calls, but everything else REQUIRES this
+           pe()
+
+           cap.doConDis()
+
+           pe()
+
+           #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+           lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
+                         ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                         ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
+                         ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
+                         ['OpenADC', 'Trigger Setup', 'Total Samples', 11000],
+                         ['OpenADC', 'Trigger Setup', 'Offset', 0],
+                         ['OpenADC', 'Gain Setting', 'Setting', 45],
+                         ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
+                         #Final step: make DCMs relock in case they are lost
+                         ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
+
+                         ['Generic Settings', 'Auxilary Module', 'Toggle FPGA-GPIO Pins'],
+                         ['GPIO Toggle', 'Standby State', 'High'],
+                         ['GPIO Toggle', 'Post-Toggle Delay', 150],
+                         ['GPIO Toggle', 'Toggle Length', 100],
+                         ]
+
+           # For IV: offset = 70000
+
+           #Download all hardware setup parameters
+           for cmd in lstexample: cap.setParameter(cmd)
+
+           #Let's only do a few traces
+           cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
+
+           #Throw away first few
+           cap.capture1()
+           pe()
+           cap.capture1()
+           pe()
+
+           print "***** Ending User Script *****"
+
+
+   if __name__ == '__main__':
+       #Make the application
+       app = cwc.makeApplication()
+
+       #If you DO NOT want to overwrite/use settings from the GUI version including
+       #the recent files list, uncomment the following:
+       #app.setApplicationName("Capture V2 Scripted")
+
+       #Get main module
+       capture = cwc.ChipWhispererCapture()
+
+       #Show window - even if not used
+       capture.show()
+
+       #NB: Must call processEvents since we aren't using proper event loop
+       pe()
+       # Call user-specific commands
+       usercommands = userScript(capture)
+
+       usercommands.run()
+
+       app.exec_()
+
+       sys.exit()
+
+
+Appendix B: AES-256 14th Round Key Script
+-----------------------------------------
+
+Full attack script, copy/paste into a file then add as active attack script::
+
+   # AES-256 14th Round Key Attack
+   from chipwhisperer.common.autoscript import AutoScriptBase
+   #Imports from Preprocessing
+   import chipwhisperer.analyzer.preprocessing as preprocessing
+   #Imports from Capture
+   from chipwhisperer.analyzer.attacks.CPA import CPA
+   from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
+   import chipwhisperer.analyzer.attacks.models.AES128_8bit
+   #Imports from utilList
+
+   class userScript(AutoScriptBase):
+       preProcessingList = []
+       def initProject(self):
+           pass
+
+       def initPreprocessing(self):
+           self.preProcessingList = []
+           return self.preProcessingList
+
+       def initAnalysis(self):
+           self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
+           self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit,chipwhisperer.analyzer.attacks.models.AES128_8bit.HypHW)
+           self.attack.setTraceStart(0)
+           self.attack.setTracesPerAttack(99)
+           self.attack.setIterations(1)
+           self.attack.setReportingInterval(10)
+           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setKeyround(0)
+           self.attack.setDirection('dec')
+           self.attack.setTraceManager(self.traceManager())
+           self.attack.setProject(self.project())
+           self.attack.setPointRange((0,10992))
+           return self.attack
+
+       def initReporting(self, results):
+           results.setAttack(self.attack)
+           results.setTraceManager(self.traceManager())
+           self.results = results
+
+       def doAnalysis(self):
+           self.attack.doAttack()
+
+Appendix C: AES-256 13th Round Key Script
+-----------------------------------------
+
+Full attack script, copy/paste into a file then add as active attack script::
+
+   # AES-256 13th Round Key Script
+   from chipwhisperer.common.autoscript import AutoScriptBase
+   #Imports from Preprocessing
+   import chipwhisperer.analyzer.preprocessing as preprocessing
+   #Imports from Capture
+   from chipwhisperer.analyzer.attacks.CPA import CPA
+   from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
+   import chipwhisperer.analyzer.attacks.models.AES128_8bit
+   # Imports from utilList
+
+   # Imports for AES256 Attack
+   from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+   from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox, inv_shiftrows, inv_mixcolumns, inv_subbytes
+
+   class AES256_ManualRound(object):
+       numSubKeys = 16
+
+   def AES256_13th_Round_HW(pt, ct, key, bnum):
+       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
+       if pt != None:
+           raise ValueError("Only setup for decryption attacks")
+       elif ct != None:
+           knownkey = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
+           xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
+           block = xored
+           block = inv_shiftrows(block)
+           block = inv_subbytes(block)
+           block = inv_mixcolumns(block)
+           block = inv_shiftrows(block)
+           result = block
+           return getHW(inv_sbox((result[bnum] ^ key)))
+       else:
+           raise ValueError("Must specify PT or CT")
+
+   class userScript(AutoScriptBase):
+       preProcessingList = []
+       def initProject(self):
+           pass
+
+       def initPreprocessing(self):
+           self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+           self.preProcessingResyncSAD0.setEnabled(True)
+           self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(9063,9177), inputwindow=(9010,9180))
+           self.preProcessingList = [self.preProcessingResyncSAD0,]
+           return self.preProcessingList
+
+       def initAnalysis(self):
+           self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
+           self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_13th_Round_HW)
+           self.attack.setTraceStart(0)
+           self.attack.setTracesPerAttack(100)
+           self.attack.setIterations(1)
+           self.attack.setReportingInterval(25)
+           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setKeyround(0)
+           self.attack.setDirection('dec')
+           self.attack.setTraceManager(self.traceManager())
+           self.attack.setProject(self.project())
+           self.attack.setPointRange((8000,10990))
+           return self.attack
+
+       def initReporting(self, results):
+           results.setAttack(self.attack)
+           results.setTraceManager(self.traceManager())
+           self.results = results
+
+       def doAnalysis(self):
+           self.attack.doAttack()
+
+Appendix D: AES-256 IV Attack Script
+------------------------------------
+
+Full attack script, copy/paste into a file then add as active attack script::
+
+   # Date Auto-Generated: 2014.10.04-18.35.13
+   from chipwhisperer.common.autoscript import AutoScriptBase
+   #Imports from Preprocessing
+   import chipwhisperer.analyzer.preprocessing as preprocessing
+   #Imports from Capture
+   from chipwhisperer.analyzer.attacks.CPA import CPA
+   from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
+   import chipwhisperer.analyzer.attacks.models.AES128_8bit
+   # Imports from utilList
+
+   # Imports for AES256 Attack
+   from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+
+   #Imports for IV Attack
+   from Crypto.Cipher import AES
+
+   class AES256_ManualRound(object):
+       numSubKeys = 16
+
+   def AES256_IV_HW(pt, ct, key, bnum):
+       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
+       if pt != None:
+           raise ValueError("Only setup for decryption attacks")
+       elif ct != None:
+           knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,
+                       0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]
+           knownkey = str(bytearray(knownkey))
+           ct = str(bytearray(ct))
+
+           aes = AES.new(knownkey, AES.MODE_ECB)
+           pt = aes.decrypt(ct)
+           return getHW(bytearray(pt)[bnum] ^ key)
+       else:
+           raise ValueError("Must specify PT or CT")
+
+   class userScript(AutoScriptBase):
+       preProcessingList = []
+       def initProject(self):
+           pass
+
+       def initPreprocessing(self):
+           self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+           self.preProcessingResyncSAD0.setEnabled(True)
+           self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(6300,6800), inputwindow=(6000,7200))
+           self.preProcessingResyncSAD1 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+           self.preProcessingResyncSAD1.setEnabled(True)
+           self.preProcessingResyncSAD1.setReference(rtraceno=0, refpoints=(4800,5100), inputwindow=(4700,5200))
+           self.preProcessingList = [self.preProcessingResyncSAD0,self.preProcessingResyncSAD1,]
+           return self.preProcessingList
+
+       def initAnalysis(self):
+           self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
+           #self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_IV_HW)
+           self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_13th_Round_HW)
+           self.attack.setTraceStart(0)
+           self.attack.setTracesPerAttack(100)
+           self.attack.setIterations(1)
+           self.attack.setReportingInterval(25)
+           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setKeyround(0)
+           self.attack.setDirection('dec')
+           self.attack.setTraceManager(self.traceManager())
+           self.attack.setProject(self.project())
+           self.attack.setPointRange((4800,6500))
+           return self.attack
+
+       def initReporting(self, results):
+           results.setAttack(self.attack)
+           results.setTraceManager(self.traceManager())
+           self.results = results
+
+       def doAnalysis(self):
+           self.attack.doAttack()
+
