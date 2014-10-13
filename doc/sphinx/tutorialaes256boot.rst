@@ -11,11 +11,10 @@ discussing how to perform custom scripts along with custom analysis scripts.
 
 Whilst the tutorial assumes you will be performing the entire capture of traces along with the
 attack, it is possible to download the traces if you don't have the hardware, in which case skip
-to section TODO XREF.
+section :ref:`aes256settinghw` and :ref:`aes256capturing`.
 
 Background
 ----------
-
 
 Bootloader Design
 ^^^^^^^^^^^^^^^^^
@@ -195,12 +194,16 @@ Performing the complete AES-256 side channel analysis attack will thus require t
    encryption key.
 
 
+.. _aes256settinghw:
+
 Setting up the Hardware
 -----------------------
 
+
 This tutorial uses the :ref:`hwcapturerev2` hardware along with the :ref:`hwmultitarget`
 board. Note that you **don't need hardware** to complete the tutorial. Instead you can
-download `example traces from the ChipWhisperer Site <https://www.assembla.com/spaces/chipwhisperer/wiki/Example_Captures>`__.
+download `example traces from the ChipWhisperer Site <https://www.assembla.com/spaces/chipwhisperer/wiki/Example_Captures>`__,
+just look for the traces titled *AVR: AES256 Bootloader (ChipWhisperer Tutorial #A5)*.
 
 This example uses the Atmel AVR in 28-pin DIP programmed with a demo bootloader. You can see instructions for programming in the
 :ref:`installing` section, this tutorial assumes you have the programmer aspect working.
@@ -232,43 +235,41 @@ Jumpers on the Multi-Target Victim board are as follows:
 Building/Programming the Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+TODO
 
-Setting up the Software
------------------------
+.. _aes256capturing:
+
+Capturing the Traces
+--------------------
 
 It is assumed that you've already followed the guide in :ref:`installing`. Thus it is assumed you are able to communicate with the ChipWhisperer Capture Rev2 hardware (or
 whatever capture hardware you are using). Note in particular you must have configured the FPGA bitstream in the ChipWhisperer-Capture software, all part of the
 description in the :ref:`installing` guide.
 
-
-Capturing the Traces
---------------------
-
-
 Communication with the Bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Capturing the Traces
-^^^^^^^^^^^^^^^^^^^^
+Running the Capture
+^^^^^^^^^^^^^^^^^^^
 
-This tutorial uses a simple script that ships with the ChipWhisperer Capture software. The easiest method of accomplishing the trace capture is as follows:
+Capturing the traces will requires a special capture script. This capture script is given in :ref:`aes256capturescript`. Running this script will start
+the ChipWhisperer capture system up with the bootloader communications module inserted. Your attack should look like this:
 
-1. Close & reopen the capture software (to clear out any previous connection which may be invalid).
-2. From the *Project* menu elect the *Example Scripts* and then *ChipWhisperer-Rev2: SimpleSerial Target*
+1. Run the python program given in :ref:`aes256capturescript`
 
-   .. image:: /images/tutorials/basic/aes/runscript.png
+2. The ChipWhisperer will automatically connect to the bootloader. You should see a window that looks like this,
+   where the every time you run a 'Capture 1' the status will update. If you see another status such as CRC Error
+   or no response, something is not working:
 
-3. The script will automatically connect to the capture hardware and run 2 example traces. You should see something that looks like the following screen:
-
-   .. image:: /images/tutorials/basic/aes/capture.png
+   .. image:: /images/tutorials/advanced/aes256/capture_examplescript.png
 
    To complete the tutorial, follow these steps:
 
        1. Switch to the *General Settings* tab
-       2. If you wish to change the number of traces, do so here. The default of 50 should be sufficient to break AES though!
+       2. Change the number of traces, you should need about 100 traces to break AES.
        3. Hit the *Capture Many* button (M in a green triangle) to start the capture process.
        4. You will see each new trace plotted in the waveform display.
-       5. You'll see the trace count in the status bar. Once it says *Trace 50 done* (assuming you requested 50 traces) the capture process is complete.
+       5. You'll see the trace count in the status bar. Once it says *Trace 100 done* (assuming you requested 100 traces) the capture process is complete.
 
 4. Finally save this project using the *File --> Save Project* option, give it any name you want.
 
@@ -276,11 +277,13 @@ This tutorial uses a simple script that ships with the ChipWhisperer Capture sof
 Analyzing of Power Traces for Key
 ---------------------------------
 
-14th Round Key
-^^^^^^^^^^^^^^
+14th Round Key using GUI
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Open the Analyzer software
-2. From the *File --> Open Project* option, navigate to the `.cwp` file you save previously. Open this file.
+2. From the *File --> Open Project* option, navigate to the `.cwp` file containing the 13th and 14th round
+   power usage. This can be either the  aes256_round1413_key0_100.cwp file downloaded, or the capture
+   you performed.
 3. If you wish to view the trace data, follow these steps:
 
    1. Switch to the *Waveform Display* tab
@@ -288,48 +291,100 @@ Analyzing of Power Traces for Key
    3. You can choose to plot a specific range of traces
    4. Hit the *Redraw* button when you change the trace plot range
    5. You can right-click on the waveform to change options, or left-click and drag to zoom
-   6. (oops there is no 6)
-   7. Use the toolbar to quickly reset the zoom back to original
+   6. Use the toolbar to quickly reset the zoom back to original
 
-   .. image:: /images/tutorials/basic/aes/traceplotting.png
+   .. image:: /images/tutorials/advanced/aes256/traceplottinground13.png
 
 5. You can view or change the attack options on the *Attack* parameter settings tab:
 
-   1. The *Hardware Model* settings are correct for the software AES by default
+   1. On the *Hardware Model* settings, ensure you select *Decryption*
    2. The *Point Setup* makes the attack faster by looking over a more narrow range of points. Often you might have to characterize your device to determine
-      the location of specific attack points of interest.
-   3. *Traces per Attack* allows you to use only a subset of capture traces on each attack. Or if you have for example 1000 traces, you could average the results of attacking
-      50 traces over 200 attack runs.
-   4. *Reporting Interval* is how often data is generated. A smaller interval generates more useful output data, but greatly increases computational complexity (e.g. slows down attack).
-      If you only care about attacking the system, the reporting interval can be set to the number of traces. In which case the attack runs completely, and you get the results. For this
-      tutorial you can set to a smaller number (such as 5).
+      the location of specific attack points of interest, although you can use the range of 2900 to 4200 here for a faster attack. The default range of all
+      the points will work fine too!
 
-   .. image:: /images/tutorials/basic/aes/attacksettings.png
+   .. image:: /images/tutorials/advanced/aes256/attacksettingsround13.png
 
-6. Finally run the attack by switching to the *Results Table* tab and then hitting the *Attack* button:
+6. The saved traces *do not* have the known encryption key stored in them. If you want to have the correct encryption key highlighted in red, switch to the
+   *Results* tab and set the override key as ``ea 79 79 20 c8 71 44 7d 46 62 5f 51 85 c1 3b cb``.
 
-   .. image:: /images/tutorials/basic/aes/attack.png
+7. Finally run the attack by switching to the *Results Table* tab and then hitting the *Attack* button:
 
-7. If you adjusted the *Reporting Interval* to a smaller number such as 5, you'll see the progression of attack results as more traces are used.
-   If not you should simply see the final results, which should have the correct key highlighted in red. In the following case the correct key *was* recovered:
+   .. image:: /images/tutorials/advanced/aes256/aes14roundstartattack.png
 
-   .. image:: /images/tutorials/basic/aes/attack-done.png
+8. If you adjusted the *Reporting Interval* to a smaller number such as 5, you'll see the progression of attack results as more traces are used.
+   If you have enabled the GUI override you should see the correct bytes highlighted in red, as below:
 
-8. You can also switch to the *Output vs Point Plot* window to see *where* exactly the data was recovered:
+   .. image:: /images/tutorials/advanced/aes256/aes14table_highlight.png
+
+   If you haven't enabled the GUI override, the wrong bytes are highlighted (since it uses some other default key). However the most likely bytes
+   as a result of the attack are still the top bytes, the red highlighting is purely decorative. Notice the large jump in correlation between the
+   correct guess and wrong guess:
+
+   .. image:: /images/tutorials/advanced/aes256/aes14table_nohighlight.png
+
+
+9. You can also switch to the *Output vs Point Plot* window to see *where* exactly the data was recovered:
 
    1. Switch to the *Output vs Point Plot* tab
    2. Turn on one of the bytes to see results.
-   3. The *known correct* guess for the key is highlighted in red. The wrong guesses are plotted in green. You can see that the attacked operation appeared
-      to occur around sample 40 for key 0. Remember you can click-drag to zoom in, then right-click and select *View All* to zoom back out.
-   4. Turn on another byte to see results for it.
-   5. This byte occured much later - sample 1240. By exploring where the maximum correlation was found for the correct key-guess of each byte, you
-      can determine where exactly the attacked operation occured.
+   3. The *known correct* guess for the key is highlighted in red. If you did not enable the 'override' feature the wrong bytes are highlighted, as
+      the system does not know the correct key. By viewing the spikes you can see where the attack succeeded.
 
-   .. image:: /images/tutorials/basic/aes/attack-done2.png
+   .. image:: /images/tutorials/advanced/aes256/aes14round_points.png
+
+14th Round Key using Script
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO - see 13th round details.
 
 13th Round Key
 ^^^^^^^^^^^^^^
 
+Attacking the 13th round key requires the use of a script. We cannot configure the system through the GUI, as we have no built-in model for the
+second part of the AES-256 algorithm. This will demonstrate how we can insert custom models into the system. See :ref:`aes256round14script` for complete
+script used here.
+
+Remember that when you change settings in the GUI, the system is actually just automatically adjusting the attack script. You could modify the attack script
+directly instead of changing GUI settings. Every time you touch the GUI the autogenerated script is overwritten however, so it would be easy to lose your
+changes. As an example here is how setting the point range maps to an API call:
+
+   .. image:: /images/tutorials/advanced/aes256/autoscript1.png
+
+We will first automatically configure a script, and then use that as the base for our full attack.
+
+1. Open the Analyzer software
+
+2. From the *File --> Open Project* option, navigate to the `.cwp` file containing the 13th and 14th round
+   power usage. This can be either the  aes256_round1413_key0_100.cwp file downloaded, or the capture
+   you performed.
+
+3. View the trace data as before, and notice how the data becomes unsynchronized. This is due to the prescense of a non-constant AES implementation.
+   There is actually a timing attack in this AES implementation, but we ignore that for now!
+
+   .. image:: /images/tutorials/advanced/aes256/syncproblems.png
+
+4. Enable the *Resync: Sum of Difference* module:
+
+  .. image:: /images/tutorials/advanced/aes256/resyncsad.png
+
+5. Configure the reference points to (9063, 9177) and the input window to (9010, 9080):
+
+  .. image:: /images/tutorials/advanced/aes256/resyncsad2.png
+
+6. Redraw the traces, confirm we now have synchronization on the second half:
+
+  .. image:: /images/tutorials/advanced/aes256/resyncsad3.png
+
+7. We will again set the AES mode to *Decryption*. Under the *Attack* tab on the *Hardware Model* settings,
+   ensure you select *Decryption*
+
+8. We are now ready to insert the custom data into the attack module. On the *General* tab, make a copy of the auto-generated script. Do so by clicking
+   on the autogenerated row, hit *Copy*, save the file somewhere. Double-click on the description of the new file and give it a better name. Finally
+   hit *Set Active* after clicking on your new file. The result should look like this:
+
+   .. image:: /images/tutorials/advanced/aes256/aes256_customscript.png
+
+9. You can now edit the custom script file using the built-in editor OR with an external editor. In this example the file would be ``C:\Users\Colin\AppData\Local\Temp\testaes256.py``.
 
 The following defines the required functions for our AES-256 attack on the 2nd part of the decryption key
 (i.e. the 13th round key)::
@@ -362,6 +417,28 @@ The following defines the required functions for our AES-256 attack on the 2nd p
 You can look back at the C code of the AES-256 decryption to see how this is implementing the decryption code.
 Note that because of the Inverse MixCols operation, we need the entire input ciphertext, and cannot use just
 a single byte of the input ciphertext.
+
+10. Add the above function to your custom script file.
+
+11. Change the ``setAnalysisAlgorithm`` to use your custom functions byt making the following call::
+
+      self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_13th_Round_HW)
+
+12. Check you have set the attack direction to decryption, and you can reduce the point range to speed up your
+    attack. Simply ensure you have the following lines in the script::
+
+      #... some more lines ...
+      self.attack.setDirection('dec')
+      #... some more lines ...
+      self.attack.setPointRange((8000,10990))
+      #... some more lines ...
+
+13. Note you can check :ref:`aes256round13script` for the complete contents of that file, and just copy/paste
+    the complete contents.
+
+14. Run *Start Attack* as before! Wait for the attack to complete, and you will determine the 13th round key:
+
+    .. image:: /images/tutorials/advanced/aes256/aes13roundresults.png
 
 Remember the key we determined was actually the key passed through inverse mixcols and
 inverse shiftrows. This means we need to pass the key through shiftrows and mixcols to
@@ -405,8 +482,12 @@ You should find the initial encryption key is::
 Analysis of Encrypted Files
 ---------------------------
 
+TODO
+
 Analysis of Power Traces for IV
 -------------------------------
+
+TODO
 
 Example::
 
@@ -443,6 +524,8 @@ Example::
 
 Timing Attacks for Signature
 ----------------------------
+
+.. _aes256capturescript:
 
 Appendix A: Capture Script
 --------------------------
@@ -782,6 +865,7 @@ The following::
 
        sys.exit()
 
+.. _aes256round14script:
 
 Appendix B: AES-256 14th Round Key Script
 -----------------------------------------
@@ -819,6 +903,9 @@ Full attack script, copy/paste into a file then add as active attack script::
            self.attack.setDirection('dec')
            self.attack.setTraceManager(self.traceManager())
            self.attack.setProject(self.project())
+           # If you want the attack to run faster, use the following point range instead
+           # of the full trace point range
+           #self.attack.setPointRange((2900,4200))
            self.attack.setPointRange((0,10992))
            return self.attack
 
@@ -829,6 +916,8 @@ Full attack script, copy/paste into a file then add as active attack script::
 
        def doAnalysis(self):
            self.attack.doAttack()
+
+.. _aes256round13script:
 
 Appendix C: AES-256 13th Round Key Script
 -----------------------------------------
@@ -903,6 +992,8 @@ Full attack script, copy/paste into a file then add as active attack script::
 
        def doAnalysis(self):
            self.attack.doAttack()
+
+.. _aes256ivscript:
 
 Appendix D: AES-256 IV Attack Script
 ------------------------------------
