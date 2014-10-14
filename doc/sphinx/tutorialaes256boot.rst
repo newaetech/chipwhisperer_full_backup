@@ -1052,8 +1052,7 @@ Full attack script, copy/paste into a file then add as active attack script::
 
        def initAnalysis(self):
            self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
-           #self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_IV_HW)
-           self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_13th_Round_HW)
+           self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_IV_HW)
            self.attack.setTraceStart(0)
            self.attack.setTracesPerAttack(100)
            self.attack.setIterations(1)
