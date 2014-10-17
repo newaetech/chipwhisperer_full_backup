@@ -67,6 +67,33 @@ chipwhisperer.analyzer.attacks.CPASimpleLoop module
     :undoc-members:
     :show-inheritance:
 
+chipwhisperer.analyzer.attacks.Profiling module
+-----------------------------------------------
+
+.. automodule:: chipwhisperer.analyzer.attacks.Profiling
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+chipwhisperer.analyzer.attacks.ProfilingTemplate module
+-------------------------------------------------------
+
+.. automodule:: chipwhisperer.analyzer.attacks.ProfilingTemplate
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+chipwhisperer.analyzer.attacks.datanalysis module
+-------------------------------------------------
+
+.. automodule:: chipwhisperer.analyzer.attacks.dataanalysis
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 
 Module contents
 ---------------

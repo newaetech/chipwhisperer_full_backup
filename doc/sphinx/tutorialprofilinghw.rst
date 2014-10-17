@@ -37,26 +37,26 @@ as the building block. The easiest method of accomplishing the trace capture is 
 2. From the *Project* menu elect the *Example Scripts* and then *ChipWhisperer-Rev2: SimpleSerial Target*
 
    .. image:: /images/tutorials/basic/aes/runscript.png
-   
+
 3. The script will automatically connect to the capture hardware and run 2 example traces. You should see something that looks like the following screen:
 
    .. image:: /images/tutorials/basic/aes/capture.png
-   
+
 4. Change to the *General Settings* tab, and adjust the *Key/Text Pattern* to send a random encryption key along with a random plaintext. This is shown
    in the following diagram:
-   
+
    .. image:: /images/tutorials/basic/profiling/campaignrandrand.png
-   
+
 5. Save the project now, giving it a name indicating the **key and text is random**. For example you could call it ``tut_randkey_randplain.cwp``. Note by saving
    the project *before* running the capture you will force all trace data to be saved into a directory with the same name. This will make it easier to find
    the data at a later time.
-   
+
 6. Change the number of traces to be *1000*: more traces are needed to form the profile. In this case 1000 is a very small capture, however for this unprotected
-   implementation will be sufficient. An interesting experiment is to see how using more or less traces impacts your templates! 
-   
+   implementation will be sufficient. An interesting experiment is to see how using more or less traces impacts your templates!
+
 7. Hit the *Capture Many* button (M in a green triangle) to start the capture process. You will see each new trace plotted in the waveform display. Once the
    capture is complete, save the project file again.
-   
+
 8. Exit the capture application, again being sure to first save the project.
 
 
@@ -64,15 +64,15 @@ Capturing the Attack Traces
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. Follow steps 1-3 of the previous section. Leave the *Key/Text Pattern* as default, where the encryption key is fixed and the plaintext is random.
-    
+
 2. Save the project now in the same directory as the ``.cwp`` file from the previous section, giving it a name indicating the key is **fixed** and text is **random**.
    For example you could call it ``tut_fixedkey_randplain.cwp``, again saving it in the same directory as the previous file.
-   
+
 6. Change the number of traces to be *20*: by comparison the profiling attack will require less attack traces compared to the CPA attack.
-   
+
 7. Hit the *Capture Many* button (M in a green triangle) to start the capture process. You will see each new trace plotted in the waveform display. Once the
    capture is complete, save the project file again.
-   
+
 8. Exit the capture application, again being sure to first save the project.
 
 Generating the Template
@@ -85,14 +85,14 @@ being attacked. It is assumed that the actual device differs from the device bei
 
 2. From the *File --> Open Project* option, navigate to the ``tut_randkey_randplain.cwp`` file you save previously. Open this file, ensure it is the file corresponding with the
    **randomly changing encryption key**!
-   
+
 3. Open the *Trace Explorer* by selecting it from the *Tools* menu.
 
 4. Change the *Partition Mode* to *HW AES Intermediate*, and select the *Auto-Save Data to Project* option:
 
    .. image:: /images/tutorials/basic/profiling/traceexplorer1.png
 
-5. Hit the *Display* button, and then select *All On*. This displays the differences between the various groups of Hamming Weight (HW) values::
+5. Hit the *Display* button, and then select *All On*. This displays the differences between the various groups of Hamming Weight (HW) values:
 
    .. image:: /images/tutorials/basic/profiling/traceexplorer2.png
 
@@ -102,8 +102,8 @@ being attacked. It is assumed that the actual device differs from the device bei
     2. Set the *Min Spacing between POI* to 5
     3. Click the *Recalc POI Values* button
     4. Click the *Set as POI in Project* button
-    
-  .. image:: /images/tutorials/basic/profiling/traceexplorer3.png 
+
+  .. image:: /images/tutorials/basic/profiling/traceexplorer3.png
 
 7. Close the Trace Explorer window
 
@@ -113,19 +113,19 @@ being attacked. It is assumed that the actual device differs from the device bei
 
 9. Go to the *Template Generation* section, and ensure you select the appropriate trace range (0-999 in this example). Select the *TraceExplorer Table* as the POI source, since we
    had just populated this with a valid POI data. Notice that if you view the analysis script it will list the poi you selected, if not hit the *Read POI* button:
-   
+
    .. image:: /images/tutorials/basic/profiling/templategeneration.png
 
-10. Click the *Generate Templates* button. This will dynamically load and run the ``def generateTemplates(self):`` function in the scripting window. 
+10. Click the *Generate Templates* button. This will dynamically load and run the ``def generateTemplates(self):`` function in the scripting window.
 
 11. Save the project file, which will save the location of the template file. We need to copy this information over to our second project, which is the traces we actually plan on
     attacking.
-    
+
 12. From the *Project* menu select the *Project File Editor (text)*, which gives you access to the raw project file. You will have to hit the *Reload Editor from Disk* button, which
     reads the changes you just saved into this special text editor. For more information on the project file editor see XREF TODO.
-    
+
 13. Scroll down until you find a section titled ``[Template Data 0001 - Templates]``. Note the number may change (e.g. 0002, etc), just use the largest number which will be the most
-    recent saved change. Copy this section to a text editor, it will look something like this::   
+    recent saved change. Copy this section to a text editor, it will look something like this::
 
       [Template Data 0001 - Templates]
       tracestart = 0
@@ -143,7 +143,7 @@ Applying the Template
 
 2. From the *File --> Open Project* option, navigate to the ``tut_fixedkey_randplain.cwp`` file you save previously. Open this file, ensure it is the file corresponding with the
    **fixed encryption key**!
-   
+
 3. Open the project text editor if not already open.
 
 4. Append the *Template Data* section you copied from the previous project to your project file:
@@ -152,10 +152,10 @@ Applying the Template
 
 5. Use the *Save Editor to Disk* button to write these changes. Note this assumes that both the ``tut_fixedkey_randplain.cwp`` and ``tut_randkey_randplain.cwp`` were saved in the
    same directory, as otherwise the reference to the template file will break!
-   
+
 6. Close the Analyzer software. Re-open the software and reload the same project file (e.g. ``tut_fixedkey_randplain.cwp``), this step is needed to ensure the changes you added in
    are loaded into memory.
-   
+
 7. Change the attack module to *Profiling*:
 
    .. image:: /images/tutorials/basic/profiling/selectprofiling.png
