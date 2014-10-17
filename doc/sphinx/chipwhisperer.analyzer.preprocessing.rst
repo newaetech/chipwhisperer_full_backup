@@ -12,6 +12,14 @@ chipwhisperer.analyzer.preprocessing.AddNoiseJitter module
     :undoc-members:
     :show-inheritance:
 
+chipwhisperer.analyzer.preprocessing.AddNoiseRandom module
+----------------------------------------------------------
+
+.. automodule:: chipwhisperer.analyzer.preprocessing.AddNoiseRandom
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 chipwhisperer.analyzer.preprocessing.DecimationClockRecovery module
 -------------------------------------------------------------------
 
