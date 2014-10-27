@@ -180,11 +180,11 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
         self.tableName = self.getParams.findParam('tableName').value()
         res = self.db.query("SELECT COUNT(*) FROM %s" % self.tableName)
         self._numTraces = res.rows[0][0]
-        self.config.setAttr('numTraces', self._NumTrace)
+        self.config.setAttr('numTraces', self._numTraces)
 
         wav = self.db.query("SELECT Wave FROM %s LIMIT 1 OFFSET %d"%(self.tableName, 0)).rows[0][0]
         self._numPoints = self.formatWave(wav, read=True).shape[0]
-        self.config.setAttr('numPoints', self._NumPoint)
+        self.config.setAttr('numPoints', self._numPoints)
 
     def numTraces(self, update=False):
         if update:
