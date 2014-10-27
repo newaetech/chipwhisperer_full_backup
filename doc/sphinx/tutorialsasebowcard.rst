@@ -95,7 +95,9 @@ you have the SASEBO-W adapter, this simple schematic shows the required circuit:
 
 .. image:: /images/sasebow/atmega16_sch.jpg
 
-Which for example could look like this:
+Note that we are not using the shunt on the SASEBO-W, as we have added filtering capacitors. Due to the long ribbon cable (with a high-frequency clock),
+you'll end up with a lot of noise if you attempted to use the shunt on the SASEBO-W (which means no filtering caps on the AtMega16). The implementation
+looks like this:
 
 .. image:: /images/sasebow/atmega16.jpg
 
