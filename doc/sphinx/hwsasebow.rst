@@ -54,6 +54,8 @@ The SASEBO-W example assumes you are using the SASEBO-W CardOS, and attacking th
 
    .. image:: /images/sasebow/sasebowexample.png
 
+See the :ref:`tutorialsasebowcard` for details, including using different target boards.
+
 
 More Information
 ^^^^^^^^^^^^^^^^
@@ -62,6 +64,10 @@ Additional information is currently posted on the ChipWhisperer Wiki at these pa
 
 * https://www.assembla.com/spaces/chipwhisperer/wiki/SASEBO-W
 * https://www.assembla.com/wiki/show/chipwhisperer/SASEBO-W_Programming_Information
+
+In addition see the following tutorial as part of this documentation:
+
+* :ref:`tutorialsasebowcard`
 
 .. _sasebowmultitarget:
 
