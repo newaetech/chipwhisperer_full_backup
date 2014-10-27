@@ -874,7 +874,7 @@ class ChipWhispererCapture(MainChip):
     def traceChanged(self, newtrace):
         self.trace = newtrace
         try:
-            self.traceparams = newtrace.getParams()
+            self.traceparams = self.trace.getParams
         except AttributeError:
             self.traceparams = None
         except TypeError:

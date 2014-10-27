@@ -35,9 +35,6 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-sys.path.append('../../common')
-sys.path.append('../../../openadc/controlsw/python/common')
-
 from openadc.ExtendedParameter import ExtendedParameter
 
 try:
@@ -66,13 +63,13 @@ except ImportError:
 
 try:
     import serial
-    import scan
+    import openadc.scan
 except ImportError:
     serial = None
 
-import ChipWhispererExtra as ChipWhispererExtra
-import ChipWhispererSAD as ChipWhispererSAD
-import ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
+import chipwhisperer.capture.scopes.ChipWhispererExtra as ChipWhispererExtra
+import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
+import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 
 class OpenADCInterface_FTDI(QWidget):
     paramListUpdated = Signal(list)
