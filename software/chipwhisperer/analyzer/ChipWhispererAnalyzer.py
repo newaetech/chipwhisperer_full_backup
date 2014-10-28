@@ -335,7 +335,7 @@ class ChipWhispererAnalyzer(MainChip):
         mse.append("#Imports from utilList", 0)
         for index, util in enumerate(self.utilList):
             if hasattr(util, '_smartstatements') and util.isVisible():
-                for i in util.getImportStatements(): self.mse.append(i, 0)
+                for i in util.getImportStatements(): mse.append(i, 0)
 
         mse.append("", 0)
 
