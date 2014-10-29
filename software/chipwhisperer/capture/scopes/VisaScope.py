@@ -34,116 +34,122 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from openadc.ExtendedParameter import ExtendedParameter
 
 try:
-    from pyqtgraph.parametertree import Parameter   
+    from pyqtgraph.parametertree import Parameter
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
 from visa import *
+import time
 
 class VisaScope(QWidget):
-    paramListUpdated = Signal(list) 
+    paramListUpdated = Signal(list)
     dataUpdated = Signal(list, int)
-    
+
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
                "500 uS":500E-6, "200 uS":200E-6, "100 uS":100E-6, "50 uS":50E-6,
                "20 uS":20E-6, "10 uS":10E-6, "5 uS":5E-6, "2 uS":2E-6}
-    
+
     yScales = {"10 V":10, "5 V":5, "2 V":2, "500 mV":500E-3, "250 mV":250E-3, "100 mV":100E-3, "50 mV":50E-3}
 
     header =        ":SYSTem:HEADer OFF\n"
-    
+
     def __init__(self,console=None,showScriptParameter=None):
         super(VisaScope, self).__init__()
         self.showScriptParameter = showScriptParameter
         self.console = console
         self.visaInst = None
-        
-        scopeParams = [                  
+
+        scopeParams = [
                       {'name':'X-Scale', 'key':'xscale', 'type':'list', 'values':self.xScales},
                       {'name':'Y-Scale', 'key':'yscale', 'type':'list', 'values':self.yScales},
                       {'name':'Y-Offset', 'key':'yoffset', 'type':'float', 'step':1E-3, 'siPrefix': True, 'suffix': 'V'},
                       {'name':'X-Offset', 'key':'xoffset', 'type':'float', 'step':1E-6, 'siPrefix': True, 'suffix': 'S'},
                       {'name':'Download Offset', 'key':'xdisporigin', 'type':'int',  'limits':(0,1E9)},
                       {'name':'Download Size', 'key':'xdisprange', 'type':'int', 'limits':(0,1E9)},
-                  ]           
-        
-        
-        
-        
+                  ]
+
+
+
+
         for t in self.getAdditionalParams():
             scopeParams.append(t)
-       
 
-       
+
+
         self.params = Parameter.create(name='Scope Settings', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params, self)  
-            
+        ExtendedParameter.setupExtended(self.params, self)
+
     def getAdditionalParams(self):
         """Override this to define additional parameters"""
         return []
-            
+
     def con(self, constr):
         self.visaInst = instrument(constr)
-        self.visaInst.write(self.header)
+        print self.visaInst.ask("*IDN?")
+        for cmd in self.header:
+            self.visaInst.write(cmd)
+            print "VISA: %s" % cmd
+            time.sleep(0.1)
         self.updateCurrentSettings()
-            
+
     def paramList(self):
-        p = [self.params]            
+        p = [self.params]
         return p
-    
+
     def updateCurrentSettings(self):
         self.currentSettings()
-        
+
         self.findParam('xscale').setValue(self.XScale)
         self.findParam('yscale').setValue(self.YScale)
         self.findParam('xoffset').setValue(self.XOffset)
         self.findParam('yoffset').setValue(self.YOffset)
-    
+
     def currentSettings(self):
         """You MUST implement this"""
         pass
-    
-    def arm(self):       
+
+    def arm(self):
         """Example arm implementation works on most"""
         self.visaInst.write(":DIGitize")
-        
+
     def capture(self, update=True, NumberPoints=None):
         """You MUST implement this"""
         self.dataUpdated.emit(self.datapoints, 0)
         pass
-    
-class VisaScopeInterface_MSO54831D(VisaScope):    
-   
+
+class VisaScopeInterface_MSO54831D(VisaScope):
+
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
                "500 uS":500E-6, "200 uS":200E-6, "100 uS":100E-6, "50 uS":50E-6,
                "20 uS":20E-6, "10 uS":10E-6, "5 uS":5E-6, "2uS":2E-6, "1 uS":1E-6}
-    
+
     yScales = {"10 V":10, "5 V":5, "2 V":2, "500 mV":500E-3, "200 mV":200E-3, "100 mV":100E-3,
                "50 mV":50E-3, "20 mV":20E-3, "10 mV":10E-3, "5 mV":5E-3}
 
-    header =   ":SYSTem:HEADer OFF\n" + \
-       ":CHANnel1:INPut DCFifty\n" + \
-       ":CHANnel1:DISPlay ON\n" + \
-       ":CHANnel2:DISPLay ON\n" + \
-       ":CHANnel2:SCALe 1.0\n" + \
-       ":CHANnel2:POSition 0.0\n" + \
-       ":TRIGger:MODE EDGE\n" + \
-       ":TRIGger:EDGE:SOURce CHANnel2\n" + \
-       ":TRIGger:EDGE:SLOPe NEGative\n" + \
-       ":TRIGger:LEVel 2.0\n" + \
-       ":TRIGger:SWEep TRIGgered\n" + \
-       ":WAVeform:SOURce CHANnel1\n" + \
-       ":WAVeform:COUPling DCFifty\n" + \
-       ":WAVeform:FORMat WORD\n" + \
-       ":WAVeform:BYTeorder LSBFirst\n" + \
-       ":ACQuire:COMPlete 100\n"
+    header = [":SYSTem:HEADer OFF\n",
+                ":CHANnel1:INPut DCFifty\n",
+                ":CHANnel1:DISPlay ON\n",
+                ":CHANnel2:DISPLay ON\n",
+                ":CHANnel2:SCALe 1.0\n",
+                ":CHANnel2:POSition 0.0\n",
+                ":TRIGger:MODE EDGE\n",
+                ":TRIGger:EDGE:SOURce CHANnel2\n",
+                ":TRIGger:EDGE:SLOPe NEGative\n",
+                ":TRIGger:LEVel 2.0\n",
+                # ":TRIGger:SWEep TRIGgered\n",
+                ":WAVeform:SOURce CHANnel1\n",
+                ":WAVeform:COUPling DCFifty\n",
+                # ":WAVeform:FORMat WORD\n",
+                # ":WAVeform:BYTeorder LSBFirst\n",
+                # ":ACQuire:COMPlete 100\n"
+                ]
 
     def currentSettings(self):
         test = self.visaInst.ask_for_values(":WAVeform:PREamble?")
@@ -154,7 +160,7 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         else:
             self.XDisplayedOrigin = 0.0
             srange = 0.0
-        
+
         spoints = test[2]
 
         if srange < spoints:
@@ -171,21 +177,21 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         self.YScale = self.visaInst.ask_for_values(":CHANnel1:SCALe?")
         self.YScale = self.YScale[0]
 
-    def arm(self):       
+    def arm(self):
         self.visaInst.write(":DIGitize")
 
-    def capture(self, Update=False, N=None):
+    def capture(self, Update=False, N=None, waitingCallback=None):
         xdstart = self.findParam("xdisporigin").value()
         xdrange = self.findParam("xdisprange").value()
-        
+
         command = ":WAVeform:DATA?"
-        
+
         if (xdstart != 0) or (xdrange != 0):
             command += " %d"%xdstart
-            
+
             if xdrange != 0:
                 command += ",%d"%xdrange
-        
+
         #print command
         self.visaInst.write(command)
         data = self.visaInst.read_raw()
@@ -230,50 +236,50 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 class VisaScopeInterface(QObject):
     connectStatus = Signal(bool)
     dataUpdated = Signal(list, int)
-    paramListUpdated = Signal(list)    
+    paramListUpdated = Signal(list)
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):          
+    def __init__(self, parent=None, console=None, showScriptParameter=None):
         super(VisaScopeInterface, self).__init__(parent)
         self.parent = parent
         self.scopetype = None
         self.datapoints = []
-        
+
         try:
             mso54831d = VisaScopeInterface_MSO54831D(console=console, showScriptParameter=showScriptParameter)
         except ImportError:
             mso54831d = None
-            
+
         self.setCurrentScope(mso54831d, False)
         defscope = mso54831d
-        
+
         scope_cons = {}
-        
+
         if mso54831d:
             mso54831d.paramListUpdated.connect(self.emitParamListUpdated)
             mso54831d.dataUpdated.connect(self.passUpdated)
             scope_cons["Agilent MSO 54831D"] = mso54831d
-        
-        
-        
+
+
+
         self.advancedSettings = None
-        
+
         scopeParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
                        {'name':'Connect String', 'key':'connStr', 'type':'str', 'value':''},
-                       {'name':'Example Strings', 'type':'list', 'values':['', 'TCPIP0::192.168.2.100::inst0::INSTR'], 'value':'', 'set':self.exampleString},                       
+                       {'name':'Example Strings', 'type':'list', 'values':['', 'TCPIP0::192.168.2.100::inst0::INSTR'], 'value':'', 'set':self.exampleString},
                       ]
-        
+
         self.params = Parameter.create(name='VISA Scope Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
-        
+
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
-        
+
     def emitParamListUpdated(self):
         self.paramListUpdated.emit(self.paramList())
-        
-    #def paramTreeChanged(self, param, changes):        
+
+    # def paramTreeChanged(self, param, changes):
     #    if self.showScriptParameter is not None:
     #        self.showScriptParameter(param, changes, self.params)
 
@@ -282,20 +288,20 @@ class VisaScopeInterface(QObject):
         self.offset = offset
         self.dataUpdated.emit(lst, offset)
 
-    def setCurrentScope(self, scope, update=True):        
+    def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
         if update:
             self.paramListUpdated.emit(self.paramList())
-   
+
     def con(self):
         if self.scopetype is not None:
-            self.scopetype.con(self.findParam('connStr').value())           
+            self.scopetype.con(self.findParam('connStr').value())
             self.connectStatus.emit(True)
-            
+
 
     def dis(self):
         if self.scopetype is not None:
-            self.scopetype.dis()  
+            self.scopetype.dis()
             self.connectStatus.emit(True)
 
     def doDataUpdated(self,  l, offset=0):
@@ -309,17 +315,17 @@ class VisaScopeInterface(QObject):
 
     def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
-        return self.scopetype.capture(update, NumberPoints)    
-        
+        return self.scopetype.capture(update, NumberPoints)
+
     def paramList(self):
-        p = []       
-        p.append(self.params)  
-         
+        p = []
+        p.append(self.params)
+
         if self.scopetype is not None:
-            for a in self.scopetype.paramList(): p.append(a)         
-        
-            
+            for a in self.scopetype.paramList(): p.append(a)
+
+
         #if self.advancedSettings is not None:
-        #    for a in self.advancedSettings.paramList(): p.append(a)    
-            
+        #    for a in self.advancedSettings.paramList(): p.append(a)
+
         return p
