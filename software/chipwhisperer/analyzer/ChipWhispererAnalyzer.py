@@ -377,7 +377,7 @@ class ChipWhispererAnalyzer(MainChip):
 
         # Get go command from analysis
         mse.append("def initReporting(self, results):", 1)
-        # self.mse.append("results.clear()")
+        # mse.append("results.clear()")
         mse.append("results.setAttack(self.attack)")
         mse.append("results.setTraceManager(self.traceManager())")
         mse.append("self.results = results")
@@ -390,7 +390,7 @@ class ChipWhispererAnalyzer(MainChip):
             if k == 'init' or k == 'go' or k == 'done':
                 pass
             else:
-                self.mse.append("def %s(self):" % k, 1)
+                mse.append("def %s(self):" % k, 1)
                 for s in self.attack.getStatements(k):
                     mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
 
