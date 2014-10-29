@@ -63,7 +63,7 @@ except ImportError:
 
 try:
     import serial
-    import openadc.scan
+    import openadc.scan as scan
 except ImportError:
     serial = None
 
