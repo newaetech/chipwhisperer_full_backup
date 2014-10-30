@@ -123,6 +123,102 @@ class VisaScope(QWidget):
         self.dataUpdated.emit(self.datapoints, 0)
         pass
 
+class VisaScopeInterface_DSO1024A(VisaScope):
+
+    # TODO: What scales & ranges are allowed on the DSO1024A?
+    xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
+               "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
+               "500 uS":500E-6, "200 uS":200E-6, "100 uS":100E-6, "50 uS":50E-6,
+               "20 uS":20E-6, "10 uS":10E-6, "5 uS":5E-6, "2uS":2E-6, "1 uS":1E-6}
+
+    yScales = {"10 V":10, "5 V":5, "2 V":2, "500 mV":500E-3, "200 mV":200E-3, "100 mV":100E-3,
+               "50 mV":50E-3, "20 mV":20E-3, "10 mV":10E-3, "5 mV":5E-3}
+
+    header = [  ":CHANnel1:PROBe 1X\n",
+                ":CHANnel1:DISPlay ON\n",
+                ":CHANnel1:COUPling DC\n",
+                ":CHANnel2:PROBe 10X\n",
+                ":CHANnel2:SCALe 1\n",
+                ":CHANnel2:OFFSet 0\n",
+                ":CHANnel2:DISPLay ON\n",
+                ":TRIGger:MODE EDGE\n",
+                ":TRIGger:EDGE:SOURce CHANnel2\n",
+                ":TRIGger:EDGE:SLOPe NEGative\n",
+                ":TRIGger:EDGE:LEVel 2.0\n",
+                ":TRIGger:EDGE:SWEep NORMal\n",
+                ":WAVeform:SOURce CHANnel1\n",
+                ":WAVeform:FORMat WORD\n",
+                ]
+
+    def currentSettings(self):
+
+        # TODO: Delete these?
+        self.XScale = self.visaInst.ask_for_values(":TIMebase:SCALe?")
+        self.XScale = self.XScale[0]
+        self.XOffset = self.visaInst.ask_for_values(":TIMebase:POSition?")
+        self.XOffset = self.XOffset[0]
+        self.YOffset = self.visaInst.ask_for_values(":CHANnel1:OFFSet?")
+        self.YOffset = self.YOffset[0]
+        self.YScale = self.visaInst.ask_for_values(":CHANnel1:SCALe?")
+        self.YScale = self.YScale[0]
+
+    def arm(self):
+        self.visaInst.write(":RUN\n")
+
+        result = "fake"
+        while ((result.startswith("WAIT") == False) and (result.startswith("RUN") == False)):
+            result = self.visaInst.ask(":TRIGger:STATus?")
+            time.sleep(0.1)
+            print "1Waiting..."
+
+    def capture(self, Update=False, N=None, waitingCallback=None):
+
+        # Wait?
+        while (self.visaInst.ask("*OPC?\n") != "1"):
+            time.sleep(0.1)
+            waitingCallback()
+            print "2Waiting..."
+
+        # print command
+        self.visaInst.write(":WAVeform:DATA?")
+        data = self.visaInst.read_raw()
+
+        # Find '#' which is start of frame
+        start = data.find('#')
+
+        if start < 0:
+            print "Error in header"
+            return
+
+        start = start + 1
+        hdrlen = data[start]
+        hdrlen = int(hdrlen)
+
+        # print hdrlen
+
+        start = start + 1
+        datalen = data[start:(start + hdrlen)]
+        datalen = int(datalen)
+        # print datalen
+
+        start = start + hdrlen
+
+        # Each is two bytes
+        wavdata = bytearray(data[start:(start + datalen)])
+
+        self.datapoints = []
+
+        for j in range(0, datalen, 2):
+            data = wavdata[j] | (wavdata[j + 1] << 8)
+
+            if (data & 0x8000):
+                data = -65536 + data
+
+            self.datapoints.append(data)
+
+        self.dataUpdated.emit(self.datapoints, 0)
+
+
 class VisaScopeInterface_MSO54831D(VisaScope):
 
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
@@ -247,6 +343,11 @@ class VisaScopeInterface(QObject):
         except ImportError:
             mso54831d = None
 
+        try:
+            dso1024A = VisaScopeInterface_DSO1024A(console=console, showScriptParameter=showScriptParameter)
+        except ImportError:
+            dso1024A = None
+
         self.setCurrentScope(mso54831d, False)
         defscope = mso54831d
 
@@ -256,6 +357,11 @@ class VisaScopeInterface(QObject):
             mso54831d.paramListUpdated.connect(self.emitParamListUpdated)
             mso54831d.dataUpdated.connect(self.passUpdated)
             scope_cons["Agilent MSO 54831D"] = mso54831d
+
+        if dso1024A:
+            dso1024A.paramListUpdated.connect(self.emitParamListUpdated)
+            dso1024A.dataUpdated.connect(self.passUpdated)
+            scope_cons["Agilent DSO 1024A"] = dso1024A
 
 
 
