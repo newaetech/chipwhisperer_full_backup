@@ -138,17 +138,15 @@ class VisaScopeInterface_MSO54831D(VisaScope):
                 ":CHANnel1:DISPlay ON\n",
                 ":CHANnel2:DISPLay ON\n",
                 ":CHANnel2:SCALe 1.0\n",
-                ":CHANnel2:POSition 0.0\n",
                 ":TRIGger:MODE EDGE\n",
                 ":TRIGger:EDGE:SOURce CHANnel2\n",
                 ":TRIGger:EDGE:SLOPe NEGative\n",
-                ":TRIGger:LEVel 2.0\n",
-                # ":TRIGger:SWEep TRIGgered\n",
+                ":TRIGger:LEVel CHANnel2,2.0\n",
+                ":TRIGger:SWEep TRIGgered\n",
+                ":WAVeform:FORMat WORD\n",
+                ":WAVeform:BYTeorder LSBFirst\n",
                 ":WAVeform:SOURce CHANnel1\n",
-                ":WAVeform:COUPling DCFifty\n",
-                # ":WAVeform:FORMat WORD\n",
-                # ":WAVeform:BYTeorder LSBFirst\n",
-                # ":ACQuire:COMPlete 100\n"
+                ":ACQuire:COMPlete 100\n"
                 ]
 
     def currentSettings(self):
