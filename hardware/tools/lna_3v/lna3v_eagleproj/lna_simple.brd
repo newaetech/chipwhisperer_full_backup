@@ -12,7 +12,7 @@
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
 <layer number="3" name="Route3" color="4" fill="3" visible="no" active="no"/>
 <layer number="14" name="Route14" color="1" fill="6" visible="no" active="no"/>
-<layer number="15" name="Route15" color="4" fill="6" visible="no" active="no"/>
+<layer number="15" name="Route15" color="4" fill="6" visible="yes" active="yes"/>
 <layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
@@ -22,11 +22,11 @@
 <layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
 <layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="25" name="tNames" color="7" fill="1" visible="no" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="26" name="bNames" color="7" fill="1" visible="no" active="yes"/>
 <layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
 <layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
 <layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
@@ -106,7 +106,7 @@
 <wire x1="19.05" y1="26.67" x2="27.305" y2="26.67" width="2.032" layer="41"/>
 <wire x1="31.75" y1="26.67" x2="38.1" y2="26.67" width="2.032" layer="41"/>
 <rectangle x1="20.955" y1="17.4625" x2="25.7175" y2="19.3675" layer="41"/>
-<text x="17.4625" y="18.415" size="1.27" layer="21" font="vector" ratio="16" rot="R90">IN</text>
+<text x="17.145" y="19.05" size="1.27" layer="21" font="vector" ratio="16" rot="R90">IN</text>
 <text x="42.545" y="17.4625" size="1.27" layer="21" font="vector" ratio="16" rot="R90">OUT</text>
 <rectangle x1="15.24" y1="24.765" x2="20.955" y2="28.575" layer="41"/>
 <rectangle x1="37.7825" y1="24.765" x2="43.18" y2="28.575" layer="41"/>
@@ -2422,6 +2422,21 @@ Source: http://www.osram.convergy.de/ ... Lb_q993.pdf</description>
 <rectangle x1="0.3" y1="0" x2="0.45" y2="0.3" layer="21"/>
 <rectangle x1="-0.15" y1="0" x2="0.15" y2="0.3" layer="21"/>
 </package>
+<package name="FIDUCIAL_1MM">
+<smd name="1" x="0" y="0" dx="1" dy="1" layer="1" roundness="100" stop="no" cream="no"/>
+<polygon width="0.127" layer="29">
+<vertex x="-1" y="0" curve="90"/>
+<vertex x="0" y="-1" curve="90"/>
+<vertex x="1" y="0" curve="90"/>
+<vertex x="0" y="1" curve="90"/>
+</polygon>
+<polygon width="0.127" layer="41">
+<vertex x="-1" y="0" curve="90"/>
+<vertex x="0" y="-1" curve="90"/>
+<vertex x="1" y="0" curve="90"/>
+<vertex x="0" y="1" curve="90"/>
+</polygon>
+</package>
 </packages>
 </library>
 <library name="pinhead">
@@ -2658,27 +2673,55 @@ design rules under a new name.</description>
 </pass>
 </autorouter>
 <elements>
-<element name="U1" library="customs" package="SOTT323-6" value="BGA2801" x="30.48" y="26.67" rot="R45"/>
-<element name="C1" library="rcl" package="C0603" value="22nF" x="31.115" y="24.13"/>
-<element name="C2" library="rcl" package="C0603" value="100nF" x="34.925" y="26.67"/>
-<element name="C3" library="rcl" package="C0603" value="100nF" x="24.13" y="26.67"/>
-<element name="C4" library="rcl" package="C0805" value="4u7" x="24.4475" y="19.3675" rot="R90"/>
-<element name="X1" library="con-coax" package="J502-ND-142-0701-801/806" value="SMA-142-0701-801/806" x="15.24" y="26.67">
+<element name="U1" library="customs" package="SOTT323-6" value="BGA2801" x="30.48" y="26.67" smashed="yes" rot="R45">
+<attribute name="NAME" x="27.18985625" y="27.6918125" size="0.8128" layer="25" font="vector" ratio="16" rot="R45"/>
+<attribute name="VALUE" x="29.4193375" y="22.639490625" size="1.27" layer="27" rot="R45"/>
+</element>
+<element name="C1" library="rcl" package="C0603" value="22nF" x="31.115" y="24.13" smashed="yes">
+<attribute name="NAME" x="33.02" y="23.495" size="0.8128" layer="25" font="vector" ratio="16"/>
+<attribute name="VALUE" x="30.48" y="22.225" size="1.27" layer="27"/>
+</element>
+<element name="C2" library="rcl" package="C0603" value="100nF" x="34.925" y="26.67" smashed="yes">
+<attribute name="NAME" x="33.3375" y="27.94" size="0.8128" layer="25" font="vector" ratio="16"/>
+<attribute name="VALUE" x="34.29" y="24.765" size="1.27" layer="27"/>
+</element>
+<element name="C3" library="rcl" package="C0603" value="100nF" x="24.13" y="26.67" smashed="yes">
+<attribute name="NAME" x="21.9075" y="27.94" size="0.8128" layer="25" font="vector" ratio="16"/>
+<attribute name="VALUE" x="23.495" y="24.765" size="1.27" layer="27"/>
+</element>
+<element name="C4" library="rcl" package="C0805" value="4u7" x="24.4475" y="19.3675" smashed="yes" rot="R90">
+<attribute name="NAME" x="23.8125" y="16.8275" size="0.8128" layer="25" font="vector" ratio="16"/>
+<attribute name="VALUE" x="26.9875" y="18.0975" size="1.27" layer="27" rot="R90"/>
+</element>
+<element name="X1" library="con-coax" package="J502-ND-142-0701-801/806" value="SMA-142-0701-801/806" x="15.24" y="26.67" smashed="yes">
 <attribute name="OC_NEWARK" value="90F2624" x="15.24" y="26.67" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="142-0701-801" x="15.24" y="26.67" size="1.778" layer="27" display="off"/>
 <attribute name="MF" value="JOHNSON COMPONENTS" x="15.24" y="26.67" size="1.778" layer="27" display="off"/>
 <attribute name="OC_FARNELL" value="1608592" x="15.24" y="26.67" size="1.778" layer="27" display="off"/>
+<attribute name="VALUE" x="16.51" y="17.78" size="1.778" layer="27"/>
 </element>
-<element name="X2" library="con-coax" package="J502-ND-142-0701-801/806" value="SMA-142-0701-801/806" x="43.18" y="26.67" rot="R180">
+<element name="X2" library="con-coax" package="J502-ND-142-0701-801/806" value="SMA-142-0701-801/806" x="43.18" y="26.67" smashed="yes" rot="R180">
 <attribute name="OC_NEWARK" value="90F2624" x="43.18" y="26.67" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="MPN" value="142-0701-801" x="43.18" y="26.67" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="MF" value="JOHNSON COMPONENTS" x="43.18" y="26.67" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="OC_FARNELL" value="1608592" x="43.18" y="26.67" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="VALUE" x="41.91" y="35.56" size="1.778" layer="27" rot="R180"/>
 </element>
-<element name="R1" library="resistor" package="R0603" value="330R" x="21.2725" y="19.05" rot="R270"/>
-<element name="D1" library="diode" package="DO214AC" value="" x="37.1475" y="18.415"/>
-<element name="LED1" library="adafruit" package="CHIP-LED0603" value="" x="19.3675" y="19.05" rot="R180"/>
+<element name="R1" library="resistor" package="R0603" value="330R" x="21.2725" y="19.05" smashed="yes" rot="R270">
+<attribute name="NAME" x="22.9235" y="19.431" size="0.8128" layer="25" font="vector" ratio="16" rot="R90"/>
+<attribute name="VALUE" x="19.2405" y="19.939" size="1.27" layer="27" rot="R270"/>
+</element>
+<element name="D1" library="diode" package="DO214AC" value="" x="37.1475" y="18.415" smashed="yes">
+<attribute name="NAME" x="34.5075" y="20.0185" size="0.8128" layer="25" font="vector" ratio="16"/>
+<attribute name="VALUE" x="34.5075" y="15.859" size="1.27" layer="27" ratio="10"/>
+</element>
+<element name="LED1" library="adafruit" package="CHIP-LED0603" value="" x="19.3675" y="19.05" smashed="yes" rot="R180">
+<attribute name="NAME" x="17.78" y="20.6375" size="0.8128" layer="25" font="vector" ratio="16" rot="R270"/>
+<attribute name="VALUE" x="17.4625" y="19.685" size="1.27" layer="27" rot="R270"/>
+</element>
 <element name="JP1" library="pinhead" package="2X03" value="" x="29.21" y="19.05" rot="MR0"/>
+<element name="U$1" library="adafruit" package="FIDUCIAL_1MM" value="FIDUCIAL" x="16.51" y="17.78"/>
+<element name="U$2" library="adafruit" package="FIDUCIAL_1MM" value="FIDUCIAL" x="35.8775" y="29.5275"/>
 </elements>
 <signals>
 <signal name="N$1">
