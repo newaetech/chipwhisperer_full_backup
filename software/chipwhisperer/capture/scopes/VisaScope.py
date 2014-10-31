@@ -91,6 +91,7 @@ class VisaScope(QWidget):
 
     def con(self, constr):
         self.visaInst = instrument(constr)
+        self.visaInst.write("*RST")
         print self.visaInst.ask("*IDN?")
         for cmd in self.header:
             self.visaInst.write(cmd)
@@ -229,24 +230,30 @@ class VisaScopeInterface_MSO54831D(VisaScope):
     yScales = {"10 V":10, "5 V":5, "2 V":2, "500 mV":500E-3, "200 mV":200E-3, "100 mV":100E-3,
                "50 mV":50E-3, "20 mV":20E-3, "10 mV":10E-3, "5 mV":5E-3}
 
-    header = [":SYSTem:HEADer OFF\n",
-                ":CHANnel1:INPut DCFifty\n",
-                ":CHANnel1:DISPlay ON\n",
-                ":CHANnel2:DISPLay ON\n",
-                ":CHANnel2:SCALe 1.0\n",
-                ":TRIGger:MODE EDGE\n",
-                ":TRIGger:EDGE:SOURce CHANnel2\n",
-                ":TRIGger:EDGE:SLOPe NEGative\n",
-                ":TRIGger:LEVel CHANnel2,2.0\n",
-                ":TRIGger:SWEep TRIGgered\n",
-                ":WAVeform:FORMat WORD\n",
-                ":WAVeform:BYTeorder LSBFirst\n",
-                ":WAVeform:SOURce CHANnel1\n",
-                ":ACQuire:COMPlete 100\n"
+    header = [":SYSTem:HEADer OFF",
+                ":CHANnel1:INPut DCFifty",
+                ":CHANnel1:DISPlay ON",
+                ":CHANnel2:INPut DC"
+                ":CHANnel2:DISPLay ON",
+                ":CHANnel2:SCALe 1.0",
+                ":TRIGger:MODE EDGE",
+                ":TRIGger:EDGE:SOURce CHANnel2",
+                ":TRIGger:EDGE:SLOPe NEGative",
+                ":TRIGger:LEVel CHANnel2,2.0",
+                ":TRIGger:SWEep TRIGgered",
+                ":WAVeform:FORMat WORD",
+                ":WAVeform:BYTeorder LSBFirst",
+                ":WAVeform:SOURce CHANnel1",
+                ":ACQuire:COMPlete 100"
                 ]
 
     def currentSettings(self):
+
+        self.visaInst.write(":TRIG:SWE AUTO")
+        self.visaInst.write(":RUN")
+        time.sleep(0.5)
         test = self.visaInst.ask_for_values(":WAVeform:PREamble?")
+        self.visaInst.write(":TRIG:SWE TRIG")
 
         if test[4] != 0.0:
             self.XDisplayedOrigin = (test[12] - test[5]) / test[4]
@@ -417,9 +424,9 @@ class VisaScopeInterface(QObject):
     def arm(self):
         self.scopetype.arm()
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
-        return self.scopetype.capture(update, NumberPoints)
+        return self.scopetype.capture(update, NumberPoints, waitingCallback)
 
     def paramList(self):
         p = []
