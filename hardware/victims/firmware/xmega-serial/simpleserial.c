@@ -60,31 +60,64 @@ uint8_t key[16];
 uint8_t pt[16];
 uint8_t tmp[16] = {0x2b,0x7e,0x15,0x16,0x28,0xae,0xd2,0xa6,0xab,0xf7,0x15,0x88,0x09,0xcf,0x4f,0x3c};
 
+//USE_PLL doesn't require an external clock. This has issues with noise though so isn't recommended
+//#define USE_PLL
 
 int main
 	(
 	void
 	)
 	{
+    
+#ifdef USE_PLL    
 	OSC.PLLCTRL = 4;
 	OSC.CTRL |= OSC_PLLEN_bm;
 	
 	while((OSC.STATUS & OSC_PLLRDY_bm) == 0);
-	
+	    
 	// Select system clock source: External Osc. or Clock
 	uint8_t n=(CLK.CTRL & (~CLK_SCLKSEL_gm)) | CLK_SCLKSEL_PLL_gc;
 	CCP=CCP_IOREG_gc;
 	CLK.CTRL=n;
-	
+    
+    PORTD.DIRSET = PIN7_bm;                   /* To output clock, port must be set as output */
+	PORTCFG.CLKEVOUT = PORTCFG_CLKOUT_PD7_gc; /* Output the clock frequency on PD7 to measure on Counter/Scope */     
+#else
+    OSC.XOSCCTRL = 0x00;
+    OSC.PLLCTRL = 0x00;
+    OSC.CTRL |= OSC_XOSCEN_bm;
+
+    //wait for clock
+    while((OSC.STATUS & OSC_XOSCRDY_bm) == 0);
+    
+    //Switch clock source
+    CCP = CCP_IOREG_gc;
+    CLK.CTRL = CLK_SCLKSEL_XOSC_gc;    
+    
+    //Turn off other sources besides external    
+    OSC.CTRL = OSC_XOSCEN_bm;
+#endif
+   	
 	init_uart0();
 	
 	AES_software_reset();
 	
-	PORTD.DIRSET = PIN7_bm;                   /* To output clock, port must be set as output */
-	PORTCFG.CLKEVOUT = PORTCFG_CLKOUT_PD7_gc; /* Output the clock frequency on PD7 to measure on Counter/Scope */ 
-	
 	PORTA.DIRSET = PIN0_bm;
 	
+    //Test Trigger Pin
+    //PORTA.OUT = PIN0_bm;
+    //PORTA.OUT = 0;
+    
+    //Test UART 
+   /*
+    output_ch_0('h');
+    output_ch_0('e');
+    output_ch_0('l');
+    output_ch_0('l');
+    output_ch_0('o');
+    output_ch_0('\n');
+  */
+    
 	/* Super-Crappy Protocol works like this:
 	
 	Send kKEY
@@ -152,7 +185,7 @@ int main
 				aes_indep_key(tmp);
 				for(uint8_t i = 0; i < 16; i++){
 					key[i] = tmp[i];
-				}				
+				}                
 				state = IDLE;
 			} else {
 				asciibuf[ptr++] = c;
