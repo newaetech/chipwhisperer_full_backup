@@ -26,7 +26,7 @@ AVR XMEGA Crypto Engine", published in the Proceedings of the 4th Workshop on Em
 If you have access to the ACM Digital Library (most likely because you are part of a university), you
 can read this paper on the `ACM Digital Library <http://dl.acm.org/citation.cfm?id=1631724>`_.
 
-Otherwise, you can read this paper as part of Chapter 4 of Dr. Kizhvatov's `PhD Thesis <www.iacr.org/phds/106_ilyakizhvatov_physicalsecuritycryptographica.pdf>`_,
+Otherwise, you can read this paper as part of Chapter 4 of Dr. Kizhvatov's `PhD Thesis <http://www.iacr.org/phds/106_ilyakizhvatov_physicalsecuritycryptographica.pdf>`_,
 starting around page 77 of that PDF file.
 
 Setting up the Hardware
@@ -50,7 +50,7 @@ wired to the *LNA* input on the ChipWhisperer-Capture Rev2 front panel. The gene
 
 Jumpers on the Multi-Target Victim board are as follows:
 
-  .. image:: /images/tutorials/advanced/ilyaxmega/xmegajumpers.jpg
+   .. image:: /images/tutorials/advanced/ilyaxmega/xmegajumpers.jpg
 
    1. NO jumpers mounted in AVR Portion (JP1,JP4-6,JP28) or SmartCard Portion. Note if your multi-target board does not
       have JP28, the TRIG jumper for the AVR, you will have to remove the AVR from the socket.
