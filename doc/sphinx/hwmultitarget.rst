@@ -1,10 +1,10 @@
 .. _hwmultitarget:
 
 MultiTarget Victim Board
-========================================
+========================
 
 Layout of the Board
---------------------
+-------------------
 
 The general board layout is shown in the following image:
 
@@ -16,14 +16,14 @@ Specifics of each section will be discussed next.
 .. _6pin:
 
 The 6-Pin Headers
--------------------
+-----------------
 
 A core feature of the MultiTarget board is the 6-pin shunt header, allowing you to select choice of shunt type,
 noise measurement, differential measurement, and glitch injection. The layout of the 6-pin header is typically as follows,
 but be aware that VCC & GND may be swapped, see the silkscreen on the PCB:
 
 .. figure:: /images/6pin-fig1.png
- 
+
    The *output* is always the middle row, and VCC/GND is above/below this row. Note that depending on the layout the
    6-pin header may be rotated, or VCC/GND swapped.
 
@@ -38,7 +38,7 @@ Using a jumper, you can measure the *noise* on the VCC or GND line for example:
 Or select to measure the power across either the VCC or GND shunts:
 
 .. figure:: /images/6pin-fig2.png
-    
+
     Measuring power across the VCC shunt. The side closest to the Device Under Test (DUT) will always be the 'shunt connection'
     as above.
 
@@ -56,12 +56,12 @@ a standard 50-ohm termination of the pulse generator output.
     Be sure to only attach a jumper to a SINGLE target on the multi-target board. This can otherwise cause serious problems
     as some parts are 3.3V only, and some parts have the ability to handle 5V supplies. This warning will be highlighted
     again when looking at the jumper selection for the SmartCard device.
-    
+
 
 .. _vref:
 
 Target Voltage Selection
---------------------------
+------------------------
 
 The target devices are typically 3.3V only, however the smartcard socket can operate at 5V when running in pass-through
 mode. To accomplish this the 'VREF' pin is set to the operating voltage of the targets, and all IO lines (e.g. the serial
@@ -78,7 +78,7 @@ together if e.g. you shunt the 'EXT' supply from the SmartCard onto the 3.3V sup
 .. figure:: /images/multitarget_power.jpg
 
     Routing of power to targets. Note if using the AVR or XMEGA targets, JP20 which selects the IO reference voltage must
-    be set to **INT.** to ensure correct operation. 
+    be set to **INT.** to ensure correct operation.
 
 .. warning::
 
@@ -89,7 +89,7 @@ together if e.g. you shunt the 'EXT' supply from the SmartCard onto the 3.3V sup
 .. _clocksel:
 
 Oscillator Selection & Net
----------------------------
+--------------------------
 By default, the board ships with a 7.3728 MHz and 3.579 MHz crystal oscillator. These devices are capable of generating a 3.3V
 logic-level oscillator signal. There is also a DIP pinout, which you could mount a standard 8-DIP or 14-DIP sized oscillator
 onto. The oscillator section is shown below, where a series of jumpers can connect these oscillators to the **CLKOSC** net.
@@ -98,7 +98,7 @@ onto. The oscillator section is shown below, where a series of jumpers can conne
 
     Clock routing on the MultiTarget board
 
-The AVR target and SmartCard target have local clock networks you can choose to connect the correct clock source to. Normally the 
+The AVR target and SmartCard target have local clock networks you can choose to connect the correct clock source to. Normally the
 usage of these jumpers is to route an oscillator of choice (7.37MHz for AVR, 3.579MHz for SmartCard) to the local clock network.
 This local clock network is also routed back to the FPGA. The following shows such an example for the DIP AVR, although similar
 settings could be used on the SmartCard:
@@ -116,7 +116,7 @@ The XMEGA has differing setup of clock selection, which is described in more det
 .. _20pin:
 
 20-Pin Target Header
-----------------------
+--------------------
 
 The 20-pin target header can connect to the ChipWhisperer Hardware, a breakout board, or the Papilio Pro adapter. The 20-pin header
 has the following pinout:
@@ -153,7 +153,7 @@ Number          Name           Dir     Description
     drive this pin. If using the breakout board **do not** mount the voltage selection jumper.
 
 AVR Target Section
-----------------------
+------------------
 
 A 28-pin DIP socket can hold one of the following AVRs: AtMega8, AtMega48, AtMega88, AtMega168, and AtMega328P. Note that many of
 these devices are available in various 'flavours' such as the AtMega88A or AtMega88P, which are pin-compatible and effectively the
@@ -171,17 +171,17 @@ same for our application. Some information on this target:
 * JP2, JP3, Q1, C6, and C7 can be used to mount an external crystal and connect to the XTAL pins on the AVR
 
 Triggering Notes
-""""""""""""""""""""""
+""""""""""""""""
 
 All external trigger lines use the PORTC port, which is also the ADC. This is done because the digital drivers for PORTC actually come from
 the AVCC pin and **not** the VCC pin. Thus any transitions on the PORTC lines do not generate as large a spike in the power measurements
-compared to similar transitions on PORTB/PORTD. 
+compared to similar transitions on PORTB/PORTD.
 
 * The trigger line is connected to PORTC.0, and there is no jumper to isolate it. If using another target you must **remove the 28-pin AVR from
   the socket**.
 * JP25 is the extra connection pins, which connect to PORTC and are also the ADC inputs to the AVR. 'Pin1' on JP25 is the top-most pin
   (e.g. closest to JP17), and the mapping of those pins is:
-  
+
   ========== ==========
   JP25 Pin   AVR Pin
   ========== ==========
@@ -194,13 +194,13 @@ compared to similar transitions on PORTB/PORTD.
   ========== ==========
 
 Programming Notes
-""""""""""""""""""""""
+"""""""""""""""""
 * The AVR In Circuit Programming (ISP) pins are always connected to the ISP connections (MOSI/MISO/SCK/RESET) on the 20-pin header. If
   you wish to program the 28-pin DIP, ensure that all jumpers on JP8 are removed. If you wish to program the SmartCard, you need to remove
   the 28-pin AVR from the socket, as there is no way to isolate the programming lines of the 28-pin DIP except for removing the device.
 
 Warnings
-"""""""""""""""""""""""
+""""""""
 .. warning::
 
    You MUST set jumper JP20 to **INT.** to ensure the IO standards on the RXD and TXD lines are 3.3V.
@@ -212,7 +212,7 @@ Warnings
    present anyway). Do not forget to clear JP1 when removing the AVR.
 
 XMEGA Target Section
----------------------
+--------------------
 
 An ATXMEGA16A4 device is mounted on the target board. Note that since the device is soldered down, jumpers are provided which are able to
 electrically isolate the device from the rest of the board when you are not using the XMEGA. Some notes on the XMEGA device:
@@ -225,10 +225,13 @@ electrically isolate the device from the rest of the board when you are not usin
      * JP11 connects to pin PORTC.3, which is the TXD (output) on the XMEGA.
      * When not using the AVR remove these jumpers to isolate the AVR from the shared serial connections.
 * JP13 is the 'Trigger' connection on the XMEGA, which connectors to PORTA.0. This is one of the analog pins as well.
-* JP19 connects pin PORTD.7 to the FPGAIN clock network. PORTD.7 is the output pin from the XMEGA so you can syncronize to
+* JP19 connects pin PORTD.7 to the FPGAIN clock network. PORTD.7 is the output pin from the XMEGA so you can synchronize to
   the internal RC oscillator.
 * JP15 is the two XTAL/CLK pins on the XMEGA. If you want to route an external clock to the XMEGA, you can do so by running a jumper
   wire from a suitable source (e.g. one of the FPGAOUT pins or the oscillators) to the XMEGA.
+* Using the 'CLKOUT' net from the XMEGA seems to cause excessive noise on the shunt resistor, which causes analysis to fail. It's
+  recommended to jumper the clock oscillator into the XTAL1 pin on JP15. Future revisions of this board will have a clock jumper
+  to simplify this.
 
 The XMEGA is programmed via the PDI interface, and the PDI pins on the XMEGA connect to the 20-pin target header.
 
@@ -236,7 +239,7 @@ The XMEGA is programmed via the PDI interface, and the PDI pins on the XMEGA con
 
     The XMEGA is a 3.3V only device. Always remove **ALL** jumpers from the XMEGA section when not using the device, as there can be a somewhat
     complicated connection of jumpers. It is not sufficient to just remove the 'PWR' jumper for example.
-    
+
 .. warning::
 
     Ensure JP20 is set to **INT.** so that the serial bus lines will drive a 3.3V logic level when using the XMEGA.
@@ -244,26 +247,26 @@ The XMEGA is programmed via the PDI interface, and the PDI pins on the XMEGA con
 .. _smartcard:
 
 SmartCard Target Section
--------------------------
+------------------------
 
 TODO
 
 Pass-Thru/SASEBO-W Adapator
-""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""
 
 .. warning::
 
     It is completely possible to use the **EXT.** IO voltage, allowing the ChipWhisperer to interface with 5V SmartCards. Before doing
     this follow all warnings in section :ref:`vref`, or you may **DESTROY THE CHIPWHISPERER DEVICE** by shunting the external power supply
     onto internal 3.3V rails.
-	
-See :ref:`sasebowmultitarget`. 
-    
+
+See :ref:`sasebowmultitarget`.
+
 Low Noise Amplifier
---------------------
+-------------------
 
 Two 20dB Low Noise Amplifiers (LNA) are mounted on the board. When connecting to standard oscilloscopes, they can be used
-to amplify very small signals coming from a shunt resistor or H-Field probe. 
+to amplify very small signals coming from a shunt resistor or H-Field probe.
 
 The LNA chain is shown in the following figure:
 
