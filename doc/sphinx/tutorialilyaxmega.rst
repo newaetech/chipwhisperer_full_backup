@@ -1,19 +1,19 @@
 .. _tutorialilyaxmega:
 
-Tutorial #A6: Replication of Ilya Kizhvatov's XMEGA Attack
-==========================================================
+Tutorial #A6: Replication of Ilya Kizhvatov's XMEGA® Attack
+===========================================================
 
 This tutorial will demonstrate how the ChipWhisperer system can be used to replicate published
 academic research findings. In this case we will attempt to recreate an attack published by
-Dr. Ilya Kizhvatov, which was performed against the AES implementation in the Atmel XMega device.
+Dr. Ilya Kizhvatov, which was performed against the AES implementation in the Atmel® XMEGA® device.
 
 If using hardware-accelerated cryptography in your design, it is useful to understand possible
 vulnerabilities to side-channel power analysis attacks. It must be **strongly** cautioned that there
-are many published attacks against other hardware crypto accelerators: the XMega device is likely
+are many published attacks against other hardware crypto accelerators: the XMEGA® device is likely
 about as secure as any other general-purpose hardware crypto accelerator (i.e. one without explicit
 side-channel resistance).
 
-Within Atmel's product line alone some devices *do* mention side-channel analysis resistance. Thus
+Within the Atmel® product line some devices *do* mention side-channel analysis resistance. Thus
 when designing an embedded product, it's up to the designer to understand why they should care about
 side-channel analysis resistance, and to select an appropriate device if they need to defend against
 such an attack.
@@ -293,3 +293,8 @@ Here is the full attack script::
 
        def doAnalysis(self):
            self.attack.doAttack()
+
+
+Disclaimers
+-----------
+Atmel and XMEGA are registered trademarks or trademarks of Atmel Corporation or its subsidiaries, in the US and/or other countries.
