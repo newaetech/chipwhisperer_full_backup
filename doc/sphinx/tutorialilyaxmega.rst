@@ -277,7 +277,7 @@ Here is the full attack script::
            self.attack.setTracesPerAttack(2999)
            self.attack.setIterations(1)
            self.attack.setReportingInterval(50)
-           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setTargetBytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
            self.attack.setKeyround(0)
            self.attack.setDirection('enc')
            self.attack.setTraceManager(self.traceManager())

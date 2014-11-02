@@ -34,7 +34,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from subprocess import Popen, PIPE
 
 import numpy as np
@@ -45,7 +45,7 @@ try:
     import pyqtgraph.multiprocess as mp
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    #print pg.systemInfo()    
+    # print pg.systemInfo()
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
@@ -57,67 +57,68 @@ class DataTypeDiffs(object):
     """
     numSubkeys = 16
     numPerms = 256
-    
+
     def __init__(self, numSubkeys=16, numPerms=256):
         self.numSubkeys = numSubkeys
         self.numPerms = numPerms
         self.knownkey = None
         self.clear()
-        
+
     def clear(self):
         #Diffs from CPA/DPA Attack
         self.diffs = [None]*self.numSubkeys
-        
+
         #Maximum diff & location of maximum
         self.maxes = [0]*self.numSubkeys
         for i in range(0, self.numSubkeys):
             self.maxes[i] = np.zeros(self.numPerms,dtype=[('hyp','i2'),('point','i4'),('value','f8')])
-            
+
         #If maximum diffs are valid & sorted correctly
         self.maxValid = [False]*self.numSubkeys
         self.pge = [255]*self.numSubkeys
         self.diffs_tnum = [None]*self.numSubkeys
         self.pge_total = []
-        
+
         #TODO: Ensure this gets called by attack algorithms when rerunning
-        
+
     def simplePGE(self, bnum):
         if self.maxValid[bnum] == False:
             #TODO: should sort
             return 1
         return self.pge[bnum]
-            
+
     def setKnownkey(self, knownkey):
-        self.knownkey = knownkey        
-        
+        self.knownkey = knownkey
+
     def updateSubkey(self, bnum, data, copy=True, forceUpdate=False, tnum=None):
         if (id(data) != id(self.diffs[bnum])) or forceUpdate:
             self.maxValid[bnum] = False
 
-            if data is not None and copy:            
+            if data is not None and copy:
                 self.diffs[bnum] = data[:]
                 self.diffs_tnum[bnum] = tnum
             else:
                 self.diffs[bnum] = data
                 self.diffs_tnum[bnum] = tnum
-        
+
     def findMaximums(self, bytelist=None, useAbsolute=True, useSingle=False):
         if bytelist is None:
             bytelist = range(0, self.numSubkeys)
-            
+
+        # print useAbsolute
 
         for i in bytelist:
             if self.diffs[i] is None:
                 self.maxValid[i] = False
                 continue
-            
-            if self.maxValid[i] == False:     
+
+            if self.maxValid[i] == False:
                 for hyp in range(0, 256):
                     if useAbsolute:
                         v = np.nanmax(np.fabs(self.diffs[i][hyp]))
                     else:
-                        v = np.nanmax(self.diffs[i][hyp])                    
-                    
+                        v = np.nanmax(self.diffs[i][hyp])
+
                     mvalue = v
 
                     #Get maximum value for this hypothesis
@@ -134,7 +135,7 @@ class DataTypeDiffs(object):
                 #self.maxes[i][np.isnan(self.maxes[i]['value'])]['value'] = 0
                 #TODO: workaround for PGE, as NaN's get ranked first
                 numnans = np.isnan(self.maxes[i]['value']).sum()
-			
+
                 self.maxes[i].sort(order='value')
                 self.maxes[i] = self.maxes[i][::-1]
                 self.maxValid[i] = True
@@ -144,8 +145,8 @@ class DataTypeDiffs(object):
                     where = self.maxes[i][0]['point']
                     for j in range(0,256):
                         self.maxes[i][j]['point'] = where
-                        self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where] 
-                        
+                        self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where]
+
                 if self.knownkey is not None:
                     try:
                         self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0] - numnans
@@ -153,11 +154,11 @@ class DataTypeDiffs(object):
                             self.pge[i] = 128
                     except IndexError:
                         self.pge[i] = 255
-                    
+
             tnum = self.diffs_tnum[i]
-            self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})      
+            self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})
         return self.maxes
-        
-    
-    
-    
+
+
+
+
