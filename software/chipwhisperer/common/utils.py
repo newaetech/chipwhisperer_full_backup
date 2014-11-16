@@ -25,24 +25,39 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+def list2hexstr(data, delim='', prefix=''):
+    """
+    Convert a list of integers to a hex string, with optional deliminators/prefix
 
-def hexstrtolist(data):
-        data = str(data)
+    delim is inserted between each list item
 
-        newdata = data.lower()
-        newdata = newdata.replace("0x", "")
-        newdata = newdata.replace(",", "")
-        newdata = newdata.replace(" ", "")
-        newdata = newdata.replace("[", "")
-        newdata = newdata.replace("]", "")
-        newdata = newdata.replace("(", "")
-        newdata = newdata.replace(")", "")
-        newdata = newdata.replace("{", "")
-        newdata = newdata.replace("}", "")
-        newdata = newdata.replace(":", "")
-        newdata = newdata.replace("-", "")
+    prefix is inserted infront of each item (including first item)
+    """
 
-        datalist = [int(newdata[i:(i + 2)], 16) for i in range(0, len(newdata), 2)]
+    rstr = ["%02x" % t for t in data]
+    rstr = (delim + prefix).join(rstr)
+    rstr = prefix + rstr
+    return rstr
 
-        return datalist
+def hexstr2list(data):
+    """Convert a string with hex numbers into a list of numbers"""
+
+    data = str(data)
+
+    newdata = data.lower()
+    newdata = newdata.replace("0x", "")
+    newdata = newdata.replace(",", "")
+    newdata = newdata.replace(" ", "")
+    newdata = newdata.replace("[", "")
+    newdata = newdata.replace("]", "")
+    newdata = newdata.replace("(", "")
+    newdata = newdata.replace(")", "")
+    newdata = newdata.replace("{", "")
+    newdata = newdata.replace("}", "")
+    newdata = newdata.replace(":", "")
+    newdata = newdata.replace("-", "")
+
+    datalist = [int(newdata[i:(i + 2)], 16) for i in range(0, len(newdata), 2)]
+
+    return datalist
 

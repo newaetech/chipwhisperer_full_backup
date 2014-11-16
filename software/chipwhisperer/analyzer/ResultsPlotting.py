@@ -35,7 +35,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.common.GraphWidget import GraphWidget
-from chipwhisperer.common.utils import hexstrtolist
+from chipwhisperer.common.utils import hexstr2list
 
 from datetime import datetime
 from functools import partial
@@ -171,7 +171,7 @@ class ResultsPlotting(QObject):
     def setKnownKeyStr(self, strkey):
         """Override known key by user selection"""
         try:
-            hexkey = hexstrtolist(strkey)
+            hexkey = hexstr2list(strkey)
             self.override = hexkey
 
         except ValueError:
