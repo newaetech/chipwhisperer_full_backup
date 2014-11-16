@@ -35,7 +35,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.common.utils import hexstrtolist
+from chipwhisperer.common.utils import hexstr2list
 
 class KeyScheduleDialog(QDialog):
 
@@ -136,7 +136,7 @@ class KeyScheduleDialog(QDialog):
         data = self.indata.text()
 
         try:
-            newdata = hexstrtolist(data)
+            newdata = hexstr2list(data)
 
             if len(newdata) != 16 and len(newdata) != 32:
                 err = "ERR: Len=%d: %s" % (len(newdata), newdata)

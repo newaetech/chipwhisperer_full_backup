@@ -40,6 +40,7 @@ from chipwhisperer.common.GraphWidget import GraphWidget
 
 #Setup scripts/examples
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import PartitionDisplay
+from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
 
 from chipwhisperer.common.autoscript import AutoScript
 
@@ -66,7 +67,7 @@ class TraceExplorerDialog(QDialog, AutoScript):
         self.setLayout(layout)
 
         # Add example scripts to this list
-        self.exampleScripts = [PartitionDisplay(self)]
+        self.exampleScripts = [PartitionDisplay(self), TextDisplay(self)]
 
         # Add Scripts
         self.setupCommonScripts()
@@ -85,14 +86,14 @@ class TraceExplorerDialog(QDialog, AutoScript):
 
     def setupCommonScripts(self):
         # Setup parameter tree
-        
+
         self.commonScriptParams = []
-        
+
         for example in self.exampleScripts:
             self.commonScriptParams.append({'name':example.name, 'type':'group', 'children':example.params})
             example.scriptsUpdated.connect(self.updateScripts)
             example.runScriptFunction.connect(self.runScriptFunction.emit)
-        
+
 
         self.paramCommonScripts = Parameter.create(name='Common Scripts', type='group', children=self.commonScriptParams)
         ExtendedParameter.setupExtended(self.paramCommonScripts, self)
@@ -124,7 +125,7 @@ class TraceExplorerDialog(QDialog, AutoScript):
     def setTraceSource(self, tmanager):
         """Set the input trace source"""
         self._tmanager = tmanager
-        
+
     def setProject(self, project):
         self._project = project
 
@@ -136,7 +137,7 @@ class TraceExplorerDialog(QDialog, AutoScript):
     def traceManager(self):
         """Get the trace information"""
         return self._tmanager
-    
+
     def getGraphWidgets(self, nameList=["Unknown"]):
         """Setup graph widgets (e.g. graphs) in the Window, and return a reference to them"""
 
@@ -176,20 +177,20 @@ class TraceExplorerDialog(QDialog, AutoScript):
         for index, example in enumerate(self.exampleScripts):
             if hasattr(example, "_smartstatements"):
                 for k in example._smartstatements:
-                    statements = example.getStatements(k)                    
+                    statements = example.getStatements(k)
                     if len(statements) > 0:
                         prefix = example.__class__.__name__ + "_"
                         self._smartstatements[prefix + k] = example._smartstatements[k]
                         self._smartstatements[prefix + k].addSelfReplacement("exampleScripts[%d]." % index)
-                        
+
                 for k in example.getImportStatements():
                     self.importsAppend(k)
 
         self.scriptsUpdated.emit()
 
-        
 
-                
-        
+
+
+
 
 
