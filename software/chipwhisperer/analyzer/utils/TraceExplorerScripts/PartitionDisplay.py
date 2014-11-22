@@ -47,10 +47,15 @@ class DifferenceModeTTest(QObject):
         var = stats["variance"]
         num = stats["number"]
 
+
         if pbDialog:
             pbDialog.setMinimum(0)
             pbDialog.setMaximum(numkeys * numparts)
 
+        # TODO: This is because we run through loop multiple times
+        # When numparts == 2 (default for rand vs. fixed), we actually
+        # run loop 4 times I think, but with all same data (i.e. part1 vs part2, part2 vs part1)
+        # need to verify this...
         scalingFactor = 1.0 / (numparts * numparts)
 
         SADSeg = np.zeros((numkeys, numpoints))
@@ -66,6 +71,9 @@ class DifferenceModeTTest(QObject):
 
                         ttest = np.subtract(means[bnum][i], means[bnum][j])
                         ttest /= np.sqrt((var[bnum][i]/num[bnum][i]) + (var[bnum][j]/num[bnum][j]))
+
+                        # if t-test is NaN indicates perhaps exact same data
+                        ttest = np.nan_to_num(ttest)
 
                         SADSeg[bnum] = np.add(SADSeg[bnum], np.abs(ttest) * scalingFactor)
 
