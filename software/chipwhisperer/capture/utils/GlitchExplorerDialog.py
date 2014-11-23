@@ -23,19 +23,23 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+# Python standard imports
 import sys
+from datetime import datetime
+import pickle
+
+# External libraries
 from PySide.QtCore import *
 from PySide.QtGui import *
 import pyqtgraph as pg
 import pyqtgraph.multiprocess as mp
 import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+
+# CW/OpenADC
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.ParameterTypesCustom
 
-
-from datetime import datetime
-import pickle
 
 class TuningParameter(QObject):
 
@@ -182,6 +186,8 @@ class GlitchExplorerDialog(QDialog):
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.table.horizontalHeader().setResizeMode(QHeaderView.Interactive)  # setStretchLastSection(True)
         self.clearTable()
+
+        self._campaignRunning = False
 
     def tuneEnabled(self, status):
         self.findParam('numtune').setReadonly(not status)
@@ -345,7 +351,7 @@ class GlitchExplorerDialog(QDialog):
 
         if self._campaignRunning:
             if self._autosavef is None:
-                #File previously not open
+                # File previously not open
                 self._autosavef = open(self._autosavefname, "w")
                 self.findParam('savefilename').setValue(self._autosavefname)
 
