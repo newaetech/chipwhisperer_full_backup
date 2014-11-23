@@ -834,6 +834,7 @@ class ChipWhispererCapture(MainChip):
             ac.newTextResponse.connect(self.esm.newData)
             ac.traceDone.connect(cprog.traceDoneSlot)
             ac.traceDone.connect(self.glitchMonitor.traceDone)
+            self.glitchMonitor.campaignStart(baseprefix)
             ac.setMaxtraces(tracesPerRun)
             cprog.abortCapture.connect(ac.abortCapture)
 
@@ -844,6 +845,7 @@ class ChipWhispererCapture(MainChip):
 
             tcnt += tracesPerRun
             self.statusBar().showMessage("%d Captures Completed" % tcnt)
+            self.glitchMonitor.campaignDone()
 
             stoptime = datetime.now()
 

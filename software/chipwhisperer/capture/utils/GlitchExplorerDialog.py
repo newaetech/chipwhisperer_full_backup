@@ -35,6 +35,7 @@ import chipwhisperer.common.ParameterTypesCustom
 
 
 from datetime import datetime
+import pickle
 
 class TuningParameter(QObject):
 
@@ -123,29 +124,39 @@ class GlitchExplorerDialog(QDialog):
         super(GlitchExplorerDialog, self).__init__(parent)
 
         # HACK FOR NOW
-        self.glitchfile = open("glitchresults.txt", "a")
-        self.glitchfile.write("\n\n")
-        self.glitchfile.write("#*******FILE OPENED************\n")
+        # self.glitchfile = open("glitchresults.txt", "a")
+        # self.glitchfile.write("\n\n")
+        # self.glitchfile.write("#*******FILE OPENED************\n")
 
         self.showScriptParameter = showScriptParameter
 
         self.setWindowTitle("Glitch Explorer")
 
-        self.parent = parent
+        #self.parent = parent
 
         self.mainLayout = QVBoxLayout()
+        self.mainSplitter = QSplitter(self)
+        self.mainSplitter.setOrientation(Qt.Vertical)
 
         self.tableList = []
         self.tuneParamList = []
 
         #Add default table
         self.table = QTableWidget(1,1)
-        self.mainLayout.addWidget(self.table)
+        # self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.mainSplitter.addWidget(self.table)
 
         self.glitchParams =[{'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
                             {'name':'Tuning Parameters ', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 1), 'set':self.updateParameters},
                             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
-                            {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'}
+                            {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
+
+                            {'name':'Recordings', 'type':'group', 'children':[
+                                # {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
+                                {'name':'Last autosave Filename', 'type':'str', 'key':'savefilename', 'value':''},
+                                {'name':'Notes', 'type':'text', 'key':'savenotes'},
+                                {'name':'Write notes to last autosave file', 'type':'action'}
+                            ]},
                             ]
 
 
@@ -155,12 +166,15 @@ class GlitchExplorerDialog(QDialog):
 
         self.reloadParameters()
 
-        self.mainLayout.addWidget(self.paramTree)
+        self.mainSplitter.addWidget(self.paramTree)
 
         self.statusLabel = QLabel("")
 
-        self.mainLayout.addWidget(self.statusLabel)
+        self.mainSplitter.addWidget(self.statusLabel)
 
+        # self.mainSplitter.setHandleWidth(100)
+
+        self.mainLayout.addWidget(self.mainSplitter)
         self.setLayout(self.mainLayout)
         self.hide()
 
@@ -168,6 +182,30 @@ class GlitchExplorerDialog(QDialog):
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.table.horizontalHeader().setResizeMode(QHeaderView.Interactive)  # setStretchLastSection(True)
         self.clearTable()
+
+    def tuneEnabled(self, status):
+        self.findParam('numtune').setReadonly(not status)
+
+    def campaignStart(self, prefixname):
+        """Called when acqusition campaign (multi-capture) starts, generates filename"""
+        suffix = "_glitchresults.p"
+        try:
+            fname = self.parent().project().getDataFilepath(prefixname + suffix, subdirectory="glitchresults")
+            self._autosavefname = fname["abs"]
+        except:
+            self._autosavefname = datetime.now().strftime('%Y.%m.%d-%H.%M.%S') + suffix
+
+        self._autosavef = None
+        self._campaignRunning = True
+        self.tuneEnabled(False)
+
+    def campaignDone(self):
+        self._campaignRunning = False
+        self.tuneEnabled(True)
+
+        if self._autosavef:
+            self._autosavef.close()
+            self._autosavef = None
 
 
     def updateStatus(self):
@@ -186,8 +224,8 @@ class GlitchExplorerDialog(QDialog):
         self.updateTableHeaders()
 
     def executeScriptCommand(self, paramNum, script):
-        print script
-        self.parent.setParameter(script)
+        #print script
+        self.parent().setParameter(script)
 
     def updateParameters(self, ignored=None):
         numparams = self.findParam('numtune').value()
@@ -234,8 +272,8 @@ class GlitchExplorerDialog(QDialog):
         self.table.setColumnCount(len(headerlist))
         self.table.setHorizontalHeaderLabels(headerlist)
 
-        for i in range(0, len(self.tuneParamList)):
-            self.glitchfile.write("# Script %d = %s\n" % (i, self.tuneParamList[i].findParam('script').value()))
+        # for i in range(0, len(self.tuneParamList)):
+        #    self.glitchfile.write("# Script %d = %s\n" % (i, self.tuneParamList[i].findParam('script').value()))
 
     def traceDone(self):
 
@@ -259,10 +297,10 @@ class GlitchExplorerDialog(QDialog):
 
         self.table.setItem(0, 1, outdata)
         self.table.setItem(0, 2, QTableWidgetItem(newdata["date"].strftime('%H:%M:%S')))
+        for i, v in enumerate(newdata["settings"]):
+            self.table.setItem(0, 3 + i, QTableWidgetItem(str(v)))
 
-        for i in range(0, len(self.tuneParamList)):
-            value = self.tuneParamList[i].paramValueItem.value()
-            self.table.setItem(0, 3 + i, QTableWidgetItem(str(value)))
+
 
     def addResponse(self, resp):
 
@@ -298,17 +336,28 @@ class GlitchExplorerDialog(QDialog):
         respstr = str(bytearray(resp.encode('utf-8')))
         # respstr = ' '.join(["%02x" % t for t in bytearray(resp)])
 
-        newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":{}, "date":starttime}
+        settingsList = [ self.tuneParamList[i].paramValueItem.value() for i in range(0, len(self.tuneParamList))]
+        newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":settingsList, "date":starttime}
+
         self.tableList.append(newdata)
         self.appendToTable(newdata)
         self.updateStatus()
 
+        if self._campaignRunning:
+            if self._autosavef is None:
+                #File previously not open
+                self._autosavef = open(self._autosavefname, "w")
+                self.findParam('savefilename').setValue(self._autosavefname)
 
-        # Write to file
-        filestr = "%s %s"%(starttime.strftime('%H:%M:%S'), respstr)
-        for p in self.tuneParamList:
-            filestr += "%s "%p.paramValueItem.value()
-        self.glitchfile.write(filestr + "\n")
+                # Add notes
+                pickle.dump({"notes":self.findParam('savenotes').value()}, self._autosavef)
+
+                # Add headers
+                cmds = [self.tuneParamList[i].findParam('script').value() for i in range(0, len(self.tuneParamList))]
+                pickle.dump({"commands":cmds}, self._autosavef)
+
+            # Add data
+            pickle.dump({"data":newdata}, self._autosavef)
 
 
 def main():
