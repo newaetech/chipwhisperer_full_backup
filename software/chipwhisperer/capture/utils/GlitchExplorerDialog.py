@@ -47,8 +47,9 @@ class TuningParameter(QObject):
     newScriptCommand = Signal(int, list)
     nameChanged = Signal(int, str)
 
-    def __init__(self, num):
+    def __init__(self, num, showScriptParameter=None):
         super(TuningParameter, self).__init__()
+        self.showScriptParameter = showScriptParameter
 
         self.paramNum = num
 
@@ -97,8 +98,9 @@ class TuningParameter(QObject):
             print "Syntax Error: %s" % str(e)
 
     def findNewValue(self, mode="linear"):
-        if str.lower(mode) == "linear":
+        """ Find new value for this parameter """
 
+        if str.lower(mode) == "linear":
             self.cnt += 1
             if self.cnt == self.paramRepeat:
                 # Done this one, next step
@@ -109,34 +111,23 @@ class TuningParameter(QObject):
                     newval = self.paramRange[0]
                     self.rangeComplete.emit(self.paramNum)
 
+                # Cast type to required value
                 newval = self.paramType(newval)
-                # print newval
 
                 self.paramScript[-1] = newval
                 self.paramValueItem.setValue(newval)
-                # print self.paramScript
                 self.newScriptCommand.emit(self.paramNum, self.paramScript)
-
-
         else:
             raise ValueError("Unknown Increment Type %s" % mode)
-
 
 
 class GlitchExplorerDialog(QDialog):
     def __init__(self, parent, showScriptParameter=None):
         super(GlitchExplorerDialog, self).__init__(parent)
 
-        # HACK FOR NOW
-        # self.glitchfile = open("glitchresults.txt", "a")
-        # self.glitchfile.write("\n\n")
-        # self.glitchfile.write("#*******FILE OPENED************\n")
-
         self.showScriptParameter = showScriptParameter
 
         self.setWindowTitle("Glitch Explorer")
-
-        #self.parent = parent
 
         self.mainLayout = QVBoxLayout()
         self.mainSplitter = QSplitter(self)
@@ -151,11 +142,11 @@ class GlitchExplorerDialog(QDialog):
         self.mainSplitter.addWidget(self.table)
 
         self.glitchParams =[{'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
-                            {'name':'Tuning Parameters ', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 1), 'set':self.updateParameters},
+                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters},
                             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
                             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
 
-                            {'name':'Recordings', 'type':'group', 'children':[
+                            {'name':'Recordings', 'type':'group', 'expanded':False, 'children':[
                                 # {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
                                 {'name':'Last autosave Filename', 'type':'str', 'key':'savefilename', 'value':''},
                                 {'name':'Notes', 'type':'text', 'key':'savenotes'},
@@ -244,12 +235,13 @@ class GlitchExplorerDialog(QDialog):
         while numparams > len(self.tuneParamList):
             #Add parameters
             #p = Parameter.create(name='Tuning Parameter %d' % len(self.tuneParamList), type='group', children=self.glitchTuneParamTemplate)
-            p = TuningParameter(len(self.tuneParamList))
+            p = TuningParameter(len(self.tuneParamList), showScriptParameter=self.showScriptParameter)
             self.tuneParamList.append(p)
 
             # Do stuff
             p.nameChanged.connect(self.updateTableHeaders)
             p.newScriptCommand.connect(self.executeScriptCommand)
+            p.rangeComplete.connect(self.rangeDone)
 
         self.updateTableHeaders()
         self.reloadParameters()
@@ -278,19 +270,23 @@ class GlitchExplorerDialog(QDialog):
         self.table.setColumnCount(len(headerlist))
         self.table.setHorizontalHeaderLabels(headerlist)
 
-        # for i in range(0, len(self.tuneParamList)):
-        #    self.glitchfile.write("# Script %d = %s\n" % (i, self.tuneParamList[i].findParam('script').value()))
+    def rangeDone(self, pnum):
+
+        if (pnum + 1) < len(self.tuneParamList):
+            self.tuneParamList[pnum + 1].findNewValue()
 
     def traceDone(self):
+        """ Single capture done """
 
-        # TODO: Currently only works on one parameter, should improve this
-        # to work with multiple. Need to think about how that should work
-        # depending on looping method etc?
+        # TODO: Improve how looping is done
         if len(self.tuneParamList) > 0:
+            # Always increment lowest, triggers upper values
             self.tuneParamList[0].findNewValue()
 
 
     def appendToTable(self, newdata):
+        """ Append a result to the display table """
+
         self.table.insertRow(0)
 
         outdata = QTableWidgetItem(newdata["output"])
@@ -307,8 +303,8 @@ class GlitchExplorerDialog(QDialog):
             self.table.setItem(0, 3 + i, QTableWidgetItem(str(v)))
 
 
-
     def addResponse(self, resp):
+        """ Add a response from the system to glitch table + logs """
 
         normeval = self.findParam('normalresp').value()
         succeval = self.findParam('successresp').value()
