@@ -58,7 +58,7 @@ def listAll(parent):
     valid_targets["Resync: Sum-of-Difference"] = ResyncSAD(parent)
     valid_targets["Resync: Peak Detect"] = ResyncPeakDetect(parent)
     valid_targets["Resync: Cross Correlation"] = ResyncCrossCorrelation(parent)
-    valid_targets["Resync: "] = ResyncResampleZC(parent)
+    valid_targets["Resync: Resample based on Zero-Crossing"] = ResyncResampleZC(parent)
     if DecimationClockRecovery:
         valid_targets["Decimation: Clock Recovery"] = DecimationClockRecovery(parent)
     if DecimationFixed:
