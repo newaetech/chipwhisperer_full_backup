@@ -52,7 +52,7 @@ class CPASimpleLoop(QObject):
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, progressBar, model, pbcnt):
         diffs = [0]*256
-    
+
         if pointRange == None:
             traces = traces_all
             padbefore = 0
@@ -62,35 +62,35 @@ class CPASimpleLoop(QObject):
             padbefore = pointRange[bnum][0]
             padafter = len(traces_all[0,:]) - pointRange[bnum][1]
             #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
-    
+
         #For each 0..0xFF possible value of the key byte
-        for key in range(0, 256):                
+        for key in range(0, 256):
             #Initialize arrays & variables to zero
             sumnum = np.zeros(len(traces[0,:]))
             sumden1 = np.zeros(len(traces[0,:]))
             sumden2 = np.zeros(len(traces[0,:]))
-    
+
             hyp = [0] * numtraces
-    
+
             #Formula for CPA & description found in "Power Analysis Attacks"
-            # by Mangard et al, page 124, formula 6.2.                         
-            
+            # by Mangard et al, page 124, formula 6.2.
+
             #Generate hypotheticals
             for tnum in range(numtraces):
-    
+
                 if len(plaintexts) > 0:
                     pt = plaintexts[tnum]
-    
+
                 if len(ciphertexts) > 0:
                     ct = ciphertexts[tnum]
-    
+
                 if keyround == "first" or keyround == 0:
                     ct = None
                 elif keyround == "last" or keyround == -1:
                     pt = None
                 else:
                     raise ValueError("keyround invalid")
-                
+
                 #Generate the output of the SBOX
                 # if modeltype == "Hamming Weight":
                 #    hypint = model.HypHW(pt, ct, key, bnum);
@@ -100,39 +100,39 @@ class CPASimpleLoop(QObject):
                 #    raise ValueError("modeltype invalid")
                 hypint = model(pt, ct, key, bnum)
                 hyp[tnum] = hypint
-                
-            hyp = np.array(hyp)                    
-    
+
+            hyp = np.array(hyp)
+
             #Mean of hypothesis
             meanh = np.mean(hyp, dtype=np.float64)
-    
+
             #Mean of all points in trace
             meant = np.mean(traces, axis=0, dtype=np.float64)
-                               
+
             #For each trace, do the following
             for tnum in range(numtraces):
                 hdiff = (hyp[tnum] - meanh)
                 tdiff = traces[tnum,:] - meant
-    
+
                 sumnum = sumnum + (hdiff*tdiff)
-                sumden1 = sumden1 + hdiff*hdiff 
-                sumden2 = sumden2 + tdiff*tdiff             
-    
+                sumden1 = sumden1 + hdiff * hdiff
+                sumden2 = sumden2 + tdiff * tdiff
+
             if progressBar:
                 progressBar.setValue(pbcnt)
                 #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
                 pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
                     raise KeyboardInterrupt
-    
+
             diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
-    
+
             if padafter > 0:
                 diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
-    
+
             if padbefore > 0:
-                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
-        
+                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
+
         return (diffs, pbcnt)
 
     def setTargetBytes(self, brange):
@@ -140,11 +140,11 @@ class CPASimpleLoop(QObject):
 
     def setKeyround(self, keyround):
         self.keyround = keyround
-    
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, tracesLoop=None):
+
+    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None, tracesLoop=None):
         keyround=self.keyround
         brange=self.brange
-                                                                   
+
         traces_all = np.array(traces)
         plaintexts =np.array(plaintexts)
         ciphertexts =np.array(ciphertexts)
@@ -164,9 +164,9 @@ class CPASimpleLoop(QObject):
         for bnum in brange:
             (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, progressBar, self.leakageModel, pbcnt)
             self.stats.updateSubkey(bnum, data)
-    
+
     def getStatistics(self):
         return self.stats
-    
+
     def setStatsReadyCallback(self, sr):
         pass

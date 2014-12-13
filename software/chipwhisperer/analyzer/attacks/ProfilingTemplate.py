@@ -220,7 +220,7 @@ class ProfilingTemplate(AutoScript, QObject):
         self.profiling.setProject(self._project)
         self.profiling.scriptsUpdated.connect(self.updateScript)
         self.updateScript()
-        
+
     def updateScript(self, ignored=None):
        # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
 
@@ -240,7 +240,7 @@ class ProfilingTemplate(AutoScript, QObject):
             self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
 
         self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
-        
+
         #Save template data to project
         self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
 
@@ -336,7 +336,7 @@ class ProfilingTemplate(AutoScript, QObject):
 
         return poiList
 
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
 
         # Hack for now - just use last template found
         template = self.loadTemplatesFromProject()[-1]
@@ -374,7 +374,7 @@ class ProfilingTemplate(AutoScript, QObject):
                         newresults.append(newresultsint[ hypint ])
                 else:
                     newresults = newresultsint
-                
+
                 results[bnum] += newresults
                 self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
 
