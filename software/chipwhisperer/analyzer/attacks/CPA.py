@@ -207,6 +207,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             data = []
             textins = []
             textouts = []
+            knownkeys = []
 
             print "%d-%d"%(startingTrace, endingTrace)
 
@@ -221,6 +222,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 data.append(d)
                 textins.append(self.trace.getTextin(i))
                 textouts.append(self.trace.getTextout(i))
+                knownkeys.append(self.trace.getKnownKey(i))
 
             progress = AttackProgressDialog()
             progress.setWindowModality(Qt.WindowModal)
@@ -229,7 +231,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
             #TODO:  pointRange=self.TraceRangeList[1:17]
             try:
-                self.attack.addTraces(data, textins, textouts, progress)
+                self.attack.addTraces(data, textins, textouts, knownkeys, progress)
             except KeyboardInterrupt:
                 self.log("Attack ABORTED... stopping")
 
