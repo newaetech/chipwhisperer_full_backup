@@ -39,6 +39,7 @@ from chipwhisperer.analyzer.preprocessing.Filter import Filter
 from chipwhisperer.analyzer.preprocessing.AddNoiseJitter import AddNoiseJitter
 from chipwhisperer.analyzer.preprocessing.AddNoiseRandom import AddNoiseRandom
 from chipwhisperer.analyzer.preprocessing.Normalize import Normalize
+from chipwhisperer.analyzer.preprocessing.ResyncResampleZC import ResyncResampleZC
 
 try:
     from chipwhisperer.analyzer.preprocessing.DecimationClockRecovery import DecimationClockRecovery
@@ -57,6 +58,7 @@ def listAll(parent):
     valid_targets["Resync: Sum-of-Difference"] = ResyncSAD(parent)
     valid_targets["Resync: Peak Detect"] = ResyncPeakDetect(parent)
     valid_targets["Resync: Cross Correlation"] = ResyncCrossCorrelation(parent)
+    valid_targets["Resync: Resample based on Zero-Crossing"] = ResyncResampleZC(parent)
     if DecimationClockRecovery:
         valid_targets["Decimation: Clock Recovery"] = DecimationClockRecovery(parent)
     if DecimationFixed:
