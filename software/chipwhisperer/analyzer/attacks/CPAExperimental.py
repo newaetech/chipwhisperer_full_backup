@@ -35,7 +35,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 from subprocess import Popen, PIPE
 
 import numpy as np
@@ -58,15 +58,15 @@ class AttackCPA_Bayesian(QObject):
 
     def setKeyround(self, keyround):
         self.keyround = keyround
-    
+
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
-    
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
+
+    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-                                          
+
         traces = np.array(traces)
         plaintexts =np.array(plaintexts)
         ciphertexts =np.array(ciphertexts)
@@ -85,11 +85,11 @@ class AttackCPA_Bayesian(QObject):
             diffs = [0]*256
 
             #For each 0..0xFF possible value of the key byte
-            for key in range(0, 256):                
+            for key in range(0, 256):
                 #Initialize arrays & variables to zero
                 sumstd = np.zeros(len(traces[0,:]), dtype=np.float64)
-                hyp = [0] * len(traces[:,0])           
-                
+                hyp = [0] * len(traces[:, 0])
+
                 #Generate hypotheticals
                 for tnum in range(len(traces[:,0])):
 
@@ -105,7 +105,7 @@ class AttackCPA_Bayesian(QObject):
                         pt = None
                     else:
                         raise ValueError("keyround invalid")
-                    
+
                     #Generate the output of the SBOX
                     if modeltype == "Hamming Weight":
                         hypint = self.model.HypHW(pt, ct, key, bnum);
@@ -113,10 +113,10 @@ class AttackCPA_Bayesian(QObject):
                         hypint = self.model.HypHD(pt, ct, key, bnum);
                     else:
                         raise ValueError("modeltype invalid")
-                    
+
                     hyp[tnum] = hypint
-                    
-                hyp = np.array(hyp)                    
+
+                hyp = np.array(hyp)
 
                 #Mean & STD-DEV of hypothesis
                 meanh = np.mean(hyp, dtype=np.float64)
@@ -125,7 +125,7 @@ class AttackCPA_Bayesian(QObject):
                 #Mean & STD-DEV of all points in trace
                 meant = np.mean(traces, axis=0, dtype=np.float64)
                 stddevt = np.std(traces, axis=0, dtype=np.float64)
-                                   
+
                 #For each trace, do the following
                 for tnum in range(len(traces[:,0])):
                     #Make both zero-mean
@@ -136,7 +136,7 @@ class AttackCPA_Bayesian(QObject):
                     hdiff = hdiff / np.float64(stddevh)
                     tdiff = tdiff / np.array(stddevt, dtype=np.float64)
 
-                    #Calculate error term                   
+                    # Calculate error term
                     error = (hdiff - tdiff)
                     sumstd = sumstd + pow(error, 2)
 
@@ -177,13 +177,13 @@ class AttackCPA_Bayesian(QObject):
                 summation = summation + 1
                 summation = np.log(summation)
                 summation = summation + diffs[0]
-                           
+
                 for key in range(0, 256):
                     diffs[key] = diffs[key] - summation
 
             else:
                 raise RuntimeError("algo not defined")
-                            
+
             self.all_diffs[bnum] = diffs
         self.algo = algo
             #From all the key candidates, select the largest difference as most likely
@@ -197,7 +197,7 @@ class AttackCPA_Bayesian(QObject):
         if hyprange == None:
             hyprange = range(0,256)
         return [self.all_diffs[bnum][i] for i in hyprange];
-    
+
     def getDiff(self, bnum, hyprange=None):
         if self.algo == "original":
             return self._getResult(bnum, hyprange)
@@ -205,13 +205,13 @@ class AttackCPA_Bayesian(QObject):
             return np.exp(self._getResult(bnum, hyprange))
         else:
             raise RuntimeError("algo not defined")
-    
+
     def getStatistics(self):
         t = [0]*16
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
-    
+
     def setStatsReadyCallback(self, sr):
         pass
 
@@ -230,15 +230,15 @@ class AttackCPA_SciPyCorrelation(QObject):
 
     def setKeyround(self, keyround):
         self.keyround = keyround
-    
+
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
-    
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None, tracesLoop=None):
+
+    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None, tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-                                                                   
+
         traces_all = np.array(traces)
         plaintexts =np.array(plaintexts)
         ciphertexts =np.array(ciphertexts)
@@ -271,11 +271,11 @@ class AttackCPA_SciPyCorrelation(QObject):
                 #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
 
             #For each 0..0xFF possible value of the key byte
-            for key in range(0, 256):               
+            for key in range(0, 256):
 
                 hyp = np.empty((numtraces, 1))
-                
-                
+
+
                 #Generate hypotheticals
                 for tnum in range(numtraces):
 
@@ -291,7 +291,7 @@ class AttackCPA_SciPyCorrelation(QObject):
                         pt = None
                     else:
                         raise ValueError("keyround invalid")
-                    
+
                     #Generate the output of the SBOX
                     if modeltype == "Hamming Weight":
                         hypint = self.model.HypHW(pt, ct, key, bnum);
@@ -299,7 +299,7 @@ class AttackCPA_SciPyCorrelation(QObject):
                         hypint = self.model.HypHD(pt, ct, key, bnum);
                     else:
                         raise ValueError("modeltype invalid")
-                    hyp[tnum, 0] = hypint       
+                    hyp[tnum, 0] = hypint
 
                 if progressBar:
                     progressBar.setValue(pbcnt)
@@ -309,9 +309,9 @@ class AttackCPA_SciPyCorrelation(QObject):
                         raise KeyboardInterrupt
 
                 diffs[key] = sp.signal.correlate(traces, hyp, 'valid')[0,:]
-                
-                  
-            
+
+
+
             self.all_diffs[bnum] = diffs
 
             #From all the key candidates, select the largest difference as most likely
@@ -324,12 +324,12 @@ class AttackCPA_SciPyCorrelation(QObject):
         if hyprange == None:
             hyprange = range(0,256)
         return [self.all_diffs[bnum][i] for i in hyprange];
-    
+
     def getStatistics(self):
         t = [0]*16
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
-    
+
     def setStatsReadyCallback(self, sr):
         pass

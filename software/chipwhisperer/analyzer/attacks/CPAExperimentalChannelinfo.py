@@ -32,7 +32,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 import numpy as np
 import scipy as sp
 from openadc.ExtendedParameter import ExtendedParameter
@@ -56,9 +56,9 @@ except ImportError:
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
-    def __init__(self):        
+    def __init__(self):
         self.clearStats()
-        
+
     def clearStats(self):
         self.sumhq = [0]*256
         self.sumtq = [0]*256
@@ -66,12 +66,12 @@ class CPAProgressiveOneSubkey(object):
         self.sumh = [0]*256
         self.sumht = [0]*256
         self.totalTraces = 0
-    
+
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-    
+
         diffs = [0]*256
         self.totalTraces += numtraces
-    
+
         if pointRange == None:
             traces = traces_all
             padbefore = 0
@@ -83,36 +83,36 @@ class CPAProgressiveOneSubkey(object):
             #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
 
         #For each 0..0xFF possible value of the key byte
-        for key in range(0, 256):                
+        for key in range(0, 256):
             #Initialize arrays & variables to zero
             sumnum = 0
             sumden1 = 0
             sumden2 = 0
-    
+
             hyp = [0] * numtraces
-    
+
             #Formula for CPA & description found in "Power Analysis Attacks"
-            # by Mangard et al, page 124, formula 6.2.     
+            # by Mangard et al, page 124, formula 6.2.
             #
             # This has been modified to reduce computational requirements such that adding a new waveform
             # doesn't require you to recalculate everything
-            
+
             #Generate hypotheticals
             for tnum in range(numtraces):
-    
+
                 if len(plaintexts) > 0:
                     pt = plaintexts[tnum]
-    
+
                 if len(ciphertexts) > 0:
                     ct = ciphertexts[tnum]
-    
+
                 if keyround == "first":
                     ct = None
                 elif keyround == "last":
                     pt = None
                 else:
                     raise ValueError("keyround invalid")
-                
+
                 #Generate the output of the SBOX
                 if modeltype == "Hamming Weight":
                     hypint = model.HypHW(pt, ct, key, bnum)
@@ -124,35 +124,35 @@ class CPAProgressiveOneSubkey(object):
                 else:
                     raise ValueError("modeltype invalid")
                 hyp[tnum] = hypint
-                
-            hyp = np.array(hyp)                                
-                
+
+            hyp = np.array(hyp)
+
             self.sumt[key] += np.sum(traces, axis=0)
             self.sumh[key] += np.sum(hyp, axis=0)
             self.sumht[key] += np.sum(np.multiply(traces, hyp), axis=0)
-    
+
             #WARNING: not casting to np.float64 causes algorithm degredation... always be careful
             #meanh = self.sumh[key] / np.float64(self.totalTraces)
             #meant = self.sumt[key] / np.float64(self.totalTraces)
-    
+
             #numtraces * meanh * meant = sumh * meant
             #sumnum =  self.sumht[key] - meant*self.sumh[key] - meanh*self.sumt[key] + (self.sumh[key] * meant)
             #sumnum =  self.sumht[key] - meanh*self.sumt[key]
 #            sumnum =  self.sumht[key] - meanh*self.sumt[key]
             #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
             sumnum = self.totalTraces*self.sumht[key] - self.sumh[key]*self.sumt[key]
-    
+
             self.sumhq[key] += np.sum(np.square(hyp),axis=0, dtype=np.float64)
             self.sumtq[key] += np.sum(np.square(traces),axis=0, dtype=np.float64)
-    
+
             #numtraces * meanh * meanh = sumh * meanh
             #sumden1 = sumhq - (2*meanh*self.sumh) + (numtraces*meanh*meanh)
             #sumden1 = sumhq - (2*meanh*self.sumh) + (self.sumh * meanh)
-            #sumden1 = sumhq - meanh*self.sumh    
-            #similarly for sumden2     
+            # sumden1 = sumhq - meanh*self.sumh
+            # similarly for sumden2
             #sumden1 = self.sumhq[key] - meanh*self.sumh[key]
             #sumden2 = self.sumtq[key] - meant*self.sumt[key]
-            #sumden = sumden1 * sumden2    
+            # sumden = sumden1 * sumden2
 
             #Sumden1/Sumden2 are variance of these variables, may be numeric unstability
             #See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance for online update
@@ -160,29 +160,29 @@ class CPAProgressiveOneSubkey(object):
             sumden1 = (np.square(self.sumh[key]) - self.totalTraces * self.sumhq[key])
             sumden2 = (np.square(self.sumt[key]) - self.totalTraces * self.sumtq[key])
             sumden = sumden1 * sumden2
-            
+
             #if sumden.any() < 1E-12:
             #    print "WARNING: sumden small"
 
-    
+
             if progressBar:
                 progressBar.setValue(pbcnt)
                 progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces), bnum)
                 pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
                     raise KeyboardInterrupt
-                
+
                 if progressBar.wasSkipped():
                     return (diffs, pbcnt)
-    
+
             diffs[key] = sumnum / np.sqrt(sumden)
-    
+
             if padafter > 0:
                 diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
-    
+
             if padbefore > 0:
-                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])                    
-        
+                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
+
         return (diffs, pbcnt)
 
 class MinDistOneSubkey(object):
@@ -262,7 +262,7 @@ class TemplateOneSubkey(object):
         self.totalTraces += numtraces
 
         traces = traces_all
-        
+
         logpdf = []
         for tnum in range(0, numtraces):
             hdata = [norm.logpdf(traces[tnum], loc=self.template['mean'][bnum][hypint], scale=self.template['cov'][bnum][hypint]) for hypint in range(0, 9)]
@@ -321,22 +321,22 @@ class CPAExperimentalChannelinfo(QObject):
 
     def __init__(self, model, showScriptParameter=None, parent=None):
         super(CPAExperimentalChannelinfo, self).__init__()
-        
+
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
                          {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},                         
+                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
         self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        
+
         self.model = model
         self.sr = None
-        self.parent = parent
-        
-        print self.parent.parent
+        self._parent = parent
+
+        # print self._parent.parent
 
         self.stats = DataTypeDiffs()
-        
+
     def paramList(self):
         return [self.params]
 
@@ -345,15 +345,15 @@ class CPAExperimentalChannelinfo(QObject):
 
     def setKeyround(self, keyround):
         self.keyround = keyround
-    
+
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
-    
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+
+    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-                                                                   
+
         traces_all = np.asarray(traces)
         plaintexts =np.asarray(plaintexts)
         ciphertexts =np.asarray(ciphertexts)
@@ -381,16 +381,16 @@ class CPAExperimentalChannelinfo(QObject):
             cpa[bnum] = CPAProgressiveOneSubkey()
             # cpa[bnum] = MinDistOneSubkey()
             # cpa[bnum] = TemplateOneSubkey()
-            
+
         brangeMap = [None]*(max(brange)+1)
         i = 1
         for bnum in brange:
             brangeMap[bnum] = i
             i += 1
-            
+
         skipPGE = self.findParam('checkpge').value()
         bf = self.findParam('itmode').value() == 'bf'
-        
+
         #bf specifies a 'breadth-first' search. bf means we search across each
         #subkey by only the amount of traces specified. Depth-First means we
         #search each subkey completely, then move onto the next.
@@ -400,8 +400,8 @@ class CPAExperimentalChannelinfo(QObject):
         else:
             brange_bf = [0]
             brange_df = brange
-        
-        
+
+
         #H = np.load('channelinfo-masked.npy')
         #H = np.load('csi-masked-newkey.npy')
         #H = np.load('channelinfo.npy')
@@ -409,7 +409,7 @@ class CPAExperimentalChannelinfo(QObject):
         #H = mio['equaltotal']
         # H = np.load('equalization.npy')
         # self.project() ?
-        project = self.parent.parent.proj
+        project = self._parent.parent().proj
         section = project.getDataConfig("Template Data", "Equalization Matrix")
        # section = project.getDataConfig("Template Data", "AOF Matrix")
         fname = project.convertDataFilepathAbs(section[0]["filename"])
@@ -421,63 +421,63 @@ class CPAExperimentalChannelinfo(QObject):
             #for i in range(0, 5):
             #    threshold = max(abs(test[j]))
             #    test[j, abs(test[j,:]) >= threshold ] = 0
-            
+
             #print "%f %d"%(threshold, (abs(H[j,:]) > threshold).sum())
-        
+
             #H[j, abs(H[j,:]) < threshold] = 0
 
         for bnum_df in brange_df:
-        
+
             #CPAMemoryOneSubkey
             #CPASimpleOneSubkey
             #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
-            
+
             tstart = 0
             tend = tdiff
-            
-            
-            while tstart < numtraces:                                       
+
+
+            while tstart < numtraces:
                 if tend > numtraces:
                     tend = numtraces
-                    
+
                 if tstart > numtraces:
                     tstart = numtraces
-                    
-                
+
+
                 for bnum_bf in brange_bf:
-                    
+
                     if bf:
                         bnum = bnum_bf
                     else:
                         bnum = bnum_df
-                
+
                     traces_fixed = np.dot(traces_all - traces_all.mean(axis=0), H[bnum]) + 4
                     skip = False
-                    if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):                    
+                    if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
                         (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_fixed[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
-                    else:  
+                    else:
                         skip = True
-                    
+
                     if progressBar.wasSkipped() or skip:
                         progressBar.clearSkipped()
                         pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
-                        
+
                         if bf is False:
                             tstart = numtraces
-                
+
                 tend += tdiff
                 tstart += tdiff
-               
+
                 if self.sr is not None:
                     self.sr()
 
             if progressBar is not None:
                 pbcnt = 0
-    
+
     def getStatistics(self):
         return self.stats
-    
+
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 

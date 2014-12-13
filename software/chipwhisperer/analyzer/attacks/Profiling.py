@@ -212,7 +212,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
             #TODO:  pointRange=self.TraceRangeList[1:17]
             try:
-                self.attack.addTraces(data, textins, textouts, progress)
+                self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progress)
             except KeyboardInterrupt:
                 self.log("Attack ABORTED... stopping")
 

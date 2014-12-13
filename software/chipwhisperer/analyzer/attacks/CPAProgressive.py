@@ -28,6 +28,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import numpy as np
+import inspect
 from pyqtgraph.parametertree import Parameter
 
 from openadc.ExtendedParameter import ExtendedParameter
@@ -47,7 +48,7 @@ class CPAProgressiveOneSubkey(object):
         self.sumht = [0]*256
         self.totalTraces = 0
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt, direction):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt, direction, knownkeys=None):
 
         diffs = [0]*256
         self.totalTraces += numtraces
@@ -86,6 +87,11 @@ class CPAProgressiveOneSubkey(object):
                 if len(ciphertexts) > 0:
                     ct = ciphertexts[tnum]
 
+                if knownkeys and len(knownkeys) > 0:
+                    nk = knownkeys[tnum]
+                else:
+                    nk = None
+
                 if (keyround == "first") or (keyround == 0):
                     if direction == "enc":
                         ct = None
@@ -106,7 +112,12 @@ class CPAProgressiveOneSubkey(object):
                     raise ValueError("keyround invalid: %s" % str(keyround))
 
                 #Generate the output of the SBOX
-                hypint = leakagetype(pt, ct, key, bnum)
+                aspec = inspect.getargspec(leakagetype)[0]
+                if 'knownkey' in aspec:
+                    hypint = leakagetype(pt, ct, key, bnum, nk)
+                else:
+                    hypint = leakagetype(pt, ct, key, bnum)
+
                 hyp[tnum] = hypint
 
             hyp = np.array(hyp)
@@ -216,7 +227,7 @@ class CPAProgressive(AutoScript, QObject):
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, traces, plaintexts, ciphertexts, progressBar=None, pointRange=None):
+    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
         keyround=self.keyround
         brange=self.brange
 
@@ -289,7 +300,7 @@ class CPAProgressive(AutoScript, QObject):
 
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt, self._direction)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True
