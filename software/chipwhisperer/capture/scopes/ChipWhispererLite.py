@@ -66,9 +66,12 @@ class XMEGAPDI(object):
     XPROG_GET_RAMBUF = 0x21
     XPROG_SET_RAMBUF = 0x22
 
+    XPROG_PARAM_TIMEOUT = 0x08
+
 
     # Chip Erase Types
     XPROG_ERASE_CHIP = 1
+    XPROG_ERASE_APP = 2
 
     # Maximum size of buffer in our system
     MAX_BUFFER_SIZE = 256
@@ -83,13 +86,22 @@ class XMEGAPDI(object):
 
         # Check status
         if checkStatus:
-            status = self._xmegaDoRead(cmd=0x0020, dlen=2)
+            status = self._xmegaDoRead(cmd=0x0020, dlen=3)
             if status[1] != 0x00:
-                raise IOError("XMEGA Command failed: %d" % status[0])
+                raise IOError("XMEGA Command %x failed: err=%x, timeout=%d" % (status[0], status[1], status[2]))
 
     def _xmegaDoRead(self, cmd, dlen=1):
         # windex selects interface, set to 0
         return self._usbdev.ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
+
+    def setParamTimeout(self, timeoutMS):
+
+        self._timeout = timeoutMS + 50
+        timeoutticks = int((float(timeoutMS) / 1000.0) * 2500.0)
+        pload = [self.XPROG_PARAM_TIMEOUT]
+        pload.extend(packuint32(timeoutticks))
+        self._xmegaDoWrite(self.XPROG_CMD_SET_PARAM, pload)
+
 
     def enablePDI(self, status):
         if status:
@@ -103,13 +115,15 @@ class XMEGAPDI(object):
 
         memread = 0
         endptsize = 64
-        start = 0
-        end = endptsize
+        # start = 0
+        # end = endptsize
 
         if "readsize" in memspec.keys():
             readsize = memspec["readsize"]
-        else:
+        elif "pagesize" in memspec.keys():
             readsize = memspec["pagesize"]
+        else:
+            readsize = dlen
 
         membuf = []
 
@@ -130,6 +144,8 @@ class XMEGAPDI(object):
             infoblock.extend(packuint32(addr + memread))
             infoblock.append(ramreadln & 0xff)
             infoblock.append((ramreadln >> 8) & 0xff)
+
+            self._xmegaDoWrite(self.XPROG_CMD_READ_MEM, data=infoblock)
 
             epread = 0
 
@@ -218,6 +234,9 @@ class XMEGAPDI(object):
 
     def eraseChip(self):
         self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_CHIP, 0, 0, 0, 0])
+
+    def eraseApp(self):
+        self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_APP, 0, 0, 0, 0])
 
     def setChip(self, chiptype):
         self._chip = chiptype
@@ -456,7 +475,7 @@ if __name__ == '__main__':
 
     cwtestusb.con()
 
-    force = True
+    force = False
 
     if cwtestusb.isFPGAProgrammed() == False or force:
         from datetime import datetime
@@ -470,7 +489,8 @@ if __name__ == '__main__':
     #cwtestusb.cmdWriteMem(0x1A, [235, 126, 5, 4])
     #print cwtestusb.cmdReadMem(0x1A, 4)
 
-    xmegaprogram = False
+    xmegaprogram = True
+
 
     if xmegaprogram:
         xmega = XMEGAPDI()
@@ -478,23 +498,25 @@ if __name__ == '__main__':
         xmega.setChip(XMEGA128A4U())
 
         try:
+            # Worst-case is 75mS for chip erase, so give us some head-room
+            xmega.setParamTimeout(200)
             xmega.enablePDI(True)
 
             # Read signature bytes
-            data = xmega.readMemory(0x01000090, 3)
+            data = xmega.readMemory(0x01000090, 3, "signature")
 
             if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
                 print "Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2])
             else:
                 print "Detected XMEGA128A4U"
 
-            print "Performing chip erase"
+            print "Erasing"
             # Chip erase
-            xmega.eraseChip()
+            xmega.eraseApp()
 
             fakedata = [i & 0xff for i in range(0, 2048)]
 
-            print "Programming FLASH Memory"
+            # print "Programming FLASH Memory"
             xmega.writeMemory(0x0800100, fakedata, memname="flash")
 
             print "Verifying"
@@ -505,7 +527,9 @@ if __name__ == '__main__':
     
         except TypeError, e:
             print str(e)
-            xmega.enablePDI(False)
+
+        except IOError, e:
+            print str(e)
     
         xmega.enablePDI(False)
 
