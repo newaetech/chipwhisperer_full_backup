@@ -32,6 +32,25 @@ import time
 def packuint32(data):
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
+XMEGAMEM_TYPE_APP = 1
+XMEGAMEM_TYPE_BOOT = 2
+XMEGAMEM_TYPE_EEPROM = 3
+XMEGAMEM_TYPE_FUSE = 4
+XMEGAMEM_TYPE_LOCKBITS = 5
+XMEGAMEM_TYPE_USERSIG = 6
+XMEGAMEM_TYPE_FACTORY_CALIBRATION = 7
+
+class XMEGA128A4U(object):
+    signature = [0x1e, 0x97, 0x46]
+    name = "XMEGA128A4U"
+
+    memtypes = {
+       "signature":{"offset":0x1000090, "size":3},
+       "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
+    }
+
+
 class XMEGAPDI(object):
 
     CMD_XMEGA_PROGRAM = 0x20
@@ -47,20 +66,30 @@ class XMEGAPDI(object):
     XPROG_GET_RAMBUF = 0x21
     XPROG_SET_RAMBUF = 0x22
 
+
+    # Chip Erase Types
+    XPROG_ERASE_CHIP = 1
+
+    # Maximum size of buffer in our system
+    MAX_BUFFER_SIZE = 256
+
     def setUSB(self, usbdev, timeout=200):
         self._usbdev = usbdev
         self._timeout = timeout
 
-    def _xmegaDoWrite(self, cmd, data=[], windex=0):
-        self._usbdev.ctrl_transfer(0x41, self.CMD_XMEGA_PROGRAM, cmd, windex, data, timeout=self._timeout)
+    def _xmegaDoWrite(self, cmd, data=[], checkStatus=True):
+        # windex selects interface
+        self._usbdev.ctrl_transfer(0x41, self.CMD_XMEGA_PROGRAM, cmd, 0, data, timeout=self._timeout)
 
         # Check status
-        status = self._xmegaDoRead(cmd=0x0020, dlen=2)
-        if status[1] != 0x00:
-            raise IOError("XMEGA Command failed: %d" % status[0])
+        if checkStatus:
+            status = self._xmegaDoRead(cmd=0x0020, dlen=2)
+            if status[1] != 0x00:
+                raise IOError("XMEGA Command failed: %d" % status[0])
 
-    def _xmegaDoRead(self, cmd, dlen=1, windex=0):
-        return self._usbdev.ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, windex, dlen, timeout=self._timeout)
+    def _xmegaDoRead(self, cmd, dlen=1):
+        # windex selects interface, set to 0
+        return self._usbdev.ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
 
     def enablePDI(self, status):
         if status:
@@ -68,33 +97,131 @@ class XMEGAPDI(object):
         else:
             self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
 
-    def readMemory(self, addr, dlen, baseaddr=0x0800000):
-        addr = baseaddr + addr
+    def readMemory(self, addr, dlen, memname="flash"):
 
-        infoblock = [0]
-        infoblock.extend(packuint32(addr))
-        infoblock.append(dlen & 0xff)
-        infoblock.append((dlen >> 8) & 0xff)
+        memspec = self._chip.memtypes[memname]
 
-        # Copy from flash to buffer
-        self._xmegaDoWrite(self.XPROG_CMD_READ_MEM, data=infoblock)
+        memread = 0
+        endptsize = 64
+        start = 0
+        end = endptsize
 
-        # Read out buffer
-        data = self._xmegaDoRead(self.XPROG_GET_RAMBUF, windex=0, dlen=dlen)
+        if "readsize" in memspec.keys():
+            readsize = memspec["readsize"]
+        else:
+            readsize = memspec["pagesize"]
 
-        return data
+        membuf = []
 
-    def writeMemory(self, addr, data, baseaddr=0x0800000):
-        addr = baseaddr + addr
+        while memread < dlen:
 
-        # Copy to page buffer
-        self._xmegaDoWrite(0x0003, windex=0, data=data)
+            #Read into internal buffer
+            ramreadln = dlen - memread
 
-        # Do actual write
-        self._xmegaDoWrite(self.XPROG_GET_RAMBUF, data=packuint32(addr))
+            # Check if maximum size for memory type
+            if ramreadln > readsize:
+                ramreadln = readsize
 
-    def chipErase(self):
-        self._xmegaDoWrite(self.XPROG_CMD_ERASE)
+            # Check if maximum size for internal buffer
+            if ramreadln > self.MAX_BUFFER_SIZE:
+                ramreadln = self.MAX_BUFFER_SIZE
+            
+            infoblock = [0]  # memspec["type"]
+            infoblock.extend(packuint32(addr + memread))
+            infoblock.append(ramreadln & 0xff)
+            infoblock.append((ramreadln >> 8) & 0xff)
+
+            epread = 0
+
+            # First we need to fill the page buffer in the USB Interface using smaller transactions
+            while epread < ramreadln:
+                
+                epreadln = ramreadln - epread
+                if epreadln > endptsize:
+                    epreadln = endptsize
+
+                # Read data out progressively
+                membuf.extend(self._xmegaDoRead(self.XPROG_GET_RAMBUF | (epread << 8), dlen=epreadln))
+
+                epread += epreadln
+
+            memread += ramreadln
+    
+        return membuf
+    
+
+
+    def writeMemory(self, addr, data, memname, erasePage=False, programPage=True):
+
+        PAGEMODE_WRITE = (1 << 1)
+        PAGEMODE_ERASE = (1 << 0)
+
+        memspec = self._chip.memtypes[memname]
+
+        memwritten = 0
+        endptsize = 64
+        start = 0
+        end = endptsize
+        pagesize = memspec["pagesize"]
+
+        if addr % pagesize:
+            print "WARNING: You appear to be writing to an address that is not page aligned, you will probably write the wrong data"
+
+        while memwritten < len(data):
+
+            epwritten = 0
+
+            # First we need to fill the page buffer in the USB Interface using smaller transactions
+            while epwritten < pagesize:
+                
+                # Check for less than full endpoint written
+                if end > len(data):
+                    end = len(data)
+
+                # Get slice of data
+                epdata = data[start:end]
+
+                # print "%d %d %d" % (epwritten, len(epdata), memwritten)
+                # Copy to USB interface buffer
+                self._xmegaDoWrite(self.XPROG_SET_RAMBUF | (epwritten << 8), data=epdata, checkStatus=False)
+
+                epwritten += len(epdata)
+
+                # Check for final write indicating we are done
+                if end == len(data):
+                    break
+
+                start += endptsize
+                end += endptsize
+
+            # Copy internal buffer to final location (probably FLASH memory)
+
+            if not ("type" in memspec.keys()):
+                raise IOError("Write on memory type that doesn't have 'type', probably read-only?")
+
+            # Do write into memory type
+            infoblock = [memspec["type"], 0]
+
+            if programPage:
+                infoblock[1] |= PAGEMODE_WRITE
+
+            if erasePage:
+                infoblock[1] |= PAGEMODE_ERASE
+
+            infoblock.extend(packuint32(addr + memwritten))
+            infoblock.append(epwritten & 0xff)
+            infoblock.append((epwritten >> 8) & 0xff)
+
+            self._xmegaDoWrite(self.XPROG_CMD_WRITE_MEM, data=infoblock)
+
+            memwritten += epwritten
+
+    def eraseChip(self):
+        self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_CHIP, 0, 0, 0, 0])
+
+    def setChip(self, chiptype):
+        self._chip = chiptype
+
 
 class CWLiteUSB(object):
     """ USB Interface for ChipWhisperer-Lite """
@@ -107,6 +234,8 @@ class CWLiteUSB(object):
     CMD_FPGA_STATUS = 0x15
     CMD_FPGA_PROGRAM = 0x16
     
+    stream = False
+
 
     def con(self):
         """Connect to device using default VID/PID"""
@@ -123,6 +252,11 @@ class CWLiteUSB(object):
         self.wep = 0x02
         self._timeout = 200
 
+    def close(self):
+        """Close USB connection"""
+        # self._usbdev.close()
+        pass
+
     def sendCtrl(self, cmd, value=0, data=[]):
         """Send data over control endpoint"""
         # Vendor-specific, OUT, interface control transfer
@@ -132,6 +266,13 @@ class CWLiteUSB(object):
         """Read data from control endpoint"""
         # Vendor-specific, IN, interface control transfer
         return self._usbdev.ctrl_transfer(0xC1, cmd, value, 0, dlen, timeout=self._timeout)
+
+    def flushInput(self):
+        """Dump all the crap left over"""
+        try:
+            self._usbdev.read(self.rep, 1000, timeout=1)
+        except:
+            pass
 
     def cmdReadMem(self, addr, dlen):
         """Send command to read over external memory interface from FPGA"""
@@ -315,7 +456,7 @@ if __name__ == '__main__':
 
     cwtestusb.con()
 
-    force = False
+    force = True
 
     if cwtestusb.isFPGAProgrammed() == False or force:
         from datetime import datetime
@@ -329,24 +470,44 @@ if __name__ == '__main__':
     #cwtestusb.cmdWriteMem(0x1A, [235, 126, 5, 4])
     #print cwtestusb.cmdReadMem(0x1A, 4)
 
-    xmega = XMEGAPDI()
-    xmega.setUSB(cwtestusb._usbdev)
+    xmegaprogram = False
 
-    try:
-        xmega.enablePDI(True)
-    
-        #Read signature bytes
-        data = xmega.readMemory(0x90, 3, 0x01000000)
-    
-        if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
-            print "Signature bytes failed: %02x %02x %02x != 1E 97 46"%(data[0], data[1], data[2])
-        else:
-            print "Detected XMEGA128A4U"
+    if xmegaprogram:
+        xmega = XMEGAPDI()
+        xmega.setUSB(cwtestusb._usbdev)
+        xmega.setChip(XMEGA128A4U())
 
-    except:
+        try:
+            xmega.enablePDI(True)
+
+            # Read signature bytes
+            data = xmega.readMemory(0x01000090, 3)
+
+            if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
+                print "Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2])
+            else:
+                print "Detected XMEGA128A4U"
+
+            print "Performing chip erase"
+            # Chip erase
+            xmega.eraseChip()
+
+            fakedata = [i & 0xff for i in range(0, 2048)]
+
+            print "Programming FLASH Memory"
+            xmega.writeMemory(0x0800100, fakedata, memname="flash")
+
+            print "Verifying"
+            test = xmega.readMemory(0x0800100, 512)
+
+            print test
+
+    
+        except TypeError, e:
+            print str(e)
+            xmega.enablePDI(False)
+    
         xmega.enablePDI(False)
-
-    xmega.enablePDI(False)
 
 
 

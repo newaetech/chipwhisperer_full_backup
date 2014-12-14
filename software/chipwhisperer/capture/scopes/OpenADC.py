@@ -67,9 +67,102 @@ try:
 except ImportError:
     serial = None
 
+try:
+    import chipwhisperer.capture.scopes.ChipWhispererLite as CWL
+except ImportError:
+    CWL = None
+
 import chipwhisperer.capture.scopes.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
+
+class OpenADCInterface_NAEUSBChip(QWidget):
+    paramListUpdated = Signal(list)
+
+    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
+        QWidget.__init__(self)
+        self.showScriptParameter = showScriptParameter
+
+        ztexParams = [
+                      # No Parameters for NAEUSBChip
+                  ]
+
+        self.console = console
+        self.ser = None
+
+
+        if (openadc_qt is None) or (usb is None):
+            missingInfo = ""
+            if openadc_qt is None:
+                missingInfo += "openadc.qt "
+            if usb is None:
+                missingInfo += " usb"
+            raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
+        else:
+            self.scope = oadcInstance
+            self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
+            ExtendedParameter.setupExtended(self.params, self)
+
+
+        # if target_chipwhisperer_extra is not None:
+        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
+        # else:
+        #    self.cwAdvancedSettings = None
+
+    # def paramTreeChanged(self, param, changes):
+    #    if self.showScriptParameter is not None:
+    #        self.showScriptParameter(param, changes, self.params)
+
+    def __del__(self):
+        if self.ser != None:
+            self.ser.close()
+
+    def con(self):
+        if self.ser == None:
+
+            dev = CWL.CWLiteUSB()
+
+            try:
+                dev.con()
+            except IOError, e:
+                exctype, value = sys.exc_info()[:2]
+                QMessageBox.warning(None, "ChipWhisperer USB", str(exctype) + str(value))
+                raise IOError(e)
+
+            if dev is None:
+                QMessageBox.warning(None, "ChipWhisperer USB", "Could not open USB Device")
+                raise IOError("Could not open USB Device")
+
+            if dev.isFPGAProgrammed() == False:
+                print "HACK: Programming FPGA"
+                dev.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\openadc\hdl\example_targets\cwlite_testdev\cwlite_interface.bit", "rb"))
+
+            self.ser = dev
+
+        try:
+            self.scope.con(self.ser)
+            self.console.append("OpenADC Found, Connecting")
+        except IOError, e:
+            exctype, value = sys.exc_info()[:2]
+            self.console.append("OpenADC Error: %s" % (str(exctype) + str(value)))
+            self.console.append("Did you download FPGA data to ChipWhisperer?")
+            QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
+            raise IOError(e)
+
+    def dis(self):
+        if self.ser != None:
+            self.ser.close()
+            self.ser = None
+
+    def getTextName(self):
+        try:
+            return self.ser.name
+        except:
+            return "None?"
+
+    def paramList(self):
+        p = [self.params]
+        return p
 
 class OpenADCInterface_FTDI(QWidget):
     paramListUpdated = Signal(list)
@@ -404,6 +497,12 @@ class OpenADCInterface(QObject):
         except ImportError:
             cwser = None
 
+        try:
+            cwlite = OpenADCInterface_NAEUSBChip(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+        except ImportError, e:
+            print "Failed to enable CW-Lite, Error: %s" % str(e)
+            cwlite = None
+
         self.setCurrentScope(cwrev2, False)
         defscope = cwrev2
 
@@ -420,6 +519,10 @@ class OpenADCInterface(QObject):
         if cwser:
             cwser.paramListUpdated.connect(self.emitParamListUpdated)
             cw_cons["Serial Port (LX9)"] = cwser
+
+        if cwlite:
+            cwlite.paramListUpdated.connect(self.emitParamListUpdated)
+            cw_cons["ChipWhisperer Lite"] = cwlite
 
         if cw_cons == {}:
             # If no scopes could be found, add a dummy entry so the
