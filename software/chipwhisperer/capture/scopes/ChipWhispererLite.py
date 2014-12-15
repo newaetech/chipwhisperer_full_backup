@@ -154,6 +154,7 @@ class XMEGAPDI(object):
         """
 
         if status:
+            self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
             self._xmegaDoWrite(self.XPROG_CMD_ENTER_PROGMODE)
         else:
             self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
@@ -221,6 +222,8 @@ class XMEGAPDI(object):
 
                 # Read data out progressively
                 membuf.extend(self._xmegaDoRead(self.XPROG_GET_RAMBUF | (epread << 8), dlen=epreadln))
+
+                # print epread
 
                 epread += epreadln
 
@@ -303,6 +306,9 @@ class XMEGAPDI(object):
             infoblock.extend(packuint32(addr + memwritten))
             infoblock.append(epwritten & 0xff)
             infoblock.append((epwritten >> 8) & 0xff)
+
+            # print "%x" % (addr + memwritten)
+            # print epwritten
 
             self._xmegaDoWrite(self.XPROG_CMD_WRITE_MEM, data=infoblock)
 
@@ -616,15 +622,19 @@ if __name__ == '__main__':
 
             print "Erasing"
             # Chip erase
-            xmega.eraseApp()
+            try:
+                xmega.eraseChip()
+            except IOError:
+                xmega.enablePDI(False)
+                xmega.enablePDI(True)
 
             fakedata = [i & 0xff for i in range(0, 2048)]
 
-            # print "Programming FLASH Memory"
-            xmega.writeMemory(0x0800100, fakedata, memname="flash")
+            print "Programming FLASH Memory"
+            xmega.writeMemory(0x0800000, fakedata, memname="flash")
 
             print "Verifying"
-            test = xmega.readMemory(0x0800100, 512)
+            test = xmega.readMemory(0x0800000, 512)
 
             print test
 
