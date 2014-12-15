@@ -26,10 +26,10 @@
 
 
 import usb.core
-import usb.util
 import time
 
 def packuint32(data):
+    """Converts a 32-bit integer into format expected by USB firmware"""
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
 XMEGAMEM_TYPE_APP = 1
@@ -52,35 +52,71 @@ class XMEGA128A4U(object):
 
 
 class XMEGAPDI(object):
+    """
+    Class for programming an XMEGA device using the NAEUSB Firmware in the ChipWhisperer-Lite
+    """
 
     CMD_XMEGA_PROGRAM = 0x20
+    """USB Command for XMEGA Programming (PDI Interface)"""
 
     XPROG_CMD_ENTER_PROGMODE = 0x01
+    """PDI Command: Enable PDI, enter programming mode"""
+
     XPROG_CMD_LEAVE_PROGMODE = 0x02
+    """PDI Command: Leave programming mode, disable PDI"""
+
     XPROG_CMD_ERASE = 0x03
+    """PDI Command: Erase command, specify what to erase as well"""
+
     XPROG_CMD_WRITE_MEM = 0x04
+    """PDI Command: Write data from RAMBUF to XMEGA memory"""
+
     XPROG_CMD_READ_MEM = 0x05
+    """PDI Command: Read data from XMEGA memory to RAMBUF"""
+
     XPROG_CMD_CRC = 0x06
+    """PDI Command: Perform CRC of Memory"""
+
     XPROG_CMD_SET_PARAM = 0x07
+    """PDI Command: Set programming parameters"""
+
     XPROG_GET_STATUS = 0x20
+    """PDI Command: Get status of last command"""
+
     XPROG_GET_RAMBUF = 0x21
+    """PDI Command: Read data from RAMBUF"""
+
     XPROG_SET_RAMBUF = 0x22
+    """PDI Command: Write data to RAMBUF"""
 
     XPROG_PARAM_TIMEOUT = 0x08
+    """Parameter: Timeout"""
 
 
     # Chip Erase Types
     XPROG_ERASE_CHIP = 1
+    """Erase type: Chip"""
+
     XPROG_ERASE_APP = 2
+    """Erase type: Application Section"""
 
     # Maximum size of buffer in our system
     MAX_BUFFER_SIZE = 256
 
     def setUSB(self, usbdev, timeout=200):
+        """
+        Set the USB communications instance.
+        """       
+        
         self._usbdev = usbdev
         self._timeout = timeout
 
     def _xmegaDoWrite(self, cmd, data=[], checkStatus=True):
+        """
+        Send a command to the PDI programming interface, optionally check if command executed OK, and if not
+        raise IOError()
+        """
+
         # windex selects interface
         self._usbdev.ctrl_transfer(0x41, self.CMD_XMEGA_PROGRAM, cmd, 0, data, timeout=self._timeout)
 
@@ -91,10 +127,16 @@ class XMEGAPDI(object):
                 raise IOError("XMEGA Command %x failed: err=%x, timeout=%d" % (status[0], status[1], status[2]))
 
     def _xmegaDoRead(self, cmd, dlen=1):
+        """
+        Read the result of some command.
+        """
         # windex selects interface, set to 0
         return self._usbdev.ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
 
     def setParamTimeout(self, timeoutMS):
+        """
+        Set timeout for executing PDI commands, sets timeout both on NAEUSB chip and host-side USB API.
+        """
 
         self._timeout = timeoutMS + 50
         timeoutticks = int((float(timeoutMS) / 1000.0) * 2500.0)
@@ -104,12 +146,33 @@ class XMEGAPDI(object):
 
 
     def enablePDI(self, status):
+        """
+        Enable or disable PDI interface and prepare XMEGA chip for new status, either entering or exiting
+        programming mode.
+        
+        Raises IOError() if an error occurs (such as no chip found). 
+        """
+
         if status:
             self._xmegaDoWrite(self.XPROG_CMD_ENTER_PROGMODE)
         else:
             self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
 
     def readMemory(self, addr, dlen, memname="flash"):
+        """
+        Read memory such as FLASH or EEPROM. Can specify an arbitrary length of data.
+        
+        Args:
+            addr (int): Address to read from.
+            dlen (in): How much data to read.                    
+        Kwargs:
+            memname (str): Type of memory, such as "flash" or "eeprom". Defaults to 'flash', but
+                           this will often work for other memory types.
+        Returns:
+            list.
+        Raises:
+            IOError                                
+        """
 
         memspec = self._chip.memtypes[memname]
 
@@ -165,9 +228,22 @@ class XMEGAPDI(object):
     
         return membuf
     
-
-
     def writeMemory(self, addr, data, memname, erasePage=False, programPage=True):
+        """
+        Write memory such as FLASH or EEPROM. Can specify an arbitrary length of data.
+        
+        Args:
+            addr (int): Address to write at, should be page aligned if writing paged memory!
+            data (list): Data to write.
+            memname (str): Type of memory, such as "flash" or "eeprom". 
+        Kwargs:
+            erasePage (bool): Should we perform a page erase before writing? Defaults to FALSE.
+            programPage (bool): Should we perform a page write once memory copied? Defaults to TRUE.
+                                If writing internal RAM set this to FALSE, but for writing FLASH/
+                                EEPROM leave as TRUE.
+        Raises:
+            IOError                                
+        """
 
         PAGEMODE_WRITE = (1 << 1)
         PAGEMODE_ERASE = (1 << 0)
@@ -243,7 +319,9 @@ class XMEGAPDI(object):
 
 
 class CWLiteUSB(object):
-    """ USB Interface for ChipWhisperer-Lite """
+    """
+    USB Interface for ChipWhisperer-Lite
+    """
 
     CMD_READMEM_BULK = 0x10
     CMD_WRITEMEM_BULK = 0x11
@@ -257,7 +335,9 @@ class CWLiteUSB(object):
 
 
     def con(self):
-        """Connect to device using default VID/PID"""
+        """
+        Connect to device using default VID/PID
+        """
 
         dev = usb.core.find(idVendor=0x03EB, idProduct=0x2423)
 
@@ -272,17 +352,23 @@ class CWLiteUSB(object):
         self._timeout = 200
 
     def close(self):
-        """Close USB connection"""
+        """
+        Close USB connection
+        """
         # self._usbdev.close()
         pass
 
     def sendCtrl(self, cmd, value=0, data=[]):
-        """Send data over control endpoint"""
+        """
+        Send data over control endpoint
+        """
         # Vendor-specific, OUT, interface control transfer
         return self._usbdev.ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
 
     def readCtrl(self, cmd, value=0, dlen=0):
-        """Read data from control endpoint"""
+        """
+        Read data from control endpoint
+        """
         # Vendor-specific, IN, interface control transfer
         return self._usbdev.ctrl_transfer(0xC1, cmd, value, 0, dlen, timeout=self._timeout)
 
@@ -294,7 +380,10 @@ class CWLiteUSB(object):
             pass
 
     def cmdReadMem(self, addr, dlen):
-        """Send command to read over external memory interface from FPGA"""
+        """
+        Send command to read over external memory interface from FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
 
         if dlen < 48:
             cmd = self.CMD_READMEM_CTRL
@@ -316,7 +405,10 @@ class CWLiteUSB(object):
 
 
     def cmdWriteMem(self, addr, data):
-        """Send command to write memory over external memory interface to FPGA"""
+        """
+        Send command to write memory over external memory interface to FPGA. Automatically
+        decides to use control-transfer or bulk-endpoint transfer based on data length.
+        """
 
         dlen = len(data)
 
@@ -343,7 +435,9 @@ class CWLiteUSB(object):
         return data
 
     def isFPGAProgrammed(self):
-        """Return True/False about FPGA status"""
+        """
+        Return True/False about FPGA status
+        """
 
         status = self.readCtrl(self.CMD_FPGA_STATUS, dlen=4)
 
@@ -354,23 +448,30 @@ class CWLiteUSB(object):
 
 
     def FPGAProgram(self, bitstream=None):
-        """ Program FPGA with a bitstream, or if not bitstream passed just erases FPGA """
+        """
+        Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
+        """
 
+        # Erase the FPGA by toggling PROGRAM pin, setup
+        # NAEUSB chip for FPGA programming
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
 
-        # Download actual bitstream now
+        # Download actual bitstream now if present
         if bitstream:
+            # Run the download which should program FPGA
             self._FPGADownloadBitstream(bitstream)
 
             wait = 4
             while wait > 0:
+                # Check the status a few times
                 programStatus = self.isFPGAProgrammed()
                 if programStatus:
                     break
                 time.sleep(0.01)
                 wait -= 1
 
+            # Exit FPGA programming mode
             self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
 
             if programStatus == False:
@@ -378,11 +479,14 @@ class CWLiteUSB(object):
 
             return programStatus
         else:
+            # No bitstream, exit programming mode
             self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
             return False
 
     def _FPGADownloadBitstream(self, fwFileLike):
-        """ Performs actual bitstream download, do not call directly, call FPGAProgram """
+        """
+        Performs actual bitstream download, do not call directly, call FPGAProgram
+        """
 
         transactionBytes = 2048
         t0 = 0
