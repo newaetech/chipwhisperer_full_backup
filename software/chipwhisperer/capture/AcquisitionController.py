@@ -133,8 +133,8 @@ class AcquisitionController(QObject):
             self.scope.arm()
 
         if self.target is not None:
-            # Load input, start encryption, get output
-            self.textout = self.TargetDoTrace(self.textin, self.key)
+            # Load input, start encryption, get output. Key was set already, don't resend
+            self.textout = self.TargetDoTrace(self.textin, key=None)
 
         # Get ADC reading
         if self.scope is not None:
