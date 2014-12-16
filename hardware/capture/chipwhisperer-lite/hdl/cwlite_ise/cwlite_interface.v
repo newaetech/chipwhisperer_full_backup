@@ -38,7 +38,6 @@ module cwlite_interface(
 	 input wire 		target_MISO,
 	 input wire 		target_MOSI,
 	 input wire 		target_SCK,
-
 	 
 	 /* Target IO Interfaces */
 	 inout wire			target_io4, // Normally trigger
@@ -48,7 +47,11 @@ module cwlite_interface(
 	 inout wire			target_hs1, // Clock from victim device
 	 inout wire			target_hs2, // Clock to victim device
 
-	 output wire		glitchout // high-speed glitch output
+	 output wire		glitchout, // high-speed glitch output
+	 
+	 /* Various connections to USB Chip */
+	 input wire			USB_ser0_tx_i,
+	 output wire		USB_ser0_rx_o	 
 	 );
 	
 	
@@ -175,8 +178,8 @@ module cwlite_interface(
 		
 		.hsglitch_o(glitchout),
 		
-		.uart_tx_i(1'b0),
-		.uart_rx_o(),
+		.uart_tx_i(USB_ser0_tx_i),
+		.uart_rx_o(USB_ser0_rx_o),
 		.usi_out_i(1'b0),
 		.usi_in_o(),
 				
