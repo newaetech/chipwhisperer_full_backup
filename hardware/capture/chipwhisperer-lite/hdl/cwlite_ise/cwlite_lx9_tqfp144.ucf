@@ -5,7 +5,6 @@ NET clk_usb TNM_NET = clk_usb;
 TIMESPEC TS_clk_usb = PERIOD clk_usb 96000 kHz;
 NET "clk_usb" CLOCK_DEDICATED_ROUTE = FALSE;
 
-
 NET GPIO_LED1         LOC = P121  |IOSTANDARD = LVCMOS33;
 NET GPIO_LED2         LOC = P140  |IOSTANDARD = LVCMOS33;
 NET GPIO_LED3         LOC = P141  |IOSTANDARD = LVCMOS33;
@@ -64,6 +63,48 @@ NET USB_CEn				 LOC=P29    |IOSTANDARD = LVCMOS33;
 #NET USB_SPARE1			 LOC=P26		|IOSTANDARD = LVCMOS33;
 #NET USB_SPARE2			 LOC=P32    |IOSTANDARD = LVCMOS33;
 
+NET target_io1			LOC=P87       |IOSTANDARD = LVCMOS33;
+NET target_io2			LOC=P84       |IOSTANDARD = LVCMOS33;
+NET target_io3			LOC=P82       |IOSTANDARD = LVCMOS33;
+NET target_io4			LOC=P80       |IOSTANDARD = LVCMOS33;
 
-NET XMEGA_PDID			LOC=P81     |IOSTANDARD = LVCMOS33;
-NET XMEGA_PDIC			LOC=P83     |IOSTANDARD = LVCMOS33;
+NET target_nRST      LOC=P94       |IOSTANDARD = LVCMOS33;
+NET target_MISO      LOC=P92       |IOSTANDARD = LVCMOS33;
+NET target_MOSI      LOC=P88       |IOSTANDARD = LVCMOS33;
+NET target_SCK       LOC=P85       |IOSTANDARD = LVCMOS33;
+NET target_PDID		LOC=P81       |IOSTANDARD = LVCMOS33;
+NET target_PDIC		LOC=P83       |IOSTANDARD = LVCMOS33;
+
+NET target_hs1			LOC=P93       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
+NET target_hs2			LOC=P95       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
+NET glitchout			LOC=P66       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
+
+#TODO
+
+
+#INST "oadc/ADC_clk_sample_BUFG" LOC = "BUFGMUX_X2Y11";
+
+#INST "reg_clockglitch/gc/dcm1_clk_BUFG" LOC="BUFGMUX_X2Y1";
+#INST "reg_clockglitch/gc/dcm2_clk_unbuf_BUFG" LOC="BUFGMUX_X2Y2";
+#INST "oadc/genclocks/adcclk_0_mux" LOC="BUFGMUX_X2Y4";
+#INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X2Y9";
+#INST "oadc/genclocks/dcm_clk_BUFG" LOC="BUFGMUX_X2Y12";
+#INST "oadc/genclocks/adcclk_mux" LOC="BUFGMUX_X3Y6";
+#INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X3Y8";
+#INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y14";
+#INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y15";
+
+PIN "reg_clockglitch/gc/dcm1_clk_out_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
+#PIN "reg_clockglitch/gc/BUFG_dcm2_clkout_inst.O" CLOCK_DEDICATED_ROUTE = FALSE;
+
+#Note: ISE generates a too-strict derived constraints... ADC signals only good up to 100 MHz due
+#to ADC requirements. But if the input is 100 MHz, this signal would be at 400 MHz. The
+#user knows they can't use the 4x clock then so we don't need such a high constraint...
+NET "oadc/genclocks/dcm_clk_in" TNM_NET = "TN_DCMInput";
+NET "oadc/genclocks/clkgenfx_in" TNM_NET = "TN_DCMInput";
+TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 40 ns HIGH 50% PRIORITY 0;
+
+NET "oadc/genclocks/out_from_dcmmux" TNM_NET = "TN_ADCSampleClock";
+#NET "oadc/ADC_clk_sample" TNM_NET = "TN_ADCSampleClock";
+TIMESPEC "TS_ADCSampleClock" = PERIOD "TN_ADCSampleClock" 12 ns HIGH 50% PRIORITY 0;
+NET "oadc/genclocks/ADC_clk_times4" TIG;

@@ -69,6 +69,8 @@ module reg_chipwhisperer(
 	inout				targetio3_io,
 	inout				targetio4_io,
 	
+	output			hsglitch_o,
+	
 	input				uart_tx_i,
 	output			uart_rx_o,
 	
@@ -88,7 +90,7 @@ module reg_chipwhisperer(
  
  /*  0xXX - External Clock Connections (One Byte)
 	 
-	   [  X RO RO FA FA S  S  S ]
+	   [  G RO RO FA FA S  S  S ]
 	     
 		  S S S = 000 Front Panel Channel A
 					 001 Front Panel Channel B
@@ -105,6 +107,9 @@ module reg_chipwhisperer(
 				  10 : CLKGEN
 				  11 : Glitch Module
 				  
+			G  = (Bit 7) Glitch Output
+			     0  : Disabled
+				  1  : Glitch Module
    
      0xXX - External Trigger Connections (One Byte)
 	 
@@ -218,7 +223,7 @@ module reg_chipwhisperer(
 		.SRTYPE("ASYNC") // Specifies "SYNC" or "ASYNC"
 							 //   set/reset
 	)
-	ODDR2_inst (
+	ODDR2_rearclk (
 		.Q(extclk_rearout_o),   // 1-bit DDR output data
 		.C0(rearclk), // 1-bit clock input
 		.C1(~rearclk), // 1-bit clock input
@@ -228,6 +233,29 @@ module reg_chipwhisperer(
 		.R(~registers_cwextclk[6]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
 	);
+	
+	//Output clock using DDR2 block (recommended for Spartan-6 device)
+	ODDR2 #(
+		// The following parameters specify the behavior
+		// of the component.
+		.DDR_ALIGNMENT("NONE"), // Sets output alignment
+										// to "NONE", "C0" or "C1"
+		.INIT(1'b0),    // Sets initial state of the Q 
+							 //   output to 1'b0 or 1'b1
+		.SRTYPE("ASYNC") // Specifies "SYNC" or "ASYNC"
+							 //   set/reset
+	)
+	ODDR2_hsglitch (
+		.Q(hsglitch_o),   // 1-bit DDR output data
+		.C0(glitchclk_i), // 1-bit clock input
+		.C1(~glitchclk_i), // 1-bit clock input
+		.CE(registers_cwextclk[7]), // 1-bit clock enable input
+		.D0(1'b1), // 1-bit data input (associated with C0)
+		.D1(1'b0), // 1-bit data input (associated with C1)
+		.R(~registers_cwextclk[7]),   // 1-bit reset input
+		.S(1'b0)    // 1-bit set input
+	);
+	
 	
 	 //TODO: Should use a mux?
 	 /*
@@ -272,6 +300,7 @@ module reg_chipwhisperer(
 	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? trigger : 1'bZ;	 
 	 
 	 
+`ifndef DISABLE_FPA
    IODELAY2 #(
 			.COUNTER_WRAPAROUND("WRAPAROUND"), // "STAY_AT_LIMIT" or "WRAPAROUND"
 			.DATA_RATE("SDR"), // "SDR" or "DDR"
@@ -301,6 +330,7 @@ module reg_chipwhisperer(
 			.RST(reset_i), // 1-bit input: Reset to zero or 1/2 of total delay period
 			.T() // 1-bit input: 3-state input signal
 		);
+`endif
 	 
 	 /* IO Routing */
 	 

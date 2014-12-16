@@ -46,8 +46,6 @@ setup.v = Setup File
 ../../../../openadc/hdl/hdl/reg_openadc_adcfifo.v
 ../../../../openadc/hdl/hdl/trigger_unit.v
 ../../../../openadc/hdl/hdl/spartan6/dcm_phaseshift_interface.v
-#clock_managment not needed if using advanced
-../../../../openadc/hdl/hdl/spartan6/clock_managment.v
 ../../../../openadc/hdl/hdl/spartan6/fifo_top.v
 ../../../../openadc/hdl/hdl/spartan6/clock_managment_advanced.v
 ../../../../openadc/hdl/hdl/spartan6/dcm_clkgen_load.v
@@ -94,5 +92,5 @@ SYSTEM_CLK = 96000000
 CLOCK_ADVANCED
 NOBUFG_ADCCLK
 ADCCLK_FEEDBACK
-
+ENABLE_RECONFIG
 
