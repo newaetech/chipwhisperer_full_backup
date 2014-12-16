@@ -41,6 +41,8 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 import openadc.scan as scan
 
+from chipwhisperer.capture.scopes.ChipWhispererLite import USART as CWLite_USART
+
 class SimpleSerial_serial(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
@@ -94,6 +96,54 @@ class SimpleSerial_serial(TargetTemplate):
             self.ser.baudrate = self.findParam('baud').value()
             self.ser.timeout  = 2     # 2 second timeout
             self.ser.open()
+
+class SimpleSerial_ChipWhispererLite(TargetTemplate):
+    def setupParameters(self):
+        ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
+
+        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.cwlite_usart = None
+        self.oa = None
+        
+    def setBaud(self, baud):
+        if self.cwlite_usart:
+            self.cwlite_usart.init(baud)
+    
+    def baud(self):
+        return 25
+        
+    def write(self, string):
+        self.cwlite_usart.write(string)
+
+    def inWaiting(self):
+        return self.cwlite_usart.inWaiting()
+
+    def read(self, num=0, timeout=100):
+        waiting = self.inWaiting()
+        data = bytearray(self.cwlite_usart.read(waiting))
+        result = data.decode('latin-1')
+        return result
+
+    def flush(self):
+        waiting = self.inWaiting()
+        while waiting > 0:
+            self.cwlite_usart.read(waiting)
+            waiting = self.inWaiting()
+
+    def flushInput(self):
+        self.flush()
+
+    def close(self):
+        self.cwlite_usart = None
+
+    def con(self):
+        self.params.getAllParameters()
+        self.cwlite_usart = CWLite_USART(self.usbdev)
+        self.cwlite_usart.init()
+
+    def setOpenADC(self, oa):
+        self.usbdev = oa._usbdev
 
 class SimpleSerial_ChipWhisperer(TargetTemplate):
     CODE_READ       = 0x80
@@ -238,7 +288,10 @@ class SimpleSerial(TargetTemplate):
     paramListUpdated = Signal(list)
 
     def setupParameters(self):
-        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter), "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)}, 'value':"System Serial Port", 'set':self.setConnection},
+        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
+                                                                                "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter),
+                                                                                "ChipWhisperer-Lite":SimpleSerial_ChipWhispererLite(showScriptParameter=self.showScriptParameter)},
+                                                                                'value':"System Serial Port", 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
                     {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
@@ -263,10 +316,9 @@ class SimpleSerial(TargetTemplate):
 
     def setOpenADC(self, oadc):
         self.oa = oadc
-        try:
+        if hasattr(self.ser, "setOpenADC"):
             self.ser.setOpenADC(oadc)
-        except:
-            pass
+
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -279,11 +331,8 @@ class SimpleSerial(TargetTemplate):
     def setConnection(self, con):
         self.ser = con
         self.paramListUpdated.emit(self.paramList)
-        if self.oa:
-            try:
-                self.ser.setOpenADC(self.oa)
-            except:
-                pass
+        if self.oa and hasattr(self.ser, "setOpenADC"):
+            self.ser.setOpenADC(self.oa)
 
     def paramList(self):
         p = [self.params]

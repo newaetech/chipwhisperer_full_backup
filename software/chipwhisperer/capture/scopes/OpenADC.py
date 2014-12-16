@@ -577,6 +577,10 @@ class OpenADCInterface(QObject):
             self.scopetype.con()
             self.refreshTimer.start()
 
+            # TODO Fix this hack
+            if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
+                self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
+
             if "ChipWhisper" in self.qtadc.sc.hwInfo.versions()[2]:
                 #For OpenADC: If we have CW Stuff, add that now
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter)
