@@ -172,7 +172,8 @@ class TargetInterface(QObject):
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
         self.oadc = oadc.scope.sc
-        self.driver.setOpenADC(self.oadc)
+        if hasattr(self.driver, "setOpenADC"):
+            self.driver.setOpenADC(self.oadc)
 
     def con(self):
         if self.driver is not None:
@@ -186,10 +187,8 @@ class TargetInterface(QObject):
 
     def setDriver(self, driver):
         self.driver = driver
-        try:
+        if hasattr(self.driver, "setOpenADC") and hasattr(self, "oadc") and self.oadc:
             self.driver.setOpenADC(self.oadc)
-        except:
-            pass
 
         if self.driver is None:
             self.paramListUpdated.emit(None)
@@ -678,10 +677,9 @@ class ChipWhispererCapture(MainChip):
                 self.scope.con()
                 self.statusBar().showMessage("Scope Connected")
                 #Pass to target if required
-                try:
+                if hasattr(self.target, "setOpenADC"):
                     self.target.setOpenADC(self.scope.qtadc.ser)
-                except:
-                    pass
+
             else:
                 self.scope.dis()
         except IOError, e:

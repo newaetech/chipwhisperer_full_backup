@@ -324,6 +324,95 @@ class XMEGAPDI(object):
         self._chip = chiptype
 
 
+class USART(object):
+    
+    CMD_USART0_DATA = 0x1A
+    CMD_USART0_CONFIG = 0x1B
+
+    USART_CMD_INIT = 0x0010
+    USART_CMD_ENABLE = 0x0011
+    USART_CMD_DISABLE = 0x0012
+    USART_CMD_NUMWAIT = 0x0014
+
+    def __init__(self, usbdev=None):
+        self._usbdev = usbdev
+        self._timeout = 200
+
+    def setUSB(self, usbdev, timeout=200):
+        """
+        Set the USB communications instance.
+        """
+
+        self._usbdev = usbdev
+        self._timeout = timeout
+
+    def _usartTxCmd(self, cmd, data=[]):
+        """
+        Send a command to the USART interface
+        """
+
+        # windex selects interface
+        self._usbdev.ctrl_transfer(0x41, self.CMD_USART0_CONFIG, cmd, 0, data, timeout=self._timeout)
+
+
+    def _usartRxCmd(self, cmd, dlen=1):
+        """
+        Read the result of some command.
+        """
+        # windex selects interface, set to 0
+        return self._usbdev.ctrl_transfer(0xC1, self.CMD_USART0_CONFIG, cmd, 0, dlen, timeout=self._timeout)
+
+    def init(self, baud=115200, stopbits=1, parity="none"):
+
+        if stopbits == 1:
+            stopbits = 0
+        elif stopbits == 1.5:
+            stopbits = 1
+        elif stopbits == 2:
+            stopbits = 2
+        else:
+            raise ValueError("Invalid stop-bit spec: %s" % str(stopbits))
+
+        if parity == "none":
+            parity = 0
+        elif parity == "odd":
+            parity = 1
+        elif parity == "even":
+            parity = 2
+        elif parity == "mark":
+            parity = 3
+        elif parity == "space":
+            parity = 4
+        else:
+            raise ValueError("Invalid pairty spec: %s" % str(parity))
+
+        cmdbuf = packuint32(baud)
+        cmdbuf.append(stopbits)
+        cmdbuf.append(parity)
+        cmdbuf.append(8)  # Data bits
+
+        print cmdbuf
+
+        self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
+        self._usartTxCmd(self.USART_CMD_ENABLE)
+
+    def write(self, data):
+
+        # TODO: split this up better
+        self._usbdev.ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data, timeout=self._timeout)
+
+    def inWaiting(self):
+        print "Checking Waiting..."
+        data = self._usartRxCmd(self.USART_CMD_NUMWAIT, dlen=4)
+        print data
+        return data[0]
+
+    def read(self, dlen=0):
+        if dlen == 0:
+            dlen = self.inWaiting()
+        print "RX %d bytes" % dlen
+        return self._usbdev.ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, dlen, timeout=self._timeout)
+
 class CWLiteUSB(object):
     """
     USB Interface for ChipWhisperer-Lite
@@ -585,7 +674,7 @@ if __name__ == '__main__':
 
     cwtestusb.con()
 
-    force = True
+    force = False
 
     if cwtestusb.isFPGAProgrammed() == False or force:
         from datetime import datetime
@@ -648,5 +737,12 @@ if __name__ == '__main__':
         xmega.enablePDI(False)
 
 
+    print "Let's Rock and Roll baby"
+    usart = USART(cwtestusb._usbdev)
+    usart.init()
+
+    usart.write("hello\n")
+    time.sleep(0.1)
+    print usart.read()
 
 
