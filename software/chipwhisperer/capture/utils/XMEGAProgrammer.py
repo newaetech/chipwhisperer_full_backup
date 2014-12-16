@@ -119,15 +119,6 @@ if __name__ == '__main__':
     cwtestusb = CWLiteUSB()
     cwtestusb.con()
 
-    force = False
-
-    if cwtestusb.isFPGAProgrammed() == False or force:
-        from datetime import datetime
-        starttime = datetime.now()
-        cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\openadc\hdl\example_targets\cwlite_testdev\cwlite_interface.bit", "rb"))
-        stoptime = datetime.now()
-        print "FPGA Config time: %s" % str(stoptime - starttime)
-
     fname = r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\firmware\xmega-serial\simpleserial.hex"
 
     xmega = XMEGAProgrammer()

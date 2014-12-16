@@ -133,7 +133,12 @@ module clockglitch_s6(
 		glitch_next_reg <= glitch_next_reg1;
 	end
 	
-	assign glitchstream = (dcm1_clk_out & ~dcm2_clk_out) & glitch_next_reg;
+	clk2glitch clk2glitch_inst(
+		.clk1(dcm1_clk_out),
+		.clk2(dcm2_clk_out),
+		.enable(glitch_next_reg),
+		.glitchout(glitchstream)
+	);
 	
 	assign glitched_clk = (glitch_type == 3'b000) ? source_clk ^ glitchstream :
 	                      (glitch_type == 3'b001) ? source_clk | glitchstream :
@@ -177,6 +182,7 @@ module clockglitch_s6(
 	.RST(dcm_rst) // 1-bit input: Active high reset input
 	);
 
+
 	// DCM_SP: Digital Clock Manager
 	// Spartan-6
 	// Xilinx HDL Libraries Guide, version 13.2
@@ -213,3 +219,18 @@ module clockglitch_s6(
 	);
 
 endmodule
+
+module clk2glitch(
+	 input wire	  clk1,
+
+	 input wire   clk2,
+	 
+	 input wire   enable,
+	 
+	 output wire  glitchout
+	 );
+	 
+	 assign glitchout = (clk1 & ~clk2) & enable;
+	 
+endmodule
+ 

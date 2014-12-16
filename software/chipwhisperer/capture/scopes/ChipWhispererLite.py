@@ -154,7 +154,7 @@ class XMEGAPDI(object):
         """
 
         if status:
-            self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
+            # self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
             self._xmegaDoWrite(self.XPROG_CMD_ENTER_PROGMODE)
         else:
             self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
@@ -585,12 +585,12 @@ if __name__ == '__main__':
 
     cwtestusb.con()
 
-    force = False
+    force = True
 
     if cwtestusb.isFPGAProgrammed() == False or force:
         from datetime import datetime
         starttime = datetime.now()
-        cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\openadc\hdl\example_targets\cwlite_testdev\cwlite_interface.bit", "rb"))
+        cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
         stoptime = datetime.now()
         print "FPGA Config time: %s" % str(stoptime - starttime)
 
@@ -599,7 +599,7 @@ if __name__ == '__main__':
     #cwtestusb.cmdWriteMem(0x1A, [235, 126, 5, 4])
     #print cwtestusb.cmdReadMem(0x1A, 4)
 
-    xmegaprogram = True
+    xmegaprogram = False
 
 
     if xmegaprogram:
