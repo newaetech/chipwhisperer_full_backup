@@ -29,6 +29,64 @@ from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGA128A4U
 from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
+from PySide.QtCore import *
+from PySide.QtGui import *
+
+class XMEGAProgrammerDialog(QDialog):
+    def __init__(self, parent=None):
+        super(XMEGAProgrammerDialog, self).__init__(parent)
+
+        self.setWindowTitle("ChipWhisperer-Lite XMEGA Programmer")
+        settings = QSettings()
+        layout = QVBoxLayout()
+
+        layoutFW = QHBoxLayout()
+        self.flashLocation = QLineEdit()
+        flashFileButton = QPushButton("Find")
+        flashFileButton.clicked.connect(self.findFlash)
+        layoutFW.addWidget(QLabel("FLASH File"))
+        layoutFW.addWidget(self.flashLocation)
+        layoutFW.addWidget(flashFileButton)
+        layout.addLayout(layoutFW)
+
+        # Add buttons
+        readSigBut = QPushButton("Check Signature")
+        readSigBut.clicked.connect(self.readSignature)
+        verifyFlashBut = QPushButton("Verify FLASH")
+        verifyFlashBut.clicked.connect(self.verifyFlash)
+        progFlashBut = QPushButton("Erase/Program/Verify FLASH")
+        progFlashBut.clicked.connect(self.writeFlash)
+
+        layoutBut = QHBoxLayout()
+        layoutBut.addWidget(readSigBut)
+        layoutBut.addWidget(verifyFlashBut)
+        layoutBut.addWidget(progFlashBut)
+        layout.addLayout(layoutBut)
+
+        # Add status stuff
+        self.statusLine = QLineEdit()
+        self.statusLine.setReadOnly(True)
+        layout.addWidget(self.statusLine)
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+    def findFlash(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', '.', '*.hex')
+        if fname:
+            self.flashLocation.setText(fname)
+            QSettings().setValue("xmega-flash-location", fname)
+
+    def readSignature(self):
+        pass
+
+    def verifyFlash(self):
+        pass
+
+    def writeFlash(self, erase=True, verify=True):
+        pass
+
+
 class XMEGAProgrammer(object):
     
     def __init__(self):
