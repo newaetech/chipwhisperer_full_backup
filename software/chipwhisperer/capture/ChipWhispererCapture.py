@@ -64,6 +64,7 @@ from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialo
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
+from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 
 
 try:
@@ -461,6 +462,18 @@ class ChipWhispererCapture(MainChip):
                                      triggered=self.glitchMonitor.show)
 
         self.toolMenu.addAction(self.GlitchMonitorAct)
+        
+        self.toolMenu.addSeparator()
+
+        self.cwliteXMEGA = XMEGAProgrammerDialog()
+
+        self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
+                                       statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
+                                       triggered=self.cwliteXMEGA.show)
+        self.toolMenu.addAction(self.xmegaProgramAct)
+        
+        
+        
 
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
