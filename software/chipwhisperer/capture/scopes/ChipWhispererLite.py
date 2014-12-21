@@ -325,6 +325,9 @@ class XMEGAPDI(object):
 
 
 class USART(object):
+    """
+    USART Class communicates with NewAE USB Interface to read/write data over control endpoint.
+    """
     
     CMD_USART0_DATA = 0x1A
     CMD_USART0_CONFIG = 0x1B
@@ -348,7 +351,7 @@ class USART(object):
 
     def _usartTxCmd(self, cmd, data=[]):
         """
-        Send a command to the USART interface
+        Send a command to the USART interface (internal function).
         """
 
         # windex selects interface
@@ -357,12 +360,15 @@ class USART(object):
 
     def _usartRxCmd(self, cmd, dlen=1):
         """
-        Read the result of some command.
+        Read the result of some command (internal function).
         """
         # windex selects interface, set to 0
         return self._usbdev.ctrl_transfer(0xC1, self.CMD_USART0_CONFIG, cmd, 0, dlen, timeout=self._timeout)
 
     def init(self, baud=115200, stopbits=1, parity="none"):
+        """
+        Open the serial port, set baud rate, parity, etc.
+        """
 
         if stopbits == 1:
             stopbits = 0
@@ -384,34 +390,66 @@ class USART(object):
         elif parity == "space":
             parity = 4
         else:
-            raise ValueError("Invalid pairty spec: %s" % str(parity))
+            raise ValueError("Invalid parity spec: %s" % str(parity))
 
         cmdbuf = packuint32(baud)
         cmdbuf.append(stopbits)
         cmdbuf.append(parity)
         cmdbuf.append(8)  # Data bits
 
-        print cmdbuf
-
         self._usartTxCmd(self.USART_CMD_INIT, cmdbuf)
         self._usartTxCmd(self.USART_CMD_ENABLE)
 
     def write(self, data):
+        """
+        Send data to serial port.
+        """
+        # print "%d: %s" % (len(data), str(data))
 
-        # TODO: split this up better
-        self._usbdev.ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data, timeout=self._timeout)
+        data = bytearray(data, 'latin-1')
+        datasent = 0
+
+        while datasent < len(data):
+            datatosend = len(data) - datasent
+            datatosend = min(datasent, 58)
+            self._usbdev.ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data[datasent:(datasent + datatosend)], timeout=self._timeout)
+            datasent += datatosend
 
     def inWaiting(self):
-        print "Checking Waiting..."
+        """
+        Get number of bytes waiting to be read.
+        """
+        # print "Checking Waiting..."
         data = self._usartRxCmd(self.USART_CMD_NUMWAIT, dlen=4)
-        print data
+        # print data
         return data[0]
 
-    def read(self, dlen=0):
+    def read(self, dlen=0, timeout=0):
+        """
+        Read data from input buffer, if 'dlen' is 0 everything present is read. If timeout is non-zero
+        system will block for a while until data is present in buffer.
+        """
+
+        waiting = self.inWaiting()
+
         if dlen == 0:
-            dlen = self.inWaiting()
-        print "RX %d bytes" % dlen
-        return self._usbdev.ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, dlen, timeout=self._timeout)
+            dlen = waiting
+
+        if timeout == 0:
+            timeout = self._timeout
+
+
+        resp = []
+
+        while dlen and timeout > 0:
+            if waiting:
+                newdata = self._usbdev.ctrl_transfer(0xC1, self.CMD_USART0_DATA, 0, 0, min(waiting, dlen), timeout=timeout)
+                resp.extend(newdata)
+                dlen -= len(newdata)
+            waiting = self.inWaiting()
+            timeout -= 1
+
+        return resp
 
 class CWLiteUSB(object):
     """
