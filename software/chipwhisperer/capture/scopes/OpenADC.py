@@ -75,6 +75,7 @@ except ImportError:
 import chipwhisperer.capture.scopes.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
+from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 
 class OpenADCInterface_NAEUSBChip(QWidget):
     paramListUpdated = Signal(list)
@@ -89,6 +90,7 @@ class OpenADCInterface_NAEUSBChip(QWidget):
 
         self.console = console
         self.ser = None
+        self._toolActs = []
 
 
         if (openadc_qt is None) or (usb is None):
@@ -99,6 +101,7 @@ class OpenADCInterface_NAEUSBChip(QWidget):
                 missingInfo += " usb"
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
+            self.setupTools()
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
@@ -117,6 +120,15 @@ class OpenADCInterface_NAEUSBChip(QWidget):
         if self.ser != None:
             self.ser.close()
 
+    def setupTools(self):
+        self.cwliteXMEGA = XMEGAProgrammerDialog(self)
+
+        self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
+                                       statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
+                                       triggered=self.cwliteXMEGA.show)
+
+        self._toolActs = [self.xmegaProgramAct]
+
     def con(self):
         if self.ser == None:
 
@@ -133,9 +145,11 @@ class OpenADCInterface_NAEUSBChip(QWidget):
                 QMessageBox.warning(None, "ChipWhisperer USB", "Could not open USB Device")
                 raise IOError("Could not open USB Device")
 
-            if dev.isFPGAProgrammed() == False:
-                print "HACK: Programming FPGA"
-                dev.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\openadc\hdl\example_targets\cwlite_testdev\cwlite_interface.bit", "rb"))
+            # if dev.isFPGAProgrammed() == False:
+            # print "HACK: Programming FPGA"
+            dev.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
+
+            self.cwliteXMEGA.setUSBInterface(dev)
 
             self.ser = dev
 
@@ -163,6 +177,9 @@ class OpenADCInterface_NAEUSBChip(QWidget):
     def paramList(self):
         p = [self.params]
         return p
+
+    def guiActions(self):
+        return self._toolActs
 
 class OpenADCInterface_FTDI(QWidget):
     paramListUpdated = Signal(list)
@@ -581,16 +598,17 @@ class OpenADCInterface(QObject):
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
                 self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
-            if "ChipWhisper" in self.qtadc.sc.hwInfo.versions()[2]:
+            if "ChipWhisperer" in self.qtadc.sc.hwInfo.versions()[2]:
                 #For OpenADC: If we have CW Stuff, add that now
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
-                self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter, self.parent)
-                self.advancedSAD.setOpenADC(self.qtadc)
+                if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter, self.parent)
+                    self.advancedSAD.setOpenADC(self.qtadc)
 
-                self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.showScriptParameter, self.parent)
-                self.digitalPattern.setOpenADC(self.qtadc)
+                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.showScriptParameter, self.parent)
+                    self.digitalPattern.setOpenADC(self.qtadc)
 
                 self.paramListUpdated.emit(None)
 
@@ -637,3 +655,11 @@ class OpenADCInterface(QObject):
             for a in self.digitalPattern.paramList(): p.append(a)
 
         return p
+
+    def guiActions(self):
+        if self.scopetype and hasattr(self.scopetype, "guiActions"):
+            return self.scopetype.guiActions()
+        else:
+            return []
+
+
