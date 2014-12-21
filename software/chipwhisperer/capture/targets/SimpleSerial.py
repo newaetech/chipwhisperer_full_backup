@@ -99,19 +99,21 @@ class SimpleSerial_serial(TargetTemplate):
 
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def setupParameters(self):
-        ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
+        ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
 
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.cwlite_usart = None
         self.oa = None
-        
+
     def setBaud(self, baud):
         if self.cwlite_usart:
             self.cwlite_usart.init(baud)
+        else:
+            print "Baud rate not set, need to connect first"
     
     def baud(self):
-        return 25
+        return 38400
         
     def write(self, string):
         self.cwlite_usart.write(string)
@@ -119,9 +121,9 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def inWaiting(self):
         return self.cwlite_usart.inWaiting()
 
-    def read(self, num=0, timeout=100):
-        waiting = self.inWaiting()
-        data = bytearray(self.cwlite_usart.read(waiting))
+    def read(self, num=0, timeout=250):
+        data = bytearray(self.cwlite_usart.read(num, timeout=timeout))
+
         result = data.decode('latin-1')
         return result
 
@@ -135,12 +137,12 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
         self.flush()
 
     def close(self):
-        self.cwlite_usart = None
+        pass
 
     def con(self):
         self.params.getAllParameters()
         self.cwlite_usart = CWLite_USART(self.usbdev)
-        self.cwlite_usart.init()
+        self.cwlite_usart.init(baud=self.findParam('baud').value())
 
     def setOpenADC(self, oa):
         self.usbdev = oa._usbdev
@@ -450,6 +452,7 @@ class SimpleSerial(TargetTemplate):
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
                 self.log("Sync Error: %s"%response)
+                self.log("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
                 return None
 
         startindx = len(expected[0])
