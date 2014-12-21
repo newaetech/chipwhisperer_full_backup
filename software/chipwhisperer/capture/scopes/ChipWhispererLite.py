@@ -411,7 +411,7 @@ class USART(object):
 
         while datasent < len(data):
             datatosend = len(data) - datasent
-            datatosend = min(datasent, 58)
+            datatosend = min(datatosend, 58)
             self._usbdev.ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data[datasent:(datasent + datatosend)], timeout=self._timeout)
             datasent += datatosend
 
