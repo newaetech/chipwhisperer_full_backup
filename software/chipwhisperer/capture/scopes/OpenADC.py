@@ -599,8 +599,14 @@ class OpenADCInterface(QObject):
                 self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
             if "ChipWhisperer" in self.qtadc.sc.hwInfo.versions()[2]:
+
+                if "Lite" in self.qtadc.sc.hwInfo.versions()[2]:
+                    cwtype = "cwlite"
+                else:
+                    cwtype = "cwrev2"
+
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter)
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter, cwtype=cwtype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
