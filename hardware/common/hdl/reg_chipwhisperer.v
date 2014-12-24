@@ -212,7 +212,11 @@ module reg_chipwhisperer(
 	.S(registers_cwextclk[5]) // 1-bit input: Clock buffer select
 	);
 	
-	//Output clock using DDR2 block (recommended for Spartan-6 device)
+	//NB: Normally ODDR2 used for clock output. This won't work as this clock
+	//can have glitches, which screws up the ODDR2 block. Because we don't care
+	//about variations in synchronization of this clock to source clock, this
+	//should be OK.
+	/*
 	ODDR2 #(
 		// The following parameters specify the behavior
 		// of the component.
@@ -233,6 +237,8 @@ module reg_chipwhisperer(
 		.R(~registers_cwextclk[6]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
 	);
+	*/
+	assign extclk_rearout_o = registers_cwextclk[6] ? rearclk : 1'bZ;
 	
 	//Output clock using DDR2 block (recommended for Spartan-6 device)
 	ODDR2 #(
