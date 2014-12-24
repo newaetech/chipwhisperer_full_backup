@@ -82,20 +82,49 @@ NET target_hs1			LOC=P93       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 NET target_hs2			LOC=P95       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 NET glitchout			LOC=P66       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 
-#TODO
 
+#This route ends up having S&H problems. However we don't care as it gets toggled very infrequently
+#Target is -> target_hs2_OBUF:OCE
+NET "reg_chipwhisperer/registers_cwextclk<7>" TIG;
 
-#INST "oadc/ADC_clk_sample_BUFG" LOC = "BUFGMUX_X2Y11";
+#This route also has S&H problems, again we don't care
+NET "reg_clockglitch/clockglitch_settings_reg<55>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<54>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<53>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<52>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<51>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<50>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<49>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<48>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<47>" TIG;
+NET "reg_clockglitch/clockglitch_settings_reg<46>" TIG;
 
-#INST "reg_clockglitch/gc/dcm1_clk_BUFG" LOC="BUFGMUX_X2Y1";
-#INST "reg_clockglitch/gc/dcm2_clk_unbuf_BUFG" LOC="BUFGMUX_X2Y2";
-#INST "oadc/genclocks/adcclk_0_mux" LOC="BUFGMUX_X2Y4";
-#INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X2Y9";
-#INST "oadc/genclocks/dcm_clk_BUFG" LOC="BUFGMUX_X2Y12";
-#INST "oadc/genclocks/adcclk_mux" LOC="BUFGMUX_X3Y6";
-#INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X3Y8";
-#INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y14";
-#INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y15";
+#Do not use ODDR2 blocks for clock output, as they don't work well when attemping to pass a
+#glitchly clock
+PIN "reg_chipwhisperer/clkgenfx_mux.O" CLOCK_DEDICATED_ROUTE = FALSE;
+
+#The design is sensitive to placement of these blocks. This is just a
+#placement that works OK, I haven't actually hand-tuned it. Without this
+#fixed placement the design sometimes fails implementation as ISE uses
+#some incorrect placement.
+INST "clk_usb_buf_BUFG" LOC="BUFGMUX_X2Y4";
+INST "oadc/ADC_clk_sample_BUFG" LOC = "BUFGMUX_X2Y11";
+INST "reg_clockglitch/gc/dcm1_clk_BUFG" LOC="BUFGMUX_X2Y9";
+INST "reg_clockglitch/gc/dcm2_clk_BUFG" LOC="BUFGMUX_X2Y12";
+INST "oadc/genclocks/adcclk_0_mux" LOC="BUFGMUX_X2Y2";
+INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X3Y8";
+INST "oadc/genclocks/dcm_clk_BUFG" LOC="BUFGMUX_X2Y10";
+INST "oadc/genclocks/adcclk_mux" LOC="BUFGMUX_X3Y6";
+INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X2Y3";
+INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y16";
+INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y14";
+INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
+INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
+INST "oadc/genclocks/DCM_extclock_gen" LOC="DCM_X0Y2";
+INST "oadc/genclocks/DCM_CLKGEN_inst" LOC="DCM_X0Y3";
+
+#INST "reg_clockglitch/gc/*"  AREA_GROUP = glitchclk_area ; #clk2glitch_inst
+#AREA_GROUP glitchclk_area RANGE="CLOCKREGION_X0Y0:CLOCKREGION_X0Y1"; 
 
 PIN "reg_clockglitch/gc/dcm1_clk_out_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #PIN "reg_clockglitch/gc/BUFG_dcm2_clkout_inst.O" CLOCK_DEDICATED_ROUTE = FALSE;
