@@ -57,11 +57,13 @@ setup.v = Setup File
 ../../../common/hdl/io_trigger/reg_iotrigger.v
 ../../../common/hdl/io_trigger/trigger_system.v
 ../../../common/hdl/reg_chipwhisperer.v
+../../../common/hdl/reconfig/reg_reconfig.v
 
 [CoreGen Files]
 #Add XCO files. You can just list the filename, OR have the CoreGen files be
 #auto-generated as well by specifying the section name
 fifoonly_adcfifo.xco = ADC FIFO CoreGen Setup
+icap_fifo.xco = ICAP FIFO Setup
 
 [ADC FIFO CoreGen Setup]
 InputFile = fifoonly_adcfifo.xco.in
