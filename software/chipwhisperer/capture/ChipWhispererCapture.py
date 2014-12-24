@@ -38,6 +38,7 @@ except ImportError:
 from datetime import datetime
 import random
 import os.path
+import traceback
 
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.qrc_resources
@@ -171,7 +172,10 @@ class TargetInterface(QObject):
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
-        self.oadc = oadc.scope.sc
+        if hasattr(oadc, "scope.sc"):
+            self.oadc = oadc.scope.sc
+        else:
+            self.oadc = oadc
         if hasattr(self.driver, "setOpenADC"):
             self.driver.setOpenADC(self.oadc)
 
@@ -461,6 +465,7 @@ class ChipWhispererCapture(MainChip):
                                      triggered=self.glitchMonitor.show)
 
         self.toolMenu.addAction(self.GlitchMonitorAct)
+        
 
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
@@ -493,6 +498,11 @@ class ChipWhispererCapture(MainChip):
     def reloadScopeParamList(self, lst=None):
         if self.scope is not None:
             ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)
+
+            # Check for any tools to add too
+            if hasattr(self.scope, "guiActions") and len(self.scope.guiActions()) > 0:
+                self.toolMenu.addSeparator()
+                self.toolMenu.addActions(self.scope.guiActions())
 
     def reloadTargetParamList(self, lst=None):
         if self.target is not None:
@@ -713,8 +723,9 @@ class ChipWhispererCapture(MainChip):
             self.statusBar().showMessage("One Capture Complete")
 
         except IOError, e:
-
             self.statusBar().showMessage("Error: %s" % str(e))
+            print "Exception caught: %s" % str(e)
+            print traceback.format_exc()
 
         self.capture1Act.setChecked(False)
         self.capture1Act.setEnabled(True)

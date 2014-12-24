@@ -24,10 +24,121 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from datetime import datetime
+import os.path
+import time
+
 from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGAPDI
 from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGA128A4U
 from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
 from chipwhisperer.capture.utils.IntelHex import IntelHex
+
+from PySide.QtCore import *
+from PySide.QtGui import *
+
+class XMEGAProgrammerDialog(QDialog):
+    def __init__(self, parent=None):
+        super(XMEGAProgrammerDialog, self).__init__(parent)
+
+        self.xmega = XMEGAProgrammer()
+
+        self.setWindowTitle("ChipWhisperer-Lite XMEGA Programmer")
+        layout = QVBoxLayout()
+
+        layoutFW = QHBoxLayout()
+        self.flashLocation = QLineEdit()
+        flashFileButton = QPushButton("Find")
+        flashFileButton.clicked.connect(self.findFlash)
+        layoutFW.addWidget(QLabel("FLASH File"))
+        layoutFW.addWidget(self.flashLocation)
+        layoutFW.addWidget(flashFileButton)
+        layout.addLayout(layoutFW)
+
+        self.flashLocation.setText(QSettings().value("xmega-flash-location"))
+
+        # Add buttons
+        readSigBut = QPushButton("Check Signature")
+        readSigBut.clicked.connect(self.readSignature)
+        verifyFlashBut = QPushButton("Verify FLASH")
+        verifyFlashBut.clicked.connect(self.verifyFlash)
+        progFlashBut = QPushButton("Erase/Program/Verify FLASH")
+        progFlashBut.clicked.connect(self.writeFlash)
+
+        layoutBut = QHBoxLayout()
+        layoutBut.addWidget(readSigBut)
+        layoutBut.addWidget(verifyFlashBut)
+        layoutBut.addWidget(progFlashBut)
+        layout.addLayout(layoutBut)
+
+        # Add status stuff
+        self.statusLine = QPlainTextEdit()
+        self.statusLine.setReadOnly(True)
+        # self.statusLine.setFixedHeight(QFontMetrics(self.statusLine.font()).lineSpacing() * 5 + 10)
+        self.statusLine.append = self.statusLine.appendPlainText
+        layout.addWidget(self.statusLine)
+
+        self.xmega._logging = self.statusLine.append
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+    def findFlash(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', '.', '*.hex')
+        if fname:
+            self.flashLocation.setText(fname)
+            QSettings().setValue("xmega-flash-location", fname)
+
+    def readSignature(self):
+        self.xmega.find()
+        self.xmega.close()
+
+    def verifyFlash(self):
+        pass
+
+    def writeFlash(self, erase=True, verify=True):
+
+        status = "FAILED"
+
+        fname = self.flashLocation.text()
+        self.statusLine.append("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
+        if (os.path.isfile(fname)):
+            self.statusLine.append("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+
+            try:
+                self.statusLine.append("Entering Programming Mode")
+                self.readSignature()
+
+                if erase:
+                    try:
+                        self.statusLine.append("Erasing Chip")
+                        self.xmega.erase()
+                    except IOError:
+                        self.statusLine.append("**chip-erase timeout, workaround enabled**")
+                        self.xmega.xmega.enablePDI(False)
+                        self.xmega.xmega.enablePDI(True)
+
+                self.xmega.program(self.flashLocation.text(), memtype="flash", verify=verify)
+                
+                self.statusLine.append("Exiting programming mode")
+                self.xmega.close()
+                
+                status = "SUCCEEDED"
+
+            except IOError, e:
+                self.statusLine.append("FAILED: %s" % str(e))
+                try:
+                    self.xmega.close()
+                except IOError:
+                    pass
+                
+        else:
+            self.statusLine.append("%s does not appear to be a file, check path" % fname)
+            
+        self.statusLine.append("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
+
+    def setUSBInterface(self, iface):
+        self.xmega.setUSBInterface(iface._usbdev)
+
 
 class XMEGAProgrammer(object):
     
@@ -48,7 +159,7 @@ class XMEGAProgrammer(object):
     def find(self):
         self._foundchip = False
 
-        self.xmega.setParamTimeout(200)
+        self.xmega.setParamTimeout(400)
         self.xmega.enablePDI(True)
 
         # Read signature bytes
@@ -89,21 +200,19 @@ class XMEGAProgrammer(object):
         if fsize > maxsize:
             raise IOError("File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
 
-        print "Programming..."
+        self.log("XMEGA Programming %s..." % memtype)
         fdata = f.tobinarray(start=0)
         self.xmega.writeMemory(startaddr, fdata, memtype)
         
-        print "Reading..."
+        self.log("XMEGA Reading %s..." % memtype)
         #Do verify run
         rdata = self.xmega.readMemory(startaddr, len(fdata), memtype)
 
         for i in range(0, len(fdata)):
             if fdata[i] != rdata[i]:
-                # raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
-                print i
-                pass
+                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
 
-        print "Verifed OK"
+        self.log("Verified %s OK, %d bytes" % (memtype, fsize))
     
     def close(self):
         self.xmega.enablePDI(False)
@@ -129,6 +238,7 @@ if __name__ == '__main__':
         xmega.erase("chip")
     except IOError:
         print "**chip-erase timeout, workaround enabled**"
+        time.sleep(0.1)
         xmega.xmega.enablePDI(False)
         xmega.xmega.enablePDI(True)
     xmega.program(fname, "flash")
