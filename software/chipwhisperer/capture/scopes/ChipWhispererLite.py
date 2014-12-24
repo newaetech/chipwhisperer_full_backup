@@ -424,7 +424,7 @@ class USART(object):
         # print data
         return data[0]
 
-    def read(self, dlen=0, timeout=0):
+    def read(self, dlen=0, timeout=50):
         """
         Read data from input buffer, if 'dlen' is 0 everything present is read. If timeout is non-zero
         system will block for a while until data is present in buffer.
@@ -448,6 +448,7 @@ class USART(object):
                 dlen -= len(newdata)
             waiting = self.inWaiting()
             timeout -= 1
+            time.sleep(0.001)
 
         return resp
 
