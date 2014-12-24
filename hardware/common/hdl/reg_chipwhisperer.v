@@ -306,7 +306,7 @@ module reg_chipwhisperer(
 	 assign trigger_fpb_i =  (registers_cwtrigmod[4] == 1'b1) ? trigger : 1'bZ;	 
 	 
 	 
-`ifndef DISABLE_FPA
+`ifndef DISABLE_FPA_IN
    IODELAY2 #(
 			.COUNTER_WRAPAROUND("WRAPAROUND"), // "STAY_AT_LIMIT" or "WRAPAROUND"
 			.DATA_RATE("SDR"), // "SDR" or "DDR"
