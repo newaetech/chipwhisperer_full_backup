@@ -128,6 +128,7 @@ module reg_clockglitch(
 	 assign phase2_requested = clockglitch_settings_reg[17:9];
 	 
 	 wire dcm_rst;
+	 
 
 /*
 	 Clock-glitch settings main registers (address 51)
@@ -160,9 +161,13 @@ module reg_clockglitch(
 	 [55..48] (Byte 6, Bits [7..0])
 	      Cycles to glitch-1 (e.g. 0 means 1 glitch)
 			
-	 [57..56] (Byte 7, But [1..0]) = Glitch Clock Source
+	 [57..56] (Byte 7, Bits [1..0]) = Glitch Clock Source
 	       00 = Source 0
-			 01 = Source 1	      
+			 01 = Source 1
+			 
+	 [62..58] (Byte 7, Bits [6..2]) = Unused
+	 
+	 [63] (Byte 7, Bit 7) = Manual Glitch. Set to 1 then 0, glitch on rising edge			 
 */	
 	 
 	 wire [2:0] glitch_type;
@@ -176,13 +181,21 @@ module reg_clockglitch(
 	 wire       sourceclk;
 	 assign sourceclk = (clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1 :
 								sourceclk0;
-							  //(clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1
+							  //(clockglitch_settings_reg[57:56] == 1'b01) ? sourceclk1	 
+	 reg manual;
+	 always @(posedge clk)
+		manual <= clockglitch_settings_reg[47];
 	 
-	 wire manual;
-	 assign manual = clockglitch_settings_reg[47];
+	 reg manual_rs1, manual_rs2;	
 	 reg manual_dly;
-	 always @(posedge sourceclk)
-		manual_dly <= manual;
+	 always @(posedge sourceclk) begin
+		//Resync with double-FF
+		manual_rs1 <= manual;
+		manual_rs2 <= manual_rs1;
+		
+		//Use delay to convert to single pulse in sourceclk domain
+		manual_dly <= ~manual_rs2;
+	 end
 		 
 	 reg glitch_trigger;
 	 wire exttrigger_resync;
@@ -194,7 +207,7 @@ module reg_clockglitch(
 		if (glitch_trigger_src == 2'b10)
 			glitch_trigger <= 1'b1;
 		else if (glitch_trigger_src == 2'b00)
-			glitch_trigger <= manual & ~manual_dly;
+			glitch_trigger <= manual_rs2 & manual_dly;
 		else if (glitch_trigger_src == 2'b01)
 			glitch_trigger <= exttrigger_resync; //exttrigger_resync & ~exttrigger_resync_dly;
 		else if (glitch_trigger_src == 2'b11)
@@ -202,7 +215,7 @@ module reg_clockglitch(
 	 end	 
 	 
 	 always @(posedge sourceclk) begin
-		if (manual & ~manual_dly)
+		if (manual_rs2 & manual_dly)
 			oneshot <= 1'b1;
 		else if (exttrigger_resync)
 			oneshot <= 1'b0;		
@@ -256,6 +269,19 @@ module reg_clockglitch(
 			endcase
 		end
 	 end
+	 
+	 /* Know when all settings have been written successfully */
+	 /*
+	 always @(posedge clk) begin
+		if ((reg_write) && (reg_address == `CLOCKGLITCH_SETTINGS)) begin
+			if (reg_bytecnt == 16'd7) begin
+				regwrite_done <= 1'b1;			
+			end else begin
+				regwrite_done <= 1'b0;
+			end
+		end
+	end
+	*/
 	 
 	 assign phase2_load  = clockglitch_settings_reg[18];
 	 assign phase1_load  = clockglitch_settings_reg[18];
