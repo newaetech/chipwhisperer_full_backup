@@ -146,7 +146,7 @@ module clockglitch_s6(
 								 (glitch_type == 3'b011) ? source_clk :
 								 (glitch_type == 3'b100) ? glitch_next_reg :
 								 1'b0;
-
+			
 	// DCM_SP: Digital Clock Manager
 	// Spartan-6
 	// Xilinx HDL Libraries Guide, version 13.2
@@ -199,10 +199,10 @@ module clockglitch_s6(
 	)
 	DCM_extclock_gen2 (
 	.CLK2X(dcm2_clk),
-	.CLK0(),
+	.CLK0(dcm2_clk_out),
 	.CLK2X180(),
 	.CLK90(),
-	.CLK180(dcm2_clk_out),
+	.CLK180(), //dcm2_clk_out
 	.CLK270(),
 	.CLKFX(),
 	.CLKFX180(),
@@ -230,7 +230,18 @@ module clk2glitch(
 	 output wire  glitchout
 	 );
 	 
-	 assign glitchout = (clk1 & ~clk2) & enable;
+	 wire clk1buf, clk2buf;
+	 
+	 //If using BUFG - not used as requires too many resources, not sure if
+	 //actually required anyway...
+	 //BUFG bufclk1 (.I(clk1), .O(clk1buf));
+	 //BUFG bufclk2 (.I(clk2), .O(clk2buf));
+	 
+	 //Otherwise	 
+	 assign clk1buf = clk1;
+	 assign clk2buf = clk2;	 
+	 
+	 assign glitchout = (clk1buf & clk2buf) & enable;
 	 
 endmodule
  
