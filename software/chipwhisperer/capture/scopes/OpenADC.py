@@ -76,6 +76,7 @@ import chipwhisperer.capture.scopes.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
+from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
 
 class OpenADCInterface_NAEUSBChip(QWidget):
     paramListUpdated = Signal(list)
@@ -386,6 +387,7 @@ class OpenADCInterface_ZTEX(QWidget):
 
         self.console = console
         self.ser = None
+        self._toolActs = []
 
 
         if (openadc_qt is None) or (usb is None):
@@ -399,6 +401,7 @@ class OpenADCInterface_ZTEX(QWidget):
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
+            self.setupTools()
 
 
         #if target_chipwhisperer_extra is not None:
@@ -414,8 +417,25 @@ class OpenADCInterface_ZTEX(QWidget):
         if self.ser != None:
             self.ser.close()
 
+    def setupTools(self):
+        self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
+
+        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
+                               statusTip='Configure ChipWhisperer FW Paths',
+                               triggered=self.CWFirmwareConfig.show)
+
+        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
+                               statusTip='Download Firmware+FPGA To Hardware',
+                               triggered=self.CWFirmwareConfig.loadRequired)
+        
+        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct]
+
     def con(self):
         if self.ser == None:
+
+            # Download firmware if required
+            self.CWFirmwareConfig.loadRequired()
+
             try:
                 dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
             except IOError, e:
@@ -483,6 +503,9 @@ class OpenADCInterface_ZTEX(QWidget):
     def paramList(self):
         p = [self.params]
         return p
+
+    def guiActions(self):
+        return self._toolActs
 
 class OpenADCInterface(QObject):
     connectStatus = Signal(bool)

@@ -64,8 +64,6 @@ except ImportError:
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
-from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
-
 
 try:
     from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
@@ -392,12 +390,6 @@ class ChipWhispererCapture(MainChip):
     def getNumSegments(self):
         return self.numSegments
 
-    def FWLoaderConfig(self):
-        self.CWFirmwareConfig.show()
-
-    def FWLoaderGo(self):
-        self.CWFirmwareConfig.loadRequired()
-
     def addExampleScripts(self):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
 
@@ -439,20 +431,6 @@ class ChipWhispererCapture(MainChip):
 
 
     def addToolMenu(self):
-        self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
-
-        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
-                               statusTip='Configure ChipWhisperer FW Paths',
-                               triggered=self.FWLoaderConfig)
-
-        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-                               statusTip='Download Firmware+FPGA To Hardware',
-                               triggered=self.FWLoaderGo)
-
-        self.toolMenu.addAction(self.CWFirmwareConfigAct)
-        self.toolMenu.addAction(self.CWFirmwareGoAct)
-        self.toolMenu.addSeparator()
-
         self.TerminalAct = QAction('Open Terminal', self,
                                    statusTip='Open Simple Serial Terminal',
                                    triggered=self.serialTerminal.show)
@@ -466,6 +444,9 @@ class ChipWhispererCapture(MainChip):
 
         self.toolMenu.addAction(self.GlitchMonitorAct)
         
+        # Keep track of add-ins
+        self._scopeToolMenuItems = []
+
 
     def addWaveforms(self):
         self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
@@ -496,13 +477,22 @@ class ChipWhispererCapture(MainChip):
         self.auxParamTree = ParameterTree()
 
     def reloadScopeParamList(self, lst=None):
+        
+        # Remove all old scope actions that don't apply for new selection
+        for act in self._scopeToolMenuItems:
+            self.toolMenu.removeAction(act)
+        self._scopeToolMenuItems = []
+
         if self.scope is not None:
             ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)
 
             # Check for any tools to add too
             if hasattr(self.scope, "guiActions") and len(self.scope.guiActions()) > 0:
-                self.toolMenu.addSeparator()
-                self.toolMenu.addActions(self.scope.guiActions())
+                sep = self.toolMenu.addSeparator()
+                acts = self.scope.guiActions()
+                self.toolMenu.addActions(acts)
+                self._scopeToolMenuItems.extend(acts)
+                self._scopeToolMenuItems.append(sep)
 
     def reloadTargetParamList(self, lst=None):
         if self.target is not None:
