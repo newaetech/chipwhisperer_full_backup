@@ -182,7 +182,6 @@ Windows should pop up a *New Hardware Found* dialog, but frequently may not. In 
 1. Open the *Device Manager*. On Windows 7 simply search *Device Manager* from start menu
 2. Find the Cypress EZ-USB Item, which should have a yellow (!) mark
 3. Click *Update Driver*
-
 4. Once this happens, you'll be able to point Windows to the location of the drivers. Some releases contain drivers, so you can attempt to
    point the wizard to the folder ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2``. If you don't have drivers, you can download them
    from
@@ -202,6 +201,9 @@ FPGA loader program, microcontroller program, and FPGA bitstream.
 
 8. Under the *Tools* menu selection *Download CW Firmware* with the ChipWhisperer device attached. If this works you will see a message in the *Debug Logging*
    window about firmware upload successful. If this fails check the output of the console to see what went wrong.
+   
+Note as of version 0.09 of the ChipWhisperer release the tool will *automatically* download firmware to unprogrammed FPGAs. You do not need
+to explicitly run this tool, however it is still useful for debugging or forcing the loading of new firmware.
 
 You can see a `Video <http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1>`__ of the Installation Process, although again skip installing Java!
 

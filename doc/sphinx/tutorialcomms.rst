@@ -194,11 +194,13 @@ Now, download the FPGA Firmware:
 
 .. image:: /images/tutorials/basic/comm/downloadfpga.png
 
-6. Run the *Download CW Firmware* tool. You should have configured this already before.
+6. Optional: Run the *Download CW Firmware* tool. You should have configured this already before. Note that from release 0.09
+   of ChipWhisperer the FPGA is automatically programmed when you attempt to connect, so you can skip this step if using a recent
+   release (i.e. any release in 2015 or later).
 
 7. If you switch to the *Debug Logging* output, you should see an indication the FPGA was programmed. If
    you were already using the device, it will skip the download. Normally you can skip steps 6 & 7 if you've
-   already performed the FPGA download once since powering on the device.
+   already performed the FPGA download once since powering on the device. Note that 
    
 .. image:: /images/tutorials/basic/comm/connect.png
 

@@ -118,9 +118,10 @@ Software Setup
 
     3. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* option
 
-    4. Run the *Download CW Firmware* tool. You should see the FPGA being programmed if required.
-
-    5. Run connect on both the Scope & Target. They should both switch to green circles indicating the system is connected.
+    4. Run connect on both the Scope & Target. They should both switch to green circles indicating the system is connected.
+    
+    5. Optional: If the previous step fails, you can try first to manually program the FPGA with the *Download CW Firmware* tool. As of
+       release 0.09 this is not required normally. 
 
 2. Setup the Glitch Module to NOT output anything by default **VERY IMPORTANT TO AVOID DAMAGE**
 

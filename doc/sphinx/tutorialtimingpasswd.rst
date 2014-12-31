@@ -41,9 +41,7 @@ for general informationon using the ChipWhisperer-Capture Interface.
 
 4. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* option
 
-5. Run the *Download CW Firmware* tool. You should see the FPGA being programmed if required.
-
-6. Run the scope connect (click the button labeled *Scope: DIS*). Only the scope should switch to
+5. Run the scope connect (click the button labeled *Scope: DIS*). Only the scope should switch to
    *CON* and be green circles. *Do not press the master button like last time.*:
 
    .. image:: /images/tutorials/basic/timingpower/connectscope_1.png
@@ -55,11 +53,11 @@ for general informationon using the ChipWhisperer-Capture Interface.
    We do not connect the 'target' as that would cause data to be sent to it, whereas we just want
    to listen on the power line while we manually send data.
 
-7. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
+6. From the *Tools* menu select *Open Terminal*, and press *Connect* on the terminal:
 
    .. image:: /images/tutorials/basic/timingpower/termconn.png
 
-8. Switch back to the *Target Settings* tab, without closing the terminal window. Set the baud rate
+7. Switch back to the *Target Settings* tab, without closing the terminal window. Set the baud rate
    for both TX & RX to ``9600`` baud. Once you start using the terminal these values will switch to
    the actual baud rates in use (the hardware can only generate certain baud rates). You cannot use
    higher bauds for this tutorial as the combined error from the AVR code & ChipWhisperer serial port
@@ -67,18 +65,18 @@ for general informationon using the ChipWhisperer-Capture Interface.
 
    .. image:: /images/tutorials/basic/timingpower/termbaud.png
 
-9. In the *ChipWhisperer-Serial Terminal*, change the *TX on Enter* to *None*, as we don't want to
+8. In the *ChipWhisperer-Serial Terminal*, change the *TX on Enter* to *None*, as we don't want to
    send any character to terminate a string.
 
-10. In the *ChipWhisperer-Serial Terminal*, check the *Show non-ASCII as hex* if not clicked.
+9. In the *ChipWhisperer-Serial Terminal*, check the *Show non-ASCII as hex* if not clicked.
 
     .. image:: /images/tutorials/basic/timingpower/term_settingssimple.png
 
-11. Finally send the command ``@@@``, which is the login sequence for the TinySafeBoot bootloader. Simply type
+10. Finally send the command ``@@@``, which is the login sequence for the TinySafeBoot bootloader. Simply type
     this in the input line, and press 'enter' to send. You will see the ``@@@`` echoed on the received data in
     a blue font.
 
-12. The objective is to get the login response. You may have to send ``@@@`` a few times for this to be successful,
+11. The objective is to get the login response. You may have to send ``@@@`` a few times for this to be successful,
     the following figure shows an example where the the login worked after sending a second round of ``@@@``. You might
     get an invalid response your first time for example. The response should start with ``TSB``:
 
@@ -105,7 +103,7 @@ for general informationon using the ChipWhisperer-Capture Interface.
     ==========   ============  =============================
 
 
-13. Finally, we want to monitor power when sending this sequence to the device. We'll need to configure a number of OpenADC
+12. Finally, we want to monitor power when sending this sequence to the device. We'll need to configure a number of OpenADC
     settings for this. The following table shows these settings, please carefully go though and set each of these as given.
     Pay attention to the 'notes' section which has some additional information.
 
@@ -123,7 +121,7 @@ for general informationon using the ChipWhisperer-Capture Interface.
                                                                              after pressing button.
     =============================  ================  =====================  ==============================================================
 
-14. Before attacking the real system, we'll need to confirm these settings will work. To do so we'll monitor the power consumption whilst
+13. Before attacking the real system, we'll need to confirm these settings will work. To do so we'll monitor the power consumption whilst
     operating the bootloader under normal conditions.
 
     With our system running, push the 'Capture 1' button. Notice it will go grey indicating the system is waiting for the trigger to occur:
@@ -133,17 +131,17 @@ for general informationon using the ChipWhisperer-Capture Interface.
     The trigger in this case is when the 'TXD' line goes low, which means when we send data to the bootloader. At this time we'll monitor
     the power when sending the sequence of ``@@@`` used before. This is described in steps 15-17.
 
-15. Prepare the serial window by typing ``@@@`` as before, but do not hit enter yet. We'll need to hit enter only after we arm the system.
+14. Prepare the serial window by typing ``@@@`` as before, but do not hit enter yet. We'll need to hit enter only after we arm the system.
 
-16. Arm the system by pressing the 'Capture 1' button.
+15. Arm the system by pressing the 'Capture 1' button.
 
-17. Before the capture times out (e.g. before the button stops being gray), quickly click on the serial terminal output line and press 'Enter'
+16. Before the capture times out (e.g. before the button stops being gray), quickly click on the serial terminal output line and press 'Enter'
     to send the command, or press the 'Send' button beside the terminal output line to send the ``@@@`` command. Note you can adjust the timeout
     in the *Trigger Setup* group of the *Scope Settings*.
 
     .. image:: /images/tutorials/basic/timingpower/captrig_example.png
 
-18. If this works, you will see the power consumption on receiving the command. You'll notice two distinct power signatures, which may look something
+17. If this works, you will see the power consumption on receiving the command. You'll notice two distinct power signatures, which may look something
     like this:
 
     .. image:: /images/tutorials/basic/timingpower/powertrace1.png

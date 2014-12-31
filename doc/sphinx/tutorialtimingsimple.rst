@@ -1,19 +1,19 @@
 .. _tutorialtimingsimple:
 
 Tutorial #2: Viewing Instruction Power Differences
-===================================================
+==================================================
 
 This tutorial will introduce you to measuring the power consumption of a device under attack. It will demonstrate
 how you can view the difference between a 'add' instruction and a 'mul' instruction.
 
 Prerequisites
---------------
+-------------
 
 You should have already completed :ref:`tutorialcomms`. This tutorial assumes you are capable of building a new
 AVR code, programming the code, and connecting to the ChipWhisperer.
 
 Setting Up the Example
----------------------------
+----------------------
 
 1. Copy the directory ``avr-serial-nocrypto`` which is found at ``chipwhisperer\hardware\victims\firmware\`` of the 
    chipwhisperer release somewhere. The following examples assume it has been copied to ``c:\chipwhisperer\user\comm\avr-serial-nocrypto\``.
@@ -133,17 +133,15 @@ as well, however see :ref:`tutorialcomms` for pictures & mode details.
 
 4. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* option
 
-5. Run the *Download CW Firmware* tool. You should see the FPGA being programmed if required.
-
-6. Run the master connect (click the button labeled *Master: DIS*). Both the Target & Scope should switch to
+5. Run the master connect (click the button labeled *Master: DIS*). Both the Target & Scope should switch to
    *CON* and be green circles.
    
-7. Press the button labeled *Master: DIS*, where DIS has a circle around it. If it works, it will switch
+6. Press the button labeled *Master: DIS*, where DIS has a circle around it. If it works, it will switch
    to green and say *CON*.
    
-8. Switch to the *General Settings* tab, and hit the *Open Monitor* button.
+7. Switch to the *General Settings* tab, and hit the *Open Monitor* button.
 
-9. Hit the *Run 1* button. You may have to hit it a few times, as the very first serial data is often lost. You should see
+8. Hit the *Run 1* button. You may have to hit it a few times, as the very first serial data is often lost. You should see
    data populate in the *Text Out* field of the monitor window. The *Text In* and *Text Out* aren't actually used in this example,
    so you can close the *Monitor* dialog.
 
@@ -152,31 +150,31 @@ to setup the analog capture hardware, which is new (to you). The following is en
 
 .. image:: /images/tutorials/basic/simplepower/cap1.png
 
-10. Under *Trigger Setup* set the *Mode* to *rising edge*. This means the system will trigger on a rising edge logic level:
+9. Under *Trigger Setup* set the *Mode* to *rising edge*. This means the system will trigger on a rising edge logic level:
 
 .. image:: /images/tutorials/basic/simplepower/cap2.png
 
-11. Under the *Trigger Pins* unselect the *Front Panel A* as an option, and select *Target IO4 (Trigger Line)*. This will
+10. Under the *Trigger Pins* unselect the *Front Panel A* as an option, and select *Target IO4 (Trigger Line)*. This will
     mean only the trigger pin coming from the AVR target is used to trigger the capture.
 
-12. In the same area, select the *Clock Source* as being from *Target IO-IN*
+11. In the same area, select the *Clock Source* as being from *Target IO-IN*
 
 .. image:: /images/tutorials/basic/simplepower/cap3.png
   
-13. You can monitor the *Freq Counter* option, which measures the frequency being used on the *EXTCLK* input. This should
+12. You can monitor the *Freq Counter* option, which measures the frequency being used on the *EXTCLK* input. This should
     be 7.37 MHz, which is the oscillator on the multi-target board.
     
-14. Change the *ADC Clock* *source* as being *EXTCLK x4 via DCM*. This routes the external clock through a 4x multiplier,
+13. Change the *ADC Clock* *source* as being *EXTCLK x4 via DCM*. This routes the external clock through a 4x multiplier,
     and routes it to the ADC.
     
-15. Hit the **Reset ADC DCM** button.
+14. Hit the **Reset ADC DCM** button.
     
 .. image:: /images/tutorials/basic/simplepower/cap5.png
 
-16. The *ADC Freq* should show 29.5 MHz (which is 4x 7.37 MHz), and the *DCM Locked* checkbox __MUST__ be checked. If the
+15. The *ADC Freq* should show 29.5 MHz (which is 4x 7.37 MHz), and the *DCM Locked* checkbox __MUST__ be checked. If the
     *DCM Locked* checkbox is NOT checked, try hitting the *Reset ADC DCM* button again.
     
-17. At this point you can hit the *Capture 1* button, and see if the system works! You should end up with a window looking 
+16. At this point you can hit the *Capture 1* button, and see if the system works! You should end up with a window looking 
     like this:
     
     .. image:: /images/tutorials/basic/simplepower/cap6.png
@@ -186,18 +184,18 @@ to setup the analog capture hardware, which is new (to you). The following is en
     
 .. image:: /images/tutorials/basic/simplepower/cap7.png
     
-18. Under *Gain Setting* set the *Mode* to *high*. Increase the *Gain Setting* to about 40. You'll be able to adjust this
+17. Under *Gain Setting* set the *Mode* to *high*. Increase the *Gain Setting* to about 40. You'll be able to adjust this
     further during experimentations. 
     
-19. Under *Trigger Setup* set the *Total Samples* to *500*. 
+18. Under *Trigger Setup* set the *Total Samples* to *500*. 
 
-20. Try a few more *Capture 1* traces, and you should see a 'zoomed-in' waveform.
+19. Try a few more *Capture 1* traces, and you should see a 'zoomed-in' waveform.
 
 Modifying the Target
-------------------------
+--------------------
 
 Background on Setup
-^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^
 
 This tutorial is using an AtMega328p, which is an Atmel AVR device. We are comparing the power consumption of two different
 instructions, the ``MUL`` (multiply) instruction and the ``NOP`` (no operation) instruction. Some information on these two
@@ -217,7 +215,7 @@ Note that the capture clock is running at 4x the device clock. Thus a single ``m
 output graph, since it takes 4 samples to cover a complete clock cycle.
 
 Initial Code
-^^^^^^^^^^^^^
+^^^^^^^^^^^^
 
 The initial code has a power signature something like this (yours will vary based on various physical considerations):
 
@@ -229,7 +227,7 @@ which operations.
 
 
 Increase number of NOPs
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 We will then modify the code to have twenty NOP operations in a row instead of ten. The modified code
 looks like this:
@@ -296,7 +294,7 @@ power graphs to see the modified code. We can actually 'see' the change in opera
 occuring from approximately 10-90, and the ``mul`` occuring from 90-170. 
     
 Add NOP loop after MUL
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^
 
 Finally, we will add 10 more NOPs after the 10 MULs. The code should look something like this:
 
@@ -371,7 +369,7 @@ With an output graph that looks like this:
   .. image:: /images/tutorials/basic/simplepower/cap_doublenop_mul_nop.png
     
 Comparison of All Three
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^
 
 The following graph lines the three options up. One can see where adding loops of different operations shows up in the power
 consumption.
@@ -379,7 +377,7 @@ consumption.
   .. image:: /images/tutorials/basic/simplepower/nop_mul_comparison.png
     
 Clock Phase Adjustment
-----------------------------
+----------------------
     
 A final area of interest is the clock phase adjustment. The clock phase adjustment is used to shift the ADC sample clock from the
 actual device clock by small amounts. This will affect the appearance of the captured waveform, and in more advanced methods is 
@@ -402,7 +400,7 @@ of the capture waveform for optimum performance, however what constitutes 'optim
 of your algorithm.
    
 Conclusion
----------------
+----------
 
 In this tutorial you have learned how power analysis can tell you the operations being performed on a microcontroller. In future work
 we will move towards using this for breaking various forms of security on devices.
