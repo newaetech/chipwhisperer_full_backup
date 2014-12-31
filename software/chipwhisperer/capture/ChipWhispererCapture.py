@@ -170,9 +170,9 @@ class TargetInterface(QObject):
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
-        if hasattr(oadc, "scope.sc"):
+        try:  # if hasattr(oadc, "scope.sc"):
             self.oadc = oadc.scope.sc
-        else:
+        except AttributeError:
             self.oadc = oadc
         if hasattr(self.driver, "setOpenADC"):
             self.driver.setOpenADC(self.oadc)
