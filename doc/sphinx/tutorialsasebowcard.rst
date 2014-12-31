@@ -124,24 +124,22 @@ Software Setup and Example Capture
 
  1. Run the ChipWhisperer Capture software
 
- 2. Download the CW Firmware (*Tools --> Download CW Firmware*), ensure the board is detected
-
- 3. Select the following options on the *General Settings* tab:
+ 2. Select the following options on the *General Settings* tab:
 
   a. Scope Module: *ChipWhisperer/OpenADC*
   b. Target Module: *Smart Card*
   c. Trace Format: *ChipWhisperer/Native*
 
- 4. Switch to the *Target Settings* tab. Set the following two options:
+ 3. Switch to the *Target Settings* tab. Set the following two options:
 
   a. Reader Hardware: *ChipWhisperer-USI*
   b. SmartCard Protocol: *SASEBO-W SmartCard OS*
 
- 5. Press the *Master Connect* button, the scope and target should both show as connected:
+ 4. Press the *Master Connect* button, the scope and target should both show as connected:
 
     .. image:: /images/tutorials/basic/scard/allcon.png
 
- 6. Under the *Scope Settings* tab, make the following changes:
+ 5. Under the *Scope Settings* tab, make the following changes:
 
   a. OpenADC-->Gain-->Setting: *35*
   b. OpenADC-->Trigger Setup-->Mode: *Rising Edge*
@@ -153,11 +151,11 @@ Software Setup and Example Capture
   h. Press the *Reset ADC DCM* button in that area, confirm the *ADC Freq* reads 14.3 MHz indicating the clock routing is working.
   i. OpenADC-->Trigger Setup-->Total Samples: *5000*
 
- 7. Finally press the *Capture 1* button. You should see a waveform like this:
+ 6. Finally press the *Capture 1* button. You should see a waveform like this:
 
     .. image:: /images/tutorials/basic/scard/waveform.png
 
- 8. Currently the APDU is printed , see the 'Debug Logging' window. You will see output like this::
+ 7. Currently the APDU is printed , see the 'Debug Logging' window. You will see output like this::
 
       APDU:  80  12  00  00  10  12  2b  7e  15  16  28  ae  d2  a6  ab  f7  15  88  09  cf  4f  3c  90  00
       APDU:  80  04  04  00  10  04  2f  b7  e7  ce  f2  b8  09  92  0d  af  16  4a  81  30  3e  ef  9f  10
@@ -166,5 +164,5 @@ Software Setup and Example Capture
 
     You can ignore the parity errors for now. You can also view the status in the Encryption Monitor to see input/output.
 
- 9. You can now run a capture campaign and save the traces as before.
+ 8. You can now run a capture campaign and save the traces as before.
 
