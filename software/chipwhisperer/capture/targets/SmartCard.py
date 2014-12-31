@@ -172,6 +172,9 @@ class ReaderChipWhisperer(ReaderTemplate):
         #for t in p:
         #    print "%x "%t,
             
+        if len(p) < 2:
+            raise IOError("Payload too small: %d, %s" % (len(p), str(p)))
+            
         status = (p[-2] << 8) | p[-1]
         
         if rxdatalen > 0:

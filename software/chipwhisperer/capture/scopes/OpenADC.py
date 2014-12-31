@@ -122,13 +122,24 @@ class OpenADCInterface_NAEUSBChip(QWidget):
             self.ser.close()
 
     def setupTools(self):
+
+        self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console, mode="cwlite")
+
+        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
+                               statusTip='Configure ChipWhisperer FW Paths',
+                               triggered=self.CWFirmwareConfig.show)
+
+        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
+                               statusTip='Download Firmware+FPGA To Hardware',
+                               triggered=self.CWFirmwareConfig.loadRequired)
+        
         self.cwliteXMEGA = XMEGAProgrammerDialog(self)
 
         self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
                                        statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
                                        triggered=self.cwliteXMEGA.show)
 
-        self._toolActs = [self.xmegaProgramAct]
+        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct]
 
     def con(self):
         if self.ser == None:
@@ -145,10 +156,9 @@ class OpenADCInterface_NAEUSBChip(QWidget):
             if dev is None:
                 QMessageBox.warning(None, "ChipWhisperer USB", "Could not open USB Device")
                 raise IOError("Could not open USB Device")
-
-            # if dev.isFPGAProgrammed() == False:
-            # print "HACK: Programming FPGA"
-            dev.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
+            
+            self.CWFirmwareConfig.setCWLiteUSBInterface(dev)
+            self.CWFirmwareConfig.loadRequired()
 
             self.cwliteXMEGA.setUSBInterface(dev)
 

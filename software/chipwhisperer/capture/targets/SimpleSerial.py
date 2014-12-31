@@ -157,7 +157,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
 
     def setupParameters(self):
-        # ssParams = [{'name':'baud', 'type':'list', 'values':['38400'], 'value':'38400', 'get':self.baud, 'set':self.setBaud}]
         ssParams = [{'name':'TX Baud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
                     {'name':'RX Baud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
                     ]

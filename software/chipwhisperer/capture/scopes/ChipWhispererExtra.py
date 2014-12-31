@@ -177,7 +177,7 @@ class CWExtraSettings(object):
         if hasPLL:
             clksrc["PLL Input"] = self.CLOCK_PLL
 
-        clksrc["Target IO-In"] = self.CLOCK_RTIOIN
+        clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
 
 
         self.param[0]["children"].extend([
