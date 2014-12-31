@@ -390,6 +390,9 @@ class ChipWhispererCapture(MainChip):
     def getNumSegments(self):
         return self.numSegments
 
+    def FWLoaderGo(self):
+        print "NOTE: Call to cap.FWLoaderGo() not required anymore, will be removed in future versions"
+
     def addExampleScripts(self):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
 
