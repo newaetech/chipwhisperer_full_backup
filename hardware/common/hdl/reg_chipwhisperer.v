@@ -69,7 +69,8 @@ module reg_chipwhisperer(
 	inout				targetio3_io,
 	inout				targetio4_io,
 	
-	output			hsglitch_o,
+	output			hsglitcha_o,
+	output			hsglitchb_o,
 	
 	input				uart_tx_i,
 	output			uart_rx_o,
@@ -90,7 +91,7 @@ module reg_chipwhisperer(
  
  /*  0xXX - External Clock Connections (One Byte)
 	 
-	   [  G RO RO FA FA S  S  S ]
+	   [  X RO RO FA FA S  S  S ]
 	     
 		  S S S = 000 Front Panel Channel A
 					 001 Front Panel Channel B
@@ -107,9 +108,6 @@ module reg_chipwhisperer(
 				  10 : CLKGEN
 				  11 : Glitch Module
 				  
-			G  = (Bit 7) Glitch Output
-			     0  : Disabled
-				  1  : Glitch Module
    
      0xXX - External Trigger Connections (One Byte)
 	 
@@ -160,11 +158,19 @@ module reg_chipwhisperer(
 		GPIO3:
 		  [ E G   X  USOC  USII USIO RX TX ]  --> USOC means USIO but with Open Collector drive
 		  
-		RESERVED:
+		GPIO4:
 		  [ X X   X     X    X    X  X   X ]
 		 
-	   RESERVED:
-		  [ X X   X     X    X    X  X   X ]
+	   GLITCH:
+		  [ X X   X     X    X    X  B   A ]
+		  
+		  	A  = (Bit 0) Glitch Output A
+			     0  : Disabled
+				  1  : Glitch Module
+				  
+			B  = (Bit 1) Glitch Output B
+			     0  : Disabled
+				  1  : Glitch Module
 		
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
@@ -251,14 +257,36 @@ module reg_chipwhisperer(
 		.SRTYPE("ASYNC") // Specifies "SYNC" or "ASYNC"
 							 //   set/reset
 	)
-	ODDR2_hsglitch (
-		.Q(hsglitch_o),   // 1-bit DDR output data
+	ODDR2_hsglitcha (
+		.Q(hsglitcha_o),   // 1-bit DDR output data
 		.C0(glitchclk_i), // 1-bit clock input
 		.C1(~glitchclk_i), // 1-bit clock input
-		.CE(registers_cwextclk[7]), // 1-bit clock enable input
+		.CE(registers_iorouting[32]), // 1-bit clock enable input
 		.D0(1'b1), // 1-bit data input (associated with C0)
 		.D1(1'b0), // 1-bit data input (associated with C1)
-		.R(~registers_cwextclk[7]),   // 1-bit reset input
+		.R(~registers_iorouting[32]),   // 1-bit reset input
+		.S(1'b0)    // 1-bit set input
+	);
+	
+	//Output clock using DDR2 block (recommended for Spartan-6 device)
+	ODDR2 #(
+		// The following parameters specify the behavior
+		// of the component.
+		.DDR_ALIGNMENT("NONE"), // Sets output alignment
+										// to "NONE", "C0" or "C1"
+		.INIT(1'b0),    // Sets initial state of the Q 
+							 //   output to 1'b0 or 1'b1
+		.SRTYPE("ASYNC") // Specifies "SYNC" or "ASYNC"
+							 //   set/reset
+	)
+	ODDR2_hsglitchb (
+		.Q(hsglitchb_o),   // 1-bit DDR output data
+		.C0(glitchclk_i), // 1-bit clock input
+		.C1(~glitchclk_i), // 1-bit clock input
+		.CE(registers_iorouting[33]), // 1-bit clock enable input
+		.D0(1'b1), // 1-bit data input (associated with C0)
+		.D1(1'b0), // 1-bit data input (associated with C1)
+		.R(~registers_iorouting[33]),   // 1-bit reset input
 		.S(1'b0)    // 1-bit set input
 	);
 	
@@ -414,7 +442,11 @@ module reg_chipwhisperer(
 	 always @(posedge clk) begin
 		if (reset) begin
 			registers_cwextclk <= 0;
-			registers_cwtrigsrc <= 1;
+`ifdef DISABLE_FPA_IN
+			registers_cwtrigsrc <= 8'b00100000;
+`else
+			registers_cwtrigsrc <= 8'b00000001;
+`endif
 			registers_cwtrigmod <= 0;
 			registers_iorouting <= 64'b00000010_00000001;
 		end else if (reg_write) begin
