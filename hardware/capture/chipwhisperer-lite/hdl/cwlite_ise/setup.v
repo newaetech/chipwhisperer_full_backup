@@ -11,4 +11,4 @@
 `define NOBUFG_ADCCLK 
 `define ADCCLK_FEEDBACK 
 `define DISABLE_FPA_IN
-//`define ENABLE_RECONFIG
+`define ENABLE_RECONFIG
