@@ -10,5 +10,5 @@
 `define CLOCK_ADVANCED 
 `define NOBUFG_ADCCLK 
 `define ADCCLK_FEEDBACK 
-`define DISABLE_FPA
-//`define ENABLE_RECONFIG
+`define DISABLE_FPA_IN
+`define ENABLE_RECONFIG
