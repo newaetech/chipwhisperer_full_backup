@@ -49,13 +49,12 @@ import scipy
 try:
     from scipy.stats import multivariate_normal
 except ImportError:
-    print "WARNING: Version of SciPy too old, require > 0.14, have %s" % (scipy.version.version)
-    # sys.exit()
+    multivariate_normal = None
 
 from chipwhisperer.common.autoscript import AutoScript
 from chipwhisperer.common.traces.utils import strListToList
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import HypHW, HypHD
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import HypHW, HypHD, getHW
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.utils.Partition import Partition
 
@@ -338,6 +337,11 @@ class ProfilingTemplate(AutoScript, QObject):
 
     def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
 
+        if multivariate_normal is None:
+            print "ERROR: Version of SciPy too old, require > 0.14, have %s" % (scipy.version.version)
+            print "       Please update your version of SciPy to support this attack"
+            return
+
         # Hack for now - just use last template found
         template = self.loadTemplatesFromProject()[-1]
         pois = template["poi"]
@@ -371,6 +375,23 @@ class ProfilingTemplate(AutoScript, QObject):
                         # Get hypothetical hamming distance
                         # hypint = HypHD(plaintexts[tnum], None, i, bnum)
                         hypint = HypHD(None, ciphertexts[tnum], i, bnum)
+                        newresults.append(newresultsint[ hypint ])
+
+                # TODO Temp
+                elif ptype == "PartitionHDRounds":
+                    newresults = []
+                    # Map to key guess format
+                    for i in range(0, 256):
+                        # Get hypothetical hamming distance
+                        # hypint = HypHD(plaintexts[tnum], None, i, bnum)
+                        if bnum == 0:
+                            hypint = getHW(plaintexts[tnum][bnum] ^ i)
+                        else:
+                            knownkey = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
+                            s1 = plaintexts[tnum][bnum - 1] ^ knownkey[bnum - 1]
+                            s2 = plaintexts[tnum][bnum] ^ i
+                            hypint = getHW(s1 ^ s2)
+
                         newresults.append(newresultsint[ hypint ])
                 else:
                     newresults = newresultsint
