@@ -34,7 +34,8 @@ from pyqtgraph.parametertree import Parameter
 try:
     import umysql as sql
 except ImportError, e:
-    print "umysql required: https://pypi.python.org/pypi/umysql"
+    # This isn't really needed, no need to bother users
+    # print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)
 
 from openadc.ExtendedParameter import ExtendedParameter

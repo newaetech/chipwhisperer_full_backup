@@ -119,9 +119,11 @@ class FWLoaderConfig(QDialog):
         # Defaults?
         # print os.getcwd()
 
+        rootprefix = QSettings().value("cwcapture-starting-root") + "/"
+
         if not fwFLoc:
             if self._mode == "cwcrev2":
-                defLocfwF = "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"
+                defLocfwF = rootprefix + "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"
             elif self._mode == "cwlite":
                 defLocfwF = ""
             # defLocfwF = os.path.realpath(defLocfwF)
@@ -130,18 +132,18 @@ class FWLoaderConfig(QDialog):
 
         if not bsZipLoc:
             if self._mode == "cwcrev2":
-                defLocZipBS = "../../../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"
+                defLocZipBS = rootprefix + "../../../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"
             elif self._mode == "cwlite":
-                defLocZipBS = "../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"
+                defLocZipBS = rootprefix + "../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"
             if os.path.isfile(defLocZipBS):
                 bsZipLoc = str(defLocZipBS)
                 settings.setValue("%s-zipbitstream-location" % self._mode, bsZipLoc)
 
         if not bsLoc:
             if self._mode == "cwcrev2":
-                defLocbs = "../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"
+                defLocbs = rootprefix + "../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"
             elif self._mode == "cwlite":
-                defLocbs = "../../../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"
+                defLocbs = rootprefix + "../../../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"
             # defLocbs = os.path.realpath(defLocbs)
             if os.path.isfile(defLocbs):
                 bsLoc = str(defLocbs)
@@ -193,8 +195,7 @@ class FWLoaderConfig(QDialog):
                 # Load firmware
                 self.loadFirmware()
             else:
-                if self.console:
-                    self.console.append("Skipped firmware download")
+                print "EZ-USB Microcontroller: Skipped firmware download (already done)"
 
             if self.ztex.deviceInfo["interfaceVersion"] != 1:
                 raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(self.ztex.deviceInfo))
@@ -206,9 +207,9 @@ class FWLoaderConfig(QDialog):
             if self.ztex.fpgaConfigured == False:
                 self.loadFPGA()
                 self.ztex.getFpgaState()
-                print "Programmed FPGA bistream"
+                print "FPGA: Programmed bitstream successfully"
             else:
-                print "FPGA already configured, skipped configuration"
+                print "FPGA: Skipped configuration (already done)"
 
         elif self._mode == "cwlite":
             self.loadFPGA()
@@ -222,7 +223,12 @@ class FWLoaderConfig(QDialog):
         """Load the USB microcontroller firmware file setup in the dialog"""
 
         if self._mode == "cwcrev2":
-            f = IhxFile(self.firmwareLocation.text())
+
+            fileloc = self.firmwareLocation.text()
+            if fileloc.startswith("."):
+                fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+
+            f = IhxFile(fileloc)
             self.ztex.uploadFirmware(f)
             time.sleep(1)
             self.ztex.probe()
@@ -236,7 +242,10 @@ class FWLoaderConfig(QDialog):
         """Load the FPGA bitstream"""
 
         if self.useFPGAZip:
-            zfile = zipfile.ZipFile(self.bitZipLocation.text(), "r")
+            fileloc = self.bitZipLocation.text()
+            if fileloc.startswith("."):
+                fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+            zfile = zipfile.ZipFile(fileloc, "r")
 
             if self._mode == "cwcrev2":
                 self.ztex.configureFpgaLS(zfile.open("interface.bit"))
@@ -245,9 +254,14 @@ class FWLoaderConfig(QDialog):
             else:
                 raise ValueError("Internal Error: Invalid setting of mode: %s" % self._mode)
         else:
+
+            fileloc = self.bitLocation.text()
+            if fileloc.startswith("."):
+                fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+
             # Get bitstream date, print for user
-            bsdate = os.path.getmtime(self.bitLocation.text())
-            print "Using FPGA Bitstream, date: %s" % time.ctime(bsdate)
+            bsdate = os.path.getmtime(fileloc)
+            print "FPGA: DEBUG MODE: Using .bit file, date: %s" % time.ctime(bsdate)
 
             if self._mode == "cwcrev2":
                 self.ztex.configureFpgaLS(open(self.bitLocation.text(), "rb"))

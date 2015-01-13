@@ -41,7 +41,7 @@ Python on the same system with minimal problems. This can be very useful as the 
 
     pip install pyusb
 
-   If that command fails, you may need to specify a version. Note the latest version printed by the command, and try:
+   If that command fails, you may need to specify a version. Note the latest version printed by the command, and try::
 
     pip install pyusb==1.0.0b1
 
@@ -59,7 +59,7 @@ it's recommended to use the WinPython distribution above.
 Download the latest release of Python 2.7 (NOT Python 3.x). It is highly recommended to use 32-bit Python, as several of the dependant
 libraries only have 32-bit versions. First, install Python:
 
-1. `Python 2.7.6 <http://www.python.org/download/releases/2.7.6/>`_
+1. `Python 2.7.9 <https://www.python.org/downloads/release/python-279/>`_
 
 Next, you need to install ``setuptools``, the best way of doing this is to use a special script called ``ez_setup``. This
 is described on the `setuptools documentation site <https://pypi.python.org/pypi/setuptools#windows?>`_. Alternatively, simply
@@ -135,14 +135,14 @@ link simply find the correct driver for your OS Version & install that.
 
 	easy_install umysql
 
+**PYSCARD**: If planning on using a PS/SC smartcard reader (i.e. standard USB-connected reader), you will need to install `pyscard <https://sourceforge.net/projects/pyscard/files/pyscard/ >`__.
 
 Getting & Installing ChipWhisperer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Assuming you've got a working Python installation, the next step is to install & run ChipWhisperer itself. This requires you to get a copy
-of ChipWhisperer, which you have two choices:
-
-1. Check the `Latest Software Release Page <https://www.assembla.com/wiki/show/chipwhisperer/ChipWhisperer_Software_Firmware_Releases>`_. Download & unzip the file somewhere.
-2. Clone the GIT Repository ``git://git.assembla.com/chipwhisperer.git`` somewhere.
+of ChipWhisperer, you should download the `Latest Release <https://www.assembla.com/wiki/show/chipwhisperer/ChipWhisperer_Software_Firmware_Releases>`_.
+Download & unzip the file somewhere. Note if you are adventerous you can clone the GIT Repository ``git://git.assembla.com/chipwhisperer.git`` instead,
+but this **may be broken** so you should start with the latest release instead.
 
 Generally 'somewhere' will become your ChipWhisperer working directory. These examples assume you've chosen ``C:\chipwhisperer`` as your
 working directory.
@@ -184,7 +184,7 @@ Windows should pop up a *New Hardware Found* dialog, but frequently may not. In 
 3. Click *Update Driver*
 4. Once this happens, you'll be able to point Windows to the location of the drivers. Some releases contain drivers, so you can attempt to
    point the wizard to the folder ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2``. If you don't have drivers, you can download them
-   from
+   from the release page on `ChipWhisperer <http://chipwhisperer.com>`__.
 
 Note as of version 0.07 of the ChipWhisperer release you DO NOT need to install Java. Previous versions required this, so you may see reference
 to that in videos or other documentation. Be confident you can now avoid installing Java when running ChipWhisperer.
@@ -192,20 +192,26 @@ to that in videos or other documentation. Be confident you can now avoid install
 Finally, we can configure the ChipWhisperer-Capture software to communicate with the hadware. To do so you need to configure the
 FPGA loader program, microcontroller program, and FPGA bitstream.
 
-5. Run ChipWhisperer-Capture by double-clicking ChipWhispererCapture.py in ``c:\chipwhisperer\software\chipwhisperer\capture\``
-6. Under the *Tools* menu select *Config CW Firmware*
+5. Run ChipWhisperer-Capture by double-clicking CWCapture.pyw in ``c:\chipwhisperer\software\``. (Note: this simply calls ChipWhispererCapture.py
+   in ``c:\chipwhisperer\software\chipwhisperer\capture\``, if you have trouble try double-clicking on the ChipWhispererCapture.py instead).
+6. As the scope, select the *ChipWhisperer* device, and ensure on the *Scope* tab ensure you have selected the appropriate hardware, such
+   as the *rev2* device 
+6. Under the *Tools* menu select *Config CW Firmware* (NB: If this does not appear as a menu option, double-check you have selected the correct scope).
 7. In the pop-up dialog, you may need to configure the location of several files. If they are blank set as follows:
 
-   a. FPGA Bitstream Location: ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2\hdl\ztex_rev2_1.11c_ise\interface.bit``
-   b. Firmware Location: ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2\ezusb-firmware\ztex-sdk\examples\usb-fpga-1.11\1.11c\openadc\OpenADC.ihx``
+   a. USB Firmware: ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2\ezusb-firmware\ztex-sdk\examples\usb-fpga-1.11\1.11c\openadc\OpenADC.ihx``
+   b. FPGA .zip (RELEASE): ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2\cwrev2_firmware.zip``
 
 8. Under the *Tools* menu selection *Download CW Firmware* with the ChipWhisperer device attached. If this works you will see a message in the *Debug Logging*
    window about firmware upload successful. If this fails check the output of the console to see what went wrong.
    
 Note as of version 0.09 of the ChipWhisperer release the tool will *automatically* download firmware to unprogrammed FPGAs. You do not need
-to explicitly run this tool, however it is still useful for debugging or forcing the loading of new firmware.
+to explicitly run this tool before connecting, however it is still useful for debugging or forcing the loading of new firmware. In addition
+you must have selected the proper scope and ChipWhisperer model for the firmware download to work - this is a change from 0.08 which just
+blindly presented the menu choice.
 
-You can see a `Video <http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1>`__ of the Installation Process, although again skip installing Java!
+You can see a `Video <http://www.youtube.com/watch?v=ozzlcUM_-dc&hd=1>`__ of the Installation Process. Note the drivers are now signed, so you will no
+longer see a warning about unsigned drivers.
 
 |YouTubeWin7Driver|_
 
@@ -257,6 +263,15 @@ external code changes, this may eventually be instead rolled into the main codeb
     `Direct Link to AVR Studio 4.19 Binary <http://www.atmel.com/forms/software-download.aspx?target=tcm:26-17924>`_.  Note it is possible to use ``avrdude``, a command-line program
     which is part of WinAVR instead if you wish. However since many people find the graphical interface
     of AVRStudio easier, this guide will use AVRStudio. Be sure to install the USB drivers as part of the package.
+    
+    .. warning::
+      
+      If using Windows 8.1, AVRStudio 4.19 may not work correctly. In particular DO NOT install the USB Drivers as part of the installation package as
+      mentioned above. Instead first install the latest stand-alone `AtmelUSBInstaller<https://gallery.atmel.com/Products/Details/6873be43-0628-46ac-ba83-286869a3d97a>`__
+      version.
+      
+      You can see additional details on the following thread: `http://www.avrfreaks.net/forum/avrisp-mk2-programmer-windows-81<http://www.avrfreaks.net/forum/avrisp-mk2-programmer-windows-81>`__.
+      If you have already installed AVRStudio 4.19 you may have to remove the associated drivers, please see the linked thread for details.
 
 6.  Plug in the USB-A Connector on the rear side of the ChipWhisperer Rev2. This should trigger the driver installation, which will detect the device as a *AVR-ISP MK2*.
 
