@@ -77,7 +77,7 @@ class ChipWhispererExtra(QObject):
         self.enableGlitch = True
 
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(showScriptParameter)
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(showScriptParameter, cwtype=cwtype)
 
 
     def paramTreeChanged(self, param, changes):
@@ -186,8 +186,9 @@ class CWExtraSettings(object):
                 ])
 
         if hasGlitchOut:
-            self.param[0]["children"].append(
-                {'name':'HS-Glitch Out Enable', 'type':'bool', 'value':False, 'set':self.setTargetGlitchOut, 'get':self.targetGlitchOut})
+            self.param[0]["children"].extend([
+                {'name':'HS-Glitch Out Enable (High Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'A'), 'get':partial(self.targetGlitchOut, 'A')},
+                {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}])
 
         self.param[0]["children"].extend([
                 {'name':'Target IOn Pins', 'type':'group', 'children':[
@@ -254,7 +255,6 @@ class CWExtraSettings(object):
     def setClockSource(self, source):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~0x07) | source
-        print "%2x"%data[0]
         self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
 
     def clockSource(self):
@@ -270,17 +270,31 @@ class CWExtraSettings(object):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return ((resp[0] & (3<<5)) >> 5)
 
-    def setTargetGlitchOut(self, enabled):
-        data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        if enabled:
-            data[0] = data[0] | (1 << 7)
-        else:
-            data[0] = data[0] & ~(1 << 7)
-        self.oa.sendMessage(CODE_WRITE, ADDR_EXTCLK, data)
+    def setTargetGlitchOut(self, out='A', enabled=False):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
 
-    def targetGlitchOut(self):
-        resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
-        return resp[0] & (1 << 7)
+        if out == 'A':
+            bn = 0
+        elif out == 'B':
+            bn = 1
+        else:
+            raise ValueError("Invalid glitch output: %s" % str(out))
+
+        if enabled:
+            data[4] = data[4] | (1 << bn)
+        else:
+            data[4] = data[4] & ~(1 << bn)
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def targetGlitchOut(self, out='A'):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if out == 'A':
+            bn = 0
+        elif out == 'B':
+            bn = 1
+        else:
+            raise ValueError("Invalid glitch output: %s" % str(out))
+        return resp[4] & (1 << bn)
 
     def setPin(self, enabled, pin):
         current = self.getPins()
