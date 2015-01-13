@@ -483,7 +483,8 @@ class OpenADCInterface_ZTEX(QWidget):
 
     def read(self, N=0, debug=False):
         try:
-            data = self.dev.read(self.readEP, N, self.interface, 100)
+            # self.interface removed from call for latest API compatability
+            data = self.dev.read(self.readEP, N, timeout=100)
         except IOError:
             return []
 
@@ -502,7 +503,8 @@ class OpenADCInterface_ZTEX(QWidget):
             for b in data:
                 print "%02x "%b,
             print ""
-        self.dev.write(self.writeEP, data, self.interface, 500)
+        # self.interface removed from call for latest API compatability
+        self.dev.write(self.writeEP, data, timeout=500)
 
     def getTextName(self):
         try:
