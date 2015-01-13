@@ -9,4 +9,4 @@ if __name__ == '__main__':
         myappid = u'newaetech.chipwhisperer.capture.git'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-    main()
+    main(scriptDir=r"chipwhisperer\capture")

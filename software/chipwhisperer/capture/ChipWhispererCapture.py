@@ -249,9 +249,14 @@ class EncryptionStatusMonitor(QDialog):
 
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4
-    def __init__(self):
+    def __init__(self, rootdir="."):
         super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"), icon="cwiconC")
         self.console = self.addConsole()
+
+        # This is a hack for paths hardcoded into the application. todo: fix this properly.
+        QSettings().setValue("cwcapture-starting-root", rootdir)
+        self._rootdir = rootdir
+        self._scriptRootDir = rootdir + "/scripts"
 
         self.scope = None
         self.trace = None
@@ -403,12 +408,12 @@ class ChipWhispererCapture(MainChip):
 
         self.scriptList = []
 
-        if os.path.isdir("scripts"):
-            for fn in os.listdir('scripts/.'):
-                fnfull = 'scripts/'+fn
+        if os.path.isdir(self._scriptRootDir):
+            for fn in os.listdir(self._scriptRootDir + '/.'):
+                fnfull = self._scriptRootDir + '/' + fn
                 if os.path.isfile(fnfull) and fnfull.lower().endswith('.py'):
                     try:
-                        m = importlib.import_module('scripts.'+os.path.splitext(fn)[0])
+                        m = importlib.import_module('chipwhisperer.capture.scripts.' + os.path.splitext(fn)[0])
                         m.name()
                         self.scriptList.append(m)
                     except ImportError, e:
@@ -927,6 +932,17 @@ class ChipWhispererCapture(MainChip):
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")
 
+def main(scriptDir="."):
+    app = makeApplication()
+
+    # Create and show the form
+    window = ChipWhispererCapture(scriptDir)
+    window.show()
+
+    # Run the main Qt loop
+    sys.exit(app.exec_())
+
+
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
@@ -935,11 +951,4 @@ def makeApplication():
     return app
 
 if __name__ == '__main__':
-    app = makeApplication()
-
-    # Create and show the form
-    window = ChipWhispererCapture()
-    window.show()
-
-    # Run the main Qt loop
-    sys.exit(app.exec_())
+    main()

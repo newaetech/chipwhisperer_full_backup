@@ -101,6 +101,9 @@ class ChipWhispererGlitch(QObject):
                 fileloc = QSettings().value("%s-zipbitstream-location" % settingprefix)
 
                 if fileloc:
+                    if fileloc.startswith("."):
+                        fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+
                     zfile = zipfile.ZipFile(fileloc, "r")
                     self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
                     self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))

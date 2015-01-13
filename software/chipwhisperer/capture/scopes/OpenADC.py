@@ -195,7 +195,7 @@ class OpenADCInterface_NAEUSBChip(QWidget):
 class OpenADCInterface_FTDI(QWidget):
     paramListUpdated = Signal(list)
 
-    def __init__(self,oadcInstance,console=None,showScriptParameter=None):
+    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
         QWidget.__init__(self)
         self.showScriptParameter = showScriptParameter
 
@@ -296,7 +296,7 @@ class OpenADCInterface_FTDI(QWidget):
 class OpenADCInterface_Serial(QWidget):
     paramListUpdated = Signal(list)
 
-    def __init__(self,oadcInstance,console=None,showScriptParameter=None):
+    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
         QWidget.__init__(self)
         self.showScriptParameter = showScriptParameter
 
@@ -387,7 +387,7 @@ class OpenADCInterface_Serial(QWidget):
 class OpenADCInterface_ZTEX(QWidget):
     paramListUpdated = Signal(list)
 
-    def __init__(self,oadcInstance,console=None,showScriptParameter=None):
+    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
         QWidget.__init__(self)
         self.showScriptParameter = showScriptParameter
 
