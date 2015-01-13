@@ -248,17 +248,12 @@ class ReaderChipWhispererSCard(ReaderTemplate):
         else:    
             return self.scard.APDUSend(cla, ins, p1, p2, txdata)
     
-    
-    
-    
-
-      
-from smartcard.CardType import AnyCardType
-from smartcard.CardRequest import CardRequest
-from smartcard.CardConnection import CardConnection
-from smartcard.util import toHexString
-
 class ReaderPCSC(ReaderTemplate):
+    from smartcard.CardType import AnyCardType
+    from smartcard.CardRequest import CardRequest
+    from smartcard.CardConnection import CardConnection
+    from smartcard.util import toHexString
+
     def __init__(self, console=None, showScriptParameter=None):
         super(ReaderPCSC, self).__init__(console, showScriptParameter)
                 
@@ -468,7 +463,16 @@ class SmartCard(TargetTemplate):
     def setupParameters(self):
         self.oa=None
         self.driver = None
-        ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':{"ChipWhisperer-USI":ReaderChipWhisperer(), "ChipWhisperer-SCARD":ReaderChipWhispererSCard(), "PC/SC Reader":ReaderPCSC(), "Cheapskate-Serial":None}, 'value':None, 'set':self.setConnection},
+        
+        supported_readers = {"Select Reader":None}
+        supported_readers["ChipWhisperer-USI"] = ReaderChipWhisperer()
+        supported_readers["ChipWhisperer-SCARD"] = ReaderChipWhispererSCard()
+        try:
+            supported_readers["PC/SC Reader"] = ReaderPCSC()
+        except:
+            pass
+        
+        ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':supported_readers, 'value':None, 'set':self.setConnection},
                     #"BasicCard v7.5 (INCOMPLETE"):None, 
                     #"Custom (INCOMPLETE)":None, "DPAContestv4 (INCOMPLETE)":None
                     {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(),

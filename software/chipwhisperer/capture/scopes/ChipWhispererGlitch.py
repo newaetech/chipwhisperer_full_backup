@@ -64,7 +64,7 @@ class ChipWhispererGlitch(QObject):
 
     paramListUpdated = Signal(list)
 
-    def __init__(self, showScriptParameter=None):
+    def __init__(self, showScriptParameter=None, cwtype="cwrev2"):
         paramSS = [
                 {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
                 {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
@@ -86,14 +86,24 @@ class ChipWhispererGlitch(QObject):
         self.oa = None
         self.showScriptParameter = showScriptParameter
 
+        # Check if we've got partial reconfiguration stuff for this scope
         try:
-            if QSettings().value("fpga-bitstream-mode") == "zip":
-                fileloc = QSettings().value("zipbitstream-location")
+            if cwtype == "cwrev2" or cwtype == "cwcrev2":
+                settingprefix = "cwcrev2"
+                partialbasename = "s6lx25"
+            elif cwtype == "cwlite":
+                settingprefix = "cwlite"
+                partialbasename = "cwlite"
+            else:
+                raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
+
+            if QSettings().value("%s-fpga-bitstream-mode" % settingprefix) == "zip":
+                fileloc = QSettings().value("%s-zipbitstream-location" % settingprefix)
 
                 if fileloc:
                     zfile = zipfile.ZipFile(fileloc, "r")
-                    self.glitchPR.load(zfile.open("s6lx25-glitchwidth.p"))
-                    self.glitchPR.load(zfile.open("s6lx25-glitchoffset.p"))
+                    self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
+                    self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))
                     self.prEnabled = True
                 else:
                     print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
@@ -112,31 +122,34 @@ class ChipWhispererGlitch(QObject):
             print str(e)
             self.prEnabled = False
 
-        #self.prEnabled = False
-
-        if self.prEnabled:
-            #Enable glitch width, check what we've got access to
-            paramSS[1]['readonly'] = False
-            lim = (self.glitchPR.limitList[0][0] / 2.55, self.glitchPR.limitList[0][1] / 2.55 )
-            #if lim[0] < 0:
-            #    lim = (0, lim[1])
-            paramSS[1]['limits'] = lim
-
-            paramSS[3]['readonly'] = False
-            lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55 )
-            #if lim[0] < 0:
-            #    lim = (0, lim[1])
-            paramSS[3]['limits'] = lim
+        # self.prEnabled = False
 
         self.params = Parameter.create(name='Glitch Module', type='group', children=paramSS)
         ExtendedParameter.setupExtended(self.params, self)
+
+        if self.prEnabled:
+            # Enable glitch width, check what we've got access to
+            self.findParam('width').setReadonly(False)
+            lim = (self.glitchPR.limitList[0][0] / 2.55, self.glitchPR.limitList[0][1] / 2.55)
+            # if lim[0] < 0:
+            #    lim = (0, lim[1])
+            self.findParam('width').setLimits(lim)
+
+            self.findParam('offset').setReadonly(False)
+            lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55)
+            # if lim[0] < 0:
+            #    lim = (0, lim[1])
+            self.findParam('offset').setLimits(lim)
 
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oa):
+
+
         if self.prEnabled:
+
             self.prCon.con(oa)
 
             # Check this is actually working
@@ -333,9 +346,9 @@ class ChipWhispererGlitch(QObject):
         multiple glitches in a row
         """
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
-        resp[5] = resp[5] | (1<<7)
+        resp[5] = resp[5] | (1 << 7)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
-        resp[5] = resp[5] & ~(1<<7)
+        resp[5] = resp[5] & ~(1 << 7)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, resp, Validate=False)
 
     def glitchArm(self):

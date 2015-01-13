@@ -135,7 +135,7 @@ class FWLoaderConfig(QDialog):
                 defLocZipBS = "../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"
             if os.path.isfile(defLocZipBS):
                 bsZipLoc = str(defLocZipBS)
-                settings.setValue("%s-zipbitstream-location", bsZipLoc)
+                settings.setValue("%s-zipbitstream-location" % self._mode, bsZipLoc)
 
         if not bsLoc:
             if self._mode == "cwcrev2":
@@ -241,7 +241,7 @@ class FWLoaderConfig(QDialog):
             if self._mode == "cwcrev2":
                 self.ztex.configureFpgaLS(zfile.open("interface.bit"))
             elif self._mode == "cwlite":
-                pass
+                self.cwliteUSB.FPGAProgram(zfile.open("cwlite_interface.bit"))
             else:
                 raise ValueError("Internal Error: Invalid setting of mode: %s" % self._mode)
         else:

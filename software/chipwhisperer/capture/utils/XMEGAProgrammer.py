@@ -88,9 +88,10 @@ class XMEGAProgrammerDialog(QDialog):
             self.flashLocation.setText(fname)
             QSettings().setValue("xmega-flash-location", fname)
 
-    def readSignature(self):
+    def readSignature(self, close=True):
         self.xmega.find()
-        self.xmega.close()
+        if close:
+            self.xmega.close()
 
     def verifyFlash(self):
         pass
@@ -106,16 +107,17 @@ class XMEGAProgrammerDialog(QDialog):
 
             try:
                 self.statusLine.append("Entering Programming Mode")
-                self.readSignature()
+                self.readSignature(close=False)
 
                 if erase:
                     try:
                         self.statusLine.append("Erasing Chip")
                         self.xmega.erase()
                     except IOError:
-                        self.statusLine.append("**chip-erase timeout, workaround enabled**")
+                        self.statusLine.append("**chip-erase timeout, erasing application only**")
                         self.xmega.xmega.enablePDI(False)
                         self.xmega.xmega.enablePDI(True)
+                        self.xmega.erase("app")
 
                 self.xmega.program(self.flashLocation.text(), memtype="flash", verify=verify)
                 
@@ -202,7 +204,7 @@ class XMEGAProgrammer(object):
 
         self.log("XMEGA Programming %s..." % memtype)
         fdata = f.tobinarray(start=0)
-        self.xmega.writeMemory(startaddr, fdata, memtype)
+        self.xmega.writeMemory(startaddr, fdata, memtype)  # , erasePage=True
         
         self.log("XMEGA Reading %s..." % memtype)
         #Do verify run
@@ -228,7 +230,7 @@ if __name__ == '__main__':
     cwtestusb = CWLiteUSB()
     cwtestusb.con()
 
-    fname = r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\firmware\xmega-serial\simpleserial.hex"
+    fname = r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\firmware\xmega-glitch\simpleserial.hex"
 
     xmega = XMEGAProgrammer()
     xmega.setUSBInterface(cwtestusb._usbdev)
@@ -241,6 +243,7 @@ if __name__ == '__main__':
         time.sleep(0.1)
         xmega.xmega.enablePDI(False)
         xmega.xmega.enablePDI(True)
-    xmega.program(fname, "flash")
+    # xmega.program(fname, "flash")
+    print "%02x" % xmega.xmega.readMemory(0x8f0025, 1)[0]
     xmega.close()
 
