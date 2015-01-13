@@ -134,14 +134,10 @@ class ChipWhispererGlitch(QObject):
             # Enable glitch width, check what we've got access to
             self.findParam('width').setReadonly(False)
             lim = (self.glitchPR.limitList[0][0] / 2.55, self.glitchPR.limitList[0][1] / 2.55)
-            # if lim[0] < 0:
-            #    lim = (0, lim[1])
             self.findParam('width').setLimits(lim)
 
             self.findParam('offset').setReadonly(False)
             lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55)
-            # if lim[0] < 0:
-            #    lim = (0, lim[1])
             self.findParam('offset').setLimits(lim)
 
     def paramTreeChanged(self, param, changes):
@@ -149,7 +145,6 @@ class ChipWhispererGlitch(QObject):
             self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oa):
-
 
         if self.prEnabled:
 
@@ -186,17 +181,17 @@ class ChipWhispererGlitch(QObject):
         width = self.findParam('width').value()
         offset = self.findParam('offset').value()
 
-        widthint = round((width/100) * 256)
-        offsetint = round((offset/100) * 256)
+        widthint = round((width / 100) * 256)
+        offsetint = round((offset / 100) * 256)
 
         bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
 
         if self.prEnabled:
             self.prCon.program(bs)
             if self.oa is not None:
-                self.resetDCMs()
+                self.resetDCMs(keepPhase=True)
 
-        # print "Partial: %d %d"%(widthint, offsetint)
+        # print "Partial: %d %d" % (widthint, offsetint)
 
     def setTriggerOffset(self, offset):
         """Set offset between trigger event and glitch in clock cycles"""
@@ -285,7 +280,7 @@ class ChipWhispererGlitch(QObject):
 
         return (phase1, phase2, dcm1Lock, dcm2Lock)
 
-    def resetDCMs(self):
+    def resetDCMs(self, keepPhase=False):
         """Reset the DCMs for the Glitch width & Glitch offset. Required after doing a PR operation"""
 
         reset = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -294,8 +289,13 @@ class ChipWhispererGlitch(QObject):
         reset[5] &= ~(1<<1)
         self.oa.sendMessage(CODE_WRITE, glitchaddr, reset, Validate=False)
 
-        self.findParam('widthfine').setValue(0)
-        self.findParam('offsetfine').setValue(0)
+        # Reload any special phase offset
+        if keepPhase:
+            self.setGlitchWidthFine(self.findParam('widthfine').value())
+            self.setGlitchOffsetFine(self.findParam('offsetfine').value())
+        else:
+            self.findParam('widthfine').setValue(0)
+            self.findParam('offsetfine').setValue(0)
 
     def checkLocked(self):
         """Check if the DCMs are locked and print results """
