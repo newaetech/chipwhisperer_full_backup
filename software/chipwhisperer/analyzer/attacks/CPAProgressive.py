@@ -58,10 +58,10 @@ class CPAProgressiveOneSubkey(object):
             padbefore = 0
             padafter = 0
         else:
-            traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
-            padbefore = pointRange[bnum][0]
-            padafter = len(traces_all[0,:]) - pointRange[bnum][1]
-            #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+            traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
+            padbefore = pointRange[0]
+            padafter = len(traces_all[0, :]) - pointRange[1]
+            # print "%d - %d (%d %d)" % (pointRange[0], pointRange[1], padbefore, padafter)
 
         #For each 0..0xFF possible value of the key byte
         for key in range(0, 256):
@@ -300,7 +300,11 @@ class CPAProgressive(AutoScript, QObject):
 
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
+                        if isinstance(pointRange, list):
+                            bptrange = pointRange[bnum]
+                        else:
+                            bptrange = pointRange
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True

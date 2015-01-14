@@ -95,10 +95,12 @@ class AttackBaseClass(QObject):
     def getReportingInterval(self):
         return self._reportinginterval
 
-    def setPointRange(self, rng, bnum=None):
-        if bnum is None:
-            self._pointRange = rng
+    def setPointRange(self, rng):
+        self._pointRange = rng
 
     def getPointRange(self, bnum=None):
-        return self._pointRange
+        if isinstance(self._pointRange, list) and bnum is not None:
+            return self._pointRange[bnum]
+        else:
+            return self._pointRange
 
