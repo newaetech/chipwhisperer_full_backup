@@ -38,6 +38,7 @@ except ImportError:
     
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
+import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 from TargetTemplate import TargetTemplate
 
 class ReaderTemplate(QObject):
@@ -92,10 +93,132 @@ class ReaderTemplate(QObject):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         pass
 
-class ReaderChipWhisperer(ReaderTemplate):
+
+class ReaderChipWhispererSER(ReaderTemplate):
     
     def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderChipWhisperer, self).__init__(console, showScriptParameter)
+        super(ReaderChipWhispererSER, self).__init__(console, showScriptParameter)        
+        
+    def setupParameters(self):
+        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)
+        self.ser.setupParameters()              
+        self.params = self.ser.params
+        self.params.addChildren([{'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
+                                ])
+        #ExtendedParameter.setupExtended(self.params, self)       
+        
+    def waitEcho(self, data):
+        rxdata = []
+        while len(rxdata) < len(data):
+            char = self.ser.read(1)
+            if len(char) == 0:
+                print "SCARD TIMEOUT: Failed to echo data?"
+                print "  SENT: %s"%" ".join(["%02x"%t for t in data])
+                print "  RECEIVED: %s"%" ".join(["%02x"%ord(t) for t in rxdata])
+                raise IOError("SmartCard Line Stuck?")
+            rxdata.extend(char)
+            
+        #print "  SENT: %s"%" ".join(["%02x"%t for t in data])
+        #print "  RECEIVED: %s"%" ".join(["%02x"%ord(t) for t in rxdata])
+    
+    def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
+        """Send APDU to SmartCard, get Response""" 
+    
+        #SmartCard header
+        data = [cla,ins, p1, p2]
+        
+        if txdata is not None:
+            txdatalen = len(txdata)
+            data.append(txdatalen)
+        else:
+            txdatalen = 0            
+            data.append(rxdatalen)
+                
+        
+        #Flush input
+        self.ser.flush()
+        
+        #Send data        
+        self.ser.write(data)
+        self.waitEcho(data)
+       
+        #Wait for ACK - don't fail yet as some scards
+        #don't send ACK properly it seems (mainly DPA Contest v4)
+        ack = self.ser.read(1)
+        
+        #Send payload
+        if txdata and len(txdata) > 0:
+            self.ser.write(txdata)
+            self.waitEcho(txdata)
+            
+        #Send length request if we had data
+        if txdatalen > 0 and rxdatalen > 0:
+            self.ser.write([rxdatalen])
+            self.ser.read(1)        
+
+        #Read Payload data
+        rxdata = []
+        while len(rxdata) < rxdatalen:
+            char = self.ser.read(1)
+            if len(char) == 0:
+                break
+            rxdata.extend(char)
+            
+        #Convert
+        rxdata = [ord(t) for t in rxdata]
+            
+        #Read two bytes of status
+        stat = self.ser.read(2)
+                  
+        # Uncomment to print data stream on RX pin
+        #print "APDU: ",
+        #for t in rxdata: print "%02x " % t,
+        #print ""            
+            
+        if len(ack) < 1:
+            print "ACK Error: not received?" 
+        elif ord(ack[0]) != ins:
+            print "ACK Error: %x != %x"%(ins, ord(ack[0]))
+                        
+        if len(stat) < 2:
+            raise IOError("Status too small: %d, %s" % (len(stat), str(stat)))
+            
+        status = (ord(stat[0]) << 8) | ord(stat[1])
+        
+        if rxdatalen > 0:
+            payload = rxdata
+            return (status, payload)
+        
+        return status
+    
+    def con(self, oa=None):
+        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+        self.ser.setOpenADC(oa)
+        self.ser.con()
+        
+        #Set defaults
+        self.ser.findParam('parity').setValue('e')
+        self.ser.findParam('stopbits').setValue(2)
+        self.ser.findParam('rxbaud').setValue(9600)
+        self.ser.findParam('txbaud').setValue(9600)
+    
+    def flush(self):
+        """Discard all input buffers"""
+        self.ser.flush()
+    
+    def reset(self):
+        """Reset card & save the ATR"""
+        pass
+    
+    def getATR(self):
+        """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
+        pass
+
+
+class ReaderChipWhispererUSI(ReaderTemplate):
+    
+    def __init__(self, console=None, showScriptParameter=None):
+        super(ReaderChipWhispererUSI, self).__init__(console, showScriptParameter)
         self.usi = ChipWhispererTargets.CWUniversalSerial()
         
 
@@ -465,7 +588,8 @@ class SmartCard(TargetTemplate):
         self.driver = None
         
         supported_readers = {"Select Reader":None}
-        supported_readers["ChipWhisperer-USI"] = ReaderChipWhisperer()
+        supported_readers["ChipWhisperer-SER"] = ReaderChipWhispererSER()
+        supported_readers["ChipWhisperer-USI"] = ReaderChipWhispererUSI()
         supported_readers["ChipWhisperer-SCARD"] = ReaderChipWhispererSCard()
         try:
             supported_readers["PC/SC Reader"] = ReaderPCSC()
