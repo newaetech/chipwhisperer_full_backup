@@ -39,6 +39,7 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
+import chipwhisperer.capture.global_mod as global_mod
 from TargetTemplate import TargetTemplate
 
 class ReaderTemplate(QObject):
@@ -104,6 +105,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.ser.setupParameters()              
         self.params = self.ser.params
         self.params.addChildren([{'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
+                                {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
+                                {'name':'ATR', 'key':'atr', 'type':'str'}                                
                                 ])
         #ExtendedParameter.setupExtended(self.params, self)       
         
@@ -205,6 +208,13 @@ class ReaderChipWhispererSER(ReaderTemplate):
         
         self.ser.findParam('rxbaud').setValue(9600)
         self.ser.findParam('txbaud').setValue(9600)
+        
+        #Setup GPIO Pins
+        self.cwe = global_mod.active_scope.advancedSettings
+        self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
+        self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
+        self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
+        self.cwe.findParam('gpiostate1').setValue(True)
     
     def flush(self):
         """Discard all input buffers"""
@@ -212,11 +222,31 @@ class ReaderChipWhispererSER(ReaderTemplate):
     
     def reset(self):
         """Reset card & save the ATR"""
-        pass
+        
+        #Flush serial port
+        self.ser.flush()
+        
+        #Toggle GPIO1
+        self.cwe.cwEXTRA.setGPIOState(False, 0)
+        time.sleep(0.01)
+        self.cwe.cwEXTRA.setGPIOState(True, 0)
+        time.sleep(0.05)
+        
+        #Read ATR
+        atr = []
+        rxdata = [0,0,0]
+        while len(rxdata) > 0:
+            rxdata = self.ser.read(1)
+            atr.extend(rxdata)
+            
+        self.atr = [ord(t) for t in atr]
+        
+        stratr = " ".join(["%02x"%ord(t) for t in atr])
+        self.ser.findParam('atr').setValue(stratr)        
     
     def getATR(self):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
-        pass
+        return self.atr
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):

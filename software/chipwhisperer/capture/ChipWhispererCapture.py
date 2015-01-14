@@ -64,6 +64,7 @@ except ImportError:
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
+import chipwhisperer.capture.global_mod as global_mod
 
 try:
     from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
@@ -871,6 +872,7 @@ class ChipWhispererCapture(MainChip):
 
     def scopeChanged(self, newscope):
         self.scope = newscope
+        global_mod.active_scope = newscope
         if self.scope is not None:
             self.scope.paramListUpdated.connect(self.reloadScopeParamList)
             self.scope.dataUpdated.connect(self.newScopeData)
