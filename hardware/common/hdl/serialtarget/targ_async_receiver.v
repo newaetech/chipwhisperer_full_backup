@@ -5,8 +5,9 @@
 
 //`define CHIPSCOPE
 
-module targ_async_receiver(clk, RxD, RxD_data_ready, RxD_data_error, RxD_data, RxD_endofpacket, RxD_idle, RxD_Baud8GeneratorInc);
+module targ_async_receiver(clk, RxD, parity_even, two_stopbits, RxD_data_ready, RxD_data_error, RxD_data, RxD_endofpacket, RxD_idle, RxD_Baud8GeneratorInc);
 input clk, RxD;
+input parity_even, two_stopbits;
 output RxD_data_ready;  // onc clock pulse when RxD_data is valid
 output RxD_data_error;
 output [7:0] RxD_data;
@@ -93,8 +94,10 @@ case(state)
 	4'b1100: if(next_bit) state <= 4'b1101;  // bit 4
 	4'b1101: if(next_bit) state <= 4'b1110;  // bit 5
 	4'b1110: if(next_bit) state <= 4'b1111;  // bit 6
-	4'b1111: if(next_bit) state <= 4'b0001;  // bit 7
-	4'b0001: if(next_bit) state <= 4'b0000;  // stop bit
+	4'b1111: if(next_bit) state <= (parity_even) ? 4'b0011 : {(two_stopbits) ? 4'b0010 : 4'b0001};  // bit 7
+	4'b0011: if(next_bit) state <= (two_stopbits) ? 4'b0010 : 4'b0001;  // parity bit
+	4'b0010: if(next_bit) state <= 4'b0001;  // stop bit 1
+	4'b0001: if(next_bit) state <= 4'b0000;  // stop bit 2
 	default: state <= 4'b0000;
 endcase
 

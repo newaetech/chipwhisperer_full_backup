@@ -56,6 +56,7 @@ module reg_serialtarget(
    );
 	 
 	 assign reg_stream = 1'b0;
+	 
 
 `ifdef CHIPSCOPE
    wire [127:0] cs_data;   
@@ -154,10 +155,12 @@ module reg_serialtarget(
 	 always @(posedge clk) begin
 		if (reset_i) begin
 			//16 is width of RxD_Baud8GeneratorInc
-			baud_settings[15:0] <=  (((`TARG_UART_BAUD*8)<<(16-7))+((`UART_CLK)>>8))/((`UART_CLK)>>7); //RX
+			baud_settings[13:0] <=  (((`TARG_UART_BAUD*8)<<(16-7))+((`UART_CLK)>>8))/((`UART_CLK)>>7); //RX
+			baud_settings[15:14] <= 2'b00;
 			
 			//16 is width of TxD_BaudGeneratorInc
-			baud_settings[31:16] <=  (((`TARG_UART_BAUD)<<(16-4))+((`UART_CLK)>>5))/((`UART_CLK)>>4); //TX
+			baud_settings[29:16] <=  (((`TARG_UART_BAUD)<<(16-4))+((`UART_CLK)>>5))/((`UART_CLK)>>4); //TX
+			baud_settings[31:30] <= 2'b11;
 		end else if (reg_write) begin
 			if (reg_address == `TARGSERIALBAUD_ADDR) begin
 				baud_settings[reg_bytecnt*8 +: 8] <= reg_datai;
@@ -167,8 +170,11 @@ module reg_serialtarget(
 	 
 	 wire [15:0] TxD_BaudGeneratorInc;
 	 wire [15:0] RxD_Baud8GeneratorInc;
-	 assign TxD_BaudGeneratorInc = baud_settings[31:16];
-	 assign RxD_Baud8GeneratorInc = baud_settings[15:0];
+	 assign TxD_BaudGeneratorInc = {2'b00 , baud_settings[29:16]};
+	 assign RxD_Baud8GeneratorInc = {2'b00 , baud_settings[13:0]};
+	 
+	 wire even_parity = baud_settings[15];
+	 wire two_stopbits = baud_settings[14];
 	 
  `ifdef CHIPSCOPE
 	 assign cs_data[5:0] = reg_address;
@@ -208,6 +214,8 @@ module reg_serialtarget(
 	targ_async_transmitter targ_tx(
 	 .clk(clk),
 	 .TxD_start(tx_start),
+	 .parity_even(even_parity),
+	 .two_stopbits(two_stopbits),
 	 .TxD_data(tx_data),
 	 .TxD(target_tx),
 	 .TxD_busy(tx_busy),
@@ -230,6 +238,8 @@ module reg_serialtarget(
 	targ_async_receiver targ_rx(
 	 .clk(clk),
 	 .RxD(target_rx),
+	 .parity_even(even_parity),
+	 .two_stopbits(two_stopbits),
 	 .RxD_data_ready(rx_data_rdy),
 	 .RxD_data_error(),
 	 .RxD_data(rx_data),
