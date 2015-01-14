@@ -1,7 +1,7 @@
 .. _tutorialsasebowcard:
 
-Tutorial #B10: Using with SASEBO-W CardOS or DPA Contestv4
-==========================================================
+Tutorial #B10: Using with SASEBO-W CardOS or DPA Contest v4.2
+=============================================================
 
 Background
 ----------
@@ -136,7 +136,7 @@ Software Setup and Example Capture (CardOS)
 
  3. Switch to the *Target Settings* tab. Set the following two options:
 
-  a. Reader Hardware: *ChipWhisperer-SER* (NOTE: This is new a new option as of 0.09, the old -USI is not recommended anymore)
+  a. Reader Hardware: *ChipWhisperer-SER* (NOTE: This is new a new option as of 0.09, the old ChipWhisperer-USI is not recommended anymore)
   b. SmartCard Protocol: *SASEBO-W SmartCard OS*
 
  4. Press the *Master Connect* button, the scope and target should both show as connected:
@@ -175,8 +175,15 @@ Changes for DPAContest v4.2 Card
 As of ChipWhisperer Release 0.09, the DPAContest v4.2 protocol is also supported. This protocol uses AES-128 RSM, making an interesting attack of a protected
 target. The following details settings required to attack this card.
 
-1. Change the *TRIG* jumper to *AX1* instead of *AX2*
-2. In step 3-b above: Select the *
-2. In step 5-b above: Under *Scope Settings*, the option OpenADC-->Trigger Setup-->Mode is set to *Falling Edge*
+ 1. Change the *TRIG* jumper to *AX1* instead of *AX2* (again this is based on silkscreen markings)
+ 2. In step 3-b above: Select the *DPA Contest 4.2* as the SmartCard Protocol
+
+Otherwise you can follow the above example. With those settings, and the .hex and .eeprom file programmed into the card. Note the *ATR* does not seem to work properly,
+possibly as it is sent too soon after reset for the ChipWhisperer reader to capture.
+
+You should see a power signature that looks something like this, note again the use of the encryption monitor to confirm correct operation:
+
+   .. image:: /images/tutorials/basic/scard/dpacontestv42.png
+
 
 
