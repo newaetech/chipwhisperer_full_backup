@@ -29,6 +29,13 @@
 import sys
 
 try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    dicttype = OrderedDict
+except ImportError:
+    dicttype = dict
+
+try:
     from PySide.QtCore import *
     from PySide.QtGui import *
 except ImportError:
@@ -558,23 +565,23 @@ class OpenADCInterface(QObject):
         self.setCurrentScope(cwrev2, False)
         defscope = cwrev2
 
-        cw_cons = {}
-
-        if ftdi:
-            ftdi.paramListUpdated.connect(self.emitParamListUpdated)
-            cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
+        cw_cons = dicttype()
 
         if cwrev2:
             cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
             cw_cons["ChipWhisperer Rev2"] = cwrev2
 
-        if cwser:
-            cwser.paramListUpdated.connect(self.emitParamListUpdated)
-            cw_cons["Serial Port (LX9)"] = cwser
-
         if cwlite:
             cwlite.paramListUpdated.connect(self.emitParamListUpdated)
             cw_cons["ChipWhisperer Lite"] = cwlite
+
+        if ftdi:
+            ftdi.paramListUpdated.connect(self.emitParamListUpdated)
+            cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
+
+        if cwser:
+            cwser.paramListUpdated.connect(self.emitParamListUpdated)
+            cw_cons["Serial Port (LX9)"] = cwser
 
         if cw_cons == {}:
             # If no scopes could be found, add a dummy entry so the

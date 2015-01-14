@@ -203,6 +203,10 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
            calls to setxxBaud, as otherwise these bits get blasted away
         """
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+
+        if data is None:
+            raise IOError("ChipWhisperer-SER Module not found, check you are using updated FPGA Bitstream")
+
         if(data[3] & 0b11000000) == 0b11000000:
             self._regVer = 1
             self.findParam('stopbits').setReadonly(False)

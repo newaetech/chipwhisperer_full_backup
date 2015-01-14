@@ -464,12 +464,18 @@ class CWSCardIntegrated(object):
     
     def con(self, oa):
         self.oa = oa
+
+        # Check module is present
+        data = self.oa.sendMessage(CODE_READ, ADDR_STATUS)
+        if data is None:
+            raise IOError("ChipWhisperer-SCARD Module not found, this module has been removed from newer FPGA targets. See docs for new module information.")
+
         self.reset()
 
     def reset(self):
 
         #Flush
-        #self.readAll()
+        # self.readAll()
 
         #Toggle Reset
         cmd = bytearray(1)

@@ -31,6 +31,13 @@ from PySide.QtGui import *
 import time
 
 try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    dicttype = OrderedDict
+except ImportError:
+    dicttype = dict
+
+try:
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
@@ -130,6 +137,9 @@ class ReaderChipWhispererSER(ReaderTemplate):
         #SmartCard header
         data = [cla,ins, p1, p2]
         
+        #Flush input
+        self.ser.flush()
+        
         if txdata is not None:
             txdatalen = len(txdata)
             data.append(txdatalen)
@@ -137,13 +147,9 @@ class ReaderChipWhispererSER(ReaderTemplate):
             txdatalen = 0            
             data.append(rxdatalen)
                 
-        
-        #Flush input
-        self.ser.flush()
-        
         #Send data        
         self.ser.write(data)
-        self.waitEcho(data)
+        self.waitEcho(data)           
        
         #Wait for ACK - don't fail yet as some scards
         #don't send ACK properly it seems (mainly DPA Contest v4)
@@ -184,7 +190,7 @@ class ReaderChipWhispererSER(ReaderTemplate):
             print "ACK Error: %x != %x"%(ins, ord(ack[0]))
                         
         if len(stat) < 2:
-            raise IOError("Status too small: %d, %s" % (len(stat), str(stat)))
+            raise IOError("Status too small: %d, %s" % (len(stat), " ".join(["%02x"%ord(t) for t in stat])))
             
         status = (ord(stat[0]) << 8) | ord(stat[1])
         
@@ -210,11 +216,14 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.ser.findParam('txbaud').setValue(9600)
         
         #Setup GPIO Pins
-        self.cwe = global_mod.active_scope.advancedSettings
-        self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
-        self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
-        self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
-        self.cwe.findParam('gpiostate1').setValue(True)
+        if hasattr(global_mod.active_scope, 'advancedSettings') and global_mod.active_scope.advancedSettings:
+            self.cwe = global_mod.active_scope.advancedSettings
+            self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
+            self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
+            self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
+            self.cwe.findParam('gpiostate1').setValue(True)
+        else:
+            self.cwe = None
         
         self.reset()
     
@@ -225,7 +234,11 @@ class ReaderChipWhispererSER(ReaderTemplate):
     def reset(self):
         """Reset card & save the ATR"""
         
+        self.atr = [0]
         self.ser.findParam('atr').setValue("--atr not read--")
+        
+        if self.cwe is None:            
+            return
         
         #Toggle GPIO1
         self.cwe.cwEXTRA.setGPIOState(False, 0)
@@ -407,16 +420,23 @@ class ReaderChipWhispererSCard(ReaderTemplate):
    
         else:    
             return self.scard.APDUSend(cla, ins, p1, p2, txdata)
-    
-class ReaderPCSC(ReaderTemplate):
+
+
+try:
     from smartcard.CardType import AnyCardType
     from smartcard.CardRequest import CardRequest
     from smartcard.CardConnection import CardConnection
     from smartcard.util import toHexString
+except ImportError:
+    AnyCardType = None
+    
+class ReaderPCSC(ReaderTemplate):    
 
     def __init__(self, console=None, showScriptParameter=None):
         super(ReaderPCSC, self).__init__(console, showScriptParameter)
-                
+        
+        if AnyCardType is None:
+            raise ImportError("smartcard libraries missing")           
 
     def setupParameters(self):
         ssParams = [{'name':'Keep-Alive Interval (off=0)', 'type':'int', 'value':2, 'set':self.setKeepalive}                                                            
@@ -696,13 +716,14 @@ class SmartCard(TargetTemplate):
         self.oa=None
         self.driver = None
         
-        supported_readers = {"Select Reader":None}
+        supported_readers = dicttype()
+        supported_readers["Select Reader"] = None
         supported_readers["ChipWhisperer-SER"] = ReaderChipWhispererSER()
         supported_readers["ChipWhisperer-USI"] = ReaderChipWhispererUSI()
         supported_readers["ChipWhisperer-SCARD"] = ReaderChipWhispererSCard()
         try:
             supported_readers["PC/SC Reader"] = ReaderPCSC()
-        except:
+        except ImportError:
             pass
         
         ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':supported_readers, 'value':None, 'set':self.setConnection},
