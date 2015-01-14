@@ -198,7 +198,11 @@ class ReaderChipWhispererSER(ReaderTemplate):
         
         #Set defaults
         self.ser.findParam('parity').setValue('e')
-        self.ser.findParam('stopbits').setValue(2)
+        
+        #NB: This should be '2' I thought, but the turn-around time on the SASEBO-W card is too fast, so
+        #    this needs to be reduced to '1' to avoid a collision.
+        self.ser.findParam('stopbits').setValue(1)
+        
         self.ser.findParam('rxbaud').setValue(9600)
         self.ser.findParam('txbaud').setValue(9600)
     
