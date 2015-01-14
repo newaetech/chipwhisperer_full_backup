@@ -29,6 +29,13 @@ import importlib
 from functools import partial
 
 try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    dicttype = OrderedDict
+except ImportError:
+    dicttype = dict
+
+try:
     from PySide.QtCore import *
     from PySide.QtGui import *
 except ImportError:
@@ -147,10 +154,12 @@ class TargetInterface(QObject):
 
     def __init__(self, parent=None, log=None,showScriptParameter=None):
         super(TargetInterface, self).__init__(parent)
-        valid_targets = {"None":None}
+        valid_targets = dicttype()
         self.driver = None
         self.log=log
         self.showScriptParameter = showScriptParameter
+
+        valid_targets["None"] = None
 
         if target_SimpleSerial is not None:
             valid_targets["Simple Serial"] = target_SimpleSerial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
@@ -266,9 +275,18 @@ class ChipWhispererCapture(MainChip):
         self.target.paramListUpdated.connect(self.reloadTargetParamList)
         self.target.newInputData.connect(self.newTargetData)
 
-        valid_scopes = {"None":None, "ChipWhisperer/OpenADC":OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)}
-        valid_traces = {"None":None, "ChipWhisperer/Native":TraceContainerNative, "DPAContestv3":TraceContainerDPAv3}
-        valid_aux = {"None":None}
+        valid_scopes = dicttype()
+        valid_traces = dicttype()
+        valid_aux = dicttype()
+
+        
+        valid_scopes["None"] = None
+        valid_scopes["ChipWhisperer/OpenADC"] = OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
+        
+        valid_traces["None"] = None
+        valid_traces["ChipWhisperer/Native"] = TraceContainerNative
+        valid_traces["DPAContestv3"] = TraceContainerDPAv3
+        valid_aux["None"] = None
 
         # If you want to add a 'hacked-in' module, you can do that in the 'aux' system. The aux system is designed to make
         # it very easy to add some code that does something like measure an external instrument, or control some other
