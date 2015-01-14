@@ -144,5 +144,4 @@ class TargetTemplate(QObject):
             ct = bytearray(ct)
             return ct
         else:
-            "nothing..."
             return None
