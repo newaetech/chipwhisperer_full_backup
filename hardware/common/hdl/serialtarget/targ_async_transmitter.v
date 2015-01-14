@@ -5,8 +5,9 @@
 
 `include "includes.v"
 
-module targ_async_transmitter(clk, TxD_start, TxD_data, TxD, TxD_busy, TxD_BaudGeneratorInc);
+module targ_async_transmitter(clk, TxD_start, parity_even, two_stopbits, TxD_data, TxD, TxD_busy, TxD_BaudGeneratorInc);
 input clk, TxD_start;
+input parity_even, two_stopbits;
 input [7:0] TxD_data;
 output TxD, TxD_busy;
 
@@ -47,8 +48,8 @@ wire [7:0] TxD_dataD = RegisterInputData ? TxD_dataReg : TxD_data;
 always @(posedge clk)
 case(state)
 	4'b0000: if(TxD_start) state <= 4'b0001;
-	4'b0001: if(BaudTick) state <= 4'b0100;
-	4'b0100: if(BaudTick) state <= 4'b1000;  // start
+	4'b0001: if(BaudTick) state <= 4'b0111;
+	4'b0111: if(BaudTick) state <= 4'b1000;  // start
 	4'b1000: if(BaudTick) state <= 4'b1001;  // bit 0
 	4'b1001: if(BaudTick) state <= 4'b1010;  // bit 1
 	4'b1010: if(BaudTick) state <= 4'b1011;  // bit 2
@@ -56,10 +57,12 @@ case(state)
 	4'b1100: if(BaudTick) state <= 4'b1101;  // bit 4
 	4'b1101: if(BaudTick) state <= 4'b1110;  // bit 5
 	4'b1110: if(BaudTick) state <= 4'b1111;  // bit 6
-	4'b1111: if(BaudTick) state <= 4'b0010;  // bit 7
-	4'b0010: if(BaudTick) state <= 4'b0011;  // stop1
-	4'b0011: if(BaudTick) state <= 4'b0000;  // stop2
+	4'b1111: if(BaudTick) state <= (parity_even) ? 4'b0110 : 4'b0100;  // bit 7
+	4'b0110: if(BaudTick) state <= 4'b0100;  // parity bit
+	4'b0100: if(BaudTick) state <= (two_stopbits) ? 4'b0101 : 4'b0000;  // stop1
+	4'b0101: if(BaudTick) state <= 4'b0000;  // stop2
 	default: if(BaudTick) state <= 4'b0000;
+	
 endcase
 
 // Output mux
@@ -76,8 +79,11 @@ case(state[2:0])
 	3'd7: muxbit <= TxD_dataD[7];
 endcase
 
+wire parity_bit;
+assign parity_bit = (state == 4'b0110) ? TxD_dataD[0] ^ TxD_dataD[1] ^ TxD_dataD[2] ^ TxD_dataD[3] ^ TxD_dataD[4] ^ TxD_dataD[5] ^ TxD_dataD[6] ^ TxD_dataD[7] : 1'b0;
+
 // Put together the start, data and stop bits
 reg TxD;
-always @(posedge clk) TxD <= (state<4) | (state[3] & muxbit);  // register the output to make it glitch free
+always @(posedge clk) TxD <= (state<6) | (state[3] & muxbit) | parity_bit;  // register the output to make it glitch free
 
 endmodule
