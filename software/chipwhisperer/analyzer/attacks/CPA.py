@@ -188,9 +188,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         start = datetime.now()
 
-        #TODO: support start/end point different per byte
-        (startingPoint, endingPoint) = self.getPointRange(None)
-
         self.attack.setTargetBytes(self.targetBytes())
         self.attack.setKeyround(self.keyround())
         self.attack.setDirection(self.direction())
@@ -217,7 +214,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 if d is None:
                     continue
 
-                d = d[startingPoint:endingPoint]
+                # d = d[startingPoint:endingPoint]
 
                 data.append(d)
                 textins.append(self.trace.getTextin(i))
@@ -231,7 +228,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
             #TODO:  pointRange=self.TraceRangeList[1:17]
             try:
-                self.attack.addTraces(data, textins, textouts, knownkeys, progress)
+                self.attack.addTraces(data, textins, textouts, knownkeys, progress, pointRange=self.getPointRange())
             except KeyboardInterrupt:
                 self.log("Attack ABORTED... stopping")
 

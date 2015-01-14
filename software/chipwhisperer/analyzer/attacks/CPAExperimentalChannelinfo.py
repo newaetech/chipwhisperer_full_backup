@@ -77,10 +77,10 @@ class CPAProgressiveOneSubkey(object):
             padbefore = 0
             padafter = 0
         else:
-            traces = np.array(traces_all[:, pointRange[bnum][0] : pointRange[bnum][1]])
-            padbefore = pointRange[bnum][0]
-            padafter = len(traces_all[0,:]) - pointRange[bnum][1]
-            #print "%d - %d (%d %d)"%( pointRange[bnum][0],  pointRange[bnum][1], padbefore, padafter)
+            traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
+            padbefore = pointRange[0]
+            padafter = len(traces_all[0, :]) - pointRange[1]
+            # print "%d - %d (%d %d)"%( pointRange[0],  pointRange[1], padbefore, padafter)
 
         #For each 0..0xFF possible value of the key byte
         for key in range(0, 256):
