@@ -82,13 +82,26 @@ class GPIOToggle(AuxiliaryTemplate):
             # Don't do this again
             self.lastPin = self.pin
 
+    def nonblockingSleep_done(self):
+        self._sleeping = False
+
+    def nonblockingSleep(self, stime):
+        """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
+        QTimer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        self._sleeping = True
+        while(self._sleeping):
+            time.sleep(0.01)
+            QApplication.processEvents()
+
 
     def trigger(self):
+        print "AUXIO: Trigger pin %d" % self.pin
         self.checkMode()
         self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
-        time.sleep(self.triglength)
+        self.nonblockingSleep(self.triglength)
         self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
-        time.sleep(self.postdelay)
+        self.nonblockingSleep(self.postdelay)
+
 
     def captureInit(self):
         self.checkMode()

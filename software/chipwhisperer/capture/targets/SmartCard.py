@@ -39,6 +39,7 @@ except ImportError:
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
+import chipwhisperer.capture.global_mod as global_mod
 from TargetTemplate import TargetTemplate
 
 class ReaderTemplate(QObject):
@@ -104,6 +105,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.ser.setupParameters()              
         self.params = self.ser.params
         self.params.addChildren([{'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
+                                {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
+                                {'name':'ATR', 'key':'atr', 'type':'str'}                                
                                 ])
         #ExtendedParameter.setupExtended(self.params, self)       
         
@@ -198,9 +201,22 @@ class ReaderChipWhispererSER(ReaderTemplate):
         
         #Set defaults
         self.ser.findParam('parity').setValue('e')
-        self.ser.findParam('stopbits').setValue(2)
+        
+        #NB: This should be '2' I thought, but the turn-around time on the SASEBO-W card is too fast, so
+        #    this needs to be reduced to '1' to avoid a collision.
+        self.ser.findParam('stopbits').setValue(1)
+        
         self.ser.findParam('rxbaud').setValue(9600)
         self.ser.findParam('txbaud').setValue(9600)
+        
+        #Setup GPIO Pins
+        self.cwe = global_mod.active_scope.advancedSettings
+        self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
+        self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
+        self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
+        self.cwe.findParam('gpiostate1').setValue(True)
+        
+        self.reset()
     
     def flush(self):
         """Discard all input buffers"""
@@ -208,11 +224,32 @@ class ReaderChipWhispererSER(ReaderTemplate):
     
     def reset(self):
         """Reset card & save the ATR"""
-        pass
+        
+        self.ser.findParam('atr').setValue("--atr not read--")
+        
+        #Toggle GPIO1
+        self.cwe.cwEXTRA.setGPIOState(False, 0)
+        #Flush serial port
+        self.ser.flush()
+        time.sleep(0.01)
+        self.cwe.cwEXTRA.setGPIOState(True, 0)
+         
+        #Read ATR
+        atr = []
+        rxdata = [0,0,0]
+        while len(rxdata) > 0:
+            rxdata = self.ser.read(1, 200)
+            atr.extend(rxdata)
+            
+        self.atr = [ord(t) for t in atr]
+        
+        stratr = " ".join(["%02x"%ord(t) for t in atr])
+        print "ATR: %s"%stratr
+        self.ser.findParam('atr').setValue(stratr)        
     
     def getATR(self):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
-        pass
+        return self.atr
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):
@@ -525,15 +562,16 @@ class ProtocolSASEBOWCardOS(ProtocolTemplate):
         if len(key) != 16:
             raise ValueError("Encryption key != 16 bytes??")
         status = self.hw.sendAPDU(0x80, 0x12, 0x00, 0x00, key)
+        self.key = key
         #print status
         
     def loadInput(self, inputtext):
-        self.inputtext = inputtext
+        self.input = inputtext
         
     def go(self):
-        if len(self.inputtext) != 16:
+        if len(self.input) != 16:
             raise ValueError("Plaintext != 16 bytes??")
-        status = self.hw.sendAPDU(0x80, 0x04, 0x04, 0x00, self.inputtext)
+        status = self.hw.sendAPDU(0x80, 0x04, 0x04, 0x00, self.input)
         #print status
     
     def readOutput(self):
@@ -541,6 +579,77 @@ class ProtocolSASEBOWCardOS(ProtocolTemplate):
         #print resp
         return pay    
                
+               
+class ProtocolDPAv42(ProtocolTemplate):
+
+    def setupParameters(self):
+        """No parameters"""
+        #ssParams = []        
+        #self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
+        #ExtendedParameter.setupExtended(self.params, self)
+        self.params = None
+        
+    def loadEncryptionKey(self, key):
+        if len(key) != 16:
+            raise ValueError("Encryption key != 16 bytes??")
+        self.key = key
+        
+    def loadInput(self, inputtext):
+        if len(inputtext) != 16:
+            raise ValueError("Plaintext != 16 bytes??")
+        self.input = inputtext
+        
+    def go(self):      
+        if not isinstance(self.hw, ReaderChipWhispererSER):
+            raise IOError("ERROR: DPAContestv4 only works with ChipWhisperer-SER Reader")
+            
+        data = []
+        data.extend(self.key)
+        data.extend(self.input)
+            
+        self.hw.ser.flush()
+        self.hw.ser.write([0x80, 0xC0, 0x00, 0x00, 32])
+        self.hw.waitEcho([0x80, 0xC0, 0x00, 0x00, 32])
+        self.hw.ser.write(data)
+        self.hw.waitEcho(data)
+        
+        #Ack
+        ack = self.hw.ser.read(1)
+        #print "%02x"%ord(ack[0])
+        
+        #Random Block
+        rblock = self.hw.ser.read(16)
+        rblock = [ord(t) for t in rblock]
+       
+        #Ack
+        ack = self.hw.ser.read(1)
+        
+        #Key + Message sent back
+        self.hw.waitEcho(data)
+        
+        #Ack - shuffle done
+        ack = self.hw.ser.read(1)
+        
+        #Receive shuffle blocks back
+        suffle0 = self.hw.ser.read(16)
+        suffle0 = [ord(t) for t in suffle0]
+        
+        suffle1 = self.hw.ser.read(16)
+        suffle1 = [ord(t) for t in suffle1]
+        
+        #Ack - encryption starting now
+        ack = self.hw.ser.read(1)
+        
+        #Ack - encryption done now
+        ack = self.hw.ser.read(1)
+        
+        result = self.hw.ser.read(16)
+        result = [ord(t) for t in result]
+        
+        self.textout = result
+    
+    def readOutput(self):
+        return self.textout   
 
 class ProtocolJCardTest(ProtocolTemplate):
 
@@ -601,7 +710,9 @@ class SmartCard(TargetTemplate):
                     #"Custom (INCOMPLETE)":None, "DPAContestv4 (INCOMPLETE)":None
                     {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(),
                                                                            "ChipWhisperer-Dumb":None,
-                                                                           "JCard Test":ProtocolJCardTest()}, 'value':None, 'set':self.setProtocol}
+                                                                           "JCard Test":ProtocolJCardTest(),
+                                                                           "DPA Contest 4.2":ProtocolDPAv42(),
+                                                                           }, 'value':None, 'set':self.setProtocol}
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -657,9 +768,11 @@ class SmartCard(TargetTemplate):
       
     def loadEncryptionKey(self, key):
         self.protocol.loadEncryptionKey(key)
+        self.key = key
       
     def loadInput(self, inputtext):
         self.protocol.loadInput(inputtext)
+        self.input = inputtext
 
     def isDone(self):
         return self.protocol.isDone()
