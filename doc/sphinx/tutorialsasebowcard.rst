@@ -1,7 +1,7 @@
 .. _tutorialsasebowcard:
 
-Tutorial #B10: Using with SASEBO-W CardOS
-=========================================
+Tutorial #B10: Using with SASEBO-W CardOS or DPA Contestv4
+==========================================================
 
 Background
 ----------
@@ -58,7 +58,7 @@ the following connections should be set:
  4. Mount all four jumpers on the *AVR-PROG* section (JP8).
 
  5. Shunt both the *GND* and *VCC* resistors, as the programming will fail with those resistors in the power lines (JP7).
-
+ 
 The following image shows these connections:
 
 .. image:: /images/tutorials/basic/scard/programming.jpg
@@ -76,13 +76,17 @@ The following describes the jumper settings when using the SmartCard socket on t
    2. 3.3V IO Level (JP20 set to *INT*.)
    3. The *3.579 MHz* oscillator is selected as the CLKOSC source (JP18)
    4. The *CLKOSC* is connected to the SmartCard Clock Network, along with connected to the *FPGAIN* pin (JP4)
-   5. Trigger is selected as *AX2* (JP22)
+   5. Trigger is selected as *AX2* (JP22) [NOTE: The silkscreen on the multi-target board is incorrect - this is actually the AUX1 pin. This tutorial will
+       use the silkscreen notation instead of the actual pin for jumper settings]
    6. Power measurement taken from VCC shunt (JP7)
    7. Jumpers removed from the AVR-PROG header (JP8)
+   8. Connect the GPIO1 line to the *RESET* line. This is done with a jumper from a line labeled *RXD* on the AVR section to one of
+      the pins on the AVR-PROG section. Note you can alternatively connect this line to the *RST* pin on the blue 8-pin smartcard
+      connector header. 
 
 The following image shows this setup:
 
-.. image:: /images/tutorials/basic/scard/attacksettings.jpg
+.. image:: /images/tutorials/basic/scard/attacksettings_new.jpg
 
 Connect the 20-pin cable and SMA cable if not already connected, and plug your programmed MegaCard into the SmartCard socket. This completes
 the hardware setup when using the card socket.
@@ -119,8 +123,8 @@ See :ref:`sasebowmultitarget` for details of connecting the Multi-Target board t
 
 .. image:: /images/sasebow/sasebow_scardfake.jpg
 
-Software Setup and Example Capture
-----------------------------------
+Software Setup and Example Capture (CardOS)
+-------------------------------------------
 
  1. Run the ChipWhisperer Capture software
 
@@ -132,7 +136,7 @@ Software Setup and Example Capture
 
  3. Switch to the *Target Settings* tab. Set the following two options:
 
-  a. Reader Hardware: *ChipWhisperer-USI*
+  a. Reader Hardware: *ChipWhisperer-SER* (NOTE: This is new a new option as of 0.09, the old -USI is not recommended anymore)
   b. SmartCard Protocol: *SASEBO-W SmartCard OS*
 
  4. Press the *Master Connect* button, the scope and target should both show as connected:
@@ -146,23 +150,33 @@ Software Setup and Example Capture
   c. CW Extra-->Clock Source: *TargetIO-IN*
   d. CW Extra-->Trigger Pins: Uncheck *Front Panel A*
   e. CW Extra-->Trigger Pins: Check *Target IO4 (Trigger Line)*
-  f. CW Extra-->TargetIOn Pins-->TargetIO3: *USI-IN/OUT*
-  g. OpenADC-->Clock Setup-->ADC Clock-->Source: *EXTCLK x4 via DCM*
-  h. Press the *Reset ADC DCM* button in that area, confirm the *ADC Freq* reads 14.3 MHz indicating the clock routing is working.
-  i. OpenADC-->Trigger Setup-->Total Samples: *5000*
+  f. OpenADC-->Clock Setup-->ADC Clock-->Source: *EXTCLK x4 via DCM*
+  g. Press the *Reset ADC DCM* button in that area, confirm the *ADC Freq* reads 14.3 MHz indicating the clock routing is working.
+  h. OpenADC-->Trigger Setup-->Total Samples: *5000*
+  
+ 6. Switch to the *Target* tab, confirm the correct ATR was found. You can reset the card as well from this page:
+ 
+    .. image:: /images/tutorials/basic/scard/scard_cwser.png
 
  6. Finally press the *Capture 1* button. You should see a waveform like this:
 
     .. image:: /images/tutorials/basic/scard/waveform.png
 
- 7. Currently the APDU is printed , see the 'Debug Logging' window. You will see output like this::
+ 7. Using the encryption monitor, you can check the encryption monitor:
+ 
+    .. image:: /images/tutorials/basic/scard/encmonitor.png
 
-      APDU:  80  12  00  00  10  12  2b  7e  15  16  28  ae  d2  a6  ab  f7  15  88  09  cf  4f  3c  90  00
-      APDU:  80  04  04  00  10  04  2f  b7  e7  ce  f2  b8  09  92  0d  af  16  4a  81  30  3e  ef  9f  10
-      WARNING: USI parity error
-      APDU:  00  c0  00  00  10  c0  34  2b  1f  28  5e  78  66  44  aa  f5  8e  eb  e6  cc  33  d7  90  00
-
-    You can ignore the parity errors for now. You can also view the status in the Encryption Monitor to see input/output.
 
  8. You can now run a capture campaign and save the traces as before.
+
+Changes for DPAContest v4.2 Card
+--------------------------------
+
+As of ChipWhisperer Release 0.09, the DPAContest v4.2 protocol is also supported. This protocol uses AES-128 RSM, making an interesting attack of a protected
+target. The following details settings required to attack this card.
+
+1. Change the *TRIG* jumper to *AX1* instead of *AX2*
+2. In step 3-b above: Select the *
+2. In step 5-b above: Under *Scope Settings*, the option OpenADC-->Trigger Setup-->Mode is set to *Falling Edge*
+
 
