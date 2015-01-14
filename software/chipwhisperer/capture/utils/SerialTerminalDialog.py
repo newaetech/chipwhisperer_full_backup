@@ -45,10 +45,14 @@ class SerialTerminalDialog(QDialog):
         self.textInSend = QPushButton("Send")
         self.textInSend.clicked.connect(self.returnPressedIn)
 
+        self.textClear = QPushButton("Clear")
+        self.textClear.clicked.connect(self.textOut.clear)
+
         # 3 = rowSpan
         self.textLayouts.addWidget(self.textOut, 0, 0)
         self.textLayouts.addWidget(self.textIn, 1, 0)
         self.textLayouts.addWidget(self.textInSend, 1, 1)
+        self.textLayouts.addWidget(self.textClear, 0, 1)
 
         self.textOut.setReadOnly(True)
 

@@ -159,9 +159,14 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'TX Baud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
                     {'name':'RX Baud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
+                    {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
+                                    'set':self.setStopBits, 'readonly':True},
+                    {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
+                                    'set':self.setParity, 'readonly':True},
                     ]
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
+        self._regVer = 0
 
 
     def paramTreeChanged(self, param, changes):
@@ -193,6 +198,17 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         baud = baud / 8
         return baud
 
+    def checkVersion(self):
+        """Check for newer version of register set - this MUST be called before any
+           calls to setxxBaud, as otherwise these bits get blasted away
+        """
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        if(data[3] & 0b11000000) == 0b11000000:
+            self._regVer = 1
+            self.findParam('stopbits').setReadonly(False)
+            self.findParam('parity').setReadonly(False)
+
+
     def setTxBaudReg(self, breg):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         data[2] = breg & 0xff
@@ -202,18 +218,50 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def setRxBaudReg(self, breg):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         data[0] = breg & 0xff
-        data[1] = (breg >> 8) & 0xff
+        highbyte = (breg >> 8) & 0x3F
+        data[1] = (data[1] & 0xC0) | highbyte
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
 
     def txBaudReg(self):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        breg = data[2] | (data[3] << 8)
+        breg = data[2] | ((data[3] & 0x3F) << 8)
         return breg
 
     def rxBaudReg(self):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        breg = data[0] | (data[1] << 8)
+        breg = data[0] | ((data[1] & 0x3F) << 8)
         return breg
+    
+    def stopBits(self):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        if data[1] & (1 << 6):
+            return 2
+        else:
+            return 1        
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
+    
+    def setStopBits(self, stopbits):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        if stopbits == 1:
+            data[1] = data[1] & ~(1 << 6)
+        else:
+            data[1] = data[1] | (1 << 6)
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
+            
+    def parity(self):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        if data[1] & (1 << 7):
+            return 'e'
+        else:
+            return 'n'
+
+    def setParity(self, par):
+        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
+        if par == 'e':
+            data[1] = data[1] | (1 << 7)
+        else:
+            data[1] = data[1] & ~(1 << 7)
+        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
 
     def paramList(self):
         return [self.params]
@@ -283,6 +331,8 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         pass
 
     def con(self):
+        # Check first!
+        self.checkVersion()
         self.params.getAllParameters()
 
 class SimpleSerial(TargetTemplate):

@@ -133,6 +133,7 @@ class CWExtraSettings(object):
     IOROUTE_USIO = 0b00000100
     IOROUTE_USII = 0b00001000
     IOROUTE_USINOUT = 0b00011000
+    IOROUTE_STXRX = 0b00100010
     IOROUTE_GPIO = 0b01000000
     IOROUTE_GPIOE = 0b10000000
 
@@ -198,8 +199,9 @@ class CWExtraSettings(object):
                     {'name': 'Target IO2', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
                                                                     'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
                                            'value':self.IOROUTE_SRX, 'set':partial(self.setTargetIOMode, IONumber=1), 'get':partial(self.getTargetIOMode, IONumber=1)},
-                    {'name': 'Target IO3', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                    'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                    {'name': 'Target IO3', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
+                                                                    'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
+                                                                    'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
                                            'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
                     {'name': 'Target IO4', 'type':'list', 'values':{'High-Z':self.IOROUTE_HIGHZ},
                                            'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},

@@ -247,7 +247,7 @@ external code changes, this may eventually be instead rolled into the main codeb
     c.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\aes`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avr-crypto-lib\aes`` (may need to created directory)
     d.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\gf256mul`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avr-crypto-lib\aes`` (same directory as above)
 
-4.  ``cd`` to the directory with the avr-serial example, and run ``make atmega328p``::
+4.  ``cd`` to the directory with the avr-serial example, and run ``make MCU=atmega328p``::
 
         cd c:\chipwhisperer\hardware\victims\firmware\avr-serial
         make MCU=atmega328p

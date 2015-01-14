@@ -11,13 +11,14 @@ import os
 import pickle
 
 
-#Windows Path
-XILINX_DIR = "C:\\Xilinx\\14.4\\ISE_DS\\ISE\\bin\\nt64\\"
-DESIGN_BASE = "ztex_rev2_1.11c_ise\\interface"
-
-#Linux Path
-#XILINX_DIR = "/opt/Xilinx/14.6/"
-#DESIGN_BASE = "ztex_rev2_1.11c_use/interface"
+if os.name == "nt":
+    # Windows Path
+    XILINX_DIR = "C:\\Xilinx\\14.4\\ISE_DS\\ISE\\bin\\nt64\\"
+    DESIGN_BASE = "ztex_rev2_1.11c_ise\\interface"
+else:
+    # Linux Path
+    XILINX_DIR = "/opt/Xilinx/14.6/"
+    DESIGN_BASE = "ztex_rev2_1.11c_use/interface"
 
 def cleanup():
     dellist = ["diffbits.rbt", "diffscr.scr", "diff.pcf", "diff.ncd",
@@ -125,8 +126,20 @@ def generateAllDiffs(comp, desc, filename, values):
         updateDict(saveDict, p, i, desc, comp)
         pickle.dump(saveDict, open(filename, 'wb'))
     #cleanup()
+    
+    #Find 'default' value which has longest crap
+    longest = [-1, -1]
+    for i in saveDict["values"]:
+        l = len(saveDict["values"][i])
+        if l > longest[0]:
+            longest = [l, i]
+
+    # For some reason we need to override the 'default' to force it to use the base dictionary, for now
+    # this hacky work-around does the trick
+    print "Assuming %d is default with %d, compared to %d" % (longest[1], longest[0], len(saveDict["values"][i + 1]))
+    saveDict["values"][longest[1]] = []
+    
     pickle.dump(saveDict, open(filename, 'wb'))
 
-#generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen2", "Glitch Width", "s6lx25-glitchwidth.p", [-100, 100])
 generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen2", "Glitch Width", "s6lx25-glitchwidth.p", range(-127, 128))
 generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen", "Glitch Offset", "s6lx25-glitchoffset.p", range(-127, 128))
