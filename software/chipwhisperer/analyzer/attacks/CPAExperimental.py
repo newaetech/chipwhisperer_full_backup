@@ -262,12 +262,12 @@ class AttackCPA_SciPyCorrelation(QObject):
 
             if pointRange == None:
                 traces = traces_all
-                padbefore = 0
-                padafter = 0
+                # padbefore = 0
+                # padafter = 0
             else:
                 traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
-                padbefore = pointRange[0]
-                padafter = len(traces_all[0, :]) - pointRange[1]
+                # padbefore = pointRange[0]
+                # padafter = len(traces_all[0, :]) - pointRange[1]
                 # print "%d - %d (%d %d)"%( pointRange[0],  pointRange[1], padbefore, padafter)
 
             #For each 0..0xFF possible value of the key byte
