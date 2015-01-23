@@ -78,6 +78,7 @@ class DataTypeDiffs(object):
         self.pge = [255]*self.numSubkeys
         self.diffs_tnum = [None]*self.numSubkeys
         self.pge_total = []
+        self.maxes_list = [ list() for i in range(0, self.numSubkeys)]
 
         #TODO: Ensure this gets called by attack algorithms when rerunning
 
@@ -157,6 +158,10 @@ class DataTypeDiffs(object):
 
             tnum = self.diffs_tnum[i]
             self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})
+            
+            if len(self.maxes_list[i]) == 0 or self.maxes_list[i][-1]['trace'] != tnum:
+                self.maxes_list[i].append({'trace':tnum, 'maxes':np.array(self.maxes[i])})
+
         return self.maxes
 
 

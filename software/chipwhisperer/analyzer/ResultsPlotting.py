@@ -84,6 +84,14 @@ class ResultsPlotting(QObject):
         self.PGEGraphDock.setWidget(self.pgegraph)
         self.pgegraph.setDock(self.PGEGraphDock)
         self.pgegraph.setKeyOverride(self.processKnownKey)
+        
+        self.corrgraph = CorrelationVsTrace()
+        self.CorrelationOutputDock = QDockWidget(self.corrgraph.name)
+        self.CorrelationOutputDock.setObjectName(self.corrgraph.name)
+        self.CorrelationOutputDock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
+        self.CorrelationOutputDock.setWidget(self.corrgraph)
+        self.corrgraph.setDock(self.CorrelationOutputDock)
+        self.corrgraph.setKeyOverride(self.processKnownKey)
 
         self.saveresults = ResultsSave()
 
@@ -99,13 +107,13 @@ class ResultsPlotting(QObject):
     def paramList(self):
         """Returns list of parameters for parameter tree GUI display"""
 
-        p = [self.table.params, self.graphoutput.params, self.pgegraph.params, self.params]
+        p = [self.table.params, self.graphoutput.params, self.pgegraph.params, self.corrgraph.params, self.params]
         return p
 
     def dockList(self):
         """Return list of docks"""
 
-        return [self.table.ResultsTable, self.GraphOutputDock, self.PGEGraphDock]
+        return [self.table.ResultsTable, self.GraphOutputDock, self.PGEGraphDock, self.CorrelationOutputDock]
 
     def setAttack(self, attack):
         """Pass the attack to all plotting devices. They pull stats from the attack directly, and listen to attackDone/statusUpdated signals."""
@@ -117,6 +125,7 @@ class ResultsPlotting(QObject):
         self.attack.settingsChanged.connect(self.attackSettingsChanged)
         self.graphoutput.setAttack(attack)
         self.pgegraph.setAttack(attack)
+        self.corrgraph.setAttack(attack)
         self.saveresults.setAttack(attack)
         self.attackSettingsChanged()
 
@@ -139,6 +148,7 @@ class ResultsPlotting(QObject):
             nk = self.trace.getKnownKey(self.startTrace)
             nk = self.attack.processKnownKey(nk)
             self.graphoutput.setKnownKey(nk)
+            self.corrgraph.setKnownKey(nk)
         except AttributeError, e:
             print str(e)
 
@@ -156,6 +166,7 @@ class ResultsPlotting(QObject):
         self.table.setBytesEnabled(self.attack.bytesEnabled())
         self.table.setStartTrace(self.startTrace)
         self.table.updateTable()
+        self.corrgraph.updateData()
         self.updateKnownKey()
 
     def setKnownKeySrc(self, keysrc):
@@ -580,6 +591,125 @@ class PGEVsTrace(ResultsPlotData):
                 #        prange = range(prange[0], prange[1])
         except StopIteration:
             pass
+
+class CorrelationVsTrace(ResultsPlotData):
+    """
+    Plots maximum correlation vs number of traces in attack.
+    """
+
+    name = "Correlation vs Trace Number"
+
+    def __init__(self, subkeys=16, permPerSubkey=256):
+        super(CorrelationVsTrace, self).__init__()
+
+        self.numKeys = subkeys
+        self.numPerms = permPerSubkey
+
+        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
+                         {'name':'Redraw on new data', 'type':'bool', 'key':'auto', 'value':False},
+                         {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
+                         {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
+                      ]
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
+        ExtendedParameter.setupExtended(self.params, self)
+
+
+    def updateData(self):
+        pass
+
+
+    def redrawPlot(self):
+        """Redraw the plot, loading data from attack"""
+
+        data = self.attack.getStatistics()
+        data = data.maxes_list
+
+        byteson = 0
+        for i in range(0, self.numKeys):
+            if self.enabledbytes[i]:
+                byteson += 1
+
+        # Do Redraw
+        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(1000)  # _callSync='off'
+        progress.setMinimum(0)  # _callSync='off'
+        progress.setMaximum(byteson * self.numPerms)  # _callSync='off'
+
+        self.clearPushed()
+        self.setupHighlights()
+        # prange = range(self.pstart[bnum], self.pend[bnum])
+
+        fastDraw = self.findParam('fast').value()
+
+        pvalue = 0
+
+        if self.findParam('hide').value():
+            self.pw.setVisible(False)
+        try:
+            for bnum in range(0, self.numKeys):
+                progress.setValue(pvalue)
+                if self.enabledbytes[bnum]:
+                    maxdata = data[bnum]
+
+                    # Generate data, should improve this
+                    tlist = []
+                    for m in maxdata:
+                        tlist.append(m['trace'])
+
+                    maxlist = np.zeros((self.numPerms, len(tlist)))
+                    for i, m in enumerate(maxdata):
+                        for j in range(0, self.numPerms):
+                            maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
+
+                    if fastDraw:
+                        if self.highlightTop:
+                            newdiff = np.array(maxlist)
+                            for j in self.highlights[bnum]:
+                                for i in range(0, len(tlist)):
+                                    newdiff[j, i] = 0
+                        else:
+                            newdiff = maxlist
+
+                        maxlimit = np.amax(newdiff, 0)
+                        minlimit = np.amin(newdiff, 0)
+                        self.pw.plot(tlist, maxlimit, pen='g', fillLevel=0.0, brush='g')
+                        self.pw.plot(tlist, minlimit, pen='g', fillLevel=0.0, brush='g')
+                        pvalue += self.numPerms
+                        progress.setValue(pvalue)
+                    else:
+                        for i in range(0, 256):
+                            self.pw.plot(tlist, maxlist[i], pen='g')
+                            pvalue += 1
+                            progress.setValue(pvalue)
+
+                if self.highlightTop:
+                    # Plot the highlighted byte(s) on top
+                    for bnum in range(0, self.numKeys):
+
+                        if self.enabledbytes[bnum]:
+
+                            # TODO: fix doing this twice, it's super-dumb and error-prone
+                            maxdata = data[bnum]
+
+                            # Generate data, should improve this
+                            tlist = []
+                            for m in maxdata:
+                                tlist.append(m['trace'])
+
+                            maxlist = np.zeros((self.numPerms, len(tlist)))
+                            for i, m in enumerate(maxdata):
+                                for j in range(0, self.numPerms):
+                                    maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
+
+                            for i in range(0, 256):
+                                if i in self.highlights[bnum]:
+                                    penclr = self._highlightColour(self.highlights[bnum].index(i))
+                                    self.pw.plot(tlist, maxlist[i], pen=penclr)
+        except StopIteration:
+            pass
+
+        self.pw.setVisible(True)
 
 class ResultsTable(QObject):
     """Table of results, showing all guesses based on sorting output of attack"""
