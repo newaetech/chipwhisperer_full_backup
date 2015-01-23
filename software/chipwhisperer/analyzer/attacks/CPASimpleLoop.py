@@ -55,12 +55,12 @@ class CPASimpleLoop(QObject):
 
         if pointRange == None:
             traces = traces_all
-            padbefore = 0
-            padafter = 0
+            # padbefore = 0
+            # padafter = 0
         else:
             traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
-            padbefore = pointRange[0]
-            padafter = len(traces_all[0, :]) - pointRange[1]
+            # padbefore = pointRange[0]
+            # padafter = len(traces_all[0, :]) - pointRange[1]
             # print "%d - %d (%d %d)"%( pointRange[0],  pointRange[1], padbefore, padafter)
 
         #For each 0..0xFF possible value of the key byte
@@ -127,11 +127,11 @@ class CPASimpleLoop(QObject):
 
             diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
 
-            if padafter > 0:
-                diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
+            # if padafter > 0:
+            #    diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
 
-            if padbefore > 0:
-                diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
+            # if padbefore > 0:
+            #    diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
 
         return (diffs, pbcnt)
 
