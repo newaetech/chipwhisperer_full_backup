@@ -340,6 +340,8 @@ class OutputVsTime(ResultsPlotData):
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(OutputVsTime, self).__init__()
 
+        self.setLabels("Attack Output vs. Sample for Subkey Guesses", "Sample Number", "Attack Output")
+
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
@@ -461,13 +463,15 @@ class OutputVsTime(ResultsPlotData):
 
 class PGEVsTrace(ResultsPlotData):
     """
-    Plots Partial Guessing Entropy (PGE) vs Number of Traces in Attack
+    Plots Partial Guessing Entropy (PGE) vs Traces in Attack
     """
 
     name = "PGE vs Trace Plot"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(PGEVsTrace, self).__init__()
+        
+        self.setLabels("Partial Guessing Entropy vs. Traces", "Traces", "Partial Guessing Entropy")
 
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -597,10 +601,12 @@ class CorrelationVsTrace(ResultsPlotData):
     Plots maximum correlation vs number of traces in attack.
     """
 
-    name = "Correlation vs Trace Number"
+    name = "Correlation vs Traces in Attack"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(CorrelationVsTrace, self).__init__()
+        
+        self.setLabels(self.name, "Traces", "Max Correlation Output for Subkey")
 
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
