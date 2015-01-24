@@ -236,10 +236,18 @@ class ResultsPlotData(GraphWidget):
 
         self.highlightTop = True
 
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
-                      ]
+        resultsParams = self.genericParameters()
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
+
+    def genericParameters(self):
+        return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
+                {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
+                {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True},
+                # {'name':''}
+
+            ]
+
 
     def paramList(self):
         """Returns parameter list"""
@@ -329,6 +337,124 @@ class ResultsPlotData(GraphWidget):
     #        self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
     #        self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
 
+
+    def drawData(self, xdatalst, ydatalst, enabledBytes=[-1]):
+        """Redraw the plot"""
+
+        # Do Redraw
+        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(1000)  # _callSync='off'
+        progress.setMinimum(0)  # _callSync='off'
+        progress.setMaximum(len(enabledBytes) * self.numPerms)  # _callSync='off'
+
+        self.clearPushed()
+        self.setupHighlights()
+
+        drawtype = self.findParam('drawtype').value().lower()
+
+
+        pvalue = 0
+
+        if self.findParam('hide').value():
+            self.pw.setVisible(False)
+
+        try:
+            for bnum in enabledBytes:
+                progress.setValue(pvalue)
+
+                if bnum != -1:
+                    ydataptr = ydatalst[bnum]
+                    xdataptr = xdatalst[bnum]
+
+                else:
+                    ydataptr = ydatalst
+                    xdataptr = xdatalst
+
+                pointargsg = {}
+
+                if not hasattr(ydataptr[0], '__iter__'):
+                    ydataptr = [[t] for t in ydataptr]
+                    pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
+
+                
+                if drawtype.startswith('fast'):
+                    if self.highlightTop:
+                        newdiff = np.array(ydataptr)
+                        for j in self.highlights[bnum]:
+                            newdiff[j] = 0
+                    else:
+                        newdiff = ydataptr
+
+
+                    maxlimit = np.amax(newdiff, 0)
+                    minlimit = np.amin(newdiff, 0)
+                    self.pw.plot(xdataptr, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
+                    if len(pointargsg) > 0:
+                        pointargsg["symbol"] = 'd'
+                    self.pw.plot(xdataptr, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
+                    pvalue += self.numPerms
+                    progress.setValue(pvalue)
+
+                elif drawtype.startswith('norm'):
+                    tlisttst = []
+                    maxlisttst = []
+                    if len(pointargsg) == 0:
+                        tlist_fixed = [xdataptr[-1], xdataptr[0]]
+                        tlist_fixed[:0] = xdataptr
+                    else:
+                        tlist_fixed = xdataptr
+                    for i in range(0, self.numPerms):
+
+                        if self.highlightTop and i in self.highlights[bnum]:
+                            continue
+
+                        tlisttst.extend(tlist_fixed)
+                        if len(pointargsg) == 0:
+                            newmax = [0, 0]
+                            newmax[:0] = ydataptr[i]
+                        else:
+                            newmax = ydataptr[i]
+                        maxlisttst.extend(newmax)
+
+                    self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg)
+                    pvalue += self.numPerms
+                    progress.setValue(pvalue)
+
+                elif drawtype.startswith('detail'):
+                    for i in range(0, self.numPerms):
+                        self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
+                        pvalue += 1
+                        progress.setValue(pvalue)
+
+
+                if self.highlightTop:
+                    # Plot the highlighted byte(s) on top
+                    for bnum in enabledBytes:
+
+                        if bnum != -1:
+                            ydataptr = ydatalst[bnum]
+                            xdataptr = xdatalst[bnum]
+
+                        else:
+                            ydataptr = ydatalst
+                            xdataptr = xdatalst
+
+                        pointargsr = {}
+
+                        if not hasattr(ydataptr[0], '__iter__'):
+                            ydataptr = [[t] for t in ydataptr]
+                            pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
+
+                        for i in range(0, self.numPerms):
+                            if i in self.highlights[bnum]:
+                                penclr = self._highlightColour(self.highlights[bnum].index(i))
+                                self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
+        except StopIteration:
+            pass
+
+        self.pw.setVisible(True)
+
 class OutputVsTime(ResultsPlotData):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
@@ -345,10 +471,11 @@ class OutputVsTime(ResultsPlotData):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
-                         {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
-                         {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
-                      ]
+        # resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
+        #                 {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
+        #                 {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
+        #              ]
+        resultsParams = self.genericParameters()
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
@@ -371,95 +498,26 @@ class OutputVsTime(ResultsPlotData):
         return prange
 
     def redrawPlot(self):
-        """Redraw the plot, loading data from attack"""
 
-        data = self.attack.getStatistics()
-        data = data.diffs
+        data = self.attack.getStatistics().diffs
 
-        byteson = 0
+        enabledlist = []
         for i in range(0, self.numKeys):
             if self.enabledbytes[i]:
-                byteson += 1
-
-        #Do Redraw
-        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(1000) #_callSync='off'
-        progress.setMinimum(0) #_callSync='off'
-        progress.setMaximum(byteson*self.numPerms) #_callSync='off'
-
-        self.clearPushed()
-        self.setupHighlights()
-        #prange = range(self.pstart[bnum], self.pend[bnum])
-
-        fastDraw = self.findParam('fast').value()
-
-        pvalue = 0
-
-        if self.findParam('hide').value():
-            self.pw.setVisible(False)
-        try:
-            for bnum in range(0, self.numKeys):
-                progress.setValue(pvalue)
-                if self.enabledbytes[bnum]:
-                    diffs = data[bnum]
-
-                    pointargsg = {}
-
-                    if not hasattr(diffs[0], '__iter__'):
-                        diffs = [[t] for t in diffs]
-                        pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
-
-                    prange = self.getPrange(bnum, diffs)
+                enabledlist.append(i)
 
 
-                    if fastDraw:
-                        if self.highlightTop:
-                            newdiff = np.array(diffs)
-                            for j in self.highlights[bnum]:
-                                newdiff[j] = 0
-                        else:
-                            newdiff = diffs
+        xrangelist = [0] * self.numKeys
+        for bnum in enabledlist:
+            diffs = data[bnum]
 
+            if not hasattr(diffs[0], '__iter__'):
+                diffs = [[t] for t in diffs]
 
-                        maxlimit = np.amax(newdiff, 0)
-                        minlimit = np.amin(newdiff, 0)
-                        self.pw.plot(prange, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                        if len(pointargsg) > 0:
-                            pointargsg["symbol"] = 'd'
-                        self.pw.plot(prange, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                        pvalue += self.numPerms
-                        progress.setValue(pvalue)
-                    else:
-                        for i in range(0,256):
-                            self.pw.plot(prange, diffs[i], pen='g', **pointargsg)
-                            pvalue += 1
-                            progress.setValue(pvalue)
+            prange = self.getPrange(bnum, diffs)
+            xrangelist[bnum] = prange
 
-                if self.highlightTop:
-                    #Plot the highlighted byte(s) on top
-                    for bnum in range(0, self.numKeys):
-
-                        if self.enabledbytes[bnum]:
-                            diffs = data[bnum]
-
-                            pointargsr = {}
-
-                            if not hasattr(diffs[0], '__iter__'):
-                                diffs = [[t] for t in diffs]
-                                pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
-
-
-                            prange = self.getPrange(bnum, diffs)
-
-                            for i in range(0, 256):
-                                if i in self.highlights[bnum]:
-                                    penclr = self._highlightColour(self.highlights[bnum].index(i))
-                                    self.pw.plot(prange, diffs[i], pen=penclr, **pointargsr)
-        except StopIteration:
-            pass
-
-        self.pw.setVisible(True)
+        self.drawData(xrangelist, data, enabledlist)
 
 class PGEVsTrace(ResultsPlotData):
     """
@@ -611,11 +669,7 @@ class CorrelationVsTrace(ResultsPlotData):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
-        resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
-                         {'name':'Redraw on new data', 'type':'bool', 'key':'auto', 'value':False},
-                         {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
-                         {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
-                      ]
+        resultsParams = self.genericParameters()
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
@@ -627,95 +681,33 @@ class CorrelationVsTrace(ResultsPlotData):
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
 
-        data = self.attack.getStatistics()
-        data = data.maxes_list
+        data = self.attack.getStatistics().maxes_list
 
-        byteson = 0
+        enabledlist = []
         for i in range(0, self.numKeys):
             if self.enabledbytes[i]:
-                byteson += 1
+                enabledlist.append(i)
 
-        # Do Redraw
-        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(1000)  # _callSync='off'
-        progress.setMinimum(0)  # _callSync='off'
-        progress.setMaximum(byteson * self.numPerms)  # _callSync='off'
 
-        self.clearPushed()
-        self.setupHighlights()
-        # prange = range(self.pstart[bnum], self.pend[bnum])
+        xrangelist = [0] * self.numKeys
+        newdata = [0] * self.numKeys
+        for bnum in enabledlist:
+            maxdata = data[bnum]
 
-        fastDraw = self.findParam('fast').value()
+            tlist = []
+            for m in maxdata:
+                tlist.append(m['trace'])
 
-        pvalue = 0
+            maxlist = np.zeros((self.numPerms, len(tlist)))
+            for i, m in enumerate(maxdata):
+                for j in range(0, self.numPerms):
+                    maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
 
-        if self.findParam('hide').value():
-            self.pw.setVisible(False)
-        try:
-            for bnum in range(0, self.numKeys):
-                progress.setValue(pvalue)
-                if self.enabledbytes[bnum]:
-                    maxdata = data[bnum]
+            newdata[bnum] = maxlist
+            xrangelist[bnum] = tlist
 
-                    # Generate data, should improve this
-                    tlist = []
-                    for m in maxdata:
-                        tlist.append(m['trace'])
+        self.drawData(xrangelist, newdata, enabledlist)
 
-                    maxlist = np.zeros((self.numPerms, len(tlist)))
-                    for i, m in enumerate(maxdata):
-                        for j in range(0, self.numPerms):
-                            maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
-
-                    if fastDraw:
-                        if self.highlightTop:
-                            newdiff = np.array(maxlist)
-                            for j in self.highlights[bnum]:
-                                for i in range(0, len(tlist)):
-                                    newdiff[j, i] = 0
-                        else:
-                            newdiff = maxlist
-
-                        maxlimit = np.amax(newdiff, 0)
-                        minlimit = np.amin(newdiff, 0)
-                        self.pw.plot(tlist, maxlimit, pen='g', fillLevel=0.0, brush='g')
-                        self.pw.plot(tlist, minlimit, pen='g', fillLevel=0.0, brush='g')
-                        pvalue += self.numPerms
-                        progress.setValue(pvalue)
-                    else:
-                        for i in range(0, 256):
-                            self.pw.plot(tlist, maxlist[i], pen='g')
-                            pvalue += 1
-                            progress.setValue(pvalue)
-
-                if self.highlightTop:
-                    # Plot the highlighted byte(s) on top
-                    for bnum in range(0, self.numKeys):
-
-                        if self.enabledbytes[bnum]:
-
-                            # TODO: fix doing this twice, it's super-dumb and error-prone
-                            maxdata = data[bnum]
-
-                            # Generate data, should improve this
-                            tlist = []
-                            for m in maxdata:
-                                tlist.append(m['trace'])
-
-                            maxlist = np.zeros((self.numPerms, len(tlist)))
-                            for i, m in enumerate(maxdata):
-                                for j in range(0, self.numPerms):
-                                    maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
-
-                            for i in range(0, 256):
-                                if i in self.highlights[bnum]:
-                                    penclr = self._highlightColour(self.highlights[bnum].index(i))
-                                    self.pw.plot(tlist, maxlist[i], pen=penclr)
-        except StopIteration:
-            pass
-
-        self.pw.setVisible(True)
 
 class ResultsTable(QObject):
     """Table of results, showing all guesses based on sorting output of attack"""
