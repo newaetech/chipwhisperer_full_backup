@@ -320,3 +320,13 @@ class GraphWidget(QWidget):
             del wid
         self._customWidgets = []
 
+    def setLabels(self, top=None, xaxis=None, yaxis=None):
+        if top:
+            self.pw.setLabel('top', top)
+
+        if xaxis:
+            self.pw.setLabel('bottom', xaxis)
+
+        if yaxis:
+            self.pw.setLabel('left', yaxis)
+
