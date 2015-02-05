@@ -385,11 +385,14 @@ module reg_chipwhisperer(
 								  registers_iorouting[16 + 7] ? registers_iorouting[16 + 6] :
 								  1'bZ;
 								  
-	 assign targetio4_io = 1'bZ;
+	 assign targetio4_io = registers_iorouting[24 + 0] ? uart_tx_i :
+								  registers_iorouting[24 + 7] ? registers_iorouting[24 + 6] :
+								  1'bZ;
 	 
 	 assign uart_rx_o = registers_iorouting[0 + 1] ? targetio1_io :
 							registers_iorouting[8 + 1] ? targetio2_io :
 							registers_iorouting[16 + 1] ? targetio3_io :
+							registers_iorouting[24 + 1] ? targetio3_io :
 							1'b1;
 							
 	assign usi_in_o = registers_iorouting[0 + 3] ? targetio1_io :
