@@ -33,13 +33,6 @@ extern "C" {
 #endif
 
 extern const int hamming_weight[];
-extern const unsigned char sbox[256];
-
-typedef struct {
-  unsigned int bnum;
-  uint8_t * roundkeys; //Table of all round keys
-  unsigned int rtarget;
-} model_setup_t;
 
 typedef struct {
     double * sumhq; // 1 x nguess
@@ -55,26 +48,24 @@ typedef struct {
 
 /* Perform CPA Attack on a single subkey */
 __declspec(dllexport) void oneSubkey(
-        double * traces,  /* double * */
-        uint8_t * datain,  /* uint8_t * */
-        uint8_t * dataout, /* uint8_t * */
+        double * traces,            /* trace data, 2d array * */
+        uint8_t * datain,           /* data in to model, 2d array * */
+        uint8_t * dataout,          /* data out from model, 2d array * */
         
-        size_t tracedim_n, /* Size of traces array, number of traces in array */
-        size_t tracedim_p, /* Total size of traces array, points in each trace */
+        size_t tracedim_n,          /* Size of traces array, number of traces in array */
+        size_t tracedim_p,          /* Total size of traces array, points in each trace */
         
-        size_t traceoffset, /* Starting trace to use in analysis */
-        size_t ntraces,     /* Number of traces to use in analysis */
-        size_t pointoffset, /* Starting point to use in analysis */
-        size_t npoints,     /* Number of points to use in analysis */
+        size_t traceoffset,         /* Starting trace to use in analysis */
+        size_t ntraces,             /* Number of traces to use in analysis */
+        size_t pointoffset,         /* Starting point to use in analysis */
+        size_t npoints,             /* Number of points to use in analysis */
         
-        analysis_state_t * state,
+        analysis_state_t * state,   /* Holds CPA State */
         
-        void * model,       /* Model */
-        model_setup_t * modeldata,
+        void * model,               /* Model */
+        void * modeldata,           /* Data passed to model */
         
-        
-
-        double * diffoutput);
+        double * diffoutput         /* Output */);
 
 #ifdef __cplusplus
 }
