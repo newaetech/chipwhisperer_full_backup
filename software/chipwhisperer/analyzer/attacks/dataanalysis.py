@@ -101,18 +101,18 @@ class DataAnalysis(object):
 
         return data
 
-fdir = "C:\\E\\Documents\\academic\\sidechannel\\eclipse-workspace\\chipwhisperer\\chipwhisperer\\software\\chipwhisperer\\analyzer\\"
-fname = "tempstats_20141009_213041.npy"
+# fdir = "C:\\E\\Documents\\academic\\sidechannel\\eclipse-workspace\\chipwhisperer\\chipwhisperer\\software\\chipwhisperer\\analyzer\\"
+# fname = "tempstats_20141009_213041.npy"
 
-test = DataAnalysis()
-test.loadData(fdir + fname)
-test.setKnownkey([0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb])
+# test = DataAnalysis()
+# test.loadData(fdir + fname)
+# test.setKnownkey([0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb])
 
-print "Calculating..."
-data = test.calculate()
-print "Done"
+# print "Calculating..."
+# data = test.calculate()
+# print "Done"
 
-print data
+# print data
 
 
 
