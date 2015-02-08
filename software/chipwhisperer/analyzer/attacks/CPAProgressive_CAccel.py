@@ -28,167 +28,118 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import numpy as np
-import inspect
+from ctypes import *
 from pyqtgraph.parametertree import Parameter
 
 from openadc.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.common.autoscript import AutoScript
 
+
+class model_setup_t(Structure):
+    _fields_ = [("bnum", c_uint)]
+            
+    def __init__(self, bnum=0):  
+        super(model_setup_t, self).__init__()
+        self.bnum = c_uint(bnum)
+
+class analysis_state_t(Structure):
+    _fields_=[("sumhq",POINTER(c_double)),
+              ("sumtq",POINTER(c_double)),
+            ("sumt",POINTER(c_double)),
+            ("sumh",POINTER(c_double)),
+            ("sumht",POINTER(c_double)),
+            ("totalTraces",c_int),
+            ("hyp",POINTER(c_double))]
+            
+    def __init__(self, npoint=0, ntrace=0):  
+        super(analysis_state_t,self).__init__()
+      
+        nguess = 256
+      
+        self._sumhq = np.zeros(nguess, dtype=np.float64)
+        self.sumhq = self._sumhq.ctypes.data_as(POINTER(c_double))
+      
+        self._sumtq = np.zeros(npoint, dtype=np.float64)
+        self.sumtq = self._sumtq.ctypes.data_as(POINTER(c_double))
+      
+        self._sumt= np.zeros(npoint, dtype=np.float64)
+        self.sumt = self._sumt.ctypes.data_as(POINTER(c_double))
+      
+        self._sumh = np.zeros(nguess, dtype=np.float64)
+        self.sumh = self._sumh.ctypes.data_as(POINTER(c_double))
+      
+      
+        self._sumht = np.zeros((nguess, npoint), dtype=np.float64)
+        self.sumht = self._sumht.ctypes.data_as(POINTER(c_double))
+      
+        self.totalTraces = c_int(0)
+
+        self._hyp = np.zeros(ntrace, dtype=np.float64)
+        self.hyp = self._hyp.ctypes.data_as(POINTER(c_double))
+
+
+c_analysis_state_t_ptr = POINTER(analysis_state_t)
+c_model_setup_t_ptr = POINTER(model_setup_t)
+
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
         self.clearStats()
+        dll = CDLL(r"C:\E\Documents\academic\sidechannel\eclipse-workspace\chipwhisperer\chipwhisperer\software\chipwhisperer\analyzer\attacks\c_accel\libcpa.dll")
+        self.osk = dll.oneSubkey
 
     def clearStats(self):
-        self.sumhq = [0]*256
-        self.sumtq = [0]
-        self.sumt = [0]
-        self.sumh = [0]*256
-        self.sumht = [0]*256
-        self.totalTraces = 0
+        self.anstate = None
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt, direction, knownkeys=None):
 
-        diffs = [0]*256
-        self.totalTraces += numtraces
-
         if pointRange == None:
             traces = traces_all
-            # padbefore = 0
-            # padafter = 0
         else:
             traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
-            # padbefore = pointRange[0]
-            # padafter = len(traces_all[0, :]) - pointRange[1]
-            # print "%d - %d (%d %d)" % (pointRange[0], pointRange[1], padbefore, padafter)
 
-        self.sumtq += np.sum(np.square(traces), axis=0, dtype=np.float64)
-        self.sumt += np.sum(traces, axis=0)
-        sumden2 = (np.square(self.sumt) - self.totalTraces * self.sumtq)
+        npoints = np.shape(traces)[1]
 
-        #For each 0..0xFF possible value of the key byte
-        for key in range(0, 256):
-            #Initialize arrays & variables to zero
-            sumnum = np.zeros(len(traces[0,:]))
-            # sumden1 = np.zeros(len(traces[0,:]))
-            # sumden2 = np.zeros(len(traces[0,:]))
+        if self.anstate is None:
+            self.anstate = analysis_state_t(npoints, numtraces)
+            
+        mstate = model_setup_t(bnum=bnum)
+        
+        guessdata = np.zeros((256, npoints), dtype=np.float64)
 
-            hyp = [0] * numtraces
+        self.osk(traces.ctypes.data_as(POINTER(c_double)),
+                 plaintexts.ctypes.data_as(POINTER(c_uint8)),
+                 ciphertexts.ctypes.data_as(POINTER(c_uint8)),
+                 c_size_t(len(traces)),
+                 c_size_t(npoints),
+                 c_size_t(0),
+                 c_size_t(numtraces),
+                 c_size_t(0),
+                 c_size_t(npoints),
+                 c_analysis_state_t_ptr(self.anstate),
+                 c_void_p(0),
+                 c_model_setup_t_ptr(mstate),
+                 guessdata.ctypes.data_as(POINTER(c_double)))
+      
 
-            #Formula for CPA & description found in "Power Analysis Attacks"
-            # by Mangard et al, page 124, formula 6.2.
-            #
-            # This has been modified to reduce computational requirements such that adding a new waveform
-            # doesn't require you to recalculate everything
+        if progressBar:
+            progressBar.setValue(pbcnt)
+            progressBar.updateStatus((self.anstate.totalTraces - numtraces, self.anstate.totalTraces), bnum)
+            pbcnt = pbcnt + 256
+            if progressBar.wasCanceled():
+                raise KeyboardInterrupt
 
-            #Generate hypotheticals
-            for tnum in range(numtraces):
+        return (guessdata, pbcnt)
 
-                if len(plaintexts) > 0:
-                    pt = plaintexts[tnum]
-
-                if len(ciphertexts) > 0:
-                    ct = ciphertexts[tnum]
-
-                if knownkeys and len(knownkeys) > 0:
-                    nk = knownkeys[tnum]
-                else:
-                    nk = None
-
-                if (keyround == "first") or (keyround == 0):
-                    if direction == "enc":
-                        ct = None
-                    elif direction == "dec":
-                        ct = pt
-                        pt = None
-                    else:
-                        raise ValueError("Direction invalid: %s" % str(direction))
-                elif keyround == "last" or keyround == -1:
-                    if direction == "enc":
-                        pt = None
-                    elif direction == "dec":
-                        pt = ct
-                        ct = None
-                    else:
-                        raise ValueError("Direction invalid: %s" % str(direction))
-                else:
-                    raise ValueError("keyround invalid: %s" % str(keyround))
-
-                #Generate the output of the SBOX
-                aspec = inspect.getargspec(leakagetype)[0]
-                if 'knownkey' in aspec:
-                    hypint = leakagetype(pt, ct, key, bnum, nk)
-                else:
-                    hypint = leakagetype(pt, ct, key, bnum)
-
-                hyp[tnum] = hypint
-
-            hyp = np.array(hyp)
-
-            self.sumh[key] += np.sum(hyp, axis=0)
-            self.sumht[key] += np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
-
-            #WARNING: not casting to np.float64 causes algorithm degredation... always be careful
-            #meanh = self.sumh[key] / np.float64(self.totalTraces)
-            #meant = self.sumt[key] / np.float64(self.totalTraces)
-
-            #numtraces * meanh * meant = sumh * meant
-            #sumnum =  self.sumht[key] - meant*self.sumh[key] - meanh*self.sumt[key] + (self.sumh[key] * meant)
-            #sumnum =  self.sumht[key] - meanh*self.sumt[key]
-#            sumnum =  self.sumht[key] - meanh*self.sumt[key]
-            #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
-            sumnum = self.totalTraces * self.sumht[key] - self.sumh[key] * self.sumt
-
-            self.sumhq[key] += np.sum(np.square(hyp),axis=0, dtype=np.float64)
-
-            #numtraces * meanh * meanh = sumh * meanh
-            #sumden1 = sumhq - (2*meanh*self.sumh) + (numtraces*meanh*meanh)
-            #sumden1 = sumhq - (2*meanh*self.sumh) + (self.sumh * meanh)
-            # sumden1 = sumhq - meanh*self.sumh
-            # similarly for sumden2
-            #sumden1 = self.sumhq[key] - meanh*self.sumh[key]
-            #sumden2 = self.sumtq[key] - meant*self.sumt[key]
-            # sumden = sumden1 * sumden2
-
-            #Sumden1/Sumden2 are variance of these variables, may be numeric unstability
-            #See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance for online update
-            #algorithm which might be better
-            sumden1 = (np.square(self.sumh[key]) - self.totalTraces * self.sumhq[key])
-            sumden = sumden1 * sumden2
-
-            #if sumden.any() < 1E-12:
-            #    print "WARNING: sumden small"
-
-
-            if progressBar:
-                progressBar.setValue(pbcnt)
-                progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces), bnum)
-                pbcnt = pbcnt + 1
-                if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
-
-                if progressBar.wasSkipped():
-                    return (diffs, pbcnt)
-
-            diffs[key] = sumnum / np.sqrt(sumden)
-
-            # if padafter > 0:
-            #    diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
-
-            # if padbefore > 0:
-            #    diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
-
-        return (diffs, pbcnt)
-
-class CPAProgressive(AutoScript, QObject):
+class CPAProgressive_CAccel(AutoScript, QObject):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     paramListUpdated = Signal(list)
 
     def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
-        super(CPAProgressive, self).__init__()
+        super(CPAProgressive_CAccel, self).__init__()
 
         resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
@@ -276,9 +227,6 @@ class CPAProgressive(AutoScript, QObject):
 
 
         for bnum_df in brange_df:
-            #CPAMemoryOneSubkey
-            #CPASimpleOneSubkey
-            #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
 
             tstart = 0
             tend = self._reportingInterval
