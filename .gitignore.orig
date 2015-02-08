@@ -1,0 +1,19 @@
+*.pyc
+*.autopilot/*
+*.s#*
+*.b#?
+software/capture/capture-*
+*/.autopilot*
+*.autopilot*
+hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/bmp/tests*
+<<<<<<< HEAD
+software/capture/default-data-dir*
+software/capture/scopes/cw-partial-files/ztex_rev2_1.11c_ise*
+software/chipwhisperer/capture/default-data-dir/*
+software/chipwhisperer/capture/capture-2013.*
+software/chipwhisperer/capture/scopes/cw-partial-files/ztex_rev2_1.11c_ise/*
+doc/sphinx/_build/html/_static
+doc/sphinx/_build
+=======
+*.epf
+>>>>>>> 32f90bce8755ac5a1086323708978ab8ed344079
