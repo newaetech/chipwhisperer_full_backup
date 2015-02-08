@@ -28,6 +28,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import numpy as np
+import os
 from ctypes import *
 from pyqtgraph.parametertree import Parameter
 
@@ -86,7 +87,8 @@ class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
         self.clearStats()
-        dll = CDLL(r"C:\E\Documents\academic\sidechannel\eclipse-workspace\chipwhisperer\chipwhisperer\software\chipwhisperer\analyzer\attacks\c_accel\libcpa.dll")
+        dir = os.path.dirname(__file__)
+        dll = CDLL(os.path.join(dir, 'c_accel/libcpa.dll'))
         self.osk = dll.oneSubkey
 
     def clearStats(self):
