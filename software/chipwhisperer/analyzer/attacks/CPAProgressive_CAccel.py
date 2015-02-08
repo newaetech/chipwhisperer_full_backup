@@ -37,12 +37,25 @@ from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.common.autoscript import AutoScript
 
 
-class model_setup_t(Structure):
-    _fields_ = [("bnum", c_uint)]
+class aesmodel_setup_t(Structure):
+
+    TARGET_SBOXOUT_HW = 1
+    TARGET_TARGET_INVSBOX_LASTROUND_HD = 2
+
+    _fields_ = [("bnum", c_uint),
+                ("roundkeys", POINTER(c_uint8)),
+                ("rtarget", c_uint),
+                ("leakagemode", c_uint),
+                ("privatedata", c_void_p),
+                ("privatedatasize", c_uint)
+                ]
             
     def __init__(self, bnum=0):  
-        super(model_setup_t, self).__init__()
+        super(aesmodel_setup_t, self).__init__()
         self.bnum = c_uint(bnum)
+        self.rtarget = c_uint(0)
+        self.privatedatasize = c_uint(0)
+        self.leakagemode = c_uint(self.TARGET_SBOXOUT_HW)
 
 class analysis_state_t(Structure):
     _fields_=[("sumhq",POINTER(c_double)),
@@ -81,7 +94,7 @@ class analysis_state_t(Structure):
 
 
 c_analysis_state_t_ptr = POINTER(analysis_state_t)
-c_model_setup_t_ptr = POINTER(model_setup_t)
+c_aesmodel_setup_t_ptr = POINTER(aesmodel_setup_t)
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -106,9 +119,13 @@ class CPAProgressiveOneSubkey(object):
         if self.anstate is None:
             self.anstate = analysis_state_t(npoints, numtraces)
             
-        mstate = model_setup_t(bnum=bnum)
+        mstate = aesmodel_setup_t(bnum=bnum)
         
         guessdata = np.zeros((256, npoints), dtype=np.float64)
+
+        # Hack for now - only HD supports this
+        if keyround == "last" or keyround == -1:
+            mstate.leakagemode = mstate.TARGET_TARGET_INVSBOX_LASTROUND_HD
 
         self.osk(traces.ctypes.data_as(POINTER(c_double)),
                  plaintexts.ctypes.data_as(POINTER(c_uint8)),
@@ -121,7 +138,7 @@ class CPAProgressiveOneSubkey(object):
                  c_size_t(npoints),
                  c_analysis_state_t_ptr(self.anstate),
                  c_void_p(0),
-                 c_model_setup_t_ptr(mstate),
+                c_aesmodel_setup_t_ptr(mstate),
                  guessdata.ctypes.data_as(POINTER(c_double)))
       
 
