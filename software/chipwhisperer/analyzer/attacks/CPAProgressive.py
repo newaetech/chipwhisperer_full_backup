@@ -42,8 +42,8 @@ class CPAProgressiveOneSubkey(object):
 
     def clearStats(self):
         self.sumhq = [0]*256
-        self.sumtq = [0]*256
-        self.sumt = [0]*256
+        self.sumtq = [0]
+        self.sumt = [0]
         self.sumh = [0]*256
         self.sumht = [0]*256
         self.totalTraces = 0
@@ -63,12 +63,16 @@ class CPAProgressiveOneSubkey(object):
             # padafter = len(traces_all[0, :]) - pointRange[1]
             # print "%d - %d (%d %d)" % (pointRange[0], pointRange[1], padbefore, padafter)
 
+        self.sumtq += np.sum(np.square(traces), axis=0, dtype=np.float64)
+        self.sumt += np.sum(traces, axis=0)
+        sumden2 = (np.square(self.sumt) - self.totalTraces * self.sumtq)
+
         #For each 0..0xFF possible value of the key byte
         for key in range(0, 256):
             #Initialize arrays & variables to zero
             sumnum = np.zeros(len(traces[0,:]))
-            sumden1 = np.zeros(len(traces[0,:]))
-            sumden2 = np.zeros(len(traces[0,:]))
+            # sumden1 = np.zeros(len(traces[0,:]))
+            # sumden2 = np.zeros(len(traces[0,:]))
 
             hyp = [0] * numtraces
 
@@ -122,7 +126,6 @@ class CPAProgressiveOneSubkey(object):
 
             hyp = np.array(hyp)
 
-            self.sumt[key] += np.sum(traces, axis=0)
             self.sumh[key] += np.sum(hyp, axis=0)
             self.sumht[key] += np.sum(np.multiply(np.transpose(traces), hyp), axis=1)
 
@@ -135,10 +138,9 @@ class CPAProgressiveOneSubkey(object):
             #sumnum =  self.sumht[key] - meanh*self.sumt[key]
 #            sumnum =  self.sumht[key] - meanh*self.sumt[key]
             #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
-            sumnum = self.totalTraces*self.sumht[key] - self.sumh[key]*self.sumt[key]
+            sumnum = self.totalTraces * self.sumht[key] - self.sumh[key] * self.sumt
 
             self.sumhq[key] += np.sum(np.square(hyp),axis=0, dtype=np.float64)
-            self.sumtq[key] += np.sum(np.square(traces),axis=0, dtype=np.float64)
 
             #numtraces * meanh * meanh = sumh * meanh
             #sumden1 = sumhq - (2*meanh*self.sumh) + (numtraces*meanh*meanh)
@@ -153,7 +155,6 @@ class CPAProgressiveOneSubkey(object):
             #See http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance for online update
             #algorithm which might be better
             sumden1 = (np.square(self.sumh[key]) - self.totalTraces * self.sumhq[key])
-            sumden2 = (np.square(self.sumt[key]) - self.totalTraces * self.sumtq[key])
             sumden = sumden1 * sumden2
 
             #if sumden.any() < 1E-12:
