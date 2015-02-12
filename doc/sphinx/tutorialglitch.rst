@@ -597,7 +597,7 @@ The following assumes you have already completed the setup in the :ref:`basic-gl
    
    .. image:: /images/tutorials/advanced/glitching/glitchexample-basic3-serial.png
 
-7. We will now set the *Glitch Trigger* set to *External Trigger*:
+7. We will now set the *Glitch Trigger* set to *Ext Trigger: Continous*:
 
    .. image:: /images/tutorials/advanced/glitching/glitchsetup-trigger.png
    

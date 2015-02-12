@@ -349,14 +349,10 @@ class CPAExperimentalChannelinfo(QObject):
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
 
-    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-
-        traces_all = np.asarray(traces)
-        plaintexts =np.asarray(plaintexts)
-        ciphertexts =np.asarray(ciphertexts)
 
         foundkey = []
 
@@ -365,7 +361,7 @@ class CPAExperimentalChannelinfo(QObject):
 
         tdiff = self.findParam('reportinterval').value()
 
-        numtraces = len(traces_all[:,0])
+        numtraces = tracerange[1] - tracerange[0]
 
         if progressBar:
             pbcnt = 0
@@ -443,6 +439,29 @@ class CPAExperimentalChannelinfo(QObject):
                 if tstart > numtraces:
                     tstart = numtraces
 
+                data = []
+                textins = []
+                textouts = []
+                knownkeys = []
+                for i in range(tstart, tend):
+
+                    # Handle Offset
+                    tnum = i + tracerange[0]
+
+                    d = tracedata.getTrace(tnum)
+
+                    if d is None:
+                        continue
+
+                    data.append(d)
+                    textins.append(tracedata.getTextin(tnum))
+                    textouts.append(tracedata.getTextout(tnum))
+                    knownkeys.append(tracedata.getKnownKey(tnum))
+
+                traces = np.array(data)
+                textins = np.array(textins)
+                textouts = np.array(textouts)
+
 
                 for bnum_bf in brange_bf:
 
@@ -451,10 +470,10 @@ class CPAExperimentalChannelinfo(QObject):
                     else:
                         bnum = bnum_df
 
-                    traces_fixed = np.dot(traces_all - traces_all.mean(axis=0), H[bnum]) + 4
+                    traces_fixed = np.dot(traces - traces.mean(axis=0), H[bnum]) + 4
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_fixed[tstart:tend], tend-tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, modeltype, progressBar, self.model, pbcnt)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, pointRange, traces_fixed, tend - tstart, textins, textouts, keyround, modeltype, progressBar, self.model, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True

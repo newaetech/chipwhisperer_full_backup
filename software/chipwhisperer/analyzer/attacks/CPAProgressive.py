@@ -58,7 +58,7 @@ class CPAProgressiveOneSubkey(object):
             # padbefore = 0
             # padafter = 0
         else:
-            traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
+            traces = traces_all[:, pointRange[0] : pointRange[1]]
             # padbefore = pointRange[0]
             # padafter = len(traces_all[0, :]) - pointRange[1]
             # print "%d - %d (%d %d)" % (pointRange[0], pointRange[1], padbefore, padafter)
@@ -228,19 +228,15 @@ class CPAProgressive(AutoScript, QObject):
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         keyround=self.keyround
         brange=self.brange
-
-        traces_all = np.array(traces)
-        plaintexts =np.array(plaintexts)
-        ciphertexts =np.array(ciphertexts)
 
         foundkey = []
 
         self.all_diffs = range(0,16)
 
-        numtraces = len(traces_all[:,0])
+        numtraces = tracerange[1] - tracerange[0]
 
         if progressBar:
             pbcnt = 0
@@ -291,6 +287,30 @@ class CPAProgressive(AutoScript, QObject):
                     tstart = numtraces
 
 
+                data = []
+                textins = []
+                textouts = []
+                knownkeys = []
+                for i in range(tstart, tend):
+
+                    # Handle Offset
+                    tnum = i + tracerange[0]
+
+                    d = tracedata.getTrace(tnum)
+
+                    if d is None:
+                        continue
+
+                    data.append(d)
+                    textins.append(tracedata.getTextin(tnum))
+                    textouts.append(tracedata.getTextout(tnum))
+                    knownkeys.append(tracedata.getKnownKey(tnum))
+
+                traces = np.array(data)
+                textins = np.array(textins)
+                textouts = np.array(textouts)
+                # knownkeys = np.array(knownkeys)
+
                 for bnum_bf in brange_bf:
 
                     if bf:
@@ -305,7 +325,7 @@ class CPAProgressive(AutoScript, QObject):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces_all[tstart:tend], tend - tstart, plaintexts[tstart:tend], ciphertexts[tstart:tend], keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True

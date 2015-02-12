@@ -141,13 +141,17 @@ class CPASimpleLoop(QObject):
     def setKeyround(self, keyround):
         self.keyround = keyround
 
-    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None, tracesLoop=None):
+    def setDirection(self, dir):
+        # Not used for simpleloop
+        pass
+
+    def setReportingInterval(self, ri):
+        # Not used for simpleloop
+        pass
+
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
         keyround=self.keyround
         brange=self.brange
-
-        traces_all = np.array(traces)
-        plaintexts =np.array(plaintexts)
-        ciphertexts =np.array(ciphertexts)
 
         foundkey = []
 
@@ -158,11 +162,35 @@ class CPASimpleLoop(QObject):
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256)
 
-        numtraces = len(traces_all[:,0])
+        numtraces = tracerange[1] - tracerange[0]
+
+        # Load all traces
+        data = []
+        textins = []
+        textouts = []
+        knownkeys = []
+        for i in range(tracerange[0], tracerange[1]):
+
+            # Handle Offset
+            tnum = i + tracerange[0]
+
+            d = tracedata.getTrace(tnum)
+
+            if d is None:
+                continue
+
+            data.append(d)
+            textins.append(tracedata.getTextin(tnum))
+            textouts.append(tracedata.getTextout(tnum))
+            knownkeys.append(tracedata.getKnownKey(tnum))
+
+        traces = np.array(data)
+        textins = np.array(textins)
+        textouts = np.array(textouts)
 
         pbcnt = 0
         for bnum in brange:
-            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, progressBar, self.leakageModel, pbcnt)
+            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, keyround, progressBar, self.leakageModel, pbcnt)
             self.stats.updateSubkey(bnum, data)
 
     def getStatistics(self):

@@ -60,6 +60,7 @@ from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDi
 
 from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
 from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
+from chipwhisperer.analyzer.attacks.CPAProgressive_CAccel import CPAProgressive_CAccel
 
 #TEMPORARY - NOT FOR REAL USE
 from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
@@ -81,6 +82,9 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         #if CPACython is not None:
         #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
+
+        if CPAProgressive_CAccel is not None:
+            cpaalgos['Progressive-C Accel'] = CPAProgressive_CAccel
 
         attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
                         {'name':'Hardware Model', 'type':'group', 'children':[
@@ -200,26 +204,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
             endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
 
-            #print "%d-%d"%(startingPoint, endingPoint)
-            data = []
-            textins = []
-            textouts = []
-            knownkeys = []
-
-            print "%d-%d"%(startingTrace, endingTrace)
-
-            for i in range(startingTrace, endingTrace):
-                d = self.trace.getTrace(i)
-
-                if d is None:
-                    continue
-
-                # d = d[startingPoint:endingPoint]
-
-                data.append(d)
-                textins.append(self.trace.getTextin(i))
-                textouts.append(self.trace.getTextout(i))
-                knownkeys.append(self.trace.getKnownKey(i))
+            print "Traces %d-%d" % (startingTrace, endingTrace)
 
             progress = AttackProgressDialog()
             progress.setWindowModality(Qt.WindowModal)
@@ -228,7 +213,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
             #TODO:  pointRange=self.TraceRangeList[1:17]
             try:
-                self.attack.addTraces(data, textins, textouts, knownkeys, progress, pointRange=self.getPointRange())
+                self.attack.addTraces(self.trace, (startingTrace, endingTrace), progress, pointRange=self.getPointRange())
             except KeyboardInterrupt:
                 self.log("Attack ABORTED... stopping")
 
