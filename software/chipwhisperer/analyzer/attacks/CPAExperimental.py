@@ -62,14 +62,10 @@ class AttackCPA_Bayesian(QObject):
     def setModeltype(self, modeltype):
         self.modeltype = modeltype
 
-    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-
-        traces = np.array(traces)
-        plaintexts =np.array(plaintexts)
-        ciphertexts =np.array(ciphertexts)
 
         foundkey = []
 
@@ -79,6 +75,30 @@ class AttackCPA_Bayesian(QObject):
             pbcnt = 0
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256)
+
+        # Load all traces
+        data = []
+        textins = []
+        textouts = []
+        knownkeys = []
+        for i in range(tracerange[0], tracerange[1]):
+
+            # Handle Offset
+            tnum = i + tracerange[0]
+
+            d = tracedata.getTrace(tnum)
+
+            if d is None:
+                continue
+
+            data.append(d)
+            textins.append(tracedata.getTextin(tnum))
+            textouts.append(tracedata.getTextout(tnum))
+            knownkeys.append(tracedata.getKnownKey(tnum))
+
+        traces = np.array(data)
+        textins = np.array(textins)
+        textouts = np.array(textouts)
 
         #For all bytes of key
         for bnum in brange:
@@ -93,11 +113,11 @@ class AttackCPA_Bayesian(QObject):
                 #Generate hypotheticals
                 for tnum in range(len(traces[:,0])):
 
-                    if len(plaintexts) > 0:
-                        pt = plaintexts[tnum]
+                    if len(textins) > 0:
+                        pt = textins[tnum]
 
-                    if len(ciphertexts) > 0:
-                        ct = ciphertexts[tnum]
+                    if len(textouts) > 0:
+                        ct = textouts[tnum]
 
                     if keyround == "first":
                         ct = None
@@ -205,125 +225,6 @@ class AttackCPA_Bayesian(QObject):
             return np.exp(self._getResult(bnum, hyprange))
         else:
             raise RuntimeError("algo not defined")
-
-    def getStatistics(self):
-        t = [0]*16
-        for i in self.brange:
-            t[i] = self.getDiff(i)
-        return t
-
-    def setStatsReadyCallback(self, sr):
-        pass
-
-class AttackCPA_SciPyCorrelation(QObject):
-    """
-    Instead uses correlation functions provided by SciPy.
-    WARNING: DOES NOT WORK RIGHT NOW.
-    """
-
-    def __init__(self, model):
-        super(AttackCPA_SciPyCorrelation, self).__init__()
-        self.model = model
-
-    def setByteList(self, brange):
-        self.brange = brange
-
-    def setKeyround(self, keyround):
-        self.keyround = keyround
-
-    def setModeltype(self, modeltype):
-        self.modeltype = modeltype
-
-    def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None, tracesLoop=None):
-        keyround=self.keyround
-        modeltype=self.modeltype
-        brange=self.brange
-
-        traces_all = np.array(traces)
-        plaintexts =np.array(plaintexts)
-        ciphertexts =np.array(ciphertexts)
-
-        foundkey = []
-
-        self.all_diffs = range(0,16)
-
-        if progressBar:
-            pbcnt = 0
-            progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256)
-
-        numtraces = len(traces_all[:,0])
-        numpoints =  len(traces_all[0,:])
-
-        #For all bytes of key
-        for bnum in brange:
-
-            diffs = [0]*256
-
-            if pointRange == None:
-                traces = traces_all
-                # padbefore = 0
-                # padafter = 0
-            else:
-                traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
-                # padbefore = pointRange[0]
-                # padafter = len(traces_all[0, :]) - pointRange[1]
-                # print "%d - %d (%d %d)"%( pointRange[0],  pointRange[1], padbefore, padafter)
-
-            #For each 0..0xFF possible value of the key byte
-            for key in range(0, 256):
-
-                hyp = np.empty((numtraces, 1))
-
-
-                #Generate hypotheticals
-                for tnum in range(numtraces):
-
-                    if len(plaintexts) > 0:
-                        pt = plaintexts[tnum]
-
-                    if len(ciphertexts) > 0:
-                        ct = ciphertexts[tnum]
-
-                    if keyround == "first":
-                        ct = None
-                    elif keyround == "last":
-                        pt = None
-                    else:
-                        raise ValueError("keyround invalid")
-
-                    #Generate the output of the SBOX
-                    if modeltype == "Hamming Weight":
-                        hypint = self.model.HypHW(pt, ct, key, bnum);
-                    elif modeltype == "Hamming Distance":
-                        hypint = self.model.HypHD(pt, ct, key, bnum);
-                    else:
-                        raise ValueError("modeltype invalid")
-                    hyp[tnum, 0] = hypint
-
-                if progressBar:
-                    progressBar.setValue(pbcnt)
-                    #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
-                    pbcnt = pbcnt + 1
-                    if progressBar.wasCanceled():
-                        raise KeyboardInterrupt
-
-                diffs[key] = sp.signal.correlate(traces, hyp, 'valid')[0,:]
-
-
-
-            self.all_diffs[bnum] = diffs
-
-            #From all the key candidates, select the largest difference as most likely
-            #foundbyte = diffs.index(max(diffs))
-            #foundkey.append(foundbyte)
-#            print "%2x "%foundbyte,
-
-
-    def getDiff(self, bnum, hyprange=None):
-        if hyprange == None:
-            hyprange = range(0,256)
-        return [self.all_diffs[bnum][i] for i in hyprange];
 
     def getStatistics(self):
         t = [0]*16
