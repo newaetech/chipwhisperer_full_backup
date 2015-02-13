@@ -310,3 +310,8 @@ class CPAProgressive(AutoScript, QObject):
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
+    def processKnownKey(self, inpkey):
+        if hasattr(self.model, 'processKnownKey'):
+            return self.model.processKnownKey(self.leakage, inpkey)
+        else:
+            return inpkey

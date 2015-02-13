@@ -71,6 +71,12 @@ SHIFT = []
 INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
 
+def processKnownKey(setting, inpkey):
+
+    # TODO: Process input key?
+
+    return inpkey
+
 def leakage(pt, ct, guess, bnum, setting, state):
     if setting == LEAK_HW_SBOXOUT_FIRSTROUND:
         return getHW(sbox(pt[bnum] ^ guess))
