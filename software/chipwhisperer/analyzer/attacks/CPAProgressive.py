@@ -48,7 +48,9 @@ class CPAProgressiveOneSubkey(object):
         self.sumht = [0]*256
         self.totalTraces = 0
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt, direction, knownkeys=None):
+        self.modelstate = {'knownkey':None}
+
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
 
         diffs = [0]*256
         self.totalTraces += numtraces
@@ -96,31 +98,9 @@ class CPAProgressiveOneSubkey(object):
                 else:
                     nk = None
 
-                if (keyround == "first") or (keyround == 0):
-                    if direction == "enc":
-                        ct = None
-                    elif direction == "dec":
-                        ct = pt
-                        pt = None
-                    else:
-                        raise ValueError("Direction invalid: %s" % str(direction))
-                elif keyround == "last" or keyround == -1:
-                    if direction == "enc":
-                        pt = None
-                    elif direction == "dec":
-                        pt = ct
-                        ct = None
-                    else:
-                        raise ValueError("Direction invalid: %s" % str(direction))
-                else:
-                    raise ValueError("keyround invalid: %s" % str(keyround))
+                state['knownkey'] = nk
 
-                #Generate the output of the SBOX
-                aspec = inspect.getargspec(leakagetype)[0]
-                if 'knownkey' in aspec:
-                    hypint = leakagetype(pt, ct, key, bnum, nk)
-                else:
-                    hypint = leakagetype(pt, ct, key, bnum)
+                hypint = model.leakage(pt, ct, key, bnum, leakagetype, state)
 
                 hyp[tnum] = hypint
 
@@ -216,23 +196,11 @@ class CPAProgressive(AutoScript, QObject):
     def setTargetBytes(self, brange):
         self.brange = brange
 
-    def setKeyround(self, keyround):
-        self.keyround = keyround
-
-    def setDirection(self, dir):
-        self._direction = dir
-
-    def setModeltype(self, modeltype):
-        self.modeltype = modeltype
-
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
-        keyround=self.keyround
         brange=self.brange
-
-        foundkey = []
 
         self.all_diffs = range(0,16)
 
@@ -244,9 +212,6 @@ class CPAProgressive(AutoScript, QObject):
             progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
 
         pbcnt = 0
-        #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
-        #self.all_diffs, pb = zip(*r)
-        #pbcnt = 0
         cpa = [None]*(max(brange)+1)
         for bnum in brange:
             cpa[bnum] = CPAProgressiveOneSubkey()
@@ -272,10 +237,6 @@ class CPAProgressive(AutoScript, QObject):
 
 
         for bnum_df in brange_df:
-            #CPAMemoryOneSubkey
-            #CPASimpleOneSubkey
-            #(self.all_diffs[bnum], pbcnt) = sCPAMemoryOneSubkey(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt)
-
             tstart = 0
             tend = self._reportingInterval
 
@@ -325,7 +286,7 @@ class CPAProgressive(AutoScript, QObject):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, self.model, self.leakage, cpa[bnum].modelstate, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True
@@ -349,3 +310,8 @@ class CPAProgressive(AutoScript, QObject):
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
+    def processKnownKey(self, inpkey):
+        if hasattr(self.model, 'processKnownKey'):
+            return self.model.processKnownKey(self.leakage, inpkey)
+        else:
+            return inpkey

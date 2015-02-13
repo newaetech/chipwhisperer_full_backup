@@ -24,8 +24,29 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
+try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    dicttype = OrderedDict
+except ImportError:
+    dicttype = dict
+
+LEAK_HW_SBOXOUT_FIRSTROUND = 1
+LEAK_HD_LASTROUND_STATE = 2
+LEAK_HD_SBOX_IN_OUT = 3
+LEAK_HD_SBOX_IN_SUCCESSIVE = 4
+LEAK_HD_SBOX_OUT_SUCCESSIVE = 5
+LEAK_HW_INVSBOXOUT_FIRSTROUND = 6
+
+leakagemodels = dicttype()
+leakagemodels['HW: AES SBox Output, First Round (Enc)'] = 'LEAK_HW_SBOXOUT_FIRSTROUND'
+leakagemodels['HW: AES Inv SBox Output, First Round (Dec)'] = 'LEAK_HW_INVSBOXOUT_FIRSTROUND'
+leakagemodels['HD: AES Last-Round State'] = 'LEAK_HD_LASTROUND_STATE'
+leakagemodels['HD: AES SBox Input to Output'] = 'LEAK_HD_SBOX_IN_OUT'
+leakagemodels['HD: AES SBox Input i to i+1'] = 'LEAK_HD_SBOX_IN_SUCCESSIVE'
+leakagemodels['HD: AES SBox Output i to i+1'] = 'LEAK_HD_SBOX_OUT_SUCCESSIVE'
+
 numSubKeys = 16
 
 ##Generate this table with:
@@ -49,6 +70,42 @@ SHIFT = []
 
 INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
+
+def processKnownKey(setting, inpkey):
+
+    # TODO: Process input key?
+
+    return inpkey
+
+def leakage(pt, ct, guess, bnum, setting, state):
+    if setting == LEAK_HW_SBOXOUT_FIRSTROUND:
+        return getHW(sbox(pt[bnum] ^ guess))
+    elif setting == LEAK_HW_INVSBOXOUT_FIRSTROUND:
+        return getHW(inv_sbox(ct[bnum] ^ guess))
+    elif setting == LEAK_HD_LASTROUND_STATE:
+        st10 = ct[INVSHIFT[bnum]]
+        st9 =  inv_sbox(ct[bnum] ^ guess)
+        return getHW(st9 ^ st10)
+    elif setting == LEAK_HD_SBOX_IN_OUT:
+        st1 = pt ^ guess
+        st2 = sbox[st1]
+        return getHW(st1 ^ st2)
+    elif setting == LEAK_HD_SBOX_IN_SUCCESSIVE:
+        pass
+    elif setting == LEAK_HD_SBOX_OUT_SUCCESSIVE:
+        pass
+    else:
+        raise ValueError("Invalid setting: %s" % str(setting))
+
+def getHW(var):
+    """Given a variable, return the hamming weight (number of 1's)"""
+    return HW8Bit[var]
+
+def VccToGnd(var):
+    """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
+    return 8 - var
+
+# TODO: Use this
 def xtime(a):
     """xtime operation"""
     a %= 0x100
@@ -59,39 +116,3 @@ def xtime(a):
     a &= 0xff
     a ^= b
     return a
-
-def HypHW(pt, ct, key, bnum):
-    """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-    if pt != None:
-        return getHW(sbox(pt[bnum] ^ key))
-    elif ct != None:
-        return getHW(inv_sbox(ct[bnum] ^ key))
-    else:
-        raise ValueError("Must specify PT or CT")
-
-def HypHWXtime(pt, keyguess, numguess, keyknown, bnumknown):
-    """Given plaintext + a subkey guess + a known subkey + subkey numbers return xtime result"""
-    a = sbox(pt[numguess] ^ keyguess)
-    b = sbox(pt[bnumknown] ^ keyknown)
-    raise ValueError("Should this be HW instead of just xtime()???")
-    return getHW(xtime(a^b))
-
-def HypHD(pt, ct, key, bnum):
-    """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming distance of result"""
-    #Get output
-    if pt != None:
-        raise ValueError("First-Round HD isn't possible")
-    elif ct != None:
-        st10 = ct[INVSHIFT[bnum]]
-        st9 =  inv_sbox(ct[bnum] ^ key)
-        return getHW(st9 ^ st10)
-    else:
-        raise ValueError("Must specify PT or CT")
-
-def getHW(var):
-    """Given a variable, return the hamming weight (number of 1's)"""
-    return HW8Bit[var]
-
-def VccToGnd(var):
-    """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
-    return 8-var

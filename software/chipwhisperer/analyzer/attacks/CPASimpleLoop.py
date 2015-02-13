@@ -44,13 +44,14 @@ class CPASimpleLoop(QObject):
     all the traces have been run through the attack.
     """
 
-    def __init__(self, hardwareModel, leakageModel, showScriptParameter=None, parent=None):
+    def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
         super(CPASimpleLoop, self).__init__()
-        self.hardwareModel = hardwareModel
-        self.leakageModel = leakageModel
+        self.model = targetModel
+        self.leakage = leakageFunction
         self.stats = DataTypeDiffs()
+        self.modelstate = {'knownkey':None}
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, progressBar, model, pbcnt):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
         diffs = [0]*256
 
         if pointRange == None:
@@ -80,25 +81,23 @@ class CPASimpleLoop(QObject):
 
                 if len(plaintexts) > 0:
                     pt = plaintexts[tnum]
+                else:
+                    pt = []
 
                 if len(ciphertexts) > 0:
                     ct = ciphertexts[tnum]
-
-                if keyround == "first" or keyround == 0:
-                    ct = None
-                elif keyround == "last" or keyround == -1:
-                    pt = None
                 else:
-                    raise ValueError("keyround invalid")
+                    ct = []
 
-                #Generate the output of the SBOX
-                # if modeltype == "Hamming Weight":
-                #    hypint = model.HypHW(pt, ct, key, bnum);
-                # elif modeltype == "Hamming Distance":
-                #    hypint = model.HypHD(pt, ct, key, bnum);
-                # else:
-                #    raise ValueError("modeltype invalid")
-                hypint = model(pt, ct, key, bnum)
+                if knownkeys and len(knownkeys) > 0:
+                    nk = knownkeys[tnum]
+                else:
+                    nk = None
+
+                state['knownkey'] = nk
+
+                hypint = model.leakage(pt, ct, key, bnum, leakagetype, state)
+
                 hyp[tnum] = hypint
 
             hyp = np.array(hyp)
@@ -138,22 +137,12 @@ class CPASimpleLoop(QObject):
     def setTargetBytes(self, brange):
         self.brange = brange
 
-    def setKeyround(self, keyround):
-        self.keyround = keyround
-
-    def setDirection(self, dir):
-        # Not used for simpleloop
-        pass
-
     def setReportingInterval(self, ri):
         # Not used for simpleloop
         pass
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
-        keyround=self.keyround
         brange=self.brange
-
-        foundkey = []
 
         self.all_diffs = range(0,16)
 
@@ -190,7 +179,7 @@ class CPASimpleLoop(QObject):
 
         pbcnt = 0
         for bnum in brange:
-            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, keyround, progressBar, self.leakageModel, pbcnt)
+            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.leakage, self.modelstate, pbcnt)
             self.stats.updateSubkey(bnum, data)
 
     def getStatistics(self):
@@ -198,3 +187,9 @@ class CPASimpleLoop(QObject):
 
     def setStatsReadyCallback(self, sr):
         pass
+
+    def processKnownKey(self, inpkey):
+        if hasattr(self.model, 'processKnownKey'):
+            return self.model.processKnownKey(self.leakage, inpkey)
+        else:
+            return inpkey

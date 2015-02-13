@@ -100,6 +100,18 @@ double aes_model(uint8_t guess, uint8_t * datain, uint8_t * dataout, void * mode
             return (double)hamming_weight[intval];
             break;
             
+        case TARGET_SBOXINOUT_HD:
+            intval = datain[bnum] ^ guess;
+            intval ^= sbox[intval];
+            return (double)hamming_weight[intval];
+            break;
+            
+        case TARGET_SBOXIN_HD:
+            break;
+            
+        case TARGET_SBOXOUT_HD:
+            break;
+            
         default:
             printf("***AES C-Accel: UNKNOWN LEAKAGE MODE %d***\n", aesdata->leakagemode);
             break;    

@@ -54,7 +54,7 @@ except ImportError:
 from chipwhisperer.common.autoscript import AutoScript
 from chipwhisperer.common.traces.utils import strListToList
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import HypHW, HypHD, getHW
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import leakage
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.utils.Partition import Partition
 
@@ -264,9 +264,6 @@ class ProfilingTemplate(AutoScript, QObject):
 
     def setReportingInterval(self, intv):
         self._reportinginterval = intv
-
-    def setModeltype(self, modeltype):
-        self.modeltype = modeltype
 
     def traceManager(self):
         return self._tmanager
