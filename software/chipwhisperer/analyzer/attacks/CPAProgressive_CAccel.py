@@ -178,7 +178,6 @@ class CPAProgressive_CAccel(AutoScript, QObject):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
         pass
 
     def paramList(self):
