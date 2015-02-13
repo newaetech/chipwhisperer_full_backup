@@ -34,6 +34,9 @@ extern "C" {
 
 #define TARGET_SBOXOUT_HW 1
 #define TARGET_INVSBOX_LASTROUND_HD 2
+#define TARGET_SBOXINOUT_HD 3
+#define TARGET_SBOXIN_HD 4
+#define TARGET_SBOXOUT_HD 5
 
 typedef struct {
   unsigned int  bnum;           // Byte number to attack

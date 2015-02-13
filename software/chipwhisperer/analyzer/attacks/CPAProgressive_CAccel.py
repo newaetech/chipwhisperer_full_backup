@@ -29,6 +29,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import numpy as np
 import os
+import platform
 from ctypes import *
 from pyqtgraph.parametertree import Parameter
 
@@ -101,13 +102,34 @@ class CPAProgressiveOneSubkey(object):
     def __init__(self):
         self.clearStats()
         dir = os.path.dirname(__file__)
-        dll = CDLL(os.path.join(dir, 'c_accel/libcpa.dll'))
+        
+        #Determine correct library to load for 64-bit vs. 32-bit
+        
+        if os.name == 'nt':
+            if platform.architecture() == '64bit':                
+                libname = 'libcpa_x64.dll'
+            else:
+                libname = 'libcpa.dll'
+        elif os.name == 'posix':
+            if platform.architecture() == '64bit':
+                libname = 'libcpa_x64.so'
+            else:
+                libname = 'libcpa.so'
+        
+        try:
+            dll = CDLL(os.path.join(dir, 'c_accel/%s'%libname))
+        except IOError:
+            #TODO: better error reporting
+            print "error"
+            
         self.osk = dll.oneSubkey
+
+        self.modelstate = {'knownkey':None}
 
     def clearStats(self):
         self.anstate = None
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, leakagetype, progressBar, model, pbcnt, direction, knownkeys=None):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
 
         if pointRange == None:
             traces = traces_all
@@ -124,9 +146,7 @@ class CPAProgressiveOneSubkey(object):
         
         guessdata = np.zeros((256, npoints), dtype=np.float64)
 
-        # Hack for now - only HD supports this
-        if keyround == "last" or keyround == -1:
-            mstate.leakagemode = mstate.TARGET_TARGET_INVSBOX_LASTROUND_HD
+        mstate.leakagemode = leakagetype
 
         self.osk(traces.ctypes.data_as(POINTER(c_double)),
                  plaintexts.ctypes.data_as(POINTER(c_uint8)),
@@ -186,20 +206,10 @@ class CPAProgressive_CAccel(AutoScript, QObject):
     def setTargetBytes(self, brange):
         self.brange = brange
 
-    def setKeyround(self, keyround):
-        self.keyround = keyround
-
-    def setDirection(self, dir):
-        self._direction = dir
-
-    def setModeltype(self, modeltype):
-        self.modeltype = modeltype
-
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
-        keyround=self.keyround
         brange=self.brange
 
         foundkey = []
@@ -291,7 +301,7 @@ class CPAProgressive_CAccel(AutoScript, QObject):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, self.model, self.leakage, cpa[bnum].modelstate, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True
@@ -315,3 +325,8 @@ class CPAProgressive_CAccel(AutoScript, QObject):
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
+    def processKnownKey(self, inpkey):
+        if hasattr(self.model, 'processKnownKey'):
+            return self.model.processKnownKey(self.leakage, inpkey)
+        else:
+            return inpkey
