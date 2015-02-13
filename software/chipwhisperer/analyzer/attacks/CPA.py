@@ -36,11 +36,6 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from subprocess import Popen, PIPE
-sys.path.append('../common/traces')
-
-import numpy as np
-import scipy as sp
 from openadc.ExtendedParameter import ExtendedParameter
 
 #from joblib import Parallel, delayed
@@ -88,10 +83,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
                         {'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit, 'AES-256 (8-bit)':models_AES256_8bit}, 'value':'AES-128', 'set':self.updateScript},
-                        {'name':'Key Round', 'key':'hw_round', 'type':'list', 'values':{'first':0, 'last':-1}, 'value':0, 'set':self.updateScript},
-                        {'name':'Power Model', 'key':'hw_pwrmodel', 'type':'list', 'values':{'Hamming Weight':'HypHW', 'Hamming Distance':'HypHD'}, 'value':'Hamming Weight', 'set':self.updateScript},
-                        {'name':'Direction', 'key':'aes_dir', 'type':'list', 'values':{'Encryption (PT=Input)':'enc', 'Decryption (PT=Input)':'dec'}, 'value':'enc', 'set':self.updateScript},
+                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
+                        {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
                         ]},
 
                        #TODO: Should be called from the AES module to figure out # of bytes
@@ -120,23 +113,11 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateBytesVisible()
         self.updateScript()
 
-    def setKeyround(self, rnd):
-        self._keyround = rnd
-
-    def keyround(self):
-        return self._keyround
-
     def setTargetBytes(self, blist):
         self._targetbytes = blist
 
     def targetBytes(self):
         return self._targetbytes
-
-    def setDirection(self, dir):
-        self._direction = dir
-
-    def direction(self):
-        return self._direction
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
         self.attack = analysisAlgorithm(hardwareModel, leakageModel, showScriptParameter=self.showScriptParameter, parent=self)
@@ -157,14 +138,12 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         analysAlgoStr = self.findParam('CPA_algo').value().__name__
         hardwareStr = self.findParam('hw_algo').value().__name__
-        leakModelStr = hardwareStr + "." + self.findParam('hw_pwrmodel').value()
+        leakModelStr = hardwareStr + "." + self.findParam('hw_leak').value()
 
         self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
-        self.addFunction("init", "setKeyround", "%d"%self.findParam('hw_round').value())
-        self.addFunction("init", "setDirection", "'%s'" % self.findParam('aes_dir').value())
 
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
@@ -176,25 +155,24 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if inpkey is None:
             return None
 
-        if self.keyround() == -1:
-            # return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
-            if len(inpkey) == 16:
-                rnds = 10
-            elif len(inpkey) == 32:
-                rnds = 14
-            else:
-                raise ValueError('unsupported key length: %d' % len(inpkey))
-            return keyScheduleRounds(inpkey, 0, rnds)
-        else:
-            return inpkey
+        # if self.keyround() == -1:
+        #    # return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
+        #    if len(inpkey) == 16:
+        #        rnds = 10
+        #    elif len(inpkey) == 32:
+        #        rnds = 14
+        #    else:
+        #        raise ValueError('unsupported key length: %d' % len(inpkey))
+        #    return keyScheduleRounds(inpkey, 0, rnds)
+        # else:
+
+        return inpkey
 
     def doAttack(self):
 
         start = datetime.now()
 
         self.attack.setTargetBytes(self.targetBytes())
-        self.attack.setKeyround(self.keyround())
-        self.attack.setDirection(self.direction())
         self.attack.setReportingInterval(self.getReportingInterval())
 
         self.attack.getStatistics().clear()

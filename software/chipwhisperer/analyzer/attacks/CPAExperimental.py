@@ -56,12 +56,6 @@ class AttackCPA_Bayesian(QObject):
     def setByteList(self, brange):
         self.brange = brange
 
-    def setKeyround(self, keyround):
-        self.keyround = keyround
-
-    def setModeltype(self, modeltype):
-        self.modeltype = modeltype
-
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype

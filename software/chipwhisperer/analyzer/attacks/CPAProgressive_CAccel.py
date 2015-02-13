@@ -187,20 +187,10 @@ class CPAProgressive_CAccel(AutoScript, QObject):
     def setTargetBytes(self, brange):
         self.brange = brange
 
-    def setKeyround(self, keyround):
-        self.keyround = keyround
-
-    def setDirection(self, dir):
-        self._direction = dir
-
-    def setModeltype(self, modeltype):
-        self.modeltype = modeltype
-
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
-        keyround=self.keyround
         brange=self.brange
 
         foundkey = []
@@ -292,7 +282,7 @@ class CPAProgressive_CAccel(AutoScript, QObject):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, keyround, self.leakage, progressBar, self.model, pbcnt, self._direction, knownkeys)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, progressBar, self.model, self.leakage, cpa[bnum].modelstate, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True

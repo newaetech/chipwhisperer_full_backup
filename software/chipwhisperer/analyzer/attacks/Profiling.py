@@ -201,8 +201,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
             #self.attack.clearStats()
             self.attack.setByteList(self.bytesEnabled())
-            # self.attack.setKeyround(self.findParam('hw_round').value())
-            # self.attack.setModeltype(self.findParam('hw_pwrmodel').value())
             self.attack.setStatsReadyCallback(self.statsReady)
 
             progress = AttackProgressDialog()
