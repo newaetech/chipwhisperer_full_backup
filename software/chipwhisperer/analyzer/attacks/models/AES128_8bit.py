@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
+from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 try:
     # OrderedDict is new in 2.7
     from collections import OrderedDict
@@ -73,27 +74,40 @@ INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
 def processKnownKey(setting, inpkey):
 
-    # TODO: Process input key?
+    if setting == LEAK_HD_LASTROUND_STATE:
+        return keyScheduleRounds(inpkey, 0, 10)
 
     return inpkey
 
 def leakage(pt, ct, guess, bnum, setting, state):
+
     if setting == LEAK_HW_SBOXOUT_FIRSTROUND:
+        # Classic HW of S-Box output
         return getHW(sbox(pt[bnum] ^ guess))
+
     elif setting == LEAK_HW_INVSBOXOUT_FIRSTROUND:
+        # HW Leakage of inverse S-Box (AES Decryption)
         return getHW(inv_sbox(ct[bnum] ^ guess))
+
     elif setting == LEAK_HD_LASTROUND_STATE:
+        # HD Leakage of AES State between 9th and 10th Round
+        # Used to break SASEBO-GII / SAKURA-G
         st10 = ct[INVSHIFT[bnum]]
         st9 =  inv_sbox(ct[bnum] ^ guess)
         return getHW(st9 ^ st10)
+
     elif setting == LEAK_HD_SBOX_IN_OUT:
-        st1 = pt ^ guess
-        st2 = sbox[st1]
+        # Leakage from HD of S-Box input to output
+        st1 = pt[bnum] ^ guess
+        st2 = sbox(st1)
         return getHW(st1 ^ st2)
+
     elif setting == LEAK_HD_SBOX_IN_SUCCESSIVE:
         pass
+
     elif setting == LEAK_HD_SBOX_OUT_SUCCESSIVE:
         pass
+
     else:
         raise ValueError("Invalid setting: %s" % str(setting))
 
