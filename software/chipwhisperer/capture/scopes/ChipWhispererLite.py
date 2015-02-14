@@ -26,6 +26,7 @@
 
 
 import usb.core
+import usb.util
 import time
 
 def packuint32(data):
@@ -477,12 +478,17 @@ class CWLiteUSB(object):
         Connect to device using default VID/PID
         """
 
-        dev = usb.core.find(idVendor=0x03EB, idProduct=0x2423)
+        dev = usb.core.find(idVendor=0x2B3E, idProduct=0xACE2)
 
         if dev is None:
             raise IOError("Failed to find USB Device")
 
         dev.set_configuration()
+
+        # Get serial number
+        self.snum = usb.util.get_string(dev, 32, 3)
+
+        print "Found CW-Lite, Serial Number = %s" % self.snum
 
         self._usbdev = dev
         self.rep = 0x81

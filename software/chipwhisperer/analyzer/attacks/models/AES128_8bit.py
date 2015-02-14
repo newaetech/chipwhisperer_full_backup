@@ -87,7 +87,7 @@ def leakage(pt, ct, guess, bnum, setting, state):
 
     elif setting == LEAK_HW_INVSBOXOUT_FIRSTROUND:
         # HW Leakage of inverse S-Box (AES Decryption)
-        return getHW(inv_sbox(ct[bnum] ^ guess))
+        return getHW(inv_sbox(pt[bnum] ^ guess))
 
     elif setting == LEAK_HD_LASTROUND_STATE:
         # HD Leakage of AES State between 9th and 10th Round

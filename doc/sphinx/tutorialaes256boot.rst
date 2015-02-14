@@ -277,6 +277,9 @@ the ChipWhisperer capture system up with the bootloader communications module in
 Analyzing of Power Traces for Key
 ---------------------------------
 
+   .. warning:: The API calling parameters changed in release 0.10 of the ChipWhisperer software. If using 0.09 release or older, see the documentation that
+                is present in the 'doc' directory (which will always correspond to your release).
+
 14th Round Key using GUI
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -392,27 +395,23 @@ The following defines the required functions for our AES-256 attack on the 2nd p
    # Imports for AES256 Attack
    from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
    from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox, inv_shiftrows, inv_mixcolumns, inv_subbytes
-
-
-   class AES256_ManualRound(object):
+   
+   class AES256Attack(object):
        numSubKeys = 16
+   
+       @staticmethod
+       def leakage(textin, textout, guess, bnum, setting, state):
+           if setting == 13:
+              knownkey = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
+              xored = [knownkey[i] ^ textin[i] for i in range(0, 16)]
+              block = xored
+              block = inv_shiftrows(block)
+              block = inv_subbytes(block)
+              block = inv_mixcolumns(block)
+              block = inv_shiftrows(block)
+              result = block
+              return getHW(inv_sbox((result[bnum] ^ guess)))
 
-   def AES256_13th_Round_HW(pt, ct, key, bnum):
-       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-       if pt != None:
-           raise ValueError("Only setup for decryption attacks")
-       elif ct != None:
-           knownkey = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
-           xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
-           block = xored
-           block = inv_shiftrows(block)
-           block = inv_subbytes(block)
-           block = inv_mixcolumns(block)
-           block = inv_shiftrows(block)
-           result = block
-           return getHW(inv_sbox((result[bnum] ^ key)))
-       else:
-           raise ValueError("Must specify PT or CT")
 
 You can look back at the C code of the AES-256 decryption to see how this is implementing the decryption code.
 Note that because of the Inverse MixCols operation, we need the entire input ciphertext, and cannot use just
@@ -422,7 +421,7 @@ a single byte of the input ciphertext.
 
 11. Change the ``setAnalysisAlgorithm`` to use your custom functions byt making the following call::
 
-      self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_13th_Round_HW)
+      self.attack.setAnalysisAlgorithm(CPAProgressive, AES256Attack, 13)
 
 12. Check you have set the attack direction to decryption, and you can reduce the point range to speed up your
     attack. Simply ensure you have the following lines in the script::
@@ -493,32 +492,30 @@ Example::
 
    #Imports for IV Attack
    from Crypto.Cipher import AES
-
-    def initPreprocessing(self):
-        self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
-        self.preProcessingResyncSAD0.setEnabled(True)
-        self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(6300,6800), inputwindow=(6000,7200))
-        self.preProcessingResyncSAD1 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
-        self.preProcessingResyncSAD1.setEnabled(True)
-        self.preProcessingResyncSAD1.setReference(rtraceno=0, refpoints=(4800,5100), inputwindow=(4700,5200))
-        self.preProcessingList = [self.preProcessingResyncSAD0,self.preProcessingResyncSAD1,]
-        return self.preProcessingList
-
-   def AES256_IV_HW(pt, ct, key, bnum):
-       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-       if pt != None:
-           raise ValueError("Only setup for decryption attacks")
-       elif ct != None:
-           knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,
-                       0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]
-           knownkey = str(bytearray(knownkey))
-           ct = str(bytearray(ct))
-
-           aes = AES.new(knownkey, AES.MODE_ECB)
-           pt = aes.decrypt(ct)
-           return getHW(bytearray(pt)[bnum] ^ key)
-       else:
-           raise ValueError("Must specify PT or CT")
+   
+   def initPreprocessing(self):
+       self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+       self.preProcessingResyncSAD0.setEnabled(True)
+       self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(6300,6800), inputwindow=(6000,7200))
+       self.preProcessingResyncSAD1 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+       self.preProcessingResyncSAD1.setEnabled(True)
+       self.preProcessingResyncSAD1.setReference(rtraceno=0, refpoints=(4800,5100), inputwindow=(4700,5200))
+       self.preProcessingList = [self.preProcessingResyncSAD0,self.preProcessingResyncSAD1,]
+       return self.preProcessingList
+   
+   class AESIVAttack(object):
+      numSubKeys = 16
+   
+      @staticmethod
+      def leakage(textin, textout, guess, bnum, setting, state):
+          knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,
+                      0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]
+          knownkey = str(bytearray(knownkey))
+          ct = str(bytearray(textin))
+   
+          aes = AES.new(knownkey, AES.MODE_ECB)
+          pt = aes.decrypt(ct)
+          return getHW(bytearray(pt)[bnum] ^ guess)
 
 
 
@@ -870,6 +867,8 @@ The following::
 Appendix B: AES-256 14th Round Key Script
 -----------------------------------------
 
+**NB: This script works for 0.10 release or later, see local copy in doc/html directory of chipwhisperer release if you need earlier versions**
+
 Full attack script, copy/paste into a file then add as active attack script::
 
    # AES-256 14th Round Key Attack
@@ -881,46 +880,43 @@ Full attack script, copy/paste into a file then add as active attack script::
    from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
    import chipwhisperer.analyzer.attacks.models.AES128_8bit
    #Imports from utilList
-
+   
    class userScript(AutoScriptBase):
        preProcessingList = []
        def initProject(self):
            pass
-
+   
        def initPreprocessing(self):
            self.preProcessingList = []
            return self.preProcessingList
-
+   
        def initAnalysis(self):
            self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
-           self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit,chipwhisperer.analyzer.attacks.models.AES128_8bit.HypHW)
+           self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit,chipwhisperer.analyzer.attacks.models.AES128_8bit.LEAK_HW_INVSBOXOUT_FIRSTROUND)
            self.attack.setTraceStart(0)
            self.attack.setTracesPerAttack(99)
            self.attack.setIterations(1)
            self.attack.setReportingInterval(10)
            self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-           self.attack.setKeyround(0)
-           self.attack.setDirection('dec')
            self.attack.setTraceManager(self.traceManager())
            self.attack.setProject(self.project())
-           # If you want the attack to run faster, use the following point range instead
-           # of the full trace point range
-           #self.attack.setPointRange((2900,4200))
            self.attack.setPointRange((0,10992))
            return self.attack
-
+   
        def initReporting(self, results):
            results.setAttack(self.attack)
            results.setTraceManager(self.traceManager())
            self.results = results
-
+   
        def doAnalysis(self):
            self.attack.doAttack()
-
+        
 .. _aes256round13script:
 
 Appendix C: AES-256 13th Round Key Script
 -----------------------------------------
+
+**NB: This script works for 0.10 release or later, see local copy in doc/html directory of chipwhisperer release if you need earlier versions**
 
 Full attack script, copy/paste into a file then add as active attack script::
 
@@ -933,74 +929,70 @@ Full attack script, copy/paste into a file then add as active attack script::
    from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
    import chipwhisperer.analyzer.attacks.models.AES128_8bit
    # Imports from utilList
-
+   
    # Imports for AES256 Attack
    from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
    from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox, inv_shiftrows, inv_mixcolumns, inv_subbytes
-
-   class AES256_ManualRound(object):
-       numSubKeys = 16
-
-   def AES256_13th_Round_HW(pt, ct, key, bnum):
-       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-       if pt != None:
-           raise ValueError("Only setup for decryption attacks")
-       elif ct != None:
-           knownkey = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
-           xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
-           block = xored
-           block = inv_shiftrows(block)
-           block = inv_subbytes(block)
-           block = inv_mixcolumns(block)
-           block = inv_shiftrows(block)
-           result = block
-           return getHW(inv_sbox((result[bnum] ^ key)))
-       else:
-           raise ValueError("Must specify PT or CT")
-
+   
+   class AES256Attack(object):
+      numSubKeys = 16
+   
+      @staticmethod
+      def leakage(textin, textout, guess, bnum, setting, state):
+          if setting == 13:
+             knownkey = [0xea, 0x79, 0x79, 0x20, 0xc8, 0x71, 0x44, 0x7d, 0x46, 0x62, 0x5f, 0x51, 0x85, 0xc1, 0x3b, 0xcb]
+             xored = [knownkey[i] ^ textin[i] for i in range(0, 16)]
+             block = xored
+             block = inv_shiftrows(block)
+             block = inv_subbytes(block)
+             block = inv_mixcolumns(block)
+             block = inv_shiftrows(block)
+             result = block
+             return getHW(inv_sbox((result[bnum] ^ guess)))
+   
    class userScript(AutoScriptBase):
-       preProcessingList = []
-       def initProject(self):
-           pass
-
-       def initPreprocessing(self):
-           self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
-           self.preProcessingResyncSAD0.setEnabled(True)
-           self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(9063,9177), inputwindow=(9010,9180))
-           self.preProcessingList = [self.preProcessingResyncSAD0,]
-           return self.preProcessingList
-
-       def initAnalysis(self):
-           self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
-           self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_13th_Round_HW)
-           self.attack.setTraceStart(0)
-           self.attack.setTracesPerAttack(100)
-           self.attack.setIterations(1)
-           self.attack.setReportingInterval(25)
-           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-           self.attack.setKeyround(0)
-           self.attack.setDirection('dec')
-           self.attack.setTraceManager(self.traceManager())
-           self.attack.setProject(self.project())
-           self.attack.setPointRange((8000,10990))
-           return self.attack
-
-       def initReporting(self, results):
-           results.setAttack(self.attack)
-           results.setTraceManager(self.traceManager())
-           self.results = results
-
-       def doAnalysis(self):
-           self.attack.doAttack()
+      preProcessingList = []
+      def initProject(self):
+          pass
+   
+      def initPreprocessing(self):
+          self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
+          self.preProcessingResyncSAD0.setEnabled(True)
+          self.preProcessingResyncSAD0.setReference(rtraceno=0, refpoints=(9063,9177), inputwindow=(9010,9180))
+          self.preProcessingList = [self.preProcessingResyncSAD0,]
+          return self.preProcessingList
+   
+      def initAnalysis(self):
+          self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
+          self.attack.setAnalysisAlgorithm(CPAProgressive, AES256Attack, 13)
+          self.attack.setTraceStart(0)
+          self.attack.setTracesPerAttack(100)
+          self.attack.setIterations(1)
+          self.attack.setReportingInterval(25)
+          self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+          self.attack.setTraceManager(self.traceManager())
+          self.attack.setProject(self.project())
+          self.attack.setPointRange((8000,10990))
+          return self.attack
+   
+      def initReporting(self, results):
+          results.setAttack(self.attack)
+          results.setTraceManager(self.traceManager())
+          self.results = results
+   
+      def doAnalysis(self):
+          self.attack.doAttack()
 
 .. _aes256ivscript:
 
 Appendix D: AES-256 IV Attack Script
 ------------------------------------
 
+**NB: This script works for 0.10 release or later, see local copy in doc/html directory of chipwhisperer release if you need earlier versions**
+
 Full attack script, copy/paste into a file then add as active attack script::
 
-   # Date Auto-Generated: 2014.10.04-18.35.13
+   #IV Attack Script
    from chipwhisperer.common.autoscript import AutoScriptBase
    #Imports from Preprocessing
    import chipwhisperer.analyzer.preprocessing as preprocessing
@@ -1009,37 +1001,32 @@ Full attack script, copy/paste into a file then add as active attack script::
    from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
    import chipwhisperer.analyzer.attacks.models.AES128_8bit
    # Imports from utilList
-
+   
    # Imports for AES256 Attack
    from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-
+   
    #Imports for IV Attack
    from Crypto.Cipher import AES
-
-   class AES256_ManualRound(object):
-       numSubKeys = 16
-
-   def AES256_IV_HW(pt, ct, key, bnum):
-       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-       if pt != None:
-           raise ValueError("Only setup for decryption attacks")
-       elif ct != None:
-           knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,
-                       0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]
-           knownkey = str(bytearray(knownkey))
-           ct = str(bytearray(ct))
-
-           aes = AES.new(knownkey, AES.MODE_ECB)
-           pt = aes.decrypt(ct)
-           return getHW(bytearray(pt)[bnum] ^ key)
-       else:
-           raise ValueError("Must specify PT or CT")
-
+   
+   class AESIVAttack(object):
+      numSubKeys = 16
+   
+      @staticmethod
+      def leakage(textin, textout, guess, bnum, setting, state):
+          knownkey = [0x94, 0x28, 0x5D, 0x4D, 0x6D, 0xCF, 0xEC, 0x08, 0xD8, 0xAC, 0xDD, 0xF6, 0xBE, 0x25, 0xA4, 0x99,
+                      0xC4, 0xD9, 0xD0, 0x1E, 0xC3, 0x40, 0x7E, 0xD7, 0xD5, 0x28, 0xD4, 0x09, 0xE9, 0xF0, 0x88, 0xA1]
+          knownkey = str(bytearray(knownkey))
+          ct = str(bytearray(textin))
+   
+          aes = AES.new(knownkey, AES.MODE_ECB)
+          pt = aes.decrypt(ct)
+          return getHW(bytearray(pt)[bnum] ^ guess)
+   
    class userScript(AutoScriptBase):
        preProcessingList = []
        def initProject(self):
            pass
-
+   
        def initPreprocessing(self):
            self.preProcessingResyncSAD0 = preprocessing.ResyncSAD.ResyncSAD(self.parent)
            self.preProcessingResyncSAD0.setEnabled(True)
@@ -1049,27 +1036,24 @@ Full attack script, copy/paste into a file then add as active attack script::
            self.preProcessingResyncSAD1.setReference(rtraceno=0, refpoints=(4800,5100), inputwindow=(4700,5200))
            self.preProcessingList = [self.preProcessingResyncSAD0,self.preProcessingResyncSAD1,]
            return self.preProcessingList
-
+   
        def initAnalysis(self):
            self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
-           self.attack.setAnalysisAlgorithm(CPAProgressive, AES256_ManualRound, AES256_IV_HW)
+           self.attack.setAnalysisAlgorithm(CPAProgressive, AESIVAttack, None)
            self.attack.setTraceStart(0)
            self.attack.setTracesPerAttack(100)
            self.attack.setIterations(1)
            self.attack.setReportingInterval(25)
            self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-           self.attack.setKeyround(0)
-           self.attack.setDirection('dec')
            self.attack.setTraceManager(self.traceManager())
            self.attack.setProject(self.project())
            self.attack.setPointRange((4800,6500))
            return self.attack
-
+   
        def initReporting(self, results):
            results.setAttack(self.attack)
            results.setTraceManager(self.traceManager())
            self.results = results
-
+   
        def doAnalysis(self):
            self.attack.doAttack()
-
