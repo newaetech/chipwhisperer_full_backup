@@ -161,38 +161,36 @@ We will first automatically configure a script, and then use that as the base fo
 
 9. You can now edit the custom script file using the built-in editor OR with an external editor. In this example the file would be ``C:\Users\Colin\AppData\Local\Temp\cw_testilya.py``.
 
-The following defines the required functions to implement, you should refer to the academic paper for details of the correlation model::
+   .. warning:: The API calling parameters changed in release 0.10 of the ChipWhisperer software. If using 0.09 release or older, either see the documentation that
+                is present in the 'doc' directory (which will always correspond to your release), or see Appendix B for the full attack script.
 
-   # Imports
-   from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+   The following defines the required functions to implement, you should refer to the academic paper for details of the correlation model::
 
-   def AES128_HD_ILYA(pt, ct, key, bnum):
-       """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-
-       #In real life would recover this one at a time, in our case we know entire full key, so we cheat to make
-       #the iterations easier
-       knownkey = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
-
-       if pt != None:
-           s1 = pt[bnum-1] ^ knownkey[bnum-1]
-           s2 = pt[bnum] ^ key
-
-           #We subtract 8 as way measurements are taken a higher current results in a lower voltage. Normally this
-           #doesn't matter due to use of absolute values. In this attack we do not use absolute mode, so we simply
-           #"flip" the expected hamming weight, which results in the correlation changing signs.
-
-           return 8-getHW(s1 ^ s2)
-
-       elif ct != None:
-           raise ValueError("Only setup for encryption attacks")
-       else:
-           raise ValueError("Must specify PT or CT")
+      # Imports
+      from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+      
+      class AESXMega(object):
+          numSubKeys = 16
+      
+          @staticmethod
+          def leakage(pt, ct, guess, bnum, setting, state):
+              #In real life would recover this one at a time, in our case we know entire full key, so we cheat to make
+              #the iterations easier
+              knownkey = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
+      
+              s1 = pt[bnum-1] ^ knownkey[bnum-1]
+              s2 = pt[bnum] ^ guess
+      
+              #We subtract 8 as way measurements are taken a higher current results in a lower voltage. Normally this
+              #doesn't matter due to use of absolute values. In this attack we do not use absolute mode, so we simply
+              #"flip" the expected hamming weight, which results in the correlation changing signs.
+              return 8-getHW(s1 ^ s2)
 
 10. Add the above function to your custom script file.
 
-11. Change the ``setAnalysisAlgorithm`` to use your custom functions byt making the following call, see the full script in the Appendix::
+11. Change the ``setAnalysisAlgorithm`` to use your custom functions by making the following call, see the full script in the Appendix::
 
-      self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit, AES128_HD_ILYA)
+      self.attack.setAnalysisAlgorithm(CPAProgressive,AESXMega,None)
 
 12. Adjust the attack bytes to *NOT* attack the first byte, as our hacked script will not work with it::
 
@@ -223,6 +221,70 @@ The following defines the required functions to implement, you should refer to t
 
 Appendix A: Full Attack Script
 ------------------------------
+
+Here is the full attack script for current releases::
+
+   # Based on Ilya Kizhvatov's work, published as "Side Channel Analysis of AVR XMEGA Crypto Engine"
+   from chipwhisperer.common.autoscript import AutoScriptBase
+   #Imports from Preprocessing
+   import chipwhisperer.analyzer.preprocessing as preprocessing
+   #Imports from Capture
+   from chipwhisperer.analyzer.attacks.CPA import CPA
+   from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
+   import chipwhisperer.analyzer.attacks.models.AES128_8bit
+   # Imports
+   from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+   
+   class AESXMega(object):
+       numSubKeys = 16
+   
+       @staticmethod
+       def leakage(pt, ct, guess, bnum, setting, state):
+           #In real life would recover this one at a time, in our case we know entire full key, so we cheat to make
+           #the iterations easier
+           knownkey = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
+   
+           s1 = pt[bnum-1] ^ knownkey[bnum-1]
+           s2 = pt[bnum] ^ guess
+   
+           #We subtract 8 as way measurements are taken a higher current results in a lower voltage. Normally this
+           #doesn't matter due to use of absolute values. In this attack we do not use absolute mode, so we simply
+           #"flip" the expected hamming weight, which results in the correlation changing signs.
+           return 8-getHW(s1 ^ s2)
+   
+   class userScript(AutoScriptBase):
+       preProcessingList = []
+       def initProject(self):
+           pass
+   
+       def initPreprocessing(self):
+           self.preProcessingList = []
+           return self.preProcessingList
+   
+       def initAnalysis(self):
+           self.attack = CPA(self.parent, console=self.console, showScriptParameter=self.showScriptParameter)
+           self.attack.setAnalysisAlgorithm(CPAProgressive,AESXMega,None)
+           self.attack.setTraceStart(0)
+           self.attack.setTracesPerAttack(2999)
+           self.attack.setIterations(1)
+           self.attack.setReportingInterval(500)
+           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setTraceManager(self.traceManager())
+           self.attack.setProject(self.project())
+           self.attack.setPointRange((0,996))
+           return self.attack
+   
+       def initReporting(self, results):
+           results.setAttack(self.attack)
+           results.setTraceManager(self.traceManager())
+           self.results = results
+   
+       def doAnalysis(self):
+           self.attack.doAttack()
+
+
+Appendix B: Full Attack Script for 0.09 or Older Releases
+---------------------------------------------------------
 
 Here is the full attack script::
 
