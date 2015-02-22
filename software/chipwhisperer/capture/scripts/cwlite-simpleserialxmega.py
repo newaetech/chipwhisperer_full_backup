@@ -54,10 +54,10 @@ import scipy.io as sio
 exitWhenDone=False
 
 def name():
-    return "ChipWhisperer-Lite: SimpleSerial Target"
+    return "ChipWhisperer-Lite: SimpleSerial on XMEGA"
 
 def tip():
-    return "SimpleSerial on ChipWhisperer-Lite"
+    return "SimpleSerial with Standard Target (XMEGA)"
 
 def pe():
     QCoreApplication.processEvents()
@@ -78,8 +78,8 @@ class userScript(QObject):
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'ChipWhisperer Lite'])
         cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer-Lite'])
+        cap.setParameter(['OpenADC Interface', 'connection', 'ChipWhisperer Lite'])
 
         #Load FW (must be configured in GUI first)
         # cap.FWLoaderGo()
@@ -91,11 +91,14 @@ class userScript(QObject):
         cap.doConDis()
         
         pe()
+        pe()
+        pe()
+        pe()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
-                      ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
+        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
+                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
                       ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
                       ['CW Extra', 'CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
@@ -103,8 +106,6 @@ class userScript(QObject):
                       ['OpenADC', 'Trigger Setup', 'Offset', 1500],
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
-                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
-                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
                       #Final step: make DCMs relock in case they are lost
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ]
