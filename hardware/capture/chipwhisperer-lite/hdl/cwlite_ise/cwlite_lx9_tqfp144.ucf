@@ -82,7 +82,7 @@ NET target_hs1			LOC=P93       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 NET target_hs2			LOC=P95       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 
 NET glitchout_highpwr LOC=P66       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=24;
-NET glitchout_lowpwr LOC=P50       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=12;
+NET glitchout_lowpwr LOC=P67       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=12;
 
 
 #This route ends up having S&H problems. However we don't care as it gets toggled very infrequently
