@@ -57,6 +57,7 @@ from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import leakage
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.utils.Partition import Partition
+import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
 
 class TemplateBasic(AutoScript, QObject):
     """
@@ -363,7 +364,8 @@ class ProfilingTemplate(AutoScript, QObject):
                     # Map to key guess format
                     for i in range(0, 256):
                         # Get hypothetical hamming weight
-                        hypint = HypHW(plaintexts[tnum], None, i, bnum)
+                        # hypint = HypHW(plaintexts[tnum], None, i, bnum)
+                        hypint = AESModel.leakage(plaintexts[tnum], ciphertexts[tnum], i, bnum, AESModel.LEAK_HW_SBOXOUT_FIRSTROUND, None)
                         newresults.append(newresultsint[ hypint ])
                 elif ptype == "PartitionHDLastRound":
                     newresults = []
@@ -371,7 +373,8 @@ class ProfilingTemplate(AutoScript, QObject):
                     for i in range(0, 256):
                         # Get hypothetical hamming distance
                         # hypint = HypHD(plaintexts[tnum], None, i, bnum)
-                        hypint = HypHD(None, ciphertexts[tnum], i, bnum)
+                        # hypint = HypHD(None, ciphertexts[tnum], i, bnum)
+                        hypint = AESModel.leakage(plaintexts[tnum], ciphertexts[tnum], i, bnum, AESModel.LEAK_HD_LASTROUND_STATE, None)
                         newresults.append(newresultsint[ hypint ])
 
                 # TODO Temp

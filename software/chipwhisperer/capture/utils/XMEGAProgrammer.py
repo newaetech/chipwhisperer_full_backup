@@ -29,7 +29,7 @@ import os.path
 import time
 
 from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGAPDI
-from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGA128A4U
+from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGA128A4U, XMEGA128D4U
 from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 
@@ -147,7 +147,7 @@ class XMEGAProgrammer(object):
     def __init__(self):
         super(XMEGAProgrammer, self).__init__()
         self._usbiface = None
-        self.supported_chips = [XMEGA128A4U()]
+        self.supported_chips = [XMEGA128A4U(), XMEGA128D4U()]
         self.xmega = XMEGAPDI()
         self._logging = None
         self._foundchip = False

@@ -50,7 +50,7 @@ class AuxiliaryTemplate(QObject):
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
-        ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]
+        ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
         self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
@@ -85,7 +85,11 @@ class AuxiliaryTemplate(QObject):
         pass
 
     def traceArm(self):
-        """Called before sending trace to target, use to arm aux system"""
+        """Called before arming scope, use to arm aux system"""
+        pass
+
+    def traceArmPost(self):
+        """Called after arming scope, before sending trigger to target"""
         pass
 
     def traceDone(self):

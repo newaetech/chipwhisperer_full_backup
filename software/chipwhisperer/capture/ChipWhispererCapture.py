@@ -220,6 +220,9 @@ class TargetInterface(QObject):
 class EncryptionStatusMonitor(QDialog):
     def __init__(self, parent):
         super(EncryptionStatusMonitor, self).__init__(parent)
+
+        self.dLayout = QVBoxLayout()
+
         self.textResultsLayout = QGridLayout()
         self.textInLine = QLineEdit()
         self.textOutLine = QLineEdit()
@@ -239,8 +242,41 @@ class EncryptionStatusMonitor(QDialog):
         self.textEncKey.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textEncKey, 3, 1)
 
-        self.setLayout(self.textResultsLayout)
+        self.dLayout.addLayout(self.textResultsLayout)
+
+        # Count of OK passes
+        cntLayout = QHBoxLayout()
+
+        self.totalOps = QLabel("0")
+        self.totalOK = QLabel("?")
+        self.totalFail = QLabel("?")
+        self.clearPB = QPushButton("Clear")
+        self.clearPB.clicked.connect(self.clrCnt)
+
+        cntLayout.addWidget(QLabel("Total Ops: "))
+        cntLayout.addWidget(self.totalOps)
+        cntLayout.addStretch()
+        cntLayout.addWidget(QLabel("Total OK: "))
+        cntLayout.addWidget(self.totalOK)
+        cntLayout.addStretch()
+        cntLayout.addWidget(QLabel("Total Failed: "))
+        cntLayout.addWidget(self.totalFail)
+        cntLayout.addStretch()
+        cntLayout.addWidget(self.clearPB)
+        self.clrCnt()
+
+        self.dLayout.addLayout(cntLayout)
+
+        self.setLayout(self.dLayout)
         self.hide()
+        
+    def clrCnt(self, ignored=False):
+        self._cntops = 0
+        self._okops = 0
+        self._failops = 0
+        self.totalOps.setText("%d" % self._cntops)
+        self.totalOK.setText("%d" % self._okops)
+        self.totalFail.setText("%d" % self._failops)
 
     def setHexText(self, lineedit, data):
         if data is not None:
@@ -255,6 +291,17 @@ class EncryptionStatusMonitor(QDialog):
         self.setHexText(self.textInLine, pt)
         self.setHexText(self.textEncKey, key)
         self.setHexText(self.textOutExpected, expected)
+        
+        self._cntops += 1
+
+        if ct == expected:
+            self._okops += 1
+        else:
+            self._failops += 1
+
+        self.totalOps.setText("%d" % self._cntops)
+        self.totalOK.setText("%d" % self._okops)
+        self.totalFail.setText("%d" % self._failops)
 
 
 class ChipWhispererCapture(MainChip):
