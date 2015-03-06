@@ -55,6 +55,19 @@ class XMEGA128A4U(object):
        "fuse5":{"offset":0x8f0025, "size":1},
      }
 
+class XMEGA128D4U(object):
+    signature = [0x1e, 0x97, 0x47]
+    name = "XMEGA128D4U"
+
+    memtypes = {
+       "signature":{"offset":0x1000090, "size":3},
+       "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
+       "fuse1":{"offset":0x8f0021, "size":1},
+       "fuse2":{"offset":0x8f0022, "size":1},
+       "fuse4":{"offset":0x8f0024, "size":1},
+       "fuse5":{"offset":0x8f0025, "size":1},
+     }
 
 class XMEGAPDI(object):
     """
