@@ -132,6 +132,10 @@ class AcquisitionController(QObject):
         if self.scope is not None:
             self.scope.arm()
 
+        if self.auxList is not None:
+            for aux in self.auxList:
+                aux.traceArmPost()
+
         if self.target is not None:
             # Load input, start encryption, get output. Key was set already, don't resend
             self.textout = self.TargetDoTrace(self.textin, key=None)
