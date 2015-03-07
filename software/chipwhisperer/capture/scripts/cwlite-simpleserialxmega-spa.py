@@ -54,10 +54,10 @@ import scipy.io as sio
 exitWhenDone=False
 
 def name():
-    return "ChipWhisperer-Lite: AES SimpleSerial on XMEGA"
+    return "ChipWhisperer-Lite: SPA SimpleSerial on XMEGA"
 
 def tip():
-    return "SimpleSerial with Standard Target for AES (XMEGA)"
+    return "SimpleSerial with Standard Target for SPA (XMEGA)"
 
 def pe():
     QCoreApplication.processEvents()
@@ -103,7 +103,6 @@ class userScript(QObject):
                       ['CW Extra', 'CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
-                      ['OpenADC', 'Trigger Setup', 'Offset', 1500],
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
                       #Final step: make DCMs relock in case they are lost
