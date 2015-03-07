@@ -27,6 +27,6 @@
 
 
 active_scope = [None]
-
+main_window = None
 
 

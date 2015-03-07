@@ -84,6 +84,7 @@ import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
+import chipwhisperer.capture.global_mod as global_mod
 
 class OpenADCInterface_NAEUSBChip(QWidget):
     paramListUpdated = Signal(list)
@@ -140,7 +141,7 @@ class OpenADCInterface_NAEUSBChip(QWidget):
                                statusTip='Download Firmware+FPGA To Hardware',
                                triggered=self.CWFirmwareConfig.loadRequired)
         
-        self.cwliteXMEGA = XMEGAProgrammerDialog(self)
+        self.cwliteXMEGA = XMEGAProgrammerDialog(global_mod.main_window)
 
         self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
                                        statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
