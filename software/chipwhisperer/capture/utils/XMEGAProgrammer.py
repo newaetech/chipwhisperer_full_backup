@@ -39,6 +39,7 @@ from PySide.QtGui import *
 class XMEGAProgrammerDialog(QDialog):
     def __init__(self, parent=None):
         super(XMEGAProgrammerDialog, self).__init__(parent)
+        # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
         self.xmega = XMEGAProgrammer()
 
@@ -83,7 +84,7 @@ class XMEGAProgrammerDialog(QDialog):
         self.setLayout(layout)
 
     def findFlash(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', '.', '*.hex')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("xmega-flash-location"), '*.hex')
         if fname:
             self.flashLocation.setText(fname)
             QSettings().setValue("xmega-flash-location", fname)
@@ -104,25 +105,31 @@ class XMEGAProgrammerDialog(QDialog):
         self.statusLine.append("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
         if (os.path.isfile(fname)):
             self.statusLine.append("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+            QCoreApplication.processEvents()
 
             try:
                 self.statusLine.append("Entering Programming Mode")
+                QCoreApplication.processEvents()
                 self.readSignature(close=False)
 
                 if erase:
                     try:
                         self.statusLine.append("Erasing Chip")
+                        QCoreApplication.processEvents()
                         self.xmega.erase()
                     except IOError:
                         self.statusLine.append("**chip-erase timeout, erasing application only**")
+                        QCoreApplication.processEvents()
                         self.xmega.xmega.enablePDI(False)
                         self.xmega.xmega.enablePDI(True)
                         self.xmega.erase("app")
 
+                QCoreApplication.processEvents()
                 self.xmega.program(self.flashLocation.text(), memtype="flash", verify=verify)
-                
+                QCoreApplication.processEvents()
                 self.statusLine.append("Exiting programming mode")
                 self.xmega.close()
+                QCoreApplication.processEvents()
                 
                 status = "SUCCEEDED"
 
@@ -203,10 +210,12 @@ class XMEGAProgrammer(object):
             raise IOError("File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
 
         self.log("XMEGA Programming %s..." % memtype)
+        QCoreApplication.processEvents()
         fdata = f.tobinarray(start=0)
         self.xmega.writeMemory(startaddr, fdata, memtype)  # , erasePage=True
         
         self.log("XMEGA Reading %s..." % memtype)
+        QCoreApplication.processEvents()
         #Do verify run
         rdata = self.xmega.readMemory(startaddr, len(fdata), memtype)
 
