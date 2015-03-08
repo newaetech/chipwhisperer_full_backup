@@ -70,6 +70,7 @@ class SerialTerminalDialog(QDialog):
         self.settingsLineLayout.addStretch()
 
         self.convNonAscii = QCheckBox()
+        self.convNonAscii.setChecked(True)
 
         self.settingsLineLayout.addWidget(QLabel("RX: Show non-ASCII as hex"))
         self.settingsLineLayout.addWidget(self.convNonAscii)

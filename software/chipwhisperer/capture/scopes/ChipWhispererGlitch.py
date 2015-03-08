@@ -72,9 +72,10 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
                 {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
+                {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
                 {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'value':0, 'set':self.setTriggerOffset, 'get':self.triggerOffset},
                 {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
-                {'name':'Manual Trigger', 'type':'action', 'action':self.glitchManual},
+                {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action':self.glitchManual},
                 {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
                 {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
                 {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
@@ -367,4 +368,14 @@ class ChipWhispererGlitch(QObject):
     def glitchClkSource(self):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[7] & self.CLKSOURCE_MASK)
+
+    def armPreScope(self):
+        """Called before scope trigger is armed"""
+        if self.findParam('ssarm').value() == 1:
+            self.glitchArm()
+
+    def armPostScope(self):
+        """Called after scope trigger is armed"""
+        if self.findParam('ssarm').value() == 2:
+            self.glitchArm()
 
