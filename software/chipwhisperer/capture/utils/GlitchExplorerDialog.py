@@ -289,7 +289,7 @@ class GlitchExplorerDialog(QDialog):
 
         self.table.insertRow(0)
 
-        outdata = QTableWidgetItem(newdata["output"])
+        outdata = QTableWidgetItem(repr(newdata["output"]))
 
         if newdata["success"]:
             outdata.setBackground(QBrush(QColor(0,255,0)))
