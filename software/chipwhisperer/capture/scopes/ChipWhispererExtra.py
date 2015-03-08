@@ -98,6 +98,14 @@ class ChipWhispererExtra(QObject):
             p.append(self.glitch.params)
         return p
 
+    def armPreScope(self):
+        if self.enableGlitch:
+            self.glitch.armPreScope()
+
+    def armPostScope(self):
+        if self.enableGlitch:
+            self.glitch.armPostScope()
+
     #def testPattern(self):
     #    desired_freq = 38400 * 3
     #    clk = 30E6
