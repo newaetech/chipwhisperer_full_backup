@@ -29,46 +29,12 @@ import usb.core
 import usb.util
 import time
 import chipwhisperer.capture.global_mod as global_mod
+from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_xmega, supported_avr
 
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
-XMEGAMEM_TYPE_APP = 1
-XMEGAMEM_TYPE_BOOT = 2
-XMEGAMEM_TYPE_EEPROM = 3
-XMEGAMEM_TYPE_FUSE = 4
-XMEGAMEM_TYPE_LOCKBITS = 5
-XMEGAMEM_TYPE_USERSIG = 6
-XMEGAMEM_TYPE_FACTORY_CALIBRATION = 7
-
-class XMEGA128A4U(object):
-    signature = [0x1e, 0x97, 0x46]
-    name = "XMEGA128A4U"
-
-    memtypes = {
-       "signature":{"offset":0x1000090, "size":3},
-       "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
-       "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
-       "fuse1":{"offset":0x8f0021, "size":1},
-       "fuse2":{"offset":0x8f0022, "size":1},
-       "fuse4":{"offset":0x8f0024, "size":1},
-       "fuse5":{"offset":0x8f0025, "size":1},
-     }
-
-class XMEGA128D4U(object):
-    signature = [0x1e, 0x97, 0x47]
-    name = "XMEGA128D4U"
-
-    memtypes = {
-       "signature":{"offset":0x1000090, "size":3},
-       "flash":{"offset":0x0800000, "size":0x00022000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
-       "eeprom":{"offset":0x08c0000, "size":0x0800, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
-       "fuse1":{"offset":0x8f0021, "size":1},
-       "fuse2":{"offset":0x8f0022, "size":1},
-       "fuse4":{"offset":0x8f0024, "size":1},
-       "fuse5":{"offset":0x8f0025, "size":1},
-     }
 
 class XMEGAPDI(object):
     """
@@ -342,8 +308,9 @@ class XMEGAPDI(object):
     def setChip(self, chiptype):
         self._chip = chiptype
 
-class ATMega328P(object):
-    
+class AVRBase(object):
+    name = "INVALID DEVICE"
+    signature = [0xFF, 0xFF, 0xFF]
     timeout = 200
     stabdelay = 100
     cmdexedelay = 25
@@ -356,7 +323,73 @@ class ATMega328P(object):
     pollmethod = 1
 
     memtypes = {
-       "flash":{"offset":0, "size":32768, "page_size":128},
+       "flash":{"offset":0, "size":32768, "pagesize":128},
+       "eeprom":{"offset":0, "size":1024, "pagesize":4}
+     }
+
+class ATMega328P(AVRBase):
+    name = "ATMega328P"
+    signature = [0x1e, 0x95, 0x0f]
+    memtypes = {
+       "flash":{"offset":0, "size":32768, "pagesize":128},
+       "eeprom":{"offset":0, "size":1024, "pagesize":4}
+     }
+
+class ATMega328(AVRBase):
+    name = "ATMega328"
+    signature = [0x1e, 0x95, 0x14]
+    memtypes = {
+       "flash":{"offset":0, "size":32768, "pagesize":128},
+       "eeprom":{"offset":0, "size":1024, "pagesize":4}
+     }
+
+
+class ATMega168PA(AVRBase):
+    name = "ATMega168PA"
+    signature = [0x1e, 0x94, 0x0B]
+    memtypes = {
+       "flash":{"offset":0, "size":16384, "pagesize":128},
+       "eeprom":{"offset":0, "size":512, "pagesize":4}
+     }
+
+class ATMega168A(AVRBase):
+    name = "ATMega168A"
+    signature = [0x1e, 0x94, 0x06]
+    memtypes = {
+       "flash":{"offset":0, "size":16384, "pagesize":128},
+       "eeprom":{"offset":0, "size":512, "pagesize":4}
+     }
+
+class ATMega88PA(AVRBase):
+    name = "ATMega88PA"
+    signature = [0x1e, 0x93, 0x0F]
+    memtypes = {
+       "flash":{"offset":0, "size":8192, "pagesize":64},
+       "eeprom":{"offset":0, "size":512, "pagesize":4}
+     }
+
+class ATMega88A(AVRBase):
+    name = "ATMega88A"
+    signature = [0x1e, 0x93, 0x0A]
+    memtypes = {
+       "flash":{"offset":0, "size":8192, "pagesize":64},
+       "eeprom":{"offset":0, "size":512, "pagesize":4}
+     }
+
+class ATMega48PA(AVRBase):
+    signature = [0x1e, 0x92, 0x0A]
+    name = "ATMega48PA"
+    memtypes = {
+       "flash":{"offset":0, "size":4096, "pagesize":64},
+       "eeprom":{"offset":0, "size":256, "pagesize":4}
+     }
+
+class ATMega48A(AVRBase):
+    signature = [0x1e, 0x92, 0x05]
+    name = "ATMega48A"
+    memtypes = {
+       "flash":{"offset":0, "size":4096, "pagesize":64},
+       "eeprom":{"offset":0, "size":256, "pagesize":4}
      }
 
 
@@ -428,8 +461,8 @@ class AVRISP(object):
         self._usbdev = usbdev
         self._timeout = timeout
 
-        # TEMP
-        self._chip = ATMega328P()
+        # TEMP, user should select correct one
+        self._chip = supported_avr[0]
 
     def _avrDoWrite(self, cmd, data=[], checkStatus=True):
         """
@@ -467,8 +500,14 @@ class AVRISP(object):
             self._avrDoWrite(self.ISP_CMD_ENTER_PROGMODE_ISP, [self._chip.timeout, self._chip.stabdelay, self._chip.cmdexedelay, self._chip.synchloops,
                                                                self._chip.bytedelay, self._chip.pollvalue, self._chip.pollindex, 0xAC, 0x53, 0, 0])
         else:
-            self._avrDoWrite(self.ISP_CMD_LEAVE_PROGMODE_ISP, [self._chip.predelay, self._chip.postdelay])
-            global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+            try:
+                self._avrDoWrite(self.ISP_CMD_LEAVE_PROGMODE_ISP, [self._chip.predelay, self._chip.postdelay])
+            except:
+                # Always disable ISP mode lines!
+                global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+                raise
+
+
 
     def _readFuseLockSig(self, cmd, cmds, respindx=4):
         if len(cmds) != 4:
@@ -483,12 +522,79 @@ class AVRISP(object):
         return status[2]
 
     def readSignature(self):
+        """
+        Read the 3-byte signature sequence from the AVR.
+
+        Returns:
+            list.
+        Raises:
+            IOError                                
+        """
         sigbytes = [0, 0, 0]
         for i in range(0, 3):
             sigbytes[i] = self._readFuseLockSig(self.ISP_CMD_READ_SIGNATURE_ISP, [0x30, 0x00, i, 0x00], 4)
         return sigbytes
 
+    def readFuse(self, fusename):
+        """
+        Read single byte of fuse memory
+        
+        Args:
+            fusename (str): One of 'low', 'high', or 'extended'
+        Returns:
+            Fuse value
+        Raises:
+            IOError, ValueError                             
+        """
+
+        if fusename == "low":
+            command = [0x50, 0x00, 0x00, 0x00]
+        elif fusename == "high":
+            command = [0x58, 0x08, 0x00, 0x00]
+        elif fusename == "extended":
+            command = [0x50, 0x08, 0x00, 0x00]
+        else:
+            raise ValueError("Invalid fusename: %s" % fusename)
+
+        return self._readFuseLockSig(self.ISP_CMD_READ_FUSE_ISP, command, 4)
+
+    def readLock(self, lock):
+        """
+        Read lock byte and return value.
+        """
+        return self._readFuseLockSig(self.ISP_CMD_READ_LOCK_ISP, [0xAC, 0xE0, 0x00, 0x00], 4)
+
+
+    def writeFuse(self, fusename, value):
+        """
+        Write single byte of fuse memory
+        
+        Args:
+            fusename (str): One of 'low', 'high', or 'extended'
+            value (byte): Value to write
+        Raises:
+            IOError, ValueError                             
+        """
+        if fusename == "low":
+            command = [0xAC, 0xA0, 0x00, value]
+        elif fusename == "high":
+            command = [0xAC, 0xA8, 0x00, value]
+        elif fusename == "extended":
+            command = [0xAC, 0xA4, 0x00, value]
+        else:
+            raise ValueError("Invalid fusename: %s" % fusename)
+        self._avrDoWrite(self.ISP_CMD_PROGRAM_FUSE_ISP, data=command)
+
+    def writeLock(self, value):
+        """
+        Write lock byte value.
+        """
+        self._avrDoWrite(self.ISP_CMD_PROGRAM_LOCK_ISP, data=[0xAC, 0xE0, 0x00, value])
+
     def eraseChip(self):
+        """
+        Perform chip erase
+        """
         # the AC 80 00 00 section comes from datasheet for chip erase, not sure if different?
         self._avrDoWrite(self.ISP_CMD_CHIP_ERASE_ISP,
                          [25,  # erase delay in mS
@@ -569,7 +675,7 @@ class AVRISP(object):
         endptsize = 64
         start = 0
         end = endptsize
-        pagesize = memspec["page_size"]
+        pagesize = memspec["pagesize"]
 
         if addr % pagesize:
             print "WARNING: You appear to be writing to an address that is not page aligned, you will probably write the wrong data"
@@ -616,6 +722,9 @@ class AVRISP(object):
             self._avrDoWrite(self.ISP_CMD_PROGRAM_FLASH_ISP, data=infoblock)
             
             memwritten += epwritten
+
+    def setChip(self, chiptype):
+        self._chip = chiptype
 
 class USART(object):
     """
@@ -1043,7 +1152,7 @@ if __name__ == '__main__':
     if xmegaprogram:
         xmega = XMEGAPDI()
         xmega.setUSB(cwtestusb._usbdev)
-        xmega.setChip(XMEGA128A4U())
+        xmega.setChip(supported_xmega[0])
 
         try:
             # Worst-case is 75mS for chip erase, so give us some head-room
