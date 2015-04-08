@@ -294,7 +294,7 @@ class EncryptionStatusMonitor(QDialog):
         
         self._cntops += 1
 
-        if ct == expected:
+        if ct and expected and list(ct) == list(expected):
             self._okops += 1
         else:
             self._failops += 1
