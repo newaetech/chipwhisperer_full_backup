@@ -4,7 +4,7 @@
 module cwlite_interface(  
     input wire         clk_usb,
       
-    output wire        GPIO_LED1,
+    //GPIO_LED1 was removed from final version of CW-Lite design
     output wire        GPIO_LED2,
     output wire        GPIO_LED3,
     output wire        GPIO_LED4,
@@ -33,12 +33,12 @@ module cwlite_interface(
 	 input wire       target_PDID,
 	 input wire       target_PDIC,
 	 
-	 /* Spare Lines - again not used right now, but avoid unintential pull-up/downs */
-	 input wire 		target_nRST,
+	 /* Spare Lines - AVR Programming */
+	 output wire 		target_nRST,
 	 input wire 		target_MISO,
-	 input wire 		target_MOSI,
-	 input wire 		target_SCK,
-	 
+	 output wire 		target_MOSI,
+	 output wire 		target_SCK,
+	 	 
 	 /* Target IO Interfaces */
 	 inout wire			target_io4, // Normally trigger
 	 inout wire			target_io3, // Normally Spare / SmartCard Comms
@@ -48,13 +48,27 @@ module cwlite_interface(
 	 inout wire			target_hs2, // Clock to victim device
 
 	 output wire		glitchout_highpwr, // high-speed glitch output
-	 output wire		glitchout_lowpwr, // high-speed glitch output
+	 output wire		glitchout_lowpwr, // high-speed glitch output 
 	 
 	 /* Various connections to USB Chip */
 	 input wire			USB_ser0_tx_i,
-	 output wire		USB_ser0_rx_o	 
+	 output wire		USB_ser0_rx_o,
+
+	 input wire			USB_spi0_sck_i,
+	 input wire 		USB_spi0_mosi_i,
+	 output wire 		USB_spi0_miso_o,
+	 input wire			USB_spi0_cs0,
+	 input wire			USB_treset_i,
+	 
+	 input wire			USB_spare2, //LCD_D/C Pin (Data/Command)
+	 
+	 output wire		ext_mosi, //Pin 4 of external header
+	 input wire			ext_miso, //Pin 3 of external header
+	 output wire		ext_sck,  //Pin 2 of external header
+	 output wire		lcd_cs,
+	 output wire		lcd_dc
+	 //output wire		lcd_rst
 	 );
-	
 	
 	/* PDI Programming done from SAM, must float these wires
 	   or programming will fail from weak pull-down on FPGA */
@@ -73,9 +87,6 @@ module cwlite_interface(
 		IBUFG IBUFG_inst (
 	.O(clk_usb_buf),
 	.I(clk_usb) );
-
-	assign GPIO_LED1 = 1'b0;
-	assign GPIO_LED5 = 1'b0;
 	
 	wire reg_rst;
 	wire [5:0] reg_addr;
@@ -97,6 +108,7 @@ module cwlite_interface(
 	wire adv_trigger;
 	wire extclk_mux;
 	wire clkgen, glitchclk, adc_sample_clk;
+	wire enable_avrprog;
 
 	openadc_interface oadc(
 		.reset_i(reset_i),
@@ -111,9 +123,10 @@ module cwlite_interface(
 		.USB_CEn(USB_CEn),
 		.USB_ALEn(USB_ALEn),
 	
-		.LED_hbeat(GPIO_LED2),
+		.LED_hbeat(GPIO_LED5),
 		.LED_armed(GPIO_LED3),
-		.LED_capture(GPIO_LED4),
+		.LED_ADCDCMUnlock(GPIO_LED2),
+		.LED_CLKGENDCMUnlock(GPIO_LED4),
 		.ADC_Data(ADC_Data),
 		.ADC_OR(ADC_OR),
 		.ADC_clk(ADC_clk),
@@ -180,6 +193,8 @@ module cwlite_interface(
 		.hsglitcha_o(glitchout_highpwr),
 		.hsglitchb_o(glitchout_lowpwr),
 		
+		.enable_avrprog(enable_avrprog),
+		
 		.uart_tx_i(USB_ser0_tx_i),
 		.uart_rx_o(USB_ser0_rx_o),
 		.usi_out_i(1'b0),
@@ -229,7 +244,16 @@ module cwlite_interface(
 	assign reg_datai_reconfig = 'd0;
 `endif
 	
-		
+	 assign target_nRST = (enable_avrprog) ? USB_treset_i : 1'bZ;
+	 assign target_MOSI = (enable_avrprog) ? USB_spi0_mosi_i : 1'bZ;
+	 assign target_SCK = (enable_avrprog) ? USB_spi0_sck_i : 1'bZ;
+	 assign USB_spi0_miso_o = (enable_avrprog) ? target_MISO : ext_miso;	
+	 
+	 assign ext_sck = USB_spi0_sck_i;
+	 assign ext_mosi = USB_spi0_mosi_i;
+	 assign lcd_cs = USB_spi0_cs0;
+	 assign lcd_dc = USB_spare2;
+			
 	/*
 	assign ila_trigbus[7:0] = USB_D;
 	assign ila_trigbus[15:8] = USB_Addr;

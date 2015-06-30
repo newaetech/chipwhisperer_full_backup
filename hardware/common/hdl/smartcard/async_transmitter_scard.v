@@ -5,7 +5,7 @@
 
 `include "includes.v"
 
-module async_transmitter_scard(clk, rst, TxD_start, TxD_data, TxD, TxD_busy);
+module async_transmitter_scard(clk, rst, parity_even, two_stopbits, TxD_start, TxD_data, TxD, TxD_busy);
 input clk, rst, TxD_start;
 input [7:0] TxD_data;
 output TxD, TxD_busy;

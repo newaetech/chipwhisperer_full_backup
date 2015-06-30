@@ -143,10 +143,12 @@ module reg_serialtarget(
 	      rxfifo_rd <= 1'b0;
 	  end
 	 end
-	 
+	 	 
+	 reg [7:0] txfifo_data;
 	 always @(posedge clk) begin
-	  if ((reg_write) & (reg_address == `TARGSERIALDATA_ADDR)) begin
+	  if ((reg_write) & (reg_address == `TARGSERIALDATA_ADDR)) begin	  
 			txfifo_wr <= 1'b1;			
+			txfifo_data <= reg_datai;
 	  end else begin
 			txfifo_wr <= 1'b0;
 	  end
@@ -225,7 +227,7 @@ module reg_serialtarget(
 	fifo_target_tx tx_fifo (
     .clk(clk),
     .rst(reset_i),
-    .din(reg_datai),
+    .din(txfifo_data),
     .wr_en(txfifo_wr),
     .rd_en(fifo_go),
     .dout(tx_data),

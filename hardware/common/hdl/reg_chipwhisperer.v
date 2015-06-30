@@ -72,6 +72,8 @@ module reg_chipwhisperer(
 	output			hsglitcha_o,
 	output			hsglitchb_o,
 	
+	output			enable_avrprog,
+	
 	input				uart_tx_i,
 	output			uart_rx_o,
 	
@@ -172,8 +174,12 @@ module reg_chipwhisperer(
 			     0  : Disabled
 				  1  : Glitch Module
 		
-		RESERVED:
-		  [ X X   X     X    X    X  X   X ]
+		EXTRA:
+		  [ X X   X     X    X    X  X   A ]
+		  
+		  A = (Bit 0) AVR Programming Enable
+				  0  : Disabled (High-Z)
+				  1  : Enabled (Connected to SAM3U)
 		  
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
@@ -290,6 +296,8 @@ module reg_chipwhisperer(
 		.S(1'b0)    // 1-bit set input
 	);
 	
+	
+	 assign enable_avrprog = registers_iorouting[40];
 	
 	 //TODO: Should use a mux?
 	 /*
