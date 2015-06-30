@@ -98,6 +98,14 @@ class ChipWhispererExtra(QObject):
             p.append(self.glitch.params)
         return p
 
+    def armPreScope(self):
+        if self.enableGlitch:
+            self.glitch.armPreScope()
+
+    def armPostScope(self):
+        if self.enableGlitch:
+            self.glitch.armPostScope()
+
     #def testPattern(self):
     #    desired_freq = 38400 * 3
     #    clk = 30E6
@@ -299,6 +307,15 @@ class CWExtraSettings(object):
         else:
             raise ValueError("Invalid glitch output: %s" % str(out))
         return resp[4] & (1 << bn)
+
+    def setAVRISPMode(self, enabled):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if enabled:
+            data[5] |= 0x01
+        else:
+            data[5] &= ~(0x01)
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
     def setPin(self, enabled, pin):
         current = self.getPins()

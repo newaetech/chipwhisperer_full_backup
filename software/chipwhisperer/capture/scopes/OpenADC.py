@@ -83,7 +83,9 @@ import chipwhisperer.capture.scopes.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
+from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
+import chipwhisperer.capture.global_mod as global_mod
 
 class OpenADCInterface_NAEUSBChip(QWidget):
     paramListUpdated = Signal(list)
@@ -140,13 +142,19 @@ class OpenADCInterface_NAEUSBChip(QWidget):
                                statusTip='Download Firmware+FPGA To Hardware',
                                triggered=self.CWFirmwareConfig.loadRequired)
         
-        self.cwliteXMEGA = XMEGAProgrammerDialog(self)
+        self.cwliteXMEGA = XMEGAProgrammerDialog(global_mod.main_window)
 
         self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
                                        statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
                                        triggered=self.cwliteXMEGA.show)
 
-        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct]
+        self.cwliteAVR = AVRProgrammerDialog(global_mod.main_window)
+
+        self.avrProgramAct = QAction('CW-Lite AVR Programmer', self,
+                                       statusTip='Open AVR Programmer (ChipWhisperer-Lite Only)',
+                                       triggered=self.cwliteAVR.show)
+
+        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct, self.avrProgramAct]
 
     def con(self):
         if self.ser == None:
@@ -168,6 +176,7 @@ class OpenADCInterface_NAEUSBChip(QWidget):
             self.CWFirmwareConfig.loadRequired()
 
             self.cwliteXMEGA.setUSBInterface(dev)
+            self.cwliteAVR.setUSBInterface(dev)
 
             self.ser = dev
 
@@ -651,6 +660,8 @@ class OpenADCInterface(QObject):
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter, cwtype=cwtype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
+                global_mod.chipwhisperer_extra = self.advancedSettings
+
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter, self.parent)
                     self.advancedSAD.setOpenADC(self.qtadc)
@@ -677,7 +688,9 @@ class OpenADCInterface(QObject):
 
     def arm(self):
         # self.advancedSettings.glitch.resetDCMs()
+        self.advancedSettings.armPreScope()
         self.qtadc.arm()
+        self.advancedSettings.armPostScope()
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""

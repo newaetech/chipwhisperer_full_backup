@@ -27,6 +27,9 @@
 
 
 active_scope = [None]
+main_window = None
 
 
+# Connection to 'chipwhisperer extra'
+chipwhisperer_extra = None
 

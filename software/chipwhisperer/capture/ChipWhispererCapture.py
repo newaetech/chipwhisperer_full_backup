@@ -294,7 +294,7 @@ class EncryptionStatusMonitor(QDialog):
         
         self._cntops += 1
 
-        if ct == expected:
+        if ct and expected and list(ct) == list(expected):
             self._okops += 1
         else:
             self._failops += 1
@@ -307,6 +307,7 @@ class EncryptionStatusMonitor(QDialog):
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4
     def __init__(self, rootdir="."):
+        global_mod.main_window = self
         super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"), icon="cwiconC")
         self.console = self.addConsole()
 
