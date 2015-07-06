@@ -1,7 +1,7 @@
 .. _hardware:
 
-Hardware Description
-========================================
+Hardware Setup
+==============
 
 Contents:
 

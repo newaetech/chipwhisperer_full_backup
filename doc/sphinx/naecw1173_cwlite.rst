@@ -1,5 +1,5 @@
 .. _naecw1173_cwlite:
 
-ChipWhisperer Capture Rev2
-=============================================
+CW1173: ChipWhisperer-Lite Board
+================================
 

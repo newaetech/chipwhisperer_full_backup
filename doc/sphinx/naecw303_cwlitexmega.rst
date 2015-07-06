@@ -1,5 +1,5 @@
 .. _naecw303_cwlitexmega:
 
-ChipWhisperer Capture Rev2
-=============================================
+CW303 Target: CW-Lite XMEGA Target Section
+==========================================
 

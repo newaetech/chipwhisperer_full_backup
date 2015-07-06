@@ -1,7 +1,7 @@
 .. _newaedocs:
 
-Hardware Description
-========================================
+NewAE Hardware Products
+=======================
 
 Contents:
 
