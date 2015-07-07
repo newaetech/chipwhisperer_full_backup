@@ -5,7 +5,6 @@ NET clk_usb TNM_NET = clk_usb;
 TIMESPEC TS_clk_usb = PERIOD clk_usb 96000 kHz;
 NET "clk_usb" CLOCK_DEDICATED_ROUTE = FALSE;
 
-NET GPIO_LED1         LOC = P121  |IOSTANDARD = LVCMOS33;
 NET GPIO_LED2         LOC = P140  |IOSTANDARD = LVCMOS33;
 NET GPIO_LED3         LOC = P141  |IOSTANDARD = LVCMOS33;
 NET GPIO_LED4         LOC = P142  |IOSTANDARD = LVCMOS33;
@@ -61,10 +60,14 @@ NET USB_CEn				 LOC=P29    |IOSTANDARD = LVCMOS33;
 
 #NET USB_SPARE0			 LOC=P23		|IOSTANDARD = LVCMOS33;
 #NET USB_SPARE1			 LOC=P26		|IOSTANDARD = LVCMOS33;
-#NET USB_SPARE2			 LOC=P32    |IOSTANDARD = LVCMOS33;
 
 NET USB_ser0_tx_i    LOC=P137    |IOSTANDARD = LVCMOS33;
 NET USB_ser0_rx_o    LOC=P134    |IOSTANDARD = LVCMOS33;
+
+NET USB_spi0_sck_i   LOC=P70     |IOSTANDARD = LVCMOS33;
+NET USB_spi0_mosi_i  LOC=P65     |IOSTANDARD = LVCMOS33;
+NET USB_spi0_miso_o  LOC=P50     |IOSTANDARD = LVCMOS33;
+NET USB_treset_i     LOC=P138    |IOSTANDARD = LVCMOS33;
 
 NET target_io1			LOC=P87       |IOSTANDARD = LVCMOS33;
 NET target_io2			LOC=P84       |IOSTANDARD = LVCMOS33;
@@ -83,6 +86,17 @@ NET target_hs2			LOC=P95       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 
 NET glitchout_highpwr LOC=P66       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=24;
 NET glitchout_lowpwr LOC=P67       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=12;
+
+#Inputs
+NET USB_spi0_cs0		LOC=P139      |IOSTANDARD = LVCMOS33 | PULLUP;
+NET USB_spare2			LOC=P32       |IOSTANDARD = LVCMOS33; //LCD_DC
+
+#Outputs
+NET ext_sck          LOC=P111      |IOSTANDARD = LVCMOS33;
+NET ext_miso         LOC=P112      |IOSTANDARD = LVCMOS33 | PULLUP;
+NET ext_mosi         LOC=P114      |IOSTANDARD = LVCMOS33;
+NET lcd_cs				LOC=P115      |IOSTANDARD = LVCMOS33;
+NET lcd_dc           LOC=P116      |IOSTANDARD = LVCMOS33; 
 
 
 #This route ends up having S&H problems. However we don't care as it gets toggled very infrequently
@@ -109,27 +123,28 @@ PIN "reg_chipwhisperer/clkgenfx_mux.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #placement that works OK, I haven't actually hand-tuned it. Without this
 #fixed placement the design sometimes fails implementation as ISE uses
 #some incorrect placement.
-INST "clk_usb_buf_BUFG" LOC="BUFGMUX_X2Y4";
-INST "oadc/ADC_clk_sample_BUFG" LOC = "BUFGMUX_X2Y11";
-INST "reg_clockglitch/gc/dcm1_clk_BUFG" LOC="BUFGMUX_X2Y9";
-INST "reg_clockglitch/gc/dcm2_clk_BUFG" LOC="BUFGMUX_X2Y12";
-INST "oadc/genclocks/adcclk_0_mux" LOC="BUFGMUX_X2Y2";
-INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X3Y8";
-INST "oadc/genclocks/dcm_clk_BUFG" LOC="BUFGMUX_X2Y10";
-INST "oadc/genclocks/adcclk_mux" LOC="BUFGMUX_X3Y6";
-INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X2Y3";
-INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y16";
-INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y14";
-INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
-INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
-INST "oadc/genclocks/DCM_extclock_gen" LOC="DCM_X0Y2";
-INST "oadc/genclocks/DCM_CLKGEN_inst" LOC="DCM_X0Y3";
+#INST "clk_usb_buf_BUFG" LOC="BUFGMUX_X2Y4";
+#INST "oadc/ADC_clk_sample_BUFG" LOC = "BUFGMUX_X2Y11";
+#INST "reg_clockglitch/gc/dcm1_clk_BUFG" LOC="BUFGMUX_X2Y9";
+#INST "reg_clockglitch/gc/dcm2_clk_BUFG" LOC="BUFGMUX_X2Y12";
+#INST "oadc/genclocks/adcclk_0_mux" LOC="BUFGMUX_X2Y2";
+#INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X3Y8";
+#INST "oadc/genclocks/dcm_clk_BUFG" LOC="BUFGMUX_X2Y10";
+#INST "oadc/genclocks/adcclk_mux" LOC="BUFGMUX_X3Y6";
+#INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X2Y3";
+#INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y16";
+#INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y14";
+#INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
+#INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
+#INST "oadc/genclocks/DCM_extclock_gen" LOC="DCM_X0Y2";
+#INST "oadc/genclocks/DCM_CLKGEN_inst" LOC="DCM_X0Y3";
 
 #INST "reg_clockglitch/gc/*"  AREA_GROUP = glitchclk_area ; #clk2glitch_inst
 #AREA_GROUP glitchclk_area RANGE="CLOCKREGION_X0Y0:CLOCKREGION_X0Y1"; 
 
 PIN "reg_clockglitch/gc/dcm1_clk_out_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #PIN "reg_clockglitch/gc/BUFG_dcm2_clkout_inst.O" CLOCK_DEDICATED_ROUTE = FALSE;
+NET "ADC_clk_fb" CLOCK_DEDICATED_ROUTE = FALSE;
 
 #Note: ISE generates a too-strict derived constraints... ADC signals only good up to 100 MHz due
 #to ADC requirements. But if the input is 100 MHz, this signal would be at 400 MHz. The
