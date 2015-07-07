@@ -1,7 +1,7 @@
 .. _hwmultitarget:
 
-MultiTarget Victim Board
-========================
+CW301 Target: MultiTarget Victim Board
+======================================
 
 Layout of the Board
 -------------------

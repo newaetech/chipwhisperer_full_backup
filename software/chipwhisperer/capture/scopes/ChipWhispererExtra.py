@@ -187,6 +187,15 @@ class CWExtraSettings(object):
             clksrc["PLL Input"] = self.CLOCK_PLL
 
         clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
+        # clksrc["Fake"] = 0
+        
+        #Added July 6/2015, Release 0.11RC1
+        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
+        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
+        if hasFPAFPB==False and hasPLL==False:
+            self.forceclkin = True
+        else:
+            self.forceclkin = False
 
 
         self.param[0]["children"].extend([
@@ -231,6 +240,11 @@ class CWExtraSettings(object):
 
     def con(self, oa):
         self.oa = oa
+        
+        # TEMPORARY PATCH: REMOVE ONCE FPGA FIXED
+        #Over-ride default for CW-Lite
+        if self.forceclkin:
+            self.setClockSource(self.CLOCK_RTIOIN)
 
     def setGPIOState(self, state, IONumber):
         if state is not None:

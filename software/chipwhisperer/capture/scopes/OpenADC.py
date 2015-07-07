@@ -688,9 +688,11 @@ class OpenADCInterface(QObject):
 
     def arm(self):
         # self.advancedSettings.glitch.resetDCMs()
-        self.advancedSettings.armPreScope()
+        if self.advancedSettings:
+            self.advancedSettings.armPreScope()
         self.qtadc.arm()
-        self.advancedSettings.armPostScope()
+        if self.advancedSettings:
+            self.advancedSettings.armPostScope()
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""

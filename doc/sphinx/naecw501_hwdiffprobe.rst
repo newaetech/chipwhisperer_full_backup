@@ -1,4 +1,4 @@
-.. _hwdiffprobe:
+.. _naecw501_hwdiffprobe:
 
 Differential Probe
 ========================================
