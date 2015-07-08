@@ -17,8 +17,12 @@ You may already have Python installed, in which case you can skip some of these 
 the correct version (2.7.x). Python 3.x will not work with this codebase.
 
 
-Installing Python via WinPython
-"""""""""""""""""""""""""""""""
+
+.. _installingwinpython:
+
+Installing Python via WinPython (Recommended)
+"""""""""""""""""""""""""""""""""""""""""""""
+
 The recommend method of installing Python is to use a distribution called `WinPython <http://winpython.sourceforge.net/>`__. This setup avoids
 installing Python globally, and includes most of the software you will need. In addition it makes it possible to install 32-bit and 64-bit
 Python on the same system with minimal problems. This can be very useful as the 64-bit version is handy for doing analysis on large data sets.
@@ -50,9 +54,11 @@ Python on the same system with minimal problems. This can be very useful as the 
 
    If you plan on running both 32-bit and 64-bit Python, you should not register them. Instead explicitly call the correct Python by always running the **WinPython Command Prompt.exe**,
    and then calling specific programs (such as CW Capture or Analyzer) from that command prompt.
+   
+5. Jump to :ref:`installingcw` to install ChipWhisperer software.
 
-Installing Python Regularly
-"""""""""""""""""""""""""""
+Installing Python Regularly (Advanced)
+""""""""""""""""""""""""""""""""""""""
 Rather than using the previous distribution, you can install Python into your system path. **DO NOT** follow both of these directions, again
 it's recommended to use the WinPython distribution above.
 
@@ -137,11 +143,13 @@ link simply find the correct driver for your OS Version & install that.
 
 **PYSCARD**: If planning on using a PS/SC smartcard reader (i.e. standard USB-connected reader), you will need to install `pyscard <https://sourceforge.net/projects/pyscard/files/pyscard/ >`__.
 
+.. _installingcw:
+
 Getting & Installing ChipWhisperer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Assuming you've got a working Python installation, the next step is to install & run ChipWhisperer itself. This requires you to get a copy
 of ChipWhisperer, you should download the `Latest Release <https://www.assembla.com/wiki/show/chipwhisperer/ChipWhisperer_Software_Firmware_Releases>`_.
-Download & unzip the file somewhere. Note if you are adventerous you can clone the GIT Repository ``git://git.assembla.com/chipwhisperer.git`` instead,
+Download & unzip the file somewhere. Note if you are adventurous you can clone the GIT Repository ``git://git.assembla.com/chipwhisperer.git`` instead,
 but this **may be broken** so you should start with the latest release instead.
 
 Generally 'somewhere' will become your ChipWhisperer working directory. These examples assume you've chosen ``C:\chipwhisperer`` as your
