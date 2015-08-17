@@ -37,10 +37,10 @@
 #PLATFORM = CW301_XMEGA
 
 #CW-Lite XMEGA Target Device (XMEGA128D4)
-#PLATFORM = CW303
+PLATFORM = CW303
 
 #NOTDUINO Kit (ATMega328P)
-PLATFORM = CW304
+#PLATFORM = CW304
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
