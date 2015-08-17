@@ -1,6 +1,6 @@
 /*
-    This file is part of the AESExplorer Example Targets
-    Copyright (C) 2012 Colin O'Flynn <coflynn@newae.com>
+    This file is part of the ChipWhisperer Example Targets
+    Copyright (C) 2012-2015 NewAE Technology Inc.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,7 +15,6 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #ifndef AES_INDEPENDANT_
 #define AES_INDEPENDANT_
 
@@ -30,10 +29,12 @@
 		0x86,0x9d,0x08,0x28,0x5d,0x2e,0x19,0x3b  
 
 //Some Other Key
-//#define DEFAULT_KEY 0x1f,0x3e,0xa0,0x47,0x76,0x30,0xce,0x21, \
+/*
+#define DEFAULT_KEY 0x1f,0x3e,0xa0,0x47,0x76,0x30,0xce,0x21, \
         0xa2,0xce,0x33,0x4a,0xa7,0x46,0xc2,0xcd, \
         0xc7,0x82,0xdc,0x4c,0x09,0x8c,0x66,0xcb, \
         0xd9,0xcd,0x27,0xd8,0x25,0x68,0x2c,0x81
+*/
 
 #else
 #define KEY_LENGTH 16

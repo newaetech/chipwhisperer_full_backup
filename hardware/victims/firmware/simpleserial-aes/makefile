@@ -1,18 +1,7 @@
 # Hey Emacs, this is a -*- makefile -*-
 #----------------------------------------------------------------------------
-# WinAVR Makefile Template written by Eric B. Weddington, Jörg Wunsch, et al.
 #
-# Released to the Public Domain
-#
-# Additional material for this makefile was written by:
-# Peter Fleury
-# Tim Henigan
-# Colin O'Flynn
-# Reiner Patommel
-# Markus Pfaff
-# Sander Pool
-# Frederik Rouleau
-# Carlos Lamas
+# Makefile for ChipWhisperer SimpleSerial-AES Program
 #
 #----------------------------------------------------------------------------
 # On command line:
@@ -39,46 +28,46 @@
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
 
-# MCU name
-#MCU = atmega48
+######### Specify your platform here
+
+#Multi-Target Board, AVR Device (ATMega328P)
+#PLATFORM = CW301_AVR
+
+#Multi-Target Board, XMEGA Device
+#PLATFORM = CW301_XMEGA
+
+#CW-Lite XMEGA Target Device (XMEGA128D4)
+#PLATFORM = CW303
+
+#NOTDUINO Kit (ATMega328P)
+PLATFORM = CW304
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
 #     processor frequency. You can then use this symbol in your source code to 
 #     calculate timings. Do NOT tack on a 'UL' at the end, this will be done
 #     automatically to create a 32-bit value in your source code.
-#     Typical values are:
-#         F_CPU =  1000000
-#         F_CPU =  1843200
-#         F_CPU =  2000000
-#         F_CPU =  3686400
-#         F_CPU =  4000000
-#         F_CPU =  7372800
-#         F_CPU =  8000000
-#         F_CPU = 11059200
-#         F_CPU = 14745600
-#         F_CPU = 16000000
-#         F_CPU = 18432000
-#         F_CPU = 20000000
 F_CPU = 7372800
 #F_CPU = 2000000
+#F_CPU = 16000000
+
+#Pull in require files
+HALPATH = ../hal
+include $(HALPATH)/PLATFORM_INCLUDE.mk
 
 # Output format. (can be srec, ihex, binary)
 FORMAT = ihex
 
-
 # Target file name (without extension).
-TARGET = simpleserial_nocrypt
-
+TARGET = simpleserial-aes
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
 OBJDIR = objdir
 
-
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c uart.c
+SRC = $(TARGET).c aes-independant.c $(HALSRC)
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = 
@@ -93,9 +82,46 @@ CPPSRC =
 #     care about how the name is spelled on its command-line.
 ASRC = 
 
+#########################################################################
+######################### CHOOSE CRYPTO LIB #############################
+#Uncomment the lines below for whichever crypto lib you'd like to attack
+
+########
+#From http://avrcryptolib.das-labor.org, C Version
+#*This is the recommended first version to test*
+CRYPTO_LIB = avrcryptolib/
+SRC += aes_enc.c aes_keyschedule.c aes_sbox.c aes128_enc.c
+ASRC += gf256mul.S
+CDEFS += -DAVRCRYPTOLIB
+VPATH += :../crypto/$(CRYPTO_LIB)/aes:../crypto/$(CRYPTO_LIB)/gf256mul
+EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
+
+########
+#From http://cs.ucsb.edu/~koc/cs178/projects/JT/avr_aes.html modified to be timing-independant
+#CRYPTO_LIB = straightforward-aes
+#SRC += aes.c
+#CDEFS += -DSIMPLEAES
+
+########
+#From http://avrcryptolib.das-labor.org, ASM Version
+#CRYPTO_LIB = avr-crypto-lib/aes
+#ASRC += aes_enc-asm.S \
+#       aes_keyschedule-asm.S \
+#	   aes_sbox-asm.S
+#CDEFS += -DAVRCRYPTOLIB  
+
+########
+#From http://www.dpacontest.org/v4/rsm_doc.php which is a masked version
+#of AES-256
+#CRYPTO_LIB = dpav4
+#SRC += aes_enc.c aes_keyschedule.c
+#ASRC += gf256mul.S aes_sbox-asm.S
+#CDEFS += -DDPAV4
 
 ##########################################################################
 ##########################################################################
+
+VPATH += :../crypto/:./
 
 # Optimization level, can be [0, 1, 2, 3, s]. 
 #     0 = turn off optimization. s = optimize for size.
@@ -114,7 +140,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS = ../crypto/$(CRYPTO_LIB) ../crypto
+EXTRAINCDIRS += ../crypto ../hal
 
 
 # Compiler flag to set the C Standard level.
@@ -400,7 +426,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: validate clean_objs begin gccversion sizebefore build sizeafter end
+all: clean_objs begin gccversion sizebefore build sizeafter end
 
 # Change the build target to build a HEX file or a library.
 build: elf hex eep lss sym
@@ -425,6 +451,8 @@ begin:
 	@echo $(MSG_BEGIN)
 
 end:
+	@echo Built for platform $(PLTNAME)
+	@echo
 	@echo $(MSG_END)
 	@echo
 
@@ -439,7 +467,7 @@ sizebefore:
 
 sizeafter:
 	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
-	2>/dev/null; echo; fi
+	2>/dev/null; fi
 
 
 
@@ -617,17 +645,9 @@ $(shell mkdir $(OBJDIR) 2>/dev/null)
 
 # Include the dependency files.
 -include $(shell mkdir .dep 2>/dev/null) $(wildcard .dep/*)
-
-
-validate:
-    ifeq ($(strip $(MCU)),)
-		@echo "You must run with MCU=, e.g.:" 
-		@echo "make MCU=atmega328p"
-		@exit 1
-    endif
-        
+    
 
 # Listing of phony targets.
 .PHONY : all begin finish end sizebefore sizeafter gccversion \
 build elf hex eep lss sym coff extcoff \
-clean clean_list clean_print clean_objs program debug gdb-config validate
+clean clean_list clean_print clean_objs program debug gdb-config

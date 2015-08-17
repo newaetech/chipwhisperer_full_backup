@@ -1,6 +1,6 @@
 /*
     This file is part of the ChipWhisperer Example Targets
-    Copyright (C) 2014 NewAE Technology Inc.
+    Copyright (C) 2012-2015 NewAE Technology Inc.
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -16,12 +16,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <avr/io.h>
-#include <util/delay.h>
+#include "hal.h"
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "uart.h"
+#include "aes-independant.h"
 
 #define IDLE 0
 #define KEY 1
@@ -55,41 +54,31 @@ void hex_print(const uint8_t * in, int len, char *out)
 		out[j] = 0;
 }
 
-#define KEY_LENGTH 16
-#define BUFLEN (KEY_LENGTH*4)
+#define BUFLEN KEY_LENGTH*4
 
-//Buffers for decoding
+uint8_t memory[BUFLEN];
 char asciibuf[BUFLEN];
-uint8_t pt[KEY_LENGTH];
-uint8_t tmp[KEY_LENGTH];
-
-
-//We want to use the AVR ADC-pins, since they have a seperate power rail
-#define trigger_setup() DDRC |= 0x01
-#define trigger_high()  PORTC |= 0x01
-#define trigger_low()   PORTC &= ~(0x01)
-
+uint8_t pt[16];
+//Default key
+uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
 
 int main
 	(
 	void
 	)
 	{
-	init_uart0();
-	
-	/* For 2 MHz crystal use this hack */
-	//BAUD0L_REG = 12;
-	
+    platform_init();
+	init_uart();	
 	trigger_setup();
-	  
+	
  	/* Uncomment this to get a HELLO message for debug */
 	/*
-	output_ch_0('h');
-	output_ch_0('e');
-	output_ch_0('l');
-	output_ch_0('l');
-	output_ch_0('o');
-	output_ch_0('\n');
+	putch('h');
+	putch('e');
+	putch('l');
+	putch('l');
+	putch('o');
+	putch('\n');
 	*/
 			
 	/* Super-Crappy Protocol works like this:
@@ -109,15 +98,15 @@ int main
 	char c;
 	int ptr = 0;
     
+	//Initial key
+	aes_indep_init();
+	aes_indep_key(tmp);
+
 	char state = 0;
-	 
-#ifdef VARYING_CLOCK
-	uint8_t newosc;
-#endif
 	 
 	while(1){
 	
-		c = input_ch_0();
+		c = getch();
 		
 		if (c == 'x') {
 			ptr = 0;
@@ -140,12 +129,9 @@ int main
 		
 		else if (state == KEY) {
 			if ((c == '\n') || (c == '\r')) {
-				asciibuf[ptr] = 0;                
+				asciibuf[ptr] = 0;
 				hex_decode(asciibuf, ptr, tmp);
-				
-                //If you want to use 'key' for something do so here
-                //Decoded value held in 'tmp' register
-                
+				aes_indep_key(tmp);
 				state = IDLE;
 			} else {
 				asciibuf[ptr++] = c;
@@ -157,31 +143,19 @@ int main
 				asciibuf[ptr] = 0;
 				hex_decode(asciibuf, ptr, pt);
 
-                
-				/**********************************
-                 * Start user-specific code here. */
-                trigger_high();
-                
-				//16 hex bytes held in 'pt' were sent
-                //from the computer. Store your response
-                //back into 'pt', which will send 16 bytes
-                //back to computer. Can ignore of course if
-                //not needed
-				
-				
-
-                trigger_low();
-                /* End user-specific code here. *
-                 ********************************/
-
+				/* Do Encryption */					
+				trigger_high();
+				aes_indep_enc(pt); /* encrypting the data block */
+				trigger_low();
+				               
 				/* Print Results */
-				hex_print(pt, KEY_LENGTH, asciibuf);
+				hex_print(pt, 16, asciibuf);
 				
-				output_ch_0('r');
-				for(int i = 0; i < KEY_LENGTH*2; i++){
-					output_ch_0(asciibuf[i]);
+				putch('r');
+				for(int i = 0; i < 32; i++){
+					putch(asciibuf[i]);
 				}
-				output_ch_0('\n');
+				putch('\n');
 				
 				state = IDLE;
 			} else {
