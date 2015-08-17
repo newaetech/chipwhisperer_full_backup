@@ -5,8 +5,7 @@ bunzip2 avrcryptolib-current.tar.bz2
 tar -xvf avrcryptolib-current.tar
 mkdir crypto\avr-crypto-lib
 mkdir crypto\avr-crypto-lib\aes
-cp avrcryptolib-nightly/avrcryptolib/aes/* crypto/avr-crypto-lib/aes/.
-cp avrcryptolib-nightly/avrcryptolib/gf256mul/* crypto/avr-crypto-lib/aes/.
+mv avrcryptolib-nightly/avrcryptolib crypto/avrcryptolib
 rm -rf avrcryptolib-nightly
 rm -f avrcryptolib-current.tar.bz2
 rm -f avrcryptolib-current.tar
