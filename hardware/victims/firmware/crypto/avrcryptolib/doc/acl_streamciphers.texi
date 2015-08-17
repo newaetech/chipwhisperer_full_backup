@@ -1,0 +1,76 @@
+@c acl_streamciphers.texi
+@section Stream ciphers
+ A stream cipher normally generates a deterministic, random looking stream of 
+ bits, known as key stream. For encryption purpose this key stream is XORed with
+ the data stream. So decryption is exactly the same as encryption. The 
+ data-stream is XORed with the key stream giving the plaintext. So both sides 
+ need exactly the same stream cipher in the same state.
+
+@subsection List of available stream ciphers
+ The following stream ciphers are currently implemented:
+@itemize @bullet 
+  @item ARCFOUR (RC4 compatibel)
+  @item Trivium
+  @item Grain
+  @item MUGI
+  @item Mickey-128 (v2)
+@end itemize 
+
+@subsection High frequent parameters
+@table @asis
+  @item output-size
+  8 bit, 1 bit
+  @item keysize
+  64 bit, 80 bit, 128 bit
+  @item IVsize
+ 64 bit
+@end table
+
+@subsection Parts of a stream cipher
+@itemize @bullet
+  @item generation algorithm
+  @item initialization algorithm
+  @item state
+@end itemize
+
+ As we can see all stream ciphers seem to utilize an internal state which
+ determines the output. This state is initialized by the initialization 
+ algorithm with a key and an IV (initialization vector). It is very important
+ for security that _never_ the same key with the same IV is used again. The
+ IV is not required to be kept secret.
+
+@subsection API of stream ciphers
+ The API is not always consistent due to the fact that we tried to optimize the
+ code for size (flash, heap and stack) and speed (runtime of the different 
+ components).
+
+ Generally the API of the implemented stream ciphers consists of:
+ @table @code 
+ @item *_init 
+ function, which implements the initialization
+
+ @item *_gen  
+ function, which implements the streamcipher algorithm and generates a 
+ keystream output
+
+ @item *_ctx_t
+ context type, which contains internal state information
+
+ @end table
+
+@subsubsection @code{*_init} function
+ The *_init function generally takes a pointer to the key as first parameter.
+ For ciphers where the keysize is not fixed the second parameter gives the 
+ keysize (in bits regularly) followed by a pointer to the IV and a length 
+ parameter for not fixed IV sizes (both are omitted if the algorithm does not 
+ specify IV handling, in this case a part of the key should be used as IV).
+ The last parameter points to the context variable to fill.
+ 
+@subsubsection @code{*_gen} function
+ The *_gen function updates the internal state to which a pointer is given as
+ parameter and returns a fixed length part of the keystream as return value.
+ 
+
+ 
+@subsection Stream cipher abstraction layer (SCAL)
+

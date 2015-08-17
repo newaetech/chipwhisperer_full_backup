@@ -1,0 +1,179 @@
+\input texinfo  @c -*-texinfo-*-
+@c %**start of header
+@setfilename acl-manual.info
+@settitle AVR/ARM-Crypto-Lib Manual 1.0
+@c %**end of header
+
+@copying
+This is a short example of a complete Texinfo file.
+Copyright © 2011 Daniel Otte (@email{daniel.otte@@rub.de})
+@end copying
+
+@titlepage
+@title AVR/ARM-Crypto-Lib Manual 1.0
+@page
+@vskip 0pt plus 1filll
+@insertcopying
+@end titlepage
+@c Output the table of the contents at the beginning.
+@contents
+@ifnottex
+@node Top
+@top GNU Sample
+@insertcopying
+@end ifnottex
+
+@chapter About
+This documentation is a guide to the AVR-Crypto-Lib and ARM-Crypto-Lib.
+Instead of documenting the full API and each function we choose the approach
+of documenting the structure of the API so you know what to do when you want
+to use the library.
+
+@chapter Generic stuff
+@section Requirements
+You should have the following software tools to build the library, the version
+mentioned is the version used on the test system, older or newer versions may
+or may not work):
+@table @asis
+  @item a recent toolchain
+  for AVR targets:
+  @table @asis 
+    @item gcc for AVR (avr-gcc)
+    4.3.5
+    @item GNU binutils for AVR
+    2.21
+    @item avr-libc
+    1.6.8-2
+  @end table
+  for ARM targets:
+  @table @asis 
+    @item gcc for ARM (arm-elf-gcc)
+    @item GNU binutils for ARM
+    @item newlib with enabled malloc()
+  @end table
+  @item a flash tool to program your device
+  for AVR targets:
+  @table @asis 
+    @item avrdude
+    5.10
+  @end table
+  for ARM targets:
+  @table @asis 
+    @item openocd
+    0.4.0
+  @end table
+
+  @item GNU make
+  3.81
+  @item ruby (for the testing system)
+  1.8.7.302-2
+  @table @asis
+    @item rubygems
+    1.3.7
+    @item serialport
+    1.0.4
+    @item getopt
+    1.4.0
+  @end table
+@end table
+
+@section File organisation
+
+
+@section Build process
+The build process is managed by a large relative complex @file{Makefile} and
+a bunch of more specific Makefile-stubs (@file{*.mk} in the @file{mkfiles} 
+directory).
+
+
+
+@subsection make-stubs
+All stubs are included by the main Makefile automatically, so the addition of
+algorithms should not require modifications to the Makefile.
+
+Because all stubs are included by the main Makefile you can use all features
+of your make system when writing them. Currently we use GNU make and we 
+recommend using GNU make when building the crypto library.
+
+Each algorithm implementation has its own stub. A stub looks like the following:
+@verbatim
+# Makefile for AES
+ALGO_NAME := AES128_C
+
+# comment out the following line for removement of AES from the build process
+BLOCK_CIPHERS += $(ALGO_NAME)
+
+$(ALGO_NAME)_DIR      := aes/
+$(ALGO_NAME)_INCDIR   := gf256mul/ bcal/
+$(ALGO_NAME)_OBJ      := aes_enc.o aes_dec.o aes_sbox.o aes_invsbox.o  \
+                         aes_keyschedule.o gf256mul.o aes128_enc.o aes128_dec.o 
+$(ALGO_NAME)_TEST_BIN := main-aes128-test.o $(CLI_STD) $(BCAL_STD) \
+                         bcal_aes128.o
+$(ALGO_NAME)_NESSIE_TEST      := test nessie
+$(ALGO_NAME)_PERFORMANCE_TEST := performance
+@end verbatim
+
+The most important thing is defining an unambiguous name for the implementation,
+in this case it is AES128_C. 
+The next step is chaining the implementation into a category. Uncategorized
+implementations will be ignored. So if you want to exclude an implementation
+from the build process you can simply comment out the line which chains it into
+a category.
+
+The following lines declare ''Attributes'' of the implementation.
+@table @var
+@item _DIR
+  defines the directory where the implementation resides
+@item _INCDIR
+  defines directorys to search for additional files
+@item _OBJ
+  defines the names of the objects which shoud be considered the implementations
+  core
+@item _TESTBIN
+  defines the names of the objects required to build the test suit
+@item _NESSIE_TEST
+  (currently unused) defines the string which should be send to the test system
+  to perform nessie standard tests
+@item _NESSIE_TEST
+  (currently unused) defines the string which should be send to the test system
+  to perform a performance tests
+@item _DEF
+  defines macros to use while compiling
+@end table
+
+@section Testing system
+@section Sizes in bits and bytes
+ Working with cryptographic functions involves working with different
+ lengths. Some times you want to know it in bits, sometimes in bytes and another
+ time in words (how long a word is must be defined by the context).
+ To reduce confusion, frustration and to avoid bugs we suffix a length 
+ parameter with either _b, _B or _w depending on the meaning. 
+ _b means in bits and _B means in bytes (big b big word) and _w meaning words.
+
+@chapter Symmetric primitives
+@include acl_keysizes.texi
+@include acl_blockciphers.texi
+
+@section Modes of operation
+
+@include acl_streamciphers.texi
+
+@include acl_hashes.texi
+
+@section MAC functions
+@section Pseudo random number generators (PRNGs)
+
+@chapter Encodings
+@section Base64
+@section ASN.1
+
+@chapter Big integer functions
+
+@chapter Asymmetric Primitives
+@section DSA
+@section RSA
+@section El-Gamal
+@section MQQ
+
+@bye
+

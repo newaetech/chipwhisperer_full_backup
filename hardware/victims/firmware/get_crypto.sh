@@ -1,9 +1,0 @@
-#!/bin/sh
-wget http://avrcryptolib.das-labor.org/avrcryptolib-current.tar.bz2
-bunzip2 avrcryptolib-current.tar.bz2
-tar -xvf avrcryptolib-current.tar
-mkdir crypto/aes
-mv avrcryptolib-nightly/avrcryptolib crypto/avrcryptolib
-rm -rf avrcryptolib-nightly
-rm -f avrcryptolib-current.tar.bz2
-rm -f avrcryptolib-current.tar

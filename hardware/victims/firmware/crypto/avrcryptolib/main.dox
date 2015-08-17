@@ -1,0 +1,81 @@
+/** \mainpage Documentation for AVR-Crypto-Lib
+ \section Algorithms Available algorithms
+ \subsection Stream-ciphers Stream ciphers
+  A stream cipher generates a keystream which is normaly XORed with the
+  plaintext to produce the the ciphertext. Stream ciphers therfore have a 
+  state which is automaticaly updated to produce the next element of the 
+  keystream. Most Streamciphers produce a fixed length of keytream per 
+  iteration which may be a byte, a bit or any other data unit.
+  
+  Implemented stream ciphers: 
+   - A5/1 (A5_1.h)
+   - ARCFOUR (RC4 compatible) (arcfour.h)
+   - Grain (grain.h)
+   - Trivium (trivium.h)
+   
+ \subsection Block-ciphers Block ciphers 
+  Block cipher encrypt/decrypt fixed length blocks (mostly 64 bits or 128 bits)
+  with a key. Most block ciphers iterate a round function which uses a so-called
+  round key. The round keys are generated on the fly or with a special init
+  function (this is cipher specific). Round keys are stored in a context which
+  is not modifyed by the encryption or decryption function. Also the same 
+  context can be used for encryption and decryption and depends only on the key
+  and its length.
+  
+  Implemented block ciphers:
+   - Camellia (camellia.h)
+   - CAST5 (a.k.a CAST-128) (cast5.h)
+   - CAST6 (a.k.a CAST-256) (cast6.h)
+   - DES & Tripple-DES (EDE) (des.h)
+   - Noekeon (noekeon.h)
+   - RC5 (rc5.h)
+   - RC6 (rc6.h)
+   - SEED (seed.h)
+   - Serpent (serpent.h)
+   - Shabea (shabea.h)
+   - SHACAL-1 (encryption only) (shacal1_enc.h)
+   - SHACAL-2 (encryption only) (shacal2_enc.h)
+   - Skipjack (skipjack.h)
+   - XTEA (xtea.h)
+   
+ \subsection Hashes Hashes
+  A Hash function produces a fixed length output (called hash value or message
+  digest) from a variable length message input. Most hash algorithms have a 
+  state which is updated by the hash core function from a block of fixed size 
+  from the message. A "lastBlock" function is used to add the last block which
+  is not required to have the fixed length. An addition function is then used
+  to transform the state into the final hash value.
+  
+  Implemented hash functions:
+   - MD5 (md5.h)
+   - SHA-1 (sha1.h)
+   - SHA-256 (sha256.h)
+   - Blake
+   - Blue Midnight Wish
+   - Grøstl
+   - Keccak
+   - Shabal
+   - Skein
+   - Twister
+   
+ \subsection MACs Message-Authentification-Codes (MACs)
+  Message-Authentification-Codes work like hash function but take an additional
+  key. The produced output is also called MAC and is highly dependant on the
+  key. They can be thought of symmetric signatures.
+  
+  Implemented MAC functions:
+   - HMAC-SHA-1 (hmac-sha1.h)
+   - HMAC-SHA-256 (hmac-sha256.h)
+   
+
+ \subsection PRNGs Pseudo-Random-Number-Generators (PRNGs)
+  PRNGs produce pseudo random output determinated by the input. They aim to 
+  produce an arbitrary length of good cryptographically secure random if the
+  input has enough entropy. PRNGs differ in the way they accept input. Some
+  are seeded only once, other (like the implemented) maintain an entropy pool
+  to which input can be added at virtually any time.
+  
+  Implemented PRNGs:
+   - Entropium (entropium.h)
+   
+*/

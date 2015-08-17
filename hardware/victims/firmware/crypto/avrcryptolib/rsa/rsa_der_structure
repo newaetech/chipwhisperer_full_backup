@@ -1,0 +1,12 @@
+ struct
+        {
+        BIGNUM *n;              // public modulus
+        BIGNUM *e;              // public exponent
+        BIGNUM *d;              // private exponent
+        BIGNUM *p;              // secret prime factor
+        BIGNUM *q;              // secret prime factor
+        BIGNUM *dmp1;           // d mod (p-1)
+        BIGNUM *dmq1;           // d mod (q-1)
+        BIGNUM *iqmp;           // q^-1 mod p
+        // ...
+        };

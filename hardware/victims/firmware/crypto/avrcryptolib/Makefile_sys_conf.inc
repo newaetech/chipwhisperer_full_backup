@@ -1,0 +1,40 @@
+DEBUG          = -gdwarf-2
+WARNING        = -pedantic -Wall -Werror -Wstrict-prototypes
+PROGRAMMER     = jtagmkII
+PROG_PORT      = usb
+FLASHCMD       = avrdude -p $(MCU_TARGET) -P $(PROG_PORT) -c $(PROGRAMMER) -U flash:w:# no space at the end
+#FLASHCMD       = avrdude -p $(MCU_TARGET) -c usbasp -U flash:w:# no space at the end
+#RESETCMD       = avrdude -p $(MCU_TARGET) -P $(PROG_PORT) -c $(PROGRAMMER) 
+RESETCMD       = avarice -2 -R -j usb
+DEP_DIR        = deps/$(BOARD_NAME)/#
+TEST_DIR       = test/#
+BIN_DIR        = bin/$(BOARD_NAME)/#
+TESTSRC_DIR    = test_src/
+#uisp -dprog=bsd -dlpt=/dev/parport1 --upload if=$(PRG).hex
+ERASECMD       =
+TESTPORT       = /dev/ttyUSB0
+TESTPORTBAUDR  = 115200
+TESTLOG_DIR    = testlog/#
+TESTPREFIX     = nessie-
+SPEEDTOOL      = host/get_performance.rb
+SPEEDLOG_DIR   = speed_log/$(BOARD_NAME)/#
+SPEEDPREFIX    =
+SPEEDCMD       = performance
+SIZE_DIR       = size_log/$(BOARD_NAME)/#
+LIST_DIR       = listings/$(BOARD_NAME)/#
+LIST_OPT       = -Wa,-adhln -g
+STAT_DIR       = stats/$(BOARD_NAME)/#
+CC	       = avr-gcc
+CSTD           = gnu99
+
+SIZESTAT_FILE = sizestats.txt
+
+OBJCOPY         = avr-objcopy
+OBJDUMP         = avr-objdump
+SIZE            = avr-size
+READELF         = readelf
+RUBY            = ruby
+GET_TEST        = host/get_test.rb
+MAKE            = make
+MAKE2GRAPH      = ~/bin/make2graph.rb
+TWOPI           = twopi
