@@ -53,7 +53,9 @@ Connection Quick-Start
          $pip install pyusb
          $pip install pyqtgraph         
         
-   Mac OS-X: TODO
+   Mac OS-X:
+      * Install homebrew, pyside, libusb, along with required Python modules.
+      * See :ref:`macosxinstall` for full details.
       
 2. Download and install ChipWhisperer
 
@@ -102,7 +104,7 @@ Connection Quick-Start
      * Connect the micro-USB cable
      
    MAC:
-     * TODO
+     * No special installation required - must ensure you have installed libusb via homebrew (see instructions at :ref:`macosxinstall`).
 
 5. Run ChipWhisperer-Capture. This can be done from one of three ways:
 
@@ -113,9 +115,11 @@ Connection Quick-Start
     The last option is the most reliable, in that it should always work on all platforms. If it doesn't start look for possible missing modules or
     other useful errors.
     
-    NOTE: The first time you run ChipWhisperer-Capture or -Analyzer, the default setup of the screen is somewhat insane. You can drag windows around
-    or close them to make it look more like the demos here. See the Video quickstart guide as well for details of that.
-
+    .. hint::
+    
+      The first time you run ChipWhisperer-Capture or -Analyzer, the default setup of the screen is somewhat insane. You can drag windows around
+      or close them to make it look more like the demos here. See the Video quickstart guide as well for details of that.
+    
 6. From the "Scripts" directory, run the ``ChipWhisperer-Lite: AES SimpleSerial on XMEGA`` script:
 
    .. image:: /images/cw1173/cwlite_simpleserial.png
@@ -124,7 +128,13 @@ Connection Quick-Start
    
    .. image:: /images/cw1173/cwdemo_normal.png
 
-7. Your ChipWhisperer-Lite is now connected. See the next section for details of the demo attack.
+7. If the previous step fails, you may need to set the path for the "firmware". This is done by going to the "Tools" menu and selecting the
+   "Config CW Firmware" option. Note on MAC OS X a special command is required instead sometimes, see :ref:`macosxinstall`.
+   
+   From there, hit the "FIND" button beside the "FPGA .zip (Release)" option. Point it to the file located at 
+   ``chipwhisperer/hardware/capture/chipwhisperer-lite/cwlite_firmware.zip`` on your filesystem.
+
+8. Your ChipWhisperer-Lite is now connected. See the next section for details of the demo attack.
 
 Capture and Attack Quickstart
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -133,29 +143,86 @@ Capture and Attack Quickstart
    from there. Be sure to use the ``ChipWhisperer-Lite: AES SimpleSerial on XMEGA`` script instead of the one referenced in step 5.5.3.
    
 
+Important Bugs/Caveats
+^^^^^^^^^^^^^^^^^^^^^^
+
+The following includes various things that might trip you up:
+
+1. If you save the project *before* running the capture, you can specify any directory. Traces
+   will be copied to the appropriate location during capture.
+
+2. If you save the project *after* running the capture,  you must save the project to
+   the same directory that "default-data-dir" exists in. This is normally the folder
+   from where you invoked the Python GUI.
+   
+3. There are a few warnings/exceptions that come up (i.e. divide-by-zero). Generally just
+   keep going and see if things are still working. A number of those are on the *TODO*
+   list to fix but I didn't get around to it yet.
+   
+4. The "Total Ops" window which checks for proper AES operation requires PyCrypto to be
+   installed.
+   
+5. By default the XMEGA device was programmed with a partial AES implementation only. This
+   is done to avoid any crypto export issues. This does not affect your side-channel analysis,
+   but be aware the returned value might not appear to be correct (since only the first couple
+   rounds of AES occurred).
+
 Basic Usage Instructions
 ------------------------
 
-Programming XMEGA Device
-^^^^^^^^^^^^^^^^^^^^^^^^
+ .. _cwliteprogramming:
 
-
-Programming AVR Device
-^^^^^^^^^^^^^^^^^^^^^^
+CW-Lite: Programming AVR/XMEGA Device
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
 Using Glitch Port
 ^^^^^^^^^^^^^^^^^
 
+The "GLITCH" port is used for 
 
 Using Measure Port
 ^^^^^^^^^^^^^^^^^^
+
+The "MEASURE" port is the input to the low-noise amplifier and ADC.
 
 
 20-Pin Connector
 ^^^^^^^^^^^^^^^^
 
 
+The pinout is as follows:
+
+============   =============   ====   ==================================================================
+Number          Name           Dir     Description
+============   =============   ====   ==================================================================
+1                +VUSB (5V)      O     Raw USB Power. Not filtered.
+2                GND             O     System GND.
+3                +3.3V           O     +3.3V from FPGA Power Supply. Very high current can be supplied.
+4                FPGA-HS1       I/O    High Speed Input (normally clock in).
+5                PROG-RESET     I/O    Target RESET Pin (AVR Programmer).
+6                FPGA-HS2       I/O    High Speed Output (normally clock or glitch out).
+7                PROG-MISO      I/O    SPI input: MISO (for SPI + AVR Programmer).
+8                VTarget         I     Drive this pin with desired I/O voltage in range 1.5V-5V.
+9                PROG-MOSI      I/O    SPI output: MOSI (for SPI + AVR Programmer).
+10               FPGA-TARG1     I/O    TargetIO Pin 1 - Usually UART TX.
+11               PROG-SCK       I/O    SPI output: SCK (for SPI + AVR Programmer).
+12               FPGA-TARG2     I/O    TargetIO Pin 2 - Usually UART RX.
+13               PROG-PDIC      I/O    PDI Programming Clock (XMEGA Programmer), or CS pin (SPI).
+14               FPGA-TARG3     I/O    TargetIO Pin 3 - Usually bidirectional IO for smartcard.
+15               PROG-PDID      I/O    PDI Programming Data (XMEGA Programmer).
+16               FPGA-TARG4     I/O    TargetIO Pin 4 - Usually trigger input.
+17               GND            O
+18               +3.3V          O
+19               GND            O
+20               +VUSB (5V)     O
+============   =============   ====   ==================================================================
+
+
+8-Pin SmartCard  Connector
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+TODO
 
 Breaking Target Section Apart
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
