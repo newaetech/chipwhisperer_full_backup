@@ -923,7 +923,8 @@ class CWLiteUSB(object):
     def flushInput(self):
         """Dump all the crap left over"""
         try:
-            self._usbdev.read(self.rep, 1000, timeout=1)
+            # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
+            self._usbdev.read(self.rep, 1000, timeout=0.010)
         except:
             pass
 
