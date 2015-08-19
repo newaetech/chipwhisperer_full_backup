@@ -982,6 +982,9 @@ class ChipWhispererCapture(MainChip):
         self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
 
+        # TODO: Fix this hack
+        self.macWorkArounds()
+
     def saveProject(self):
         if self.project().hasFilename() == False:
             fd = QFileDialog(self, 'Save New File', '.', '*.cwp')
