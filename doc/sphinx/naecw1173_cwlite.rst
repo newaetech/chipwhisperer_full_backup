@@ -175,39 +175,142 @@ Basic Usage Instructions
 CW-Lite: Programming AVR/XMEGA Device
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+The CW1173/1180 has built-in support for programming either Atmel AVR or Atmel XMEGA device. This
+is designed to allow you to program our target boards (either the built-in XMEGA target, or 
+the Multi-Target board).
+
+Note this programmer is fairly simple, and *does not* provide all the features of a
+stand-alone programmer. 
+
+AVR Programmer
+""""""""""""""
+
+The AVR device programmer requires four connections to the target: RESET, MOSI, MISO, SCK. See
+:ref:`20pincwlite` for details of AVR programming pin connections.
+
+Accessing the Programming
+'''''''''''''''''''''''''
+To access the AVR Programmer, select the "CW-Lite AVR Programmer" from the pull-down Tools menu:
+
+.. image:: /images/cw1173/avrprog_menu.png
+
+Which should give you the AVR Programmer Window.
+
+Clock Source Selection
+''''''''''''''''''''''
+Note to use the AVR programmer you may require a valid clock source for the AVR. It is suggested to select one
+of the setup scripts (such as ``ChipWhisperer-Lite: AES Simple-Serial on ATMega328P``) which will
+generate a 7.37 MHz clock.
+
+Check if the device is found by pressing the "Check Signature" button. The status window will show
+the detected device based on the signature.
+
+.. image:: /images/cw1173/avrprog_sigok.png
+
+If this fails, double-check connections, and ensure the
+clock source to the AVR is suitable. Note some errors will appear as part of the main window log:
+
+.. image:: /images/cw1173/avrprog_fail.png
+
+The default SPI data rate for the programmer is too fast for devices which are running slower
+than 2 MHz. If programming a device with a clock source slower than 2 MHz, you will need to
+enable the "Slow Clock Mode". In "Slow Clock Mode" the entire SAM3U and FPGA clock is changed from
+96 MHz to 12 MHz. Note the default fuse bytes for a virgin ATMega328P result in a 1 MHz clock,
+so you will need to use "slow clock mode" to program the correct fuse bytes, after which point
+you will not need to use "slow clock mode".
+
+.. note::
+
+  The 'slow clock mode' is used to provide a slower SPI clock than would otherwise be possible. When
+  switching into 'slow clock mode' it will cause all DCM blocks in the FPGA to become unlocked. You
+  will need to reset the DCM blocks, or simply restart the CW-Capture software and run the setup script.
+
+
+Programming the Fuses
+'''''''''''''''''''''
+
+By default the AVR programmer allows you to modify the LOW fuse byte only, as this byte controls the 
+clock source selection. To change the value of the fuse byte:
+
+1. Press the "Read Fuses" button, and the values should be populated
+2. Specify the new low fuse value
+3. Hit "Write Fuses"
+
+See `an Online Fuse Calculator <http://eleccelerator.com/fusecalc/fusecalc.php?chip=atmega328p>`_ to
+better understand what the values mean.
+
+.. tip::
+    If programming a virgin ATMega328P device, the default low-fuse value of ``62`` results in the internal
+    8 MHz oscillator being divided down to 1 MHz. Any external clock is ignored.
+
+    The low fuse byte must be changed to ``D0`` to use the external clock provided by the ChipWhisperer
+    toolchain.
+ 
+Programming the Flash
+'''''''''''''''''''''
+
+Programming the flash is accomplished by selecting the new .hex file in the "Find" menu, and pressing
+the "Erase/Program/Verify FLASH" button. The "Status" line will show the following information:
+
+* File programmed into device
+* Time file was last modified (very useful to confirm you are using changed file when doing development)
+* Status of verification, and number of bytes programmed/verified
+
+.. image:: /images/cw1173/avrprog_progok.png
+
+XMEGA Programmer
+""""""""""""""""
+
+The XMEGA device programmer requires only two connections to the target: clock (PDIC) and data (PDID).
+The PDIC line is usually shared with the RESET pin, and the PDID pin is a specific pin on the XMEGA
+device. See :ref:`20pincwlite` for details of XMEGA programming pin connections.
+
+.. image:: /images/cw1173/xmegaprog_main.png
+
 
 Using Glitch Port
 ^^^^^^^^^^^^^^^^^
 
-The "GLITCH" port is used for 
+The "GLITCH" port is used for voltage glitching. It's connected to two MOSFET elements, as the following
+figure shows:
+
+<TODO>
+
+The CW1173/1180 can be commanded to turn on either of those MOSFETs via the "Glitch Output":
+
+<TODO>
+
+Be careful using this feature, as you don't want to short the MOSFETs for too long. It's also possible
+to damage the ChipWhisperer-Lite by burning these MOSFETs up if used incorrectly. See tutorial TODO for
+more information on using this feature.
 
 Using Measure Port
 ^^^^^^^^^^^^^^^^^^
 
 The "MEASURE" port is the input to the low-noise amplifier and ADC.
 
+.. _20pincwlite:
 
 20-Pin Connector
 ^^^^^^^^^^^^^^^^
-
 
 The pinout is as follows:
 
 ============   =============   ====   ==================================================================
 Number          Name           Dir     Description
 ============   =============   ====   ==================================================================
-1                +VUSB (5V)      O     Raw USB Power. Not filtered.
+1                +VUSB (5V)      O     Not Connected on ChipWhisperer-Lite.
 2                GND             O     System GND.
-3                +3.3V           O     +3.3V from FPGA Power Supply. Very high current can be supplied.
+3                +3.3V           O     +3.3V to Target Device, can be turned off, 200mA available.
 4                FPGA-HS1       I/O    High Speed Input (normally clock in).
 5                PROG-RESET     I/O    Target RESET Pin (AVR Programmer).
 6                FPGA-HS2       I/O    High Speed Output (normally clock or glitch out).
 7                PROG-MISO      I/O    SPI input: MISO (for SPI + AVR Programmer).
 8                VTarget         I     Drive this pin with desired I/O voltage in range 1.5V-5V.
 9                PROG-MOSI      I/O    SPI output: MOSI (for SPI + AVR Programmer).
-10               FPGA-TARG1     I/O    TargetIO Pin 1 - Usually UART TX.
+10               FPGA-TARG1     I/O    TargetIO Pin 1 - Usually UART TX or RX.
 11               PROG-SCK       I/O    SPI output: SCK (for SPI + AVR Programmer).
-12               FPGA-TARG2     I/O    TargetIO Pin 2 - Usually UART RX.
+12               FPGA-TARG2     I/O    TargetIO Pin 2 - Usually UART RX or TX.
 13               PROG-PDIC      I/O    PDI Programming Clock (XMEGA Programmer), or CS pin (SPI).
 14               FPGA-TARG3     I/O    TargetIO Pin 3 - Usually bidirectional IO for smartcard.
 15               PROG-PDID      I/O    PDI Programming Data (XMEGA Programmer).
@@ -215,14 +318,69 @@ Number          Name           Dir     Description
 17               GND            O
 18               +3.3V          O
 19               GND            O
-20               +VUSB (5V)     O
+20               +VUSB (5V)     O      Not Connected on ChipWhisperer-Lite.
 ============   =============   ====   ==================================================================
+
+.. warning:
+
+   All IO lines of the CW1173 (ChipWhisperer-Lite bare board) are 3.3V maximum. There is NO IO protection present
+   on these pins, so connect them to external devices with *extreme care*.
+   
+   The CW1180 contains IO protection to avoid damage, but is also designed for 3.3V IO lines. No voltage
+   translation is present on either product to ensure maximum flexability of IO drive characteristics
+   from the internal FPGA.
 
 
 8-Pin SmartCard  Connector
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-TODO
+The CW1173 contains two 8-pin connectors, which use our standard 8-pin Smart-Card header pinout. One header
+connects to the SAM3U device (which has ISO-7816 drivers), one header connects to the FPGA. Note there is
+currently no firmware support for these devices, but the hardware is designed for any of the following:
+
+ * Emulating a smart card (use interposer board), or fuzzing a smart card reader
+ * Communicating to a smart card
+ * Sniffing traffic between a legitimate reader and smart card
+ * Side-channel analysis of smart card device
+
+.. warning:
+
+   The Smart-Card lines on the CW1173 have no IO protection. Be extremely careful using these lines - many
+   smart-cards are designed to run at 5.0V, or if interfacing to an external reader it will attempt to use
+   5.0V at some stage.
+   
+   The CW1180 contains voltage translation that allows voltages of up to 5.5V to be safely input to the 8-pin
+   connector. See the CW1180 product page for more details.
+
+Header J7 (Connects to SAM3U):
+
+============   =============   ====   ==================================================================
+Number          Name           Dir     Description
+============   =============   ====   ==================================================================
+1                VCCIO           O     3.3V Supply (from linear regulator, always on)
+2                GND             O     System GND
+3                RST            I/O    Reset (SAM3U: PA3)
+4                PRESENT         I     Used to detect presence of smart card (SAM3U: PA2)
+5                CLK            I/O    Clock (SAM3U: PA25, 'CLK2'. FPGA: P131)
+6                I/O            I/O    I/O Line (SAM3U: PA22), 10k pull-up
+7                AUX1           I/O    Spare line (SAM3U: PA4)
+8                AUX2           I/O    Spare line (SAM3U: PA5)
+============   =============   ====   ==================================================================
+
+Header J6 (Connects to FPGA):
+
+============   =============   ====   ==================================================================
+Number          Name           Dir     Description
+============   =============   ====   ==================================================================
+1                VCCIO           O     3.3V Supply (from FPGA supply)
+2                GND             O     System GND
+3                RST            I/O    Reset (FPGA: P102)
+4                PRESENT/VPP     I     Not Connected (mount R60 to connect to P101)     
+5                CLK            I/O    Clock (FPGA: P100)
+6                I/O            I/O    I/O Line (FPGA: P99), 10k pull-up
+7                AUX1           I/O    Spare line (FPGA: P98)
+8                AUX2           I/O    Spare line (FPGA: P97)
+============   =============   ====   ==================================================================
 
 Breaking Target Section Apart
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
