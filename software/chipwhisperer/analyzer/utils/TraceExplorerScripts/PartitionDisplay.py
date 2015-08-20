@@ -407,43 +407,44 @@ class PartitionDisplay(AutoScript, QObject):
 
             if progressBar:
                 progressBar.setWindowTitle("Phase 1: Trace Statistics")
-                progressBar.setMaximum(len(segList['offsetList']) * self.numKeys)
+                progressBar.setMaximum(bnum)  # len(segList['offsetList']) * self.numKeys)
                 progressBar.show()
 
-            for tsegn, segtrace in enumerate(segList['offsetList']):
+            # TODO: Double-check this fix
+            # for tsegn, segtrace in enumerate(segList['offsetList']):
+            tsegn = 0
+            if progressBar: progressBar.setLabelText("Segment %d" % tsegn)
 
-                if progressBar: progressBar.setLabelText("Segment %d" % tsegn)
-
-                # Average data needs to be calculated
-                # Require partition list
-                partData = partitionData["partdata"]
+            # Average data needs to be calculated
+            # Require partition list
+            partData = partitionData["partdata"]
 
 
-                # print "Calculating Average + Std-Dev"
-                # Std-Dev calculation:
-                # A[0] = 0
-                # A[k] = A[k-1] + (x[k] - A[k-1]) / k
-                # Q[0] = 0
-                # Q[k] = Q[k-1] + (x[k] - A[k-1])(x[k] - A[k])
-                for bnum in range(0, self.numKeys):
-                    progressBar.setValue(tsegn * self.numKeys + bnum)
-                    if progressBar.wasCanceled():
-                        break
-                    for i in range(0, self.partObject.partMethod.getNumPartitions()):
-                        QApplication.processEvents()
-                        tlist = partData[bnum][i]
-                        if len(tlist) > 0:
-                            for tnum in tlist:
-                                if tnum > tRange[0] and tnum < tRange[1]:
-                                    t = traces.getTrace(tnum)
-                                    ACnt[bnum][i] += 1
-                                    A_k[bnum][i] = A_k[bnum][i] + (t - A_j[bnum][i]) / ACnt[bnum][i]
-                                    Q_k[bnum][i] = Q_k[bnum][i] + ((t - A_j[bnum][i]) * (t - A_k[bnum][i]))
-                                    A_j[bnum][i] = A_k[bnum][i]
-
+            # print "Calculating Average + Std-Dev"
+            # Std-Dev calculation:
+            # A[0] = 0
+            # A[k] = A[k-1] + (x[k] - A[k-1]) / k
+            # Q[0] = 0
+            # Q[k] = Q[k-1] + (x[k] - A[k-1])(x[k] - A[k])
+            for bnum in range(0, self.numKeys):
+                progressBar.setValue(tsegn * self.numKeys + bnum)
                 if progressBar.wasCanceled():
-                    progressBar.hide()
-                    return
+                    break
+                for i in range(0, self.partObject.partMethod.getNumPartitions()):
+                    QApplication.processEvents()
+                    tlist = partData[bnum][i]
+                    if len(tlist) > 0:
+                        for tnum in tlist:
+                            if tnum > tRange[0] and tnum < tRange[1]:
+                                t = traces.getTrace(tnum)
+                                ACnt[bnum][i] += 1
+                                A_k[bnum][i] = A_k[bnum][i] + (t - A_j[bnum][i]) / ACnt[bnum][i]
+                                Q_k[bnum][i] = Q_k[bnum][i] + ((t - A_j[bnum][i]) * (t - A_k[bnum][i]))
+                                A_j[bnum][i] = A_k[bnum][i]
+
+            if progressBar.wasCanceled():
+                progressBar.hide()
+                return
 
             # Finally get variance
             for bnum in range(0, self.numKeys):
