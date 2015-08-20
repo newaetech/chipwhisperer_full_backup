@@ -641,6 +641,13 @@ class MainChip(QMainWindow):
             
            
             self.paramScripting.append(str(name))
+
+
+    def macWorkArounds(self):
+        # There is some odd error on Mac OS X where you get little rectangles near close buttons
+        # Calling this gets rid of them - reference to errors with modal system on QT Mac build have been found
+        # but haven't chased down actual cause yet
+        test = saveProjectDialog(self)
            
                                                        
 def main():    

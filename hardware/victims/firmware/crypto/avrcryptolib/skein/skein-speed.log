@@ -1,0 +1,202 @@
+performance
+
+ === Skein-256-128 performance === 
+    type:             hashfunction
+    hashsize (bits):           128
+    ctxsize (bytes):            50
+    blocksize (bits):          256
+    init (cycles):           42999
+    nextBlock (cycles):      42003
+    lastBlock (cycles):      41706
+    ctx2hash (cycles):       42912
+
+ === Skein-256-160 performance === 
+    type:             hashfunction
+    hashsize (bits):           160
+    ctxsize (bytes):            50
+    blocksize (bits):          256
+    init (cycles):           42999
+    nextBlock (cycles):      42003
+    lastBlock (cycles):      41713
+    ctx2hash (cycles):       42940
+
+ === Skein-256-224 performance === 
+    type:             hashfunction
+    hashsize (bits):           224
+    ctxsize (bytes):            50
+    blocksize (bits):          256
+    init (cycles):           43006
+    nextBlock (cycles):      42003
+    lastBlock (cycles):      41713
+    ctx2hash (cycles):       42996
+
+ === Skein-256-256 performance === 
+    type:             hashfunction
+    hashsize (bits):           256
+    ctxsize (bytes):            50
+    blocksize (bits):          256
+    init (cycles):           43006
+    nextBlock (cycles):      42003
+    lastBlock (cycles):      41706
+    ctx2hash (cycles):       43026
+
+ === Skein-256-384 performance === 
+    type:             hashfunction
+    hashsize (bits):           384
+    ctxsize (bytes):            50
+    blocksize (bits):          256
+    init (cycles):           42999
+    nextBlock (cycles):      42003
+    lastBlock (cycles):      41706
+    ctx2hash (cycles):       20054
+
+ === Skein-256-512 performance === 
+    type:             hashfunction
+    hashsize (bits):           512
+    ctxsize (bytes):            50
+    blocksize (bits):          256
+    init (cycles):           42999
+    nextBlock (cycles):      42003
+    lastBlock (cycles):      41706
+    ctx2hash (cycles):       20165
+
+ === Skein-512-128 performance === 
+    type:             hashfunction
+    hashsize (bits):           128
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30522
+    nextBlock (cycles):      29183
+    lastBlock (cycles):      28526
+    ctx2hash (cycles):       30515
+
+ === Skein-512-160 performance === 
+    type:             hashfunction
+    hashsize (bits):           160
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30522
+    nextBlock (cycles):      29183
+    lastBlock (cycles):      28526
+    ctx2hash (cycles):       30536
+
+ === Skein-512-224 performance === 
+    type:             hashfunction
+    hashsize (bits):           224
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30522
+    nextBlock (cycles):      29176
+    lastBlock (cycles):      28526
+    ctx2hash (cycles):       30592
+
+ === Skein-512-256 performance === 
+    type:             hashfunction
+    hashsize (bits):           256
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30522
+    nextBlock (cycles):      29176
+    lastBlock (cycles):      28533
+    ctx2hash (cycles):       30620
+
+ === Skein-512-384 performance === 
+    type:             hashfunction
+    hashsize (bits):           384
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30529
+    nextBlock (cycles):      29176
+    lastBlock (cycles):      28533
+    ctx2hash (cycles):       30732
+
+ === Skein-512-512 performance === 
+    type:             hashfunction
+    hashsize (bits):           512
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30529
+    nextBlock (cycles):      29176
+    lastBlock (cycles):      28533
+    ctx2hash (cycles):       30846
+
+ === Skein-512-1024 performance === 
+    type:             hashfunction
+    hashsize (bits):          1024
+    ctxsize (bytes):            82
+    blocksize (bits):          512
+    init (cycles):           30529
+    nextBlock (cycles):      29176
+    lastBlock (cycles):      28526
+    ctx2hash (cycles):       61119
+
+ === Skein-1024-128 performance === 
+    type:             hashfunction
+    hashsize (bits):           128
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28976
+    nextBlock (cycles):      26263
+    lastBlock (cycles):      23978
+    ctx2hash (cycles):       27216
+
+ === Skein-1024-160 performance === 
+    type:             hashfunction
+    hashsize (bits):           160
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28983
+    nextBlock (cycles):      26256
+    lastBlock (cycles):      23978
+    ctx2hash (cycles):       27244
+
+ === Skein-1024-224 performance === 
+    type:             hashfunction
+    hashsize (bits):           224
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28983
+    nextBlock (cycles):      26256
+    lastBlock (cycles):      23978
+    ctx2hash (cycles):       27307
+
+ === Skein-1024-256 performance === 
+    type:             hashfunction
+    hashsize (bits):           256
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28983
+    nextBlock (cycles):      26263
+    lastBlock (cycles):      23971
+    ctx2hash (cycles):       27335
+
+ === Skein-1024-384 performance === 
+    type:             hashfunction
+    hashsize (bits):           384
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28983
+    nextBlock (cycles):      26263
+    lastBlock (cycles):      23971
+    ctx2hash (cycles):       27447
+
+ === Skein-1024-512 performance === 
+    type:             hashfunction
+    hashsize (bits):           512
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28983
+    nextBlock (cycles):      26263
+    lastBlock (cycles):      23971
+    ctx2hash (cycles):       27559
+
+ === Skein-1024-1024 performance === 
+    type:             hashfunction
+    hashsize (bits):          1024
+    ctxsize (bytes):           146
+    blocksize (bits):         1024
+    init (cycles):           28983
+    nextBlock (cycles):      26263
+    lastBlock (cycles):      23971
+    ctx2hash (cycles):       28002
+>

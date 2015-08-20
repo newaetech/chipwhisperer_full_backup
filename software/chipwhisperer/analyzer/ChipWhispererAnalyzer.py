@@ -262,8 +262,9 @@ class ChipWhispererAnalyzer(MainChip):
         attack.triggered.connect(self.doAttack)
 
         self.AttackToolbar = self.addToolBar('Attack Tools')
-        self.AttackToolbar.setObjectName('Attack Tools')
+        self.AttackToolbar.setObjectName('Attack Toolbar')
         self.AttackToolbar.addAction(attack)
+        self.AttackToolbar.show()
 
 
         # Add utilities
@@ -697,6 +698,9 @@ class ChipWhispererAnalyzer(MainChip):
         self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
         self.projectChanged.connect(self.traceExplorerDialog.setProject)
+
+        # TODO: Fix this hack
+        self.macWorkArounds()
 
     def saveProject(self):
         """Save a ChipWhisperer project file"""

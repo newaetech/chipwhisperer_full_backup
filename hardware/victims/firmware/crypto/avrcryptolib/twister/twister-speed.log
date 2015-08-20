@@ -1,0 +1,40 @@
+ === Twister-224 performance === 
+    type:             hashfunction
+    hashsize (bits):           224
+    ctxsize (bytes):            80
+    blocksize (bits):          512
+    init (cycles):             480
+    nextBlock (cycles):      36528
+    lastBlock (cycles):       8071
+    ctx2hash (cycles):       19377
+
+ === Twister-256 performance === 
+    type:             hashfunction
+    hashsize (bits):           256
+    ctxsize (bytes):            80
+    blocksize (bits):          512
+    init (cycles):             425
+    nextBlock (cycles):      36535
+    lastBlock (cycles):       8064
+    ctx2hash (cycles):       19438
+
+ === Twister-384 performance === 
+    type:             hashfunction
+    hashsize (bits):           384
+    ctxsize (bytes):           144
+    blocksize (bits):          512
+    init (cycles):             745
+    nextBlock (cycles):      55707
+    lastBlock (cycles):      42573
+    ctx2hash (cycles):       27212
+
+ === Twister-512 performance === 
+    type:             hashfunction
+    hashsize (bits):           512
+    ctxsize (bytes):           144
+    blocksize (bits):          512
+    init (cycles):             743
+    nextBlock (cycles):      55707
+    lastBlock (cycles):      42573
+    ctx2hash (cycles):       35203
+

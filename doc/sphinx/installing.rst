@@ -5,10 +5,15 @@
 Installing Python, |ChipWhisperer|, Drivers & Building Target Firmware
 ======================================================================
 
+Using VMWare Virtual Machine
+----------------------------
+
+
 Windows XP/7
 ------------
 
-Installing on Windows requires a few extra steps compared to Linux, as Linux normally comes with most of the required tools.
+Assuming you want to install the full ChipWhisperer software, you can follow the following steps to do so. Note it is recommended to use the VMWare image
+if possible, since it includes all required tools out of the box!
 
 Python Setup
 ^^^^^^^^^^^^
@@ -17,11 +22,10 @@ You may already have Python installed, in which case you can skip some of these 
 the correct version (2.7.x). Python 3.x will not work with this codebase.
 
 
-
 .. _installingwinpython:
 
-Installing Python via WinPython (Recommended)
-"""""""""""""""""""""""""""""""""""""""""""""
+Installing Python via WinPython
+"""""""""""""""""""""""""""""""
 
 The recommend method of installing Python is to use a distribution called `WinPython <http://winpython.sourceforge.net/>`__. This setup avoids
 installing Python globally, and includes most of the software you will need. In addition it makes it possible to install 32-bit and 64-bit
@@ -57,69 +61,6 @@ Python on the same system with minimal problems. This can be very useful as the 
    
 5. Jump to :ref:`installingcw` to install ChipWhisperer software.
 
-Installing Python Regularly (Advanced)
-""""""""""""""""""""""""""""""""""""""
-Rather than using the previous distribution, you can install Python into your system path. **DO NOT** follow both of these directions, again
-it's recommended to use the WinPython distribution above.
-
-Download the latest release of Python 2.7 (NOT Python 3.x). It is highly recommended to use 32-bit Python, as several of the dependant
-libraries only have 32-bit versions. First, install Python:
-
-1. `Python 2.7.9 <https://www.python.org/downloads/release/python-279/>`_
-
-Next, you need to install ``setuptools``, the best way of doing this is to use a special script called ``ez_setup``. This
-is described on the `setuptools documentation site <https://pypi.python.org/pypi/setuptools#windows?>`_. Alternatively, simply
-click the following link (assuming you've already installed Python!) and let it run:
-
-2. `Get ez_setup.py program <https://bitbucket.org/pypa/setuptools/raw/bootstrap/ez_setup.py>`_
-
-3. Open a command prompt (on XP: run->cmd, on Windows 7: search 'cmd' from search bar) and type::
-
-    easy_install configobj
-
-   The results should look something similar to this:
-
-   .. image:: /images/easy_install-configobj.png
-      :width: 12cm
-
-   If easy_install *is not* working, you need to modify your system path (see sidebar). Assuming it is, continue to install other required packages::
-
-    easy_install pyside
-    easy_install pyqtgraph
-    easy_install configobj
-    easy_install pyserial
-
-
-.. sidebar:: Python Path Settings
-
-	When you installed Python, it may not have modified your system path. Generally this will make your life easier, although it's not required.
-	This guide assumes you can run python commands such as easy_install.exe direct from the command line. If you cannot seem to do so, it's easy to
-	fix that.
-
-	First, you need to open the environmental variables editing dialog. On Windows 7 / 8 simply search for **environment** from the start menu, and you'll
-	get an option to **Edit System Environment Variables**. On Windows XP you'll have to find the **System Properties** option in the control panel, then
-	go to the **Advanced** tab.
-
-	Finally open the **Environment Variables** dialog, and edit the *PATH* system variable to include::
-
-		;C:\Python27;C:\Python27\Scripts
-
-	.. image:: /images/pathmodify.png
-
-
-Next, you have to install NumPy & SciPy which don't work with easy_install. Run the following Windows binary installers - Be sure you are downloading the
-*win32-py2.7.exe* version. The *Direct Link for Windows* should be the correct version, but they may get changed in the future to default to another Python
-(e.g. 3.x which we don't use) version. The installer itself will validate you downloaded the correct version of NumPy/SciPy for your python installation, so
-the installation will fail anyway if you accidently download the wrong version.
-
-5. `NumPy <http://sourceforge.net/projects/numpy/files/NumPy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/numpy/files/latest/download?source=files>`__)
-6. `SciPy <http://sourceforge.net/projects/scipy/files/scipy/>`_ (Direct Link for `Windows <http://sourceforge.net/projects/scipy/files/latest/download?source=files>`__)
-
-Assuming you are planning on using the ChipWhisperer Capture Rev2 hardware, you also require `PyUSB <http://sourceforge.net/projects/pyusb/>`_.
-The easiest method is to again use easy_install, by opening a terminal and running::
-
-    easy_install pyusb
-
 .. _optional-ftdi:
 
 Optional Packages
@@ -139,7 +80,7 @@ link simply find the correct driver for your OS Version & install that.
 
 **MYSQL**: If you want to use the MySQL trace format (not used by default), you'll need to install `umysql <https://pypi.python.org/pypi/umysql>`_::
 
-	easy_install umysql
+	pip install umysql
 
 **PYSCARD**: If planning on using a PS/SC smartcard reader (i.e. standard USB-connected reader), you will need to install `pyscard <https://sourceforge.net/projects/pyscard/files/pyscard/ >`__.
 
@@ -178,131 +119,42 @@ You can see a `Video <http://www.youtube.com/watch?v=qd86cUD8iBs&hd=1>`__ of the
 .. |YouTubeWin7Install| image:: /images/youtube-win7-install.png
 .. _YouTubeWin7Install: http://www.youtube.com/watch?v=qd86cUD8iBs&hd=1
 
-Installing Hardware Drivers for CaptureRev2
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Installing Hardware Drivers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following is specific to ChipWhisperer Capture Rev2 hardware. Using the mini-usb cable, plug in the ChipWhisperer Capture Rev2. Note
-that only an internal LED will turn on when this happens - the LEDs on the front panel are controlled by the internal FPGA. They will not
-be active until you actually communicate with the unit.
-
-Windows should pop up a *New Hardware Found* dialog, but frequently may not. In which case force the driver to update using the following:
-
-1. Open the *Device Manager*. On Windows 7 simply search *Device Manager* from start menu
-2. Find the Cypress EZ-USB Item, which should have a yellow (!) mark
-3. Click *Update Driver*
-4. Once this happens, you'll be able to point Windows to the location of the drivers. Some releases contain drivers, so you can attempt to
-   point the wizard to the folder ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2``. If you don't have drivers, you can download them
-   from the release page on `ChipWhisperer <http://chipwhisperer.com>`__.
-
-Note as of version 0.07 of the ChipWhisperer release you DO NOT need to install Java. Previous versions required this, so you may see reference
-to that in videos or other documentation. Be confident you can now avoid installing Java when running ChipWhisperer.
-
-Finally, we can configure the ChipWhisperer-Capture software to communicate with the hadware. To do so you need to configure the
-FPGA loader program, microcontroller program, and FPGA bitstream.
-
-5. Run ChipWhisperer-Capture by double-clicking CWCapture.pyw in ``c:\chipwhisperer\software\``. (Note: this simply calls ChipWhispererCapture.py
-   in ``c:\chipwhisperer\software\chipwhisperer\capture\``, if you have trouble try double-clicking on the ChipWhispererCapture.py instead).
-6. As the scope, select the *ChipWhisperer* device, and ensure on the *Scope* tab ensure you have selected the appropriate hardware, such
-   as the *rev2* device 
-6. Under the *Tools* menu select *Config CW Firmware* (NB: If this does not appear as a menu option, double-check you have selected the correct scope).
-7. In the pop-up dialog, you may need to configure the location of several files. If they are blank set as follows:
-
-   a. USB Firmware: ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2\ezusb-firmware\ztex-sdk\examples\usb-fpga-1.11\1.11c\openadc\OpenADC.ihx``
-   b. FPGA .zip (RELEASE): ``c:\chipwhisperer\hardware\capture\chipwhisperer-rev2\cwrev2_firmware.zip``
-
-8. Under the *Tools* menu selection *Download CW Firmware* with the ChipWhisperer device attached. If this works you will see a message in the *Debug Logging*
-   window about firmware upload successful. If this fails check the output of the console to see what went wrong.
-   
-Note as of version 0.09 of the ChipWhisperer release the tool will *automatically* download firmware to unprogrammed FPGAs. You do not need
-to explicitly run this tool before connecting, however it is still useful for debugging or forcing the loading of new firmware. In addition
-you must have selected the proper scope and ChipWhisperer model for the firmware download to work - this is a change from 0.08 which just
-blindly presented the menu choice.
-
-You can see a `Video <http://www.youtube.com/watch?v=ozzlcUM_-dc&hd=1>`__ of the Installation Process. Note the drivers are now signed, so you will no
-longer see a warning about unsigned drivers.
-
-|YouTubeWin7Driver|_
-
-.. |YouTubeWin7Driver| image:: /images/youtube-win7-driver.png
-.. _YouTubeWin7Driver: http://www.youtube.com/watch?v=bj_Ul02exi8&hd=1
+Details of driver installation are on specific pages for supported hardware (such as :ref:`hwcapturerev2` and :ref:`naecw1173_cwlite`). Drivers are available from `ChipWhisperer <http://chipwhisperer.com>`__ release section.
 
 .. _buildprogrammingavr:
 
-Building & Programming Example Targets
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Getting AVR Compiler Toolchain
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The following section is **NOT REQUIRED** for your first attack - you can jump right to the tutorial if you wish. However you'll ultimately wish to
 modify the code of the device under test, and these instructions tell you how. You should first follow the tutorial to confirm your system is working
 before modifying the code however!
 
-To build the code, you'll need to install WinAVR.
+To build the code, you'll need to install WinAVR on Windows (if using the Virtual Machine, the following is *not required*, as the VM comes setup with the
+AVR compiler already).
 
 .. include:: installing_winavr.rsti
 
 Note that the default codebase *does not* include the cryptographic code we attack. Instead you are required to add this code into the system -- if the
 external code changes, this may eventually be instead rolled into the main codebase. To setup the code, follow the following steps:
 
-2.  Run the script ``get_crypto.bat`` inside the ``chipwhisperer\hardware\victims\firmware`` directory.
-3.  **Only** if this script fails, try the following manual version instead (but try the automated version first!):
+1.  ``cd`` to the directory with the avr-serial example, and run ``make``::
 
-    a.  From the `avr-crypto-lib project <http://avrcryptolib.das-labor.org/trac>`_ download the following: `Nightly Tar Ball <http://avrcryptolib.das-labor.org/avrcryptolib-current.tar.bz2>`_
-    b.  You'll need to extract the downloaded file. You can do this with programs built into WinAVR, the following shows some example commands::
-
-            cd C:\Users\colin\Downloads
-            bunzip2 avrcryptolib-current.tar.bz2
-            tar -xvf avrcryptolib-current.tar
-
-    c.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\aes`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avr-crypto-lib\aes`` (may need to created directory)
-    d.  Copy everything in ``avrcryptolib-nightly\avrcryptolib\gf256mul`` to ``c:\avrchipwhisperer\hardware\victims\firmware\crypto\avr-crypto-lib\aes`` (same directory as above)
-
-4.  ``cd`` to the directory with the avr-serial example, and run ``make MCU=atmega328p``::
-
-        cd c:\chipwhisperer\hardware\victims\firmware\avr-serial
-        make MCU=atmega328p
+        cd c:\chipwhisperer\hardware\victims\firmware\simpleserial-aes
+        make
 
     If this is successful, you'll see an output like the following:
 
     .. image:: /images/avr-build-ok.png
 
-    If instead you get an error something like ``make: *** No rule to make target `simpleserial.elf', needed by `elf'.  Stop.``, this means a required file was missing. Check
-    that you have copied all files to the ``avr-crypto-lib\aes directory``, in particular did you copy the two *gf256mul* files?
+    If instead you get an error something like ``make: *** No rule to make target `simpleserial.elf', needed by `elf'.  Stop.``, this means a required file was missing.
 
-5.  Next, you will need to program the AVR itself. On Windows we will make use of the free `AVR Studio 4.19 <www.atmel.com/tools/STUDIOARCHIVE.aspx>`_. You can find a direct link here:
-    `Direct Link to AVR Studio 4.19 Binary <http://www.atmel.com/forms/software-download.aspx?target=tcm:26-17924>`_.  Note it is possible to use ``avrdude``, a command-line program
-    which is part of WinAVR instead if you wish. However since many people find the graphical interface
-    of AVRStudio easier, this guide will use AVRStudio. Be sure to install the USB drivers as part of the package.
-    
-    .. warning::
-      
-      If using Windows 8.1, AVRStudio 4.19 may not work correctly. In particular DO NOT install the USB Drivers as part of the installation package as
-      mentioned above. Instead first install the latest stand-alone `AtmelUSBInstaller<https://gallery.atmel.com/Products/Details/6873be43-0628-46ac-ba83-286869a3d97a>`__
-      version.
-      
-      You can see additional details on the following thread: `http://www.avrfreaks.net/forum/avrisp-mk2-programmer-windows-81<http://www.avrfreaks.net/forum/avrisp-mk2-programmer-windows-81>`__.
-      If you have already installed AVRStudio 4.19 you may have to remove the associated drivers, please see the linked thread for details.
-
-6.  Plug in the USB-A Connector on the rear side of the ChipWhisperer Rev2. This should trigger the driver installation, which will detect the device as a *AVR-ISP MK2*.
-
-7.  Once AVR Studio is installed, open the main window. From the toolbar select either the *Con* or *AVR* icon, and select the *AVR-ISP MK-II* Device:
-
-    .. image:: /images/studio4-connect.png
-
-8.  In the window that opens, select the *Main* tab. Select the device type as *AtMega328P*, and hit *Read Signature*. You should get an indication that the device signature was
-    successfully read!
-
-    .. image:: /images/studio4-read-signature.png
-
-9.  Finally we can program the chip. To do so switch to the *Program* tab, select the ``simpleserial.hex`` file that was generated in Step 4, and hit *Program*. If it's successful
-    you should see some output data saying so.
-
-    .. image:: /images/studio4-program.png
-
-You can see a `Video <http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1>`__ of the Target Build Procedure:
-
-|YouTubeWin7Target|_
-
-.. |YouTubeWin7Target| image:: /images/youtube-win7-target.png
-.. _YouTubeWin7Target: http://www.youtube.com/watch?v=gy6-MBvVvy4&hd=1
+2. Programming the target AVR is accomplished in one of two methods depending on your hardware. The ChipWhisperer Capture Rev 2 uses the external "AVR Studio"
+   program, whereas the CW1173 and CW1180 (ChipWhisperer-Lite based platforms) use a programmer menu from the ChipWhisperer-Capture software. To see details
+   refer to either :ref:`_cwcr2programmer` or :ref:`cwliteprogramming`.
 
 Linux
 -----
@@ -408,4 +260,90 @@ And reset the udev system::
 
 Finally log out & in again for the group change to take effect.
 
+.. _macosxinstall:
 
+MAC OS X
+--------
+
+The following have been tested on Mac OS X Yosemite (10.10) - earlier versions may not have a recent enough Python installation (recommended
+2.7.6 or later). It's possible to install other Python versions on your Mac OS X via the 'homebrew' system, we will use this for installing a
+few additional required tools.
+
+Python Setup
+^^^^^^^^^^^^
+
+1. Ensure your user account has a password. In order for the 'sudo' command to work it requires you to type your password, so if you don't have
+   one enabled be sure to set a temporary password now.
+   
+2. Install the 'homebrew' system, see `brew.sh <http://brew.sh>`_ for details. Briefly, you can install it by pasting the following in a terminal::
+
+    $ ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+3. Install PySide using homebrew::
+
+    $ brew install pyside
+   
+   The install will probably print a message like this:
+ 
+    .. image:: /images/install_macosx_brewpath.png   
+   
+   Note you must run that command in order to successfully import the modules, in this example it would be::
+   
+    $ mkdir -p /Users/macmini/Library/Python/2.7/lib/python/site-packages
+    $ echo 'import site; site.addsitedir("/usr/local/lib/python2.7/site-packages")' >> /Users/macmini/Library/Python/2.7/lib/python/site-packages/homebrew.pth
+    
+  Be sure to adjust paths for your system as described in the message from homebrew.
+    
+4. Install libusb backend using homebrew::
+
+    $ brew install libusb
+    
+5. Install Python dependancies using easy_install::
+
+    $ sudo easy_install pyusb
+    $ sudo easy_install pyqtgraph
+    $ sudo easy_install configobj
+    $ sudo easy_install pyserial
+    
+    
+Getting ChipWhisperer
+^^^^^^^^^^^^^^^^^^^^^
+
+As in the Windows release, you can download a complete ChipWhisperer software release. Alternatively you can clone the
+ChipWhisperer repository with git, which is very simple on Linux::
+
+    $ git clone git://git.assembla.com/chipwhisperer.git
+    $ cd chipwhisperer
+    $ git clone git://git.assembla.com/openadc.git
+
+Be aware that the git code may be broken, although we try not to commit completely untested code to the master branch. Either way
+once you have the `chipwhisperer` directory somewhere, do the following from within that directory::
+
+    $ cd software
+    $ sudo python setup.py develop
+    $ cd ../openadc/controlsw/python
+    $ sudo python setup.py develop
+    
+Running ChipWhisperer
+^^^^^^^^^^^^^^^^^^^^^
+
+1. Running ChipWhisperer can be done from the command prompt::
+
+    $ cd ~/chipwhisperer/software
+    $ python CWCapture.pyw
+    $ python CWAnalyzer.pyw
+   
+2. Be aware there is a problem with displaying the "CWFirmware Config" dialog on current releases. To fix this, type the following
+   into the "Python Console" of the ChipWhisperer-Capture window::
+   
+     self.scope.scopetype.CWFirmwareConfig.show()
+
+   You can then point the ChipWhisperer-Capture software to the firmware zip file for the required hardware. Once
+   this is done you will not have to repeat the process, as the software remembers the location of the firmware file.
+
+3. If toolbars are missing, they may have been hidden by default (another unknown issue on MAC OS X). To fix this simply right-click
+   and confirm all toolbars are being shown:
+   
+    .. image:: /images/install_macosx_toolbars.png
+    
+    

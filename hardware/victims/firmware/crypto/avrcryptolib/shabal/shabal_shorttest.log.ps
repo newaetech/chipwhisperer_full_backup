@@ -1,0 +1,713 @@
+%!PS-Adobe-3.0
+%%BoundingBox: 24 24 571 818
+%%Title: Enscript Output
+%%For: 
+%%Creator: GNU enscript 1.6.4
+%%CreationDate: Mon Apr 27 00:59:17 2009
+%%Orientation: Portrait
+%%Pages: (atend)
+%%DocumentMedia: A4 595 842 0 () ()
+%%DocumentNeededResources: (atend)
+%%EndComments
+%%BeginProlog
+%%BeginResource: procset Enscript-Prolog 1.6 4
+%
+% Procedures.
+%
+
+/_S {	% save current state
+  /_s save def
+} def
+/_R {	% restore from saved state
+  _s restore
+} def
+
+/S {	% showpage protecting gstate
+  gsave
+  showpage
+  grestore
+} bind def
+
+/MF {	% fontname newfontname -> -	make a new encoded font
+  /newfontname exch def
+  /fontname exch def
+
+  /fontdict fontname findfont def
+  /newfont fontdict maxlength dict def
+
+  fontdict {
+    exch
+    dup /FID eq {
+      % skip FID pair
+      pop pop
+    } {
+      % copy to the new font dictionary
+      exch newfont 3 1 roll put
+    } ifelse
+  } forall
+
+  newfont /FontName newfontname put
+
+  % insert only valid encoding vectors
+  encoding_vector length 256 eq {
+    newfont /Encoding encoding_vector put
+  } if
+
+  newfontname newfont definefont pop
+} def
+
+/MF_PS { % fontname newfontname -> -	make a new font preserving its enc
+  /newfontname exch def
+  /fontname exch def
+
+  /fontdict fontname findfont def
+  /newfont fontdict maxlength dict def
+
+  fontdict {
+    exch
+    dup /FID eq {
+      % skip FID pair
+      pop pop
+    } {
+      % copy to the new font dictionary
+      exch newfont 3 1 roll put
+    } ifelse
+  } forall
+
+  newfont /FontName newfontname put
+
+  newfontname newfont definefont pop
+} def
+
+/SF { % fontname width height -> -	set a new font
+  /height exch def
+  /width exch def
+
+  findfont
+  [width 0 0 height 0 0] makefont setfont
+} def
+
+/SUF { % fontname width height -> -	set a new user font
+  /height exch def
+  /width exch def
+
+  /F-gs-user-font MF
+  /F-gs-user-font width height SF
+} def
+
+/SUF_PS { % fontname width height -> -	set a new user font preserving its enc
+  /height exch def
+  /width exch def
+
+  /F-gs-user-font MF_PS
+  /F-gs-user-font width height SF
+} def
+
+/M {moveto} bind def
+/s {show} bind def
+
+/Box {	% x y w h -> -			define box path
+  /d_h exch def /d_w exch def /d_y exch def /d_x exch def
+  d_x d_y  moveto
+  d_w 0 rlineto
+  0 d_h rlineto
+  d_w neg 0 rlineto
+  closepath
+} def
+
+/bgs {	% x y height blskip gray str -> -	show string with bg color
+  /str exch def
+  /gray exch def
+  /blskip exch def
+  /height exch def
+  /y exch def
+  /x exch def
+
+  gsave
+    x y blskip sub str stringwidth pop height Box
+    gray setgray
+    fill
+  grestore
+  x y M str s
+} def
+
+/bgcs { % x y height blskip red green blue str -> -  show string with bg color
+  /str exch def
+  /blue exch def
+  /green exch def
+  /red exch def
+  /blskip exch def
+  /height exch def
+  /y exch def
+  /x exch def
+
+  gsave
+    x y blskip sub str stringwidth pop height Box
+    red green blue setrgbcolor
+    fill
+  grestore
+  x y M str s
+} def
+
+% Highlight bars.
+/highlight_bars {	% nlines lineheight output_y_margin gray -> -
+  gsave
+    setgray
+    /ymarg exch def
+    /lineheight exch def
+    /nlines exch def
+
+    % This 2 is just a magic number to sync highlight lines to text.
+    0 d_header_y ymarg sub 2 sub translate
+
+    /cw d_output_w cols div def
+    /nrows d_output_h ymarg 2 mul sub lineheight div cvi def
+
+    % for each column
+    0 1 cols 1 sub {
+      cw mul /xp exch def
+
+      % for each rows
+      0 1 nrows 1 sub {
+        /rn exch def
+        rn lineheight mul neg /yp exch def
+        rn nlines idiv 2 mod 0 eq {
+	  % Draw highlight bar.  4 is just a magic indentation.
+	  xp 4 add yp cw 8 sub lineheight neg Box fill
+	} if
+      } for
+    } for
+
+  grestore
+} def
+
+% Line highlight bar.
+/line_highlight {	% x y width height gray -> -
+  gsave
+    /gray exch def
+    Box gray setgray fill
+  grestore
+} def
+
+% Column separator lines.
+/column_lines {
+  gsave
+    .1 setlinewidth
+    0 d_footer_h translate
+    /cw d_output_w cols div def
+    1 1 cols 1 sub {
+      cw mul 0 moveto
+      0 d_output_h rlineto stroke
+    } for
+  grestore
+} def
+
+% Column borders.
+/column_borders {
+  gsave
+    .1 setlinewidth
+    0 d_footer_h moveto
+    0 d_output_h rlineto
+    d_output_w 0 rlineto
+    0 d_output_h neg rlineto
+    closepath stroke
+  grestore
+} def
+
+% Do the actual underlay drawing
+/draw_underlay {
+  ul_style 0 eq {
+    ul_str true charpath stroke
+  } {
+    ul_str show
+  } ifelse
+} def
+
+% Underlay
+/underlay {	% - -> -
+  gsave
+    0 d_page_h translate
+    d_page_h neg d_page_w atan rotate
+
+    ul_gray setgray
+    ul_font setfont
+    /dw d_page_h dup mul d_page_w dup mul add sqrt def
+    ul_str stringwidth pop dw exch sub 2 div ul_h_ptsize -2 div moveto
+    draw_underlay
+  grestore
+} def
+
+/user_underlay {	% - -> -
+  gsave
+    ul_x ul_y translate
+    ul_angle rotate
+    ul_gray setgray
+    ul_font setfont
+    0 0 ul_h_ptsize 2 div sub moveto
+    draw_underlay
+  grestore
+} def
+
+% Page prefeed
+/page_prefeed {		% bool -> -
+  statusdict /prefeed known {
+    statusdict exch /prefeed exch put
+  } {
+    pop
+  } ifelse
+} def
+
+% Wrapped line markers
+/wrapped_line_mark {	% x y charwith charheight type -> -
+  /type exch def
+  /h exch def
+  /w exch def
+  /y exch def
+  /x exch def
+
+  type 2 eq {
+    % Black boxes (like TeX does)
+    gsave
+      0 setlinewidth
+      x w 4 div add y M
+      0 h rlineto w 2 div 0 rlineto 0 h neg rlineto
+      closepath fill
+    grestore
+  } {
+    type 3 eq {
+      % Small arrows
+      gsave
+        .2 setlinewidth
+        x w 2 div add y h 2 div add M
+        w 4 div 0 rlineto
+        x w 4 div add y lineto stroke
+
+        x w 4 div add w 8 div add y h 4 div add M
+        x w 4 div add y lineto
+	w 4 div h 8 div rlineto stroke
+      grestore
+    } {
+      % do nothing
+    } ifelse
+  } ifelse
+} def
+
+% EPSF import.
+
+/BeginEPSF {
+  /b4_Inc_state save def    		% Save state for cleanup
+  /dict_count countdictstack def	% Count objects on dict stack
+  /op_count count 1 sub def		% Count objects on operand stack
+  userdict begin
+  /showpage { } def
+  0 setgray 0 setlinecap
+  1 setlinewidth 0 setlinejoin
+  10 setmiterlimit [ ] 0 setdash newpath
+  /languagelevel where {
+    pop languagelevel
+    1 ne {
+      false setstrokeadjust false setoverprint
+    } if
+  } if
+} bind def
+
+/EndEPSF {
+  count op_count sub { pos } repeat	% Clean up stacks
+  countdictstack dict_count sub { end } repeat
+  b4_Inc_state restore
+} bind def
+
+% Check PostScript language level.
+/languagelevel where {
+  pop /gs_languagelevel languagelevel def
+} {
+  /gs_languagelevel 1 def
+} ifelse
+%%EndResource
+%%BeginResource: procset Enscript-Encoding-88591 1.6 4
+/encoding_vector [
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/space        	/exclam       	/quotedbl     	/numbersign   	
+/dollar       	/percent      	/ampersand    	/quoteright   	
+/parenleft    	/parenright   	/asterisk     	/plus         	
+/comma        	/hyphen       	/period       	/slash        	
+/zero         	/one          	/two          	/three        	
+/four         	/five         	/six          	/seven        	
+/eight        	/nine         	/colon        	/semicolon    	
+/less         	/equal        	/greater      	/question     	
+/at           	/A            	/B            	/C            	
+/D            	/E            	/F            	/G            	
+/H            	/I            	/J            	/K            	
+/L            	/M            	/N            	/O            	
+/P            	/Q            	/R            	/S            	
+/T            	/U            	/V            	/W            	
+/X            	/Y            	/Z            	/bracketleft  	
+/backslash    	/bracketright 	/asciicircum  	/underscore   	
+/quoteleft    	/a            	/b            	/c            	
+/d            	/e            	/f            	/g            	
+/h            	/i            	/j            	/k            	
+/l            	/m            	/n            	/o            	
+/p            	/q            	/r            	/s            	
+/t            	/u            	/v            	/w            	
+/x            	/y            	/z            	/braceleft    	
+/bar          	/braceright   	/tilde        	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/.notdef      	/.notdef      	/.notdef      	/.notdef      	
+/space        	/exclamdown   	/cent         	/sterling     	
+/currency     	/yen          	/brokenbar    	/section      	
+/dieresis     	/copyright    	/ordfeminine  	/guillemotleft	
+/logicalnot   	/hyphen       	/registered   	/macron       	
+/degree       	/plusminus    	/twosuperior  	/threesuperior	
+/acute        	/mu           	/paragraph    	/bullet       	
+/cedilla      	/onesuperior  	/ordmasculine 	/guillemotright	
+/onequarter   	/onehalf      	/threequarters	/questiondown 	
+/Agrave       	/Aacute       	/Acircumflex  	/Atilde       	
+/Adieresis    	/Aring        	/AE           	/Ccedilla     	
+/Egrave       	/Eacute       	/Ecircumflex  	/Edieresis    	
+/Igrave       	/Iacute       	/Icircumflex  	/Idieresis    	
+/Eth          	/Ntilde       	/Ograve       	/Oacute       	
+/Ocircumflex  	/Otilde       	/Odieresis    	/multiply     	
+/Oslash       	/Ugrave       	/Uacute       	/Ucircumflex  	
+/Udieresis    	/Yacute       	/Thorn        	/germandbls   	
+/agrave       	/aacute       	/acircumflex  	/atilde       	
+/adieresis    	/aring        	/ae           	/ccedilla     	
+/egrave       	/eacute       	/ecircumflex  	/edieresis    	
+/igrave       	/iacute       	/icircumflex  	/idieresis    	
+/eth          	/ntilde       	/ograve       	/oacute       	
+/ocircumflex  	/otilde       	/odieresis    	/divide       	
+/oslash       	/ugrave       	/uacute       	/ucircumflex  	
+/udieresis    	/yacute       	/thorn        	/ydieresis    	
+] def
+%%EndResource
+%%EndProlog
+%%BeginSetup
+%%IncludeResource: font Courier-Bold
+%%IncludeResource: font Courier
+/HFpt_w 10 def
+/HFpt_h 10 def
+/Courier-Bold /HF-gs-font MF
+/HF /HF-gs-font findfont [HFpt_w 0 0 HFpt_h 0 0] makefont def
+/Courier /F-gs-font MF
+/F-gs-font 10 10 SF
+/#copies 1 def
+% Pagedevice definitions:
+gs_languagelevel 1 gt {
+  <<
+    /PageSize [595 842] 
+  >> setpagedevice
+} if
+%%BeginResource: procset Enscript-Header-simple 1.6 4
+
+/do_header {	% print default simple header
+  gsave
+    d_header_x d_header_y HFpt_h 3 div add translate
+
+    HF setfont
+    user_header_p {
+      5 0 moveto user_header_left_str show
+
+      d_header_w user_header_center_str stringwidth pop sub 2 div
+      0 moveto user_header_center_str show
+
+      d_header_w user_header_right_str stringwidth pop sub 5 sub
+      0 moveto user_header_right_str show
+    } {
+      5 0 moveto fname show
+      45 0 rmoveto fmodstr show
+      45 0 rmoveto pagenumstr show
+    } ifelse
+
+  grestore
+} def
+%%EndResource
+/d_page_w 547 def
+/d_page_h 794 def
+/d_header_x 0 def
+/d_header_y 779 def
+/d_header_w 547 def
+/d_header_h 15 def
+/d_footer_x 0 def
+/d_footer_y 0 def
+/d_footer_w 547 def
+/d_footer_h 0 def
+/d_output_w 547 def
+/d_output_h 779 def
+/cols 1 def
+%%EndSetup
+%%Page: (1) 1
+%%BeginPageSetup
+_S
+24 24 translate
+/pagenum 1 def
+/fname (shabal_shorttest.log) def
+/fdir () def
+/ftail (shabal_shorttest.log) def
+% User defined strings:
+/fmodstr (Mon Apr 27 00:58:21 2009) def
+/pagenumstr (1) def
+/user_header_p false def
+/user_footer_p false def
+%%EndPageSetup
+do_header
+5 766 M
+(test) s
+5 744 M
+(Test vectors for Shabal \(192 bits\):) s
+5 733 M
+(message:) s
+5 722 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 711 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 700 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 689 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 678 M
+(hash:) s
+5 667 M
+(    0F 70 6E CB 97 CF 4D CE 00 BF BB D2 FB 64 53 0C ) s
+5 656 M
+(    32 87 0C B4 48 39 73 0D ) s
+5 634 M
+(Test vectors for Shabal \(192 bits\):) s
+5 623 M
+(message:) s
+5 612 M
+(    61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 ) s
+5 601 M
+(    71 72 73 74 75 76 77 78 79 7A 2D 30 31 32 33 34 ) s
+5 590 M
+(    35 36 37 38 39 2D 41 42 43 44 45 46 47 48 49 4A ) s
+5 579 M
+(    4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A ) s
+5 568 M
+(    2D 30 31 32 33 34 35 36 37 38 39 2D 61 62 63 64 ) s
+5 557 M
+(    65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 ) s
+5 546 M
+(    75 76 77 78 79 7A ) s
+5 535 M
+(hash:) s
+5 524 M
+(    69 0F AE 79 22 6D 95 76 0A E8 FD B4 F5 8C 05 37 ) s
+5 513 M
+(    11 17 56 55 7D 30 7B 15 ) s
+5 491 M
+(Test vectors for Shabal \(224 bits\):) s
+5 480 M
+(message:) s
+5 469 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 458 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 447 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 436 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 425 M
+(hash:) s
+5 414 M
+(    99 DD A6 14 F9 07 D2 E8 81 76 18 F7 30 69 6F 32 ) s
+5 403 M
+(    00 AE CA 8B 5F 85 F4 25 43 BA 20 31 ) s
+5 381 M
+(Test vectors for Shabal \(224 bits\):) s
+5 370 M
+(message:) s
+5 359 M
+(    61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 ) s
+5 348 M
+(    71 72 73 74 75 76 77 78 79 7A 2D 30 31 32 33 34 ) s
+5 337 M
+(    35 36 37 38 39 2D 41 42 43 44 45 46 47 48 49 4A ) s
+5 326 M
+(    4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A ) s
+5 315 M
+(    2D 30 31 32 33 34 35 36 37 38 39 2D 61 62 63 64 ) s
+5 304 M
+(    65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 ) s
+5 293 M
+(    75 76 77 78 79 7A ) s
+5 282 M
+(hash:) s
+5 271 M
+(    C7 D6 2D 8D 2A 34 74 B4 F4 A9 D1 1A 52 DB 3D 43 ) s
+5 260 M
+(    5B F1 58 CF 45 4C 5D 56 1D 71 25 F5 ) s
+5 238 M
+(Test vectors for Shabal \(256 bits\):) s
+5 227 M
+(message:) s
+5 216 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 205 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 194 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 183 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 172 M
+(hash:) s
+5 161 M
+(    DA 8F 08 C0 2A 67 BA 9A 56 BD D0 79 8E 48 AE 07 ) s
+5 150 M
+(    14 21 5E 09 3B 5B 85 06 49 A3 77 18 99 3F 54 A2 ) s
+5 128 M
+(Test vectors for Shabal \(256 bits\):) s
+5 117 M
+(message:) s
+5 106 M
+(    61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 ) s
+5 95 M
+(    71 72 73 74 75 76 77 78 79 7A 2D 30 31 32 33 34 ) s
+5 84 M
+(    35 36 37 38 39 2D 41 42 43 44 45 46 47 48 49 4A ) s
+5 73 M
+(    4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A ) s
+5 62 M
+(    2D 30 31 32 33 34 35 36 37 38 39 2D 61 62 63 64 ) s
+5 51 M
+(    65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 ) s
+5 40 M
+(    75 76 77 78 79 7A ) s
+5 29 M
+(hash:) s
+5 18 M
+(    B4 9F 34 BF 51 86 4C 30 53 3C C4 6C C2 54 2B DE ) s
+5 7 M
+(    C2 F9 6F D0 6F 5C 53 9A FF 6E AD 58 83 F7 32 7A ) s
+_R
+S
+%%Page: (2) 2
+%%BeginPageSetup
+_S
+24 24 translate
+/pagenum 2 def
+/fname (shabal_shorttest.log) def
+/fdir () def
+/ftail (shabal_shorttest.log) def
+% User defined strings:
+/fmodstr (Mon Apr 27 00:58:21 2009) def
+/pagenumstr (2) def
+/user_header_p false def
+/user_footer_p false def
+%%EndPageSetup
+do_header
+5 755 M
+(Test vectors for Shabal \(384 bits\):) s
+5 744 M
+(message:) s
+5 733 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 722 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 711 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 700 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 689 M
+(hash:) s
+5 678 M
+(    9D DE 12 33 91 0D 85 DA 3A 5C 78 03 12 B1 11 C6 ) s
+5 667 M
+(    FC CA 1B 5D D2 55 37 03 5E E0 8E 3B 4E 1E 25 15 ) s
+5 656 M
+(    4F 72 6A 63 84 E5 A8 F0 AF EA AB 4A C4 C0 2F 12 ) s
+5 634 M
+(Test vectors for Shabal \(384 bits\):) s
+5 623 M
+(message:) s
+5 612 M
+(    61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 ) s
+5 601 M
+(    71 72 73 74 75 76 77 78 79 7A 2D 30 31 32 33 34 ) s
+5 590 M
+(    35 36 37 38 39 2D 41 42 43 44 45 46 47 48 49 4A ) s
+5 579 M
+(    4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A ) s
+5 568 M
+(    2D 30 31 32 33 34 35 36 37 38 39 2D 61 62 63 64 ) s
+5 557 M
+(    65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 ) s
+5 546 M
+(    75 76 77 78 79 7A ) s
+5 535 M
+(hash:) s
+5 524 M
+(    30 01 2C 0E 3E DC 46 0B D7 86 27 C2 C3 09 44 D2 ) s
+5 513 M
+(    A1 89 66 9A FA 2D 7A 97 13 EF 2F 77 4C 44 74 A4 ) s
+5 502 M
+(    3A F1 CB CE C5 FA B4 24 8C 08 73 F0 38 FB EB A0 ) s
+5 480 M
+(Test vectors for Shabal \(512 bits\):) s
+5 469 M
+(message:) s
+5 458 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 447 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 436 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 425 M
+(    00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ) s
+5 414 M
+(hash:) s
+5 403 M
+(    15 80 16 C6 C8 1F 3F 0A 52 D9 8D 68 ED 2F 9E 8E ) s
+5 392 M
+(    78 95 EF 23 CB A7 E2 BC 61 09 D8 A5 32 E6 C9 E6 ) s
+5 381 M
+(    A6 A5 01 97 9F B8 37 F0 4E C4 C6 20 E7 31 79 DC ) s
+5 370 M
+(    82 AB B5 2B 32 CD AD B3 56 50 E2 9C 98 5E 30 22 ) s
+5 348 M
+(Test vectors for Shabal \(512 bits\):) s
+5 337 M
+(message:) s
+5 326 M
+(    61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 ) s
+5 315 M
+(    71 72 73 74 75 76 77 78 79 7A 2D 30 31 32 33 34 ) s
+5 304 M
+(    35 36 37 38 39 2D 41 42 43 44 45 46 47 48 49 4A ) s
+5 293 M
+(    4B 4C 4D 4E 4F 50 51 52 53 54 55 56 57 58 59 5A ) s
+5 282 M
+(    2D 30 31 32 33 34 35 36 37 38 39 2D 61 62 63 64 ) s
+5 271 M
+(    65 66 67 68 69 6A 6B 6C 6D 6E 6F 70 71 72 73 74 ) s
+5 260 M
+(    75 76 77 78 79 7A ) s
+5 249 M
+(hash:) s
+5 238 M
+(    67 7E 6F 7F 12 D7 0A F0 B3 35 66 2F 59 B5 68 51 ) s
+5 227 M
+(    F3 65 3E 66 64 7D 33 86 DF DA 01 43 25 4C C8 A5 ) s
+5 216 M
+(    DB 3E 21 94 06 8C 6F 71 59 7D 7B 60 98 4D 22 B4 ) s
+5 205 M
+(    7A 1F 60 D9 1C A8 DF CB 17 5D 65 B9 73 59 CE CF ) s
+5 194 M
+(>) s
+_R
+S
+%%Trailer
+%%Pages: 2
+%%DocumentNeededResources: font Courier-Bold Courier 
+%%EOF

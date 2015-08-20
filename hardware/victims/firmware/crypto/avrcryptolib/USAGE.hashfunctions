@@ -1,0 +1,76 @@
+===================================
+=    Usage of hash functions      =  
+===================================
+
+Author: Daniel Otte
+email:  daniel.otte@rub.de
+ 
+ 
+0. Foreword
+ This file will describe how to use the hash function implementations provided
+  by this library.
+  
+1. What a hash function does
+ A hash function is an algorithm to map an arbitrary long message (in the form
+ of a bit string) to a fixed length message digest or hash value.
+ The hash function aims to be collision free, which means that it is not 
+ practicable to find two messages with the same hash value (although this 
+ collision must exist). Also it should not be practicable to construct a 
+ message which maps to a given hash value.
+ 
+ 
+1.1. high frequent parameters:
+  block size: 512 bits
+  hash value size: 128 bits, 160 bits, 224 bits, 256 bits, 384 bits, 512 bits
+ 
+2. Parts of a hash function 
+  * initialization function 
+  * compression algorithm
+  * finalization function
+ 
+3. hash function API
+ The API is not always consistent due to the fact that we tried to optimize the
+ code for size (flash, heap and stack) and speed (runtime of the different 
+ components).
+ Generally the API of the implemented block ciphers consists of:
+ 
+ *_init      function, which implements the initialisation of the context
+ *_nextBlock function, which implements the compression algorithm
+ *_lastBlock function, which implements the the padding algorithm
+ *_ctx2hash  function, which turns a context into an actual hash value
+ *_ctx_t     context type, which can contains the state of a hashing process
+ 
+3.1 look at the prototypes
+ Generally the prototypes (defined in the *.h files) will tell you what 
+ parameter means what. 
+  
+3.1.2 sizes in bits and bytes
+ Working with cryptographic functions involves working with different 
+ lengths. Some times you want to know it in bits and sometimes in bytes. To 
+ reduce frustration and to avoid bugs we suffix a length parameter with either
+ _b or _B depending on the meaning. _b means in bits and _B means in bytes 
+ (big b big word).
+
+3.2. *_init function
+ The *_init function generally takes a pointer to the context as parameter.
+ This function initializes the context with algorithm specific values.
+ 
+3.3. *_nextBlock function
+ The *_nextBlock function is the core of each hash function. It updates the hash 
+ state with a given message block. So this function uses a context pointer and 
+ a message pointer as parameters. The size of a message block is fixed for each
+ hash function (mostly 512 bit). For the last block of a messages which may be
+ smaller than the blocksize you have to use the *_lastBlock function described
+ below.
+ 
+3.4 *_lastBlock function
+ The *_lastBlock function finalizes the context with the last bits of a 
+ message. Since the last block is not required to have the blocksize you have
+ to specify the length of the last block (normally in bits). This function
+ performs the padding and final processing.
+
+3.5. *_ctx2hash function
+ The *_ctx2hash function turns a given hash context into an actual hash value.
+ If multiple sized hash value may be created from a context it is necessary to
+ give the the size of the hash value as parameter. 
+ 

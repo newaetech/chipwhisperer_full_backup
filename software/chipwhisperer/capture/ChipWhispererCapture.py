@@ -626,12 +626,13 @@ class ChipWhispererCapture(MainChip):
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')
-        self.CaptureToolbar.setObjectName('Capture Tools')
+        self.CaptureToolbar.setObjectName('Capture Toolbar')
         self.CaptureToolbar.addAction(self.capture1Act)
         self.CaptureToolbar.addAction(self.captureMAct)
         self.CaptureToolbar.addWidget(QLabel('Master:'))
         self.CaptureToolbar.addWidget(self.captureStatus)
-        #self.CaptureToolbar.setEnabled(False)
+        # Unknown bug on MAC OS X requires this + the different name for setObjectName
+        self.CaptureToolbar.show()
 
         # Scope Toolbar
         self.scopeStatus = QToolButton()
@@ -980,6 +981,9 @@ class ChipWhispererCapture(MainChip):
         self.project().addParamTree(self.target)
         self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
+
+        # TODO: Fix this hack
+        self.macWorkArounds()
 
     def saveProject(self):
         if self.project().hasFilename() == False:
