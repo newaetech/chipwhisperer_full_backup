@@ -287,6 +287,7 @@ class Partition(QObject):
 
         if loadFile:
             partitionTable = self.loadPartitions(tRange)
+            raise AttributeError("WARNING: loadPartitions broken for split files, disabled for now")
 
         start = tRange[0]
         end = tRange[1]
@@ -303,12 +304,15 @@ class Partition(QObject):
                 # Discover where this trace starts & ends
                 tmapstart = t.mappedRange[0]
                 tmapend = t.mappedRange[1]
+                
+                partitionTableTemp = self.createBlankTable(self.traceManager().findMappedTrace(start))
 
                 for tnum in range(tmapstart, tmapend + 1):
                     # Check each trace, write partition number
                     partNum = self.partMethod.getPartitionNum(t, tnum - tmapstart)
                     for i, pn in enumerate(partNum):
-                        partitionTable[i][pn].append(tnum - tmapstart)
+                        partitionTable[i][pn].append(tnum)
+                        partitionTableTemp[i][pn].append(tnum - tmapstart)
 
                     # self.traceDone.emit(tnum)
 
@@ -316,7 +320,7 @@ class Partition(QObject):
                     # Save partition table, reference it in config file
                     newCfgDict = copy.deepcopy(self.attrDictPartition)
                     updatedDict = t.addAuxDataConfig(newCfgDict)
-                    t.saveAuxData(partitionTable, updatedDict)
+                    t.saveAuxData(partitionTableTemp, updatedDict)
 
                 # Debug - Dump Table
                 # for t in range(0, self.partMethod.getNumPartitions()):
