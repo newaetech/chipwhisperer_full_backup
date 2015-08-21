@@ -1,6 +1,6 @@
 .. _hwcapturerev2:
 
-ChipWhisperer Capture Rev2
+CW1002: ChipWhisperer Capture Rev2
 =============================================
 
 Introduction to Capture Hardware
