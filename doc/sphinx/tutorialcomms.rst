@@ -388,7 +388,6 @@ We will now need to configure the clock to the XMEGA target device.
     data populate in the *Text Out* field of the monitor window. Note that each byte of the *Text In* is incremented in the
     *Text Out* field.
 
-
 Conclusion
 ----------
 

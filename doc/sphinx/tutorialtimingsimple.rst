@@ -1,6 +1,6 @@
 .. _tutorialtimingsimple:
 
-Tutorial #2: Viewing Instruction Power Differences
+Tutorial #B2: Viewing Instruction Power Differences
 ==================================================
 
 This tutorial will introduce you to measuring the power consumption of a device under attack. It will demonstrate
@@ -10,17 +10,19 @@ Prerequisites
 -------------
 
 You should have already completed :ref:`tutorialcomms`. This tutorial assumes you are capable of building a new
-AVR code, programming the code, and connecting to the ChipWhisperer.
+AVR/XMEGA code, programming the code, and connecting to the ChipWhisperer.
 
 Setting Up the Example
 ----------------------
+  
+1. Copy the directory ``simpleserial-base`` which is found at ``chipwhisperer\hardware\victims\firmware\`` of the 
+   chipwhisperer release to a new directory called ``simpleserial-base-lab2``. You must keep it in the same directory, as
+   it will reference other files within that directory for the build process.
 
-1. Copy the directory ``avr-serial-nocrypto`` which is found at ``chipwhisperer\hardware\victims\firmware\`` of the 
-   chipwhisperer release somewhere. The following examples assume it has been copied to ``c:\chipwhisperer\user\comm\avr-serial-nocrypto\``.
    If you just completed :ref:`tutorialcomms`, you can simply reuse that code (this builds upon it).
  
    At this point we want to modify the system to perform a number of operations. We won't actually use the input data.
-   To do so, open the file ``c:\chipwhisperer\user\comm\avr-serial-nocrypto\simpleserial_nocrypt.c`` with a text
+   To do so, open the file ``simpleserial-base.c`` with a text
    editor such as Programmer's Notepad (which ships with WinAVR).
 
 2. Find the following code block towards the end of the file, which may look different if you just completed :ref:`tutorialcomms`.
@@ -87,61 +89,75 @@ Setting Up the Example
     /* End user-specific code here. *
      ********************************/
 
-4. Change the terminal to the directory with your source, and run ``make MCU=atmega328p`` to build the system.
+4. Change the terminal to the directory with your source, and run ``make`` to build the system.
    Remember you can press the up arrow on the keyboard to get recently typed commands in most OSes::
 
-    make MCU=atmega328p
+    make
     
-   Which should have the following output::
+   Which should have the following output, you will **want to check the build platform is what you expect**::
 
     ...Bunch of lines removed...
-    Creating Extended Listing: simpleserial_nocrypt.lss
-    avr-objdump -h -S -z simpleserial_nocrypt.elf > simpleserial_nocrypt.lss
-
-    Creating Symbol Table: simpleserial_nocrypt.sym
-    avr-nm -n simpleserial_nocrypt.elf > simpleserial_nocrypt.sym
-
+    Creating Extended Listing: simpleserial-base.lss
+    avr-objdump -h -S -z simpleserial-base.elf > simpleserial-base.lss
+    
+    Creating Symbol Table: simpleserial-base.sym
+    avr-nm -n simpleserial-base.elf > simpleserial-base.sym
+    
     Size after:
     AVR Memory Usage
     ----------------
-    Device: atmega328p
-
-    Program:     758 bytes (2.3% Full)
+    Device: atxmega128d3
+    
+    Program:    1568 bytes (1.1% Full)
     (.text + .data + .bootloader)
-
-    Data:        112 bytes (5.5% Full)
+    
+    Data:        224 bytes (2.7% Full)
     (.data + .bss + .noinit)
+    
+    
+    Built for platform CW-Lite XMEGA
+    
+    -------- end --------
 
-5.  Following the instructions given in :ref:`tutorialcomms`, program the AVR with your new code. Note you __do not__
-    need to close the programming window in AVRStudio. If you will be doing frequent modifications to the source code,
+5.  Following the instructions given in :ref:`tutorialcomms`, program the AVR or XMEGA with your new code. Note you __do not__
+    need to close the programming window. If you will be doing frequent modifications to the source code,
     this can simplify your life since you only need to hit the **Program** button in AVRStudio to download new code.
   
-6.  Ensure the hardware is setup as in :ref:`tutorialcomms`. You will need to ensure all jumpers are set correctly, the
-    SMA cable is connecting the target output to the chipwhisperer, etc.
+6.  Ensure the hardware is setup as in :ref:`tutorialcomms`, if using the CW1002 ensure the SMA cable is also connected as described
+    in the previous tutorial.
  
 Capturing Power Traces
----------------------------- 
+----------------------
 
 The basic steps to connect to the ChipWhisperer device are described in :ref:`tutorialcomms`. They are repeated here
 as well, however see :ref:`tutorialcomms` for pictures & mode details.
 
 1. Start ChipWhisperer-Capture
 
-2. As the *Scope Module*, select the *ChipWhisperer/OpenADC* option
+2. As the *Scope Module*, select the *ChipWhisperer/OpenADC* option.
 
-3. As the *Target Module*, select the *Simple Serial* option
+3. As the *Target Module*, select the *Simple Serial* option.
 
-4. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* option
+4. Switch to the *Target Settings* tab, and as the *connection*, select the *ChipWhisperer* (for CW1002) or *ChipWhisperer-Lite* (for CW1173 or CW1180).
+
+5. Switch to the *Scope Settings* tab, and ensure the *connection* is set to either *ChipWhisperer* (for CW1002) or *ChipWhisperer-Lite* (for CW1173 or CW1180).
 
 5. Run the master connect (click the button labeled *Master: DIS*). Both the Target & Scope should switch to
    *CON* and be green circles.
-   
-6. Press the button labeled *Master: DIS*, where DIS has a circle around it. If it works, it will switch
-   to green and say *CON*.
-   
-7. Switch to the *General Settings* tab, and hit the *Open Monitor* button.
+ 
+6. For the CW1173/CW1180 (ChipWhisperer-Lite based systems), perform the following:
 
-8. Hit the *Run 1* button. You may have to hit it a few times, as the very first serial data is often lost. You should see
+    a. Set the *CLKGEN* frequency to *7.37 MHz*
+    b. Set the*Target HS-IO Out* as *CLKGEN* 
+ 
+7. If targetting an XMEGA board (either the ChipWhisperer-Lite XMEGA default target, or the XMEGA on the multi-target board), perform the following:
+
+   a. Set *Target IO1* as *Serial RXD*
+   b. Set *Target IO2* as *Serial TXD*
+    
+8. Switch to the *General Settings* tab, and hit the *Open Monitor* button.
+
+9. Hit the *Run 1* button. You may have to hit it a few times, as the very first serial data is often lost. You should see
    data populate in the *Text Out* field of the monitor window. The *Text In* and *Text Out* aren't actually used in this example,
    so you can close the *Monitor* dialog.
 
@@ -154,27 +170,34 @@ to setup the analog capture hardware, which is new (to you). The following is en
 
 .. image:: /images/tutorials/basic/simplepower/cap2.png
 
-10. Under the *Trigger Pins* unselect the *Front Panel A* as an option, and select *Target IO4 (Trigger Line)*. This will
-    mean only the trigger pin coming from the AVR target is used to trigger the capture.
+10. For the CW1002 (ChipWhisperer Capture Rev 2) hardware only, perform the following:
 
-11. In the same area, select the *Clock Source* as being from *Target IO-IN*
+   a. Under the *Trigger Pins* unselect the *Front Panel A* as an option, and select *Target IO4 (Trigger Line)*. This will
+      mean only the trigger pin coming from the AVR target is used to trigger the capture.
 
-.. image:: /images/tutorials/basic/simplepower/cap3.png
-  
-12. You can monitor the *Freq Counter* option, which measures the frequency being used on the *EXTCLK* input. This should
-    be 7.37 MHz, which is the oscillator on the multi-target board.
+   b. In the same area, select the *Clock Source* as being from *Target IO-IN*
+
+      .. image:: /images/tutorials/basic/simplepower/cap3.png
+      
+   c. You can monitor the *Freq Counter* option, which measures the frequency being used on the *EXTCLK* input. This should
+      be 7.37 MHz, which is the oscillator on the multi-target board.
     
-13. Change the *ADC Clock* *source* as being *EXTCLK x4 via DCM*. This routes the external clock through a 4x multiplier,
-    and routes it to the ADC.
+   d. Change the *ADC Clock* *source* as being *EXTCLK x4 via DCM*. This routes the external clock through a 4x multiplier,
+      and routes it to the ADC.
     
-14. Hit the **Reset ADC DCM** button.
+11. For the CW1173/CW1180 (ChipWhisperer-Lite based hardware), perform the following:
+
+   d. Change the *ADC Clock* *source* as being *CLKGEN x4 via DCM*. This routes the device clock through a 4x multiplier,
+      and routes it to the ADC. 
+    
+12. Hit the **Reset ADC DCM** button.
     
 .. image:: /images/tutorials/basic/simplepower/cap5.png
 
-15. The *ADC Freq* should show 29.5 MHz (which is 4x 7.37 MHz), and the *DCM Locked* checkbox __MUST__ be checked. If the
+13. The *ADC Freq* should show 29.5 MHz (which is 4x 7.37 MHz), and the *DCM Locked* checkbox __MUST__ be checked. If the
     *DCM Locked* checkbox is NOT checked, try hitting the *Reset ADC DCM* button again.
     
-16. At this point you can hit the *Capture 1* button, and see if the system works! You should end up with a window looking 
+14. At this point you can hit the *Capture 1* button, and see if the system works! You should end up with a window looking 
     like this:
     
     .. image:: /images/tutorials/basic/simplepower/cap6.png
@@ -184,12 +207,13 @@ to setup the analog capture hardware, which is new (to you). The following is en
     
 .. image:: /images/tutorials/basic/simplepower/cap7.png
     
-17. Under *Gain Setting* set the *Mode* to *high*. Increase the *Gain Setting* to about 40. You'll be able to adjust this
-    further during experimentations. 
+15. Under *Gain Setting* set the *Mode* to *high*. Increase the *Gain Setting* to about 25. You'll be able to adjust this
+    further during experimentations, you may need to increase this depending on your hardware and target device. For the 
+    multi-target board with the CW1002 you will probably need to set this around 40 for example.
     
-18. Under *Trigger Setup* set the *Total Samples* to *500*. 
+16. Under *Trigger Setup* set the *Total Samples* to *500*. 
 
-19. Try a few more *Capture 1* traces, and you should see a 'zoomed-in' waveform.
+17. Try a few more *Capture 1* traces, and you should see a 'zoomed-in' waveform.
 
 Modifying the Target
 --------------------
@@ -197,9 +221,9 @@ Modifying the Target
 Background on Setup
 ^^^^^^^^^^^^^^^^^^^
 
-This tutorial is using an AtMega328p, which is an Atmel AVR device. We are comparing the power consumption of two different
-instructions, the ``MUL`` (multiply) instruction and the ``NOP`` (no operation) instruction. Some information on these two
-instructions:
+This tutorial is using either an AtMega328p which is an Atmel AVR device, or AtXMEGA128D4 which is an Atmel XMEGA device.
+We are comparing the power consumption of two different instructions, the ``MUL`` (multiply) instruction and the ``NOP``
+(no operation) instruction. Some information on these two instructions:
 
 mul
    * Multiples two 8-bit numbers together.
@@ -217,7 +241,8 @@ output graph, since it takes 4 samples to cover a complete clock cycle.
 Initial Code
 ^^^^^^^^^^^^
 
-The initial code has a power signature something like this (yours will vary based on various physical considerations):
+The initial code has a power signature something like this (yours will vary based on various physical considerations, and depending
+if you are using an XMEGA or AVR device):
 
 .. image:: /images/tutorials/basic/simplepower/cap_nop_mul.png
 
@@ -395,8 +420,8 @@ And the resulting waveforms for a variety of different phase shift settings:
   
 .. image:: /images/tutorials/basic/simplepower/phase_differences.png 
    
-The specifics of the capture are highly dependant on each ChipWhisperer board & target platform. The phase shift allows customization
-of the capture waveform for optimum performance, however what constitutes 'optimum performance' is highly dependant on the specifics
+The specifics of the capture are highly dependent on each ChipWhisperer board & target platform. The phase shift allows customization
+of the capture waveform for optimum performance, however what constitutes 'optimum performance' is highly dependent on the specifics
 of your algorithm.
    
 Conclusion
