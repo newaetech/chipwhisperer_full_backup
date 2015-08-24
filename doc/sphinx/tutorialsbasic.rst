@@ -10,6 +10,7 @@ The basic tutorials show you the basics of power analysis. All tutorials use the
     
     tutorialcomms
     tutorialtimingsimple
+    tutorialbasictimingpasswd
     tutorialtimingpasswd
     tutorialpartition
     tutorialaes

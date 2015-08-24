@@ -1,12 +1,16 @@
 .. _tutorialtimingpasswd:
 
-Tutorial #B3: Timing Analysis with Power
-========================================
+Tutorial #B3-2: Timing Analysis with Power for Attacking TSB
+============================================================
 
 This tutorial will introduce you to breaking devices by determining when a device is performing certain operations. It will
 break simple bootloaders which may otherwise seem 'secure' against password attacks. In particular this uses the excellent
 `TinySafeBoot <http://jtxp.org/tech/tinysafeboot_en.htm>`_ bootloader for AVR microcontrollers. The example uses an old
 release of TinySafeBoot, since newer releases do not have this vulnerability!
+
+This tutorial can only be completed if you have an ATMega328P target - for example the CW301 Multi-Target board, or the CW304
+NOTDuino board. It cannot be completed with the XMEGA target, as it relies on a 3rd-party bootloader. It uses the same principles
+learned in :ref:`tutorialbasictimingpasswd`.
 
 In addition this example shows you how to drive the ChipWhisperer software with a script, rather than using the GUI. This will
 be required when attacking new devices which you have not yet added to the core ChipWhisperer software.
@@ -31,7 +35,7 @@ Testing the Serial Connection & Observing Power
 -----------------------------------------------
 
 These steps differ from previous steps, as we are not going to be using a built-in target. However you can refer to :ref:`tutorialcomms`
-for general informationon using the ChipWhisperer-Capture Interface.
+for general information on using the ChipWhisperer-Capture Interface.
 
 1. Start ChipWhisperer-Capture
 
