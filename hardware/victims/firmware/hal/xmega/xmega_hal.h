@@ -24,13 +24,17 @@
 
 //We want to use the AVR ADC-pins, since they have a seperate power rail
 #define trigger_setup() PORTA.DIRSET = PIN0_bm
-#define trigger_high()  PORTA.OUT = PIN0_bm
-#define trigger_low()   PORTA.OUT = 0
-
+#define trigger_high()  PORTA.OUTSET = PIN0_bm
+#define trigger_low()   PORTA.OUTCLR = PIN0_bm
 
 #define init_uart init_uart0
 #define putch output_ch_0
 #define getch input_ch_0
+
+#if PLATFORM == CW303
+#define led_error(a) if (a) {PORTA.OUTCLR = PIN6_bm;} else {PORTA.OUTSET = PIN6_bm;}
+#define led_ok(a) if (a) {PORTA.OUTCLR = PIN5_bm;} else {PORTA.OUTSET = PIN5_bm;}
+#endif
 
 #endif //AVR_HAL_H_
 
