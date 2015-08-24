@@ -139,11 +139,11 @@ how we can use a script as a starting point to simplify our setup.
     
 17. Play around with the password entered on the *Go Command* - try all of the following:
 
-     *``h0px3\n``
-     *``h0px4\n``
-     *``h0paa\n``
-     *``haaaa\n``
-     *``a\n``
+    * ``h0px3\n``
+    * ``h0px4\n``
+    * ``h0paa\n``
+    * ``haaaa\n``
+    * ``a\n``
 
     You should notice a distinct change in the password depending how many characters were correct. For example the following shows the
     difference between passwords of ``h0px4`` (which has 4 correct characters) and ``h0paa`` (which has 3 correct characters):
@@ -392,8 +392,12 @@ Scripting Communications
     
      .. image:: /images/tutorials/basic/timingpowerbasic/passwordcrackerpts.png
    
-    This point corresponds to an offset of 153 samples, and a delta for each character of 72 points. Let's start with cracking
-    just the first character, assuming it's a lowercase alphanumeric character::
+    This point corresponds to an offset of 153 samples, and a delta for each character of 72 points. Note the specific point
+    will change for different hardware, and may also change if you use different versions of avr-gcc to compile the target
+    code. The example code here was compiled with WinAVR 20100110, which has avr-gcc 4.3.3. If you view the video version
+    of this tutorial the point numbers are different for example, so be sure to check what they are for your specific system.
+    
+    Let's start with cracking just the first character, assuming it's a lowercase alphanumeric character::
     
         trylist = "abcdefghijklmnopqrstuvwyx0123456789"
         
@@ -410,7 +414,8 @@ Scripting Communications
 11. We haven't yet pragmatically tested the results, but run the script anyway (to kill it, you'll have to use Ctrl-C on the terminal
     window). You should notice a distinct change of the power signature when it runs through "Try = h".
     
-12. We can access ``cap.scope.datapoints`` to get the data points. Let's print that point of interest::
+12. We can access ``cap.scope.datapoints`` to get the data points. Let's print that point of interest (again change
+    the point for your specific setup)::
         
         for c in trylist:
             cap.setParameter(['Target Connection', 'Go Command', u'%c\\n'%c])
