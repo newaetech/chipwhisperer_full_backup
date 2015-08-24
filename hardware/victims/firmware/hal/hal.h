@@ -48,4 +48,13 @@
     #define HW_CRYPTO 0
 #endif
 
+
+#ifndef led_error
+#define led_error(a)
+#endif
+
+#ifndef led_ok
+#define led_ok(a)
+#endif
+
 #endif //HAL_H_

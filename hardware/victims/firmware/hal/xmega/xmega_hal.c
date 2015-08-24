@@ -15,8 +15,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
-
+#include "hal.h"
 #include "xmega_hal.h"
 
 void platform_init(void)
@@ -33,5 +32,10 @@ void platform_init(void)
     CLK.CTRL = CLK_SCLKSEL_XOSC_gc;    
     
     //Turn off other sources besides external    
-    OSC.CTRL = OSC_XOSCEN_bm;   
+    OSC.CTRL = OSC_XOSCEN_bm;
+    
+ #if PLATFORM == CW303
+    PORTA.DIRSET = PIN5_bm | PIN6_bm;
+    PORTA.OUTSET = PIN5_bm | PIN6_bm;
+ #endif
 }
