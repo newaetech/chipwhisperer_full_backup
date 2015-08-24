@@ -142,22 +142,22 @@ as well, however see :ref:`tutorialcomms` for pictures & mode details.
 
 5. Switch to the *Scope Settings* tab, and ensure the *connection* is set to either *ChipWhisperer* (for CW1002) or *ChipWhisperer-Lite* (for CW1173 or CW1180).
 
-5. Run the master connect (click the button labeled *Master: DIS*). Both the Target & Scope should switch to
+6. Run the master connect (click the button labeled *Master: DIS*). Both the Target & Scope should switch to
    *CON* and be green circles.
  
-6. For the CW1173/CW1180 (ChipWhisperer-Lite based systems), perform the following:
+7. For the CW1173/CW1180 (ChipWhisperer-Lite based systems), perform the following:
 
     a. Set the *CLKGEN* frequency to *7.37 MHz*
     b. Set the*Target HS-IO Out* as *CLKGEN* 
  
-7. If targetting an XMEGA board (either the ChipWhisperer-Lite XMEGA default target, or the XMEGA on the multi-target board), perform the following:
+8. If targetting an XMEGA board (either the ChipWhisperer-Lite XMEGA default target, or the XMEGA on the multi-target board), perform the following:
 
    a. Set *Target IO1* as *Serial RXD*
    b. Set *Target IO2* as *Serial TXD*
     
-8. Switch to the *General Settings* tab, and hit the *Open Monitor* button.
+9. Switch to the *General Settings* tab, and hit the *Open Monitor* button.
 
-9. Hit the *Run 1* button. You may have to hit it a few times, as the very first serial data is often lost. You should see
+10. Hit the *Run 1* button. You may have to hit it a few times, as the very first serial data is often lost. You should see
    data populate in the *Text Out* field of the monitor window. The *Text In* and *Text Out* aren't actually used in this example,
    so you can close the *Monitor* dialog.
 
@@ -166,11 +166,11 @@ to setup the analog capture hardware, which is new (to you). The following is en
 
 .. image:: /images/tutorials/basic/simplepower/cap1.png
 
-9. Under *Trigger Setup* set the *Mode* to *rising edge*. This means the system will trigger on a rising edge logic level:
+11. Under *Trigger Setup* set the *Mode* to *rising edge*. This means the system will trigger on a rising edge logic level:
 
 .. image:: /images/tutorials/basic/simplepower/cap2.png
 
-10. For the CW1002 (ChipWhisperer Capture Rev 2) hardware only, perform the following:
+12. For the CW1002 (ChipWhisperer Capture Rev 2) hardware only, perform the following:
 
    a. Under the *Trigger Pins* unselect the *Front Panel A* as an option, and select *Target IO4 (Trigger Line)*. This will
       mean only the trigger pin coming from the AVR target is used to trigger the capture.
@@ -185,19 +185,19 @@ to setup the analog capture hardware, which is new (to you). The following is en
    d. Change the *ADC Clock* *source* as being *EXTCLK x4 via DCM*. This routes the external clock through a 4x multiplier,
       and routes it to the ADC.
     
-11. For the CW1173/CW1180 (ChipWhisperer-Lite based hardware), perform the following:
+13. For the CW1173/CW1180 (ChipWhisperer-Lite based hardware), perform the following:
 
    d. Change the *ADC Clock* *source* as being *CLKGEN x4 via DCM*. This routes the device clock through a 4x multiplier,
       and routes it to the ADC. 
     
-12. Hit the **Reset ADC DCM** button.
+14. Hit the **Reset ADC DCM** button.
     
 .. image:: /images/tutorials/basic/simplepower/cap5.png
 
-13. The *ADC Freq* should show 29.5 MHz (which is 4x 7.37 MHz), and the *DCM Locked* checkbox __MUST__ be checked. If the
+15. The *ADC Freq* should show 29.5 MHz (which is 4x 7.37 MHz), and the *DCM Locked* checkbox __MUST__ be checked. If the
     *DCM Locked* checkbox is NOT checked, try hitting the *Reset ADC DCM* button again.
     
-14. At this point you can hit the *Capture 1* button, and see if the system works! You should end up with a window looking 
+16. At this point you can hit the *Capture 1* button, and see if the system works! You should end up with a window looking 
     like this:
     
     .. image:: /images/tutorials/basic/simplepower/cap6.png
@@ -207,13 +207,13 @@ to setup the analog capture hardware, which is new (to you). The following is en
     
 .. image:: /images/tutorials/basic/simplepower/cap7.png
     
-15. Under *Gain Setting* set the *Mode* to *high*. Increase the *Gain Setting* to about 25. You'll be able to adjust this
+17. Under *Gain Setting* set the *Mode* to *high*. Increase the *Gain Setting* to about 25. You'll be able to adjust this
     further during experimentations, you may need to increase this depending on your hardware and target device. For the 
     multi-target board with the CW1002 you will probably need to set this around 40 for example.
     
-16. Under *Trigger Setup* set the *Total Samples* to *500*. 
+18. Under *Trigger Setup* set the *Total Samples* to *500*. 
 
-17. Try a few more *Capture 1* traces, and you should see a 'zoomed-in' waveform.
+19. Try a few more *Capture 1* traces, and you should see a 'zoomed-in' waveform.
 
 Modifying the Target
 --------------------
