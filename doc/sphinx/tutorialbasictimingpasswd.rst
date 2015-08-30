@@ -9,7 +9,17 @@ a simple password check, and demonstrate how to perform a basic power analysis.
 In addition this example shows you how to drive the ChipWhisperer software with a script, rather than using the GUI. This will
 be required when attacking new devices which you have not yet added to the core ChipWhisperer software.
 
-Note this is not a prerequisite to the tutorial on breaking AES. You can skip this tutorial if you wish.
+Note this is not a prerequisite to the tutorial on breaking AES. You can skip this tutorial if you wish to go ahead with the AES
+tutorial.
+
+You can also view a 53-min `Video Version on YouTube <https://www.youtube.com/watch?v=h4eAU6vEONs&hd=1>`_:
+
+|YouTubeB2.1|_
+
+.. |YouTubeB2.1| image:: /images/tutorials/basic/timingpowerbasic/timingvideo.png
+.. _YouTubeB2.1: https://www.youtube.com/watch?v=h4eAU6vEONs&hd=1
+
+https://www.youtube.com/watch?v=h4eAU6vEONs&hd=1
 
 Prerequisites
 -------------

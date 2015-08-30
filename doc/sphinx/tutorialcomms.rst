@@ -265,7 +265,7 @@ Now, download the FPGA Firmware:
 Completing Tutorial with CW1173 (ChipWhisperer-Lite Board)
 ----------------------------------------------------------
 
-Note the following is only applicable to the use of the ChipWhisperer-Lite hardware (aka the CW1173). See :ref:`tutorialcomcw1002`
+Note the following is only applicable to the use of the ChipWhisperer-Lite hardware (aka the CW1173). See :ref:`tutorialcommcw1002`
 if you are not using this hardware.
 
 Setting up the Hardware
@@ -273,7 +273,7 @@ Setting up the Hardware
 
 This tutorial uses the :ref:`naecw1173_cwlite` hardware. No hardware setup is required normally, simply plug in the micro-USB cable:
 
-.. image:: /images/cw1173/regularusb.jpg
+.. image:: /images/tutorials/basic/aes/cw1173_microusb.jpg
 
 Note that under *no circumstances* as part of the setup should you use the CW1173 device to hold up furniture:
 
