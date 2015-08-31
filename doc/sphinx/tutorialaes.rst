@@ -7,8 +7,94 @@ This tutorial will take you through a complete attack on a software AES implemen
 The specific implementation being attacked is a well-known AES implementation written
 in C, which is likely to be similar to other implementations used by proprietary systems.
 
-Setting up the Hardware
------------------------
+This tutorial runs on four different hardware targets. You only need to follow the steps
+for your given hardware. 
+
+Capturing with CW1173 + CW303 (ChipWhisperer-Lite with default XMEGA Target)
+------------------------------------------------------------------------------------------
+
+NOTE: You can see a Quick-Start Guide and Video for this target on the :ref:`naecw1173_cwlite` page:
+      
+|YouTubeCW1173Demo|_
+
+.. |YouTubeCW1173Demo| image:: /images/cw1173/cwlite_demo_video.png
+.. _YouTubeCW1173Demo: http://www.youtube.com/watch?v=MJmkYqA-LeM&hd=1
+
+Hardware Setup
+^^^^^^^^^^^^^^
+
+1. Connect the CW1173 by micro USB cable to computer.
+
+    .. image:: /images/tutorials/basic/aes/cw1173_microusb.jpg
+
+Capturing the Traces
+^^^^^^^^^^^^^^^^^^^^
+
+1. Close & reopen the capture software (to clear out any previous connection which may be invalid).
+2. From the *Project* menu elect the *Example Scripts* and then *ChipWhisperer-Lite: AES SimpleSerial on XMEGA* (make sure you don't select
+   the "SPA" example):
+
+   .. image:: /images/tutorials/basic/aes/runscript_cw1173xmega.png
+   
+3. The script will automatically connect to the capture hardware and run 2 example traces. You should see something that looks like the following screen:
+
+   .. image:: /images/tutorials/basic/aes/capture_cw1173xmega.png
+   
+   To complete the tutorial, follow these steps:
+   
+       1. Switch to the *General Settings* tab
+       2. If you wish to change the number of traces, do so here. The default of 50 should be sufficient to break AES though!
+       3. Hit the *Capture Many* button (M in a green triangle) to start the capture process.
+       4. You will see each new trace plotted in the waveform display.
+       5. You'll see the trace count in the status bar. Once it says *Trace 50 done* (assuming you requested 50 traces) the capture process is complete.
+
+4. Finally save this project using the *File --> Save Project* option, give it any name you want.
+
+5. Skip ahead to :ref:`basicaesanalyzing`.
+
+Capturing with CW1173 + CW304 (ChipWhisperer-Lite with NOTDuino)
+------------------------------------------------------------------------------
+
+Hardware Setup
+^^^^^^^^^^^^^^
+
+1. Set jumpers on NOTDuino to default position (see silkscreen on bottom of
+   NOTDuino for default positions).
+2. Connect the NOTDuino using the SMA cable on the "measure" port, and the
+   20-pin IDC cable:
+3. Connect the CW1173 by micro USB cable to computer.
+
+   .. image:: /images/tutorials/basic/aes/cw1173_avr_microusb.jpg
+
+Capturing the Traces
+^^^^^^^^^^^^^^^^^^^^
+
+1. Close & reopen the capture software (to clear out any previous connection which may be invalid).
+2. From the *Project* menu elect the *Example Scripts* and then *ChipWhisperer-Lite: AES SimpleSerial on ATMega328P*
+
+   .. image:: /images/tutorials/basic/aes/runscript_cw1173avr.png
+   
+3. The script will automatically connect to the capture hardware and run 2 example traces. You should see something that looks like the following screen:
+
+   .. image:: /images/tutorials/basic/aes/capture.png
+   
+   To complete the tutorial, follow these steps:
+   
+       1. Switch to the *General Settings* tab
+       2. If you wish to change the number of traces, do so here. The default of 50 should be sufficient to break AES though!
+       3. Hit the *Capture Many* button (M in a green triangle) to start the capture process.
+       4. You will see each new trace plotted in the waveform display.
+       5. You'll see the trace count in the status bar. Once it says *Trace 50 done* (assuming you requested 50 traces) the capture process is complete.
+
+4. Finally save this project using the *File --> Save Project* option, give it any name you want.
+
+5. Skip ahead to :ref:`basicaesanalyzing`.
+
+Capturing with CW1002 + CW301 (Capture Rev2 + Multi-Target)
+-------------------------------------------------------------------------
+
+Hardware Setup
+^^^^^^^^^^^^^^
 
 This tutorial uses the :ref:`hwcapturerev2` hardware along with the :ref:`hwmultitarget`
 board. Note that you **don't need hardware** to complete the tutorial. Instead you can
@@ -42,14 +128,14 @@ Jumpers on the Multi-Target Victim board are as follows:
    For more information on these jumper settings see :ref:`hwmultitarget` .
 
 Setting up the Software
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
-It is assumed that you've already followed the guide in :ref:`installing`. Thus it is assumed you are able to communicate with the ChipWhisperer Capture Rev2 hardware (or 
-whatever capture hardware you are using). Note in particular you must have configured the FPGA bitstream in the ChipWhisperer-Capture software, all part of the
-description in the :ref:`installing` guide.
+It is assumed that you've already followed the guide in :ref:`installing`. Thus it is assumed you are able to communicate with
+the ChipWhisperer Capture Rev2 hardware. Note in particular you must have configured the FPGA bitstream in the ChipWhisperer-Capture
+software, all part of the description in the :ref:`installing` guide.
 
 Capturing the Traces
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 This tutorial uses a simple script that ships with the ChipWhisperer Capture software. The easiest method of accomplishing the trace capture is as follows:
 
@@ -72,6 +158,14 @@ This tutorial uses a simple script that ships with the ChipWhisperer Capture sof
 
 4. Finally save this project using the *File --> Save Project* option, give it any name you want.
 
+5. Skip ahead to :ref:`basicaesanalyzing`.
+
+Capturing with PicoScope + CW301
+--------------------------------
+
+<TODO>
+
+.. _basicaesanalyzing:
 
 Analyzing the Traces
 --------------------
