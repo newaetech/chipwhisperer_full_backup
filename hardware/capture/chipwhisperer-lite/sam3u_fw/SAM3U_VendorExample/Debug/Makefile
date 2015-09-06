@@ -117,6 +117,7 @@ C_SRCS +=  \
 ../src/isp/ISPTarget.c \
 ../src/isp/V2Protocol.c \
 ../src/isp/V2ProtocolParams.c \
+../src/usb.c \
 ../src/pdi/XPROGTimeout.c \
 ../src/scard.c \
 ../src/usart_driver.c \
@@ -169,6 +170,7 @@ src/isp/ISPProtocol.o \
 src/isp/ISPTarget.o \
 src/isp/V2Protocol.o \
 src/isp/V2ProtocolParams.o \
+src/usb.o \
 src/pdi/XPROGTimeout.o \
 src/scard.o \
 src/usart_driver.o \
@@ -214,6 +216,7 @@ src/isp/ISPProtocol.o \
 src/isp/ISPTarget.o \
 src/isp/V2Protocol.o \
 src/isp/V2ProtocolParams.o \
+src/usb.o \
 src/pdi/XPROGTimeout.o \
 src/scard.o \
 src/usart_driver.o \
@@ -259,6 +262,7 @@ src/isp/ISPProtocol.d \
 src/isp/ISPTarget.d \
 src/isp/V2Protocol.d \
 src/isp/V2ProtocolParams.d \
+src/usb.d \
 src/pdi/XPROGTimeout.d \
 src/scard.d \
 src/usart_driver.d \
@@ -304,6 +308,7 @@ src/isp/ISPProtocol.d \
 src/isp/ISPTarget.d \
 src/isp/V2Protocol.d \
 src/isp/V2ProtocolParams.d \
+src/usb.d \
 src/pdi/XPROGTimeout.d \
 src/scard.d \
 src/usart_driver.d \
@@ -353,6 +358,8 @@ LINKER_SCRIPT_DEP+=  \
 
 
 # AVR32/GNU C Compiler
+
+
 
 
 

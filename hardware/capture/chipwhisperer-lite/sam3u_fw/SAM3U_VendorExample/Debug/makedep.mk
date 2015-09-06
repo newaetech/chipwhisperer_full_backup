@@ -22,6 +22,8 @@ src\isp\V2Protocol.c
 
 src\isp\V2ProtocolParams.c
 
+src\usb.c
+
 src\pdi\XPROGTimeout.c
 
 src\scard.c
