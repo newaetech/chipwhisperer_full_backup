@@ -28,6 +28,10 @@
 #include "usart_driver.h"
 #include <string.h>
 
+#define FW_VER_MAJOR 0
+#define FW_VER_MINOR 10
+#define FW_VER_DEBUG 0
+
 static volatile bool main_b_vendor_enable = true;
 
 //Serial Number - will be read by device ID
@@ -229,6 +233,8 @@ void main_vendor_disable(void)
 #define REQ_FPGA_STATUS 0x15
 #define REQ_FPGA_PROGRAM 0x16
 
+#define REQ_FW_VERSION 0x17
+
 #define REQ_USART0_DATA 0x1A
 #define REQ_USART0_CONFIG 0x1B
 #define REQ_USART2_DATA 0x1C
@@ -236,6 +242,8 @@ void main_vendor_disable(void)
 
 #define REQ_XMEGA_PROGRAM 0x20
 #define REQ_AVR_PROGRAM 0x21
+
+#define REQ_SAM3U_CFG 0x22
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -329,10 +337,36 @@ void ctrl_avr_program_void(void)
 	V2Protocol_ProcessCommand();
 }
 
-
 static void ctrl_usart_cb(void)
 {
 	ctrl_usart(USART0, false);
+}
+
+static void ctrl_sam3ucfg_cb(void)
+{
+	switch(udd_g_ctrlreq.req.wValue & 0xFF)
+	{
+		/* Turn on slow clock */
+		case 0x01:
+			osc_enable(OSC_MAINCK_XTAL);
+			osc_wait_ready(OSC_MAINCK_XTAL);
+			pmc_switch_mck_to_mainck(CONFIG_SYSCLK_PRES);
+			break;
+			
+		/* Turn off slow clock */
+		case 0x02:
+			pmc_switch_mck_to_pllack(CONFIG_SYSCLK_PRES);
+			break;
+			
+		/* Jump to ROM-resident bootloader */
+		case 0x03:
+			/* Turn off connected stuff */		
+			
+			/* Disconnect USB (will kill stuff) */
+			
+			/* Make the jump */		
+			break;
+	}
 }
 
 static void ctrl_usart_cb_data(void)
@@ -404,6 +438,11 @@ bool main_setup_out_received(void)
 		/* AVR Programming */
 		case REQ_AVR_PROGRAM:
 			udd_g_ctrlreq.callback = ctrl_avr_program_void;
+			return true;
+			
+		/* Misc hardware setup */
+		case REQ_SAM3U_CFG:
+			udd_g_ctrlreq.callback = ctrl_sam3ucfg_cb;
 			return true;
 			
 		default:
@@ -492,6 +531,15 @@ bool main_setup_in_received(void)
 			udd_g_ctrlreq.payload = respbuf;
 			udd_g_ctrlreq.payload_size = cnt;
 			return true;
+			break;
+			
+		case REQ_FW_VERSION:
+			respbuf[0] = FW_VER_MAJOR;
+			respbuf[1] = FW_VER_MINOR;
+			respbuf[2] = FW_VER_DEBUG;
+			udd_g_ctrlreq.payload = respbuf;
+			udd_g_ctrlreq.payload_size = 3;
+			return true;			
 			break;
 			
 		default:
