@@ -33,13 +33,6 @@ char usb_serial_number[33] = "000000000000DEADBEEF";
 
 static void configure_console(void);
 
-void FPGA_setaddr(uint32_t addr)
-{
-	pio_sync_output_write(FPGA_ADDR_PORT, addr);
-	gpio_set_pin_low(FPGA_ALE_GPIO);
-	gpio_set_pin_high(FPGA_ALE_GPIO);
-}
-
 /*! \brief Main function. Execution starts here.
  */
 int main(void)
