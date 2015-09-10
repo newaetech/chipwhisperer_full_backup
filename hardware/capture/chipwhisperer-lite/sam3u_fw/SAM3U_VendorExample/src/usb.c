@@ -26,7 +26,13 @@
 #include "pdi\XPROGTarget.h"
 #include "isp\V2Protocol.h"
 #include "usart_driver.h"
+#include "usb.h"
+#include "fpga_xmem.h"
 #include <string.h>
+
+#ifdef PLATFORMCW1180
+#include "lcd.h"
+#endif
 
 #define FW_VER_MAJOR 0
 #define FW_VER_MINOR 10
@@ -34,30 +40,13 @@
 
 static volatile bool main_b_vendor_enable = true;
 
-/**
- * \name Buffer for loopback
- */
-#define  MAIN_LOOPBACK_SIZE    1024
-
 COMPILER_WORD_ALIGNED
 		static uint8_t main_buf_loopback[MAIN_LOOPBACK_SIZE];
-
-
-/* Access pointer for FPGA Interface */
-#define PSRAM_BASE_ADDRESS         (0x60000000)
-uint8_t volatile *xram = (uint8_t *) PSRAM_BASE_ADDRESS;
 
 void main_vendor_bulk_in_received(udd_ep_status_t status,
 		iram_size_t nb_transfered, udd_ep_id_t ep);
 void main_vendor_bulk_out_received(udd_ep_status_t status,
 		iram_size_t nb_transfered, udd_ep_id_t ep);
-		
-void FPGA_setaddr(uint32_t addr)
-{
-	pio_sync_output_write(FPGA_ADDR_PORT, addr);
-	gpio_set_pin_low(FPGA_ALE_GPIO);
-	gpio_set_pin_high(FPGA_ALE_GPIO);
-}
 
 void main_suspend_action(void)
 {
@@ -136,6 +125,8 @@ void ctrl_readmem_bulk(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);	
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
 	
+	FPGA_setlock(fpga_blockin);
+	
 	/* Set address */
 	FPGA_setaddr(address);
 	
@@ -150,6 +141,8 @@ void ctrl_readmem_bulk(void){
 void ctrl_readmem_ctrl(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
+	
+	FPGA_setlock(fpga_ctrlmem);
 	
 	/* Set address */
 	FPGA_setaddr(address);
@@ -171,6 +164,8 @@ void ctrl_writemem_ctrl(void){
 	
 	//printf("Writing to %x, %d\n", address, buflen);
 	
+	FPGA_setlock(fpga_generic);
+	
 	/* Set address */
 	FPGA_setaddr(address);
 
@@ -180,11 +175,15 @@ void ctrl_writemem_ctrl(void){
 	for(unsigned int i = 0; i < buflen; i++){
 		xram[i] = ctrlbuf_payload[i];
 	}
+	
+	FPGA_setlock(fpga_unlocked);
 }
 
 void ctrl_writemem_bulk(void){
 	//uint32_t buflen = *(CTRLBUFFER_WORDPTR);
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
+	
+	FPGA_setlock(fpga_blockout);
 	
 	/* Set address */
 	FPGA_setaddr(address);
@@ -208,24 +207,36 @@ static void ctrl_sam3ucfg_cb(void)
 	{
 		/* Turn on slow clock */
 		case 0x01:
-		osc_enable(OSC_MAINCK_XTAL);
-		osc_wait_ready(OSC_MAINCK_XTAL);
-		pmc_switch_mck_to_mainck(CONFIG_SYSCLK_PRES);
-		break;
-		
+			osc_enable(OSC_MAINCK_XTAL);
+			osc_wait_ready(OSC_MAINCK_XTAL);
+			pmc_switch_mck_to_mainck(CONFIG_SYSCLK_PRES);
+			break;
+			
 		/* Turn off slow clock */
 		case 0x02:
-		pmc_switch_mck_to_pllack(CONFIG_SYSCLK_PRES);
-		break;
+			pmc_switch_mck_to_pllack(CONFIG_SYSCLK_PRES);
+			break;
 		
 		/* Jump to ROM-resident bootloader */
 		case 0x03:
-		/* Turn off connected stuff */
+			/* Turn off connected stuff */
 		
-		/* Disconnect USB (will kill stuff) */
+			/* Disconnect USB (will kill stuff) */
 		
-		/* Make the jump */
-		break;
+			/* Make the jump */
+			break;
+			
+#ifdef PLATFORMCW1180
+		/* 0xA0 starts CW1180 Specific Commands */
+		case 0xA0:
+			enable_lcd();
+			redraw_background();
+			break;	
+			
+#endif
+		/* Oh well, sucks to be you */
+		default:
+			break;
 	}
 }
 
@@ -364,6 +375,11 @@ bool main_setup_in_received(void)
 			udd_g_ctrlreq.payload = ctrlmemread_buf;
 			udd_g_ctrlreq.payload_size = ctrlmemread_size;
 			ctrlmemread_size = 0;
+			
+			if (FPGA_lockstatus() == fpga_ctrlmem){
+				FPGA_setlock(fpga_unlocked);
+			}
+			
 			return true;
 			break;
 			
@@ -421,6 +437,10 @@ void main_vendor_bulk_in_received(udd_ep_status_t status,
 	if (UDD_EP_TRANSFER_OK != status) {
 		return; // Transfer aborted/error
 	}	
+	
+	if (FPGA_lockstatus() == fpga_blockin){
+		FPGA_setlock(fpga_unlocked);
+	}
 }
 
 void main_vendor_bulk_out_received(udd_ep_status_t status,
@@ -442,6 +462,10 @@ void main_vendor_bulk_out_received(udd_ep_status_t status,
 	if (blockendpoint_usage == bep_emem){
 		for(unsigned int i = 0; i < nb_transfered; i++){
 			xram[i] = main_buf_loopback[i];
+		}
+		
+		if (FPGA_lockstatus() == fpga_blockout){
+			FPGA_setlock(fpga_unlocked);
 		}
 	} else if (blockendpoint_usage == bep_fpgabitstream){
 
