@@ -89,14 +89,16 @@ NET glitchout_lowpwr LOC=P67       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=12
 
 #Inputs
 NET USB_spi0_cs0		LOC=P139      |IOSTANDARD = LVCMOS33 | PULLUP;
+NET USB_spare1       LOC=P26       |IOSTANDARD = LVCMOS33 | PULLUP; //AVR CS Pin
 NET USB_spare2			LOC=P32       |IOSTANDARD = LVCMOS33; //LCD_DC
 
 #Outputs
-NET ext_sck          LOC=P111      |IOSTANDARD = LVCMOS33;
-NET ext_miso         LOC=P112      |IOSTANDARD = LVCMOS33 | PULLUP;
-NET ext_mosi         LOC=P114      |IOSTANDARD = LVCMOS33;
-NET lcd_cs				LOC=P115      |IOSTANDARD = LVCMOS33;
-NET lcd_dc           LOC=P116      |IOSTANDARD = LVCMOS33; 
+NET ext_sck          LOC=P111      |IOSTANDARD = LVCMOS33; //Pin 9
+NET ext_miso         LOC=P112      |IOSTANDARD = LVCMOS33 | PULLUP; //Pin 8
+NET ext_mosi         LOC=P114      |IOSTANDARD = LVCMOS33; //Pin 7
+NET lcd_cs				LOC=P115      |IOSTANDARD = LVCMOS33; //Pin 6
+NET lcd_dc           LOC=P116      |IOSTANDARD = LVCMOS33; //Pin 5
+NET avr_cs           LOC=P117      |IOSTANDARD = LVCMOS33; //Pin 4
 
 
 #This route ends up having S&H problems. However we don't care as it gets toggled very infrequently

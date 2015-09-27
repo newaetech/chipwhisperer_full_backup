@@ -60,13 +60,15 @@ module cwlite_interface(
 	 input wire			USB_spi0_cs0,
 	 input wire			USB_treset_i,
 	 
+	 input wire       USB_spare1, //CS pin from SAM3U
 	 input wire			USB_spare2, //LCD_D/C Pin (Data/Command)
 	 
 	 output wire		ext_mosi, //Pin 4 of external header
 	 input wire			ext_miso, //Pin 3 of external header
 	 output wire		ext_sck,  //Pin 2 of external header
 	 output wire		lcd_cs,
-	 output wire		lcd_dc
+	 output wire		lcd_dc,
+	 output wire      avr_cs
 	 //output wire		lcd_rst
 	 );
 	
@@ -253,6 +255,7 @@ module cwlite_interface(
 	 assign ext_mosi = USB_spi0_mosi_i;
 	 assign lcd_cs = USB_spi0_cs0;
 	 assign lcd_dc = USB_spare2;
+	 assign avr_cs = USB_spare1;
 			
 	/*
 	assign ila_trigbus[7:0] = USB_D;
