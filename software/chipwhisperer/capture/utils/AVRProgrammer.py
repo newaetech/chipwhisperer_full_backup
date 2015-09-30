@@ -104,6 +104,13 @@ class AVRProgrammerDialog(QDialog):
         layoutFuse.addWidget(writeFuseBut)
         layout.addLayout(layoutFuse)
 
+        layoutExtra = QHBoxLayout()
+        self.clockMode = QPushButton("Enable Slow Clock Mode")
+        self.clockMode.setCheckable(True)
+        self.clockMode.clicked.connect(self.toggleSlowClock)
+        layoutExtra.addWidget(self.clockMode)
+        layoutExtra.addStretch()
+        layout.addLayout(layoutExtra)
 
         # Add status stuff
         self.statusLine = QPlainTextEdit()
@@ -116,6 +123,22 @@ class AVRProgrammerDialog(QDialog):
 
         # Set dialog layout
         self.setLayout(layout)
+
+    def toggleSlowClock(self):
+        if self.clockMode.isChecked():
+            self.avr.avr.enableSlowClock(True)
+            self.clockMode.setText("Disable Slow Clock Mode")
+        else:
+            self.avr.avr.enableSlowClock(False)
+            self.clockMode.setText("Enable Slow Clock Mode")
+
+    def reject(self):
+        if self.clockMode.isChecked():
+            self.clockMode.setChecked(False)
+            self.toggleSlowClock()
+
+        QDialog.reject(self)
+
 
     def findFlash(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("avr-flash-location"), '*.hex')
@@ -266,7 +289,7 @@ class AVRProgrammer(object):
         if fsize > maxsize:
             raise IOError("File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
 
-        self.log("XMEGA Programming %s..." % memtype)
+        self.log("AVR Programming %s..." % memtype)
         QCoreApplication.processEvents()
         fdata = f.tobinarray(start=0)
         self.avr.writeMemory(0, fdata, memtype)
