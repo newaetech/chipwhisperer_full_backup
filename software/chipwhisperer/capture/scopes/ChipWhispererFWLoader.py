@@ -98,6 +98,12 @@ class FWLoaderConfig(QDialog):
         layoutBit.addWidget(bitButton)
         layout.addLayout(layoutBit)
 
+        layoutProgramNow = QHBoxLayout()
+        self.programNow = QPushButton("Program FPGA (MUST be connected already)")
+        self.programNow.clicked.connect(self.loadFPGA)
+        layoutProgramNow.addWidget(self.programNow)
+        layout.addLayout(layoutProgramNow)
+
         mode = settings.value("%s-fpga-bitstream-mode" % self._mode)
         if mode is not None and mode == "debug":
             radioDebug.setChecked(True)

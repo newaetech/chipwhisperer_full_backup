@@ -10,7 +10,7 @@ in C, which is likely to be similar to other implementations used by proprietary
 This tutorial runs on four different hardware targets. You only need to follow the steps
 for your given hardware. 
 
-Capturing with CW1173 + CW303 (ChipWhisperer-Lite with default XMEGA Target)
+Capturing with ChipWhisperer-Lite with default XMEGA Target (CW1173 + CW303)
 ------------------------------------------------------------------------------------------
 
 NOTE: You can see a Quick-Start Guide and Video for this target on the :ref:`naecw1173_cwlite` page:
@@ -52,7 +52,7 @@ Capturing the Traces
 
 5. Skip ahead to :ref:`basicaesanalyzing`.
 
-Capturing with CW1173 + CW304 (ChipWhisperer-Lite with NOTDuino)
+Capturing with ChipWhisperer-Lite with NOTDuino (CW1173 + CW304)
 ------------------------------------------------------------------------------
 
 Hardware Setup
@@ -90,7 +90,7 @@ Capturing the Traces
 
 5. Skip ahead to :ref:`basicaesanalyzing`.
 
-Capturing with CW1002 + CW301 (Capture Rev2 + Multi-Target)
+Capturing with Capture Rev2 + Multi-Target (CW1002 + CW301)
 -------------------------------------------------------------------------
 
 Hardware Setup
@@ -160,8 +160,8 @@ This tutorial uses a simple script that ships with the ChipWhisperer Capture sof
 
 5. Skip ahead to :ref:`basicaesanalyzing`.
 
-Capturing with PicoScope + CW301
---------------------------------
+Capturing with PicoScope + Multi-Target (CW301)
+-----------------------------------------------
 
 <TODO>
 
