@@ -362,7 +362,7 @@ class SakuraG(TargetTemplate):
     def isDone(self):
         result = self.hw.read(0x0002)
 
-        if result[0] == 0x00 and result[1] == 0x00:
+        if result[0] == 0x00: # and result[1] == 0x00:
             return True
         else:
             return False
