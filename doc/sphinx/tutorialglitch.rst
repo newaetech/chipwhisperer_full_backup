@@ -9,14 +9,12 @@ This advanced tutorial will demonstrate clock glitch attacks using the ChipWhisp
 required features of the ChipWhisperer system when it comes to glitching. This will be built on in later tutorials to generate
 voltage glitching attacks, or when you wish to attack other targets.
 
-The follow OUTDATED video which briefly
-outlines the attack using the CW Capture Rev2 device, note this follows an older version of the tutorial and thus does not yet 
-directly follow this guide:
+You can follow along with this video for details of this page too:
 
 |YouTubeGlitch|_
 
 .. |YouTubeGlitch| image:: /images/tutorials/advanced/glitching/youtube-glitch.png
-.. _YouTubeGlitch: http://www.youtube.com/watch?v=Ib8qvAlU8xo&hd=1
+.. _YouTubeGlitch: http://www.youtube.com/watch?v=PAMo611ERWU&hd=1
 
 
 Background on Clock Glitching
@@ -290,7 +288,15 @@ Software Setup
    
        .. image:: /images/tutorials/advanced/glitching/termhello.png
 
-       HINT: If you uncheck the *RX: Show non-ASCII as hex* you will not see the red text with ASCII values of newline (``0a``).
+       .. tip::
+          
+          If you uncheck the *RX: Show non-ASCII as hex* you will not see the red text with ASCII values of newline (``0a``).
+       
+       .. hint::
+       
+          Sometimes the "reset" message won't appear. This happens often on the virtual machine version, or if your host
+          computer is slow or loaded. Generally you can ignore this error, for example in the video version the welcome
+          message is never printed. You will just have to trust the system is reseting correctly.
 
 
 We'll now look at glitching this routine. You should inspect the source code to determine that a simple series of calculations are
@@ -488,6 +494,12 @@ To do this:
 5. When you perform a *Capture 1*, the terminal should print ``hello\nA``, based on the above source code. Note the
    objective will be to glitch past the infinite loop, such that ``1234`` is printed. If using the XMEGA target board
    this will also turn on the RED led.
+   
+   .. hint::
+   
+     If the startup message isn't visible, it may be related to issues with the Capture software not being fast enough
+     after reset to display the serial port contents on the terminal emulator. This happens often on the virtual machine
+     environment, as can be seen in the demo video. You can ignore this error for now. 
    
    
 .. _tutorialglitchtriggering:
@@ -738,6 +750,7 @@ listed as follows:
    in the GUI.    
     
 4. On the *General Settings* tab:
+
     a. Ensure the *Trace Format* is set to *None* (i.e., no traces will be written to disk).
     b. Set the *Number of Traces* to 121.
     
@@ -877,10 +890,10 @@ The following assumes you have already completed the previous steps:
    
 9. Let's try a glitch insertion! Perform the following:
 
-   a. Press the *Capture 1* button. This will reset the target and arm the glitch.
-   b. Before the timeout, enter a wrong password such as ``test`` in the terminal and hit enter.
-   c. See if you can get the wrong password accepted. If not, let's use the Glitch Explorer to automate the 
-      parameter adjustments.
+    a. Press the *Capture 1* button. This will reset the target and arm the glitch.
+    b. Before the timeout, enter a wrong password such as ``test`` in the terminal and hit enter.
+    c. See if you can get the wrong password accepted. If not, let's use the Glitch Explorer to automate the 
+       parameter adjustments.
       
 10. Switching to the *Auxiliary Settings* tab, adjust the delay on the reset such that you have a *150 mS* delay.
     This will mean once the device resets there is a delay while it prints the startup message.
@@ -889,15 +902,15 @@ The following assumes you have already completed the previous steps:
     
 11. Switch to the *Target Settings* tab:
 
-    a. In the *Go Command* field, put the bad password such as ``test\n``.
-    b. In the *Output Format* field, put ``$GLITCH$`` to route the output to the glitch explorer.
+     a. In the *Go Command* field, put the bad password such as ``test\n``.
+     b. In the *Output Format* field, put ``$GLITCH$`` to route the output to the glitch explorer.
     
 12. Open the *Glitch Explorer*, and press *Capture 1*. You should see the *Denied* message come across.
 
 13. In the *Glitch Explorer*, adjust the following settings:
 
-    a. Set *Tuning Parameters* to 1
-    b. Set Parameter 0 options to:
+     a. Set *Tuning Parameters* to 1
+     b. Set Parameter 0 options to:
     
         ============== ========================================================
         Option          Value
