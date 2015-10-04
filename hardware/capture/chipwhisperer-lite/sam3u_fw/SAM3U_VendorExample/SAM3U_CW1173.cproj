@@ -581,6 +581,15 @@
     <Compile Include="src\ASF\sam\drivers\chipid\chipid.c">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\fpga_xmem.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\usb.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\usb_xmem.c">
+      <SubType>compile</SubType>
+    </Compile>
     <None Include="src\ASF\sam\drivers\chipid\chipid.h">
       <SubType>compile</SubType>
     </None>
@@ -633,6 +642,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\isp\V2ProtocolParams.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\usb.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\pdi\XPROGTimeout.c">

@@ -31,12 +31,14 @@
 #include <string.h>
 
 #ifdef PLATFORMCW1180
-#include "lcd.h"
+  #include "lcd.h"
 #endif
 
 #define FW_VER_MAJOR 0
-#define FW_VER_MINOR 10
+#define FW_VER_MINOR 11
 #define FW_VER_DEBUG 0
+
+volatile bool g_captureinprogress = true;
 
 static volatile bool main_b_vendor_enable = true;
 
@@ -220,10 +222,18 @@ static void ctrl_sam3ucfg_cb(void)
 		/* Jump to ROM-resident bootloader */
 		case 0x03:
 			/* Turn off connected stuff */
+			board_power(0);
 		
-			/* Disconnect USB (will kill stuff) */
+			/* Clear ROM-mapping bit. */
+			efc_perform_command(EFC0, EFC_FCMD_CGPB, 1);	
 		
-			/* Make the jump */
+			/* Disconnect USB (will kill connection) */
+			udc_detach();
+		
+			/* With knowledge that I will rise again, I lay down my life. */
+			while (RSTC->RSTC_SR & RSTC_SR_SRCMP);			
+			RSTC->RSTC_CR |= RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;				
+			while(1);
 			break;
 			
 #ifdef PLATFORMCW1180
@@ -439,6 +449,11 @@ void main_vendor_bulk_in_received(udd_ep_status_t status,
 	}	
 	
 	if (FPGA_lockstatus() == fpga_blockin){
+		
+		//TODO FIX THIS HACK
+		//Should detect actual capture, for now hack onto USB
+		g_captureinprogress = true;
+		
 		FPGA_setlock(fpga_unlocked);
 	}
 }
