@@ -179,6 +179,9 @@ class FWLoaderConfig(QDialog):
     def setCWLiteUSBInterface(self, cwliteusb):
         self.cwliteUSB = cwliteusb
 
+        if self.sam3loader:
+            self.sam3loader.cwLiteUSB = cwliteusb
+
         # Get versions
         fwver = cwliteusb.readFwVersion()
         self.samfwVersion.setText("Detected FW Version: %d.%d b%d" % (fwver[0], fwver[1], fwver[2]))
