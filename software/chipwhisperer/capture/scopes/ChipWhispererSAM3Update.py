@@ -185,5 +185,5 @@ class SAM3LoaderConfig(QDialog):
             if reply != QMessageBox.Yes:
                 return
 
-        self.cwLiteUSB.sendCtrl(0x22, [3])
+        self.cwLiteUSB.sendCtrl(0x22, 3)
 
