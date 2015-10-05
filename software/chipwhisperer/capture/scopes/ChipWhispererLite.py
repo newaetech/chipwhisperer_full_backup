@@ -877,6 +877,8 @@ class CWLiteUSB(object):
     
     stream = False
 
+    # TODO: make this better
+    fwversion_latest = [0, 11]
 
     def con(self):
         """
@@ -910,12 +912,10 @@ class CWLiteUSB(object):
         fwver = self.readFwVersion()
         print "SAM3U Firmware version = %d.%d b%d" % (fwver[0], fwver[1], fwver[2])
 
-        # TODO: make this better
-        latest = [0, 10]
-        if fwver[0] >= latest[0] and fwver[1] >= latest[1]:
+        if fwver[0] >= self.fwversion_latest[0] and fwver[1] >= self.fwversion_latest[1]:
             pass
         else:
-            print "**NOTE: Your CW-Lite firmware is outdated - latest is %d.%d" % (latest[0], latest[1])
+            print "**NOTE: Your CW-Lite firmware is outdated - latest is %d.%d" % (self.fwversion_latest[0], self.fwversion_latest[1])
             print "**Suggested to update firmware, as you may experience errors"
 
     def close(self):
@@ -1159,8 +1159,8 @@ if __name__ == '__main__':
     if cwtestusb.isFPGAProgrammed() == False or force:
         from datetime import datetime
         starttime = datetime.now()
-        cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
-        # cwtestusb.FPGAProgram(open(r"C:\E\Documents\newae\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
+        # cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
+        cwtestusb.FPGAProgram(open(r"C:\E\Documents\newae\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
         stoptime = datetime.now()
         print "FPGA Config time: %s" % str(stoptime - starttime)
 
