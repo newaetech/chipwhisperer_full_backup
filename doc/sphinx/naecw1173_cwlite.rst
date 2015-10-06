@@ -274,14 +274,15 @@ Using Glitch Port
 The "GLITCH" port is used for voltage glitching. It's connected to two MOSFET elements, as the following
 figure shows:
 
-<TODO>
+    .. image:: /images/cw1173/glitch_lp_hp.png
 
-The CW1173/1180 can be commanded to turn on either of those MOSFETs via the "Glitch Output":
+The CW1173/1180 glitch output can be commanded to turn on either of those MOSFETs via the "Glitch Out Enable"
+checkboxes:
 
-<TODO>
+    .. image:: /images/cw1173/glitch_gui.png
 
 Be careful using this feature, as you don't want to short the MOSFETs for too long. It's also possible
-to damage the ChipWhisperer-Lite by burning these MOSFETs up if used incorrectly. See tutorial TODO for
+to damage the ChipWhisperer-Lite by burning these MOSFETs up if used incorrectly. See tutorial #A3 for
 more information on using this feature.
 
 Using Measure Port
@@ -381,6 +382,139 @@ Number          Name           Dir     Description
 7                AUX1           I/O    Spare line (FPGA: P98)
 8                AUX2           I/O    Spare line (FPGA: P97)
 ============   =============   ====   ==================================================================
+
+Upgrading SAM3U Firmware
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+When talking about the ChipWhisperer-Lite's firmware, there is really two parts to this:
+
+1. The FPGA Bitstream file.
+
+2. The SAM3U USB interface chip firmware.
+
+The FPGA bitstream alone is what is normally configured by the ChipWhisperer-Capture software. This bitstream is always the most up-to-date, since
+it's automatically reloaded by the computer every time you power cycle the ChipWhisperer-Capture. The SAM3U firmware however is not automatically
+updated, but it tends to change less frequently.
+
+Checking Firmware Version
+"""""""""""""""""""""""""
+
+The firmware version is printed at start-up. You will see a line that looks like this indicating the version of the SAM3U Firmware::
+
+    Found CW-Lite, Serial Number = 442031204630xxxxxxxxxxx
+    SAM3U Firmware version = 0.11 b0
+    Programmed FPGA
+
+If your firmware version is outdated, a warning will be printed. You can also see the firmware version in the *Config CW Firmware* dialog:
+
+    .. image:: /images/cw1173/sam3fwver.png
+
+Note the main version is 0.11 in this example. The "b0" indicates a "build" number. Typically this will be "build 0", but special versions will
+use a different build number to indicate a variant of a regular version.
+
+Entering Bootloader Mode
+""""""""""""""""""""""""
+
+Before updating, you must put your ChipWhisperer-Lite into bootloader mode. Once put into this mode you will need to load a new firmware file.
+The two methods of doing this are:
+
+1. Using ChipWhisperer-Capture GUI
+
+   a. Connect to the ChipWhisperer-Lite.
+   
+   b. From the *Tools* menu select *Config CW Firmware*.
+   
+   c. Select the *Open SAM3U Update Widget* button.
+   
+   d. Press the *Enable Bootloader Mode* button.
+   
+   e. The blue LED will stop flashing, and the device will reconnect in programmer mode (see below).  
+
+2. If this method doesn't work, you can use the manual override method. To use a metal object:
+
+   a. Short the jumper labeled "ERASE" on the ChipWhisperer-Lite. Do this while the device is connected via micro-USB.
+      The blue LED should stop flashing at this point, and will stay either on or off (depending when you shorted the jumper).
+      This can be accomplished by anything metallic - for example using a screwdriver or tweezers:
+      
+      .. image:: /images/cw1173/short_screwdriver.jpg
+        :width: 300pt
+      
+      .. image:: /images/cw1173/short_tweezers.jpg
+        :width: 300pt
+
+   b. Unplug and Replug the micro-USB port.
+ 
+Once you are in bootloader mode, both the blue and red LED will be very dimmly lit:
+
+    .. image:: /images/cw1173/lights_prog.jpg
+        :width: 300pt
+
+This indicates it is in bootloader mode. The device will now attach as a serial port. If you are using Windows this may take a few
+minutes to happen.
+
+If using Linux, you can use *dmesg* to verify the serial port was connected OK.
+
+Upgrading with BOSSA
+""""""""""""""""""""
+BOSSA is a programming tool for the Atmel SAM devices. The ChipWhisperer-Capture software can call the command-line tool for you. To do this:
+
+1. Open the SAM3U Firmware Loader - if you just used it to enter bootloader mode, you will already have this window open. If not:
+
+   a. Start ChipWhisperer-Capture.
+   b. Select the "ChipWhisperer/OpenADC" and "ChipWhisperer-Lite" target, but *do not* click connect (as it won't work). 
+   c. From the *Tools* menu select *Config CW Firmware*.
+   d. Press the *Open SAM3U Update Widget* button.
+  
+2. Hopefully the *bossac* binary was found. ChipWhisperer-Capture has a binary for Windows and Linux already present, which should be located
+   at ``chipwhisperer/capture/hardware/chipwhisperer-lite/bossa``. If these binaries are not working, see the BOSSA homepage to download an
+   appropriate installer for your system.
+   
+   Once ready, point to the ``bossac`` binary for your system.
+  
+3. The firmware update file is normally located in ``hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin``. If
+   not found, again point your system to this. If the window is setup correctly, it should look like this:
+   
+   .. image:: /images/cw1173/bossa_gui.png
+  
+4. Hit the *Run bossac* button. You should see a decleration of success printed in the output.
+
+5. Unplug and replug the ChipWhisperer-Lite. The blue LED should be blinking again. Close ChipWhisperer-Capture and re-open it to attempt a re-connect.
+
+If things don't work, you can manually run bossac as follows::
+
+    bossac -e -w -v -b /path/to/SAM3U_CW1173.bin
+
+If you are on Linux, you may need to either fix permissions on the serial port, or run bossac as root/sudo. See below for details.
+
+Linux-Specific Instructions
+'''''''''''''''''''''''''''
+
+You may need to give yourself write permission for the serial port. This can be done on some systems easily by adding yourself to the ``dialout``
+user group. For example, assuming your username was ``cwuser``:
+
+1. ``$ sudo usermod -a -G dialout cwuser``
+
+2. Log out and log back in again for changes to take effect. 
+
+You may also need to build bossac from sources, as the provided binary does not work with your system. Details of how to perform this are provided next:
+
+.. warning:
+
+    Do not install BOSSA from your system repository manager. Some versions of BOSSA (noteably what is reported as version 1.3, which appears
+    to install from the Ubuntu repositories) are broken, and will work incorrectly. If your version of bossac appears to detect the chip but
+    then fails, this might be the case.
+    
+To build BOSSA, it is recommended to use our simplified `bossac` repository, which only builds the command-line version. To build this perform
+these steps:
+
+1. Download `a copy of the GIT repo <https://github.com/newaetech/BOSSA/archive/master.zip>`__, or clone with ``git clone git@github.com:newaetech/BOSSA.git``
+   (see github.com/newaetech/bossa for the full repo).
+   
+2. Unzip the directory if you downloaded the zip.
+
+3. Run ``make``.
+
+4. The binary should be in ``bin\bossac``. 
 
 Breaking Target Section Apart
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
