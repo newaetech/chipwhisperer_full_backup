@@ -15,6 +15,7 @@ Contents:
     naecw304_notduino
     naecw501_hwdiffprobe
     naecw502_hwlna
+    naecw503_hwpsu
     naecw504_hwhprobe
 
 
