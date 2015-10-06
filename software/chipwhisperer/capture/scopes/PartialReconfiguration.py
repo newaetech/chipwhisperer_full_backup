@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2015, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
@@ -30,6 +30,7 @@ import os.path
 import time
 
 class PartialReconfigData(object):
+    """ Handles a single partial reconfiguration file. """
     def load(self, fname):
         self.configData = pickle.load(open(fname, 'r'))
         klist = list(self.configData['values'].keys())
@@ -52,6 +53,10 @@ class PartialReconfigData(object):
         return data
 
 class PartialReconfigDataMulti(object):
+    """
+    Handles combining multiple partial reconfiguration files into a single file. Relies heavily on
+    modifications not happeneing to the same location. 
+    """
     def __init__(self):
         self.dataList = []
         self.limitList = []
@@ -65,16 +70,53 @@ class PartialReconfigDataMulti(object):
     def getPartialBitstream(self, indxlst):
 
         data = list(self.dataList[0]['base'])
+        baseref = data[:]
 
         diffs = []
         for i, cfg in enumerate(self.dataList):
             diff = cfg['values'][indxlst[i]]
-
+            # print diff
             diffs.append(diff)
 
             #Update base
             for d in diff:
+
+                # Check if multiple updates to same location (debug info)
+                if data[d[0]] != baseref[d[0]]:
+                    print "COLLISION & %d, %x/%x --> %x --> %x" % (d[0], baseref[d[0]], list(self.dataList[1]['base'])[d[0]], data[d[0]], d[1])
                 data[d[0]] = d[1]
+
+        return data
+
+class PartialReconfigDataOffsetWidth(object):
+    """ Handles a special file with two changes blended into one file. """
+
+    # NOTE: This module was somewhat an emergency hack to fix the LX9 configuration failures due to PR. Thus
+    #       stuff like the offset/width format is hard coded. It's not ideal but it works.
+
+    def load(self, filelike):
+
+        data = pickle.load(filelike)
+        self.dataList = data
+        klist = list(data['values'].keys())
+
+        offset = [klist[i][0] for i in range(len(klist))]
+        width = [klist[i][1] for i in range(len(klist))]
+
+        self.limitList = []
+        self.limitList.append((min(width), max(width)))
+        self.limitList.append((min(offset), max(offset)))
+
+    def getPartialBitstream(self, indxlst):
+
+        data = list(self.dataList['base'])
+
+        # Expected is "(offset, width)"
+        diff = self.dataList['values'][(indxlst[1], indxlst[0])]
+
+        # Update base
+        for d in diff:
+            data[d[0]] = d[1]
 
         return data
 

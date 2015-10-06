@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2015, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
@@ -81,8 +81,7 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
                 ]
 
-        #Load FPGA partial configuration data
-        self.glitchPR = pr.PartialReconfigDataMulti()
+        # Setup FPGA partial configuration data
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
         self.showScriptParameter = showScriptParameter
@@ -92,9 +91,11 @@ class ChipWhispererGlitch(QObject):
             if cwtype == "cwrev2" or cwtype == "cwcrev2":
                 settingprefix = "cwcrev2"
                 partialbasename = "s6lx25"
+                self.glitchPR = pr.PartialReconfigDataMulti()
             elif cwtype == "cwlite":
                 settingprefix = "cwlite"
                 partialbasename = "cwlite"
+                self.glitchPR = pr.PartialReconfigDataOffsetWidth()
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
@@ -106,8 +107,13 @@ class ChipWhispererGlitch(QObject):
                         fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
 
                     zfile = zipfile.ZipFile(fileloc, "r")
-                    self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
-                    self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))
+
+
+                    if cwtype == "cwlite":
+                        self.glitchPR.load(zfile.open(("%s-glitchoffsetwidth.p" % partialbasename)))
+                    else:
+                        self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
+                        self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))
                     self.prEnabled = True
                 else:
                     print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
@@ -191,8 +197,7 @@ class ChipWhispererGlitch(QObject):
             self.prCon.program(bs)
             if self.oa is not None:
                 self.resetDCMs(keepPhase=True)
-
-        # print "Partial: %d %d" % (widthint, offsetint)
+                # print "Partial: %d %d" % (widthint, offsetint)
 
     def setTriggerOffset(self, offset):
         """Set offset between trigger event and glitch in clock cycles"""
