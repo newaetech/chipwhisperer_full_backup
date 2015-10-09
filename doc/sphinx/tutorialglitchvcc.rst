@@ -5,6 +5,14 @@ Tutorial #A3: VCC Glitch Attacks
 
 This advanced tutorial will demonstrate power glitch attacks using the ChipWhisperer system.
 
+You can follow along with this video for details of this page too:
+
+|YouTubeVccGlitch|_
+
+.. |YouTubeVccGlitch| image:: /images/tutorials/advanced/vccglitching/youtube-vccglitch.png
+.. _YouTubeVccGlitch: http://www.youtube.com/watch?v=hxU5uVbYCYo&hd=1
+
+
 Background on VCC (Power) Glitching
 -----------------------------------
 
@@ -75,13 +83,18 @@ The AVR is an extremely reliable target to glitch. To do this, you need to conne
 
 The following shows an example of connecting the NOTDuino target to the ChipWhisperer-Lite:
 
-<TODO>
+   .. image:: /images/tutorials/advanced/vccglitching/notduino_cwlite.jpg
 
 If using a target with only a single SMA, only connect the *Glitch* port. The measure port is optional to
-allow you to monitor the VCC line as you are inserting the glitch. For example this shows the setup for
-the Multi-Target board:
+allow you to monitor the VCC line as you are inserting the glitch.
 
-<TODO>
+If using the ChipWhisperer-Lite with Multi-Target board, you can connect both ports by doing the following:
+
+    a. Connect the *Glitch* port to the *VOUT* pin.
+
+    b. Connect the *Measure* port to the *LNAIN* pin.
+
+    c. Add the jumper across JP21 to route the *VOUT* to the *LNAIN*. 
 
 Using VCC Glitching Add-on with Multi-Target Board
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -193,7 +206,7 @@ Software Setup
    
    .. warning::
    
-        Releases of the ChipWhisperer-Capture software prior to 0.12 had a bug in the AVR reset logic, which
+        Releases of the ChipWhisperer-Capture software prior to 0.13 had a bug in the AVR reset logic, which
         never released the device from reset. You must update your ChipWhisperer-Capture release in order
         to complete this tutorial. 
 
@@ -388,6 +401,9 @@ The Raspberry Pi is a small ARM-based computer that runs Linux. This tutorial
 will show you how to influence a program running in userland via voltage
 glitching.
 
+We will use the ChipWhisperer-Lite board, as it has integrated high-power glitching
+MOSFET.
+
 Hardware Setup
 ^^^^^^^^^^^^^^
 
@@ -405,34 +421,115 @@ To glitch the board, you must solder a wire onto the *VDD_CORE* power supply,
 ideally as close to the BGA power pin as possible. To do this identify the
 power plane by looking at the schematic:
 
-TODO
+  .. image:: /images/tutorials/advanced/vccglitching/rpi_schematic.png
 
-And then solder a wire onto the appropriate side of a decoupling capacitor, such
-as C65:
+And then solder a wire onto the VCC side of a decoupling capacitor, such
+as C65. Check the polarity with a DMM to ensure you have the positive side and
+solder a fine wire to it.
 
-TODO
+    .. image:: /images/tutorials/advanced/vccglitching/rpi_solder1.jpg   
+        :width: 400
+    
+    .. image:: /images/tutorials/advanced/vccglitching/rpi_solder2.jpg    
+        :width: 400
 
-You will need to build a circuit with a logic-level MOSFET. The provided glitching
-board has too low-power of a MOSFET to work, and you will
-*damage the VCC glitching board if you attempt to use it*. The following shows
-the basic example used here:
+We will now mount a connector so we can connect this to the ChipWhisperer-Lite Glitch
+port. This will require you to check your specific revision - on this board an empty hole
+(test point) labeled "TP2" connects to ground, and made a handy location to connect
+the SMA connector to ground.
 
-TODO
+The following shows an example of soldering the SMA connector onto the board, note the GND
+is soldered on both top and bottom to give additional strength:
 
-Finally connect the drive pin of the MOSFET to the *FPGAOUT* pin on the
-ChipWhisperer. Note you should to do this *after* the ChipWhisperer software
-is configured (see next section), as it is possible to damage the Raspberry Pi by
-driving the MOSFET incorrectly. If the ChipWhisperer is not yet configured it
-may *accidently drive the MOSFET causing damage*.
+.. image:: /images/tutorials/advanced/vccglitching/rpi_sma.jpg
+    :width: 400
 
+The positive side of the capacitor connects to the inner conductor of
+the SMA "GLITCH" port, and connect the outer connector to ground on the Raspberry Pi. At this
+point do not yet plug into the GLITCH port, we will do that once setup is complete.
+
+Finally you need to boot the Raspberry Pi and connect to it. This is suggested to be done
+with a SSH shell over the Ethernet connection, as the Ethernet connection typically has very
+good protection against voltage transients. If you connect the Raspberry Pi to a monitor over
+HDMI, there is a chance the glitches may cause invalid voltage levels on the HDMI port which
+could damage your monitor.
+
+Once you have connected to it, simply make a file called ``glitch.c`` with the following contents::
+
+    #include <stdio.h>
+    
+    int main(void){
+        int i,j,k,cnt;
+        k = 0;
+        while(1){
+         cnt = 0;
+         for(i=0; i<5000; i++){
+           for(j=0; j<5000; j++){
+              cnt++;
+           }
+         }
+         printf("%d %d %d %d\n", cnt, i, j,k++);
+        }
+    }
+
+Compile to an executable with::
+
+    $ gcc glitch.c -o glitch
+
+And run the executable::
+
+    $ ./glitch
+    25000000 5000 5000 0
+    25000000 5000 5000 1
+    25000000 5000 5000 2
+    25000000 5000 5000 3
+    25000000 5000 5000 4
+    25000000 5000 5000 5
+    
+The output is split into two parts. The first three are used to monitor the glitch insertion
+(this is the ``25000000 5000 5000``, the second makes it easier for you to confirm if the Raspberry Pi
+has crashed.
+
+Now that you have a working system - let's break it!
 
 Glitch Parameters
 ^^^^^^^^^^^^^^^^^
 
-Triggering
-^^^^^^^^^^
+Glitching the Raspberry Pi is very simple. We just need to generate an appropriately sized glitch,
+as the following shows:
 
+1. Start ChipWhisperer-Capture.
 
+2. Set the *Scope Module* to *ChipWhisperer/OpenADC*, and the *connection* to *ChipWhisperer-Lite*.
+
+3. Hit the *Scope Connect* button. There is no target for this example.
+
+4. Set the CLKGEN frequency to *120 MHz*.
+
+5. Set the Glitch module Source to *CLKGEN*.
+
+6. Set the Glitch Mode to *Enable Only*.
+
+7. Ensure the *Glitch Trigger* is *Manual*.
+
+8. Set the *Repeat* to *38*.
+
+9. Click the *HS-Glitch Out Enable (High Power)* check-box.
+
+10. Connect the SMA cable for the glitch output to the Raspberry Pi.
+
+11. With the output of the *glitch* program running, hit the *Manual Trigger* button. This will cause
+    a glitch to be inserted, and observe the output of your glitch program.
+    
+    Most likely the glitch width was insufficient for a glitch to be inserted, so increase the *Repeat*
+    count to increase the width, and try pressing the *Manual Trigger* button again. In this example
+    a glitch was successfully inserted with a width of *52*, so you might want to try a few larger
+    numbers. If you do things wrong your Raspberry Pi will crash and you'll need to reboot it and
+    continue experimenting.
+    
+    The following shows an example of inserting several glitches successfully:
+    
+    .. image:: /images/tutorials/advanced/vccglitching/rpi-glitch.png
 
 
 
