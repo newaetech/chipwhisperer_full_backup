@@ -47,5 +47,5 @@ projects, which may also have additional license restrictions or information:
 
 Some projects may be missing from the above list - please let us know, any omission is a mistake!
 
-*ChipWhisperer* is a Trademark of NewAE Technology Inc., registered in the U.S.
+*ChipWhisperer* is a registered trademark of NewAE Technology Inc., in the U.S and Europe.
 *Listen to Your Inner Hardware* is a Trademarks of NewAE Technology Inc.

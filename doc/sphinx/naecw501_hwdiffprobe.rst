@@ -83,7 +83,7 @@ clip the output.
 
 When setting up the probe, first connect it into the system with power, clock, etc connected. The two green LEDs on the side of the null adjustment show
 which way the trim-pot must be turned. If the green LEDs are off, the null adjustment is set correctly. In the following image the trim-pot needs to be
-turned towards the lower green LED until it extinguishes (not the trim pot is a multi-turn device):
+turned towards the lower green LED until it extinguishes (note the trim pot is a multi-turn device):
 
 .. image:: /images/diffprobe/diffprobe-example.jpg
 

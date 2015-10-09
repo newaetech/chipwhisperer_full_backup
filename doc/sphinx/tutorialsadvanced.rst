@@ -12,7 +12,6 @@ Advanced Tutorials
     tutorialsadtrigger
     tutorialaes256boot
     tutorialilyaxmega
-    tutorialglitchexplorer
 
 
 
