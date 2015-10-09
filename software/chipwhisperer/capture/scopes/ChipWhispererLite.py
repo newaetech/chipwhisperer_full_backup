@@ -490,7 +490,7 @@ class AVRISP(object):
 
     def enableISP(self, status):
         """
-        Enable or disable PDI interface and prepare XMEGA chip for new status, either entering or exiting
+        Enable or disable ISP interface and prepare AVR chip for new status, either entering or exiting
         programming mode.
         
         Raises IOError() if an error occurs (such as no chip found). 
@@ -508,6 +508,7 @@ class AVRISP(object):
                 # Always disable ISP mode lines!
                 global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
                 raise
+            global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
 
     def _readFuseLockSig(self, cmd, cmds, respindx=4):
         if len(cmds) != 4:
