@@ -1,6 +1,6 @@
-.. _tutorialglitch:
-
 .. include:: imagenums.rsti
+
+.. _tutorialglitch:
 
 Tutorial #A2: Introduction to Glitch Attacks (including Glitch Explorer)
 ========================================================================

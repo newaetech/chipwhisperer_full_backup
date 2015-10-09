@@ -27,6 +27,10 @@ a summary of important specifications are:
 * Typical 4 dB NF.
 * 2 dBm maximum power output at 1 dB compression point.
 
+The following shows an example of S21 and S11 parameters for the LNA:
+
+.. image:: /images/lna/lna_gain.png
+
 Schematic
 ---------
 
