@@ -27,6 +27,7 @@
 import sys
 from datetime import datetime
 import pickle
+import math
 
 # External libraries
 from PySide.QtCore import *
@@ -46,6 +47,7 @@ class TuningParameter(QObject):
     rangeComplete = Signal(int)
     newScriptCommand = Signal(int, list)
     nameChanged = Signal(int, str)
+    tracesreqChanged = Signal(int, int)
 
     def __init__(self, num, showScriptParameter=None):
         super(TuningParameter, self).__init__()
@@ -67,6 +69,7 @@ class TuningParameter(QObject):
         self.params = Parameter.create(name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
         ExtendedParameter.setupExtended(self.params, self)
         self.cnt = 0
+        self.updateParams()
 
     def nameChange(self, newname):
         self.nameChanged.emit(self.paramNum, newname)
@@ -96,6 +99,10 @@ class TuningParameter(QObject):
             self.paramScript = eval(self.findParam('script').value())
         except SyntaxError, e:
             print "Syntax Error: %s" % str(e)
+
+        self.tracesrequired = math.ceil(((self.paramRange[1] - self.paramRange[0]) / self.paramStep) * self.paramRepeat)
+        self.tracesreqChanged.emit(self.paramNum, self.tracesrequired)
+
 
     def findNewValue(self, mode="linear"):
         """ Find new value for this parameter """
@@ -143,6 +150,7 @@ class GlitchExplorerDialog(QDialog):
 
         self.glitchParams =[{'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
                             {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters},
+                            {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True},
                             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
                             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
 
@@ -242,9 +250,20 @@ class GlitchExplorerDialog(QDialog):
             p.nameChanged.connect(self.updateTableHeaders)
             p.newScriptCommand.connect(self.executeScriptCommand)
             p.rangeComplete.connect(self.rangeDone)
+            p.tracesreqChanged.connect(self.tracesreqChanged)
 
         self.updateTableHeaders()
         self.reloadParameters()
+        self.tracesreqChanged()
+        
+    def tracesreqChanged(self, pnum=None, newnum=None):
+        treq = None
+        for t in self.tuneParamList:
+            if treq is None:
+                treq = t.tracesrequired
+            else:
+                treq *= t.tracesrequired
+        self.findParam('tracesreq').setValue(treq)
 
     def reloadParameters(self):
         ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
