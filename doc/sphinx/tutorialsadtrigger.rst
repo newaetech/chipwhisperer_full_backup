@@ -7,12 +7,15 @@ This advanced tutorial will demonstrate the use of analog Sum of Absolute Differ
 trigger an event (e.g. capture or glitch) based on a pattern in the analog waveform. This pattern typically comes from the Device Under Test (DUT)
 performing an operation of interest such as cryptographic or authentication code.
 
+The SAD trigger is built into the :ref:`hwcapturerev2` only at this time, and is not present in the
+:ref:`naecw1173_cwlite`.
+
 The SAD Criteria
 ----------------
 
 The Sum of Absolute Differences (SAD) measures the similarity between two blocks of data. This is done simply by first subtracting the two arrays
 in an element-wise fashion, then converting that into an absolute value, and finally summing up the absolute difference between each element. You
-can see other examples of the `SAD Algorith on Wikipedia <http://en.wikipedia.org/wiki/Sum_of_absolute_differences>`_.
+can see other examples of the `SAD Algorithm on Wikipedia <http://en.wikipedia.org/wiki/Sum_of_absolute_differences>`_.
 
 In this system, a trigger is generated whenever the output of the SAD algorithm falls `below` some threshold. The FPGA calculates the SAD critera
 for every incoming sample, where the SAD is calculated over 128 samples. The following diagram shows the system design:
