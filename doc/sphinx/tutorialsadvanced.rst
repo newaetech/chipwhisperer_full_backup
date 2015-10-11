@@ -6,7 +6,7 @@ Advanced Tutorials
 .. toctree::
     :maxdepth: 3
 
-    tutorialresync
+    tutorialsynccomm
     tutorialglitch
     tutorialglitchvcc
     tutorialsadtrigger

@@ -949,62 +949,7 @@ The following assumes you have already completed the previous steps:
     tries the same settings multiple times. You will likely find that the successful
     glitch does not have 100% success rate, so using a repeat count of 2 or 3
     is helpful to increase your chances of success.
-  
-   
-Serial IO Line Trigger on ``glitch1()`` (not applicable to CW-Lite)
--------------------------------------------------------------------
-
-The following is possible only with the ChipWhisperer Capture Rev 2 device. The default bitstream for the
-CW1173 does not include the Serial IO-Line trigger function due to FPGA resource limitations. This may be
-possible in future revisions with FPGA optimization, or if you remove other unneeded functions.
-
-The following requires you to configure the target device to call the ``glitch1()`` routine. We'll use an
-automatic digital pattern trigger, instead of the Trigger line. This will detect when the DUT sends the
-``A`` character indicating the infinite loop is going to happen.
-
-1. Switch the *Trigger Module* to *Digital Pattern Matching*:
-
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger1.png
-
-2. Setup the system to monitor both TX & RX lines, using an AND logic. The lines normally idle high, thus
-   the AND combination allows you to trigger on either sent or received data:
-
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger2.png
-
-3. Under the *Digital Pattern Trigger Module*, set the Baud rate to 38400. Set the *Trigger Character* to ``A``:
-
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger3.png
-
-When the glitch sends an ``A``, the glitch will trigger. If you want to check the trigger is occurring, you
-can use the normal analog capture. To do so follow these steps:
-
-4. Set the gain setting to *30*:
-
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog1.png
-
-5. Set the trigger mode to *rising edge*:
-
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog2.png
-   
-6. Set the ADC clock source to *CLKGEN x4 via DCM*, and ensure the *DCM Locked* checkbox indicates the DCM
-   is locked, along with the ADC frequency being *29.5 MHz*. Hit the *Reset ADC DCM* button if this is not
-   the case:
-   
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog3.png
-
-Finally - we can check both the triggering and the glitches. To check the triggers our occurring:
-
-7. Hit the *Capture 1* box. Quickly (before the timeout occurs) hit the *Read Signature* button in AVRStudio,
-   which will reset the AVR. It should send an ``A`` causing the trigger to occur. If the system is working the
-   ADC will capture data, immediately on hitting *Read Signature*. If the trigger is NOT working you will instead
-   see a message printed about *Timeout in OpenADC capture(), trigger FORCED* in the *Debug Logging* tab:
-   
-   .. image:: /images/tutorials/advanced/glitching/glitchexample-iotrigger-analog3.png
-
-8. The glitch trigger will occur whenever the trigger conditions are met, and *DOES NOT* rely on the capture
-   to be armed. Thus for example try adjusting the *Repeat* number until you are able to get glitches occuring
-   by simply hitting the *Read Signature* button to reset the AVR.
-   
+     
 Glitching Onward
 ----------------
 
@@ -1014,6 +959,7 @@ in embedded hardware devices. There are many ways to expand your knowledge with 
 * Use manual glitches to try simply glitching past the prompt in ``glitch3()``.
 * Download some example source code (bootloaders, login prompts, etc) and port them to the AVR. See how you can
   glitch past security checks.
+* Use one of the IO triggers discussed in :ref:`tutorialsynccomm`.
   
   
   
