@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectVersion>6.2</ProjectVersion>
+    <ProjectVersion>7.0</ProjectVersion>
     <ToolchainName>com.Atmel.ARMGCC.C</ToolchainName>
     <ProjectGuid>{e24df74f-51ee-4aa3-97f3-ab499557ceb2}</ProjectGuid>
     <avrdevice>ATSAM3U2C</avrdevice>
@@ -250,7 +250,8 @@
       <ToolNumber>28006436</ToolNumber>
       <ToolName>SAM-ICE</ToolName>
     </com_atmel_avrdbg_tool_samice>
-    <avrtoolinterface>JTAG</avrtoolinterface>
+    <avrtoolinterface>
+    </avrtoolinterface>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -443,7 +444,7 @@
   <armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>True</armgcc.compiler.optimization.PrepareFunctionsForGarbageCollection>
   <armgcc.compiler.optimization.DebugLevel>Maximum (-g3)</armgcc.compiler.optimization.DebugLevel>
   <armgcc.compiler.warnings.AllWarnings>True</armgcc.compiler.warnings.AllWarnings>
-  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500</armgcc.compiler.miscellaneous.OtherFlags>
+  <armgcc.compiler.miscellaneous.OtherFlags>-pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes</armgcc.compiler.miscellaneous.OtherFlags>
   <armgcc.linker.libraries.Libraries>
     <ListValues>
       <Value>libarm_cortexM3l_math</Value>
@@ -575,6 +576,7 @@
     <Folder Include="src\ASF\thirdparty\CMSIS\Lib\GCC\" />
     <Folder Include="src\config\" />
     <Folder Include="src\isp" />
+    <Folder Include="src\scard" />
     <Folder Include="src\pdi" />
   </ItemGroup>
   <ItemGroup>
@@ -583,6 +585,28 @@
     </Compile>
     <Compile Include="src\fpga_xmem.h">
       <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard\at88sc102_highlevel.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard\at88sc102_highlevel.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard\at88sc102_lowlevel.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard\at88sc102_lowlevel.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard\iso7816.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard\iso7816.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\scard_usb.c">
+      <SubType>compile</SubType>
+      <Link>src\scard_usb.c</Link>
     </Compile>
     <Compile Include="src\usb.h">
       <SubType>compile</SubType>
@@ -606,12 +630,6 @@
       <SubType>compile</SubType>
     </Compile>
     <None Include="src\ASF\sam\services\flash_efc\flash_efc.h">
-      <SubType>compile</SubType>
-    </None>
-    <Compile Include="src\ASF\sam\services\smart_card\iso7816.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <None Include="src\ASF\sam\services\smart_card\iso7816.h">
       <SubType>compile</SubType>
     </None>
     <Compile Include="src\circbuffer.c">
@@ -651,9 +669,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\pdi\XPROGTimeout.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="src\scard.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\usart_driver.c">
