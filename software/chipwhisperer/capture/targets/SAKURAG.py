@@ -29,6 +29,13 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 
 try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    dicttype = OrderedDict
+except ImportError:
+    dicttype = dict
+
+try:
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
@@ -36,6 +43,8 @@ except ImportError:
     
 from openadc.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
+from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
+import openadc.qt as openadc_qt
 
 try:
     import ftd2xx as ft
@@ -53,8 +62,19 @@ class ChipWhispererComm(object):
     FLAG_WRFULL = 0x02
     FLAG_RDEMPTY = 0x04
 
+    def __init__(self, standalone=False):
+        self.standalone = standalone
+        self.serialnum = None
+
+        if standalone:
+            self.setSerial = self._setSerial
+
+    def _setSerial(self, serialnum):
+        self.serialnum = serialnum
+
     def setOpenADC(self, oadc):
         self.oa = oadc
+        
 
     def reset(self):
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
@@ -62,9 +82,17 @@ class ChipWhispererComm(object):
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
 
     def con(self):
-        if self.oa is None:
-            print "No OpenADC?"
-            return
+        if self.oa is None:            
+            if self.serialnum is not None:
+                self.qtadc = openadc_qt.OpenADCQt(includePreview=False, setupLayout=False)
+                self.qtadc.setupParameterTree()
+                self.oaiface = OpenADCInterface_FTDI(self.qtadc)
+                self.oaiface.setSerialNumber(self.serialnum)
+                self.oaiface.con()
+                self.oa = self.qtadc.sc
+            else:
+                print "No OpenADC - did you connect in scope module already and/or set serial number (hit 'REFRESH')?"
+                return
 
         # Reset AES Core
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
@@ -231,7 +259,14 @@ class SakuraG(TargetTemplate):
     def setupParameters(self): 
         self.hw = None
 
-        ssParams = [{'name':'Connection via:', 'key':'conn', 'type':'list', 'values':{'ChipWhisperer Integrated':ChipWhispererComm(), 'FTDI Stand-Alone':FTDIComm()}, 'set':self.setConn},
+        conntypes = dicttype()
+        conntypes['Select Interface type...'] = None
+        conntypes['CW Bitstream, with OpenADC'] = ChipWhispererComm(standalone=False)
+        conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)
+        conntypes['Original Bitstream'] = FTDIComm()
+
+        ssParams = [{'name':'Connection via:', 'key':'conn', 'type':'list',
+                            'values':conntypes, 'set':self.setConn, 'value':None},
                     {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':self.reset, 'visible':False},
                     {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
                     {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
@@ -240,7 +275,6 @@ class SakuraG(TargetTemplate):
         ExtendedParameter.setupExtended(self.params, self)      
         self.oa = None
         self.fixedStart = True
-
         self.hw = self.findParam('conn').value()
                     
     def setOpenADC(self, oadc):
@@ -271,10 +305,8 @@ class SakuraG(TargetTemplate):
         if hasattr(self.hw, 'setSerial'):
             # For SAKURA-G normally we use 'A' channel
             ser = self.findParam('serno').value()
-
             if ser.endswith('A') is False:
                 print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
-
             self.hw.setSerial(ser)
 
         hwok = self.hw.con()
