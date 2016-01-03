@@ -4,13 +4,21 @@
 
 src\ASF\sam\drivers\chipid\chipid.c
 
+src\scard\at88sc102_highlevel.c
+
+src\scard\at88sc102_lowlevel.c
+
+src\scard\iso7816.c
+
+src\scard_usb.c
+
+src\usb_xmem.c
+
 src\ASF\sam\drivers\efc\efc.c
 
 src\ASF\sam\drivers\tc\tc.c
 
 src\ASF\sam\services\flash_efc\flash_efc.c
-
-src\ASF\sam\services\smart_card\iso7816.c
 
 src\circbuffer.c
 
@@ -25,8 +33,6 @@ src\isp\V2ProtocolParams.c
 src\usb.c
 
 src\pdi\XPROGTimeout.c
-
-src\scard.c
 
 src\usart_driver.c
 
