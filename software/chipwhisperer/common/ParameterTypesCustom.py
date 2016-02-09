@@ -453,3 +453,35 @@ class FilelistParameter(Parameter):
         Parameter.setLimits(self, limits)
 
 registerParameterType('filelist', FilelistParameter, override=True)
+
+
+class SpinBoxWithSetItem(WidgetParameterItem):
+    def makeWidget(self):
+        """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
+        opts = self.param.opts
+        defs = {
+            'value': 0, 'min': None, 'max': None, 'int': True,
+            'step': 1.0, 'minStep': 1.0, 'dec': False,
+            'siPrefix': False, 'suffix': ''
+        }
+
+        defs.update(opts)
+        if 'limits' in opts:
+            defs['bounds'] = opts['limits']
+        w = SpinBox()
+
+        # This hack ensures compatability between 0.9.10 and later
+        for k in opts:
+            w.opts[k] = opts[k]
+
+        w.setOpts(**defs)
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
+
+        return w
+
+class SpinBoxWithSet(Parameter):
+    itemClass = SpinBoxWithSetItem
+
+registerParameterType('int', SpinBoxWithSet, override=True)
+
