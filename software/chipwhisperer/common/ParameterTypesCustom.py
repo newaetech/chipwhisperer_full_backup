@@ -12,6 +12,7 @@ from pyqtgraph.pgcollections import OrderedDict
 from pyqtgraph.widgets.SpinBox import SpinBox
 import pyqtgraph as pg
 import chipwhisperer.common.qrc_resources
+from openadc.ExtendedParameter import ExtendedParameter
 
 class SigStuff(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)
@@ -456,6 +457,11 @@ registerParameterType('filelist', FilelistParameter, override=True)
 
 
 class SpinBoxWithSetItem(WidgetParameterItem):
+    
+    def __init__(self, *args, **kwargs):
+        super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
+        ExtendedParameter.drawHelpIcon(self)
+    
     def makeWidget(self):
         """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
         opts = self.param.opts
@@ -470,7 +476,7 @@ class SpinBoxWithSetItem(WidgetParameterItem):
             defs['bounds'] = opts['limits']
         w = SpinBox()
 
-        # This hack ensures compatability between 0.9.10 and later
+        # This hack ensures compatibility between 0.9.10 and later
         for k in opts:
             w.opts[k] = opts[k]
 
@@ -480,8 +486,13 @@ class SpinBoxWithSetItem(WidgetParameterItem):
 
         return w
 
+    def updateDefaultBtn(self):
+        pass
+
 class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
 registerParameterType('int', SpinBoxWithSet, override=True)
+
+
 
