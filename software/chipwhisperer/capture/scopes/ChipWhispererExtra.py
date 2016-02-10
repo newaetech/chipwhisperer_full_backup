@@ -237,6 +237,12 @@ class CWExtraSettings(object):
                 ]},
         ])
         
+        #Catch for CW-Lite Specific Stuff
+        if hasFPAFPB==False and hasPLL==False:
+            self.param[0]["children"].extend([
+                {'name':'Target Power State', 'type':'bool', 'value':'True', 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
+            ])
+        
 
     def con(self, oa):
         self.oa = oa
@@ -330,6 +336,22 @@ class CWExtraSettings(object):
             data[5] &= ~(0x01)
 
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetPowerState(self, enabled):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if enabled:
+            data[5] &= ~(0x02)
+        else:
+            data[5] |= (0x02)
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def getTargetPowerState(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if data[5] & 0x02:
+            return False
+        else:
+            return True
 
     def setPin(self, enabled, pin):
         current = self.getPins()

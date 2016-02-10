@@ -43,6 +43,7 @@ except ImportError:
 
 from GraphWidget import GraphWidget
 import PythonConsole
+from openadc.HelpWindow import HelpBrowser
 
 from traces.TraceManager import TraceManagerDialog
 from chipwhisperer.common.project_text_editor import ProjectTextEditor
@@ -193,6 +194,7 @@ class MainChip(QMainWindow):
         self.initUI(icon)
         self.paramTrees = []
         self.originalStdout = None
+        self.helpbrowser = HelpBrowser()
         
         #Fake widget for dock
         #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
