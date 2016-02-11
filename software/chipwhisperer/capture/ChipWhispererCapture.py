@@ -578,7 +578,7 @@ class ChipWhispererCapture(MainChip):
         self._scopeToolMenuItems = []
 
         if self.scope is not None:
-            ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)
+            ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
 
             # Check for any tools to add too
             if hasattr(self.scope, "guiActions") and len(self.scope.guiActions()) > 0:
@@ -590,12 +590,12 @@ class ChipWhispererCapture(MainChip):
 
     def reloadTargetParamList(self, lst=None):
         if self.target is not None:
-            ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
+            ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadTraceParamList(self, lst=None):
         if self.traceparams is not None:
             try:
-                ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree)
+                ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
             except AttributeError:
                 #Some trace writers have no configuration options
                 pass
@@ -603,13 +603,13 @@ class ChipWhispererCapture(MainChip):
     def reloadAuxParamList(self, lst=None):
         if self.auxList is not None:
             try:
-                ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree)
+                ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
             except AttributeError:
                 # Some trace writers have no configuration options
                 pass
 
     def reloadParamList(self, lst=None):
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree, help_window=self.helpbrowser.helpwnd)
 
     def paramList(self):
         p = []
