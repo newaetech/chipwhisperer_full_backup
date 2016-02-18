@@ -101,12 +101,20 @@ class RangeParameterItem(WidgetParameterItem):
                 'siPrefix': False, 'suffix': ''
             }
         defs.update(opts)
+
+        wlow = SpinBox()
+        whigh = SpinBox()
+
+        # The following required for pyqtgraph > 0.9.10
+        for k in defs:
+            wlow.opts[k] = defs[k]
+        for k in defs:
+            whigh.opts[k] = defs[k]
+
         if 'limits' in opts:
             defs['bounds'] = opts['limits']
-        wlow = SpinBox()
-        wlow.setOpts(**defs)
 
-        whigh = SpinBox()
+        wlow.setOpts(**defs)
         whigh.setOpts(**defs)
 
         whigh.sigValueChanged.connect(self.svChangedEmit)
