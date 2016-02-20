@@ -25,12 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+from PySide.QtCore import *
+from PySide.QtGui import *
 
 
 class ValidationDialog(QDialog):

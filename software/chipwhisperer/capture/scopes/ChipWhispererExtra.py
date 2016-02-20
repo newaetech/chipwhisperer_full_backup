@@ -26,11 +26,10 @@
 #=================================================
 
 import sys
-from functools import partial
 import time
+from functools import partial
 
 from PySide.QtCore import *
-from PySide.QtGui import *
 
 try:
     from pyqtgraph.parametertree import Parameter
@@ -38,7 +37,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 import ChipWhispererGlitch
 
 CODE_READ = 0x80

@@ -37,7 +37,7 @@
 import sys
 
 #Import the ChipWhispererCapture module
-import chipwhisperer.capture.ChipWhispererCapture as cwc
+import chipwhisperer.capture.ui.ChipWhispererCapture as cwc
 
 #Check for PySide
 try:

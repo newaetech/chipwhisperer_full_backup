@@ -25,8 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
-from PySide.QtGui import *
+from chipwhisperer.common.utils import util
 
 class SmartStatements(object):
     """
@@ -127,14 +126,13 @@ class SmartStatements(object):
 
 
 
-class AutoScript(QObject):
+class AutoScript(object):
     """Base functions for getting/setting stuff to make main script file"""
 
-    scriptsUpdated = Signal()
-    runScriptFunction = Signal(str)
+    scriptsUpdated = util.Signal()
+    runScriptFunction = util.Signal()
 
     def __init__(self, parent=None):
-        super(AutoScript, self).__init__(parent)
         self.autoScriptInit()
         
     def autoScriptInit(self):

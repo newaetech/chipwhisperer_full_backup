@@ -39,7 +39,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 glitchaddr = 51
 glitchoffsetaddr = 25

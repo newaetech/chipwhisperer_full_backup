@@ -90,7 +90,7 @@ finally:
 
 
 try:
-    import chipwhisperer.capture.targets.ChipWhispererTargets
+    import chipwhisperer.capture.ChipWhispererTargets
     ok = True
     err = ""
 except ImportError, e:

@@ -40,7 +40,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
     
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 try:
     from pyqtgraph.parametertree import Parameter   
@@ -175,7 +175,7 @@ class PicoScope(QWidget):
             print "WARNING: OVERFLOW IN DATA"
         self.datapoints = data[0]
         self.dataUpdated.emit(self.datapoints, 0)
-        waitingCallback()
+#        waitingCallback()
 
         # No timeout?
         return False

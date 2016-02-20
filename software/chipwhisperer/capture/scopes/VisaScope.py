@@ -27,24 +27,12 @@
 
 
 import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from visa import *
 import time
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
+from visa import *
 
 class VisaScope(QWidget):
     paramListUpdated = Signal(list)

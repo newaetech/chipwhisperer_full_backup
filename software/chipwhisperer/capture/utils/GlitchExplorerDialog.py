@@ -38,8 +38,8 @@ import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 
 # CW/OpenADC
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ParameterTypesCustom
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.ui.ParameterTypesCustom
 
 
 class TuningParameter(QObject):

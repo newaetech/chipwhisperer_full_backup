@@ -23,21 +23,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
-try:
-    import pyqtgraph as pg
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-import chipwhisperer.common.qrc_resources
+from PySide.QtCore import *
+from PySide.QtGui import *
+import pyqtgraph as pg
+import chipwhisperer.common.ui.qrc_resources
 
 class ColorDialog(QDialog):
     """

@@ -31,6 +31,9 @@ from PySide.QtGui import *
 from TargetTemplate import TargetTemplate
 import hid
 
+def getTarget(log, showScriptParameter):
+    return "ChipWhisperer SPI", ChipWhispererSPI(log, showScriptParameter)
+
 class HIDSPI(object):
     CMDSPI = 0x01
     CMDBOOT = 0xFE
@@ -95,7 +98,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
     paramListUpdated = Signal(list)

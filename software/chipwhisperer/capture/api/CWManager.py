@@ -1,4 +1,4 @@
-    #!/usr/bin/python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2013-2014, NewAE Technology Inc
@@ -21,19 +21,11 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#=================================================
 
-import ast
-    
-def strListToList(strlist):
-    """
-    Convert string in form of '"[33, 42, 43]", "[24, 43, 4]"'
-    into a normal list.
-    """
+import chipwhisperer.common.utils.util as util
 
-    strlist = strlist.replace('"', '')
-    strlist = strlist.replace("'", "")
-    try:
-        listeval = ast.literal_eval(strlist)
-        return listeval
-    except ValueError:
-        raise ValueError("Failed to convert %s to list" % (strlist))
+class CWManager(object):
+
+
+

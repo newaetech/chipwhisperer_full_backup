@@ -27,18 +27,17 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 try:
     from Crypto.Cipher import AES
 except ImportError:
     AES = None
+
+def getTarget(log, showScriptParameter):
+    return "None", TargetTemplate(log, showScriptParameter)
+
 
 class TargetTemplate(QObject):
     paramListUpdated = Signal(list)
@@ -57,6 +56,10 @@ class TargetTemplate(QObject):
         self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)      
                         
+    def setSomething(self):
+        """Here you would send value to the reader hardware"""
+        pass
+
     def paramList(self):
         p = [self.params]
         #if self.ser is not None:
@@ -126,9 +129,11 @@ class TargetTemplate(QObject):
 
     def readOutput(self):        
         """Read result"""
+        raise NotImplementedError, "TargetTemplate.readOutput()"
 
     def go(self):
         """Do Encryption"""
+        raise NotImplementedError, "TargetTemplate.go()"
 
     def keyLen(self):
         """Length of key system is using"""

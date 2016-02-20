@@ -23,10 +23,31 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+__version__ = "V3"
 
-import sys
 import importlib
+import os.path
+import sys
+import traceback
+from datetime import datetime
 from functools import partial
+
+import chipwhisperer.capture.api.global_mod as global_mod
+from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
+from chipwhisperer.common.utils import util
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ListAllModules import ListAllModules
+from chipwhisperer.capture.api.TargetInterface import TargetInterface
+from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
+from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
+from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.traces.TraceContainerDPAv3 import TraceContainerDPAv3
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
+from chipwhisperer.common.ui.MainChip import MainChip
+from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 
 try:
     # OrderedDict is new in 2.7
@@ -42,16 +63,6 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from datetime import datetime
-import random
-import os.path
-import traceback
-
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.qrc_resources
-import chipwhisperer.common.ParameterTypesCustom
-
-
 try:
     import writer_dpav3
 except ImportError:
@@ -64,63 +75,9 @@ try:
     import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
     #print pg.systemInfo()
-
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
-
-from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
-from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
-from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
-import chipwhisperer.capture.global_mod as global_mod
-
-try:
-    from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
-except:
-    # VISA Scope uses WindowsError it seems? If so catch on OSError to work on Linux too
-    VisaScopeInterface = None
-
-try:
-    from  chipwhisperer.capture.scopes.PicoScope import PicoScopeInterface as PicoScopeInterface
-except ImportError:
-    PicoScopeInterface = None
-
-try:
-    import  chipwhisperer.capture.targets.SimpleSerial as target_SimpleSerial
-except ImportError:
-    target_SimpleSerial = None
-    target_SimpleSerial_str = sys.exc_info()
-
-try:
-    import  chipwhisperer.capture.targets.SmartCard as target_SmartCard
-except ImportError:
-    target_SmartCard = None
-    target_SmartCard_str = sys.exc_info()
-    print "SmartCard targets disabled: %s"%str(target_SmartCard_str)
-
-try:
-    import  chipwhisperer.capture.targets.SASEBOGII as target_SASEBOGII
-except ImportError:
-    target_SASEBOGII = None
-    target_SASEBOGII_str = sys.exc_info()
-
-try:
-    import  chipwhisperer.capture.targets.SAKURAG as target_SAKURAG
-except ImportError:
-    target_SAKURAG = None
-    target_SAKURAG_str = sys.exc_info()
-
-try:
-    import  chipwhisperer.capture.targets.ChipWhispererSPI as target_CWSPI
-except ImportError:
-    target_CWSPI = None
-    target_CWSPI_str = sys.exc_info()
-
-try:
-    import chipwhisperer.capture.targets.CW305 as target_CW305
-except ImportError:
-    target_CW305 = None
-    target_CW305_str = sys.exc_info()
 
 try:
     import  chipwhisperer.capture.auxiliary.FrequencyMeasure as aux_FrequencyMeasure
@@ -137,219 +94,61 @@ try:
 except ImportError:
     aux_ResetCW1173Read = None
 
-
 try:
     import  chipwhisperer.capture.auxiliary.GPIOToggle as aux_GPIOToggle
 except ImportError:
     aux_GPIOToggle = None
-
-from chipwhisperer.common.MainChip import MainChip
-from chipwhisperer.common.ProjectFormat import ProjectFormat
-from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
-from chipwhisperer.common.traces.TraceContainerDPAv3 import TraceContainerDPAv3
 
 try:
     from chipwhisperer.common.traces.TraceContainerMySQL import TraceContainerMySQL
 except ImportError:
     TraceContainerMySQL = None
 
-from chipwhisperer.capture.ListAllModules import ListAllModules
-from chipwhisperer.common.ValidationDialog import ValidationDialog
-from chipwhisperer.capture.CaptureProgressDialog import CaptureProgressDialog
-from chipwhisperer.capture.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
+try:
+    from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
+except:
+    # VISA Scope uses WindowsError it seems? If so catch on OSError to work on Linux too
+    VisaScopeInterface = None
 
-class TargetInterface(QObject):
-    """This is a standard target interface, which controls various supported lower-level hardware interfaces"""
-    paramListUpdated = Signal(list)
-    targetUpdated = Signal(bool)
-    connectStatus = Signal(bool)
-    newInputData = Signal(list)
+try:
+    from  chipwhisperer.capture.scopes.PicoScope import PicoScopeInterface as PicoScopeInterface
+except ImportError:
+    PicoScopeInterface = None
 
-    def __init__(self, parent=None, log=None,showScriptParameter=None):
-        super(TargetInterface, self).__init__(parent)
-        valid_targets = dicttype()
-        self.driver = None
-        self.log=log
-        self.showScriptParameter = showScriptParameter
-
-        valid_targets["None"] = None
-
-        if target_SimpleSerial is not None:
-            valid_targets["Simple Serial"] = target_SimpleSerial.SimpleSerial(self.log, showScriptParameter=showScriptParameter)
-
-        if target_SmartCard is not None:
-            valid_targets["Smart Card"] = target_SmartCard.SmartCard(self.log, showScriptParameter=showScriptParameter)
-
-        if target_SASEBOGII is not None:
-            valid_targets["SASEBO GII"] = target_SASEBOGII.SaseboGII(self.log, showScriptParameter=showScriptParameter)
-
-        if target_SAKURAG is not None:
-            valid_targets["SAKURA G"] = target_SAKURAG.SakuraG(self.log, showScriptParameter=showScriptParameter)
-
-        if target_CWSPI is not None:
-            valid_targets["ChipWhisperer SPI"] = target_CWSPI.ChipWhispererSPI(self.log, showScriptParameter=showScriptParameter)
-
-        if target_CW305 is not None:
-            valid_targets["ChipWhisperer CW305 (Artix-7)"] = target_CW305.CW305(self.log, showScriptParameter=showScriptParameter)
-
-        self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}
-
-    def setOpenADC(self, oadc):
-        '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
-        try:  # if hasattr(oadc, "scope.sc"):
-            self.oadc = oadc.scope.sc
-        except AttributeError:
-            self.oadc = oadc
-        if hasattr(self.driver, "setOpenADC"):
-            self.driver.setOpenADC(self.oadc)
-
-    def con(self):
-        if self.driver is not None:
-            self.driver.con()
-            self.connectStatus.emit(True)
-
-    def dis(self):
-        if self.driver is not None:
-            self.driver.dis()
-            self.connectStatus.emit(False)
-
-    def setDriver(self, driver):
-        self.driver = driver
-        if hasattr(self.driver, "setOpenADC") and hasattr(self, "oadc") and self.oadc:
-            self.driver.setOpenADC(self.oadc)
-
-        if self.driver is None:
-            self.paramListUpdated.emit(None)
-            self.targetUpdated.emit(False)
-        else:
-            self.driver.paramListUpdated.connect(self.paramListUpdated.emit)
-            self.driver.newInputData.connect(self.newInputData.emit)
-            self.paramListUpdated.emit(self.driver.paramList())
-            self.targetUpdated.emit(True)
-
-    def paramList(self):
-        if self.driver is None:
-            return [None]
-        else:
-            return self.driver.paramList()
-
-class EncryptionStatusMonitor(QDialog):
-    def __init__(self, parent):
-        super(EncryptionStatusMonitor, self).__init__(parent)
-
-        self.dLayout = QVBoxLayout()
-
-        self.textResultsLayout = QGridLayout()
-        self.textInLine = QLineEdit()
-        self.textOutLine = QLineEdit()
-        self.textResultsLayout.addWidget(QLabel("Text In "), 0, 0)
-        self.textInLine.setReadOnly(True)
-        self.textResultsLayout.addWidget(self.textInLine, 0, 1)
-        self.textResultsLayout.addWidget(QLabel("Text Out"), 1, 0)
-        self.textOutLine.setReadOnly(True)
-        self.textResultsLayout.addWidget(self.textOutLine, 1, 1)
-        self.textResultsLayout.addWidget(QLabel("Expected"), 2, 0)
-        self.textOutExpected = QLineEdit()
-        self.textOutExpected.setReadOnly(True)
-        self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
-
-        self.textResultsLayout.addWidget(QLabel("Enc. Key"), 3, 0)
-        self.textEncKey = QLineEdit()
-        self.textEncKey.setReadOnly(True)
-        self.textResultsLayout.addWidget(self.textEncKey, 3, 1)
-
-        self.dLayout.addLayout(self.textResultsLayout)
-
-        # Count of OK passes
-        cntLayout = QHBoxLayout()
-
-        self.totalOps = QLabel("0")
-        self.totalOK = QLabel("?")
-        self.totalFail = QLabel("?")
-        self.clearPB = QPushButton("Clear")
-        self.clearPB.clicked.connect(self.clrCnt)
-
-        cntLayout.addWidget(QLabel("Total Ops: "))
-        cntLayout.addWidget(self.totalOps)
-        cntLayout.addStretch()
-        cntLayout.addWidget(QLabel("Total OK: "))
-        cntLayout.addWidget(self.totalOK)
-        cntLayout.addStretch()
-        cntLayout.addWidget(QLabel("Total Failed: "))
-        cntLayout.addWidget(self.totalFail)
-        cntLayout.addStretch()
-        cntLayout.addWidget(self.clearPB)
-        self.clrCnt()
-
-        self.dLayout.addLayout(cntLayout)
-
-        self.setLayout(self.dLayout)
-        self.hide()
-        
-    def clrCnt(self, ignored=False):
-        self._cntops = 0
-        self._okops = 0
-        self._failops = 0
-        self.totalOps.setText("%d" % self._cntops)
-        self.totalOK.setText("%d" % self._okops)
-        self.totalFail.setText("%d" % self._failops)
-
-    def setHexText(self, lineedit, data):
-        if data is not None:
-            text = ""
-            for t in data: text += "%02X " % t
-            lineedit.setText(text)
-        else:
-            lineedit.setText("?")
-
-    def newData(self, key, pt, ct, expected):
-        self.setHexText(self.textOutLine, ct)
-        self.setHexText(self.textInLine, pt)
-        self.setHexText(self.textEncKey, key)
-        self.setHexText(self.textOutExpected, expected)
-        
-        self._cntops += 1
-
-        if ct and expected and list(ct) == list(expected):
-            self._okops += 1
-        else:
-            self._failops += 1
-
-        self.totalOps.setText("%d" % self._cntops)
-        self.totalOK.setText("%d" % self._okops)
-        self.totalFail.setText("%d" % self._failops)
-
+# class TargetSignals(QObject, TargetInterface.Signals):
+#     def __init__(self):
+#         QObject.__init__(self)
+#         TargetInterface.Signals.__init__(self, Signal(list), Signal(bool), Signal(bool), Signal(list))
 
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4
     def __init__(self, rootdir="."):
-        global_mod.main_window = self
         super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"), icon="cwiconC")
+        global_mod.main_window = self
         self.console = self.addConsole()
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
         QSettings().setValue("cwcapture-starting-root", rootdir)
         self._rootdir = rootdir
-        self._scriptRootDir = rootdir + "/scripts"
-
         self.scope = None
         self.trace = None
         self.auxList = None
-        self.target = TargetInterface(log=self.console, showScriptParameter=self.showScriptParameter)
-        self.target.paramListUpdated.connect(self.reloadTargetParamList)
-        self.target.newInputData.connect(self.newTargetData)
+        self.target = TargetInterface(self._rootdir + "/targets", log=self.console, showScriptParameter=self.showScriptParameter)
+
+        # self.target.signals = TargetSignals()
+        self.target.signals.paramListUpdated.connect(self.reloadTargetParamList)
+        self.target.signals.newInputData.connect(self.newTargetData)
 
         valid_scopes = dicttype()
-        valid_traces = dicttype()
-        valid_aux = dicttype()
-
-        
         valid_scopes["None"] = None
         valid_scopes["ChipWhisperer/OpenADC"] = OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
-        
+
+        valid_traces = dicttype()
         valid_traces["None"] = None
         valid_traces["ChipWhisperer/Native"] = TraceContainerNative
         valid_traces["DPAContestv3"] = TraceContainerDPAv3
+
+        valid_aux = dicttype()
         valid_aux["None"] = None
 
         # If you want to add a 'hacked-in' module, you can do that in the 'aux' system. The aux system is designed to make
@@ -440,8 +239,8 @@ class ChipWhispererCapture(MainChip):
         self.saveFile.connect(self.saveProject)
 
         self.fixedPlain = False
-        self.target.targetUpdated.connect(self.targetUpdated)
-        self.target.connectStatus.connect(self.targetStatusChanged)
+        self.target.signals.targetUpdated.connect(self.targetUpdated)
+        self.target.signals.connectStatus.connect(self.targetStatusChanged)
 
         self.targetConnected = False
         self.reloadParamList()
@@ -457,11 +256,11 @@ class ChipWhispererCapture(MainChip):
         self.TargetToolbar.setEnabled(enabled)
 
         if enabled:
-            self.acqPattern.setTarget(self.target.driver)
+            self.acqPattern.setTarget(self.target.getDriver())
 
     def setAcqPattern(self, pat, reloadList=True):
         self.acqPattern = pat
-        self.acqPattern.setTarget(self.target.driver)
+        self.acqPattern.setTarget(self.target.getDriver())
 
         if reloadList:
             self.reloadParamList()
@@ -486,34 +285,16 @@ class ChipWhispererCapture(MainChip):
 
     def addExampleScripts(self):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
-
         self.projectMenu.addSeparator()
         self.projectMenu.addAction(self.exampleScriptAct)
-
         subMenu = QMenu("Submenu", self)
 
-        self.scriptList = []
-
-        if os.path.isdir(self._scriptRootDir):
-            for fn in os.listdir(self._scriptRootDir + '/.'):
-                fnfull = self._scriptRootDir + '/' + fn
-                if os.path.isfile(fnfull) and fnfull.lower().endswith('.py'):
-                    try:
-                        m = importlib.import_module('chipwhisperer.capture.scripts.' + os.path.splitext(fn)[0])
-                        m.name()
-                        self.scriptList.append(m)
-                    except ImportError, e:
-                        #for debugging uncomment this:
-                        #print str(e)
-                        pass
-
-                    except AttributeError,e:
-                        #for debugging uncomment this:
-                        #print str(e)
-                        pass
-
-        for t in self.scriptList:
-            subMenu.addAction(QAction(t.name(), self, statusTip=t.tip(), triggered=partial(self.runScript, t)))
+        for s in util.getPyFiles(self._rootdir + "/scripts"):
+            try:
+                m = importlib.import_module('chipwhisperer.capture.scripts.' + s)
+                subMenu.addAction(QAction(m.name(), self, statusTip=m.tip(), triggered=partial(self.runScript, m)))
+            except Exception as e:
+                print str(e)
 
         self.exampleScriptAct.setMenu(subMenu)
 
@@ -537,7 +318,7 @@ class ChipWhispererCapture(MainChip):
                                      triggered=self.glitchMonitor.show)
 
         self.toolMenu.addAction(self.GlitchMonitorAct)
-        
+
         # Keep track of add-ins
         self._scopeToolMenuItems = []
 
@@ -571,7 +352,7 @@ class ChipWhispererCapture(MainChip):
         self.auxParamTree = ParameterTree()
 
     def reloadScopeParamList(self, lst=None):
-        
+
         # Remove all old scope actions that don't apply for new selection
         for act in self._scopeToolMenuItems:
             self.toolMenu.removeAction(act)
@@ -609,7 +390,8 @@ class ChipWhispererCapture(MainChip):
                 pass
 
     def reloadParamList(self, lst=None):
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree, help_window=self.helpbrowser.helpwnd)
+#        ExtendedParameter.reloadParams(self.paramList(), self.paramTree, help_window=self.helpbrowser.helpwnd)
+        pass
 
     def paramList(self):
         p = []
@@ -792,14 +574,14 @@ class ChipWhispererCapture(MainChip):
 
     def capture1(self):
 
-        if self.target.driver and self.targetConnected:
-            target = self.target.driver
+        if self.target.driverIsLoaded() and self.targetConnected:
+            target = self.target.getDriver()
         else:
             target = None
 
         try:
             ac = AcquisitionController(self.scope, target, writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
-            ac.newTextResponse.connect(self.esm.newData)
+#            ac.newTextResponse.connect(self.esm.newData)
 
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
@@ -821,10 +603,8 @@ class ChipWhispererCapture(MainChip):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog(onlyOkButton=not warnOnly)
 
-        if self.target.driver:
-            target = self.target.driver
-        else:
-            target = None
+        target = self.target.getDriver()
+
 
         # Basic Validation of settings from the main GUI
         if target is None:
@@ -870,10 +650,7 @@ class ChipWhispererCapture(MainChip):
             return True
 
     def captureM(self):
-        if self.target.driver:
-            target = self.target.driver
-        else:
-            target = None
+        target = self.target.getDriver()
 
         if self.validateSettings(True) == False:
             return
@@ -925,9 +702,9 @@ class ChipWhispererCapture(MainChip):
                     aux.setPrefix(baseprefix)
 
             ac = AcquisitionController(self.scope, target, writer, auxList=self.auxList, keyTextPattern=self.acqPattern)
-            ac.newTextResponse.connect(self.esm.newData)
-            ac.traceDone.connect(cprog.traceDoneSlot)
-            ac.traceDone.connect(self.glitchMonitor.traceDone)
+#            ac.newTextResponse.connect(self.esm.newData)
+#            ac.traceDone.connect(cprog.traceDoneSlot)
+#            ac.traceDone.connect(self.glitchMonitor.traceDone)
             self.glitchMonitor.campaignStart(baseprefix)
             ac.setMaxtraces(tracesPerRun)
             cprog.abortCapture.connect(ac.abortCapture)
@@ -1005,16 +782,12 @@ class ChipWhispererCapture(MainChip):
         self.macWorkArounds()
 
     def saveProject(self):
-        if self.project().hasFilename() == False:
-            fd = QFileDialog(self, 'Save New File', '.', '*.cwp')
-            fd.setDefaultSuffix('cwp')
-            fd.setAcceptMode(QFileDialog.AcceptSave)
-            fd.setViewMode(QFileDialog.Detail)
-            if fd.exec_() == QDialog.Accepted:
-                fname = fd.selectedFiles()[0]
-            else:
+        if self.project().hasFilename() == False :
+            fd = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')
+            if not fd.exec_():
                 return
 
+            fname = fd.selectedFiles()[0]
             self.project().setFilename(fname)
             self.setCurrentFile(fname)
 
@@ -1023,23 +796,23 @@ class ChipWhispererCapture(MainChip):
         self.updateTitleBar()
         self.statusBar().showMessage("Project Saved")
 
-def main(scriptDir="."):
-    app = makeApplication()
-
-    # Create and show the form
-    window = ChipWhispererCapture(scriptDir)
-    window.show()
-
-    # Run the main Qt loop
-    sys.exit(app.exec_())
-
 
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
-    app.setApplicationName("Capture V2")
+    app.setApplicationName("Capture "+__version__)
     return app
+
+def main():
+    app = makeApplication()
+
+    # Create and show the form
+    window = ChipWhispererCapture(os.path.join('chipwhisperer', 'capture'))
+    window.show()
+
+    # Run the main Qt loop
+    sys.exit(app.exec_())
 
 if __name__ == '__main__':
     main()

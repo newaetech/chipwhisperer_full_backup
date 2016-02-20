@@ -27,10 +27,8 @@
 from datetime import datetime
 import os.path
 import time
-
 from PySide.QtCore import *
 from PySide.QtGui import *
-
 from chipwhisperer.capture.scopes.ChipWhispererLite import AVRISP
 from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
 from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_avr

@@ -43,7 +43,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
     
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import hexstr2list
 
 class APDUFilter(QObject):

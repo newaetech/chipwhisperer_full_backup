@@ -32,16 +32,15 @@ from TargetTemplate import TargetTemplate
 
 import time
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-import openadc.scan as scan
+from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.api.scan as scan
 
 from chipwhisperer.capture.scopes.ChipWhispererLite import USART as CWLite_USART
+
+def getTarget(log, showScriptParameter):
+    return "Simple Serial", SimpleSerial(log, showScriptParameter)
+
 
 class SimpleSerial_serial(TargetTemplate):
     def setupParameters(self):

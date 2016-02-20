@@ -24,25 +24,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
+import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-class AuxiliaryTemplate(QObject):
-    paramListUpdated = Signal(list)
+class AuxiliaryTemplate():
+    paramListUpdated = util.Signal()
 
     def __init__(self, parent=None, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(AuxiliaryTemplate, self).__init__(parent)
         self.console = console
         self.showScriptParameter = showScriptParameter
         self.setupParameters()

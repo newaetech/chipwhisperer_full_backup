@@ -25,44 +25,32 @@
 
 import sys
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import random
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+import chipwhisperer.common.utils.util as util
 
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.qrc_resources
-import chipwhisperer.common.ParameterTypesCustom
+# print pg.systemInfo()
 
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    # print pg.systemInfo()
+# class Observed:
+#     def __init__(self):
+#         self.observers = []
+#
+#     def addObserver(self,observer):
+#         if observer not in self.observers:
+#             self.observers.append(observer)
+#
+#
+#     def deleteObserver(self, observer):
+#         self.observers.remove(observer)
+#
+#     def notifyObservers(self):
+#         for observer in self.observers:
+#             observer.update(self)
 
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
 
-from chipwhisperer.common.MainChip import MainChip
-from chipwhisperer.common.ProjectFormat import ProjectFormat
-
-
-class AcquisitionController(QObject):
-    traceDone = Signal(int, list, int)
-    captureDone = Signal(bool)
-
-    # (key, plaintext, response)
-    newTextResponse = Signal(list, list, list, list)
-
+class AcquisitionController():
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
-        super(AcquisitionController, self).__init__()
-
         self.target = target
         self.scope = scope
         self.writer = writer
@@ -108,7 +96,7 @@ class AcquisitionController(QObject):
         #    print " %02X"%i,
         # print ""
 
-        self.newTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
+#        self.newTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
 
         return resp
 
@@ -145,7 +133,8 @@ class AcquisitionController(QObject):
         # Get ADC reading
         if self.scope is not None:
             try:
-                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
+                if self.scope.capture(update, N) == True:
+#                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
                     print "Timeout"
                     return False
             except IOError, e:
@@ -188,12 +177,9 @@ class AcquisitionController(QObject):
             if self.doSingleReading(True, None) == True:
                 if self.writer is not None:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
-
                 nt = nt + 1
-                self.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
-
-            QCoreApplication.processEvents()
-
+#                self.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
+#            QCoreApplication.processEvents()
 
         if self.auxList is not None:
             for aux in self.auxList:
@@ -207,30 +193,18 @@ class AcquisitionController(QObject):
             if self.writer is not None:
                 addToList.append(self.writer)
 
-        self.captureDone.emit(self.running)
+#        self.captureDone.emit(self.running)
 
         self.running = False
 
-def hexStrToByteArray(hexStr):
-    ba = bytearray()
-    for s in hexStr.split():
-        ba.append(int(s, 16))
-    return ba
-
-class AcqKeyTextPattern_Base(QObject):
-
-    paramListUpdated = Signal(list)
-
+class AcqKeyTextPattern_Base(object):
     def __init__(self, console=None, showScriptParameter=None, target=None):
-        super(AcqKeyTextPattern_Base, self).__init__()
         self.showScriptParameter = showScriptParameter
         self.console = console
-        basicParams = self.setupParams()
-        self.params = Parameter.create(name='Key/Text Pattern', type='group', children=basicParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = {'name':'Key/Text Pattern', 'type':'group',  'children':self.setupParams()}
+#        ExtendedParameter.setupExtended(self.params, self)
         self._target = target
         self._initPattern()
-
 
     def setTarget(self, target):
         self._target = target
@@ -250,16 +224,10 @@ class AcqKeyTextPattern_Base(QObject):
             self._key = self._target.checkEncryptionKey(self._key)
 
     def setupParams(self):
-        basicParams = [
-                      {'name':'Do Something', 'type':'bool'},
-                  ]
-
-        return basicParams
-
+        return [{'name':'Do Something', 'type':'bool'},]
 
     def paramList(self):
-        p = [self.params]
-        return p
+        return self.params
 
     def _initPattern(self):
         """Perform any extra init stuff required. Called at the end of main init() & when target changed."""
@@ -280,9 +248,7 @@ class AcqKeyTextPattern_Base(QObject):
         raise AttributeError("This needs to be reimplemented")
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
-
     def setupParams(self):
-
         self._fixedPlain = False
         self._fixedKey = True
 
@@ -323,9 +289,9 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._key = bytearray(initialKey)
             else:
                 keyStr = initialKey
-                self._key = hexStrToByteArray(initialKey)
+                self._key = util.hexStrToByteArray(initialKey)
 
-            self.findParam('initkey').setValue(keyStr)
+            self.initkey = keyStr
 
     def setInitialText(self, initialText, binaryText=False):
         if initialText:
@@ -336,13 +302,12 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin = bytearray(initialText)
             else:
                 textStr = initialText
-                self._textin = hexStrToByteArray(initialText)
+                self._textin = util.hexStrToByteArray(initialText)
 
-            self.findParam('inittext').setValue(textStr)
+            self.inittext = textStr
 
     def initPair(self):
-        self.setInitialKey(self.findParam('initkey').value())
-        self.setInitialText(self.findParam('inittext').value())
+        self._initPattern()
 
     def newPair(self):
         if self._fixedKey is False:
@@ -360,18 +325,10 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
 
         return (self._key, self._textin)
 
-try:
-    from Crypto.Cipher import AES
-except ImportError:
-    AES = None
-
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
-
     def setupParams(self):
-
         self._fixedPlain = False
         self._fixedKey = True
-
         basicParams = [
                       # {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
                   ]
@@ -382,37 +339,37 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
 
     def initPair(self):
         if self.keyLen() == 16:
-            self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
+            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
         elif self.keyLen() == 24:
-            self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
+            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
         elif self.keyLen() == 32:
-            self._key = hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
+            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
 
-        self._textin1 = hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        self._textin1 = util.hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
 
         if self.keyLen() == 16:
-            self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
+            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
         elif self.keyLen() == 24:
-            self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
+            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
         elif self.keyLen() == 32:
-            self._textin2 = hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
+            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
 
         self.group1 = True
 
     def newPair(self):
-
         if self.group1:
             self.group1 = False
             self._textin = self._textin1
 
-            if AES:
+            try:
+                from Crypto.Cipher import AES
                 cipher = AES.new(str(self._key), AES.MODE_ECB)
                 self._textin1 = bytearray(cipher.encrypt(str(self._textin1)))
-            else:
+            except ImportError:
                 print "No AES Module, Using rand() instead!"
                 self._textin1 = bytearray(16)
                 for i in range(0, 16):

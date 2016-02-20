@@ -36,7 +36,7 @@ import re
 import pstats, cProfile
 
 from pyqtgraph.parametertree import Parameter
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 class parameters(object):
     def __init__(self, openMode=False):

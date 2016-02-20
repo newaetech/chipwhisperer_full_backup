@@ -32,15 +32,13 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from pip._vendor.requests.packages.chardet.latin1prober import FREQ_CAT_NUM
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
+
+def getTarget(log, showScriptParameter):
+    return "ChipWhisperer CW305 (Artix-7)", CW305(log, showScriptParameter)
 
 class CW305(TargetTemplate):
      

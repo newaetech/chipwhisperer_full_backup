@@ -24,29 +24,20 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
 import os
+import sys
 import traceback
+
 #We always import PySide first, to force usage of PySide over PyQt
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+from PySide.QtCore import *
+from PySide.QtGui import *
+import pyqtgraph as pg
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
+import chipwhisperer.common.ui.PythonConsole
+from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 
-try:
-    import pyqtgraph as pg
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from GraphWidget import GraphWidget
-import PythonConsole
-from openadc.HelpWindow import HelpBrowser
-
-from traces.TraceManager import TraceManagerDialog
-from chipwhisperer.common.project_text_editor import ProjectTextEditor
+from chipwhisperer.common.traces.TraceManager import TraceManagerDialog
+from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
 
 class saveProjectDialog(QDialog):
     def __init__(self, parent=None):
@@ -289,7 +280,7 @@ class MainChip(QMainWindow):
     
     def addPythonConsole(self, name="Python Console", visible=False):
         """Add a python console, inside which you can access the Python interpreter"""
-        wid = PythonConsole.QPythonConsole(self, locals())
+        wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
         return wid   
         

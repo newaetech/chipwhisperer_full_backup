@@ -35,21 +35,19 @@ try:
 except ImportError:
     dicttype = dict
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
-import openadc.qt as openadc_qt
+import chipwhisperer.capture.ui.qt as openadc_qt
 
 try:
     import ftd2xx as ft
 except OSError:  # Also catches WindowsError
     raise ImportError
+
+def getTarget(log, showScriptParameter):
+    return "SAKURA G", SakuraG(log, showScriptParameter)
 
 class ChipWhispererComm(object):
     CODE_READ = 0x80

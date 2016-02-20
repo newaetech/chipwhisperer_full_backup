@@ -31,14 +31,8 @@ import time
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
-
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
 
@@ -48,7 +42,8 @@ CODE_WRITE      = 0xC0
 ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
-        
+
+
 class CWUniversalSerialProcessor(object):
     def bitsToTxPattern(self, bits, samplesperbit=1, idle=1):
         txpattern = []

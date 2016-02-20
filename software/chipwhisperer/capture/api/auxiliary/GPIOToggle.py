@@ -24,24 +24,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
+import sys
+import time
 from PySide.QtCore import *
 from PySide.QtGui import *
-
-import time
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 class GPIOToggle(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def setupParameters(self):
         ssParams = [

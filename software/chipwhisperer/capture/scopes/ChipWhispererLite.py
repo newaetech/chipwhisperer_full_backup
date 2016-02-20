@@ -28,7 +28,7 @@
 import usb.core
 import usb.util
 import time
-import chipwhisperer.capture.global_mod as global_mod
+import chipwhisperer.capture.api.global_mod as global_mod
 from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_xmega, supported_avr
 
 def packuint32(data):

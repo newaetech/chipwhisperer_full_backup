@@ -38,8 +38,8 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ParameterTypesCustom
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.ui.ParameterTypesCustom
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 

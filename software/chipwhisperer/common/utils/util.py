@@ -25,6 +25,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+import ast
+import os.path
+
 def list2hexstr(data, delim='', prefix=''):
     """
     Convert a list of integers to a hex string, with optional deliminators/prefix
@@ -61,3 +64,41 @@ def hexstr2list(data):
 
     return datalist
 
+def strListToList(strlist):
+    """
+    Convert string in form of '"[33, 42, 43]", "[24, 43, 4]"'
+    into a normal list.
+    """
+
+    strlist = strlist.replace('"', '')
+    strlist = strlist.replace("'", "")
+    try:
+        listeval = ast.literal_eval(strlist)
+        return listeval
+    except ValueError:
+        raise ValueError("Failed to convert %s to list" % (strlist))
+
+def hexStrToByteArray(hexStr):
+    ba = bytearray()
+    for s in hexStr.split():
+        ba.append(int(s, 16))
+    return ba
+
+def getPyFiles(dir):
+    scriptList = []
+    if os.path.isdir(dir):
+        for fn in os.listdir(dir):
+            fnfull = dir + '/' + fn
+            if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')):
+                scriptList.append(os.path.splitext(fn)[0])
+    return scriptList;
+
+class Signal:
+    callback = None
+
+    def emit(self, value):
+        if self.callback is not None:
+            self.callback(value)
+
+    def connect(self, callback):
+        self.callback = callback

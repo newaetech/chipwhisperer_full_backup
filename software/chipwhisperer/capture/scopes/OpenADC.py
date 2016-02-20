@@ -35,26 +35,14 @@ try:
 except ImportError:
     dicttype = dict
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+from PySide.QtCore import *
+from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
 
-try:
-    import openadc.qt as openadc_qt
-except ImportError:
-    print "ERROR: openadc.qt is required for this program"
-    sys.exit()
+import chipwhisperer.capture.ui.qt as openadc_qt
 
 try:
     import ftd2xx as ft
@@ -85,7 +73,7 @@ import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhisperer
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
-import chipwhisperer.capture.global_mod as global_mod
+import chipwhisperer.capture.api.global_mod as global_mod
 
 class OpenADCInterface_NAEUSBChip(QWidget):
     paramListUpdated = Signal(list)

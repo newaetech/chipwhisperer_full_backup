@@ -11,8 +11,8 @@ from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem
 from pyqtgraph.pgcollections import OrderedDict
 from pyqtgraph.widgets.SpinBox import SpinBox
 import pyqtgraph as pg
-import chipwhisperer.common.qrc_resources
-from openadc.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.ui.qrc_resources
+from  chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 class SigStuff(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)

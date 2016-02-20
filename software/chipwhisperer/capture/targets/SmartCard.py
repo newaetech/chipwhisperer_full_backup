@@ -22,13 +22,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
 import time
+
+import serial
+from PySide.QtCore import *
 
 try:
     # OrderedDict is new in 2.7
@@ -37,20 +34,20 @@ try:
 except ImportError:
     dicttype = dict
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
-import openadc.scan as scan
-import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.api.scan as scan
+import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
-import chipwhisperer.capture.global_mod as global_mod
+import chipwhisperer.capture.api.global_mod as global_mod
 from TargetTemplate import TargetTemplate
 
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
+
+
+def getTarget(log, showScriptParameter):
+    return "Smart Card", SmartCard(log, showScriptParameter)
+
 
 class ReaderTemplate(QObject):
     paramListUpdated = Signal(list)

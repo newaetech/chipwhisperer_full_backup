@@ -28,6 +28,7 @@ import sys
 import os
 import re
 import inspect
+from chipwhisperer.common.utils import util
 
 #We always import PySide first, to force usage of PySide over PyQt
 try:
@@ -36,7 +37,7 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-    
+
 try:
     from configobj import ConfigObj  # import the module
 except ImportError:
@@ -54,8 +55,8 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.dictdiffer import DictDiffer
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.dictdiffer import DictDiffer
 
 def delete_keys_from_dict(dict_del, lst_keys):
     for k in lst_keys:
@@ -176,19 +177,18 @@ class ProjectDiffWidget(QWidget):
         return True
 
 
-class ProjectFormat(QObject):
+class ProjectFormat(object):
 
     # Filename changed
-    filenameChanged = Signal(str)
+    filenameChanged = util.Signal()
 
     # File changed on disk but perhaps not yet updated
-    fileChangedOnDisk = Signal()
+    fileChangedOnDisk = util.Signal()
 
     # Project settings changed but NOT saved anywhere yet
-    valueChanged = Signal(str)
+    valueChanged = util.Signal()
 
     def __init__(self, parent=None):
-        super(ProjectFormat, self).__init__(parent)
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
         self.paramListList = []        
         self.filename = "untitled.cwp"

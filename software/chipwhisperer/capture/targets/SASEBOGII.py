@@ -22,27 +22,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
 from PySide.QtCore import *
-from PySide.QtGui import *
 
 try:
     import ftd2xx as ft
 except OSError:  # also catches WindowsError
     raise ImportError
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
-import ChipWhispererTargets
 from TargetTemplate import TargetTemplate
+
+def getTarget(log, showScriptParameter):
+    return "SASEBO GII", SaseboGII(log, showScriptParameter)
 
 class SaseboGIIDPAContest(object):
     def init(self):

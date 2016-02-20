@@ -1,7 +1,9 @@
 # Calls ChipWhisperer w/o the annoying window
-from chipwhisperer.capture.ChipWhispererCapture import main
 import ctypes
 import os
+
+from chipwhisperer.capture.ui.ChipWhispererCapture import main
+
 if __name__ == '__main__':
 
     # Windows work-around
@@ -9,4 +11,4 @@ if __name__ == '__main__':
         myappid = u'newaetech.chipwhisperer.capture.git'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-    main(scriptDir=os.path.join('chipwhisperer', 'capture'))
+    main()
