@@ -14,3 +14,5 @@ software/chipwhisperer/capture/scopes/cw-partial-files/ztex_rev2_1.11c_ise/*
 doc/sphinx/_build/html/_static
 doc/sphinx/_build
 *.epf
+*.o
+*.d
