@@ -1,0 +1,483 @@
+# Target file name (without extension).
+TARGET = CW305_SAM3UFW
+
+
+# Object files directory
+#     To put object files in current directory, use a dot (.), do NOT make
+#     this an empty or blank macro!
+OBJDIR = obj
+
+
+# List C source files here. (C dependencies are automatically generated.)
+SRC = ../src/main_cw305.c
+SRC += ../src/ASF/common/services/serial/usart_serial.c \
+../src/ASF/sam/boards/cw305/init.c \
+../src/ASF/sam/boards/cw305/led.c \
+../src/ASF/sam/drivers/twi/twi.c \
+../src/ASF/sam/drivers/usart/usart.c \
+../src/cdce906.c \
+../src/circbuffer.c \
+../src/fpga_program.c \
+../src/pdi/XMEGANVM.c \
+../src/pdi/XPROGNewAE.c \
+../src/pdi/XPROGTarget.c \
+../src/pdi/XPROGTimeout.c \
+../src/tasks.c \
+../src/tps56520.c \
+../src/usart_driver.c \
+../src/usb.c \
+../src/usb_xmem.c \
+../src/ASF/sam/drivers/chipid/chipid.c \
+../src/ASF/sam/drivers/efc/efc.c \
+../src/ASF/sam/drivers/tc/tc.c \
+../src/ASF/sam/services/flash_efc/flash_efc.c \
+../src/ASF/common/services/delay/sam/cycle_counter.c \
+../src/ASF/common/services/usb/class/vendor/device/example/sam3u4e_sam3u_ek/ui_cw305.c \
+../src/ASF/common/services/clock/sam3u/sysclk.c \
+../src/ASF/common/services/sleepmgr/sam/sleepmgr.c \
+../src/ASF/common/services/usb/class/vendor/device/udi_vendor.c \
+../src/ASF/common/services/usb/class/vendor/device/udi_vendor_desc.c \
+../src/ASF/common/services/usb/udc/udc.c \
+../src/ASF/common/utils/interrupt/interrupt_sam_nvic.c \
+../src/ASF/common/utils/stdio/read.c \
+../src/ASF/common/utils/stdio/write.c \
+../src/ASF/sam/drivers/ebi/smc/smc.c \
+../src/ASF/sam/drivers/pio/pio.c \
+../src/ASF/sam/drivers/pio/pio_handler.c \
+../src/ASF/sam/drivers/pmc/pmc.c \
+../src/ASF/sam/drivers/pmc/sleep.c \
+../src/ASF/sam/drivers/spi/spi.c \
+../src/ASF/sam/drivers/udphs/udphs_device.c \
+../src/ASF/sam/drivers/uart/uart.c \
+../src/ASF/sam/utils/cmsis/sam3u/source/templates/exceptions.c \
+../src/ASF/sam/utils/cmsis/sam3u/source/templates/gcc/startup_sam3u.c \
+../src/ASF/sam/utils/cmsis/sam3u/source/templates/system_sam3u.c \
+../src/ASF/sam/utils/syscalls/gcc/syscalls.c \
+../src/main_cw305.c
+
+# List C++ source files here. (C dependencies are automatically generated.)
+CPPSRC = 
+
+
+# List Assembler source files here.
+#     Make them always end in a capital .S.  Files ending in a lowercase .s
+#     will not be considered source files but generated files (assembler
+#     output from the compiler), and will be deleted upon "make clean"!
+#     Even though the DOS/Win* filesystem matches both .s and .S the same,
+#     it will preserve the spelling of the filenames, and gcc itself does
+#     care about how the name is spelled on its command-line.
+ASRC =
+
+
+# Optimization level, can be [0, 1, 2, 3, s]. 
+#     0 = turn off optimization. s = optimize for size.
+#     (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
+OPT = 1
+
+
+# Debugging format.
+DEBUG = 3
+
+
+# List any extra directories to look for include files here.
+#     Each directory must be seperated by a space.
+#     Use forward slashes for directory separators.
+#     For a directory that has spaces, enclose it in quotes.
+EXTRAINCDIRS = ../common/services/usb/class/vendor/device/example \
+ ../common/services/usb/class/vendor/device/example/sam3u4e_sam3u_ek \
+ ../src/ASF/common/services/usb/udc \
+ ../src/ASF/common/utils \
+ ../src/ASF/common/services/sleepmgr \
+ ../src/ASF/sam/utils/cmsis/sam3u/source/templates \
+ ../src/ASF/sam/drivers/pmc \
+ ../src/ASF/common/services/gpio \
+ ../src/ASF/sam/boards \
+ ../src/ASF/sam/drivers/pio \
+ ../src/ASF/common/boards \
+ ../src/ASF/sam/utils/header_files \
+ ../src/ASF/common/services/ioport \
+ ../src/ASF/common/services/usb/class/vendor \
+ ../src/ASF/common/services/usb/class/vendor/device \
+ ../src/ASF/thirdparty/CMSIS/Include \
+ ../src/ASF/common/services/usb \
+ ../src/ASF/sam/drivers/udphs \
+ ../src/ASF/sam/utils/cmsis/sam3u/include \
+ ../src/ASF/thirdparty/CMSIS/Lib/GCC \
+ ../src/config \
+ ../src \
+ ../src/ASF/common/services/clock \
+ ../src/ASF/sam/utils \
+ ../src/ASF/sam/utils/preprocessor \
+ ../src/ASF/sam/boards/sam3u_ek \
+ ../src/ASF/common/utils/stdio/stdio_serial \
+ ../src/ASF/common/services/serial \
+ ../src/ASF/sam/drivers/uart \
+ ../src/ASF/sam/drivers/usart \
+ ../src/ASF/sam/drivers/ebi/smc \
+ ../src/ASF/sam/drivers/spi \
+ ../src/ASF/common/services/delay \
+ ../src/ASF/sam/drivers/tc \
+ ../src/ASF/sam/drivers/chipid \
+ ../src/ASF/sam/drivers/efc \
+ ../src/ASF/sam/services/flash_efc \
+ ../src/ASF/sam/services/smart_card \
+ ../src/ASF/common/services/spi/sam_spi \
+ ../src/ASF/common/services/spi \
+ ../src/ASF/common/services/wtk \
+ ../src/ASF/common/utils/membag \
+ ../src/ASF/common/services/serial/sam_uart \
+ ../src/ASF/common/services/twi \
+ ../src/ASF/sam/drivers/twi
+
+# Place -D or -U options here for C sources
+CDEFS = -D__SAM3U2E__ -DDEBUG -D__SAM3U2E__ -DARM_MATH_CM3=true -Dprintf=iprintf -DUDD_ENABLE -DBOARD=CW305 -Dscanf=iscanf -DPLATFORMCW305=1 
+
+
+# Place -D or -U options here for ASM sources
+ADEFS = 
+
+
+# Place -D or -U options here for C++ sources
+CPPDEFS = 
+#CPPDEFS += -D__STDC_LIMIT_MACROS
+#CPPDEFS += -D__STDC_CONSTANT_MACROS
+
+
+
+#---------------- Compiler Options C ----------------
+#  -g*:          generate debugging information
+#  -O*:          optimization level
+#  -f...:        tuning, see GCC manual and avr-libc documentation
+#  -Wall...:     warning level
+#  -Wa,...:      tell GCC to pass this to the assembler.
+#    -adhlns...: create assembler listing
+ #-c -pipe 
+
+CFLAGS = -x c -mthumb
+CFLAGS += -g$(DEBUG)
+CFLAGS += $(CDEFS)
+CFLAGS += -O$(OPT)
+CFLAGS += -fdata-sections
+CFLAGS += -ffunction-sections
+CFLAGS += -mlong-calls
+CFLAGS += -Wall
+CFLAGS += -mcpu=cortex-m3
+CFLAGS += -fno-strict-aliasing
+CFLAGS += -Wstrict-prototypes
+CFLAGS += -Wmissing-prototypes
+CFLAGS += -Werror-implicit-function-declaration
+CFLAGS += -Wpointer-arith
+CFLAGS += -std=gnu99
+CFLAGS += -ffunction-sections
+CFLAGS += -fdata-sections
+CFLAGS += -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused
+CFLAGS += -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return
+CFLAGS += -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs
+CFLAGS += -Wlong-long -Wunreachable-code -Wcast-align
+CFLAGS += --param max-inline-insns-single=500
+CFLAGS += -Wa,-adhlns=$(<:%.c=$(OBJDIR)/%.lst)
+CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
+CFLAGS += $(CSTANDARD)
+
+#---------------- Assembler Options ----------------
+#  -Wa,...:   tell GCC to pass this to the assembler.
+#  -adhlns:   create listing
+#  -gstabs:   have the assembler create line number information; note that
+#             for use in COFF files, additional information about filenames
+#             and function names needs to be present in the assembler source
+#             files -- see avr-libc docs [FIXME: not yet described there]
+#  -listing-cont-lines: Sets the maximum number of continuation lines of hex 
+#       dump that will be displayed for a given single line of source input.
+ASFLAGS = $(ADEFS) -Wa,-adhlns=$(<:%.S=$(OBJDIR)/%.lst),-gstabs,--listing-cont-lines=100
+
+
+#---------------- Library Options ----------------
+# Minimalistic printf version
+PRINTF_LIB_MIN = -Wl,-u,vfprintf -lprintf_min
+
+# Floating point printf version (requires MATH_LIB = -lm below)
+PRINTF_LIB_FLOAT = -Wl,-u,vfprintf -lprintf_flt
+
+# If this is left blank, then it will use the Standard printf version.
+PRINTF_LIB = 
+#PRINTF_LIB = $(PRINTF_LIB_MIN)
+#PRINTF_LIB = $(PRINTF_LIB_FLOAT)
+
+
+# Minimalistic scanf version
+SCANF_LIB_MIN = -Wl,-u,vfscanf -lscanf_min
+
+# Floating point + %[ scanf version (requires MATH_LIB = -lm below)
+SCANF_LIB_FLOAT = -Wl,-u,vfscanf -lscanf_flt
+
+# If this is left blank, then it will use the Standard scanf version.
+SCANF_LIB = 
+#SCANF_LIB = $(SCANF_LIB_MIN)
+#SCANF_LIB = $(SCANF_LIB_FLOAT)
+
+
+MATH_LIB = -lm
+
+
+# List any extra directories to look for libraries here.
+#     Each directory must be seperated by a space.
+#     Use forward slashes for directory separators.
+#     For a directory that has spaces, enclose it in quotes.
+EXTRALIBDIRS = 
+
+
+
+#---------------- External Memory Options ----------------
+
+# 64 KB of external RAM, starting after internal RAM (ATmega128!),
+# used for variables (.data/.bss) and heap (malloc()).
+#EXTMEMOPTS = -Wl,-Tdata=0x801100,--defsym=__heap_end=0x80ffff
+
+# 64 KB of external RAM, starting after internal RAM (ATmega128!),
+# only used for heap (malloc()).
+#EXTMEMOPTS = -Wl,--section-start,.data=0x801100,--defsym=__heap_end=0x80ffff
+
+EXTMEMOPTS =
+
+
+#---------------- Linker Options ----------------
+#  -Wl,...:     tell GCC to pass this to linker.
+#    -Map:      create map file
+#    --cref:    add cross reference to  map file
+LDFLAGS = -mthumb -Wl,-Map=$(TARGET).map,--cref
+LDFLAGS += -Wl,--start-group -larm_cortexM3l_math -lm  -Wl,--end-group -L"../cmsis/linkerScripts"
+LDFLAGS += -L"../src/ASF/thirdparty/CMSIS/Lib/GCC"
+LDFLAGS += -Wl,--gc-sections -mcpu=cortex-m3 -Wl,--entry=Reset_Handler
+LDFLAGS += -Wl,--cref -mthumb -T../src/ASF/sam/utils/linker_scripts/sam3u/sam3u2/gcc/flash.ld
+
+
+#============================================================================
+
+
+# Define programs and commands.
+#SHELL = sh
+SHELL = cmd.exe
+CC = "C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe"
+OBJCOPY = "C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe"
+OBJDUMP = "C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objdump.exe"
+SIZE = "C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-size.exe"
+REMOVE = "C:\Program Files (x86)\Atmel\Studio\7.0\shellutils\rm.exe" -f
+REMOVEDIR = "C:\Program Files (x86)\Atmel\Studio\7.0\shellutils\rm.exe" -rf
+COPY = "C:\Program Files (x86)\Atmel\Studio\7.0\shellutils\cp.exe"
+TEST = "C:\Program Files (x86)\Atmel\Studio\7.0\shellutils\test.exe"
+MKDIR = "C:\Program Files (x86)\Atmel\Studio\7.0\shellutils\mkdir.exe"
+
+WINSHELL = cmd.exe
+
+
+# Define Messages
+# English
+MSG_ERRORS_NONE = Errors: none
+MSG_BEGIN = -------- begin --------
+MSG_END = --------  end  --------
+MSG_SIZE_BEFORE = Size before: 
+MSG_SIZE_AFTER = Size after:
+MSG_COFF = Converting to AVR COFF:
+MSG_EXTENDED_COFF = Converting to AVR Extended COFF:
+MSG_FLASH = Creating load file for Flash:
+MSG_EEPROM = Creating load file for EEPROM:
+MSG_EXTENDED_LISTING = Creating Extended Listing:
+MSG_SYMBOL_TABLE = Creating Symbol Table:
+MSG_LINKING = Linking:
+MSG_COMPILING = Compiling C:
+MSG_COMPILING_CPP = Compiling C++:
+MSG_ASSEMBLING = Assembling:
+MSG_CLEANING = Cleaning project:
+MSG_CREATING_LIBRARY = Creating library:
+
+
+
+
+# Define all object files.
+OBJ = $(SRC:%.c=$(OBJDIR)/%.o) $(CPPSRC:%.cpp=$(OBJDIR)/%.o) $(ASRC:%.S=$(OBJDIR)/%.o) 
+
+# Define all listing files.
+LST = $(SRC:%.c=$(OBJDIR)/%.lst) $(CPPSRC:%.cpp=$(OBJDIR)/%.lst) $(ASRC:%.S=$(OBJDIR)/%.lst) 
+
+
+# Compiler flags to generate dependency files.
+GENDEPFLAGS = -MMD -MP -MF .dep/$(@F).d
+
+
+# Combine all necessary flags and optional flags.
+# Add target processor to flags.
+ALL_CFLAGS = -I. $(CFLAGS) $(GENDEPFLAGS)
+ALL_CPPFLAGS = -I. -x c++ $(CPPFLAGS) $(GENDEPFLAGS)
+ALL_ASFLAGS = -I. -x assembler-with-cpp $(ASFLAGS)
+
+
+
+# Default target.
+all: begin gccversion build
+#sizebefore
+
+#build sizeafter end
+
+# Change the build target to build a HEX file or a library.
+build: elf bin eep lss sym
+#build: lib
+
+
+elf: $(TARGET).elf
+bin: $(TARGET).bin
+eep: $(TARGET).eep
+lss: $(TARGET).lss
+sym: $(TARGET).sym
+LIBNAME=lib$(TARGET).a
+lib: $(LIBNAME)
+
+
+
+# Eye candy.
+# AVR Studio 3.x does not check make's exit code but relies on
+# the following magic strings to be generated by the compile job.
+begin:
+	@echo
+	@echo $(MSG_BEGIN)
+
+end:
+	@echo $(MSG_END)
+	@echo
+
+
+# Display size of file.
+ELFSIZE = $(SIZE) $(TARGET).elf
+
+sizebefore:
+	@if $(TEST) -f $(TARGET).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
+	2>/dev/null; echo; fi
+
+sizeafter:
+	@if $(TEST) -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
+	2>/dev/null; echo; fi
+
+# Display compiler version information.
+gccversion : 
+	@$(CC) --version
+
+
+# Create final output files (.hex, .eep) from ELF output file.
+%.hex: %.elf
+	@echo
+	@echo $(MSG_FLASH) $@
+	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
+
+%.srec: %.elf
+	@echo
+	@echo $(MSG_FLASH) $@
+	$(OBJCOPY) -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
+
+%.bin: %.elf
+	@echo
+	@echo $(MSG_FLASH) $@
+	$(OBJCOPY) -O binary $< $@
+
+%.eep: %.elf
+	@echo
+	@echo $(MSG_EEPROM) $@
+	-$(OBJCOPY) -j .eeprom --set-section-flags=.eeprom="alloc,load" \
+	--change-section-lma .eeprom=0 --no-change-warnings -O binary $< $@ || exit 0
+
+# Create extended listing file from ELF output file.
+%.lss: %.elf
+	@echo
+	@echo $(MSG_EXTENDED_LISTING) $@
+	$(OBJDUMP) -h -S -z $< > $@
+
+# Create a symbol table from ELF output file.
+%.sym: %.elf
+	@echo
+	@echo $(MSG_SYMBOL_TABLE) $@
+	$(NM) -n $< > $@
+
+
+
+# Create library from object files.
+.SECONDARY : $(TARGET).a
+.PRECIOUS : $(OBJ)
+%.a: $(OBJ)
+	@echo
+	@echo $(MSG_CREATING_LIBRARY) $@
+	$(AR) $@ $(OBJ)
+
+
+# Link: create ELF output file from object files.
+.SECONDARY : $(TARGET).elf
+.PRECIOUS : $(OBJ)
+%.elf: $(OBJ)
+	@echo
+	@echo $(MSG_LINKING) $@
+	$(CC) $(ALL_CFLAGS) $^ --output $@ $(LDFLAGS)
+
+# Compile: create object files from C source files.
+$(OBJDIR)/%.o : %.c
+	@echo
+	@echo $(MSG_COMPILING) $<
+	$(CC) -c $(ALL_CFLAGS) $< -o $@ 
+
+
+# Compile: create object files from C++ source files.
+$(OBJDIR)/%.o : %.cpp
+	@echo
+	@echo $(MSG_COMPILING_CPP) $<
+	$(CC) -c $(ALL_CPPFLAGS) $< -o $@ 
+
+
+# Compile: create assembler files from C source files.
+%.s : %.c
+	$(CC) -S $(ALL_CFLAGS) $< -o $@
+
+
+# Compile: create assembler files from C++ source files.
+%.s : %.cpp
+	$(CC) -S $(ALL_CPPFLAGS) $< -o $@
+
+
+# Assemble: create object files from assembler source files.
+$(OBJDIR)/%.o : %.S
+	@echo
+	@echo $(MSG_ASSEMBLING) $<
+	$(CC) -c $(ALL_ASFLAGS) $< -o $@
+
+
+# Create preprocessed source for use in sending a bug report.
+%.i : %.c
+	$(CC) -E -I. $(CFLAGS) $< -o $@ 
+
+
+# Target: clean project.
+clean: begin clean_list end
+
+clean_list :
+	@echo
+	@echo $(MSG_CLEANING)
+	$(REMOVE) $(TARGET).hex
+	$(REMOVE) $(TARGET).eep
+	$(REMOVE) $(TARGET).cof
+	$(REMOVE) $(TARGET).elf
+	$(REMOVE) $(TARGET).map
+	$(REMOVE) $(TARGET).sym
+	$(REMOVE) $(TARGET).lss
+	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.o)
+	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst)
+	$(REMOVE) $(SRC:.c=.s)
+	$(REMOVE) $(SRC:.c=.d)
+	$(REMOVE) $(SRC:.c=.i)
+	$(REMOVEDIR) .dep
+
+# Create object files directory
+$($(SHELL) $(MKDIR) $(OBJDIR) 2>/dev/null)
+
+
+# Include the dependency files.
+-include $($(SHELL) $(MKDIR) .dep 2>/dev/null) $(wildcard .dep/*)
+
+# Listing of phony targets.
+.PHONY : all begin finish end sizebefore sizeafter gccversion \
+build elf hex eep lss sym coff extcoff \
+clean clean_list program debug gdb-config
