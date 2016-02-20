@@ -1,33 +1,21 @@
-/**
- * \file
- *
- * \brief Empty user application template
- *
+/*
+ Copyright (c) 2015-2016 NewAE Technology Inc. All rights reserved.
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * \mainpage User Application template doxygen documentation
- *
- * \par Empty user application template
- *
- * Bare minimum empty user application template
- *
- * \par Content
- *
- * -# Include the ASF header files (through asf.h)
- * -# "Insert system clock initialization code here" comment
- * -# Minimal main function that starts with a call to board_init()
- * -# "Insert application code here" comment
- *
- */
 
-/*
- * Include header files for all drivers that have been imported from
- * Atmel Software Framework (ASF).
- */
-/*
- * Support and FAQ: visit <a href="http://www.atmel.com/design-support/">Atmel Support</a>
- */
 #include <asf.h>
 #define F_CPU 2000000UL
 #include <util/delay.h>
@@ -55,6 +43,11 @@
 void display(uint8_t numeral, uint8_t dp_on, uint8_t diginum);
 int adc_init(void);
 
+#define EEPROM_ADDR_ID 2
+#define EEPROM_ADDR_OFFSET_NEG 3
+#define EEPROM_ADDR_OFFSET_POS 4
+#define EEPROM_ID 0xBE
+
 #define AVG_READINGS 64
 
 int main(void)
@@ -62,20 +55,27 @@ int main(void)
 	board_init();
 	sysclk_init();
 	adc_init();
+	
+	//Offset is stored in EEPROM
+	int adc_offset = 0;
+	if (nvm_eeprom_read_byte(EEPROM_ADDR_ID) == EEPROM_ID){
+		adc_offset = nvm_eeprom_read_byte(EEPROM_ADDR_OFFSET_POS) - nvm_eeprom_read_byte(EEPROM_ADDR_OFFSET_NEG);
+	}
 
 	
     PORTE_DIRSET = MASK_DIGIT012;
 	PORTD_DIRSET = 0xFF;
 	
-	int i = 0;	
+	int32_t i = 0;	
 	uint8_t disp = 0;
 	uint8_t adccnt = 0;
 	
 	unsigned int adc_readings[AVG_READINGS];
-	int adc_offset = 4;
 	
+	//Setup ADC hardware
 	adc_init();
 	
+	//Main loop...measure VCC-INT
 	while(1){	
 		// Vref = 2.048V
 		// 4096 count ADC (12-bit)
@@ -99,8 +99,10 @@ int main(void)
 			adccnt = 0;
 		}
 		
+		//Limit negative values to 0
 		if (i < 0) i = 0;
 		
+		//Switch between mV and V ranges
 		if (i > 999){
 			if (disp == 0){
 				display((i / 10)%10, 0, 2);
@@ -134,7 +136,7 @@ int main(void)
 	}
 }
 
-
+/* Update the numeral */
 void display(uint8_t numeral, uint8_t dp_on, uint8_t diginum)
 {
 	PORTE_OUTCLR = MASK_DIGIT012;
@@ -203,6 +205,7 @@ void display(uint8_t numeral, uint8_t dp_on, uint8_t diginum)
 	
 }
 
+/* Setup the external ADC */
 
 int adc_init(void)
 {

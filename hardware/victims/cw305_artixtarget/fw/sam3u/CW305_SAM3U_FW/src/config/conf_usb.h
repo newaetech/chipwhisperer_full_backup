@@ -72,7 +72,7 @@ extern char usb_serial_number[33];
 #define  USB_DEVICE_PRODUCT_NAME          "ChipWhisperer CW305"
 #define  USB_DEVICE_GET_SERIAL_NAME_POINTER usb_serial_number
 #define  USB_DEVICE_GET_SERIAL_NAME_LENGTH 32
-//We get serial number from unique ID buitl into chip
+//We get serial number from unique ID built into chip
 //#define  USB_DEVICE_SERIAL_NAME "1234"
 
 /**
