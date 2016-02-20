@@ -81,7 +81,7 @@ class userScript(QObject):
         cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer'])
 
         #Load FW (must be configured in GUI first)
-        cap.FWLoaderGo()
+        # cap.FWLoaderGo()
                 
         #NOTE: You MUST add this call to pe() to process events. This is done automatically
         #for setParameter() calls, but everything else REQUIRES this
@@ -89,6 +89,9 @@ class userScript(QObject):
 
         cap.doConDis()
         
+        pe()
+        pe()
+        pe()
         pe()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format

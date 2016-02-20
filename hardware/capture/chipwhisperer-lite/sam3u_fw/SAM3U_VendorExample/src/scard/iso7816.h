@@ -46,25 +46,19 @@
 
 #include "board.h"
 #include "usart.h"
-
-#if defined(SMART_CARD_USING_GPIO)
 #include "gpio.h"
-#elif defined(SMART_CARD_USING_IOPORT)
-#include "ioport.h"
-#else
-#error Smart Card service is not supported.
-#endif
 
-unsigned int iso7816_init(const usart_iso7816_opt_t *p_usart_opt, uint32_t ul_mck,
-		uint32_t ul_rst_pin_idx);
+uint32_t iso7816_get_char(Usart* p_usart, uint8_t *p_char_received);
+uint32_t iso7816_send_char(Usart* p_usart, uint8_t uc_char);
+void iso7816_init(Usart* p_usart, const usart_iso7816_opt_t *p_usart_opt, uint32_t ul_mck, uint32_t ul_rst_pin_idx);
 void iso7816_icc_power_off(void);
-uint16_t iso7816_xfr_block_tpdu_t0(const uint8_t *p_apdu, uint8_t *p_message,
-		uint16_t us_length);
-void iso7816_data_block_atr(uint8_t *p_atr, uint8_t *p_length);
+uint16_t iso7816_xfr_block_apdu_t0(Usart* p_usart, const uint8_t *p_apdu, uint8_t *p_message, uint16_t us_length);
+uint16_t iso7816_xfr_block_apdu_t1(Usart* p_usart, const uint8_t *p_apdu, uint8_t *p_message, uint16_t us_length);
+void iso7816_data_block_atr(Usart* p_usart, uint8_t *p_atr, uint8_t *p_length);
 uint8_t iso7816_get_reset_statuts(void);
-void iso7816_cold_reset(void);
-void iso7816_warm_reset(void);
-void iso7816_decode_atr(uint8_t *p_atr);
+void iso7816_cold_reset(Usart* p_usart);
+void iso7816_warm_reset(Usart* p_usart);
+uint8_t iso7816_decode_atr(Usart* p_usart, uint8_t *p_atr);
 
 #endif /* ISO7816_H_INCLUDED */
 

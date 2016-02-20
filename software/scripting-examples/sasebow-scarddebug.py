@@ -46,6 +46,7 @@ except ImportError:
 #Import the ChipWhispererCapture module
 import chipwhisperer.capture.ChipWhispererCapture as cwc
 import chipwhisperer.capture.scopes.ChipWhispererExtra as cwe
+from chipwhisperer.capture.targets.ChipWhispererTargets import CWUniversalSerial
 
 
 exitWhenDone=False
@@ -69,7 +70,8 @@ class userScript(QObject):
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         #cap.setParameter(['Generic Settings', 'Target Module', 'SmartCard DPAContestv4'])
         cap.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
-        cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-Connected'])
+        cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-USI'])
+        cap.setParameter(['Target Connection', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
         #cap.setParameter(['OpenADC Interface', 'connection', 'FTDI (SASEBO-W)'])
         #cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
 
@@ -79,11 +81,17 @@ class userScript(QObject):
 
         cap.doConDis()
         pe()
+
+        cap.setParameter(['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'USI-Out'])
+        cap.setParameter(['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'USI-In'])
+        pe()
                       
         print "Loading CW-Extra Module"
-        usi = cwe.CWUniversalSerial()
+        usi = CWUniversalSerial()
         usi.con(cap.scope.qtadc.sc)
         
+        usi.setIdle(1)
+
         usi.setBaud(9600)
         usi.setParity("even")        
         usi.setStopbits(2)
@@ -91,11 +99,22 @@ class userScript(QObject):
         
         time.sleep(0.05)
         
-        usi.read(16, startonly=True)
+        try:
+            usi.read(16, startonly=True)
+        except IOError:
+            print "Timeout"
+
         usi.write([0x80,0xC0, 0x00, 0x00, 0x10])
-        p = bytearray(usi.read(16, waitonly=True))
-        for t in p:
-            print "%2x "%t,
+
+        while usi.doneRx() == False:
+            continue
+
+        try:
+            p = bytearray(usi.read(16, waitonly=True))
+            for t in p:
+                print "%2x " % t,
+        except IOError:
+            print "Timeout"
 
         
         

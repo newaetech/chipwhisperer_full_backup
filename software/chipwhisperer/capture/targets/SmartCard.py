@@ -50,6 +50,8 @@ import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 import chipwhisperer.capture.global_mod as global_mod
 from TargetTemplate import TargetTemplate
 
+import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
+
 class ReaderTemplate(QObject):
     paramListUpdated = Signal(list)
     
@@ -102,6 +104,136 @@ class ReaderTemplate(QObject):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         pass
 
+class ReaderChipWhispererLiteSCard(ReaderTemplate):    
+    REQ_DATA = 0x1C
+    REQ_CFG = 0x1D
+    REQ_AUX = 0x1E
+    
+    REQ_CFG_ATR = 0x01
+    REQ_CFG_PROTOCOL = 0x02
+    REQ_CFG_TXRX = 0x05
+    
+    def __init__(self, console=None, showScriptParameter=None):
+        super(ReaderChipWhispererLiteSCard, self).__init__(console, showScriptParameter)        
+        
+    def setupParameters(self):         
+        ssParams = [  {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
+                      {'name':'ATR', 'key':'atr', 'type':'str'},                              
+                      ]
+        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        
+        self.protocol = 0            
+        
+     
+    def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
+        """Send APDU to SmartCard, get Response""" 
+        
+        data = [cla,ins, p1, p2]
+        
+        if txdata is not None:
+            txdatalen = len(txdata)
+            data.append(txdatalen)
+        else:
+            txdatalen = 0
+            
+        if (txdata is None) & (rxdatalen == 0):
+            data.append(0)
+                
+        #Append payload
+        if txdata is not None:
+            for b in txdata: data.append(b)
+            
+        if rxdatalen != 0:
+            data.append(rxdatalen)
+            
+        if self.protocol:
+            #T-1 Mode needs header added
+            data.insert(0, len(data))
+            data.insert(0, 0)
+            data.insert(0, 0)
+        
+        #Load APDU into buffer & send
+        #TODO: Break APDU into multiple transmissions for larger blocks
+        offset = 0
+        self.usbcon.sendCtrl(self.REQ_DATA, value=offset, data=data)
+        self.usbcon.sendCtrl(self.REQ_CFG, self.REQ_CFG_TXRX)
+        
+        #Read response 
+        if self.protocol:
+            contRead = True
+            offset = 0            
+            resplen = 64
+            response = []
+            while contRead:
+                data = self.usbcon.readCtrl(self.REQ_DATA, value = ((offset << 8) | resplen), dlen=resplen)               
+                response.extend(data)
+                
+                if len(data) == resplen:
+                    offset += resplen
+                else:
+                    contRead = False                   
+                    
+            #Simple reader passes everything back to us
+            print response
+            
+            if ((response[1] & 0x7F) == 0x81) or((response[1] & 0x7F) == 0x82):
+                   raise IOError("Error on response:, T-1 PCB = %02x"%response[1])
+            
+            #Get length
+            resplen = response[2]
+            #Cut off first three bytes & CRC bytes
+            response = response[3:(3+resplen)]
+            print response
+            #Get status
+            status = (response[0] << 8) | response[1]            
+            
+            #Return status seperately from "payload" if any
+            if len(response) > 2:
+                return (status, response[2:])
+            else:
+                return status
+        else:
+            #TODO: break into multiple as well for larger blocks?
+            offset = 0
+            resplen = rxdatalen+2
+            response = self.usbcon.readCtrl(self.REQ_DATA, value = ((offset << 8) | resplen), dlen=resplen)
+            sw1 = response[0]
+            sw2 = response[1]
+                        
+            status = (sw1 << 8) | sw2;
+            
+            if rxdatalen > 0:
+                response = response[2:]
+                return (status, response)
+            
+            return status
+    
+    def con(self, oa):
+        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+        self.usbcon = oa     
+        self.reset()
+    
+    def flush(self):
+        """Discard all input buffers"""
+        pass
+    
+    def reset(self):
+        """Reset card & save the ATR"""
+        
+        self.usbcon.sendCtrl(self.REQ_CFG, self.REQ_CFG_ATR)
+        self.atr = self.usbcon.readCtrl(self.REQ_CFG, self.REQ_CFG_ATR, 55)
+        stratr = " ".join(["%02x"%t for t in self.atr])
+        print "ATR: %s"%stratr
+        self.findParam('atr').setValue(stratr) 
+        
+        self.protocol = self.usbcon.readCtrl(self.REQ_CFG, self.REQ_CFG_PROTOCOL, 1)[0]
+        
+        print "SmartCard Protocol = T-%d"%self.protocol       
+    
+    def getATR(self):
+        """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
+        return self.atr
 
 class ReaderSystemSER(ReaderTemplate):
     
@@ -635,7 +767,7 @@ class ReaderPCSC(ReaderTemplate):
         if rxdatalen != 0:
             data.append(rxdatalen)
         
-        response, sw1, sw2 = self.scserv.connection.transmit(data , CardConnection.T1_protocol)
+        response, sw1, sw2 = self.scserv.connection.transmit(data , CardConnection.T0_protocol)
             
         status = (sw1 << 8) | sw2;
         
@@ -650,6 +782,7 @@ class ReaderPCSC(ReaderTemplate):
             self.sccard = AnyCardType()
             self.screq = CardRequest(timeout=1, cardType=self.sccard)
             self.scserv = self.screq.waitforcard()
+            
 
             #observer = ConsoleCardConnectionObserver()
             #self.scserv.connection.addObserver( observer )           
@@ -657,7 +790,10 @@ class ReaderPCSC(ReaderTemplate):
             if not self.timeoutTimer.isActive():
                 self.timeoutTimer.start()
 
+            print "SCARD: Connected..."
+
         except CardRequestTimeoutException:
+            print "SCARD: Failed to connect..."
             return False
 
         return True        
@@ -874,26 +1010,31 @@ class SmartCard(TargetTemplate):
     def setupParameters(self):
         self.oa=None
         self.driver = None
+        self.scgui = SCGUI.SmartCardGUICard(self.parent())
         
         supported_readers = dicttype()
         supported_readers["Select Reader"] = None
-        supported_readers["ChipWhisperer-SER"] = ReaderChipWhispererSER()
-        supported_readers["ChipWhisperer-USI"] = ReaderChipWhispererUSI()
-        supported_readers["ChipWhisperer-SCARD"] = ReaderChipWhispererSCard()
-        supported_readers["System Serial (SASEBO-W)"] = ReaderSystemSER()
+        supported_readers["CWCR2-SER"] = ReaderChipWhispererSER()
+        supported_readers["CW1173/1180-SCARD"] = ReaderChipWhispererLiteSCard()               
         try:
             supported_readers["PC/SC Reader"] = ReaderPCSC()
         except ImportError:
             pass
+        supported_readers["System Serial (SASEBO-W)"] = ReaderSystemSER() 
+        supported_readers["CWCR2-USI (obsolete)"] = ReaderChipWhispererUSI()
+        supported_readers["CWCR2-SCARD (obsolete)"] = ReaderChipWhispererSCard()
         
         ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':supported_readers, 'value':None, 'set':self.setConnection},
                     #"BasicCard v7.5 (INCOMPLETE"):None, 
                     #"Custom (INCOMPLETE)":None, "DPAContestv4 (INCOMPLETE)":None
                     {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(),
                                                                            "ChipWhisperer-Dumb":None,
-                                                                           "JCard Test":ProtocolJCardTest(),
+                                                                           "JavaCard Test":ProtocolJCardTest(),
                                                                            "DPA Contest 4.2":ProtocolDPAv42(),
-                                                                           }, 'value':None, 'set':self.setProtocol}
+                                                                           }, 'value':None, 'set':self.setProtocol},
+                                                                           
+                    {'name':'SmartCard Explorer', 'type':'action', 'action':self.scgui.show}
+                                                                           
                     ]        
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -915,6 +1056,7 @@ class SmartCard(TargetTemplate):
     def setConnection(self, con):
         self.driver = con        
         self.paramListUpdated.emit(self.paramList)
+        self.scgui.setConnection(con)
         
     def setProtocol(self, con):
         self.protocol = con

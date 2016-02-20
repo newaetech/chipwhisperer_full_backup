@@ -51,6 +51,7 @@ from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.qrc_resources
 import chipwhisperer.common.ParameterTypesCustom
 
+
 try:
     import writer_dpav3
 except ImportError:
@@ -114,6 +115,12 @@ try:
 except ImportError:
     target_CWSPI = None
     target_CWSPI_str = sys.exc_info()
+
+try:
+    import chipwhisperer.capture.targets.CW305 as target_CW305
+except ImportError:
+    target_CW305 = None
+    target_CW305_str = sys.exc_info()
 
 try:
     import  chipwhisperer.capture.auxiliary.FrequencyMeasure as aux_FrequencyMeasure
@@ -181,6 +188,9 @@ class TargetInterface(QObject):
 
         if target_CWSPI is not None:
             valid_targets["ChipWhisperer SPI"] = target_CWSPI.ChipWhispererSPI(self.log, showScriptParameter=showScriptParameter)
+
+        if target_CW305 is not None:
+            valid_targets["ChipWhisperer CW305 (Artix-7)"] = target_CW305.CW305(self.log, showScriptParameter=showScriptParameter)
 
         self.toplevel_param = {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':valid_targets["None"], 'set':self.setDriver}
 
@@ -568,7 +578,7 @@ class ChipWhispererCapture(MainChip):
         self._scopeToolMenuItems = []
 
         if self.scope is not None:
-            ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree)
+            ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
 
             # Check for any tools to add too
             if hasattr(self.scope, "guiActions") and len(self.scope.guiActions()) > 0:
@@ -580,12 +590,12 @@ class ChipWhispererCapture(MainChip):
 
     def reloadTargetParamList(self, lst=None):
         if self.target is not None:
-            ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree)
+            ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadTraceParamList(self, lst=None):
         if self.traceparams is not None:
             try:
-                ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree)
+                ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
             except AttributeError:
                 #Some trace writers have no configuration options
                 pass
@@ -593,13 +603,13 @@ class ChipWhispererCapture(MainChip):
     def reloadAuxParamList(self, lst=None):
         if self.auxList is not None:
             try:
-                ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree)
+                ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
             except AttributeError:
                 # Some trace writers have no configuration options
                 pass
 
     def reloadParamList(self, lst=None):
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree, help_window=self.helpbrowser.helpwnd)
 
     def paramList(self):
         p = []
@@ -762,7 +772,7 @@ class ChipWhispererCapture(MainChip):
                 self.scope.con()
                 self.statusBar().showMessage("Scope Connected")
                 #Pass to target if required
-                if hasattr(self.target, "setOpenADC"):
+                if hasattr(self.target, "setOpenADC") and hasattr(self.scope, "qtadc"):
                     self.target.setOpenADC(self.scope.qtadc.ser)
 
             else:

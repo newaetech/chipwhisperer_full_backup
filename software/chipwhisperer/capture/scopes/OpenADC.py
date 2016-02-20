@@ -263,10 +263,10 @@ class OpenADCInterface_FTDI(QWidget):
 
         try:
             self.scope.con(self.ser)
-            self.console.append("OpenADC Found, Connecting")
+            print("OpenADC Found, Connecting")
         except IOError,e:
             exctype, value = sys.exc_info()[:2]
-            self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
+            print("OpenADC Error: %s"%(str(exctype) + str(value)))
             QMessageBox.warning(None, "FTDI Port", str(exctype) + str(value))
             raise IOError(e)
 

@@ -15,21 +15,25 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FPGA_XMEM_H_
-#define FPGA_XMEM_H_
+#ifndef SCARD_USB_H_
+#define SCARD_USB_H_
 
-#include <stdint.h>
+#include <asf.h>
 
-typedef enum fpga_lockstatus_e {fpga_unlocked = 0, fpga_generic, fpga_blockin, fpga_blockout, fpga_ctrlmem} fpga_lockstatus_t;
-void FPGA_setlock(fpga_lockstatus_t lockstatus);
-fpga_lockstatus_t FPGA_lockstatus(void);
-uint32_t unsafe_readuint32(uint16_t fpgaaddr);
+/** Maximum ATR uc_size in bytes. */
+#define MAX_ATR_SIZE            55
 
-void FPGA_setaddr(uint32_t addr);
+extern uint8_t scard_atr[MAX_ATR_SIZE];
+extern uint8_t scard_atr_size;
+extern uint8_t scard_protocol;
 
-/* Access pointer for FPGA Interface */
-#define PSRAM_BASE_ADDRESS         (0x60000000)
-extern uint8_t volatile *xram;
+bool ctrl_scarddata_req(void);
+bool ctrl_scardconfig_req(void);
+bool ctrl_scardaux_req(void);
+void ctrl_scarddata_cb(void);
+void ctrl_scardconfig_cb(void);
+void ctrl_scardaux_cb(void);
+void scard_reset_init(void);
 
 
-#endif /* FPGA_XMEM_H_ */
+#endif /* SCARD_USB_H_ */

@@ -27,6 +27,7 @@
 #include "isp\V2Protocol.h"
 #include "usart_driver.h"
 #include "usb.h"
+#include "scard_usb.h"
 #include "fpga_xmem.h"
 #include <string.h>
 
@@ -95,11 +96,13 @@ void main_vendor_disable(void)
 #define REQ_FW_VERSION 0x17
 #define REQ_USART0_DATA 0x1A
 #define REQ_USART0_CONFIG 0x1B
-#define REQ_USART2_DATA 0x1C
-#define REQ_USART2_CONFIG 0x1D
+#define REQ_SCARD_DATA 0x1C
+#define REQ_SCARD_CONFIG 0x1D
+#define REQ_SCARD_AUX 0x1E
 #define REQ_XMEGA_PROGRAM 0x20
 #define REQ_AVR_PROGRAM 0x21
 #define REQ_SAM3U_CFG 0x22
+
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -203,6 +206,7 @@ void ctrl_avr_program_void(void)
 	V2Protocol_ProcessCommand();
 }
 
+
 static void ctrl_sam3ucfg_cb(void)
 {
 	switch(udd_g_ctrlreq.req.wValue & 0xFF)
@@ -303,8 +307,19 @@ bool main_setup_out_received(void)
 			udd_g_ctrlreq.callback = ctrl_usart_cb_data;
 			return true;
 		
-		/* Smartcard serial */
-		case REQ_USART2_CONFIG:
+		/* Smartcard T0/T1 Configuration etc */
+		case REQ_SCARD_CONFIG:
+			udd_g_ctrlreq.callback = ctrl_scardconfig_cb;
+			return true;
+			
+		/* Send Data */
+		case REQ_SCARD_DATA:
+			udd_g_ctrlreq.callback = ctrl_scarddata_cb;
+			return true;
+			
+		/* Smartcard 'aux' stuff, used for special modes, power, etc. */
+		case REQ_SCARD_AUX:
+			udd_g_ctrlreq.callback = ctrl_scardaux_cb;
 			return true;
 			
 		/* Send bitstream to FPGA */
@@ -433,6 +448,21 @@ bool main_setup_in_received(void)
 			return true;
 			break;
 			
+		case REQ_SCARD_CONFIG:
+			/* Smartcard Configuration Information */
+			return ctrl_scardconfig_req();
+			break;
+			
+		case REQ_SCARD_DATA:
+			/* Read data from receive buffer */
+			return ctrl_scarddata_req();
+			break;
+			
+		case REQ_SCARD_AUX:
+			/* Auxiliary mode, used for special interfaces */
+			return ctrl_scardaux_req();
+			break;
+			
 		default:
 			return false;
 	}
@@ -451,7 +481,9 @@ void main_vendor_bulk_in_received(udd_ep_status_t status,
 	if (FPGA_lockstatus() == fpga_blockin){
 		
 		//TODO FIX THIS HACK
-		//Should detect actual capture, for now hack onto USB
+		/*Should detect actual capture, for now hack onto USB traffic. This variable is
+		  used to flash LED indicating status of capture process on CW1180 hardware, and
+		  is unused for CW1173 hardware. */
 		g_captureinprogress = true;
 		
 		FPGA_setlock(fpga_unlocked);

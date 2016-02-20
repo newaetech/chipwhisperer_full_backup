@@ -881,12 +881,12 @@ class CWLiteUSB(object):
     # TODO: make this better
     fwversion_latest = [0, 11]
 
-    def con(self):
+    def con(self, idProduct=0xACE2):
         """
         Connect to device using default VID/PID
         """
 
-        dev = usb.core.find(idVendor=0x2B3E, idProduct=0xACE2)
+        dev = usb.core.find(idVendor=0x2B3E, idProduct=idProduct)
 
         if dev is None:
             raise IOError("Failed to find USB Device")
@@ -1155,13 +1155,14 @@ if __name__ == '__main__':
 
     cwtestusb.con()
 
-    force = False
+    force = True
 
     if cwtestusb.isFPGAProgrammed() == False or force:
         from datetime import datetime
         starttime = datetime.now()
         # cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
-        cwtestusb.FPGAProgram(open(r"C:\E\Documents\newae\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
+        cwtestusb.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
+        # cwtestusb.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise_spifake\cwlite_interface.bit", "rb"))
         stoptime = datetime.now()
         print "FPGA Config time: %s" % str(stoptime - starttime)
 
@@ -1177,19 +1178,23 @@ if __name__ == '__main__':
         avr.enableISP(True)
         avr.enableISP(False)
 
-    xmegaprogram = False
+    xmegaprogram = True
     if xmegaprogram:
         xmega = XMEGAPDI()
         xmega.setUSB(cwtestusb._usbdev)
         xmega.setChip(supported_xmega[0])
+        # Worst-case is 75mS for chip erase, so give us some head-room
+        xmega.setParamTimeout(200)
 
         try:
-            # Worst-case is 75mS for chip erase, so give us some head-room
-            xmega.setParamTimeout(200)
+            print "Enable"
             xmega.enablePDI(True)
 
+            print "Read sig"
             # Read signature bytes
             data = xmega.readMemory(0x01000090, 3, "signature")
+
+            print data
 
             if data[0] != 0x1E or data[1] != 0x97 or data[2] != 0x46:
                 print "Signature bytes failed: %02x %02x %02x != 1E 97 46" % (data[0], data[1], data[2])
@@ -1205,7 +1210,6 @@ if __name__ == '__main__':
                 xmega.enablePDI(True)
 
             fakedata = [i & 0xff for i in range(0, 2048)]
-
             print "Programming FLASH Memory"
             xmega.writeMemory(0x0800000, fakedata, memname="flash")
 
@@ -1225,7 +1229,42 @@ if __name__ == '__main__':
 
 
     # cwtestusb.cmdReadMem(0x00, 25)
-    cwtestusb.cmdWriteMem(0, [1, 2, 3, 4, 5, 0xFF])
+    # cwtestusb.cmdWriteMem(0, [1, 2, 3, 4, 5, 0xFF])
+    # cwtestusb.cmdWriteMem(0x100, [0xFF, 2, 3])
+    # time.sleep(1)
+    # cwtestusb.cmdWriteMem(0x100, [0x00])
+    # time.sleep(1)
+    # cwtestusb.cmdWriteMem(0x100, [0xFF])
+
+    # key = [0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c]
+    # key = [i for i in range(0, 16)]
+    # text = [0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a]
+    # text = [i for i in range(0, 16)]
+    # text = key
+    # text = [0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2b]
+
+    # key = key[::-1]
+    # text = text[::-1]
+
+    # cwtestusb.cmdWriteMem(0x200, key)
+    # cwtestusb.cmdWriteMem(0x300, text)
+
+    # print "enable AES and wait..."
+    # print cwtestusb.cmdReadMem(0x110, 1)[0]
+    # cwtestusb.cmdWriteMem(0x100, [1])
+    # print cwtestusb.cmdReadMem(0x110, 1)[0]
+
+    # print "done"
+    # print cwtestusb.cmdReadMem(0x110, 1)[0]
+    # while cwtestusb.cmdReadMem(0x110, 1)[0] == 0:
+    #    time.sleep(0.01)
+    #    print "waiting..."
+    # cwtestusb.cmdWriteMem(0x100, [0])
+    # # time.sleep(0.5)
+    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x600, 16)]
+    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x200, 16)]
+    # print ["%02x" % i for i in cwtestusb.cmdReadMem(0x300, 16)]
+
 
     print "Let's Rock and Roll baby"
 
@@ -1238,5 +1277,20 @@ if __name__ == '__main__':
         usart.write("hello\n")
         time.sleep(0.1)
         print usart.read()
+
+    # cwtestusb.sendCtrl(0x1F, 0x01)
+    # flog = open("spilog.txt", "w+")
+    # while True:
+    #    try:
+    #        data = cwtestusb._usbdev.read(cwtestusb.rep, 512)
+    #        slog = ""
+    #        slog += "%s: " % str(datetime.now())
+    #        for d in data:
+    #            slog += "%02x " % d
+    #        print slog
+    #        flog.write(slog + "\n")
+    #        flog.flush()
+    #    except usb.core.USBError:
+    #        pass
 
 
