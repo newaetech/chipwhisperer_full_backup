@@ -578,10 +578,10 @@
 </ArmGcc>
     </ToolchainSettings>
     <UsesExternalMakeFile>True</UsesExternalMakeFile>
-    <OutputDirectory>C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\firmware\CW305_SAM3U_FW\build</OutputDirectory>
+    <OutputDirectory>C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\cw305_artixtarget\fw\sam3u\CW305_SAM3U_FW\build</OutputDirectory>
     <BuildTarget>all</BuildTarget>
     <CleanTarget>clean</CleanTarget>
-    <ExternalMakeFilePath>C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\firmware\CW305_SAM3U_FW\build\Makefile</ExternalMakeFilePath>
+    <ExternalMakeFilePath>C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\cw305_artixtarget\fw\sam3u\CW305_SAM3U_FW\build\Makefile</ExternalMakeFilePath>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="src\" />

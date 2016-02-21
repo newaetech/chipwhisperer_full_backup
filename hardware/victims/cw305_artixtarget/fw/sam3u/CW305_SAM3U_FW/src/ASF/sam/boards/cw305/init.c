@@ -71,21 +71,9 @@ void iopins_normal(void)
 	/* Configure MOSFET for turning on-off system */
 	gpio_configure_pin(PIN_PWRON_GPIO, PIN_PWRON_FLAGS);
 	board_power(0);
-	
-	/* FPGA Programming pins */
-	FPGA_NPROG_SETUP();
-	FPGA_NPROG_HIGH();
-	
-	/* FPGA External memory interface */
-	//Allow sync writing to address pins
-	gpio_configure_group(FPGA_ADDR_PORT, FPGA_ADDR_PINS, (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT));
-	pio_enable_output_write(FPGA_ADDR_PORT, FPGA_ADDR_PINS);
-	
-	//ALE pin under SW control
-	gpio_configure_pin(FPGA_ALE_GPIO, FPGA_ALE_FLAGS);
-	gpio_set_pin_high(FPGA_ALE_GPIO);
-	
-	gpio_configure_pin(FPGA_TRIGGER_GPIO, FPGA_TRIGGER_FLAGS);
+
+	//Detect state of switch
+	gpio_configure_pin(PIN_SWSTATE_GPIO, PIN_SWSTATE_FLAGS);
 
 #ifdef CONF_BOARD_UART_CONSOLE
 	/* Configure UART pins */
@@ -202,13 +190,6 @@ void iopins_normal(void)
 	gpio_configure_pin(TWI0_CLK_GPIO, TWI0_CLK_FLAGS);
 #endif
 
-#ifdef CONF_BOARD_PCK0
-	gpio_configure_pin(PIN_PCK0, PIN_PCK0_FLAGS);
-#endif
-
-#ifdef CONF_BOARD_PCK1
-gpio_configure_pin(PIN_PCK1, PIN_PCK1_FLAGS);
-#endif
 
 #if defined(CONF_BOARD_USB_PORT)
 #  if defined(CONF_BOARD_USB_VBUS_DETECT)
@@ -231,5 +212,4 @@ void board_init(void)
 	ioport_init();
 
 	iopins_normal();
-
 }

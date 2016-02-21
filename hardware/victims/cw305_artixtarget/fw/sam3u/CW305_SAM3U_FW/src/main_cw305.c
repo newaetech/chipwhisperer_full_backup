@@ -33,7 +33,129 @@
 //Serial Number - will be read by device ID
 char usb_serial_number[33] = "000000000000DEADBEEF";
 
+void fpga_pins(bool enabled);
 static void configure_console(void);
+
+void fpga_pins(bool enabled)
+{
+	if (enabled){
+		#ifdef CONF_BOARD_PCK0
+		gpio_configure_pin(PIN_PCK0, PIN_PCK0_FLAGS);
+		#endif
+
+		#ifdef CONF_BOARD_PCK1
+		gpio_configure_pin(PIN_PCK1, PIN_PCK1_FLAGS);
+		#endif
+		
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D0, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D1, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D2, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D3, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D4, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D5, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D6, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D7, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_NRD, PIN_EBI_NRD_FLAGS);
+		gpio_configure_pin(PIN_EBI_NWE, PIN_EBI_NWE_FLAGS);
+		gpio_configure_pin(PIN_EBI_NCS0, PIN_EBI_NCS0_FLAGS);
+			
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A0, PIN_EBI_DATA_BUS_FLAG2);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A1, PIN_EBI_DATA_BUS_FLAG2);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A2, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A3, PIN_EBI_DATA_BUS_FLAG1);
+		pio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A5, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A6, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A7, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A8, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A9, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A10, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A11, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A12, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A13, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A14, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A15, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A16, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A17, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A18, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A19, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A20, PIN_EBI_DATA_BUS_FLAG1);
+		
+		/* FPGA Programming pins */
+		FPGA_NPROG_SETUP();
+		FPGA_NPROG_HIGH();
+			
+		/* FPGA External memory interface */
+		//Allow sync writing to address pins
+		gpio_configure_group(FPGA_ADDR_PORT, FPGA_ADDR_PINS, (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT));
+		pio_enable_output_write(FPGA_ADDR_PORT, FPGA_ADDR_PINS);
+			
+		//ALE pin under SW control
+		gpio_configure_pin(FPGA_ALE_GPIO, FPGA_ALE_FLAGS);
+		gpio_set_pin_high(FPGA_ALE_GPIO);
+			
+		//Force FPGA trigger
+		gpio_configure_pin(FPGA_TRIGGER_GPIO, FPGA_TRIGGER_FLAGS);
+		
+		gpio_configure_pin(PIN_FPGA_PROGRAM_GPIO, PIN_FPGA_PROGRAM_FLAGS);
+		
+	} else {
+		#ifdef CONF_BOARD_PCK0
+		gpio_configure_pin(PIN_PCK0, PIO_INPUT);
+		#endif
+
+		#ifdef CONF_BOARD_PCK1
+		gpio_configure_pin(PIN_PCK1, PIO_INPUT);
+		#endif
+		
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D0, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D1, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D2, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D3, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D4, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D5, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D6, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_DATA_BUS_D7, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_NRD, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_NWE, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_NCS0, PIO_INPUT);
+		
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A0, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A1, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A2, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A3, PIO_INPUT);
+		pio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A5, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A6, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A7, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A8, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A9, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A10, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A11, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A12, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A13, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A14, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A15, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A16, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A17, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A18, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A19, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A20, PIO_INPUT);	
+			
+		/* FPGA External memory interface */
+		//Allow sync writing to address pins
+		gpio_configure_group(FPGA_ADDR_PORT, FPGA_ADDR_PINS, PIO_INPUT);
+		
+		//ALE pin under SW control
+		gpio_configure_pin(FPGA_ALE_GPIO, PIO_INPUT);
+		
+		//Force FPGA trigger
+		gpio_configure_pin(FPGA_TRIGGER_GPIO, PIO_INPUT);
+		
+		gpio_configure_pin(PIN_FPGA_PROGRAM_GPIO, PIO_INPUT);
+	}
+	
+}
 
 /*! \brief Main function. Execution starts here.
  */
@@ -76,40 +198,7 @@ int main(void)
 
 	/* Enable SMC */
 	pmc_enable_periph_clk(ID_SMC);	
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D0, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D1, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D2, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D3, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D4, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D5, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D6, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_DATA_BUS_D7, PIN_EBI_DATA_BUS_FLAG1);	
-	gpio_configure_pin(PIN_EBI_NRD, PIN_EBI_NRD_FLAGS);
-	gpio_configure_pin(PIN_EBI_NWE, PIN_EBI_NWE_FLAGS);
-	gpio_configure_pin(PIN_EBI_NCS0, PIN_EBI_NCS0_FLAGS);
-	
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A0, PIN_EBI_DATA_BUS_FLAG2);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A1, PIN_EBI_DATA_BUS_FLAG2);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A2, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A3, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A5, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A6, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A7, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A8, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A9, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A10, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A11, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A12, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A13, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A14, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A15, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A16, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A17, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A18, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A19, PIN_EBI_DATA_BUS_FLAG1);
-	gpio_configure_pin(PIN_EBI_ADDR_BUS_A20, PIN_EBI_DATA_BUS_FLAG1);
-
+	fpga_pins(true);
 	
 	/* Configure EBI I/O for PSRAM connection */
 	printf("Setting up FPGA Communication\n");
@@ -169,7 +258,19 @@ Can insert regular tasks here if needed
 */
 void do_task(void)
 {
-	;
+	static bool last_power_state = false;
+	
+	//If change in external state pin
+	if (board_get_powerstate() != last_power_state){
+		if (board_get_powerstate()){
+			//If power turned on, enable all IO to FPGA
+			fpga_pins(true);
+		} else {
+			//If power turned off, disable all IO to FPGA
+			fpga_pins(false);
+		}
+		
+		//Record new state
+		last_power_state = board_get_powerstate();
+	}
 }
-
-

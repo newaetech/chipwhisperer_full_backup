@@ -202,11 +202,16 @@
 #define PIN_PWRON_FLAGS  (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT) 
 #define board_power(a)	 if (a){gpio_set_pin_high(PIN_PWRON_GPIO);} else {gpio_set_pin_low(PIN_PWRON_GPIO);}
 	
+#define PIN_SWSTATE_GPIO  PIO_PB30_IDX
+#define PIN_SWSTATE_FLAGS  (PIO_TYPE_PIO_INPUT | PIO_DEFAULT)
+#define board_get_powerstate()  gpio_pin_is_high(PIO_PB30_IDX)
+
 //! FPGA Programming Pins
 #define PIN_FPGA_PROGRAM_GPIO	PIO_PA8_IDX
 #define PIN_FPGA_DONE_GPIO		PIO_PA7_IDX
 #define PIN_FPGA_CCLK_GPIO		PIO_PA15_IDX
 #define PIN_FPGA_DO_GPIO		PIO_PA14_IDX
+#define PIN_FPGA_INITB_GPIO     PIO_PC29_IDX
 
 //#define PIN_TARG_NRST_GPIO      PIO_PA17_IDX
 
