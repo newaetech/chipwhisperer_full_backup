@@ -21,7 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-#=================================================
+#
 
 
 import sys
@@ -767,18 +767,18 @@ class ChipWhispererCapture(MainChip):
                 con = False
 
         # Triggered from API
-        try:
-            if con:
-                self.scope.con()
-                self.statusBar().showMessage("Scope Connected")
-                #Pass to target if required
-                if hasattr(self.target, "setOpenADC") and hasattr(self.scope, "qtadc"):
-                    self.target.setOpenADC(self.scope.qtadc.ser)
+        # try:
+        if con:
+            self.scope.con()
+            self.statusBar().showMessage("Scope Connected")
+            # Pass to target if required
+            if hasattr(self.target, "setOpenADC") and hasattr(self.scope, "qtadc"):
+                self.target.setOpenADC(self.scope.qtadc.ser)
 
-            else:
-                self.scope.dis()
-        except IOError, e:
-            self.console.append("Target Error: %s" % str(e))
+        else:
+            self.scope.dis()
+        # except IOError, e:
+        #    self.console.append("Target Error: %s" % str(e))
 
 
     def doConDis(self):
