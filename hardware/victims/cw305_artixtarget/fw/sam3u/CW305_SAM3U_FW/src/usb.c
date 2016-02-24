@@ -28,6 +28,7 @@
 #include "usb.h"
 #include "fpga_xmem.h"
 #include "cdce906.h"
+#include "tps56520.h"
 #include <string.h>
 
 #define FW_VER_MAJOR 0
@@ -82,21 +83,33 @@ void main_vendor_disable(void)
 	main_b_vendor_enable = false;
 }
 
+/* Read/write into FPGA memory-mapped space */
 #define REQ_MEMREAD_BULK 0x10
 #define REQ_MEMWRITE_BULK 0x11
 #define REQ_MEMREAD_CTRL 0x12
 #define REQ_MEMWRITE_CTRL 0x13
+
+/* Get status of INITB and PROG lines */
 #define REQ_FPGA_STATUS 0x15
+
+/* Enter FPGA Programming mode */
 #define REQ_FPGA_PROGRAM 0x16
+
+/* Get SAM3U Firmware Version */
 #define REQ_FW_VERSION 0x17
-#define REQ_USART0_DATA 0x1A
-#define REQ_USART0_CONFIG 0x1B
-#define REQ_USART2_DATA 0x1C
-#define REQ_USART2_CONFIG 0x1D
+
+/* Program XMEGA (DMM volt-meter) */
 #define REQ_XMEGA_PROGRAM 0x20
-#define REQ_AVR_PROGRAM 0x21
+
+/* Various Settings */
 #define REQ_SAM3U_CFG 0x22
+
+/* Send data to PLL chip */
 #define REQ_CDCE906 0x30
+
+/* Set VCC-INT Voltage */
+#define REQ_VCCINT 0x31
+
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -118,7 +131,6 @@ void ctrl_writemem_ctrl(void);
 void ctrl_progfpga_bulk(void);
 bool ctrl_xmega_program(void);
 void ctrl_xmega_program_void(void);
-void ctrl_avr_program_void(void);
 
 void ctrl_xmega_program_void(void)
 {
@@ -234,25 +246,14 @@ static void ctrl_sam3ucfg_cb(void)
 	}
 }
 
-static void ctrl_usart_cb(void)
-{
-	ctrl_usart(USART0, false);
-}
-
-static void ctrl_usart_cb_data(void)
-{		
-	//Catch heartbleed-style error
-	if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size){
-		return;
-	}
-	
-	for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
-		usart_driver_putchar(USART0, NULL, udd_g_ctrlreq.payload[i]);
-	}
-}
-
 static uint8_t cdce906_status;
 static uint8_t cdce906_data;
+
+#define USB_STATUS_NONE       0
+#define USB_STATUS_PARAMWRONG 1
+#define USB_STATUS_OK         2
+#define USB_STATUS_COMMERR    3
+#define USB_STATUS_CSFAIL     4
 
 static void ctrl_cdce906_cb(void)
 {
@@ -261,27 +262,67 @@ static void ctrl_cdce906_cb(void)
 		return;
 	}
 	
-	cdce906_status = 0;
+	cdce906_status = USB_STATUS_NONE;
 	
 	if (udd_g_ctrlreq.req.wLength < 3){
-		cdce906_status = 1;
+		cdce906_status = USB_STATUS_PARAMWRONG;
 		return;
 	}
 	
+	cdce906_status = USB_STATUS_COMMERR;
 	if (udd_g_ctrlreq.payload[0] == 0x00){
 		if (cdce906_read(udd_g_ctrlreq.payload[1], &cdce906_data)){
-			cdce906_status = 2;
+			cdce906_status = USB_STATUS_OK;
 		}
 		
 	} else if (udd_g_ctrlreq.payload[0] == 0x01){
 		if (cdce906_write(udd_g_ctrlreq.payload[1], udd_g_ctrlreq.payload[2])){
-			cdce906_status = 2;
+			cdce906_status = USB_STATUS_OK;
 		}
 	} else {
-		cdce906_status = 1;
+		cdce906_status = USB_STATUS_PARAMWRONG;
 		return;
 	}
 }
+
+static uint8_t vccint_status = 0;
+static uint16_t vccint_setting = 1000;
+
+static void ctrl_vccint_cb(void)
+{
+	//Catch heartbleed-style error
+	if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size){
+		return;
+	}
+	
+	vccint_status = USB_STATUS_NONE;
+	
+	if ((udd_g_ctrlreq.payload[0] ^ udd_g_ctrlreq.payload[1] ^ 0xAE) != (udd_g_ctrlreq.payload[2])){
+		vccint_status = USB_STATUS_PARAMWRONG;
+		return;
+	}
+	
+	if (udd_g_ctrlreq.req.wLength < 3){
+		vccint_status = USB_STATUS_CSFAIL;
+		return;
+	}
+	
+	uint16_t vcctemp = (udd_g_ctrlreq.payload[0]) | (udd_g_ctrlreq.payload[1] << 8);
+	if ((vcctemp < 600) || (vcctemp > 1200)){
+		vccint_status = USB_STATUS_PARAMWRONG;
+		return;
+	}
+	
+	vccint_status = USB_STATUS_COMMERR;
+	
+	if (tps56520_set(vcctemp)){
+		vccint_setting = vcctemp;
+		vccint_status = USB_STATUS_OK;
+	}
+	
+	return;
+}
+
 
 bool main_setup_out_received(void)
 {
@@ -309,19 +350,6 @@ bool main_setup_out_received(void)
 			udd_g_ctrlreq.callback = ctrl_writemem_ctrl;
 			return true;		
 			
-		/* Target serial */
-		case REQ_USART0_CONFIG:
-			udd_g_ctrlreq.callback = ctrl_usart_cb;
-			return true;
-			
-		case REQ_USART0_DATA:
-			udd_g_ctrlreq.callback = ctrl_usart_cb_data;
-			return true;
-		
-		/* Smartcard serial */
-		case REQ_USART2_CONFIG:
-			return true;
-			
 		/* Send bitstream to FPGA */
 		case REQ_FPGA_PROGRAM:
 			udd_g_ctrlreq.callback = ctrl_progfpga_bulk;
@@ -344,6 +372,11 @@ bool main_setup_out_received(void)
 		/* CDCE906 read/write */
 		case REQ_CDCE906:
 			udd_g_ctrlreq.callback = ctrl_cdce906_cb;
+			return true;
+			
+		/* VCC-INT Setting */
+		case REQ_VCCINT:
+			udd_g_ctrlreq.callback = ctrl_vccint_cb;
 			return true;
 			
 		default:
@@ -375,13 +408,6 @@ void ctrl_progfpga_bulk(void){
 	}
 }
 
-/*
-udd_g_ctrlreq.req.bRequest == 0
-
-
-&& (udd_g_ctrlreq.req.bRequest == 0)
-&& (0 != udd_g_ctrlreq.req.wLength)
-*/
 
 bool main_setup_in_received(void)
 {
@@ -393,7 +419,7 @@ bool main_setup_in_received(void)
 	*/
 	
 	static uint8_t  respbuf[64];
-	unsigned int cnt;
+	//unsigned int cnt;
 
 	switch(udd_g_ctrlreq.req.bRequest){
 		case REQ_MEMREAD_CTRL:
@@ -410,7 +436,7 @@ bool main_setup_in_received(void)
 			
 		case REQ_FPGA_STATUS:
 			respbuf[0] = FPGA_ISDONE();
-			respbuf[1] = 0;
+			respbuf[1] = FPGA_INITB_STATUS();
 			respbuf[2] = 0;
 			respbuf[3] = 0;
 			udd_g_ctrlreq.payload = respbuf;
@@ -420,19 +446,6 @@ bool main_setup_in_received(void)
 			
 		case REQ_XMEGA_PROGRAM:
 			return XPROGProtocol_Command();
-			break;
-					
-		case REQ_USART0_CONFIG:
-			return ctrl_usart(USART0, true);
-			break;
-			
-		case REQ_USART0_DATA:						
-			for(cnt = 0; cnt < udd_g_ctrlreq.req.wLength; cnt++){
-				respbuf[cnt] = usart_driver_getchar(USART0);
-			}
-			udd_g_ctrlreq.payload = respbuf;
-			udd_g_ctrlreq.payload_size = cnt;
-			return true;
 			break;
 
 		case REQ_FW_VERSION:
@@ -450,7 +463,16 @@ bool main_setup_in_received(void)
 			udd_g_ctrlreq.payload = respbuf;
 			udd_g_ctrlreq.payload_size = 2;
 			return true;
-			break;		
+			break;
+			
+		case REQ_VCCINT:
+			respbuf[0] = vccint_status;
+			respbuf[1] = (uint8_t)vccint_setting;
+			respbuf[2] = (uint8_t)(vccint_setting >> 8);
+			udd_g_ctrlreq.payload = respbuf;
+			udd_g_ctrlreq.payload_size = 3;
+			return true;
+			break;	
 			
 		default:
 			return false;

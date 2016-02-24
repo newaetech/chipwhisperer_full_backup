@@ -61,7 +61,7 @@ bool tps56520_set(uint16_t mv_output)
 	}
 	
 	/* Avoid frying FPGA */
-	if (mv_output > 1100){
+	if (mv_output > 1200){
 		return false;
 	}
 	
