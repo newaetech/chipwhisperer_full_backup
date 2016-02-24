@@ -27,6 +27,7 @@ import sys
 import time
 import math
 from functools import partial
+import os.path
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -42,61 +43,103 @@ from openadc.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
 
+class CW305_USB(object):
+    REQ_SYSCFG = 0x22
+    REQ_VCCINT = 0x31
+    SYSCFG_CLKOFF = 0x04
+    SYSCFG_CLKON = 0x05
+    SYSCFG_TOGGLE = 0x06
+    VCCINT_XORKEY = 0xAE
+
 class CW305(TargetTemplate):
      
     def setupParameters(self): 
         self.hw = None
         self.reffreq = 12.0E6
+        self._fpgabs = QSettings().value("cw305-bitstream")
+        if self._fpgabs is None:
+            self._fpgabs = ''
         ssParams = [
                     {'name':'PLL Settings', 'type':'group', 'children':[
-                        {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'value':False, 'set':self.enableset, 'get':self.enableget},
+                        {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'value':False, 'set':self.pll_enable_set, 'get':self.pll_enable_get},
                         {'name':'CLK-SMA (X6)', 'type':'group', 'children':[
-                            {'name':'CLK-SMA Enabled', 'key':'pll0enabled', 'type':'bool', 'value':False, 'set':partial(self.outputSetEnabled, outnum=0), 'get':partial(self.outputGetEnabled, outnum=0), },
-                            {'name':'CLK-SMA Source', 'key':'pll0source', 'type':'list', 'values':['PLL0', 'PLL1', 'PLL2'], 'value':'PLL0', 'set':partial(self.outputSetSource, outnum=0), 'get':partial(self.outputGetSource, outnum=0), },
-                            {'name':'CLK-SMA Slew Rate', 'key':'pll0slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.outputSetSlew, outnum=0), 'get':partial(self.outputGetSlew, outnum=0)},
+                            {'name':'CLK-SMA Enabled', 'key':'pll0enabled', 'type':'bool', 'value':False, 'set':partial(self.pll_outenable_set, outnum=0), 'get':partial(self.pll_outenable_get, outnum=0), },
+                            {'name':'CLK-SMA Source', 'key':'pll0source', 'type':'list', 'values':['PLL0', 'PLL1', 'PLL2'], 'value':'PLL0', 'set':partial(self.pll_outsource_set, outnum=0), 'get':partial(self.pll_outsource_get, outnum=0), },
+                            {'name':'CLK-SMA Slew Rate', 'key':'pll0slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.pll_outslew_set, outnum=0), 'get':partial(self.pll_outslew_get, outnum=0)},
                             {'name':'PLL0 Frequency', 'key':'pll0freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
-                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.outputSetFreq, outnum=0), 'get':partial(self.outputGetFreq, outnum=0)},
+                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll_outfreq_set, outnum=0), 'get':partial(self.pll_outfreq_get, outnum=0)},
                         ]},
                         {'name':'CLK-N13 (FGPA Pin N13)', 'type':'group', 'children':[
-                            {'name':'CLK-N13 Enabled', 'key':'pll1enabled', 'type':'bool', 'value':False, 'set':partial(self.outputSetEnabled, outnum=1), 'get':partial(self.outputGetEnabled, outnum=1), },
+                            {'name':'CLK-N13 Enabled', 'key':'pll1enabled', 'type':'bool', 'value':False, 'set':partial(self.pll_outenable_set, outnum=1), 'get':partial(self.pll_outenable_get, outnum=1), },
                             {'name':'CLK-N13 Source', 'key':'pll1source', 'type':'list', 'values':['PLL1'], 'value':'PLL1'},
-                            {'name':'CLK-N13 Slew Rate', 'key':'pll1slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.outputSetSlew, outnum=1), 'get':partial(self.outputGetSlew, outnum=1)},
+                            {'name':'CLK-N13 Slew Rate', 'key':'pll1slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.pll_outslew_set, outnum=1), 'get':partial(self.pll_outslew_get, outnum=1)},
                             {'name':'PLL1 Frequency', 'key':'pll1freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
-                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.outputSetFreq, outnum=1), 'get':partial(self.outputGetFreq, outnum=1)},
+                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll_outfreq_set, outnum=1), 'get':partial(self.pll_outfreq_get, outnum=1)},
                         ]},
                         {'name':'CLK-E12 (FGPA Pin E12)', 'type':'group', 'children':[
-                            {'name':'CLK-E12 Enabled', 'key':'pll2enabled', 'type':'bool', 'value':False, 'set':partial(self.outputSetEnabled, outnum=2), 'get':partial(self.outputGetEnabled, outnum=2), },
+                            {'name':'CLK-E12 Enabled', 'key':'pll2enabled', 'type':'bool', 'value':False, 'set':partial(self.pll_outenable_set, outnum=2), 'get':partial(self.pll_outenable_get, outnum=2), },
                             {'name':'CLK-E12 Source', 'key':'pll2source', 'type':'list', 'values':['PLL2'], 'value':'PLL2'},
-                            {'name':'CLK-E12 Slew Rate', 'key':'pll2slew', 'type':'list', 'values':['+0nS', '+1nS', '+2nS', '+3nS'], 'value':'+0nS', 'set':partial(self.outputSetSlew, outnum=2), 'get':partial(self.outputGetSlew, outnum=2)},
+                            {'name':'CLK-E12 Slew Rate', 'key':'pll2slew', 'type':'list', 'values':['+0nS', '+1nS', '+2nS', '+3nS'], 'value':'+0nS', 'set':partial(self.pll_outslew_set, outnum=2), 'get':partial(self.pll_outslew_get, outnum=2)},
                             {'name':'PLL2 Frequency', 'key':'pll2freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
-                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.outputSetFreq, outnum=2), 'get':partial(self.outputGetFreq, outnum=2)},
+                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll_outfreq_set, outnum=2), 'get':partial(self.pll_outfreq_get, outnum=2)},
                         ]},
-                        {'name':'Save as Default', 'type':'action', 'action':self.cdce906writeEEPROM},
+                        {'name':'Save as Default (stored in EEPROM)', 'type':'action', 'action':self.pll_writedefaults},
                         ]},
                     {'name':'Disable CLKUSB For Capture', 'key':'clkusbautooff', 'type':'bool', 'value':True},
                     {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
-                    {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.setClkUSB},
-                    {'name':'Send Trigger', 'type':'action', 'action':self.toggleTrigger},
-                    # {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'value':1.00, 'range':(0.6, 1.05), 'suffix':'V'},
-                    # {'name':'FPGA Bitstream'},
-                    # {'name':''}
+                    {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.usb_clk_setenabled},
+                    {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
+                    {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'value':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
+                    {'name':'FPGA Bitstream', 'type':'group', 'children':[
+                            {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'str', 'value':self._fpgabs, 'set':self.gui_selectfpga},
+                            {'name':'Select Bitstream File', 'type':'action', 'action':self.gui_selectfpga},
+                            {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
+                            ]},
                     ]
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)      
         self.oa = None
 
-    def setClkUSB(self, status):
+    def usb_clk_setenabled(self, status):
         """ Turn on or off the Data Clock to the FPGA """
         if status:
-            self.cwtestusb.sendCtrl(0x22, 0x05)
+            self.cwtestusb.sendCtrl(CW305_USB.REQ_SYSCFG, CW305_USB.SYSCFG_CLKON)
         else:
-            self.cwtestusb.sendCtrl(0x22, 0x04)
+            self.cwtestusb.sendCtrl(CW305_USB.REQ_SYSCFG, CW305_USB.SYSCFG_CLKOFF)
 
-    def toggleTrigger(self):
+    def usb_trigger_toggle(self):
         """ Toggle the trigger line high then low """
-        self.cwtestusb.sendCtrl(0x22, 0x06)
+        self.cwtestusb.sendCtrl(CW305_USB.REQ_SYSCFG, CW305_USB.SYSCFG_TOGGLE)
+        
+    def vccint_set(self, vccint=1.0):
+        """ Set the VCC-INT for the FPGA """
 
-    def outputSetFreq(self, freq, outnum):        
+        # print "vccint = " + str(vccint)
+
+        if (vccint < 0.6) or (vccint > 1.15):
+            raise ValueError("VCC-Int out of range 0.6V-1.1V")
+        
+        # Convert to mV
+        vccint = int(vccint * 1000)
+        vccsetting = [vccint & 0xff, (vccint >> 8) & 0xff, 0]
+
+        # calculate checksum
+        vccsetting[2] = vccsetting[0] ^ vccsetting[1] ^ CW305_USB.VCCINT_XORKEY
+
+        self.cwtestusb.sendCtrl(CW305_USB.REQ_VCCINT, 0, vccsetting)
+
+        resp = self.cwtestusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
+        if resp[0] != 2:
+            raise IOError("VCC-INT Write Error, response = %d" % resp[0])
+
+    def vccint_get(self):
+        """ Get the last set value for VCC-INT """
+
+        resp = self.cwtestusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
+        return float(resp[1] | (resp[2] << 8)) / 1000.0
+
+
+    def pll_outfreq_set(self, freq, outnum):        
         """
         Set the PLL Output Frequency
         
@@ -140,27 +183,27 @@ class CW305(TargetTemplate):
             divsrc = 2
         self.cdce906setoutput(outpin, divsrc, slewrate=self.findParam('pll%dslew' % outnum).value(), enabled=self.findParam('pll%denabled' % outnum).value())
         
-    def outputGetFreq(self, outnum):
+    def pll_outfreq_get(self, outnum):
         """Read the programmed output frequency from a PLL"""
         settings = self.pllread(outnum)        
         freq = ((self.reffreq * float(settings[0])) / float(settings[1])) / float(settings[2])
         return freq
         
-    def outputSetEnabled(self, enabled, outnum):
+    def pll_outenable_set(self, enabled, outnum):
         """Enable or disable one of the PLLs"""
         self.outputUpdateOutputs(outnum)
     
-    def outputGetEnabled(self, outnum):
+    def pll_outenable_get(self, outnum):
         """Get if an output is enabled or not"""
         outpin = self.outnumToPin(outnum)
         data = self.cdce906read(19+outpin)        
         return bool(data & (1 << 3))
         
-    def outputSetSlew(self, enabled, outnum):
+    def pll_outslew_set(self, enabled, outnum):
         """Updates slew rates from GUI settings"""
         self.outputUpdateOutputs(outnum)
 
-    def outputGetSlew(self, outnum):
+    def pll_outslew_get(self, outnum):
         """Get slew rate of PLL output"""
         outpin = self.outnumToPin(outnum)
         data = self.cdce906read(19+outpin)
@@ -175,11 +218,11 @@ class CW305(TargetTemplate):
         else:
             return "+0nS"
 
-    def outputSetSource(self, source, outnum):
+    def pll_outsource_set(self, source, outnum):
         """Updates sources from GUI settings"""
         self.outputUpdateOutputs(outnum)
         
-    def outputGetSource(self, outnum):
+    def pll_outsource_get(self, outnum):
         """Get output source settings"""
         outpin = self.outnumToPin(outnum)
         data = self.cdce906read(19 + outpin)
@@ -194,7 +237,7 @@ class CW305(TargetTemplate):
         else:
             return "UNKNOWN"
 
-    def cdce906writeEEPROM(self):
+    def pll_writedefaults(self):
         """Save PLL settings to EEPROM, making them power-on defaults"""
         # Set bit high to enable write
         data = self.cdce906read(26) & (~(1 << 7))
@@ -264,7 +307,7 @@ class CW305(TargetTemplate):
             data |= 1 << 6
         self.cdce906write(19 + outpin, data)
 
-    def enableset(self, enabled):
+    def pll_enable_set(self, enabled):
         """Enable or disable the PLL chip"""
         base = self.cdce906read(12)
         if enabled:
@@ -272,7 +315,7 @@ class CW305(TargetTemplate):
         else:
             self.cdce906write(12, base | (1 << 6))
 
-    def enableget(self):
+    def pll_enable_get(self):
         """Read if PLL chip is enabled or disabled"""
         base = self.cdce906read(12)
         if base & (1 << 6):
@@ -350,7 +393,35 @@ class CW305(TargetTemplate):
 
         return (N, M, outdiv)
 
-    def con(self):   
+    def gui_getfpgabs(self):
+        
+        if os.path.isfile(self._fpgabs):
+            return self._fpgabs
+        else:
+            raise IOError("FPGA Bitstream not configured or %s not a file." % str(self._fpgabs))
+
+        # # Example of a version of this that hard-codes a bitstream
+        # return r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp_vivado\CW305_VivadoSample\CW305_VivadoSample.runs\impl_1\cw305_blockexample.bit"
+
+    def gui_selectfpga(self, fname=None):
+        if fname is None:
+            fname, _ = QFileDialog.getOpenFileName(None, 'Find FPGA Bitstream', QSettings().value("cw305-bitstream"), '*.bit')
+
+        if fname:
+            self.findParam('fpgabsfile').setValue(fname)
+            self._fpgabs = fname
+
+            QSettings().setValue("cw305-bitstream", fname)
+
+    def gui_programfpga(self):
+        bsfile = self.gui_getfpgabs()
+        from datetime import datetime
+        starttime = datetime.now()
+        self.cwtestusb.FPGAProgram(open(bsfile, "rb"))
+        stoptime = datetime.now()
+        print "FPGA Config time: %s" % str(stoptime - starttime)
+
+    def con(self, bsfile=None):
         """Connect to CW305 board, download bitstream"""
         self.cwtestusb = CWLiteUSB()
         self.cwtestusb.con(idProduct=0xC305)
@@ -359,7 +430,10 @@ class CW305(TargetTemplate):
             from datetime import datetime
             starttime = datetime.now()
             # self.cwtestusb.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
-            self.cwtestusb.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp_vivado\CW305_VivadoSample\CW305_VivadoSample.runs\impl_1\cw305_blockexample.bit", "rb"))
+            # self.cwtestusb.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp_vivado\CW305_VivadoSample\CW305_VivadoSample.runs\impl_1\cw305_blockexample.bit", "rb"))
+            if bsfile is None:
+                bsfile = self.gui_getfpgabs()
+            self.cwtestusb.FPGAProgram(open(bsfile, "rb"))
             stoptime = datetime.now()
             print "FPGA Config time: %s" % str(stoptime - starttime)
         self.cwtestusb.cmdWriteMem(0x100, [0])
@@ -399,14 +473,14 @@ class CW305(TargetTemplate):
     def go(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
         if self.findParam('clkusbautooff').value():
-            self.setClkUSB(False)
+            self.usb_clk_setenabled(False)
 
         time.sleep(0.01)
-        self.toggleTrigger()
+        self.usb_trigger_toggle()
         # self.cwtestusb.cmdWriteMem(0x100, [1])
         # self.cwtestusb.cmdWriteMem(0x100, [0])
 
         if self.findParam('clkusbautooff').value():
             time.sleep(self.findParam('clksleeptime').value() / 1000.0)
-            self.setClkUSB(True)
+            self.usb_clk_setenabled(True)
 
