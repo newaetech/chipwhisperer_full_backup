@@ -28,6 +28,16 @@
 import ast
 import os.path
 
+active_scope = [None]
+main_window = None
+chipwhisperer_extra = None
+globalSettings = {}
+
+def printAndForwardErrorMessage(msg, e):
+        ret = "Error: " + msg + " -> " + str(e)
+        print ret
+        raise Exception(ret)
+
 def list2hexstr(data, delim='', prefix=''):
     """
     Convert a list of integers to a hex string, with optional deliminators/prefix
@@ -93,12 +103,20 @@ def getPyFiles(dir):
                 scriptList.append(os.path.splitext(fn)[0])
     return scriptList;
 
-class Signal:
-    callback = None
+class Signal():
+    def __init__(self):
+        self.observers = []
 
-    def emit(self, value):
-        if self.callback is not None:
-            self.callback(value)
+    def connect(self, observer):
+        if observer not in self.observers:
+            self.observers.append(observer)
 
-    def connect(self, callback):
-        self.callback = callback
+    def disconnect(self, observer):
+        self.observers.remove(observer)
+
+    def emit(self, *arg):
+        for observer in self.observers:
+            observer(*arg)
+
+    def disconnectAll(self):
+        self.observers = []

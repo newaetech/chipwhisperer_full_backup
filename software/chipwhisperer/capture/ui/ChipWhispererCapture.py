@@ -25,36 +25,22 @@
 
 __version__ = "V3"
 
-import importlib
 import os.path
 import sys
 import traceback
-from datetime import datetime
 from functools import partial
 
-import chipwhisperer.capture.api.global_mod as global_mod
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
-from chipwhisperer.common.utils import util
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.capture.api.ListAllModules import ListAllModules
-from chipwhisperer.capture.api.TargetInterface import TargetInterface
-from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface as OpenADCInterface
+from chipwhisperer.capture.api.manager import Manager
 from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.traces.TraceContainerDPAv3 import TraceContainerDPAv3
-from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 from chipwhisperer.common.ui.MainChip import MainChip
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
-
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
+from chipwhisperer.common.utils import util
 
 try:
     from PySide.QtCore import *
@@ -79,124 +65,63 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-try:
-    import  chipwhisperer.capture.auxiliary.FrequencyMeasure as aux_FrequencyMeasure
-except ImportError:
-    aux_FrequencyMeasure = None
-
-try:
-    import  chipwhisperer.capture.auxiliary.ResetAVR as aux_ResetAVR
-except ImportError:
-    aux_ResetAVR = None
-
-try:
-    import  chipwhisperer.capture.auxiliary.ResetCW1173Read as aux_ResetCW1173Read
-except ImportError:
-    aux_ResetCW1173Read = None
-
-try:
-    import  chipwhisperer.capture.auxiliary.GPIOToggle as aux_GPIOToggle
-except ImportError:
-    aux_GPIOToggle = None
-
-try:
-    from chipwhisperer.common.traces.TraceContainerMySQL import TraceContainerMySQL
-except ImportError:
-    TraceContainerMySQL = None
-
-try:
-    from  chipwhisperer.capture.scopes.VisaScope import VisaScopeInterface as VisaScopeInterface
-except:
-    # VISA Scope uses WindowsError it seems? If so catch on OSError to work on Linux too
-    VisaScopeInterface = None
-
-try:
-    from  chipwhisperer.capture.scopes.PicoScope import PicoScopeInterface as PicoScopeInterface
-except ImportError:
-    PicoScopeInterface = None
-
-# class TargetSignals(QObject, TargetInterface.Signals):
-#     def __init__(self):
-#         QObject.__init__(self)
-#         TargetInterface.Signals.__init__(self, Signal(list), Signal(bool), Signal(bool), Signal(list))
-
 class ChipWhispererCapture(MainChip):
     MaxRecentFiles = 4
+
     def __init__(self, rootdir="."):
-        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture V2"), icon="cwiconC")
-        global_mod.main_window = self
-        self.console = self.addConsole()
+        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture " + __version__), icon="cwiconC")
+        util.main_window = self
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
-        QSettings().setValue("cwcapture-starting-root", rootdir)
+        util.globalSettings["cwcapture-starting-root"] = rootdir
         self._rootdir = rootdir
-        self.scope = None
         self.trace = None
         self.auxList = None
-        self.target = TargetInterface(self._rootdir + "/targets", log=self.console, showScriptParameter=self.showScriptParameter)
-
-        # self.target.signals = TargetSignals()
-        self.target.signals.paramListUpdated.connect(self.reloadTargetParamList)
-        self.target.signals.newInputData.connect(self.newTargetData)
-
-        valid_scopes = dicttype()
-        valid_scopes["None"] = None
-        valid_scopes["ChipWhisperer/OpenADC"] = OpenADCInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
-
-        valid_traces = dicttype()
-        valid_traces["None"] = None
-        valid_traces["ChipWhisperer/Native"] = TraceContainerNative
-        valid_traces["DPAContestv3"] = TraceContainerDPAv3
-
-        valid_aux = dicttype()
-        valid_aux["None"] = None
-
-        # If you want to add a 'hacked-in' module, you can do that in the 'aux' system. The aux system is designed to make
-        # it very easy to add some code that does something like measure an external instrument, or control some other
-        # system. Useful if you are wanting to do something like script different core voltages, frequencies, or otherwise
-        # control some external device for every capture run.
-
-        if aux_FrequencyMeasure is not None:
-            valid_aux["Frequency Counter"] = aux_FrequencyMeasure.FrequencyMeasure(console=self.console, showScriptParameter=self.showScriptParameter)
-
-        if aux_ResetAVR is not None:
-            valid_aux["Reset AVR via ISP-MKII"] = aux_ResetAVR.ResetAVR(console=self.console, showScriptParameter=self.showScriptParameter)
-
-        if aux_ResetCW1173Read is not None:
-            valid_aux["Reset AVR/XMEGA via CW-Lite"] = aux_ResetCW1173Read.ResetCW1173Read(self, console=self.console, showScriptParameter=self.showScriptParameter)
-
-        if aux_GPIOToggle is not None:
-            valid_aux["Toggle FPGA-GPIO Pins"] = aux_GPIOToggle.GPIOToggle(self, console=self.console, showScriptParameter=self.showScriptParameter)
-
-        if TraceContainerMySQL is not None:
-            valid_traces["MySQL"] = TraceContainerMySQL
-
-        if VisaScopeInterface is not None:
-            valid_scopes["VISA Scope"] = VisaScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
-
-        if PicoScopeInterface is not None:
-            valid_scopes["PicoScope"] = PicoScopeInterface(parent=self, console=self.console, showScriptParameter=self.showScriptParameter)
-
         self.esm = EncryptionStatusMonitor(self)
-
         self.serialTerminal = SerialTerminalDialog(self)
-
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
         self.paramTrees.append(self.glitchMonitor.paramTree)
 
-        valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(console=self.console, showScriptParameter=self.showScriptParameter)}
+        self.manager = Manager()
 
+
+        self.da = None
+        self.numTraces = 100
+        self.numSegments = 1
+
+        self.addToolbars()
+        self.addWaveforms()
+        self.addToolMenu()
+
+        self.addExampleScripts()
+
+        self.restoreDockGeometry()
+
+        self.newFile.connect(self.newProject)
+        self.saveFile.connect(self.saveProject)
+
+        self.fixedPlain = False
+        self.targetConnected = False
+
+        valid_scopes = Manager.getScopeModules(self._rootdir + "/scopes", self, self.showScriptParameter);
+        valid_targets =  Manager.getTargetModules(self._rootdir + "/targets", self.showScriptParameter);
+        valid_traces = Manager.getTraceFormats(self._rootdir + "/../common/traces");
+        valid_aux = Manager.getAuxiliaryModules(self._rootdir + "/auxiliary", self.showScriptParameter);
+
+        self.manager.setScope(valid_scopes["None"])
+        self.manager.setTarget(valid_targets["None"])
+        self.newProject()
+
+        valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(showScriptParameter=self.showScriptParameter)}
         if AcqKeyTextPattern_CRITTest:
-            valid_acqPatterns['CRI T-Test'] = AcqKeyTextPattern_CRITTest(console=self.console, showScriptParameter=self.showScriptParameter)
-
+            valid_acqPatterns['CRI T-Test'] = AcqKeyTextPattern_CRITTest(showScriptParameter=self.showScriptParameter)
         self.setAcqPattern(valid_acqPatterns['Basic'], reloadList=False)
 
         self.cwParams = [
-                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':valid_scopes["None"], 'set':self.scopeChanged},
-                self.target.toplevel_param,
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':valid_traces["None"], 'set':self.traceChanged},
-
-                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':valid_aux["None"], 'set':self.auxChanged },
+                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.manager.getScope(), 'set':self.manager.setScope},
+                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.manager.getTarget(), 'set':self.manager.setTarget},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':"ChipWhisperer/Native", 'set':self.traceChanged},
+                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':None, 'set':self.auxChanged },
 
                 # {'name':'Key Settings', 'type':'group', 'children':[
                 #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
@@ -218,36 +143,27 @@ class ChipWhispererCapture(MainChip):
                 # {'name':''}
                 ]
 
-        self.da = None
-        self.numTraces = 100
-        self.numSegments = 1
-
-        self.addToolbars()
         self.addSettingsDocks()
-        self.addWaveforms()
-        self.addToolMenu()
-
-        self.addExampleScripts()
-
-        self.restoreDockGeometry()
         self.dockifySettings()
         self.settingsAuxDock.setVisible(False)
-
-        self.newProject()
-
-        self.newFile.connect(self.newProject)
-        self.saveFile.connect(self.saveProject)
-
-        self.fixedPlain = False
-        self.target.signals.targetUpdated.connect(self.targetUpdated)
-        self.target.signals.connectStatus.connect(self.targetStatusChanged)
-
-        self.targetConnected = False
         self.reloadParamList()
+
+        self.manager.signals.paramListUpdated.connect(self.reloadTargetParamList)
+        self.manager.signals.newInputData.connect(self.newTargetData)
+        self.manager.signals.targetUpdated.connect(self.targetUpdated)
+        self.manager.signals.connectStatus.connect(self.targetStatusChanged)
+        self.manager.signals.newTextResponse.connect(self.esm.newData)
+        self.manager.signals.traceDone.connect(self.glitchMonitor.traceDone)
+        self.manager.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
+        self.manager.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
+        self.manager.signals.scopeUpdated.connect(self.scopeChanged)
+        self.manager.signals.targetUpdated.connect(self.targetUpdated)
+        self.manager.signals.connectStatus.connect(self.targetStatusChanged)
+
 
     def listModules(self):
         """Overload this to test imports"""
-        return ListAllModules()
+        return []
 
     def newTargetData(self, data):
         self.glitchMonitor.addResponse(data)
@@ -256,11 +172,12 @@ class ChipWhispererCapture(MainChip):
         self.TargetToolbar.setEnabled(enabled)
 
         if enabled:
-            self.acqPattern.setTarget(self.target.getDriver())
+            self.acqPattern.setTarget(self.manager.getTarget())
 
     def setAcqPattern(self, pat, reloadList=True):
         self.acqPattern = pat
-        self.acqPattern.setTarget(self.target.getDriver())
+        if self.manager.hasTarget():
+            self.acqPattern.setTarget(self.manager.getTarget())
 
         if reloadList:
             self.reloadParamList()
@@ -289,20 +206,16 @@ class ChipWhispererCapture(MainChip):
         self.projectMenu.addAction(self.exampleScriptAct)
         subMenu = QMenu("Submenu", self)
 
-        for s in util.getPyFiles(self._rootdir + "/scripts"):
-            try:
-                m = importlib.import_module('chipwhisperer.capture.scripts.' + s)
-                subMenu.addAction(QAction(m.name(), self, statusTip=m.tip(), triggered=partial(self.runScript, m)))
-            except Exception as e:
-                print str(e)
+        for script in Manager.getExampleScripts(self._rootdir + "/scripts"):
+            subMenu.addAction(QAction(script.name(), self, statusTip=script.tip(), triggered=partial(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 
     def runScript(self, mod):
-        self.console.append( "****Running Script: %s"%mod.name() )
+        print("****Running Script: %s"%mod.name())
         m = mod.userScript(self)
         m.run()
-        self.console.append( "****Finished Script: %s"%mod.name() )
+        print("****Finished Script: %s"%mod.name())
 
 
     def addToolMenu(self):
@@ -351,27 +264,25 @@ class ChipWhispererCapture(MainChip):
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
 
-    def reloadScopeParamList(self, lst=None):
-
+    def reloadScopeParamList(self, lst = None):
         # Remove all old scope actions that don't apply for new selection
         for act in self._scopeToolMenuItems:
             self.toolMenu.removeAction(act)
         self._scopeToolMenuItems = []
 
-        if self.scope is not None:
-            ExtendedParameter.reloadParams(self.scope.paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
+        if self.manager.hasScope():
+            ExtendedParameter.reloadParams(self.manager.getScope().paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
 
             # Check for any tools to add too
-            if hasattr(self.scope, "guiActions") and len(self.scope.guiActions()) > 0:
+            if hasattr(self.manager.getScope(), "guiActions") and len(self.manager.getScope().guiActions()) > 0:
                 sep = self.toolMenu.addSeparator()
-                acts = self.scope.guiActions()
+                acts = self.manager.getScope().guiActions()
                 self.toolMenu.addActions(acts)
                 self._scopeToolMenuItems.extend(acts)
                 self._scopeToolMenuItems.append(sep)
 
     def reloadTargetParamList(self, lst=None):
-        if self.target is not None:
-            ExtendedParameter.reloadParams(self.target.paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.manager.getTarget().paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadTraceParamList(self, lst=None):
         if self.traceparams is not None:
@@ -469,6 +380,17 @@ class ChipWhispererCapture(MainChip):
         self.MiscToolbar.setObjectName('Misc Tools')
         self.MiscToolbar.addAction(self.miscValidateAction)
 
+    def doConDisScope(self):
+        if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
+            self.manager.connectScope()
+        else:
+            self.manager.disconnectScope()
+
+    def doConDisTarget(self):
+        if self.targetStatus.defaultAction() == self.targetStatusActionDis:
+            self.manager.connectTarget()
+        else:
+            self.manager.disconnectTarget()
 
     def masterStatusChanged(self):
         # Deal with multiple
@@ -512,108 +434,32 @@ class ChipWhispererCapture(MainChip):
 
         self.masterStatusChanged()
 
-    def doConDisTarget(self, con=None):
-        """Toggle connect button pushed (target), alternatively can use via API by setting 'con' to True or False"""
-
-        if self.target is None:
-            return
-
-        #Triggered from GUI
-        if con is None:
-            if self.targetStatus.defaultAction() == self.targetStatusActionDis:
-                con = True
-            else:
-                con = False
-
-        #Triggered from API
-        try:
-            if con:
-                self.target.con()
-                self.statusBar().showMessage("Target Connected")
-            else:
-                self.target.dis()
-        except IOError, e:
-            self.console.append("Target Error: %s"%str(e))
-
-
-    def doConDisScope(self, con=None):
-        """Toggle connect button pushed (scope), alternatively can use via API by setting 'con' to True or False"""
-        if self.scope is None:
-            return
-
-        # Triggered from GUI
-        if con is None:
-            if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
-                con = True
-            else:
-                con = False
-
-        # Triggered from API
-        try:
-            if con:
-                self.scope.con()
-                self.statusBar().showMessage("Scope Connected")
-                #Pass to target if required
-                if hasattr(self.target, "setOpenADC") and hasattr(self.scope, "qtadc"):
-                    self.target.setOpenADC(self.scope.qtadc.ser)
-
-            else:
-                self.scope.dis()
-        except IOError, e:
-            self.console.append("Target Error: %s" % str(e))
-
-
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
-        if self.captureStatus.defaultAction() == self.captureStatusActionDis:
-            self.doConDisScope(True)
-            self.doConDisTarget(True)
-        else:
-            self.doConDisScope(False)
-            self.doConDisTarget(False)
-
-    def capture1(self):
-
-        if self.target.driverIsLoaded() and self.targetConnected:
-            target = self.target.getDriver()
-        else:
-            target = None
-
         try:
-            ac = AcquisitionController(self.scope, target, writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
-#            ac.newTextResponse.connect(self.esm.newData)
-
-            self.capture1Act.setEnabled(False)
-            self.captureMAct.setEnabled(False)
-
-            ac.doSingleReading()
-            self.statusBar().showMessage("One Capture Complete")
-
-        except IOError, e:
-            self.statusBar().showMessage("Error: %s" % str(e))
-            print "Exception caught: %s" % str(e)
-            print traceback.format_exc()
-
-        self.capture1Act.setChecked(False)
-        self.capture1Act.setEnabled(True)
-        self.captureMAct.setEnabled(True)
-
+            if self.captureStatus.defaultAction() == self.captureStatusActionDis:
+                self.manager.connect()
+                self.statusBar().showMessage("Target and Scope Connected")
+            else:
+                self.manager.disconnect()
+                self.statusBar().showMessage("Target and Scope Disconnected")
+        except Exception, e:
+            QMessageBox.information(self, "Error", e.message)
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog(onlyOkButton=not warnOnly)
 
-        target = self.target.getDriver()
-
-
         # Basic Validation of settings from the main GUI
-        if target is None:
-            vw.addMessage("warn", "General Settings", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
-        else:
+        try:
+            target = self.manager.getTarget()
             try:
                 target.validateSettings(vw)
             except AttributeError:
                 vw.addMessage("info", "Target Module", "Target has no validateSettings()", "Internal Error", "73b08424-3865-4274-8fd7-dd213ede2c46")
+        except Exception as e:
+            vw.addMessage("warn", "General Settings", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
+
 
         if self.scope is None:
             vw.addMessage("warn", "General Settings", "No Scope Module", "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f")
@@ -649,111 +495,56 @@ class ChipWhispererCapture(MainChip):
         else:
             return True
 
-    def captureM(self):
-        target = self.target.getDriver()
-
-        if self.validateSettings(True) == False:
-            return
-
-        overallstarttime = datetime.now()
-
-        tcnt = 0
-        writerlist = []
-
-        tracesPerRun = int(self.numTraces / self.numSegments)
-
-        cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
-
-        cprog.startCapture()
-
-        # This system re-uses one wave buffer a bunch of times. This is required since the memory will become
-        # fragmented, even though you are just freeing & reallocated the same size buffer. It's slightly less
-        # clear but it ensures you don't suddently have a capture interrupted with a memory error. This can
-        # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
-        # the 1GB limit that a 32-bit process would expect to give you trouble at.
-        waveBuffer = None
-
-        for i in range(0, self.numSegments):
-
-            cprog.incSeg()
-
-            if self.trace is not None:
-                writer = self.trace(self.traceparams)
-            else:
-                writer = None
-
-            starttime = datetime.now()
-            baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
-            prefix = baseprefix + "_"
-
-            # Load trace writer information
-            if writer:
-                writer.config.setAttr("prefix", prefix)
-                writer.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
-                writer.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
-                writer.setTraceHint(tracesPerRun)
-
-                if waveBuffer is not None:
-                    writer.setTraceBuffer(waveBuffer)
-
-
-            if self.auxList is not None:
-                for aux in self.auxList:
-                    aux.setPrefix(baseprefix)
-
-            ac = AcquisitionController(self.scope, target, writer, auxList=self.auxList, keyTextPattern=self.acqPattern)
-#            ac.newTextResponse.connect(self.esm.newData)
-#            ac.traceDone.connect(cprog.traceDoneSlot)
-#            ac.traceDone.connect(self.glitchMonitor.traceDone)
-            self.glitchMonitor.campaignStart(baseprefix)
-            ac.setMaxtraces(tracesPerRun)
-            cprog.abortCapture.connect(ac.abortCapture)
-
+    def capture1(self):
+        try:
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
+            self.manager.capture1(self.auxList, self.acqPattern)
+            self.statusBar().showMessage("One Capture Complete")
+        except IOError, e:
+            self.statusBar().showMessage("Error: %s" % str(e))
+            print "Exception caught: %s" % str(e)
+            print traceback.format_exc()
 
-            ac.doReadings(addToList=self.manageTraces)
-
-            tcnt += tracesPerRun
-            self.statusBar().showMessage("%d Captures Completed" % tcnt)
-            self.glitchMonitor.campaignDone()
-
-            stoptime = datetime.now()
-
-            # Re-use the wave buffer for later segments
-            if writer is not None:
-                waveBuffer = writer.traces
-                writerlist.append(writer)
-
-        self.console.append("Capture delta time: %s" % str(stoptime - overallstarttime))
-
+        self.capture1Act.setChecked(False)
         self.capture1Act.setEnabled(True)
-        self.captureMAct.setChecked(False)
         self.captureMAct.setEnabled(True)
 
-        return writerlist
+    def captureM(self):
+        # if self.validateSettings(True) == False:
+        #     return
+        self.capture1Act.setEnabled(False)
+        self.captureMAct.setEnabled(False)
 
-    def scopeChanged(self, newscope):
-        self.scope = newscope
-        global_mod.active_scope = newscope
-        if self.scope is not None:
-            self.scope.paramListUpdated.connect(self.reloadScopeParamList)
-            self.scope.dataUpdated.connect(self.newScopeData)
-            self.scope.connectStatus.connect(self.scopeStatusChanged)
+        cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
+        cprog.startCapture()
+
+        try:
+            self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
+            self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
+            self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
+        except IOError, e:
+            self.statusBar().showMessage("Error: %s" % str(e))
+            print "Exception caught: %s" % str(e)
+            print traceback.format_exc()
+
+        self.captureMAct.setChecked(False)
+        self.capture1Act.setEnabled(True)
+        self.captureMAct.setEnabled(True)
+
+    def scopeChanged(self):
+        if self.manager.hasScope():
+            self.manager.getScope().paramListUpdated.connect(self.reloadScopeParamList)
+            self.manager.getScope().dataUpdated.connect(self.newScopeData)
+            self.manager.getScope().connectStatus.connect(self.scopeStatusChanged)
             self.reloadScopeParamList()
             self.ScopeToolbar.setEnabled(True)
         else:
             self.ScopeToolbar.setEnabled(False)
 
-    def traceChanged(self, newtrace):
-        self.trace = newtrace
-        try:
-            self.traceparams = self.trace.getParams
-        except AttributeError:
-            self.traceparams = None
-        except TypeError:
-            self.traceparams = None
-
+    def traceChanged(self, newTrace):
+        self.manager.setTraceClass(newTrace)
+        self.traceparams = newTrace.getParams
         self.reloadTraceParamList()
 
     def auxChanged(self, newaux):
@@ -771,10 +562,10 @@ class ChipWhispererCapture(MainChip):
     def newProject(self):
         self.setProject(ProjectFormat(self))
         self.project().setProgramName("ChipWhisperer-Capture")
-        self.project().setProgramVersion("2.00")
+        self.project().setProgramVersion(__version__)
         self.project().addParamTree(self)
-        self.project().addParamTree(self.scope)
-        self.project().addParamTree(self.target)
+        self.project().addParamTree(self.manager.getScope())
+        self.project().addParamTree(self.manager.getTarget())
         self.project().setTraceManager(self.manageTraces)
         self.setCurrentFile(None)
 

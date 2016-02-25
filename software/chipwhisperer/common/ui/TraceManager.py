@@ -25,29 +25,22 @@
 __author__ = "Colin O'Flynn"
 
 import sys
-from PySide.QtCore import *
-from PySide.QtGui import *
 import os.path
-sys.path.append('../common')
-
-#import TraceContainer
-import TraceContainerConfig
-import TraceContainerNative
-from TraceContainerDPAv3 import ImportDPAv3Dialog
-
-from TraceManagerImport import TraceManagerImport
-
 import re
-
-#For copying files when adding existing traces
 import shutil
 import glob
+from PySide.QtCore import *
+from PySide.QtGui import *
 
-#For profiling support (not 100% needed)
-import pstats, cProfile
-
-#Reading trace config files
 import ConfigParser
+import pstats, cProfile #For profiling support (not 100% needed)
+import chipwhisperer.common.traces.TraceContainerConfig
+import chipwhisperer.common.traces.TraceContainerNative
+from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
+from TraceManagerImport import TraceManagerImport
+from chipwhisperer.common.utils import util
+
+sys.path.append('../common')
 
 class TraceManager(object):
     """
@@ -165,7 +158,7 @@ class TraceManagerDialog(QDialog):
         layout = QVBoxLayout()
 
         #Get labels in use
-        exampleConfig = TraceContainerConfig.TraceContainerConfig()
+        exampleConfig = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig()
         attrs = exampleConfig.attrHeaderValues()
         attrHeaders = [i["header"] for i in attrs]
         attrHeaders.insert(0, "Mapped Range")
@@ -232,7 +225,7 @@ class TraceManagerDialog(QDialog):
                 fname = fdir + t[1]
                 fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
-                ti = TraceContainerNative.TraceContainerNative()
+                ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
                 ti.config.loadTrace(fname)
                 self.traceList.append(ti)
                 self.addRow(ti)
@@ -347,9 +340,9 @@ class TraceManagerDialog(QDialog):
 
     def copyExisting(self, fname=None):
         if fname == None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings["trace_last_file"],'*.cfg')
             if fname:
-                QSettings().setValue("trace_last_file", fname)
+                util.globalSettings["trace_last_file"] = fname
 
         if fname:
             #Get our project directory

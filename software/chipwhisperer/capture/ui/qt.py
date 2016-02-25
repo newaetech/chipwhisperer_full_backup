@@ -87,9 +87,8 @@ class OpenADCQt(QObject):
 
     dataUpdated = Signal(list, int)
 
-    def __init__(self, MainWindow=None, includePreview=True, setupLayout=True, includeParameters=True, console=None, showScriptParameter=None):
+    def __init__(self, MainWindow=None, includePreview=True, setupLayout=True, includeParameters=True, showScriptParameter=None):
         super(OpenADCQt,  self).__init__()
-        self.console = console
         self.offset = 0.5
         self.ser = None
         self.sc = None
@@ -144,7 +143,7 @@ class OpenADCQt(QObject):
 
     def setupParameterTree(self, makeTree=True):
         if self.adc_settings is None:
-            self.adc_settings = openadc.OpenADCSettings(self.console)
+            self.adc_settings = openadc.OpenADCSettings()
             self.params = Parameter.create(name='OpenADC', type='group', children=self.adc_settings.parameters(doUpdate=False))
             #ExtendedParameter.setupExtended(self.params)
             ep = ExtendedParameter()
@@ -228,9 +227,8 @@ class OpenADCQt(QObject):
 
     def con(self, ser):
         self.ser = ser
-
         #See if device seems to be attached
-        self.sc = openadc.OpenADCInterface(self.ser, self.console)
+        self.sc = openadc.OpenADCInterface(self.ser)
 
         deviceFound = False
         numTries = 0

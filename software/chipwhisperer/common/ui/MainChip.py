@@ -35,9 +35,9 @@ import pyqtgraph as pg
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 import chipwhisperer.common.ui.PythonConsole
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
-
-from chipwhisperer.common.traces.TraceManager import TraceManagerDialog
+from chipwhisperer.common.ui.TraceManager import TraceManagerDialog
 from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
+from chipwhisperer.common.utils import util
 
 class saveProjectDialog(QDialog):
     def __init__(self, parent=None):
@@ -286,7 +286,7 @@ class MainChip(QMainWindow):
         
     def clearAllSettings(self):
         """Clear all saved QSettings(), such as window location etc"""
-        QSettings().remove("")
+        util.globalSettings = {}
         
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""

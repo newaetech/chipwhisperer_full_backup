@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 import time
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -33,6 +32,9 @@ from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
+
+def getInstance(*args):
+    return GPIOToggle(*args)
 
 class GPIOToggle(AuxiliaryTemplate):
     paramListUpdated = util.Signal()
@@ -119,5 +121,5 @@ class GPIOToggle(AuxiliaryTemplate):
     def testToggle(self):
         pass
 
-
-
+    def getName(self):
+        return "Toggle FPGA-GPIO Pins"

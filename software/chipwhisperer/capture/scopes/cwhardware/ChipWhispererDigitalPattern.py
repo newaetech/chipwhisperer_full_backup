@@ -26,22 +26,11 @@
 #=================================================
 
 import sys
-from functools import partial
-import numpy as np
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ui.ParameterTypesCustom
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+from chipwhisperer.common.utils import util
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -185,17 +174,16 @@ class CWAdvTrigger(object):
     def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
         return self.bitsToPattern(totalpat)
 
-class ChipWhispererDigitalPattern(QObject):
+class ChipWhispererDigitalPattern(object):
     """
     Communicates and drives with the Digital Pattern Match module inside the FPGA. 
     """
 
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None, CWMainWindow=None):
+    def __init__(self, showScriptParameter=None):
 
         self.cwAdv = CWAdvTrigger()   
-        
 
         paramSS = [
                  {'name':'Serial Settings', 'type':'group', 'children':[

@@ -25,11 +25,11 @@
 #=================================================
 
 
+import time
 import usb.core
 import usb.util
-import time
-import chipwhisperer.capture.api.global_mod as global_mod
-from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_xmega, supported_avr
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_xmega, supported_avr
+from chipwhisperer.common.utils import util
 
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
@@ -497,7 +497,7 @@ class AVRISP(object):
         """
 
         if status:
-            global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+            util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
             time.sleep(0.1)
             self._avrDoWrite(self.ISP_CMD_ENTER_PROGMODE_ISP, [self._chip.timeout, self._chip.stabdelay, self._chip.cmdexedelay, self._chip.synchloops,
                                                                self._chip.bytedelay, self._chip.pollvalue, self._chip.pollindex, 0xAC, 0x53, 0, 0])
@@ -506,9 +506,9 @@ class AVRISP(object):
                 self._avrDoWrite(self.ISP_CMD_LEAVE_PROGMODE_ISP, [self._chip.predelay, self._chip.postdelay])
             except:
                 # Always disable ISP mode lines!
-                global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+                util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
                 raise
-            global_mod.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+            util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
 
     def _readFuseLockSig(self, cmd, cmds, respindx=4):
         if len(cmds) != 4:

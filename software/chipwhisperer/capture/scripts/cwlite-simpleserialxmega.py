@@ -48,7 +48,6 @@ except ImportError:
     sys.exit()
 
 import thread
-
 import scipy.io as sio
 
 exitWhenDone=False

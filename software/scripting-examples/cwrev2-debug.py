@@ -35,7 +35,6 @@
 
 #Setup path
 import sys
-import time
 
 #Check for PySide
 try:
@@ -47,8 +46,6 @@ except ImportError:
 
 #Import the ChipWhispererCapture module
 import chipwhisperer.capture.ChipWhispererCapture as cwc
-import chipwhisperer.capture.scopes.ChipWhispererExtra as cwe
-
 
 exitWhenDone=False
 

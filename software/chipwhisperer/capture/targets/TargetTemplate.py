@@ -22,34 +22,32 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+
 import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+from pyqtgraph.parametertree import Parameter
 
 try:
     from Crypto.Cipher import AES
 except ImportError:
     AES = None
 
-def getTarget(log, showScriptParameter):
-    return "None", TargetTemplate(log, showScriptParameter)
+def getInstance(*args):
+    return TargetTemplate(*args)
 
+class TargetTemplate(object):
+    params = None
 
-class TargetTemplate(QObject):
-    paramListUpdated = Signal(list)
-    newInputData = Signal(list)
-    
-    def __init__(self, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(TargetTemplate, self).__init__()        
-        self.console = console
-        self.showScriptParameter = showScriptParameter                
+    def __init__(self, showScriptParameter=None):
+        """Pass None/None if you don't have/want showScriptParameter"""
+        self.showScriptParameter = showScriptParameter
         self.setupParameters()
-                
+        self._ConnectionStatus = False
+        self.paramListUpdated = util.Signal()
+        self.newInputData = util.Signal()
+        self.connStatusUpdated = util.Signal()
+
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
@@ -69,24 +67,19 @@ class TargetTemplate(QObject):
     def __del__(self):
         """Close system if needed"""
         self.close()
-        
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
-            
+
     def setOpenADC(self, oadc):
         self.oa = oadc
-        
-    
+
+    def getStatus(self):
+        return self._ConnectionStatus
+
     def dis(self):
         """Disconnect from target"""
         self.close()
 
-    def con(self):   
+    def con(self):
         """Connect to target"""
-        pass
 
     def flush(self):
         """Flush input/output buffers"""
@@ -129,11 +122,11 @@ class TargetTemplate(QObject):
 
     def readOutput(self):        
         """Read result"""
-        raise NotImplementedError, "TargetTemplate.readOutput()"
+        raise NotImplementedError("TargetTemplate.readOutput()")
 
     def go(self):
         """Do Encryption"""
-        raise NotImplementedError, "TargetTemplate.go()"
+        raise NotImplementedError("TargetTemplate.go()")
 
     def keyLen(self):
         """Length of key system is using"""
@@ -150,3 +143,6 @@ class TargetTemplate(QObject):
             return ct
         else:
             return None
+
+    def getName(self):
+        return "None"

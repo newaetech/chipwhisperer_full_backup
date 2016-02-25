@@ -4,14 +4,11 @@
 # This file based on PyQtGraph parameterTypes.py
 #=================================================
 from pyqtgraph.Qt import QtCore, QtGui
-from pyqtgraph.python2_3 import asUnicode
 from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
 from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem
-from pyqtgraph.pgcollections import OrderedDict
 from pyqtgraph.widgets.SpinBox import SpinBox
 import pyqtgraph as pg
-import chipwhisperer.common.ui.qrc_resources
 from  chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 class SigStuff(QtGui.QWidget):

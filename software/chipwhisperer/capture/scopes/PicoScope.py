@@ -31,39 +31,24 @@ picoscope library at https://github.com/colinoflynn/pico-python which you
 must install
 """
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter   
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+import collections
+import time
 from picoscope import ps6000
 from picoscope import ps5000a
 from picoscope import ps2000
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
-import collections
+def getInstance(*args):
+    return PicoScopeInterface(*args)
 
-import time
+class PicoScope(object):
+    paramListUpdated = util.Signal()
+    dataUpdated = util.Signal()
 
-class PicoScope(QWidget):
-    paramListUpdated = Signal(list) 
-    dataUpdated = Signal(list, int)
-
-    def __init__(self, psClass, console=None, showScriptParameter=None):
-        super(PicoScope, self).__init__()
+    def __init__(self, psClass, showScriptParameter=None):
         self.showScriptParameter = showScriptParameter
-        self.console = console
         self.ps = psClass
         
         chlist = {}
@@ -93,9 +78,7 @@ class PicoScope(QWidget):
                       {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.UpdateSampleRateFreq, 'siPrefix':True, 'suffix':'S/s'},
                       {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.UpdateSampleRateFreq},
                       {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.UpdateSampleRateFreq},
-                  ]           
-        
-
+                  ]
         
         for t in self.getAdditionalParams():
             scopeParams.append(t)
@@ -112,24 +95,22 @@ class PicoScope(QWidget):
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
             self.ps.setSamplingFrequency(paramSR.value(), paramSL.value() + self.findParam('sampleoffset').value(), 1)
-            # paramSR.setValue(self.ps.sampleRate)
-            # paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
-            QTimer.singleShot(0, self.UpdateSampleParameters)
-
-    def UpdateSampleParameters(self):
-        paramSR = self.findParam('samplerate')
-        paramSL = self.findParam('samplelength')
-        paramSR.setValue(self.ps.sampleRate)
-        paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
-
+            paramSR.setValue(self.ps.sampleRate)
+            paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
+    #         QTimer.singleShot(0, self.UpdateSampleParameters)
+    #
+    # def UpdateSampleParameters(self):
+    #     paramSR = self.findParam('samplerate')
+    #     paramSL = self.findParam('samplelength')
+    #     paramSR.setValue(self.ps.sampleRate)
+    #     paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
 
     def con(self):
         self.ps.open()
         self.updateCurrentSettings()
             
     def paramList(self):
-        p = [self.params]            
-        return p
+        return [self.params]
     
     def updateCurrentSettings(self, ignored=False):
         if self.ps.handle is None: return
@@ -161,14 +142,13 @@ class PicoScope(QWidget):
 
             self.UpdateSampleRateFreq()
         except IOError, e:
-            print "Caught Error: %s" % str(e)
-            raise IOError(e)
+            raise IOError("Caught Error: %s" % str(e))
 
 
     def arm(self):       
         self.ps.runBlock()
         
-    def capture(self, Update=False, N=None, waitingCallback=None):
+    def capture(self):
         while(self.ps.isReady() == False): time.sleep(0.01)
         data = self.ps.getDataV(self.findParam('tracesource').value(), self.findParam('samplelength').value(), startIndex=self.findParam('sampleoffset').value(), returnOverflow=True)
         if data[1] is True:
@@ -180,19 +160,16 @@ class PicoScope(QWidget):
         # No timeout?
         return False
 
-class PicoScopeInterface(QObject):
-    connectStatus = Signal(bool)
-    dataUpdated = Signal(list, int)
-    paramListUpdated = Signal(list)    
+class PicoScopeInterface(object):
+    connectStatus = util.Signal()
+    dataUpdated = util.Signal()
+    paramListUpdated = util.Signal()
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):          
-        super(PicoScopeInterface, self).__init__(parent)
-        self.parent = parent
+    def __init__(self, showScriptParameter=None):
         self.scopetype = None
         self.datapoints = []
 
         scope_cons = {}
-        
         scope_cons["PS6000"] = ps6000.PS6000(connect=False)
         scope_cons["PS5000a"] = ps5000a.PS5000a(connect=False)
         scope_cons["PS2000"] = ps2000.PS2000(connect=False)
@@ -258,10 +235,12 @@ class PicoScopeInterface(QObject):
         p.append(self.params)  
          
         if self.scopetype is not None:
-            for a in self.scopetype.paramList(): p.append(a)         
-        
+            for a in self.scopetype.paramList(): p.append(a)
             
         #if self.advancedSettings is not None:
         #    for a in self.advancedSettings.paramList(): p.append(a)    
             
         return p
+
+    def getName(self):
+        return "PicoScope"

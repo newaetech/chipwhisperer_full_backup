@@ -25,18 +25,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-from PySide.QtCore import *
-from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
 
+def getInstance(*args):
+    return AuxiliaryTemplate(*args)
+
 class AuxiliaryTemplate():
     paramListUpdated = util.Signal()
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        self.console = console
+    def __init__(self, showScriptParameter=None):
         self.showScriptParameter = showScriptParameter
         self.setupParameters()
         self.prefix = ""
@@ -57,12 +56,6 @@ class AuxiliaryTemplate():
         """Close system if needed"""
         print "Aux: Closing"
         self.close()
-
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
 
     def close(self):
         """Close target, disconnect if required"""
@@ -91,3 +84,6 @@ class AuxiliaryTemplate():
 
     def setPrefix(self, prefix):
         self.prefix = prefix
+
+    def getName(self):
+        return "None"

@@ -35,8 +35,6 @@
 
 #Setup path
 import sys
-
-#Import the ChipWhispererCapture module
 import chipwhisperer.capture.ui.ChipWhispererCapture as cwc
 
 #Check for PySide
@@ -46,10 +44,6 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-
-import thread
-
-import scipy.io as sio
 
 exitWhenDone=False
 

@@ -30,7 +30,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.common.utils import hexstr2list
+from chipwhisperer.common.utils.util import hexstr2list
 
 class KeyScheduleDialog(QDialog):
 

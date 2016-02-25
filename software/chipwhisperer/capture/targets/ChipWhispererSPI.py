@@ -23,21 +23,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import sys
-import serial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
 from TargetTemplate import TargetTemplate
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.utils import util
 import hid
 
-def getTarget(log, showScriptParameter):
-    return "ChipWhisperer SPI", ChipWhispererSPI(log, showScriptParameter)
+def getInstance(*args):
+    return ChipWhispererSPI(*args)
 
 class HIDSPI(object):
     CMDSPI = 0x01
     CMDBOOT = 0xFE
-
 
     def findCWSPI(self, VID=0x03EB, PID=0xBAED):
         print "Detecting HID device..."
@@ -92,16 +88,10 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def setupParameters(self):
         self.hdev = HIDSPI()
@@ -126,9 +116,6 @@ class ChipWhispererSPI(TargetTemplate):
 
     def con(self):  
         self.hdev.findCWSPI()
-
-    def dis(self):
-        self.close()
 
     def close(self):
         return
@@ -175,3 +162,6 @@ class ChipWhispererSPI(TargetTemplate):
             return kin[0:blen]
 
         return kin
+
+    def getName(self):
+        return "ChipWhisperer SPI"

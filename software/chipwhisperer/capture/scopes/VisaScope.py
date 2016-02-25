@@ -26,17 +26,18 @@
 #=================================================
 
 
-import sys
 import time
-from PySide.QtCore import *
-from PySide.QtGui import *
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.utils import util
 from visa import *
 
-class VisaScope(QWidget):
-    paramListUpdated = Signal(list)
-    dataUpdated = Signal(list, int)
+def getInstance(*args):
+    return VisaScopeInterface(*args)
+
+class VisaScope(object):
+    paramListUpdated = util.Signal()
+    dataUpdated = util.Signal()
 
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
@@ -45,12 +46,11 @@ class VisaScope(QWidget):
 
     yScales = {"10 V":10, "5 V":5, "2 V":2, "500 mV":500E-3, "250 mV":250E-3, "100 mV":100E-3, "50 mV":50E-3}
 
-    header =        ":SYSTem:HEADer OFF\n"
+    header = ":SYSTem:HEADer OFF\n"
 
-    def __init__(self,console=None,showScriptParameter=None):
+    def __init__(self,showScriptParameter=None):
         super(VisaScope, self).__init__()
         self.showScriptParameter = showScriptParameter
-        self.console = console
         self.visaInst = None
 
         scopeParams = [
@@ -62,13 +62,8 @@ class VisaScope(QWidget):
                       {'name':'Download Size', 'key':'xdisprange', 'type':'int', 'limits':(0,1E9)},
                   ]
 
-
-
-
         for t in self.getAdditionalParams():
             scopeParams.append(t)
-
-
 
         self.params = Parameter.create(name='Scope Settings', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -322,24 +317,22 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
 
 
-class VisaScopeInterface(QObject):
-    connectStatus = Signal(bool)
-    dataUpdated = Signal(list, int)
-    paramListUpdated = Signal(list)
+class VisaScopeInterface(object):
+    connectStatus = util.Signal()
+    dataUpdated = util.Signal()
+    paramListUpdated = util.Signal()
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        super(VisaScopeInterface, self).__init__(parent)
-        self.parent = parent
+    def __init__(self, showScriptParameter=None):
         self.scopetype = None
         self.datapoints = []
 
         try:
-            mso54831d = VisaScopeInterface_MSO54831D(console=console, showScriptParameter=showScriptParameter)
+            mso54831d = VisaScopeInterface_MSO54831D(showScriptParameter=showScriptParameter)
         except ImportError:
             mso54831d = None
 
         try:
-            dso1024A = VisaScopeInterface_DSO1024A(console=console, showScriptParameter=showScriptParameter)
+            dso1024A = VisaScopeInterface_DSO1024A(showScriptParameter=showScriptParameter)
         except ImportError:
             dso1024A = None
 
@@ -423,8 +416,10 @@ class VisaScopeInterface(QObject):
         if self.scopetype is not None:
             for a in self.scopetype.paramList(): p.append(a)
 
-
         #if self.advancedSettings is not None:
         #    for a in self.advancedSettings.paramList(): p.append(a)
 
         return p
+
+    def getName(self):
+        return "VISA Scope"

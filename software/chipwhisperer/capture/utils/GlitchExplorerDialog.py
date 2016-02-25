@@ -294,7 +294,7 @@ class GlitchExplorerDialog(QDialog):
         if (pnum + 1) < len(self.tuneParamList):
             self.tuneParamList[pnum + 1].findNewValue()
 
-    def traceDone(self):
+    def traceDone(self, num, data, offset=0):
         """ Single capture done """
 
         # TODO: Improve how looping is done

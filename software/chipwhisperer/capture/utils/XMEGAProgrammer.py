@@ -24,17 +24,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from datetime import datetime
 import os.path
 import time
-
-from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGAPDI
-from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_xmega
-from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.capture.utils.IntelHex import IntelHex
+from datetime import datetime
 
 from PySide.QtCore import *
 from PySide.QtGui import *
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import XMEGAPDI
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_xmega
+from chipwhisperer.capture.utils.IntelHex import IntelHex
+from chipwhisperer.common.utils import util
+
 
 class XMEGAProgrammerDialog(QDialog):
     def __init__(self, parent=None):
@@ -55,7 +56,7 @@ class XMEGAProgrammerDialog(QDialog):
         layoutFW.addWidget(flashFileButton)
         layout.addLayout(layoutFW)
 
-        self.flashLocation.setText(QSettings().value("xmega-flash-location"))
+        self.flashLocation.setText(util.globalSettings["xmega-flash-location"])
 
         # Add buttons
         readSigBut = QPushButton("Check Signature")
@@ -85,10 +86,10 @@ class XMEGAProgrammerDialog(QDialog):
         self.setLayout(layout)
 
     def findFlash(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("xmega-flash-location"), '*.hex')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', util.globalSettings["xmega-flash-location"], '*.hex')
         if fname:
             self.flashLocation.setText(fname)
-            QSettings().setValue("xmega-flash-location", fname)
+            global_mod.settings["xmega-flash-location"] = fname
 
     def readSignature(self, close=True):
         self.xmega.find()

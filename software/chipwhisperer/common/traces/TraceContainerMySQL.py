@@ -22,14 +22,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import pickle
-
-import sys
-
 import numpy as np
 import TraceContainer
 from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from TraceContainerConfig import makeAttrDict
 
 try:
     import umysql as sql
@@ -38,8 +36,8 @@ except ImportError, e:
     # print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)
 
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from TraceContainerConfig import makeAttrDict
+def getClass():
+    return TraceContainerMySQL
 
 class parameters(object):
     def __init__(self, openMode=False):
@@ -266,7 +264,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             self.db.close()
         self.db = None
 
-
     def getTrace(self, n):
         wv = self.db.query("SELECT Wave FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.formatWave(wv, read=True)
@@ -291,5 +288,7 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
         asc = self.db.query("SELECT EncKey FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.asc2list(asc)
 
-
+    @staticmethod
+    def getName():
+        return "MySQL"
 

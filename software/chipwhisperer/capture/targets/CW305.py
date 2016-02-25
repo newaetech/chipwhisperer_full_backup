@@ -23,22 +23,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import time
 import math
+import time
 from functools import partial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-from pip._vendor.requests.packages.chardet.latin1prober import FREQ_CAT_NUM
-
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
 from TargetTemplate import TargetTemplate
-from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
+from chipwhisperer.common.utils import util
 
-def getTarget(log, showScriptParameter):
-    return "ChipWhisperer CW305 (Artix-7)", CW305(log, showScriptParameter)
+
+def getInstance(*args):
+    return CW305(*args)
 
 class CW305(TargetTemplate):
      
@@ -204,7 +200,6 @@ class CW305(TargetTemplate):
 
         # Set bit low
         self.cdce906write(26, data)
-
 
     def cdce906write(self, addr, data):
         """ Write a byte to the CDCE906 External PLL Chip """
@@ -408,3 +403,5 @@ class CW305(TargetTemplate):
             time.sleep(self.findParam('clksleeptime').value() / 1000.0)
             self.setClkUSB(True)
 
+    def getName(self):
+        return "ChipWhisperer CW305 (Artix-7)"

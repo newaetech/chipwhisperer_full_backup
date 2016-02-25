@@ -38,29 +38,24 @@ except ImportError:
 import os.path
 import time
 import zipfile
-
-# Connection for ZTEX Board
-from chipwhisperer.capture.scopes.ztex_fwloader import Ztex1v1, IhxFile
-from chipwhisperer.capture.scopes.ChipWhispererSAM3Update import SAM3LoaderConfig
+from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFile
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAM3LoaderConfig
+from chipwhisperer.common.utils import util
 
 class FWLoaderConfig(QDialog):
-    def __init__(self, parent=None, console=None, mode="cwcrev2"):
-        super(FWLoaderConfig, self).__init__(parent)
+    def __init__(self, mode="cwcrev2"):
+        super(FWLoaderConfig, self).__init__(None)
 
         if (mode != "cwcrev2") and (mode != "cwlite"):
             raise ValueError("Invalid mode: %s" % mode)
 
         self._mode = mode
-
-        self.console = console
-
         self.cwliteUSB = None
         self.sam3loader = None
 
         self.setWindowTitle("ChipWhisperer (%s) Firmware Loader Configuration" % mode)
-        settings = QSettings()
-
         layout = QVBoxLayout()
+        settings = QSettings()
 
         gbFPGAMode = QGroupBox("FPGA Mode Selection")
         radioOfficial = QRadioButton("Official Release (.zip)")
@@ -143,7 +138,7 @@ class FWLoaderConfig(QDialog):
         # Defaults?
         # print os.getcwd()
 
-        rootprefix = QSettings().value("cwcapture-starting-root") + "/"
+        rootprefix = util.globalSettings["cwcapture-starting-root"] + "/"
 
         if not fwFLoc:
             if self._mode == "cwcrev2":
@@ -191,31 +186,31 @@ class FWLoaderConfig(QDialog):
         self.bitZipLocation.setEnabled(True)
         self.bitLocation.setEnabled(False)
         self.useFPGAZip = True
-        QSettings().setValue("%s-fpga-bitstream-mode" % self._mode, "zip")
+        util.globalSettings["%s-fpga-bitstream-mode" % self._mode] = "zip"
 
     def setFPGAModeDebug(self):
         self.bitZipLocation.setEnabled(False)
         self.bitLocation.setEnabled(True)
         self.useFPGAZip = False
-        QSettings().setValue("%s-fpga-bitstream-mode" % self._mode, "debug")
+        util.globalSettings["%s-fpga-bitstream-mode" % self._mode] = "debug"
 
     def findDebugBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', '.', '*.bit')
         if fname:
             self.bitLocation.setText(fname)
-            QSettings().setValue("%s-debugbitstream-location" % self._mode, fname)
+            util.globalSettings["%s-debugbitstream-location" % self._mode] = fname
 
     def findZipBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Zip Firmware', '.', '*.zip')
         if fname:
             self.bitZipLocation.setText(fname)
-            QSettings().setValue("%s-zipbitstream-location" % self._mode, fname)
+            util.globalSettings["%s-zipbitstream-location" % self._mode] = fname
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware', '.', '*.ihx')
         if fname:
             self.firmwareLocation.setText(fname)
-            QSettings().setValue("%s-firmware-location" % self._mode, fname)
+            util.globalSettings["%s-firmware-location" % self._mode] = fname
 
     def loadRequired(self, forceFirmware=False):
         """Load firmware file or FPGA file only as required, skip otherwise"""
@@ -250,7 +245,6 @@ class FWLoaderConfig(QDialog):
         else:
             raise ValueError("Internal Error: Invalid setting of mode: %s" % self._mode)
 
-
     def loadFirmware(self):
         """Load the USB microcontroller firmware file setup in the dialog"""
 
@@ -258,7 +252,7 @@ class FWLoaderConfig(QDialog):
 
             fileloc = self.firmwareLocation.text()
             if fileloc.startswith("."):
-                fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+                fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
 
             f = IhxFile(fileloc)
             self.ztex.uploadFirmware(f)
@@ -269,14 +263,13 @@ class FWLoaderConfig(QDialog):
         else:
             raise ValueError("Internal Error: Invalid setting of mode: %s" % self._mode)
 
-
     def loadFPGA(self):
         """Load the FPGA bitstream"""
 
         if self.useFPGAZip:
             fileloc = self.bitZipLocation.text()
             if fileloc.startswith("."):
-                fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+                fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
             zfile = zipfile.ZipFile(fileloc, "r")
 
             if self._mode == "cwcrev2":
@@ -289,7 +282,7 @@ class FWLoaderConfig(QDialog):
 
             fileloc = self.bitLocation.text()
             if fileloc.startswith("."):
-                fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
+                fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
 
             # Get bitstream date, print for user
             bsdate = os.path.getmtime(fileloc)
@@ -306,4 +299,3 @@ class FWLoaderConfig(QDialog):
         if self.sam3loader is None:
             self.sam3loader = SAM3LoaderConfig(self, self.console, self.cwliteUSB)
         self.sam3loader.show()
-

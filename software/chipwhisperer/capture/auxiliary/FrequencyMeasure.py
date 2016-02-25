@@ -23,13 +23,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-import serial
 import time
 import numpy as np
-from PySide.QtCore import *
-from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from pyqtgraph.parametertree import Parameter
 from matplotlib.mlab import find
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
@@ -39,6 +35,9 @@ try:
     from picoscope import ps5000a
 except ImportError:
     ps5000a = None
+
+def getInstance(*args):
+    return FrequencyMeasure(*args)
 
 class freqMeasure():
     
@@ -131,3 +130,5 @@ class FrequencyMeasure(AuxiliaryTemplate):
     def captureComplete(self):
         np.save("frequency-%s.npy" % self.prefix, self.data)
 
+    def getName(self):
+        return "Frequency Counter"

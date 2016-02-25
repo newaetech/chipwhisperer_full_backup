@@ -44,7 +44,7 @@ except ImportError:
     sys.exit()
     
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.utils import hexstr2list
+from chipwhisperer.common.utils.util import hexstr2list
 
 class APDUFilter(QObject):
         

@@ -35,7 +35,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.common.GraphWidget import GraphWidget
-from chipwhisperer.common.utils import hexstr2list
+from chipwhisperer.common.utils.util import hexstr2list
 
 from datetime import datetime
 from functools import partial

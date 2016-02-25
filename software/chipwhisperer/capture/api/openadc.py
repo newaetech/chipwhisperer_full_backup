@@ -58,23 +58,12 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
-class BaseLog(object):
-    def __init__(self, console=None):
-        self.console = console
-
-    def log(self, msg):
-        if self.console:
-            self.console.append(msg)
-        else:
-            print msg
-
-class OpenADCSettings(BaseLog):
-    def __init__(self, oaiface=None, console=None):
-        super(OpenADCSettings, self).__init__(console)
-        self.parm_hwinfo = HWInformation(console=console)
-        self.parm_gain = GainSettings(console=console)
-        self.parm_trigger = TriggerSettings(console=console)
-        self.parm_clock = ClockSettings(console=console, hwinfo=self.parm_hwinfo)
+class OpenADCSettings(object):
+    def __init__(self, oaiface=None):
+        self.parm_hwinfo = HWInformation()
+        self.parm_gain = GainSettings()
+        self.parm_trigger = TriggerSettings()
+        self.parm_clock = ClockSettings(hwinfo=self.parm_hwinfo)
 
         self.params = [
             self.parm_hwinfo,
@@ -125,9 +114,8 @@ class OpenADCSettings(BaseLog):
         """Set all parameters/settings from a dict. Can pass only part of the dictionary too for changes."""
         return
 
-class HWInformation(BaseLog):
-    def __init__(self, console=None):
-        super(HWInformation, self).__init__(console)
+class HWInformation():
+    def __init__(self):
         self.name = "Hardware Information"
         self.sysFreq = 0
         self.param = {'name': 'HW Information', 'type': 'group', 'children': [
@@ -188,9 +176,8 @@ class HWInformation(BaseLog):
 
         return self.sysFreq
 
-class GainSettings(BaseLog):
-    def __init__(self, console=None):
-        super(GainSettings, self).__init__(console)
+class GainSettings():
+    def __init__(self):
         self.name = "Gain Setting"
         self.param = {'name': 'Gain Setting', 'type': 'group', 'children': [
                 {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'value':"low", 'set':self.setMode, 'get':self.mode,
@@ -256,9 +243,8 @@ class GainSettings(BaseLog):
 
         return gaindb
 
-class TriggerSettings(BaseLog):
-    def __init__(self, console=None):
-        super(TriggerSettings, self).__init__(console)
+class TriggerSettings():
+    def __init__(self):
         self.name = "Trigger Settings"
         self.param = {'name': 'Trigger Setup', 'type':'group', 'children': [
             {'name': 'Refresh Status', 'type':'action', 'linked':['Digital Pin State'], 'visible':False,
@@ -439,12 +425,11 @@ class TriggerSettings(BaseLog):
         else:
             return False
 
-class ClockSettings(BaseLog):
+class ClockSettings():
 
     readMask = [0x1f, 0xff, 0xff, 0xfd]
 
-    def __init__(self, console=None, hwinfo=None):
-        super(ClockSettings, self).__init__(console)
+    def __init__(self, hwinfo=None):
         self.name = "Clock Setup"
         self.findParam = None
         self.param = {'name': 'Clock Setup', 'type':'group', 'children': [
@@ -718,7 +703,7 @@ class ClockSettings(BaseLog):
 
             return phase
         else:
-            self.log("No phase shift loaded")
+            print("No phase shift loaded")
             return 0
 
     def dcmADCLocked(self):
@@ -732,7 +717,7 @@ class ClockSettings(BaseLog):
     def DCMStatus(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         if (result[0] & 0x80) == 0:
-            self.log("ERROR: ADVCLK register not present. Version mismatch")
+            print("ERROR: ADVCLK register not present. Version mismatch")
             return (False, False)
 
         if (result[0] & 0x40) == 0:
@@ -808,9 +793,8 @@ class ClockSettings(BaseLog):
         return long(measured)
 
 
-class OpenADCInterface(BaseLog):
-    def __init__(self, serial_instance, debug=None, console=None):
-        super(OpenADCInterface, self).__init__(console)
+class OpenADCInterface():
+    def __init__(self, serial_instance, debug=None):
         self.serial = serial_instance
         self.offset = 0.5
         self.ddrMode = False
@@ -851,7 +835,7 @@ class OpenADCInterface(BaseLog):
                totalerror = totalerror + len([(i,j) for i,j in zip(testData,testDataEcho) if i!=j])
                totalbytes = totalbytes + len(testData)
 
-               self.log("%d errors in %d"%(totalerror, totalbytes))
+               print("%d errors in %d"%(totalerror, totalbytes))
 
 
     def sendMessage(self, mode, address, payload=None, Validate=True, maxResp=None, readMask=None):
@@ -864,7 +848,7 @@ class OpenADCInterface(BaseLog):
         length = len(payload)
 
         if ((mode == CODE_WRITE) and (length < 1)) or ((mode == CODE_READ) and (length != 0)):
-            self.log("Invalid payload for mode")
+            print("Invalid payload for mode")
             return None
 
         if mode == CODE_READ:
@@ -915,7 +899,7 @@ class OpenADCInterface(BaseLog):
                         else:
                             errmsg += "<Timeout>"
 
-                        self.log(errmsg)
+                        print(errmsg)
 
         else:
             # ## Setup Message
@@ -952,7 +936,7 @@ class OpenADCInterface(BaseLog):
                 # Check for timeout, if so abort
                 if len(result) < 1:
                     self.flushInput()
-                    self.log("Timeout in read: %d" % len(result))
+                    print("Timeout in read: %d" % len(result))
                     return None
 
                 rb = bytearray(result)
@@ -982,7 +966,7 @@ class OpenADCInterface(BaseLog):
                         else:
                             errmsg += "<Timeout>"
 
-                        self.log(errmsg)
+                        print(errmsg)
 
 ### Generic
     def setSettings(self, state, validate=True):
@@ -1122,7 +1106,7 @@ class OpenADCInterface(BaseLog):
             diff = datetime.datetime.now() - starttime
 
             if (diff.total_seconds() > self._timeout):
-                self.log("Timeout in OpenADC capture(), trigger FORCED")
+                print("Timeout in OpenADC capture(), trigger FORCED")
                 timeout = True
                 self.triggerNow()
 
@@ -1232,7 +1216,7 @@ class OpenADCInterface(BaseLog):
         lastpt = -100;
 
         if data[0] != 0xAC:
-            self.log("Unexpected sync byte: 0x%x"%data[0])
+            print("Unexpected sync byte: 0x%x"%data[0])
             return None
 
         trigfound = False

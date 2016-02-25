@@ -193,15 +193,11 @@ class AutoScript(object):
 
 class AutoScriptBase(object):
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
+    def __init__(self, parent=None, showScriptParameter=None):
         super(AutoScriptBase, self).__init__()
         self.parent = parent
-        self.console = console
         self.showScriptParameter = showScriptParameter
         self._project = None
-
-    def log(self, sr, level=None):
-        if hasattr(self, 'console') and self.console: self.console.append(sr)
 
     def initProject(self):
         pass

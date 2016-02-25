@@ -22,25 +22,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from TargetTemplate import TargetTemplate
-
 import time
-
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+import serial
+from pyqtgraph.parametertree import Parameter
+from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.api.scan as scan
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import USART as CWLite_USART
+from chipwhisperer.common.api import scan
+from chipwhisperer.common.utils import util
 
-from chipwhisperer.capture.scopes.ChipWhispererLite import USART as CWLite_USART
 
-def getTarget(log, showScriptParameter):
-    return "Simple Serial", SimpleSerial(log, showScriptParameter)
-
+def getInstance(*args):
+    return SimpleSerial(*args)
 
 class SimpleSerial_serial(TargetTemplate):
     def setupParameters(self):
@@ -96,6 +89,7 @@ class SimpleSerial_serial(TargetTemplate):
             self.ser.timeout  = 2     # 2 second timeout
             self.ser.open()
 
+
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
@@ -146,14 +140,13 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def setOpenADC(self, oa):
         self.usbdev = oa._usbdev
 
+
 class SimpleSerial_ChipWhisperer(TargetTemplate):
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
-
     ADDR_DATA       = 33
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
-
 
     def setupParameters(self):
         ssParams = [{'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
@@ -312,7 +305,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             waiting = self.inWaiting()
 
         if timeout <= 0:
-            self.log("CW Serial timed out")
+            print("CW Serial timed out")
 
         #TODO: fix removing garbage at front
         # result = data[1:(len(data)+1)]
@@ -339,7 +332,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         self.params.getAllParameters()
 
 class SimpleSerial(TargetTemplate):
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def setupParameters(self):
         ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
@@ -366,7 +359,6 @@ class SimpleSerial(TargetTemplate):
 
         self.oa = None
         self.setConnection(self.findParam('con').value())
-
 
     def setOpenADC(self, oadc):
         self.oa = oadc
@@ -399,9 +391,6 @@ class SimpleSerial(TargetTemplate):
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
-
-    def dis(self):
-        self.close()
 
     def close(self):
         if self.ser != None:
@@ -494,7 +483,7 @@ class SimpleSerial(TargetTemplate):
         response = self.ser.read(dataLen)
 
         if len(response) < dataLen:
-            self.log("WARNING: Response too short (len=%d): %s"%(len(response), response))
+            print("WARNING: Response too short (len=%d): %s"%(len(response), response))
             return None
 
         #Go through...skipping expected if applicable
@@ -503,8 +492,8 @@ class SimpleSerial(TargetTemplate):
         #Is a beginning part
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
-                self.log("Sync Error: %s"%response)
-                self.log("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
+                print("Sync Error: %s"%response)
+                print("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
                 return None
 
         startindx = len(expected[0])
@@ -520,7 +509,7 @@ class SimpleSerial(TargetTemplate):
         #Is end part?
         if len(expected[1]) > 0:
             if response[startindx:startindx+len(expected[1])] != expected[1]:
-                self.log("Sync Error: %s"%response)
+                print("Sync Error: %s"%response)
                 return None
 
         return data
@@ -542,9 +531,11 @@ class SimpleSerial(TargetTemplate):
 
         return kin
 
+    def getName(self):
+        return "Simple Serial"
 
 
-class SimpleSerialWidget(SimpleSerial, QWidget):
+class SimpleSerialWidget(SimpleSerial):
     def __init__(self):
         super(SimpleSerialWidget, self).__init__()
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2015, NewAE Technology Inc.
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -23,7 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 import time
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -31,17 +30,19 @@ from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
-from subprocess import call
 
-class ResetAVR(AuxiliaryTemplate):
+def getInstance(*args):
+    return ResetCW1173Read(*args)
+
+class ResetCW1173Read(AuxiliaryTemplate):
     paramListUpdated = util.Signal()
 
     def setupParameters(self):
-        ssParams = [{'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
-                    {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
+        ssParams = [{'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
+                    {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
                     {'name':'Test Reset', 'type':'action', 'action':self.testReset}
                     ]
-        self.params = Parameter.create(name='Reset AVR via STK500', type='group', children=ssParams)
+        self.params = Parameter.create(name='Reset AVR/XMEGA via CW-Lite', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
     def captureInit(self):
@@ -50,27 +51,34 @@ class ResetAVR(AuxiliaryTemplate):
     def captureComplete(self):
         pass
 
-    def traceArm(self):
+    def traceArmPost(self):
+        target = self.findParam('target').value()
+        if target == 'xmega (PDI)':
+            self.parent().scope.scopetype.cwliteXMEGA.readSignature()
+        else:
+            self.parent().scope.scopetype.cwliteAVR.readSignature()
 
-        # If using STK500
-        stk500 = self.findParam('stk500path').value()
-        ret = call([stk500, "-d%s" % self.findParam('part').value(), "-s", "-cUSB"])
-
-        if int(ret) != 0:
-            raise IOError("Error Calling Stk500.exe")
-
-        time.sleep(1)
-
-
-        # If using AVRDude
-        # call(["avrdude"])
+        dly = self.findParam('toggledelay').value()
+        if dly > 0:
+            self.nonblockingSleep(dly / 1000.0)
 
     def traceDone(self):
         pass
 
-
     def testReset(self):
-        self.traceArm()
+        self.traceArmPost()
 
 
+    def nonblockingSleep_done(self):
+        self._sleeping = False
 
+    def nonblockingSleep(self, stime):
+        """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
+        QTimer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        self._sleeping = True
+        while(self._sleeping):
+            time.sleep(0.01)
+            QApplication.processEvents()
+
+    def getName(self):
+        return "Reset AVR/XMEGA via CW-Lite"

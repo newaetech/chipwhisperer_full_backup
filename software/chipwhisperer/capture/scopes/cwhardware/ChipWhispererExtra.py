@@ -25,39 +25,27 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 import time
 from functools import partial
-
-from PySide.QtCore import *
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 import ChipWhispererGlitch
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
-
 ADDR_DATA = 33
 ADDR_LEN = 34
 ADDR_BAUD = 35
-
 ADDR_EXTCLK = 38
 ADDR_TRIGSRC = 39
 ADDR_TRIGMOD = 40
-
 ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
-
 ADDR_IOROUTE = 55
 
-class ChipWhispererExtra(QObject):
-    paramListUpdated = Signal(list)
+class ChipWhispererExtra(object):
+    paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None, cwtype="cwrev2"):
         #self.cwADV = CWAdvTrigger()
@@ -110,8 +98,6 @@ class ChipWhispererExtra(QObject):
     #    clk = 30E6
     #    clkdivider = (clk / (2 * desired_freq)) + 1
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
-
-
 
 
 class CWExtraSettings(object):
@@ -531,7 +517,6 @@ class CWPLLDriver(object):
 
         self.writeByte(outreg, data)
 
-
     def setupClockSource(self, diff=True, useIN0=False, useIN1=False):
         if diff == False:
             #Select which single-ended input to use
@@ -558,8 +543,6 @@ class CWPLLDriver(object):
             self.writeByte(11, bnew)
 
         print "%x, %x" % (bnew, self.readByte(11))
-
-
 
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
@@ -600,10 +583,3 @@ class CWPLLDriver(object):
         stat = self.oa.sendMessage(CODE_READ, ADDR_I2CSTATUS, Validate=False, maxResp=3)
         if stat[0] & 0x01:
             raise IOError("No ACK from Slave in I2C")
-
-
-
-
-
-
-

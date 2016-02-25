@@ -23,20 +23,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from TargetTemplate import TargetTemplate
 
 try:
     import ftd2xx as ft
 except OSError:  # also catches WindowsError
     raise ImportError
 
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-
-from TargetTemplate import TargetTemplate
-
-def getTarget(log, showScriptParameter):
-    return "SASEBO GII", SaseboGII(log, showScriptParameter)
+def getInstance(*args):
+    return SaseboGII(*args)
 
 class SaseboGIIDPAContest(object):
     def init(self):
@@ -190,7 +187,7 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
-    paramListUpdated = Signal(list) 
+    paramListUpdated = util.Signal(list)
      
     def setupParameters(self):
         """Parameter Definition."""
@@ -204,9 +201,6 @@ class SaseboGII(TargetTemplate):
     def paramList(self):
         p = [self.params]
         return p
-    
-    def dis(self):
-        self.close()
 
     def con(self):   
         try:
@@ -220,7 +214,7 @@ class SaseboGII(TargetTemplate):
         
         #Init
         self.init()
-        
+
         return True
 
     def disconnect(self):
@@ -364,3 +358,6 @@ class SaseboGII(TargetTemplate):
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
+
+    def getName(self):
+        return "SASEBO GII"

@@ -25,20 +25,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 import zipfile
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-import PartialReconfiguration as pr
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
+from chipwhisperer.common.utils import util
+from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 glitchaddr = 51
@@ -53,7 +43,7 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
-class ChipWhispererGlitch(QObject):
+class ChipWhispererGlitch():
     """
     Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA module inserted into other systems.
     """
@@ -62,7 +52,7 @@ class ChipWhispererGlitch(QObject):
     CLKSOURCE1_BIT = 0b00000001
     CLKSOURCE_MASK = 0b00000011
 
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None, cwtype="cwrev2"):
         paramSS = [
@@ -81,7 +71,7 @@ class ChipWhispererGlitch(QObject):
                 {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
                 ]
 
-        # Setup FPGA partial configuration data
+        # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
         self.showScriptParameter = showScriptParameter
@@ -99,15 +89,13 @@ class ChipWhispererGlitch(QObject):
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if QSettings().value("%s-fpga-bitstream-mode" % settingprefix) == "zip":
-                fileloc = QSettings().value("%s-zipbitstream-location" % settingprefix)
+            if util.globalSettings["%s-fpga-bitstream-mode" % settingprefix] == "zip":
+                fileloc = util.globalSettings["%s-zipbitstream-location" % settingprefix]
 
                 if fileloc:
                     if fileloc.startswith("."):
-                        fileloc = QSettings().value("cwcapture-starting-root") + "/" + fileloc
-
+                        fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
                     zfile = zipfile.ZipFile(fileloc, "r")
-
 
                     if cwtype == "cwlite":
                         self.glitchPR.load(zfile.open(("%s-glitchoffsetwidth.p" % partialbasename)))
@@ -154,7 +142,6 @@ class ChipWhispererGlitch(QObject):
     def setOpenADC(self, oa):
 
         if self.prEnabled:
-
             self.prCon.con(oa)
 
             # Check this is actually working
@@ -163,10 +150,8 @@ class ChipWhispererGlitch(QObject):
                 print "WARNING: Partial Reconfiguration block not detected, PR disabled"
                 return
 
-
             # Reset FPGA back to defaults in case previous bitstreams loaded
             self.updatePartialReconfig()
-
         self.oa = oa
 
         try:

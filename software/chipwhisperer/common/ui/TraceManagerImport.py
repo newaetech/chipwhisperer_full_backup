@@ -24,22 +24,12 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
-from PySide.QtCore import *
 from PySide.QtGui import *
-import os.path
-
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-import pyqtgraph.parametertree.parameterTypes as pTypes
 from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-    
-from TraceContainerNative import TraceContainerNative
-from TraceContainerConfig import TraceContainerConfig
-import TraceContainerTypes
-
-from functools import partial
+from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
+import chipwhisperer.common.traces.TraceContainerTypes
+from chipwhisperer.common.utils import util
 
 try:
     from traces.TraceContainerMySQL import TraceContainerMySQL
@@ -107,10 +97,10 @@ class TraceManagerImport(QDialog):
             
     def loadCfg(self, fname=None):
 	if fname is None:
-	        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("trace_last_file"),'*.cfg')
+	        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings["trace_last_file"], '*.cfg')
 
         if fname:
-            QSettings().setValue("trace_last_file", fname)
+            util.globalSettings["trace_last_file"] = fname
 
         if fname:
             self.modName.setEnabled(False)
@@ -120,7 +110,7 @@ class TraceManagerImport(QDialog):
             fmt = tc.attr("format")
             
             #Generate a temp class for getting parameters from
-            fmtclass = TraceContainerTypes.TraceContainerFormatList[fmt]
+            fmtclass = chipwhisperer.common.traces.TraceContainerTypes.TraceContainerFormatList[fmt]
             
             #Use temp class to finally initilize our "good" version
             self.tmanager = fmtclass( fmtclass.getParamsClass(openMode=True) )

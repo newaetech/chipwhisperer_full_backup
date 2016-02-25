@@ -24,17 +24,11 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
-
 import numpy as np
 import TraceContainerConfig
-
 import copy
 import re
-
-#For profiling support (not 100% needed)
-import pstats, cProfile
-
+import pstats, cProfile #For profiling support (not 100% needed)
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
@@ -122,8 +116,7 @@ class TraceContainer(object):
         self.config.setAttr("numTraces", self.numTraces())
         self.config.setAttr("numPoints", self.numPoints())      
 
-    def addWave(self, trace, dtype=None):                
-
+    def addWave(self, trace, dtype=None):
         try:
             if self.traces is None:
                 if dtype is None:
@@ -216,9 +209,7 @@ class TraceContainer(object):
                             pass
 
                     return self.config.config[sname]
-
         return None
-
 
     def addAuxDataConfig(self, newmodule):
         """Add a new module to the config file, place in aux data"""
@@ -251,7 +242,6 @@ class TraceContainer(object):
         self.config.syncFile(sectionname=newdict["sectionName"])
 
         return newdict
-
 
     def prepareDisk(self):
         """Placeholder called after creating a new file setup, but before actually writing traces to it"""
@@ -296,6 +286,9 @@ class TraceContainer(object):
         """Returns true if you can use getTrace, getTextin, etc methods"""
         return self._isloaded
 
+    @staticmethod
+    def getName():
+        return "None"
         
         
 if __name__ == "__main__":

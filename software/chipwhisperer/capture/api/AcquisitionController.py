@@ -26,30 +26,16 @@
 import sys
 
 import random
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 import chipwhisperer.common.utils.util as util
 
 # print pg.systemInfo()
 
-# class Observed:
-#     def __init__(self):
-#         self.observers = []
-#
-#     def addObserver(self,observer):
-#         if observer not in self.observers:
-#             self.observers.append(observer)
-#
-#
-#     def deleteObserver(self, observer):
-#         self.observers.remove(observer)
-#
-#     def notifyObservers(self):
-#         for observer in self.observers:
-#             observer.update(self)
-
-
 class AcquisitionController():
+    class Signals:
+        traceDone = util.Signal()
+        captureDone = util.Signal()
+        newTextResponse = util.Signal()
+
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
         self.target = target
         self.scope = scope
@@ -57,6 +43,7 @@ class AcquisitionController():
         self.auxList = auxList
         self.running = False
         self.setKeyTextPattern(keyTextPattern)
+        self.signals = AcquisitionController.Signals()
 
         self.maxtraces = 1
 
@@ -96,7 +83,7 @@ class AcquisitionController():
         #    print " %02X"%i,
         # print ""
 
-#        self.newTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
+        self.signals.newTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
 
         return resp
 
@@ -178,8 +165,7 @@ class AcquisitionController():
                 if self.writer is not None:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
                 nt = nt + 1
-#                self.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
-#            QCoreApplication.processEvents()
+                self.signals.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
 
         if self.auxList is not None:
             for aux in self.auxList:
@@ -193,14 +179,12 @@ class AcquisitionController():
             if self.writer is not None:
                 addToList.append(self.writer)
 
-#        self.captureDone.emit(self.running)
-
+        self.signals.captureDone.emit(self.running)
         self.running = False
 
 class AcqKeyTextPattern_Base(object):
-    def __init__(self, console=None, showScriptParameter=None, target=None):
+    def __init__(self, showScriptParameter=None, target=None):
         self.showScriptParameter = showScriptParameter
-        self.console = console
         self.params = {'name':'Key/Text Pattern', 'type':'group',  'children':self.setupParams()}
 #        ExtendedParameter.setupExtended(self.params, self)
         self._target = target
