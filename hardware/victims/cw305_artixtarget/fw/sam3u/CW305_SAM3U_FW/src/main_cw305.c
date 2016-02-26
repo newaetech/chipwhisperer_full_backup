@@ -38,6 +38,11 @@ static void configure_console(void);
 
 void fpga_pins(bool enabled)
 {
+	
+	gpio_configure_pin(PIO_PB22_IDX, PIO_OUTPUT_0);
+	gpio_configure_pin(PIO_PB18_IDX, PIO_OUTPUT_0);
+	gpio_configure_pin(PIN_FPGA_DONE_GPIO, PIN_FPGA_DONE_FLAGS);
+	
 	if (enabled){
 		#ifdef CONF_BOARD_PCK0
 		gpio_configure_pin(PIN_PCK0, PIN_PCK0_FLAGS);
@@ -99,6 +104,10 @@ void fpga_pins(bool enabled)
 		
 		gpio_configure_pin(PIN_FPGA_PROGRAM_GPIO, PIN_FPGA_PROGRAM_FLAGS);
 		
+		gpio_configure_pin(SPI_MISO_GPIO, SPI_MISO_FLAGS);
+		gpio_configure_pin(SPI_MOSI_GPIO, SPI_MOSI_FLAGS);
+		gpio_configure_pin(SPI_SPCK_GPIO, SPI_SPCK_FLAGS);
+		
 	} else {
 		#ifdef CONF_BOARD_PCK0
 		gpio_configure_pin(PIN_PCK0, PIO_INPUT);
@@ -153,6 +162,10 @@ void fpga_pins(bool enabled)
 		gpio_configure_pin(FPGA_TRIGGER_GPIO, PIO_INPUT);
 		
 		gpio_configure_pin(PIN_FPGA_PROGRAM_GPIO, PIO_INPUT);
+		
+		gpio_configure_pin(SPI_MISO_GPIO, PIO_INPUT);
+		gpio_configure_pin(SPI_MOSI_GPIO, PIO_INPUT);
+		gpio_configure_pin(SPI_SPCK_GPIO, PIO_INPUT);
 	}
 	
 }
@@ -229,6 +242,9 @@ int main(void)
 	//genclk_enable_config(GENCLK_PCK_0, GENCLK_PCK_SRC_PLLBCK, GENCLK_PCK_PRES_4);
 	
 	printf("Event Loop Entered, waiting...\n");	
+	
+	//Turn off FPGA pins for now, will be enabled in event loop
+	fpga_pins(false);
 		
 	// The main loop manages only the power mode
 	// because the USB management is done by interrupt
