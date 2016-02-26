@@ -71,11 +71,11 @@ class ChipWhispererCapture(MainChip):
     def __init__(self, rootdir="."):
         super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture " + __version__), icon="cwiconC")
         util.main_window = self
+        self.console = self.addConsole()
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
-        util.globalSettings["cwcapture-starting-root"] = rootdir
+        util.globalSettings.setValue("cwcapture-starting-root", rootdir)
         self._rootdir = rootdir
-        self.trace = None
         self.auxList = None
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self)
@@ -92,16 +92,12 @@ class ChipWhispererCapture(MainChip):
         self.addToolbars()
         self.addWaveforms()
         self.addToolMenu()
-
         self.addExampleScripts()
-
         self.restoreDockGeometry()
-
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
 
         self.fixedPlain = False
-        self.targetConnected = False
 
         valid_scopes = Manager.getScopeModules(self._rootdir + "/scopes", self, self.showScriptParameter);
         valid_targets =  Manager.getTargetModules(self._rootdir + "/targets", self.showScriptParameter);
@@ -110,6 +106,7 @@ class ChipWhispererCapture(MainChip):
 
         self.manager.setScope(valid_scopes["None"])
         self.manager.setTarget(valid_targets["None"])
+        self.manager.setTraceClass(valid_traces["ChipWhisperer/Native"])
         self.newProject()
 
         valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(showScriptParameter=self.showScriptParameter)}
@@ -120,8 +117,8 @@ class ChipWhispererCapture(MainChip):
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.manager.getScope(), 'set':self.manager.setScope},
                 {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.manager.getTarget(), 'set':self.manager.setTarget},
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':"ChipWhisperer/Native", 'set':self.traceChanged},
-                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':None, 'set':self.auxChanged },
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.manager.getTraceClass(), 'set':self.traceChanged},
+                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':None, 'set':self.auxChanged},
 
                 # {'name':'Key Settings', 'type':'group', 'children':[
                 #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
@@ -150,29 +147,58 @@ class ChipWhispererCapture(MainChip):
 
         self.manager.signals.paramListUpdated.connect(self.reloadTargetParamList)
         self.manager.signals.newInputData.connect(self.newTargetData)
-        self.manager.signals.targetUpdated.connect(self.targetUpdated)
         self.manager.signals.connectStatus.connect(self.targetStatusChanged)
         self.manager.signals.newTextResponse.connect(self.esm.newData)
         self.manager.signals.traceDone.connect(self.glitchMonitor.traceDone)
         self.manager.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.manager.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
-        self.manager.signals.scopeUpdated.connect(self.scopeChanged)
-        self.manager.signals.targetUpdated.connect(self.targetUpdated)
+        self.manager.signals.scopeChanged.connect(self.scopeChanged)
+        self.manager.signals.targetChanged.connect(self.targetChanged)
         self.manager.signals.connectStatus.connect(self.targetStatusChanged)
-
-
-    def listModules(self):
-        """Overload this to test imports"""
-        return []
 
     def newTargetData(self, data):
         self.glitchMonitor.addResponse(data)
 
-    def targetUpdated(self, enabled):
-        self.TargetToolbar.setEnabled(enabled)
+    def scopeChanged(self):
+        self.ScopeToolbar.setEnabled(self.manager.hasScope())
 
-        if enabled:
+        if self.manager.hasScope():
+            self.manager.getScope().paramListUpdated.connect(self.reloadScopeParamList)
+            self.manager.getScope().dataUpdated.connect(self.newScopeData)
+            self.manager.getScope().connectStatus.connect(self.scopeStatusChanged)
+            self.reloadScopeParamList()
+
+    def targetChanged(self):
+        self.TargetToolbar.setEnabled(self.manager.hasTarget())
+
+        if self.manager.hasTarget():
+            self.manager.getTarget().connectStatus.connect(self.targetStatusChanged)
             self.acqPattern.setTarget(self.manager.getTarget())
+
+    def masterStatusChanged(self):
+        # Deal with multiple
+        if self.scopeStatus.defaultAction() == self.scopeStatusActionCon or self.targetStatus.defaultAction() == self.targetStatusActionCon:
+            self.captureStatus.setDefaultAction(self.captureStatusActionCon)
+        else:
+            self.captureStatus.setDefaultAction(self.captureStatusActionDis)
+
+    def scopeStatusChanged(self):
+        """Callback when scope connection successful"""
+        if self.manager.getScope().getStatus():
+            self.scopeStatus.setDefaultAction(self.scopeStatusActionCon)
+        else:
+            self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
+
+        self.masterStatusChanged()
+
+    def targetStatusChanged(self):
+        """Callback when target connection successful"""
+        if self.manager.getTarget().getStatus():
+            self.targetStatus.setDefaultAction(self.targetStatusActionCon)
+        else:
+            self.targetStatus.setDefaultAction(self.targetStatusActionDis)
+
+        self.masterStatusChanged()
 
     def setAcqPattern(self, pat, reloadList=True):
         self.acqPattern = pat
@@ -216,7 +242,6 @@ class ChipWhispererCapture(MainChip):
         m = mod.userScript(self)
         m.run()
         print("****Finished Script: %s"%mod.name())
-
 
     def addToolMenu(self):
         self.TerminalAct = QAction('Open Terminal', self,
@@ -392,103 +417,28 @@ class ChipWhispererCapture(MainChip):
         else:
             self.manager.disconnectTarget()
 
-    def masterStatusChanged(self):
-        # Deal with multiple
-
-        if self.scopeStatus.defaultAction() == self.scopeStatusActionCon:
-            scopeStat = True
-        else:
-            scopeStat = False
-
-        if self.targetStatus.defaultAction() == self.targetStatusActionCon:
-            targetStat = True
-        else:
-            targetStat = False
-
-        if targetStat or scopeStat:
-            self.captureStatus.setDefaultAction(self.captureStatusActionCon)
-        else:
-            self.captureStatus.setDefaultAction(self.captureStatusActionDis)
-
-    def scopeStatusChanged(self, status=True, text=None):
-        """Callback when scope connection successful"""
-        # self.CaptureToolbar.setEnabled(status)
-
-        if status:
-            self.scopeStatus.setDefaultAction(self.scopeStatusActionCon)
-        else:
-            self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
-
-        self.masterStatusChanged()
-
-    def targetStatusChanged(self, status=True, text=None):
-        """Callback when target connection successful"""
-        #self.CaptureToolbar.setEnabled(status)
-
-        self.targetConnected = status
-
-        if status:
-            self.targetStatus.setDefaultAction(self.targetStatusActionCon)
-        else:
-            self.targetStatus.setDefaultAction(self.targetStatusActionDis)
-
-        self.masterStatusChanged()
-
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
-        try:
-            if self.captureStatus.defaultAction() == self.captureStatusActionDis:
-                self.manager.connect()
-                self.statusBar().showMessage("Target and Scope Connected")
-            else:
-                self.manager.disconnect()
-                self.statusBar().showMessage("Target and Scope Disconnected")
-        except Exception, e:
-            QMessageBox.information(self, "Error", e.message)
+        if self.captureStatus.defaultAction() == self.captureStatusActionDis:
+            self.manager.connect()
+            self.statusBar().showMessage("Target and Scope Connected")
+        else:
+            self.manager.disconnect()
+            self.statusBar().showMessage("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog(onlyOkButton=not warnOnly)
 
-        # Basic Validation of settings from the main GUI
-        try:
-            target = self.manager.getTarget()
-            try:
-                target.validateSettings(vw)
-            except AttributeError:
-                vw.addMessage("info", "Target Module", "Target has no validateSettings()", "Internal Error", "73b08424-3865-4274-8fd7-dd213ede2c46")
-        except Exception as e:
-            vw.addMessage("warn", "General Settings", "No Target Module", "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66")
-
-
-        if self.scope is None:
-            vw.addMessage("warn", "General Settings", "No Scope Module", "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f")
-        else:
-            try:
-                self.scope.validateSettings(vw)
-            except AttributeError:
-                vw.addMessage("info", "Scope Module", "Scope has no validateSettings()", "Internal Error", "d19be31d-ad1a-4533-80dc-9423dfa92753")
-
-        if self.trace is not None:
-            writer = self.trace(self.traceparams)
-        else:
-            writer = None
-
-        if writer is None:
-            vw.addMessage("warn", "General Settings", "No Writer Module", "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727")
-        else:
-            try:
-                writer.validateSettings(vw)
-            except AttributeError:
-                vw.addMessage("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae")
+        for i in self.manager.validateSettings():
+            vw.addMessage(*i)
 
         if self.project().dataDirIsDefault:
-            vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
+             vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
         tracesPerRun = int(self.numTraces / self.numSegments)
-
         if tracesPerRun > 10E3:
-            vw.addMessage("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb")
+             vw.addMessage("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb")
 
         if vw.numWarnings() > 0 or warnOnly == False:
             return vw.exec_()
@@ -531,16 +481,6 @@ class ChipWhispererCapture(MainChip):
         self.captureMAct.setChecked(False)
         self.capture1Act.setEnabled(True)
         self.captureMAct.setEnabled(True)
-
-    def scopeChanged(self):
-        if self.manager.hasScope():
-            self.manager.getScope().paramListUpdated.connect(self.reloadScopeParamList)
-            self.manager.getScope().dataUpdated.connect(self.newScopeData)
-            self.manager.getScope().connectStatus.connect(self.scopeStatusChanged)
-            self.reloadScopeParamList()
-            self.ScopeToolbar.setEnabled(True)
-        else:
-            self.ScopeToolbar.setEnabled(False)
 
     def traceChanged(self, newTrace):
         self.manager.setTraceClass(newTrace)

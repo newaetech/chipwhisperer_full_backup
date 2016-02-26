@@ -171,7 +171,7 @@ class MainChip(QMainWindow):
     
     def __init__(self, name="Demo", icon="cwicon"):
         super(MainChip, self).__init__()
-        
+        sys.excepthook = self.exceptionHook
         self.manageTraces = TraceManagerDialog(self)
         # self.manageTraces.tracesChanged.
         self.name = name        
@@ -194,8 +194,7 @@ class MainChip(QMainWindow):
         self.setCentralWidget(fake)
         
         self.paramScripting = self.addConsole("Script Commands", visible=False)
-        self.addPythonConsole()
-
+        self.pythonConsole = self.addPythonConsole()
 
     def restoreDockGeometry(self):
         """
@@ -282,11 +281,25 @@ class MainChip(QMainWindow):
         """Add a python console, inside which you can access the Python interpreter"""
         wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
-        return wid   
-        
+        return wid
+
+    # def execute(self, command):
+    #     try:
+    #         self.pythonConsole.interpreter.write(">>> " + command)
+    #         exec(command)
+    #     except Exception, e:
+    #         QMessageBox.information(self, "Error", e.message)
+
+    def exceptionHook(self, etype, value, trace):
+        """
+        Handler for all unhandled exceptions.
+        """
+        print "".join(traceback.format_exception(etype, value, trace))
+        QMessageBox.information(self, u"Error", unicode(value))
+
     def clearAllSettings(self):
         """Clear all saved QSettings(), such as window location etc"""
-        util.globalSettings = {}
+        util.globalSettings.clear()
         
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""

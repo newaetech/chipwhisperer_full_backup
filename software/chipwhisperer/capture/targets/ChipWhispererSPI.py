@@ -116,9 +116,7 @@ class ChipWhispererSPI(TargetTemplate):
 
     def con(self):  
         self.hdev.findCWSPI()
-
-    def close(self):
-        return
+        self.connectStatus.setValue(True)
 
     def init(self):
         return
@@ -162,6 +160,9 @@ class ChipWhispererSPI(TargetTemplate):
             return kin[0:blen]
 
         return kin
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "ChipWhisperer SPI"

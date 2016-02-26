@@ -278,9 +278,9 @@ class TraceContainer(object):
         """Writer is done, can close/save any files."""               
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
 
-    def validateSettings(self, vw):
+    def validateSettings(self):
         """Check settings, log any messages to special setup window"""
-        pass
+        return []
 
     def isLoaded(self):
         """Returns true if you can use getTrace, getTextin, etc methods"""

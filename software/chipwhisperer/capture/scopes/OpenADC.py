@@ -27,7 +27,6 @@
 
 import sys
 
-from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 import chipwhisperer.capture.ui.qt as openadc_qt
@@ -38,6 +37,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
+from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 
 try:
     # OrderedDict is new in 2.7
@@ -162,23 +162,23 @@ class OpenADCInterface_NAEUSBChip():
         return p
 
     def guiActions(self):
-        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
-                               statusTip='Configure ChipWhisperer FW Paths',
-                               triggered=self.CWFirmwareConfig.show)
+        # self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
+        #                        statusTip='Configure ChipWhisperer FW Paths',
+        #                        triggered=self.CWFirmwareConfig.show)
+        #
+        # self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
+        #                        statusTip='Download Firmware+FPGA To Hardware',
+        #                        triggered=self.CWFirmwareConfig.loadRequired)
+        # self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
+        #                                statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
+        #                                triggered=self.cwliteXMEGA.show)
+        # self.avrProgramAct = QAction('CW-Lite AVR Programmer', self,
+        #                                statusTip='Open AVR Programmer (ChipWhisperer-Lite Only)',
+        #                                triggered=self.cwliteAVR.show)
+        #
+        # self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct, self.avrProgramAct]
 
-        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-                               statusTip='Download Firmware+FPGA To Hardware',
-                               triggered=self.CWFirmwareConfig.loadRequired)
-        self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
-                                       statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
-                                       triggered=self.cwliteXMEGA.show)
-        self.avrProgramAct = QAction('CW-Lite AVR Programmer', self,
-                                       statusTip='Open AVR Programmer (ChipWhisperer-Lite Only)',
-                                       triggered=self.cwliteAVR.show)
-
-        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct, self.avrProgramAct]
-
-        return self._toolActs
+        return [] #self._toolActs
 
 class OpenADCInterface_FTDI():
     paramListUpdated = util.Signal()
@@ -470,23 +470,23 @@ class OpenADCInterface_ZTEX():
         return p
 
     def guiActions(self):
-        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
-                               statusTip='Configure ChipWhisperer FW Paths',
-                               triggered=self.CWFirmwareConfig.show)
+        # self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
+        #                        statusTip='Configure ChipWhisperer FW Paths',
+        #                        triggered=self.CWFirmwareConfig.show)
+        #
+        # self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
+        #                        statusTip='Download Firmware+FPGA To Hardware',
+        #                        triggered=self.CWFirmwareConfig.loadRequired)
+        #
+        # self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct]
+        return [] #self._toolActs
 
-        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-                               statusTip='Download Firmware+FPGA To Hardware',
-                               triggered=self.CWFirmwareConfig.loadRequired)
-
-        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct]
-        return self._toolActs
-
-class OpenADCInterface():
-    connectStatus = util.Signal()
+class OpenADCInterface(ScopeTemplate):
     dataUpdated = util.Signal()
     paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None):
+        super(OpenADCInterface, self).__init__()
         self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, showScriptParameter=showScriptParameter)
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
@@ -615,13 +615,13 @@ class OpenADCInterface():
 
                 self.paramListUpdated.emit(None)
 
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(True)
 
     def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()
             # self.refreshTimer.stop()
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         self.datapoints = l
@@ -667,6 +667,9 @@ class OpenADCInterface():
             return self.scopetype.guiActions()
         else:
             return []
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "ChipWhisperer/OpenADC"

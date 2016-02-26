@@ -56,7 +56,7 @@ class XMEGAProgrammerDialog(QDialog):
         layoutFW.addWidget(flashFileButton)
         layout.addLayout(layoutFW)
 
-        self.flashLocation.setText(util.globalSettings["xmega-flash-location"])
+        self.flashLocation.setText(util.globalSettings.value("xmega-flash-location"))
 
         # Add buttons
         readSigBut = QPushButton("Check Signature")
@@ -86,10 +86,10 @@ class XMEGAProgrammerDialog(QDialog):
         self.setLayout(layout)
 
     def findFlash(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', util.globalSettings["xmega-flash-location"], '*.hex')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', util.globalSettings.value("xmega-flash-location"), '*.hex')
         if fname:
             self.flashLocation.setText(fname)
-            global_mod.settings["xmega-flash-location"] = fname
+            util.globalSettings.setValue("xmega-flash-location", fname)
 
     def readSignature(self, close=True):
         self.xmega.find()

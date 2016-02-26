@@ -214,6 +214,7 @@ class SaseboGII(TargetTemplate):
         
         #Init
         self.init()
+        self.connectStatus.setValue(True)
 
         return True
 
@@ -358,6 +359,9 @@ class SaseboGII(TargetTemplate):
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "SASEBO GII"

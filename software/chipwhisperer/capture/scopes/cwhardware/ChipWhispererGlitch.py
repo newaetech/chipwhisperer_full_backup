@@ -89,12 +89,12 @@ class ChipWhispererGlitch():
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if util.globalSettings["%s-fpga-bitstream-mode" % settingprefix] == "zip":
-                fileloc = util.globalSettings["%s-zipbitstream-location" % settingprefix]
+            if util.globalSettings.value("%s-fpga-bitstream-mode" % settingprefix) == "zip":
+                fileloc = util.globalSettings.value("%s-zipbitstream-location" % settingprefix)
 
                 if fileloc:
                     if fileloc.startswith("."):
-                        fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
+                        fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
                     zfile = zipfile.ZipFile(fileloc, "r")
 
                     if cwtype == "cwlite":

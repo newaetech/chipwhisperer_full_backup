@@ -1039,6 +1039,7 @@ class SmartCard(TargetTemplate):
         self.driver.con(self.oa)
         self.driver.flush()
         self.protocol.setReaderHardware(self.driver)
+        self.connectStatus.setValue(True)
 
     def close(self):
         if self.driver != None:
@@ -1074,6 +1075,9 @@ class SmartCard(TargetTemplate):
     
     def checkEncryptionKey(self, key):
         return key
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "Smart Card"

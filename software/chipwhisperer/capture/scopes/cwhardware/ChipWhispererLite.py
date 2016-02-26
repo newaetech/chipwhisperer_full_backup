@@ -913,9 +913,7 @@ class CWLiteUSB(object):
         fwver = self.readFwVersion()
         print "SAM3U Firmware version = %d.%d b%d" % (fwver[0], fwver[1], fwver[2])
 
-        if fwver[0] >= self.fwversion_latest[0] and fwver[1] >= self.fwversion_latest[1]:
-            pass
-        else:
+        if not (fwver[0] >= self.fwversion_latest[0] and fwver[1] >= self.fwversion_latest[1]):
             print "**NOTE: Your CW-Lite firmware is outdated - latest is %d.%d" % (self.fwversion_latest[0], self.fwversion_latest[1])
             print "**Suggested to update firmware, as you may experience errors"
 

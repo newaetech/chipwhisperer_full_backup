@@ -30,6 +30,7 @@ import time
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 from visa import *
 
 def getInstance(*args):
@@ -317,12 +318,12 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
 
 
-class VisaScopeInterface(object):
-    connectStatus = util.Signal()
+class VisaScopeInterface(ScopeTemplate):
     dataUpdated = util.Signal()
     paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None):
+        super(VisaScopeInterface, self).__init__()
         self.scopetype = None
         self.datapoints = []
 
@@ -388,13 +389,13 @@ class VisaScopeInterface(object):
     def con(self):
         if self.scopetype is not None:
             self.scopetype.con(self.findParam('connStr').value())
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(True)
 
 
     def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         self.datapoints = l
@@ -420,6 +421,9 @@ class VisaScopeInterface(object):
         #    for a in self.advancedSettings.paramList(): p.append(a)
 
         return p
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "VISA Scope"

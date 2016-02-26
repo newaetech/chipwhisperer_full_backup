@@ -43,10 +43,9 @@ class TargetTemplate(object):
         """Pass None/None if you don't have/want showScriptParameter"""
         self.showScriptParameter = showScriptParameter
         self.setupParameters()
-        self._ConnectionStatus = False
         self.paramListUpdated = util.Signal()
         self.newInputData = util.Signal()
-        self.connStatusUpdated = util.Signal()
+        self.connectStatus = util.Observable(False)
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
@@ -72,14 +71,16 @@ class TargetTemplate(object):
         self.oa = oadc
 
     def getStatus(self):
-        return self._ConnectionStatus
+        return self.connectStatus.value()
 
     def dis(self):
         """Disconnect from target"""
         self.close()
+        self.connectStatus.setValue(False)
 
     def con(self):
         """Connect to target"""
+        self.connectStatus.setValue(True)
 
     def flush(self):
         """Flush input/output buffers"""
@@ -143,6 +144,10 @@ class TargetTemplate(object):
             return ct
         else:
             return None
+
+    def validateSettings(self):
+        return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
+
 
     def getName(self):
         return "None"

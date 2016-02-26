@@ -57,7 +57,7 @@ class AVRProgrammerDialog(QDialog):
         layoutFW.addWidget(flashFileButton)
         layout.addLayout(layoutFW)
 
-        self.flashLocation.setText(util.globalSettings["avr-flash-location"])
+        self.flashLocation.setText(util.globalSettings.value("avr-flash-location"))
 
         # Add buttons
         readSigBut = QPushButton("Check Signature")
@@ -142,10 +142,10 @@ class AVRProgrammerDialog(QDialog):
 
 
     def findFlash(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', util.globalSettings["avr-flash-location"], '*.hex')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', util.globalSettings.value("avr-flash-location"), '*.hex')
         if fname:
             self.flashLocation.setText(fname)
-            util.globalSettings["avr-flash-location"] = fname
+            util.globalSettings.setValue("avr-flash-location", fname)
 
     def readSignature(self, close=True):
         self.avr.find()

@@ -136,6 +136,7 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
         self.params.getAllParameters()
         self.cwlite_usart = CWLite_USART(self.usbdev)
         self.cwlite_usart.init(baud=self.findParam('baud').value())
+        self.connectStatus.setValue(True)
 
     def setOpenADC(self, oa):
         self.usbdev = oa._usbdev
@@ -323,13 +324,11 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def flushInput(self):
         self.flush()
 
-    def close(self):
-        pass
-
     def con(self):
         # Check first!
         self.checkVersion()
         self.params.getAllParameters()
+        self.connectStatus.setValue(True)
 
 class SimpleSerial(TargetTemplate):
     paramListUpdated = util.Signal()
@@ -391,6 +390,7 @@ class SimpleSerial(TargetTemplate):
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
+        self.connectStatus.setValue(True)
 
     def close(self):
         if self.ser != None:
@@ -530,6 +530,9 @@ class SimpleSerial(TargetTemplate):
             return kin[0:blen]
 
         return kin
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "Simple Serial"

@@ -33,8 +33,8 @@ class Manager(object):
 
     class Signals():
         paramListUpdated = util.Signal()
-        targetUpdated = util.Signal()
-        scopeUpdated = util.Signal()
+        scopeChanged = util.Signal()
+        targetChanged = util.Signal()
         connectStatus = util.Signal()
         newInputData = util.Signal()
         newTextResponse = util.Signal()
@@ -45,6 +45,9 @@ class Manager(object):
 
     def __init__(self):
         self.signals = Manager.Signals()
+
+        self.numTraces = 100
+        self.numSegments = 1
         self._scope = None
         self._target = None
         self._traceClass = None
@@ -60,7 +63,7 @@ class Manager(object):
         self._scope = driver
 
         util.active_scope = self._scope
-        self.signals.scopeUpdated.emit()
+        self.signals.scopeChanged.emit()
 
     def setOpenADC(self, oadc):
         '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
@@ -83,7 +86,7 @@ class Manager(object):
         self._target.paramListUpdated.connect(self.signals.paramListUpdated.emit)
         self._target.newInputData.connect(self.signals.newInputData.emit)
         self.signals.paramListUpdated.emit(self.getTarget().paramList())
-        self.signals.targetUpdated.emit(True)
+        self.signals.targetChanged.emit()
 
     def hasTraceClass(self):
         return self._traceClass is not None
@@ -92,6 +95,9 @@ class Manager(object):
         if not self.hasTraceClass(): raise Exception("Trace format not defined")
 
         return self._traceClass(self._traceClass.getParams)
+
+    def getTraceClass(self):
+        return self._traceClass
 
     def setTraceClass(self, driver):
         self._traceClass = driver
@@ -102,7 +108,7 @@ class Manager(object):
             if hasattr(self.getScope(), "qtadc"):
                 self.getTarget().setOpenADC(self.getScope().qtadc.ser)
         except Exception, e:
-            util.printAndForwardErrorMessage("Could not connect to Scope Module \"" + self.getScope().getName() + "\"", e)
+            util.appendAndForwardErrorMessage("Manager could not connect to Scope Module \"" + self.getScope().getName() + "\"", e)
 
     def connectTarget(self):
         try:
@@ -110,7 +116,7 @@ class Manager(object):
                 self.getTarget().setOpenADC(self.oadc)
             self.getTarget().con()
         except Exception, e:
-            util.printAndForwardErrorMessage("Could not connect to Target Module \"" + self.getTarget().getName() + "\"", e)
+            util.appendAndForwardErrorMessage("Manager could not connect to Target Module \"" + self.getTarget().getName() + "\"", e)
 
     def connect(self):
         self.connectScope()
@@ -125,6 +131,18 @@ class Manager(object):
     def disconnect(self):
         self.disconnectScope()
         self.disconnectTarget()
+
+    def getNumTraces(self):
+        return self.numTraces
+
+    def setNumTraces(self, t):
+        self.numTraces = t
+
+    def setNumSegments(self, s):
+        self.numSegments = s
+
+    def getNumSegments(self):
+        return self.numSegments
 
     def capture1(self, auxList, acqPattern):
         ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=auxList, keyTextPattern=acqPattern)
@@ -186,6 +204,32 @@ class Manager(object):
 
         print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
         return writerlist
+
+    def validateSettings(self):
+        # Validate settings from all modules before starting multi-capture
+        ret = []
+        try:
+            ret.extend(self.getTarget().validateSettings())
+        except AttributeError:
+            ret.append(("info", "Target Module", "Target has no validateSettings()", "Internal Error", "73b08424-3865-4274-8fd7-dd213ede2c46"))
+        except Exception as e:
+            ret.append(("warn", "General Settings", e.message, "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66"))
+
+        try:
+            ret.extend(self.getScope().validateSettings())
+        except AttributeError:
+            ret.append(("info", "Scope Module", "Scope has no validateSettings()", "Internal Error", "d19be31d-ad1a-4533-80dc-9423dfa92753"))
+        except Exception as e:
+            ret.append(("warn", "General Settings", e.message, "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f"))
+
+        try:
+            ret.extend(self.getTraceClass()().validateSettings())
+        except AttributeError:
+            ret.append(("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae"))
+        except Exception as e:
+            ret.append(("warn", "General Settings", e.message, "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727"))
+
+        return ret
 
     @staticmethod
     def getScopeModules(dir, parent, showScriptParameter):

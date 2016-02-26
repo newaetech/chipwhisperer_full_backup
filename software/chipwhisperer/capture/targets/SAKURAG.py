@@ -313,6 +313,7 @@ class SakuraG(TargetTemplate):
         if hwok:
             # Init
             self.init()
+        self.connectStatus.setValue(True)
 
         return hwok
 
@@ -406,6 +407,9 @@ class SakuraG(TargetTemplate):
 
     def go(self):
         self.hw.write(0x0002, 0x00, 0x01)
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "SAKURA G"

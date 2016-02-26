@@ -340,9 +340,9 @@ class TraceManagerDialog(QDialog):
 
     def copyExisting(self, fname=None):
         if fname == None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings["trace_last_file"],'*.cfg')
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings.value("trace_last_file"),'*.cfg')
             if fname:
-                util.globalSettings["trace_last_file"] = fname
+                util.globalSettings.setValue("trace_last_file", fname)
 
         if fname:
             #Get our project directory

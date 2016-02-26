@@ -111,7 +111,7 @@ class SAM3LoaderConfig(QDialog):
         bossaLoc = settings.value("bossa-location")
         sam3uFWLoc = settings.value("cwlite-sam3u-firmware-location")
 
-        rootprefix = util.globalSettings["cwcapture-starting-root"] + "/"
+        rootprefix = util.globalSettings.value("cwcapture-starting-root") + "/"
 
         if not sam3uFWLoc:
             defLocfwF = rootprefix + "../../../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"
@@ -148,14 +148,14 @@ class SAM3LoaderConfig(QDialog):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find bossac Executable', '.', '*')
         if fname:
             self.BOSSALocation.setText(fname)
-            util.globalSettings["bossa-location"] = fname
+            util.globalSettings.setValue("bossa-location", fname)
 
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware', '.', '*.bin')
         if fname:
             self.firmwareLocation.setText(fname)
-            util.globalSettings["cwlite-sam3u-firmware-location"] = fname
+            util.globalSettings.setValue("cwlite-sam3u-firmware-location", fname)
 
     def runBossa(self):
         # Windows seems to require this?

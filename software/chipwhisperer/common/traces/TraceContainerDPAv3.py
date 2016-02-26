@@ -237,9 +237,9 @@ class ImportDPAv3Dialog(QDialog):
         return self.parent.parent.cwp.traceslocation + "/" + "config_" + self.prefixDirLE.text() + ".cfg"
        
     def selectInfo(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings["dpav3_last_file"], 'info.xml')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings.value("dpav3_last_file"), 'info.xml')
         if fname:
-            util.globalSettings["dpav3_last_file"] = fname
+            util.globalSettings.setValue("dpav3_last_file", fname)
             trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()
             trimport.loadInfo(os.path.dirname(fname))
             self.trimport = trimport

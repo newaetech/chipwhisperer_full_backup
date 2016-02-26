@@ -358,6 +358,7 @@ class CW305(TargetTemplate):
         self.cwtestusb.cmdWriteMem(0x100, [0])
         self.params.getAllParameters()
         self.cdce906init()
+        self.connectStatus.setValue(True)
 
     def checkEncryptionKey(self, key):
         """Validate encryption key"""
@@ -402,6 +403,9 @@ class CW305(TargetTemplate):
         if self.findParam('clkusbautooff').value():
             time.sleep(self.findParam('clksleeptime').value() / 1000.0)
             self.setClkUSB(True)
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "ChipWhisperer CW305 (Artix-7)"

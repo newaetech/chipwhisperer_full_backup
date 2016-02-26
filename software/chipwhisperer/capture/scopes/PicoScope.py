@@ -39,6 +39,7 @@ from picoscope import ps2000
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 
 def getInstance(*args):
     return PicoScopeInterface(*args)
@@ -160,12 +161,12 @@ class PicoScope(object):
         # No timeout?
         return False
 
-class PicoScopeInterface(object):
-    connectStatus = util.Signal()
+class PicoScopeInterface(ScopeTemplate):
     dataUpdated = util.Signal()
     paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None):
+        super(PicoScopeInterface, self).__init__()
         self.scopetype = None
         self.datapoints = []
 
@@ -210,12 +211,12 @@ class PicoScopeInterface(object):
     def con(self):
         if self.scopetype is not None:
             self.scopetype.con()
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(True)
 
     def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()  
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         self.datapoints = l
@@ -241,6 +242,9 @@ class PicoScopeInterface(object):
         #    for a in self.advancedSettings.paramList(): p.append(a)    
             
         return p
+
+    def validateSettings(self):
+        return []
 
     def getName(self):
         return "PicoScope"

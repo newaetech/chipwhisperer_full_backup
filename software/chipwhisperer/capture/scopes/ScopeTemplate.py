@@ -33,12 +33,10 @@ def getInstance(*args):
     return ScopeTemplate(*args)
 
 class ScopeTemplate(object):
-    connectStatus = util.Signal()
-    dataUpdated = util.Signal()
-    paramListUpdated = util.Signal()
-
     def __init__(self, showScriptParameter=None):
-        pass
+        self.connectStatus = util.Observable(False)
+        self.dataUpdated = util.Signal()
+        self.paramListUpdated = util.Signal()
 
     def dcmTimeout(self):
         pass
@@ -52,11 +50,16 @@ class ScopeTemplate(object):
     def setCurrentScope(self, scope, update=True):
         pass
 
+    def getStatus(self):
+        return self.connectStatus.value()
+
     def con(self):
-        raise NotImplementedError("Connect method not implemented")
+        raise NotImplementedError("Method con() is not implemented")
+        self.connectStatus.setValue(True)
 
     def dis(self):
-        raise NotImplementedError("Disconnect method not implemented")
+        raise NotImplementedError("Method dis() is not implemented")
+        self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         pass
@@ -72,6 +75,9 @@ class ScopeTemplate(object):
 
     def guiActions(self):
         return []
+
+    def validateSettings(self):
+        return [("warn", "Scope Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
 
     def getName(self):
         return "None"

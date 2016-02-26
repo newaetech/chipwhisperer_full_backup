@@ -31,12 +31,27 @@ import os.path
 active_scope = [None]
 main_window = None
 chipwhisperer_extra = None
-globalSettings = {}
 
-def printAndForwardErrorMessage(msg, e):
-        ret = "Error: " + msg + " -> " + str(e)
-        print ret
-        raise Exception(ret)
+class Settings(object):
+    def __init__(self):
+        self.dictionary = {}
+
+    def value(self, key):
+        if(self.dictionary.has_key(key)):
+            return self.dictionary[key]
+        else:
+            return ""
+
+    def setValue(self, key, value):
+        self.dictionary[key] = value
+
+    def clear(self):
+        self.dictionary.clear()
+
+globalSettings = Settings()
+
+def appendAndForwardErrorMessage(msg, e):
+    raise type(e)(msg + "\n  -> " + str(e))
 
 def list2hexstr(data, delim='', prefix=''):
     """
@@ -103,7 +118,7 @@ def getPyFiles(dir):
                 scriptList.append(os.path.splitext(fn)[0])
     return scriptList;
 
-class Signal():
+class Signal(object):
     def __init__(self):
         self.observers = []
 
@@ -120,3 +135,15 @@ class Signal():
 
     def disconnectAll(self):
         self.observers = []
+
+class Observable(Signal):
+    def __init__(self, value):
+        super(Observable, self).__init__()
+        self.data = value
+
+    def setValue(self, value):
+        self.data = value
+        self.emit()
+
+    def value(self):
+        return self.data

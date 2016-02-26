@@ -138,7 +138,7 @@ class FWLoaderConfig(QDialog):
         # Defaults?
         # print os.getcwd()
 
-        rootprefix = util.globalSettings["cwcapture-starting-root"] + "/"
+        rootprefix = util.globalSettings.value("cwcapture-starting-root") + "/"
 
         if not fwFLoc:
             if self._mode == "cwcrev2":
@@ -186,31 +186,31 @@ class FWLoaderConfig(QDialog):
         self.bitZipLocation.setEnabled(True)
         self.bitLocation.setEnabled(False)
         self.useFPGAZip = True
-        util.globalSettings["%s-fpga-bitstream-mode" % self._mode] = "zip"
+        util.globalSettings.setValue("%s-fpga-bitstream-mode" % self._mode, "zip")
 
     def setFPGAModeDebug(self):
         self.bitZipLocation.setEnabled(False)
         self.bitLocation.setEnabled(True)
         self.useFPGAZip = False
-        util.globalSettings["%s-fpga-bitstream-mode" % self._mode] = "debug"
+        util.globalSettings.setValue("%s-fpga-bitstream-mode" % self._mode, "debug")
 
     def findDebugBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', '.', '*.bit')
         if fname:
             self.bitLocation.setText(fname)
-            util.globalSettings["%s-debugbitstream-location" % self._mode] = fname
+            util.globalSettings.setValue("%s-debugbitstream-location" % self._mode, fname)
 
     def findZipBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Zip Firmware', '.', '*.zip')
         if fname:
             self.bitZipLocation.setText(fname)
-            util.globalSettings["%s-zipbitstream-location" % self._mode] = fname
+            util.globalSettings.setValue("%s-zipbitstream-location" % self._mode, fname)
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware', '.', '*.ihx')
         if fname:
             self.firmwareLocation.setText(fname)
-            util.globalSettings["%s-firmware-location" % self._mode] = fname
+            util.globalSettings.setValue("%s-firmware-location" % self._mode, fname)
 
     def loadRequired(self, forceFirmware=False):
         """Load firmware file or FPGA file only as required, skip otherwise"""
@@ -252,7 +252,7 @@ class FWLoaderConfig(QDialog):
 
             fileloc = self.firmwareLocation.text()
             if fileloc.startswith("."):
-                fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
+                fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
 
             f = IhxFile(fileloc)
             self.ztex.uploadFirmware(f)
@@ -269,7 +269,7 @@ class FWLoaderConfig(QDialog):
         if self.useFPGAZip:
             fileloc = self.bitZipLocation.text()
             if fileloc.startswith("."):
-                fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
+                fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
             zfile = zipfile.ZipFile(fileloc, "r")
 
             if self._mode == "cwcrev2":
@@ -282,7 +282,7 @@ class FWLoaderConfig(QDialog):
 
             fileloc = self.bitLocation.text()
             if fileloc.startswith("."):
-                fileloc = util.globalSettings["cwcapture-starting-root"] + "/" + fileloc
+                fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
 
             # Get bitstream date, print for user
             bsdate = os.path.getmtime(fileloc)
