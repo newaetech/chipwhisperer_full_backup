@@ -91,8 +91,6 @@ class HIDSPI(object):
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
-    paramListUpdated = util.Signal()
-
     def setupParameters(self):
         self.hdev = HIDSPI()
         ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}

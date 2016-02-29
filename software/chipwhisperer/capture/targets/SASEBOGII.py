@@ -187,8 +187,6 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
-    paramListUpdated = util.Signal(list)
-     
     def setupParameters(self):
         """Parameter Definition."""
         ssParams = []

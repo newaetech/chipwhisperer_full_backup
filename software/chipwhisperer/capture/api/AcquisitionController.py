@@ -23,12 +23,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
 import random
 import chipwhisperer.common.utils.util as util
-
-# print pg.systemInfo()
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
 
 class AcquisitionController():
     class Signals:
@@ -44,6 +42,7 @@ class AcquisitionController():
         self.running = False
         self.setKeyTextPattern(keyTextPattern)
         self.signals = AcquisitionController.Signals()
+        keyTextPattern.setTarget(target)
 
         self.maxtraces = 1
 
@@ -57,8 +56,8 @@ class AcquisitionController():
             self._keyTextPattern.initPair()
 
     def TargetDoTrace(self, plaintext, key=None):
-        if self.target is None:
-            return
+        if self.target is None or self.target.getName()=="None":
+            return []
 
         if key:
             self.target.loadEncryptionKey(key)
@@ -88,18 +87,7 @@ class AcquisitionController():
         return resp
 
     def doSingleReading(self, update=True, N=None):
-
-        # Get key / plaintext now
-        data = self._keyTextPattern.newPair()
-        self.key = data[0]
-        self.textin = data[1]
-
         # Set mode
-        if self.target is not None:
-            self.target.reinit()
-            self.target.setModeEncrypt()
-            self.target.loadEncryptionKey(self.key)
-
         if self.auxList is not None:
             for aux in self.auxList:
                 aux.traceArm()
@@ -112,6 +100,14 @@ class AcquisitionController():
                 aux.traceArmPost()
 
         if self.target is not None:
+            # Get key / plaintext now
+            data = self._keyTextPattern.newPair()
+            self.key = data[0]
+            self.textin = data[1]
+
+            self.target.reinit()
+            self.target.setModeEncrypt()
+            self.target.loadEncryptionKey(self.key)
             # Load input, start encryption, get output. Key was set already, don't resend
             self.textout = self.TargetDoTrace(self.textin, key=None)
         else:
@@ -185,8 +181,8 @@ class AcquisitionController():
 class AcqKeyTextPattern_Base(object):
     def __init__(self, showScriptParameter=None, target=None):
         self.showScriptParameter = showScriptParameter
-        self.params = {'name':'Key/Text Pattern', 'type':'group',  'children':self.setupParams()}
-#        ExtendedParameter.setupExtended(self.params, self)
+        self.params = Parameter.create(name='Key/Text Pattern', type='group', children=self.setupParams())
+        ExtendedParameter.setupExtended(self.params, self)
         self._target = target
         self._initPattern()
 
@@ -211,7 +207,7 @@ class AcqKeyTextPattern_Base(object):
         return [{'name':'Do Something', 'type':'bool'},]
 
     def paramList(self):
-        return self.params
+        return [self.params]
 
     def _initPattern(self):
         """Perform any extra init stuff required. Called at the end of main init() & when target changed."""

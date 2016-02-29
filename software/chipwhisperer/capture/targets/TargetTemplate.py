@@ -42,10 +42,10 @@ class TargetTemplate(object):
     def __init__(self, showScriptParameter=None):
         """Pass None/None if you don't have/want showScriptParameter"""
         self.showScriptParameter = showScriptParameter
-        self.setupParameters()
         self.paramListUpdated = util.Signal()
         self.newInputData = util.Signal()
         self.connectStatus = util.Observable(False)
+        self.setupParameters()
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
@@ -58,10 +58,7 @@ class TargetTemplate(object):
         pass
 
     def paramList(self):
-        p = [self.params]
-        #if self.ser is not None:
-        #    for a in self.ser.paramList(): p.append(a)
-        return p        
+        return [self.params]
         
     def __del__(self):
         """Close system if needed"""
@@ -81,6 +78,7 @@ class TargetTemplate(object):
     def con(self):
         """Connect to target"""
         self.connectStatus.setValue(True)
+        raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def flush(self):
         """Flush input/output buffers"""
@@ -123,11 +121,11 @@ class TargetTemplate(object):
 
     def readOutput(self):        
         """Read result"""
-        raise NotImplementedError("TargetTemplate.readOutput()")
+        raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".readOutput()")
 
     def go(self):
         """Do Encryption"""
-        raise NotImplementedError("TargetTemplate.go()")
+        raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".go()")
 
     def keyLen(self):
         """Length of key system is using"""

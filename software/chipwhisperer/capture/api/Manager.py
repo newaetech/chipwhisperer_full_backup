@@ -26,7 +26,7 @@
 import importlib
 from datetime import *
 from chipwhisperer.common.utils import util
-from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
+from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
 class Manager(object):
     """This is the manager class"""
@@ -35,6 +35,7 @@ class Manager(object):
         paramListUpdated = util.Signal()
         scopeChanged = util.Signal()
         targetChanged = util.Signal()
+        traceChanged = util.Signal()
         connectStatus = util.Signal()
         newInputData = util.Signal()
         newTextResponse = util.Signal()
@@ -45,7 +46,6 @@ class Manager(object):
 
     def __init__(self):
         self.signals = Manager.Signals()
-
         self.numTraces = 100
         self.numSegments = 1
         self._scope = None
@@ -85,7 +85,7 @@ class Manager(object):
         self._target = driver
         self._target.paramListUpdated.connect(self.signals.paramListUpdated.emit)
         self._target.newInputData.connect(self.signals.newInputData.emit)
-        self.signals.paramListUpdated.emit(self.getTarget().paramList())
+        self.signals.paramListUpdated.emit()
         self.signals.targetChanged.emit()
 
     def hasTraceClass(self):
@@ -93,13 +93,13 @@ class Manager(object):
 
     def getTraceClassInstance(self):
         if not self.hasTraceClass(): raise Exception("Trace format not defined")
-
         return self._traceClass(self._traceClass.getParams)
 
     def getTraceClass(self):
         return self._traceClass
 
     def setTraceClass(self, driver):
+        self.signals.traceChanged.emit()
         self._traceClass = driver
 
     def connectScope(self):
@@ -145,9 +145,12 @@ class Manager(object):
         return self.numSegments
 
     def capture1(self, auxList, acqPattern):
-        ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=auxList, keyTextPattern=acqPattern)
-        ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-        ac.doSingleReading()
+        try:
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=auxList, keyTextPattern=acqPattern)
+            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+            ac.doSingleReading()
+        except Exception, e:
+            util.appendAndForwardErrorMessage("Manager could execute capture1 method", e)
 
     def captureM(self, datadirectory, numTraces, numSegments, auxList, acqPattern):
         overallstarttime = datetime.now()
@@ -162,47 +165,50 @@ class Manager(object):
         # the 1GB limit that a 32-bit process would expect to give you trouble at.
         waveBuffer = None
 
-        for i in range(0, numSegments):
-            starttime = datetime.now()
-            baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
-            prefix = baseprefix + "_"
+        try:
+            for i in range(0, numSegments):
+                starttime = datetime.now()
+                baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
+                prefix = baseprefix + "_"
 
-            currentTrace = self.getTraceClassInstance()
+                currentTrace = self.getTraceClassInstance()
 
-            # Load trace writer information
-            currentTrace.config.setAttr("prefix", prefix)
-            currentTrace.config.setConfigFilename(datadirectory + "traces/config_" + prefix + ".cfg")
-            currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
-            currentTrace.setTraceHint(tracesPerRun)
+                # Load trace writer information
+                currentTrace.config.setAttr("prefix", prefix)
+                currentTrace.config.setConfigFilename(datadirectory + "traces/config_" + prefix + ".cfg")
+                currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+                currentTrace.setTraceHint(tracesPerRun)
 
-            if waveBuffer is not None:
-                currentTrace.setTraceBuffer(waveBuffer)
+                if waveBuffer is not None:
+                    currentTrace.setTraceBuffer(waveBuffer)
 
 
-            if auxList is not None:
-                for aux in auxList:
-                    aux.setPrefix(baseprefix)
+                if auxList is not None:
+                    for aux in auxList:
+                        aux.setPrefix(baseprefix)
 
-            ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, auxList, acqPattern)
-            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-            ac.signals.traceDone.connect(self.signals.traceDone.emit)
-            self.signals.abortCapture.connect(ac.abortCapture)
-            self.signals.campaignStart.emit(baseprefix)
-            ac.setMaxtraces(tracesPerRun)
+                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, auxList, acqPattern)
+                ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+                ac.signals.traceDone.connect(self.signals.traceDone.emit)
+                self.signals.abortCapture.connect(ac.abortCapture)
+                self.signals.campaignStart.emit(baseprefix)
+                ac.setMaxtraces(tracesPerRun)
 
-            ac.doReadings()
-#            ac.doReadings(addToList=self.manageTraces)
+                ac.doReadings()
+    #            ac.doReadings(addToList=self.manageTraces)
 
-            tcnt += tracesPerRun
-            print "%d Captures Completed" % tcnt
-            self.signals.campaignDone.emit()
+                tcnt += tracesPerRun
+                print "%d Captures Completed" % tcnt
+                self.signals.campaignDone.emit()
 
-            # Re-use the wave buffer for later segments
-            if self.hasTraceClass():
-                waveBuffer = currentTrace.traces
-                writerlist.append(currentTrace)
+                # Re-use the wave buffer for later segments
+                if self.hasTraceClass():
+                    waveBuffer = currentTrace.traces
+                    writerlist.append(currentTrace)
+            print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
+        except Exception, e:
+            util.appendAndForwardErrorMessage("Manager could execute captureM method", e)
 
-        print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
         return writerlist
 
     def validateSettings(self):
@@ -232,7 +238,7 @@ class Manager(object):
         return ret
 
     @staticmethod
-    def getScopeModules(dir, parent, showScriptParameter):
+    def getScopeModules(dir, showScriptParameter):
         resp = {}
         for f in util.getPyFiles(dir):
             try:
@@ -259,7 +265,7 @@ class Manager(object):
 
     @staticmethod
     def getAuxiliaryModules(dir, showScriptParameter):
-        resp = {"None": None}
+        resp = {}
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
@@ -293,5 +299,14 @@ class Manager(object):
             except Exception as e:
                 print "Warning: Could not import example script " + f + ": " + str(e)
         # print "Loaded scripts: " + resp.__str__()
+        return resp
+
+    @staticmethod
+    def getAcqPatternModules(showScriptParameter):
+        resp = {}
+        resp["Basic"] = AcqKeyTextPattern_Basic(showScriptParameter=showScriptParameter)
+        if AcqKeyTextPattern_CRITTest:
+            resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest(showScriptParameter=showScriptParameter)
+        # print "Loaded Patterns: " + resp.__str__()
         return resp
 

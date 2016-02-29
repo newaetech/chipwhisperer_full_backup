@@ -163,7 +163,6 @@ class PicoScope(object):
 
 class PicoScopeInterface(ScopeTemplate):
     dataUpdated = util.Signal()
-    paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None):
         super(PicoScopeInterface, self).__init__()
@@ -185,9 +184,6 @@ class PicoScopeInterface(ScopeTemplate):
         ExtendedParameter.setupExtended(self.params, self)
         self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
-
-    def emitParamListUpdated(self):
-        self.paramListUpdated.emit(self.paramList())
         
     #def paramTreeChanged(self, param, changes):        
     #    if self.showScriptParameter is not None:
@@ -206,7 +202,7 @@ class PicoScopeInterface(ScopeTemplate):
             self.scopetype = scope
 
         if update:
-            self.paramListUpdated.emit(self.paramList())
+            self.paramListUpdated.emit()
    
     def con(self):
         if self.scopetype is not None:

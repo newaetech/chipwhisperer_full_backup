@@ -320,7 +320,6 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
 class VisaScopeInterface(ScopeTemplate):
     dataUpdated = util.Signal()
-    paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None):
         super(VisaScopeInterface, self).__init__()
@@ -343,12 +342,12 @@ class VisaScopeInterface(ScopeTemplate):
         scope_cons = {}
 
         if mso54831d:
-            mso54831d.paramListUpdated.connect(self.emitParamListUpdated)
+            mso54831d.paramListUpdated.connect(self.paramListUpdated)
             mso54831d.dataUpdated.connect(self.passUpdated)
             scope_cons["Agilent MSO 54831D"] = mso54831d
 
         if dso1024A:
-            dso1024A.paramListUpdated.connect(self.emitParamListUpdated)
+            dso1024A.paramListUpdated.connect(self.paramListUpdated)
             dso1024A.dataUpdated.connect(self.passUpdated)
             scope_cons["Agilent DSO 1024A"] = dso1024A
 
@@ -369,9 +368,6 @@ class VisaScopeInterface(ScopeTemplate):
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
 
-    def emitParamListUpdated(self):
-        self.paramListUpdated.emit(self.paramList())
-
     # def paramTreeChanged(self, param, changes):
     #    if self.showScriptParameter is not None:
     #        self.showScriptParameter(param, changes, self.params)
@@ -384,7 +380,7 @@ class VisaScopeInterface(ScopeTemplate):
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
         if update:
-            self.paramListUpdated.emit(self.paramList())
+            self.paramListUpdated.emit()
 
     def con(self):
         if self.scopetype is not None:

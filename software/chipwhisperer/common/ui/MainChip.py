@@ -27,6 +27,7 @@ __author__ = "Colin O'Flynn"
 import os
 import sys
 import traceback
+from datetime import datetime
 
 #We always import PySide first, to force usage of PySide over PyQt
 from PySide.QtCore import *
@@ -153,7 +154,6 @@ class MainChip(QMainWindow):
     """
 
     settings_docks = []
-
     MaxRecentFiles = 4
 
     #Be sure to set things with:
@@ -648,6 +648,8 @@ class MainChip(QMainWindow):
            
             self.paramScripting.append(str(name))
 
+    def updateStatusBar(self, message):
+        self.statusBar().showMessage(message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")")
 
     def macWorkArounds(self):
         # There is some odd error on Mac OS X where you get little rectangles near close buttons

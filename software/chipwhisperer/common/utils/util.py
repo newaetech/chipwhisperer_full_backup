@@ -29,7 +29,6 @@ import ast
 import os.path
 
 active_scope = [None]
-main_window = None
 chipwhisperer_extra = None
 
 class Settings(object):

@@ -1021,12 +1021,12 @@ class SmartCard(TargetTemplate):
 
     def setConnection(self, con):
         self.driver = con        
-        self.paramListUpdated.emit(self.paramList)
+        self.paramListUpdated.emit()
         self.scgui.setConnection(con)
         
     def setProtocol(self, con):
         self.protocol = con
-        self.paramListUpdated.emit(self.paramList)
+        self.paramListUpdated.emit()
         self.protocol.setReaderHardware(self.driver)
         
     def paramList(self):

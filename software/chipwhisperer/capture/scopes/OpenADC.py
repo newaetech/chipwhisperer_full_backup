@@ -93,7 +93,7 @@ class OpenADCInterface_NAEUSBChip():
                 missingInfo += " usb"
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
-            self.setupTools()
+            self.CWFirmwareConfig = FWLoaderConfig(mode="cwlite")
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
@@ -111,11 +111,6 @@ class OpenADCInterface_NAEUSBChip():
     def __del__(self):
         if self.ser != None:
             self.ser.close()
-
-    def setupTools(self):
-        self.CWFirmwareConfig = FWLoaderConfig(mode="cwlite")
-        self.cwliteXMEGA = XMEGAProgrammerDialog(util.main_window)
-        self.cwliteAVR = AVRProgrammerDialog(util.main_window)
 
     def con(self):
         if self.ser == None:
@@ -161,7 +156,9 @@ class OpenADCInterface_NAEUSBChip():
         p = [self.params]
         return p
 
-    def guiActions(self):
+    def guiActions(self, mainWindow):
+        self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
+        self.cwliteAVR = AVRProgrammerDialog(mainWindow)
         # self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
         #                        statusTip='Configure ChipWhisperer FW Paths',
         #                        triggered=self.CWFirmwareConfig.show)
@@ -255,7 +252,7 @@ class OpenADCInterface_FTDI():
                 p.setLimits(serialnames)
                 p.setValue(serialnames[0])
 
-        self.paramListUpdated.emit(self.paramList())
+        self.paramListUpdated.emit()
 
     def read(self, N=0, debug=False):
         return bytearray(self.dev.read(N))
@@ -344,7 +341,7 @@ class OpenADCInterface_Serial():
                 p.setLimits(serialnames)
                 p.setValue(serialnames[0])
 
-        self.paramListUpdated.emit(self.paramList())
+        self.paramListUpdated.emit()
 
     def getTextName(self):
         try:
@@ -469,7 +466,7 @@ class OpenADCInterface_ZTEX():
         p = [self.params]
         return p
 
-    def guiActions(self):
+    def guiActions(self, mainWindow):
         # self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
         #                        statusTip='Configure ChipWhisperer FW Paths',
         #                        triggered=self.CWFirmwareConfig.show)
@@ -483,7 +480,6 @@ class OpenADCInterface_ZTEX():
 
 class OpenADCInterface(ScopeTemplate):
     dataUpdated = util.Signal()
-    paramListUpdated = util.Signal()
 
     def __init__(self, showScriptParameter=None):
         super(OpenADCInterface, self).__init__()
@@ -521,19 +517,19 @@ class OpenADCInterface(ScopeTemplate):
         cw_cons = dicttype()
 
         if cwrev2:
-            cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
+            cwrev2.paramListUpdated.connect(self.paramListUpdated)
             cw_cons["ChipWhisperer Rev2"] = cwrev2
 
         if cwlite:
-            cwlite.paramListUpdated.connect(self.emitParamListUpdated)
+            cwlite.paramListUpdated.connect(self.paramListUpdated)
             cw_cons["ChipWhisperer Lite"] = cwlite
 
         if ftdi:
-            ftdi.paramListUpdated.connect(self.emitParamListUpdated)
+            ftdi.paramListUpdated.connect(self.paramListUpdated)
             cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
 
         if cwser:
-            cwser.paramListUpdated.connect(self.emitParamListUpdated)
+            cwser.paramListUpdated.connect(self.paramListUpdated)
             cw_cons["Serial Port (LX9)"] = cwser
 
         if cw_cons == {}:
@@ -572,9 +568,6 @@ class OpenADCInterface(ScopeTemplate):
     #     else:
     #         self.refreshTimer.stop()
 
-    def emitParamListUpdated(self):
-        self.paramListUpdated.emit(self.paramList())
-
     # def paramTreeChanged(self, param, changes):
     #    if self.showScriptParameter is not None:
     #        self.showScriptParameter(param, changes, self.params)
@@ -582,7 +575,7 @@ class OpenADCInterface(ScopeTemplate):
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
         if update:
-            self.paramListUpdated.emit(self.paramList())
+            self.paramListUpdated.emit()
 
     def con(self):
         if self.scopetype is not None:
@@ -613,7 +606,7 @@ class OpenADCInterface(ScopeTemplate):
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.showScriptParameter)
                     self.digitalPattern.setOpenADC(self.qtadc)
 
-                self.paramListUpdated.emit(None)
+                self.paramListUpdated.emit()
 
             self.connectStatus.setValue(True)
 
@@ -630,6 +623,8 @@ class OpenADCInterface(ScopeTemplate):
             self.dataUpdated.emit(l, offset)
 
     def arm(self):
+        if self.connectStatus.value() is False:
+            raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
         # self.advancedSettings.glitch.resetDCMs()
         if self.advancedSettings:
             self.advancedSettings.armPreScope()
@@ -662,9 +657,9 @@ class OpenADCInterface(ScopeTemplate):
 
         return p
 
-    def guiActions(self):
+    def guiActions(self, mainWindow):
         if self.scopetype and hasattr(self.scopetype, "guiActions"):
-            return self.scopetype.guiActions()
+            return self.scopetype.guiActions(mainWindow)
         else:
             return []
 

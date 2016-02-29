@@ -331,8 +331,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         self.connectStatus.setValue(True)
 
 class SimpleSerial(TargetTemplate):
-    paramListUpdated = util.Signal()
-
     def setupParameters(self):
         ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
                                                                                 "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter),
@@ -375,7 +373,7 @@ class SimpleSerial(TargetTemplate):
 
     def setConnection(self, con):
         self.ser = con
-        self.paramListUpdated.emit(self.paramList)
+        self.paramListUpdated.emit()
         if self.oa and hasattr(self.ser, "setOpenADC"):
             self.ser.setOpenADC(self.oa)
 

@@ -27,10 +27,7 @@ __version__ = "V3"
 
 import os.path
 import sys
-import traceback
 from functools import partial
-
-from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.capture.api.manager import Manager
 from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
@@ -66,24 +63,19 @@ except ImportError:
     sys.exit()
 
 class ChipWhispererCapture(MainChip):
-    MaxRecentFiles = 4
-
     def __init__(self, rootdir="."):
         super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture " + __version__), icon="cwiconC")
-        util.main_window = self
         self.console = self.addConsole()
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
         util.globalSettings.setValue("cwcapture-starting-root", rootdir)
         self._rootdir = rootdir
-        self.auxList = None
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self)
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
         self.paramTrees.append(self.glitchMonitor.paramTree)
 
         self.manager = Manager()
-
 
         self.da = None
         self.numTraces = 100
@@ -92,33 +84,29 @@ class ChipWhispererCapture(MainChip):
         self.addToolbars()
         self.addWaveforms()
         self.addToolMenu()
-        self.addExampleScripts()
         self.restoreDockGeometry()
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
 
-        self.fixedPlain = False
-
-        valid_scopes = Manager.getScopeModules(self._rootdir + "/scopes", self, self.showScriptParameter);
-        valid_targets =  Manager.getTargetModules(self._rootdir + "/targets", self.showScriptParameter);
-        valid_traces = Manager.getTraceFormats(self._rootdir + "/../common/traces");
-        valid_aux = Manager.getAuxiliaryModules(self._rootdir + "/auxiliary", self.showScriptParameter);
+        valid_scopes = Manager.getScopeModules(self._rootdir + "/scopes", self.showScriptParameter)
+        valid_targets =  Manager.getTargetModules(self._rootdir + "/targets", self.showScriptParameter)
+        valid_traces = Manager.getTraceFormats(self._rootdir + "/../common/traces")
+        valid_aux = Manager.getAuxiliaryModules(self._rootdir + "/auxiliary", self.showScriptParameter)
+        valid_acqPatterns = Manager.getAcqPatternModules(self.showScriptParameter)
+        self.addExampleScripts(Manager.getExampleScripts(self._rootdir + "/scripts"))
 
         self.manager.setScope(valid_scopes["None"])
         self.manager.setTarget(valid_targets["None"])
         self.manager.setTraceClass(valid_traces["ChipWhisperer/Native"])
+        self.auxList = [valid_aux["None"]]
+        self.acqPattern = valid_acqPatterns['Basic']
         self.newProject()
-
-        valid_acqPatterns = {"Basic":AcqKeyTextPattern_Basic(showScriptParameter=self.showScriptParameter)}
-        if AcqKeyTextPattern_CRITTest:
-            valid_acqPatterns['CRI T-Test'] = AcqKeyTextPattern_CRITTest(showScriptParameter=self.showScriptParameter)
-        self.setAcqPattern(valid_acqPatterns['Basic'], reloadList=False)
 
         self.cwParams = [
                 {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.manager.getScope(), 'set':self.manager.setScope},
                 {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.manager.getTarget(), 'set':self.manager.setTarget},
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.manager.getTraceClass(), 'set':self.traceChanged},
-                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':None, 'set':self.auxChanged},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.manager.getTraceClass(), 'set':self.manager.setTraceClass},
+                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.auxList[0], 'set':self.auxChanged},
 
                 # {'name':'Key Settings', 'type':'group', 'children':[
                 #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
@@ -132,17 +120,12 @@ class ChipWhispererCapture(MainChip):
                          'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
                          'as each segment is buffered into RAM before being written to disk.'},
                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
-                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':valid_acqPatterns['Basic'], 'set':self.setAcqPattern},
-                        # {'name':'Fixed Plaintext', 'type':'bool', 'value':False, 'set':self.setFixedPlain },
-                        # {'name':'Fixed Plaintext Value', 'type':'str', 'value':self.plaintextStr, 'set':self.setPlaintext},
+                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.acqPattern, 'set':self.setAcqPattern},
                     ]},
-
-                # {'name':''}
                 ]
 
         self.addSettingsDocks()
         self.dockifySettings()
-        self.settingsAuxDock.setVisible(False)
         self.reloadParamList()
 
         self.manager.signals.paramListUpdated.connect(self.reloadTargetParamList)
@@ -152,12 +135,10 @@ class ChipWhispererCapture(MainChip):
         self.manager.signals.traceDone.connect(self.glitchMonitor.traceDone)
         self.manager.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.manager.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
+        self.manager.signals.connectStatus.connect(self.targetStatusChanged)
         self.manager.signals.scopeChanged.connect(self.scopeChanged)
         self.manager.signals.targetChanged.connect(self.targetChanged)
-        self.manager.signals.connectStatus.connect(self.targetStatusChanged)
-
-    def newTargetData(self, data):
-        self.glitchMonitor.addResponse(data)
+        self.manager.signals.traceChanged.connect(self.traceChanged)
 
     def scopeChanged(self):
         self.ScopeToolbar.setEnabled(self.manager.hasScope())
@@ -174,9 +155,26 @@ class ChipWhispererCapture(MainChip):
         if self.manager.hasTarget():
             self.manager.getTarget().connectStatus.connect(self.targetStatusChanged)
             self.acqPattern.setTarget(self.manager.getTarget())
+            self.reloadTargetParamList()
+
+    def traceChanged(self):
+        self.reloadTraceParamList()
+
+    def auxChanged(self, newaux):
+        self.auxList = [newaux]
+        try:
+            newaux.paramList()
+            newaux.paramListUpdated.connect(self.reloadAuxParamList)
+            self.reloadAuxParamList()
+            self.settingsAuxDock.setVisible(True)
+        except AttributeError:
+            self.settingsAuxDock.setVisible(False)
+        except TypeError:
+            self.settingsAuxDock.setVisible(False)
+        self.reloadAuxParamList()
 
     def masterStatusChanged(self):
-        # Deal with multiple
+        # Deals with multiple
         if self.scopeStatus.defaultAction() == self.scopeStatusActionCon or self.targetStatus.defaultAction() == self.targetStatusActionCon:
             self.captureStatus.setDefaultAction(self.captureStatusActionCon)
         else:
@@ -200,16 +198,12 @@ class ChipWhispererCapture(MainChip):
 
         self.masterStatusChanged()
 
-    def setAcqPattern(self, pat, reloadList=True):
+    def newTargetData(self, data):
+        self.glitchMonitor.addResponse(data)
+
+    def setAcqPattern(self, pat):
         self.acqPattern = pat
-        if self.manager.hasTarget():
-            self.acqPattern.setTarget(self.manager.getTarget())
-
-        if reloadList:
-            self.reloadParamList()
-
-    def setFixedPlain(self, x):
-        self.fixedPlain = x
+        self.reloadParamList()
 
     def getNumTraces(self):
         return self.numTraces
@@ -217,31 +211,28 @@ class ChipWhispererCapture(MainChip):
     def setNumTraces(self, t):
         self.numTraces = t
 
-    def setNumSegments(self, s):
-        self.numSegments = s
-
     def getNumSegments(self):
         return self.numSegments
 
-    def FWLoaderGo(self):
-        print "NOTE: Call to cap.FWLoaderGo() not required anymore, will be removed in future versions"
+    def setNumSegments(self, s):
+        self.numSegments = s
 
-    def addExampleScripts(self):
+    def addExampleScripts(self, scripts):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
         self.projectMenu.addSeparator()
         self.projectMenu.addAction(self.exampleScriptAct)
         subMenu = QMenu("Submenu", self)
 
-        for script in Manager.getExampleScripts(self._rootdir + "/scripts"):
+        for script in scripts:
             subMenu.addAction(QAction(script.name(), self, statusTip=script.tip(), triggered=partial(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 
     def runScript(self, mod):
-        print("****Running Script: %s"%mod.name())
+        print("Running Script: %s" % mod.name())
         m = mod.userScript(self)
         m.run()
-        print("****Finished Script: %s"%mod.name())
+        print("Finished Script: %s" % mod.name())
 
     def addToolMenu(self):
         self.TerminalAct = QAction('Open Terminal', self,
@@ -249,12 +240,9 @@ class ChipWhispererCapture(MainChip):
                                    triggered=self.serialTerminal.show)
 
         self.toolMenu.addAction(self.TerminalAct)
-
-
         self.GlitchMonitorAct = QAction('Open Glitch Monitor', self,
                                      statusTip='Open Glitch Monitor Table',
                                      triggered=self.glitchMonitor.show)
-
         self.toolMenu.addAction(self.GlitchMonitorAct)
 
         # Keep track of add-ins
@@ -271,25 +259,24 @@ class ChipWhispererCapture(MainChip):
 
     def addSettingsDocks(self):
         self.setupParametersTree()
-        self.settingsNormalDock = self.addSettings(self.paramTree, "General Settings")
+        self.settingsGeneralDock = self.addSettings(self.generalParamTree, "General Settings")
         self.settingsScopeDock = self.addSettings(self.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
         self.settingsTraceDock = self.addSettings(self.traceParamTree, "Trace Settings")
         self.settingsAuxDock = self.addSettings(self.auxParamTree, "Aux Settings")
-        self.settingsAuxDock.setVisible(False)
 
     def setupParametersTree(self):
-        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
-        ExtendedParameter.setupExtended(self.params, self)
-        self.paramTree = ParameterTree()
-        self.paramTree.setParameters(self.params, showTop=False)
-
+        self.generalParamTree = ParameterTree()
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
 
-    def reloadScopeParamList(self, lst = None):
+        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
+        ExtendedParameter.setupExtended(self.params, self)
+        self.generalParamTree.setParameters(self.params, showTop=False)
+
+    def reloadScopeParamList(self):
         # Remove all old scope actions that don't apply for new selection
         for act in self._scopeToolMenuItems:
             self.toolMenu.removeAction(act)
@@ -299,44 +286,32 @@ class ChipWhispererCapture(MainChip):
             ExtendedParameter.reloadParams(self.manager.getScope().paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
 
             # Check for any tools to add too
-            if hasattr(self.manager.getScope(), "guiActions") and len(self.manager.getScope().guiActions()) > 0:
+            if hasattr(self.manager.getScope(), "guiActions") and len(self.manager.getScope().guiActions(self)) > 0:
                 sep = self.toolMenu.addSeparator()
-                acts = self.manager.getScope().guiActions()
+                acts = self.manager.getScope().guiActions(self)
                 self.toolMenu.addActions(acts)
                 self._scopeToolMenuItems.extend(acts)
                 self._scopeToolMenuItems.append(sep)
 
-    def reloadTargetParamList(self, lst=None):
+    def reloadTargetParamList(self):
         ExtendedParameter.reloadParams(self.manager.getTarget().paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
 
-    def reloadTraceParamList(self, lst=None):
-        if self.traceparams is not None:
-            try:
-                ExtendedParameter.reloadParams(self.traceparams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
-            except AttributeError:
-                #Some trace writers have no configuration options
-                pass
+    def reloadTraceParamList(self):
+        ExtendedParameter.reloadParams(self.manager.getTraceClass().getParams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
 
-    def reloadAuxParamList(self, lst=None):
-        if self.auxList is not None:
-            try:
-                ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
-            except AttributeError:
-                # Some trace writers have no configuration options
-                pass
+    def reloadAuxParamList(self):
+        ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
 
-    def reloadParamList(self, lst=None):
-#        ExtendedParameter.reloadParams(self.paramList(), self.paramTree, help_window=self.helpbrowser.helpwnd)
-        pass
+    def reloadParamList(self):
+        ExtendedParameter.reloadParams(self.paramList(), self.generalParamTree, help_window=self.helpbrowser.helpwnd)
 
     def paramList(self):
         p = []
         p.append(self.params)
 
         if self.acqPattern is not None:
-            acqParams = self.acqPattern.paramList()
-            for ap in acqParams:
-                p.append(ap)
+            for par in self.acqPattern.paramList():
+                p.append(par)
         return p
 
     def newScopeData(self,  data=None, offset=0):
@@ -421,10 +396,10 @@ class ChipWhispererCapture(MainChip):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:
             self.manager.connect()
-            self.statusBar().showMessage("Target and Scope Connected")
+            self.updateStatusBar("Target and Scope Connected")
         else:
             self.manager.disconnect()
-            self.statusBar().showMessage("Target and Scope Disconnected")
+            self.updateStatusBar("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
@@ -444,60 +419,6 @@ class ChipWhispererCapture(MainChip):
             return vw.exec_()
         else:
             return True
-
-    def capture1(self):
-        try:
-            self.capture1Act.setEnabled(False)
-            self.captureMAct.setEnabled(False)
-            self.manager.capture1(self.auxList, self.acqPattern)
-            self.statusBar().showMessage("One Capture Complete")
-        except IOError, e:
-            self.statusBar().showMessage("Error: %s" % str(e))
-            print "Exception caught: %s" % str(e)
-            print traceback.format_exc()
-
-        self.capture1Act.setChecked(False)
-        self.capture1Act.setEnabled(True)
-        self.captureMAct.setEnabled(True)
-
-    def captureM(self):
-        # if self.validateSettings(True) == False:
-        #     return
-        self.capture1Act.setEnabled(False)
-        self.captureMAct.setEnabled(False)
-
-        cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
-        cprog.startCapture()
-
-        try:
-            self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
-            self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
-            self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
-        except IOError, e:
-            self.statusBar().showMessage("Error: %s" % str(e))
-            print "Exception caught: %s" % str(e)
-            print traceback.format_exc()
-
-        self.captureMAct.setChecked(False)
-        self.capture1Act.setEnabled(True)
-        self.captureMAct.setEnabled(True)
-
-    def traceChanged(self, newTrace):
-        self.manager.setTraceClass(newTrace)
-        self.traceparams = newTrace.getParams
-        self.reloadTraceParamList()
-
-    def auxChanged(self, newaux):
-        self.auxList = [newaux]
-        try:
-            newaux.paramList()
-            newaux.paramListUpdated.connect(self.reloadAuxParamList)
-            self.reloadAuxParamList()
-            self.settingsAuxDock.setVisible(True)
-        except AttributeError:
-            self.settingsAuxDock.setVisible(False)
-        except TypeError:
-            self.settingsAuxDock.setVisible(False)
 
     def newProject(self):
         self.setProject(ProjectFormat(self))
@@ -525,8 +446,33 @@ class ChipWhispererCapture(MainChip):
         self.project().save()
         self.dirty = False
         self.updateTitleBar()
-        self.statusBar().showMessage("Project Saved")
+        self.updateStatusBar("Project Saved")
 
+    def capture1(self):
+        try:
+            self.capture1Act.setEnabled(False)
+            self.captureMAct.setEnabled(False)
+            self.manager.capture1(self.auxList, self.acqPattern)
+            self.updateStatusBar("Capture-One Completed")
+        finally:
+            self.capture1Act.setChecked(False)
+            self.capture1Act.setEnabled(True)
+            self.captureMAct.setEnabled(True)
+
+    def captureM(self):
+        try:
+            self.capture1Act.setEnabled(False)
+            self.captureMAct.setEnabled(False)
+            cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
+            cprog.startCapture()
+            self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
+            self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
+            self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
+            self.updateStatusBar("Capture-M Completed")
+        finally:
+            self.capture1Act.setChecked(False)
+            self.capture1Act.setEnabled(True)
+            self.captureMAct.setEnabled(True)
 
 def makeApplication():
     # Create the Qt Application

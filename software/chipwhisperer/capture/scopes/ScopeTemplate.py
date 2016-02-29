@@ -44,9 +44,6 @@ class ScopeTemplate(object):
     def setAutorefreshDCM(self, enabled):
         pass
 
-    def emitParamListUpdated(self):
-        pass
-
     def setCurrentScope(self, scope, update=True):
         pass
 
@@ -54,18 +51,19 @@ class ScopeTemplate(object):
         return self.connectStatus.value()
 
     def con(self):
-        raise NotImplementedError("Method con() is not implemented")
         self.connectStatus.setValue(True)
+        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
-        raise NotImplementedError("Method dis() is not implemented")
         self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         pass
 
     def arm(self):
-        pass
+        if self.connectStatus.value() is False:
+            raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         pass
@@ -73,7 +71,7 @@ class ScopeTemplate(object):
     def paramList(self):
         return []
 
-    def guiActions(self):
+    def guiActions(self, mainWindow):
         return []
 
     def validateSettings(self):
