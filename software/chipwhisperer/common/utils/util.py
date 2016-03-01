@@ -115,7 +115,7 @@ def getPyFiles(dir):
             fnfull = dir + '/' + fn
             if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')):
                 scriptList.append(os.path.splitext(fn)[0])
-    return scriptList;
+    return scriptList
 
 class Signal(object):
     def __init__(self):

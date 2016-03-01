@@ -36,8 +36,9 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as Ch
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite, CWCRev2
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from PySide.QtGui import *
 
 try:
     # OrderedDict is new in 2.7
@@ -93,7 +94,7 @@ class OpenADCInterface_NAEUSBChip():
                 missingInfo += " usb"
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
-            self.CWFirmwareConfig = FWLoaderConfig(mode="cwlite")
+            self.CWFirmwareConfig = FWLoaderConfig(CWLite())
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
@@ -126,7 +127,7 @@ class OpenADCInterface_NAEUSBChip():
             if dev is None:
                 raise IOError("Could not open USB Device")
             
-            self.CWFirmwareConfig.setCWLiteUSBInterface(dev)
+            self.CWFirmwareConfig.setUSBInterface(dev)
             self.CWFirmwareConfig.loadRequired()
 
             self.cwliteXMEGA.setUSBInterface(dev)
@@ -153,29 +154,19 @@ class OpenADCInterface_NAEUSBChip():
             return "None?"
 
     def paramList(self):
-        p = [self.params]
-        return p
+        return [self.params]
 
     def guiActions(self, mainWindow):
-        self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
-        self.cwliteAVR = AVRProgrammerDialog(mainWindow)
-        # self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
-        #                        statusTip='Configure ChipWhisperer FW Paths',
-        #                        triggered=self.CWFirmwareConfig.show)
-        #
-        # self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-        #                        statusTip='Download Firmware+FPGA To Hardware',
-        #                        triggered=self.CWFirmwareConfig.loadRequired)
-        # self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
-        #                                statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
-        #                                triggered=self.cwliteXMEGA.show)
-        # self.avrProgramAct = QAction('CW-Lite AVR Programmer', self,
-        #                                statusTip='Open AVR Programmer (ChipWhisperer-Lite Only)',
-        #                                triggered=self.cwliteAVR.show)
-        #
-        # self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct, self.avrProgramAct]
-
-        return [] #self._toolActs
+        if not hasattr(self, 'fwLoaderGUI'):
+            self.fwLoaderGUI = FWLoaderConfigGUI(self.CWFirmwareConfig)
+        if not hasattr(self, 'cwliteXMEGA'):
+            self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
+        if not hasattr(self, 'cwliteAVR'):
+            self.cwliteAVR = AVRProgrammerDialog(mainWindow)
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderGUI.show], # Can' use Config... name with MacOS
+                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.CWFirmwareConfig.loadRequired],
+                ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
+                ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
 
 class OpenADCInterface_FTDI():
     paramListUpdated = util.Signal()
@@ -378,7 +369,7 @@ class OpenADCInterface_ZTEX():
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
-            self.setupTools()
+            self.CWFirmwareConfig = FWLoaderConfig(CWCRev2())
 
         #if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
@@ -392,9 +383,6 @@ class OpenADCInterface_ZTEX():
     def __del__(self):
         if self.ser != None:
             self.ser.close()
-
-    def setupTools(self):
-        self.CWFirmwareConfig = FWLoaderConfig()
 
     def con(self):
         if self.ser == None:
@@ -467,16 +455,10 @@ class OpenADCInterface_ZTEX():
         return p
 
     def guiActions(self, mainWindow):
-        # self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
-        #                        statusTip='Configure ChipWhisperer FW Paths',
-        #                        triggered=self.CWFirmwareConfig.show)
-        #
-        # self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-        #                        statusTip='Download Firmware+FPGA To Hardware',
-        #                        triggered=self.CWFirmwareConfig.loadRequired)
-        #
-        # self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct]
-        return [] #self._toolActs
+        if not hasattr(self, 'fwLoaderGUI'):
+            self.fwLoaderGUI = FWLoaderConfigGUI(self.CWFirmwareConfig)
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderGUI.show], # Can' use Config/Setup... name with MacOS
+               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.CWFirmwareConfig.loadRequired]]
 
 class OpenADCInterface(ScopeTemplate):
     dataUpdated = util.Signal()

@@ -28,7 +28,7 @@ from datetime import *
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
-class Manager(object):
+class CWCaptureAPI(object):
     """This is the manager class"""
 
     class Signals():
@@ -45,7 +45,7 @@ class Manager(object):
         abortCapture = util.Signal()
 
     def __init__(self):
-        self.signals = Manager.Signals()
+        self.signals = CWCaptureAPI.Signals()
         self.numTraces = 100
         self.numSegments = 1
         self._scope = None

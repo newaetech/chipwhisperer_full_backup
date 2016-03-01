@@ -29,7 +29,7 @@ import os.path
 import sys
 from functools import partial
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.capture.api.manager import Manager
+from chipwhisperer.capture.api.captureapi import CWCaptureAPI
 from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
@@ -45,12 +45,6 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-
-try:
-    import writer_dpav3
-except ImportError:
-    writer_dpav3 = None
-    writer_dpav3_str = sys.exc_info()
 
 try:
     import pyqtgraph as pg
@@ -75,7 +69,7 @@ class ChipWhispererCapture(MainChip):
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
         self.paramTrees.append(self.glitchMonitor.paramTree)
 
-        self.manager = Manager()
+        self.manager = CWCaptureAPI()
 
         self.da = None
         self.numTraces = 100
@@ -88,12 +82,12 @@ class ChipWhispererCapture(MainChip):
         self.newFile.connect(self.newProject)
         self.saveFile.connect(self.saveProject)
 
-        valid_scopes = Manager.getScopeModules(self._rootdir + "/scopes", self.showScriptParameter)
-        valid_targets =  Manager.getTargetModules(self._rootdir + "/targets", self.showScriptParameter)
-        valid_traces = Manager.getTraceFormats(self._rootdir + "/../common/traces")
-        valid_aux = Manager.getAuxiliaryModules(self._rootdir + "/auxiliary", self.showScriptParameter)
-        valid_acqPatterns = Manager.getAcqPatternModules(self.showScriptParameter)
-        self.addExampleScripts(Manager.getExampleScripts(self._rootdir + "/scripts"))
+        valid_scopes = CWCaptureAPI.getScopeModules(self._rootdir + "/scopes", self.showScriptParameter)
+        valid_targets =  CWCaptureAPI.getTargetModules(self._rootdir + "/targets", self.showScriptParameter)
+        valid_traces = CWCaptureAPI.getTraceFormats(self._rootdir + "/../common/traces")
+        valid_aux = CWCaptureAPI.getAuxiliaryModules(self._rootdir + "/auxiliary", self.showScriptParameter)
+        valid_acqPatterns = CWCaptureAPI.getAcqPatternModules(self.showScriptParameter)
+        self.addExampleScripts(CWCaptureAPI.getExampleScripts(self._rootdir + "/scripts"))
 
         self.manager.setScope(valid_scopes["None"])
         self.manager.setTarget(valid_targets["None"])
@@ -280,18 +274,20 @@ class ChipWhispererCapture(MainChip):
         # Remove all old scope actions that don't apply for new selection
         for act in self._scopeToolMenuItems:
             self.toolMenu.removeAction(act)
+
         self._scopeToolMenuItems = []
 
         if self.manager.hasScope():
             ExtendedParameter.reloadParams(self.manager.getScope().paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
 
             # Check for any tools to add too
-            if hasattr(self.manager.getScope(), "guiActions") and len(self.manager.getScope().guiActions(self)) > 0:
-                sep = self.toolMenu.addSeparator()
-                acts = self.manager.getScope().guiActions(self)
-                self.toolMenu.addActions(acts)
-                self._scopeToolMenuItems.extend(acts)
-                self._scopeToolMenuItems.append(sep)
+            if hasattr(self.manager.getScope(), "guiActions"):
+                self._scopeToolMenuItems.append(self.toolMenu.addSeparator())
+                for act in self.manager.getScope().guiActions(self):
+                    self._scopeToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
+
+        for act in self._scopeToolMenuItems:
+            self.toolMenu.addAction(act)
 
     def reloadTargetParamList(self):
         ExtendedParameter.reloadParams(self.manager.getTarget().paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
@@ -435,11 +431,10 @@ class ChipWhispererCapture(MainChip):
 
     def saveProject(self):
         if self.project().hasFilename() == False :
-            fd = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')
-            if not fd.exec_():
+            fname = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')[0]
+            if fname=='':
                 return
 
-            fname = fd.selectedFiles()[0]
             self.project().setFilename(fname)
             self.setCurrentFile(fname)
 
