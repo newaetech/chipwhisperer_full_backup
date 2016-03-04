@@ -469,7 +469,10 @@ class ChipWhispererCapture(MainChip):
         cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
         cprog.startCapture()
         self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
+        self.manager.signals.campaignDone.connect(cprog.incSeg)
+        cprog.abortCapture.connect(self.manager.signals.abortCapture.emit)
         self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
+        self.manager.signals.campaignDone.disconnect(cprog.incSeg)
         self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
         return "Capture-M Completed"
 

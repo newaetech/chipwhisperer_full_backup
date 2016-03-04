@@ -519,7 +519,7 @@ class OpenADCInterface(ScopeTemplate):
         self.advancedSAD = None
         self.digitalPattern = None
 
-        scopeParams = [{'name':'connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
+        scopeParams = [{'name':'Connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
                        # {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
 

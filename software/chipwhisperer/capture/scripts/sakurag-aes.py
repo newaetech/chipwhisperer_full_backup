@@ -76,7 +76,7 @@ class userScript(QObject):
         print "***** Starting User Script *****"
        
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        cap.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
         cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
         cap.setParameter(['Generic Settings', 'Target Module', 'SAKURA G'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])

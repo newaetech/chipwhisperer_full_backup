@@ -25,35 +25,22 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.common.utils import util
 
 class CaptureProgressDialog(QDialog):
-
-    abortCapture = Signal(bool)
-
     def __init__(self, parent=None, ntraces=0, nsegs=0):
         super(CaptureProgressDialog, self).__init__(parent)
+        self.abortCapture = util.Signal()
 
-        self.abort = False
-
-        # Qt.WindowCloseButtonHint |
-        # | Qt.WindowStaysOnTopHint
         self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & ~(Qt.WindowContextHelpButtonHint))
         self.setWindowTitle("Capture in Progress")
-        # self.setWindowIcon(QIcon(imagePath + "attack_transp.png"))
 
         layout = QVBoxLayout()
         clayout = QHBoxLayout()
         cancel = QPushButton("Abort")
-        cancel.clicked.connect(self.setCanceled)
+        cancel.clicked.connect(self.abortCapture.emit)
         clayout.addStretch()
         clayout.addWidget(cancel)
         self.pbar = QProgressBar()
@@ -69,7 +56,6 @@ class CaptureProgressDialog(QDialog):
         layout.addWidget(self.pbar)
         layout.addLayout(statusInfo)
         layout.addLayout(clayout)
-
         self.setLayout(layout)
 
         self.setMinimum(0)
@@ -116,9 +102,3 @@ class CaptureProgressDialog(QDialog):
 
         QApplication.processEvents()
 
-    def setCanceled(self):
-        self.abort = True
-        self.abortCapture.emit(True)
-
-    def wasCanceled(self):
-        return self.abort

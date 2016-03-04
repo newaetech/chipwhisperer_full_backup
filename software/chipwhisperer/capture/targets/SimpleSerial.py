@@ -139,7 +139,6 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def setOpenADC(self, oa):
         self.usbdev = oa._usbdev
 
-
 class SimpleSerial_ChipWhisperer(TargetTemplate):
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
@@ -328,7 +327,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
 class SimpleSerial(TargetTemplate):
     def setupParameters(self):
-        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
+        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
                                                                                 "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter),
                                                                                 "ChipWhisperer-Lite":SimpleSerial_ChipWhispererLite(showScriptParameter=self.showScriptParameter)},
                                                                                 'value':"System Serial Port", 'set':self.setConnection},

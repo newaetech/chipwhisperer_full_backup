@@ -51,6 +51,7 @@ class CWCaptureAPI(object):
         self._scope = None
         self._target = None
         self._traceClass = None
+        self.signals.abortCapture.connect(self.abortCapture)
 
     def hasScope(self):
         return self._scope is not None
@@ -65,14 +66,14 @@ class CWCaptureAPI(object):
         util.active_scope = self._scope
         self.signals.scopeChanged.emit()
 
-    def setOpenADC(self, oadc):
-        '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
-        try:  # if hasattr(oadc, "scope.sc"):
-            self.oadc = oadc.scope.sc
-        except AttributeError:
-            self.oadc = oadc
-        if hasattr(self.getTarget(), "setOpenADC"):
-            self.getTarget().setOpenADC(self.oadc)
+    # def setOpenADC(self, oadc):
+    #     '''Declares OpenADC Instance in use. Only for openadc-integrated targets'''
+    #     try:  # if hasattr(oadc, "scope.sc"):
+    #         self.oadc = oadc.scope.sc
+    #     except AttributeError:
+    #         self.oadc = oadc
+    #     if hasattr(self.getTarget(), "setOpenADC"):
+    #         self.getTarget().setOpenADC(self.oadc)
 
     def hasTarget(self):
         return self._target is not None
@@ -103,20 +104,14 @@ class CWCaptureAPI(object):
         self._traceClass = driver
 
     def connectScope(self):
-        # try:
-            self.getScope().con()
-            if hasattr(self.getScope(), "qtadc"):
-                self.getTarget().setOpenADC(self.getScope().qtadc.ser)
-        # except Exception, e:
-        #     util.appendAndForwardErrorMessage("Manager could not connect to Scope Module \"" + self.getScope().getName() + "\"", e)
+        self.getScope().con()
+        if hasattr(self.getScope(), "qtadc"):
+            self.getTarget().setOpenADC(self.getScope().qtadc.ser)
 
     def connectTarget(self):
-        # try:
          if hasattr(self.getTarget(), "setOpenADC") and hasattr(self, "oadc") and self.oadc:
              self.getTarget().setOpenADC(self.oadc)
          self.getTarget().con()
-        # except Exception, e:
-        #     util.appendAndForwardErrorMessage("Manager could not connect to Target Module \"" + self.getTarget().getName() + "\"", e)
 
     def connect(self):
         try:
@@ -147,12 +142,13 @@ class CWCaptureAPI(object):
         return self.numSegments
 
     def capture1(self, auxList, acqPattern):
-        try:
-            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=auxList, keyTextPattern=acqPattern)
-            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-            ac.doSingleReading()
-        except Exception, e:
-            util.appendAndForwardErrorMessage("Manager could execute capture1 method", e)
+        ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=auxList, keyTextPattern=acqPattern)
+        ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+        ac.doSingleReading()
+
+    def abortCapture(self):
+            print "Capture aborted"
+            self._abortCapture = True
 
     def captureM(self, datadirectory, numTraces, numSegments, auxList, acqPattern):
         overallstarttime = datetime.now()
@@ -166,50 +162,50 @@ class CWCaptureAPI(object):
         # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
         # the 1GB limit that a 32-bit process would expect to give you trouble at.
         waveBuffer = None
+        self._abortCapture = False
 
-        try:
-            for i in range(0, numSegments):
-                starttime = datetime.now()
-                baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
-                prefix = baseprefix + "_"
+        for i in range(0, numSegments):
+            currentTrace = self.getTraceClassInstance()
 
-                currentTrace = self.getTraceClassInstance()
+            # Load trace writer information
+            starttime = datetime.now()
+            baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
+            prefix = baseprefix + "_"
+            currentTrace.config.setAttr("prefix", prefix)
+            currentTrace.config.setConfigFilename(datadirectory + "traces/config_" + prefix + ".cfg")
+            currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+            currentTrace.setTraceHint(tracesPerRun)
 
-                # Load trace writer information
-                currentTrace.config.setAttr("prefix", prefix)
-                currentTrace.config.setConfigFilename(datadirectory + "traces/config_" + prefix + ".cfg")
-                currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
-                currentTrace.setTraceHint(tracesPerRun)
+            if waveBuffer is not None:
+                currentTrace.setTraceBuffer(waveBuffer)
 
-                if waveBuffer is not None:
-                    currentTrace.setTraceBuffer(waveBuffer)
+            if auxList is not None:
+                for aux in auxList:
+                    aux.setPrefix(baseprefix)
 
+            ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, auxList, acqPattern)
+            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+            ac.signals.traceDone.connect(self.signals.traceDone.emit)
+            self.signals.abortCapture.connect(ac.abortCapture)
+            self.signals.campaignStart.emit(baseprefix)
+            ac.setMaxtraces(tracesPerRun)
 
-                if auxList is not None:
-                    for aux in auxList:
-                        aux.setPrefix(baseprefix)
+            ac.doReadings()
+#            ac.doReadings(addToList=self.manageTraces)
+            self.signals.abortCapture.disconnect(ac.abortCapture)
 
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, auxList, acqPattern)
-                ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-                ac.signals.traceDone.connect(self.signals.traceDone.emit)
-                self.signals.abortCapture.connect(ac.abortCapture)
-                self.signals.campaignStart.emit(baseprefix)
-                ac.setMaxtraces(tracesPerRun)
+            if self._abortCapture:
+                break
 
-                ac.doReadings()
-    #            ac.doReadings(addToList=self.manageTraces)
+            tcnt += tracesPerRun
+            print "%d Captures Completed" % tcnt
+            self.signals.campaignDone.emit()
 
-                tcnt += tracesPerRun
-                print "%d Captures Completed" % tcnt
-                self.signals.campaignDone.emit()
-
-                # Re-use the wave buffer for later segments
-                if self.hasTraceClass():
-                    waveBuffer = currentTrace.traces
-                    writerlist.append(currentTrace)
-            print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
-        except Exception, e:
-            util.appendAndForwardErrorMessage("Manager could execute captureM method", e)
+            # Re-use the wave buffer for later segments
+            if self.hasTraceClass():
+                waveBuffer = currentTrace.traces
+                writerlist.append(currentTrace)
+        print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
 
         return writerlist
 
