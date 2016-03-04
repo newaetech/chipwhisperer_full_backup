@@ -103,24 +103,26 @@ class CWCaptureAPI(object):
         self._traceClass = driver
 
     def connectScope(self):
-        try:
+        # try:
             self.getScope().con()
             if hasattr(self.getScope(), "qtadc"):
                 self.getTarget().setOpenADC(self.getScope().qtadc.ser)
-        except Exception, e:
-            util.appendAndForwardErrorMessage("Manager could not connect to Scope Module \"" + self.getScope().getName() + "\"", e)
+        # except Exception, e:
+        #     util.appendAndForwardErrorMessage("Manager could not connect to Scope Module \"" + self.getScope().getName() + "\"", e)
 
     def connectTarget(self):
-        try:
-            if hasattr(self.getTarget(), "setOpenADC") and hasattr(self, "oadc") and self.oadc:
-                self.getTarget().setOpenADC(self.oadc)
-            self.getTarget().con()
-        except Exception, e:
-            util.appendAndForwardErrorMessage("Manager could not connect to Target Module \"" + self.getTarget().getName() + "\"", e)
+        # try:
+         if hasattr(self.getTarget(), "setOpenADC") and hasattr(self, "oadc") and self.oadc:
+             self.getTarget().setOpenADC(self.oadc)
+         self.getTarget().con()
+        # except Exception, e:
+        #     util.appendAndForwardErrorMessage("Manager could not connect to Target Module \"" + self.getTarget().getName() + "\"", e)
 
     def connect(self):
-        self.connectScope()
-        self.connectTarget()
+        try:
+            self.connectScope()
+        finally:
+            self.connectTarget()
 
     def disconnectScope(self):
         self.getScope().dis()

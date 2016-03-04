@@ -29,8 +29,6 @@ from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import USART as CWLite_USART
 from chipwhisperer.common.api import scan
-from chipwhisperer.common.utils import util
-
 
 def getInstance(*args):
     return SimpleSerial(*args)
@@ -161,11 +159,9 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         ExtendedParameter.setupExtended(self.params, self)
         self._regVer = 0
 
-
     def paramTreeChanged(self, param, changes):
         if self.showScriptParameter is not None:
             self.showScriptParameter(param, changes, self.params)
-
 
     def systemClk(self):
         return 30E6
@@ -362,7 +358,6 @@ class SimpleSerial(TargetTemplate):
         if hasattr(self.ser, "setOpenADC"):
             self.ser.setOpenADC(oadc)
 
-
     def setKeyLen(self, klen):
         """ Set key length in BITS """
         self.keylength = klen / 8
@@ -393,7 +388,7 @@ class SimpleSerial(TargetTemplate):
     def close(self):
         if self.ser != None:
             self.ser.close()
-            self.ser = None
+            # self.ser = None
         return
 
     def init(self):
@@ -415,6 +410,8 @@ class SimpleSerial(TargetTemplate):
         return s
 
     def runCommand(self, cmdstr, flushInputBefore=True):
+        if self.connectStatus.value()==False:
+            raise Exception("Can't write to the target while disconected. Connect to it first.")
 
         if cmdstr is None or len(cmdstr) == 0:
             return
@@ -432,12 +429,15 @@ class SimpleSerial(TargetTemplate):
         newstr = newstr.replace("\\n", "\n")
         newstr = newstr.replace("\\r", "\r")
 
-        if flushInputBefore:
-            self.ser.flushInput()
 
         #print newstr
-
-        self.ser.write(newstr)
+        try:
+            if flushInputBefore:
+                self.ser.flushInput()
+            self.ser.write(newstr)
+        except Exception, e:
+            self.dis()
+            raise e
 
     def loadEncryptionKey(self, key):
         self.key = key

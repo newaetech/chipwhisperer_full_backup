@@ -156,7 +156,6 @@ class OpenADCQt(QObject):
                 self.paramTree = ParameterTree()
                 self.paramTree.setParameters(self.params, showTop=False)
 
-
     def reloadParameterTree(self):
         self.adc_settings.setInterface(self.sc)
         self.params.blockTreeChangeSignal()

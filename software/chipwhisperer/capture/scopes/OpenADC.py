@@ -36,9 +36,8 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as Ch
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite, CWCRev2
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite_Loader, CWCRev2_Loader
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
-from PySide.QtGui import *
 
 try:
     # OrderedDict is new in 2.7
@@ -85,7 +84,6 @@ class OpenADCInterface_NAEUSBChip():
         self.ser = None
         self._toolActs = []
 
-
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
             if openadc_qt is None:
@@ -94,7 +92,7 @@ class OpenADCInterface_NAEUSBChip():
                 missingInfo += " usb"
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
-            self.CWFirmwareConfig = FWLoaderConfig(CWLite())
+            self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
@@ -115,7 +113,6 @@ class OpenADCInterface_NAEUSBChip():
 
     def con(self):
         if self.ser == None:
-
             dev = CWL.CWLiteUSB()
 
             try:
@@ -127,8 +124,8 @@ class OpenADCInterface_NAEUSBChip():
             if dev is None:
                 raise IOError("Could not open USB Device")
             
-            self.CWFirmwareConfig.setUSBInterface(dev)
-            self.CWFirmwareConfig.loadRequired()
+            self.cwFirmwareConfig.setInterface(dev)
+            self.cwFirmwareConfig.loadRequired()
 
             self.cwliteXMEGA.setUSBInterface(dev)
             self.cwliteAVR.setUSBInterface(dev)
@@ -157,14 +154,12 @@ class OpenADCInterface_NAEUSBChip():
         return [self.params]
 
     def guiActions(self, mainWindow):
-        if not hasattr(self, 'fwLoaderGUI'):
-            self.fwLoaderGUI = FWLoaderConfigGUI(self.CWFirmwareConfig)
         if not hasattr(self, 'cwliteXMEGA'):
             self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
         if not hasattr(self, 'cwliteAVR'):
             self.cwliteAVR = AVRProgrammerDialog(mainWindow)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderGUI.show], # Can' use Config... name with MacOS
-                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.CWFirmwareConfig.loadRequired],
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()], # Can' use Config... name with MacOS
+                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired],
                 ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
                 ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
 
@@ -369,7 +364,7 @@ class OpenADCInterface_ZTEX():
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
-            self.CWFirmwareConfig = FWLoaderConfig(CWCRev2())
+            self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
 
         #if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
@@ -388,7 +383,7 @@ class OpenADCInterface_ZTEX():
         if self.ser == None:
 
             # Download firmware if required
-            self.CWFirmwareConfig.loadRequired()
+            self.cwFirmwareConfig.loadRequired()
 
             try:
                 dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
@@ -455,10 +450,8 @@ class OpenADCInterface_ZTEX():
         return p
 
     def guiActions(self, mainWindow):
-        if not hasattr(self, 'fwLoaderGUI'):
-            self.fwLoaderGUI = FWLoaderConfigGUI(self.CWFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderGUI.show], # Can' use Config/Setup... name with MacOS
-               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.CWFirmwareConfig.loadRequired]]
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()],  # Can' use Config/Setup... name with MacOS
+               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
 class OpenADCInterface(ScopeTemplate):
     dataUpdated = util.Signal()
@@ -499,19 +492,19 @@ class OpenADCInterface(ScopeTemplate):
         cw_cons = dicttype()
 
         if cwrev2:
-            cwrev2.paramListUpdated.connect(self.paramListUpdated)
+            cwrev2.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["ChipWhisperer Rev2"] = cwrev2
 
         if cwlite:
-            cwlite.paramListUpdated.connect(self.paramListUpdated)
+            cwlite.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["ChipWhisperer Lite"] = cwlite
 
         if ftdi:
-            ftdi.paramListUpdated.connect(self.paramListUpdated)
+            ftdi.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
 
         if cwser:
-            cwser.paramListUpdated.connect(self.paramListUpdated)
+            cwser.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["Serial Port (LX9)"] = cwser
 
         if cw_cons == {}:
@@ -610,7 +603,13 @@ class OpenADCInterface(ScopeTemplate):
         # self.advancedSettings.glitch.resetDCMs()
         if self.advancedSettings:
             self.advancedSettings.armPreScope()
-        self.qtadc.arm()
+
+        try:
+            self.qtadc.arm()
+        except Exception, e:
+            self.dis()
+            raise e
+
         if self.advancedSettings:
             self.advancedSettings.armPostScope()
 

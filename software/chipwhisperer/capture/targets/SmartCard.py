@@ -1044,7 +1044,7 @@ class SmartCard(TargetTemplate):
     def close(self):
         if self.driver != None:
             self.driver.close()
-            self.driver = None
+            # self.driver = None
         return
         
     def init(self):

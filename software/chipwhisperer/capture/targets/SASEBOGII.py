@@ -225,6 +225,9 @@ class SaseboGII(TargetTemplate):
             self.sasebo.read(num)
 
     def write(self, address, MSB, LSB):
+        if self.connectStatus.value()==False:
+            raise Exception("Can't write to the target while disconected. Connect to it first.")
+
         msg = bytearray(5)
 
         msg[0] = 0x01;
@@ -238,7 +241,11 @@ class SaseboGII(TargetTemplate):
         #msg = bytearray(strmsg)
         #print "Write: %x %x %x %x %x"%(msg[0],msg[1],msg[2],msg[3],msg[4])
 
-        self.sasebo.write(strmsg)
+        try:
+            self.sasebo.write(strmsg)
+        except Exception, e:
+            self.dis()
+            raise e
 
     def read(self, address):
         self.flush()

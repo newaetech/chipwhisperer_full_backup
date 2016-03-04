@@ -465,16 +465,18 @@ class ClockSettings():
                 {'name': 'DCM Locked', 'type':'bool', 'value':False, 'get':self.dcmADCLocked, 'readonly':True},
                 {'name':'Reset ADC DCM', 'type':'action', 'action':partial(self.resetDcms, True, False), 'linked':['Phase Adjust']},
             ]},
-            {'name': 'Freq Counter', 'type': 'int', 'value': 0, 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self.extFrequency},
+            {'name': 'Freq Counter', 'type': 'str', 'value': 0, 'readonly':True, 'get':lambda: str(self.extFrequency()) + " Hz"},
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'value':0, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'value':"system", 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
-                {'name':'Multiply', 'type':'int', 'limits':(2, 256), 'value':2, 'set':self.setClkgenMul, 'get':self.clkgenMul},
-                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'value':2, 'set':self.setClkgenDiv, 'get':self.clkgenDiv},
+                {'name':'Multiply', 'type':'int', 'limits':(2, 256), 'value':2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
+                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'value':2, 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
+                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'value':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
+                                            'set':self.autoMulDiv, 'linked':['Multiply', 'Divide']},
+                {'name':'Current Frequency', 'type':'str', 'value':0, 'readonly':True,
+                                            'get':lambda: str(self.getClkgen()) + " Hz"},
                 {'name':'DCM Locked', 'type':'bool', 'value':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':partial(self.resetDcms, False, True), 'linked':['Multiply', 'Divide']},
-                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'value':0, 'step':100E6, 'siPrefix':True, 'suffix':'Hz',
-                                            'set':self.autoMulDiv, 'linked':['Multiply', 'Divide']},
             ]},
         ]}
 
@@ -496,6 +498,9 @@ class ClockSettings():
     def freqSrc(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         return ((result[3] & 0x08) >> 3)
+
+    def getClkgen(self):
+        return (self._hwinfo.sysFrequency() * self.clkgenMul()) / self.clkgenDiv()
 
     def autoMulDiv(self, freq):
 

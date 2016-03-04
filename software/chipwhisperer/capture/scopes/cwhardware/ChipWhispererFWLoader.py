@@ -26,15 +26,6 @@
 #=================================================
 
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import os.path
 import time
 import zipfile
@@ -42,55 +33,51 @@ from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFi
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAM3LoaderConfig
 from chipwhisperer.common.utils import util
 
-
-class CWCRev2:
+class CWCRev2_Loader(object):
     def __init__(self):
         self.name = "cwcrev2"
-        self.ztex = Ztex1v1()
+        self.driver = Ztex1v1()
         self.defLocfwF = "../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"
         self.defLocZipBS = "../../../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"
         self.defLocZipBS_filename = "interface.bit"
         self.defLocbs = "../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"
 
     def loadRequired(self, callback, forceFirmware=False):
-        self.ztex.probe(True)
+        self.driver.probe(True)
 
-        if self.ztex.firmwareProgrammed == False or forceFirmware:
+        if self.driver.firmwareProgrammed == False or forceFirmware:
             self.loadFirmware()
         else:
             print "EZ-USB Microcontroller: Skipped firmware download (already done)"
 
-        if self.ztex.deviceInfo["interfaceVersion"] != 1:
-            raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(self.ztex.deviceInfo))
+        if self.driver.deviceInfo["interfaceVersion"] != 1:
+            raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(self.driver.deviceInfo))
 
-        if self.ztex.deviceInfo["productId"] != [10, 12, 0, 0]:
-            raise IOError("Unknown productId, invalid ZTEX Firmware/Module?. Device info: %s" % str(self.ztex.deviceInfo))
+        if self.driver.deviceInfo["productId"] != [10, 12, 0, 0]:
+            raise IOError("Unknown productId, invalid ZTEX Firmware/Module?. Device info: %s" % str(self.driver.deviceInfo))
 
-        self.ztex.getFpgaState()
-        if self.ztex.fpgaConfigured == False:
+        self.driver.getFpgaState()
+        if self.driver.fpgaConfigured == False:
             callback()
-            self.ztex.getFpgaState()
+            self.driver.getFpgaState()
             print "FPGA: Programmed bitstream successfully"
         else:
             print "FPGA: Skipped configuration (already done)"
 
     def loadFirmware(self, file):
         f = IhxFile(file)
-        self.ztex.uploadFirmware(f)
+        self.driver.uploadFirmware(f)
         time.sleep(1)
-        self.ztex.probe()
+        self.driver.probe()
 
     def loadFPGA(self, file):
-        self.ztex.configureFpgaLS(file.open("interface.bit"))
+        self.driver.configureFpgaLS(file.open("interface.bit"))
 
-    def setUSBInterface(self, dev):
-        pass
 
-class CWLite:
+class CWLite_Loader(object):
     def __init__(self):
         self.name = "cwlite"
-        self.cwliteUSB = None
-        self.sam3loader = None
+        self.driver = None
         self.defLocfwF = ""
         self.defLocZipBS = "../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"
         self.defLocZipBS_filename = "cwlite_interface.bit"
@@ -99,106 +86,75 @@ class CWLite:
     def loadRequired(self, callback, forceFirmware=False):
         callback()
 
-    def loadFirmware(self):
-        pass
-
     def loadFPGA(self, file):
-        self.cwliteUSB.FPGAProgram(file)
+        self.driver.FPGAProgram(file)
 
-    def setUSBInterface(self, cwliteusb):
-        self.cwliteUSB = cwliteusb
+    def setInterface(self, driver):
+        self.driver = driver
 
-        if self.sam3loader:
-            self.sam3loader.cwLiteUSB = cwliteusb
 
 class FWLoaderConfig(object):
-    def __init__(self, driver):
-        self.driver = driver
-        settings = util.Settings()
+    def __init__(self, loader):
+        self.loader = loader
 
-        self.bsLoc = settings.value("%s-debugbitstream-location" % self.driver.name)
-        self.bsZipLoc = settings.value("%s-zipbitstream-location" % self.driver.name)
-        self.fwFLoc = settings.value("%s-firmware-location" % self.driver.name)
-
-        mode = settings.value("%s-fpga-bitstream-mode" % self.driver.name)
-        if mode == "debug":
-            self.setFPGAModeDebug()
-        else:
-            self.setFPGAModeZip()
-
-        rootprefix = util.globalSettings.value("cwcapture-starting-root") + "/"
-
-        defLocfwF = rootprefix + self.driver.defLocfwF
-        if os.path.isfile(defLocfwF):
-            self.fwFLoc = str(defLocfwF)
-
-        defLocZipBS = rootprefix + self.driver.defLocZipBS
-        if os.path.isfile(defLocZipBS):
-            self.bsZipLoc = str(defLocZipBS)
-            settings.setValue("%s-zipbitstream-location" % self.driver.name, self.bsZipLoc)
-
-        defLocbs = rootprefix + self.driver.defLocbs
-        if os.path.isfile(defLocbs):
-            self.bsLoc = str(defLocbs)
+        self.rootprefix = util.globalSettings.value("cwcapture-starting-root") + "/"
+        self.fwFLoc = self.rootprefix + self.loader.defLocfwF
+        self.bsZipLoc = self.rootprefix + self.loader.defLocZipBS
+        self.bsLoc = self.rootprefix + self.loader.defLocbs
+        self.useFPGAZip = True
 
     def loadRequired(self, forceFirmware=False):
         """Load firmware file or FPGA file only as required, skip otherwise"""
-        self.driver.loadRequired(self.loadFPGA, forceFirmware)
+        self.loader.loadRequired(self.loadFPGA, forceFirmware)
 
     def loadFirmware(self):
-        self.driver.loadFirmware()
+        if hasattr(self.loader, 'loadFirmware'):
+            self.loader.loadFirmware(self.fwFLoc)
+            print "Firmware loaded"
+
+    def setFPGAMode(self, useFPGAZip):
+        self.useFPGAZip = useFPGAZip
 
     def loadFPGA(self):
         """Load the FPGA bitstream"""
         if self.useFPGAZip:
-            fileloc = self.bsZipLoc
-            if fileloc.startswith("."):
-                fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
-            zfile = zipfile.ZipFile(fileloc, "r")
+            zfile = zipfile.ZipFile(self.bsZipLoc, "r")
+            self.loader.loadFPGA(zfile.open(self.loader.defLocZipBS_filename))
 
-            self.driver.loadFPGA(zfile.open(self.driver.defLocZipBS_filename))
         else:
-            fileloc = self.bsLoc
-            if fileloc.startswith("."):
-                fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
-
             # Get bitstream date, print for user
-            bsdate = os.path.getmtime(fileloc)
+            bsdate = os.path.getmtime(self.bsLoc)
             print "FPGA: DEBUG MODE: Using .bit file, date: %s" % time.ctime(bsdate)
+            self.loader.loadFPGA(open(self.bsLoc, "rb"))
+        print "FPGA programmed"
 
-            self.driver.loadFPGA(open(self.bsLoc, "rb"))
+    def setInterface(self, dev):
+        self.loader.setInterface(dev)
 
-    def setFPGAModeZip(self):
-        self.useFPGAZip = True
-        util.globalSettings.setValue("%s-fpga-bitstream-mode" % self.driver.name, "zip")
 
-    def setFPGAModeDebug(self):
-        self.useFPGAZip = False
-        util.globalSettings.setValue("%s-fpga-bitstream-mode" % self.driver.name, "debug")
-
-    def setUSBInterface(self, dev):
-        self.driver.setUSBInterface(dev)
-
+from PySide.QtGui import *
 
 class FWLoaderConfigGUI(QDialog):
-    def __init__(self, fwlc):
-        super(FWLoaderConfigGUI, self).__init__(None)
-        self.fwlc = fwlc
-        self.setWindowTitle("ChipWhisperer (%s) Firmware Loader Configuration " % self.fwlc.driver.name)
+    def __init__(self, parent, fwLoaderConfig):
+        super(FWLoaderConfigGUI, self).__init__(parent)
+        self.fwLoaderConfig = fwLoaderConfig
+        self.setWindowTitle("ChipWhisperer (%s) Firmware Loader Configuration " % self.fwLoaderConfig.loader.name)
 
         layout = QVBoxLayout()
 
         gbFPGAMode = QGroupBox("FPGA Mode Selection")
-        radioOfficial = QRadioButton("Official Release (.zip)")
-        radioDebug = QRadioButton("Debug - no Partial Reconfig (.bit)")
+        radioRelease = QRadioButton("Official Release (.zip)")
+        radioDebug = QRadioButton("Debug - no partial reconfig (.bit)")
         layoutGB = QHBoxLayout()
-        layoutGB.addWidget(radioOfficial)
+        layoutGB.addWidget(radioRelease)
         layoutGB.addWidget(radioDebug)
         layoutGB.addStretch(1)
         gbFPGAMode.setLayout(layoutGB)
         layout.addWidget(gbFPGAMode)
-        radioOfficial.clicked.connect(self.setFPGAModeZip)
-        radioDebug.clicked.connect(self.setFPGAModeDebug)
+        radioRelease.clicked.connect(lambda: self.setFPGAModeRelease(True))
+        radioDebug.clicked.connect(lambda: self.setFPGAModeRelease(False))
+        radioRelease.setChecked(self.fwLoaderConfig.useFPGAZip)
+        radioDebug.setChecked(not self.fwLoaderConfig.useFPGAZip)
 
         layoutFW = QHBoxLayout()
         self.firmwareLocation = QLineEdit()
@@ -207,7 +163,8 @@ class FWLoaderConfigGUI(QDialog):
         layoutFW.addWidget(QLabel("USB Firmware"))
         layoutFW.addWidget(self.firmwareLocation)
         layoutFW.addWidget(firmwareButton)
-        if self.fwlc.driver.name == "cwcrev2":
+
+        if hasattr(self.fwLoaderConfig.loader, 'loadFirmware'):
             layout.addLayout(layoutFW)
 
         layoutBitZip = QHBoxLayout()
@@ -220,81 +177,72 @@ class FWLoaderConfigGUI(QDialog):
         layout.addLayout(layoutBitZip)
 
         layoutBit = QHBoxLayout()
-        self.bitLocation = QLineEdit()
+        self.bitDebugLocation = QLineEdit()
         bitButton = QPushButton("Find")
         bitButton.clicked.connect(self.findDebugBitstream)
         layoutBit.addWidget(QLabel("FPGA .bit file (DEBUG ONLY)"))
-        layoutBit.addWidget(self.bitLocation)
+        layoutBit.addWidget(self.bitDebugLocation)
         layoutBit.addWidget(bitButton)
         layout.addLayout(layoutBit)
 
         layoutProgramNow = QHBoxLayout()
         self.programNow = QPushButton("Program FPGA (MUST be connected already)")
-        self.programNow.clicked.connect(self.fwlc.loadFPGA)
+        self.programNow.clicked.connect(self.loadFPGA)
         layoutProgramNow.addWidget(self.programNow)
         layout.addLayout(layoutProgramNow)
 
-        if self.fwlc.driver.name == "cwlite":
-            gbSAMFW = QGroupBox("SAM3U Firmware")
-            layoutSAMFW = QVBoxLayout()
-            self.samfwVersion = QLabel("Detected FW Version: unknown")
-            self.samfwVersionLatest = QLabel("Latest FW Version: unknown")
-            pbSAMFW = QPushButton("Open SAM3U Update Widget")
-            pbSAMFW.clicked.connect(self.upgradeSAM3)
+        gbSAMFW = QGroupBox("SAM3U Firmware")
+        layoutSAMFW = QVBoxLayout()
+        pbSAMFW = QPushButton("Open SAM3U Update Widget")
+        pbSAMFW.clicked.connect(self.upgradeSAM3)
+        self.samfwVersion = QLabel("Detected FW Version: unknown")
+        self.samfwVersionLatest = QLabel("Latest FW Version: unknown")
+        layoutSAMFW.addWidget(self.samfwVersion)
+        layoutSAMFW.addWidget(self.samfwVersionLatest)
+        layoutSAMFW.addWidget(pbSAMFW)
+        gbSAMFW.setLayout(layoutSAMFW)
+        self.readFirmwareVersion()
 
-            layoutSAMFW.addWidget(self.samfwVersion)
-            layoutSAMFW.addWidget(self.samfwVersionLatest)
-            layoutSAMFW.addWidget(pbSAMFW)
-            gbSAMFW.setLayout(layoutSAMFW)
+        if isinstance(self.fwLoaderConfig.loader, CWLite_Loader):
             layout.addWidget(gbSAMFW)
 
-        if not self.fwlc.useFPGAZip:
-            radioDebug.setChecked(True)
-        else:
-            radioOfficial.setChecked(True)
-
+        self.setFPGAModeRelease(self.fwLoaderConfig.useFPGAZip)
+        self.bitZipLocation.setText(self.fwLoaderConfig.bsZipLoc)
+        self.bitDebugLocation.setText(self.fwLoaderConfig.bsLoc)
+        self.firmwareLocation.setText(self.fwLoaderConfig.fwFLoc)
         self.setLayout(layout)
 
-        self.bitLocation.setText(self.fwlc.bsLoc)
-        self.bitZipLocation.setText(self.fwlc.bsZipLoc)
-        self.firmwareLocation.setText(self.fwlc.fwFLoc)
+    def readFirmwareVersion(self):
+        if self.fwLoaderConfig.loader.driver is not None and hasattr(self.fwLoaderConfig.loader.driver, "readFwVersion"):
+            fwver = self.fwLoaderConfig.loader.driver.readFwVersion()
+            self.samfwVersion.setText("Detected FW Version: %d.%d b%d" % (fwver[0], fwver[1], fwver[2]))
+            self.samfwVersionLatest.setText("Latest FW Version: %d.%d" % (self.fwLoaderConfig.loader.driver.fwversion_latest[0], self.fwLoaderConfig.loader.driver.fwversion_latest[1]))
 
-    def setUSBInterface(self, cwliteusb):
-        self.fwlc.setUSBInterface(cwliteusb)
-        # Get versions
-        fwver = cwliteusb.readFwVersion()
-        self.samfwVersion.setText("Detected FW Version: %d.%d b%d" % (fwver[0], fwver[1], fwver[2]))
-        self.samfwVersionLatest.setText("Latest FW Version: %d.%d" % (cwliteusb.fwversion_latest[0], cwliteusb.fwversion_latest[1]))
+    def loadFPGA(self):
+        self.fwLoaderConfig.loadFPGA(self.bitZipLocation.isEnabled())
 
-    def setFPGAModeZip(self):
-        self.fwlc.setFPGAModeZip()
-        self.bitZipLocation.setEnabled(True)
-        self.bitLocation.setEnabled(False)
-
-    def setFPGAModeDebug(self):
-        self.fwlc.setFPGAModeDebug()
-        self.bitZipLocation.setEnabled(False)
-        self.bitLocation.setEnabled(True)
+    def setFPGAModeRelease(self, mode):
+        self.bitZipLocation.setEnabled(mode)
+        self.bitDebugLocation.setEnabled(not mode)
+        self.fwLoaderConfig.setFPGAMode(mode)
 
     def findDebugBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', '.', '*.bit')
         if fname:
-            self.bitLocation.setText(fname)
-            util.globalSettings.setValue("%s-debugbitstream-location" % self.name, fname)
+            self.bitDebugLocation.setText(fname)
+            self.fwLoaderConfig.bsLoc = fname
 
     def findZipBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Zip Firmware', '.', '*.zip')
         if fname:
             self.bitZipLocation.setText(fname)
-            util.globalSettings.setValue("%s-zipbitstream-location" % self.name, fname)
+            self.fwLoaderConfig.bsZipLoc = fname
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware', '.', '*.ihx')
         if fname:
             self.firmwareLocation.setText(fname)
-            util.globalSettings.setValue("%s-firmware-location" % self.name, fname)
+            self.fwLoaderConfig.fwFLoc = fname
 
     def upgradeSAM3(self):
-        if self.sam3loader is None:
-            self.sam3loader = SAM3LoaderConfig(self, self.console, self.cwliteUSB)
-        self.sam3loader.show()
+        SAM3LoaderConfig(self, self.fwLoaderConfig.loader.driver).show()

@@ -922,7 +922,8 @@ class CWLiteUSB(object):
         Close USB connection
         """
         # self._usbdev.close()
-        pass
+        if self._usbdev:
+            usb.util.dispose_resources(self._usbdev)
     
     def readFwVersion(self):
         try:

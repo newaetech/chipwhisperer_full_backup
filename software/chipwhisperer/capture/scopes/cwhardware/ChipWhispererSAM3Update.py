@@ -43,10 +43,8 @@ from chipwhisperer.common.utils import util
 
 
 class SAM3LoaderConfig(QDialog):
-    def __init__(self, parent=None, console=None, cwliteUSB=None):
+    def __init__(self, parent=None, cwliteUSB=None):
         super(SAM3LoaderConfig, self).__init__(parent)
-
-        self.console = console
         self.cwLiteUSB = cwliteUSB
 
         self.setWindowTitle("SAM3U Firmware Loader")

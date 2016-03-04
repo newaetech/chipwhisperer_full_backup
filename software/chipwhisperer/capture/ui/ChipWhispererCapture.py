@@ -223,10 +223,10 @@ class ChipWhispererCapture(MainChip):
         self.exampleScriptAct.setMenu(subMenu)
 
     def runScript(self, mod):
-        print("Running Script: %s" % mod.name())
+        self.updateStatusBar("Running Script: %s" % mod.name())
         m = mod.userScript(self)
         m.run()
-        print("Finished Script: %s" % mod.name())
+        self.updateStatusBar("Finished Script: %s" % mod.name())
 
     def addToolMenu(self):
         self.TerminalAct = QAction('Open Terminal', self,
@@ -321,16 +321,17 @@ class ChipWhispererCapture(MainChip):
 
     def addCaptureTools(self):
         self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
-        self.capture1Act.triggered.connect(self.capture1)
+        self.capture1Act.triggered.connect(lambda: self.doCapture(self.capture1))
         self.capture1Act.setCheckable(True)
         self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
-        self.captureMAct.triggered.connect(self.captureM)
+        self.captureMAct.triggered.connect(lambda: self.doCapture(self.captureM))
         self.captureMAct.setCheckable(True)
 
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
         self.captureStatusActionDis.triggered.connect(self.doConDis)
         self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self)
+        self.captureStatusActionCon.triggered.connect(self.doConDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         self.CaptureToolbar = self.addToolBar('Capture Tools')
@@ -347,6 +348,7 @@ class ChipWhispererCapture(MainChip):
         self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self)
         self.scopeStatusActionDis.triggered.connect(self.doConDisScope)
         self.scopeStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Scope: Connected', self)
+        self.scopeStatusActionCon.triggered.connect(self.doConDisScope)
         self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
 
         self.ScopeToolbar = self.addToolBar('Scope Toolbar')
@@ -360,6 +362,7 @@ class ChipWhispererCapture(MainChip):
         self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self)
         self.targetStatusActionDis.triggered.connect(self.doConDisTarget)
         self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self)
+        self.targetStatusActionCon.triggered.connect(self.doConDisTarget)
         self.targetStatus.setDefaultAction(self.targetStatusActionDis)
 
         self.TargetToolbar = self.addToolBar('Target Toolbar')
@@ -379,14 +382,18 @@ class ChipWhispererCapture(MainChip):
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
             self.manager.connectScope()
+            self.updateStatusBar("Scope Connected")
         else:
             self.manager.disconnectScope()
+            self.updateStatusBar("Scope Disconnected")
 
     def doConDisTarget(self):
         if self.targetStatus.defaultAction() == self.targetStatusActionDis:
             self.manager.connectTarget()
+            self.updateStatusBar("Target Connected")
         else:
             self.manager.disconnectTarget()
+            self.updateStatusBar("Target Disconnected")
 
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
@@ -431,9 +438,9 @@ class ChipWhispererCapture(MainChip):
 
     def saveProject(self):
         if self.project().hasFilename() == False :
-            fname = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')[0]
-            if fname=='':
-                return
+            # fname = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')[0]
+            fname, _ = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp','', QFileDialog.DontUseNativeDialog)
+            if not fname: return
 
             self.project().setFilename(fname)
             self.setCurrentFile(fname)
@@ -443,31 +450,28 @@ class ChipWhispererCapture(MainChip):
         self.updateTitleBar()
         self.updateStatusBar("Project Saved")
 
-    def capture1(self):
+    def doCapture(self, callback):
         try:
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
-            self.manager.capture1(self.auxList, self.acqPattern)
-            self.updateStatusBar("Capture-One Completed")
+            self.updateStatusBar(callback())
         finally:
-            self.capture1Act.setChecked(False)
             self.capture1Act.setEnabled(True)
             self.captureMAct.setEnabled(True)
+            self.capture1Act.setChecked(False)
+            self.captureMAct.setChecked(False)
+
+    def capture1(self):
+        self.manager.capture1(self.auxList, self.acqPattern)
+        return "Capture-One Completed"
 
     def captureM(self):
-        try:
-            self.capture1Act.setEnabled(False)
-            self.captureMAct.setEnabled(False)
-            cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
-            cprog.startCapture()
-            self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
-            self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
-            self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
-            self.updateStatusBar("Capture-M Completed")
-        finally:
-            self.capture1Act.setChecked(False)
-            self.capture1Act.setEnabled(True)
-            self.captureMAct.setEnabled(True)
+        cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
+        cprog.startCapture()
+        self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
+        self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
+        self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
+        return "Capture-M Completed"
 
 def makeApplication():
     # Create the Qt Application

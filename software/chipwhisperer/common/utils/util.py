@@ -31,6 +31,21 @@ import os.path
 active_scope = [None]
 chipwhisperer_extra = None
 
+class SettingsManager(object):
+    def __init__(self):
+        self.settingsList = {}
+
+    def getSettingsFor(self, name):
+        if not self.settingsList.has_key(name):
+            self.settingsList[name] = Settings()
+        return self.settingsList[name]
+
+    def write(self):
+        pass
+
+    def read(self):
+        pass
+
 class Settings(object):
     def __init__(self):
         self.dictionary = {}
@@ -46,6 +61,7 @@ class Settings(object):
 
     def clear(self):
         self.dictionary.clear()
+
 
 globalSettings = Settings()
 
@@ -146,3 +162,5 @@ class Observable(Signal):
 
     def value(self):
         return self.data
+
+    # value = property(fget=setValue, fset=value)

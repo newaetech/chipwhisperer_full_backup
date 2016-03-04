@@ -400,7 +400,11 @@ class VisaScopeInterface(ScopeTemplate):
             self.dataUpdated.emit(l, offset)
 
     def arm(self):
-        self.scopetype.arm()
+        try:
+            self.scopetype.arm()
+        except Exception, e:
+            self.dis()
+            raise e
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""

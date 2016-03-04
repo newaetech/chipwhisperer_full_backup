@@ -99,7 +99,6 @@ class ChipWhispererSPI(TargetTemplate):
         ExtendedParameter.setupExtended(self.params, self)
         self.keylength = 16
 
-
     def setKeyLen(self, klen):
         """ Set key length in BITS """
         self.keylength = klen / 8

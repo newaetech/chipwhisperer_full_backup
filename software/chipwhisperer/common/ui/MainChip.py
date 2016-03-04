@@ -649,7 +649,9 @@ class MainChip(QMainWindow):
             self.paramScripting.append(str(name))
 
     def updateStatusBar(self, message):
-        self.statusBar().showMessage(message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")")
+        msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
+        print "Status: " + msg
+        self.statusBar().showMessage(msg)
 
     def macWorkArounds(self):
         # There is some odd error on Mac OS X where you get little rectangles near close buttons
