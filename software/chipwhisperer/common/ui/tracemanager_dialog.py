@@ -39,122 +39,20 @@ import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.tracemanager import TraceManager
 
 sys.path.append('../common')
 
-class TraceManager(object):
-    """
-    When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
-    block of traces. This class is used to handle the remapping.
-    """
-
-    def __init__(self, parent):
-        self.dlg = parent
-        self.NumTrace = 0
-        self.NumPoint = 0
-        self.lastMapped = None
-
-    def getSegmentList(self, start=0, end=-1):
-        """
-        Get a list of segments.
-        """
-        tnum = start
-        if end == -1:
-            end = self.NumTrace
-
-        dataDict = {'offsetList':[], 'lengthList':[]}
-
-        while(tnum < end):
-            t = self.findMappedTrace(tnum)
-            dataDict['offsetList'].append(t.mappedRange[0])
-            dataDict['lengthList'].append(t.mappedRange[1] - t.mappedRange[0] + 1)
-            tnum = t.mappedRange[1] + 1
-
-        return dataDict
-
-    def findMappedTrace(self, n):
-        if self.lastMapped is not None:
-            if self.lastMapped.mappedRange is not None and n >= self.lastMapped.mappedRange[0] and n <= self.lastMapped.mappedRange[1]:
-                return self.lastMapped
-            else:
-                # Only load one segment at a time for memory reasons
-                self.lastMapped.unloadAllTraces()
-                self.lastMapped = None
-
-        for t in self.dlg.traceList:
-            if t.mappedRange:
-                if n >= t.mappedRange[0] and n <= t.mappedRange[1]:
-                    if not t.isLoaded():
-                        t.loadAllTraces(None, None)
-                    self.lastMapped = t
-                    return t
-
-        raise ValueError("n = %d not in mapped range"%n)
-
-    def getAuxData(self, n, auxDic):
-        t = self.findMappedTrace(n)
-        cfg = t.getAuxDataConfig(auxDic)
-        if cfg is not None:
-            filedata = t.loadAuxData(cfg["filename"])
-        else:
-            filedata = None
-
-        return {'cfgdata':cfg, 'filedata':filedata}
-
-    def getTrace(self, n):
-        t = self.findMappedTrace(n)
-        return t.getTrace(n - t.mappedRange[0])
-
-    def getTextin(self, n):
-        t = self.findMappedTrace(n)
-        return t.getTextin(n - t.mappedRange[0])
-
-    def getTextout(self, n):
-        t = self.findMappedTrace(n)
-        return t.getTextout(n - t.mappedRange[0])
-
-    def getKnownKey(self, n):
-        t = self.findMappedTrace(n)
-        return t.getKnownKey(n - t.mappedRange[0])
-
-    def UpdateTraces(self):
-        #Find total (last mapped range)
-        num = []
-        pts = []
-
-        for t in self.dlg.traceList:
-            if t.mappedRange is not None:
-                num.append(t.mappedRange[1])
-                pts.append(int(t.config.attr("numPoints")))
-
-        if not num:
-            self.NumTrace = 0
-        else:
-            self.NumTrace = max(num)
-
-        if not pts:
-            self.NumPoint = 0
-        else:
-            self.NumPoint = max(pts)
-
-    def numPoint(self):
-        return self.NumPoint
-
-    def numTrace(self):
-        return self.NumTrace
-
-class TraceManagerDialog(QDialog):
+class TraceManagerDialog(QDialog, TraceManager):
     """Manages traces associated with some project"""
     tracesChanged = Signal()
 
     secName = "Trace Management"
-    def __init__(self, parent=None):
-        super(TraceManagerDialog, self).__init__(parent)
+    def __init__(self, parent):
+        QDialog.__init__(self, parent)
+        TraceManager.__init__(self)
         self.parent = parent
-
         #This module is interface for others
-        self.iface = TraceManager(self)
-
         layout = QVBoxLayout()
 
         #Get labels in use
@@ -188,16 +86,6 @@ class TraceManagerDialog(QDialog):
         self.setLayout(layout)
 
         self.setWindowTitle("Trace Management")
-
-        self.newProject()
-
-    #def updatePreview(self):
-    #    if self.parent is not None:
-    #        self.parent.updatePreview()
-
-    def newProject(self):
-        self.traceList = []
-        return
 
     def checkProject(self, ask=True):
         #Check trace attributes
@@ -313,7 +201,7 @@ class TraceManagerDialog(QDialog):
                 self.traceList[i].mappedRange = None
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
 
-        self.iface.UpdateTraces()
+        self.UpdateTraces()
         #self.updatePreview()
         self.tracesChanged.emit()
 

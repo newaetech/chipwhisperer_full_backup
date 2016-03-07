@@ -23,22 +23,33 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 __author__ = "Colin O'Flynn"
+__organization__ = "NewAE"
 
 import os
 import sys
 import traceback
 from datetime import datetime
-
-#We always import PySide first, to force usage of PySide over PyQt
-from PySide.QtCore import *
-from PySide.QtGui import *
-import pyqtgraph as pg
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 import chipwhisperer.common.ui.PythonConsole
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
-from chipwhisperer.common.ui.TraceManager import TraceManagerDialog
+from chipwhisperer.common.ui.tracemanager_dialog import TraceManagerDialog
 from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
 from chipwhisperer.common.utils import util
+
+#We always import PySide first, to force usage of PySide over PyQt
+try:
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+except ImportError:
+    print "ERROR: PySide is required for this program"
+    sys.exit()
+
+try:
+    import pyqtgraph as pg
+except ImportError:
+    print "ERROR: PyQtGraph is required for this program"
+    sys.exit()
+
 
 class saveProjectDialog(QDialog):
     def __init__(self, parent=None):
@@ -161,70 +172,32 @@ class MainChip(QMainWindow):
     #app.setOrganizationName()
     #app.setApplicationName()
     #app.setWindowIcon()    
-    
-    openFile = Signal(str)
-    saveFile = Signal()
-    newFile = Signal()
-    
+
     projectChanged = Signal(object)
 
-    
     def __init__(self, name="Demo", icon="cwicon"):
         super(MainChip, self).__init__()
         sys.excepthook = self.exceptionHook
         self.manageTraces = TraceManagerDialog(self)
-        # self.manageTraces.tracesChanged.
-        self.name = name        
-        self.filename = None
+        self.name = name
         self.dirty = True
-        self.projEditWidget = ProjectTextEditor(self)
-        self.projectChanged.connect(self.projEditWidget.setProject)
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
-        self.lastMenuActionSection = None        
-        self.initUI(icon)
+        self.lastMenuActionSection = None
         self.paramTrees = []
         self.originalStdout = None
-        self.helpbrowser = HelpBrowser()
-        
-        #Fake widget for dock
-        #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
-        #with size policy or min/max sizes has worked.
-        fake = QWidget()
-        self.setCentralWidget(fake)
-        
+        self.projEditWidget = ProjectTextEditor(self)
+        self.initUI(icon)
+        self.helpbrowser = HelpBrowser(self)
         self.paramScripting = self.addConsole("Script Commands", visible=False)
         self.pythonConsole = self.addPythonConsole()
+        pg.setConfigOption('background', 'w')
+        pg.setConfigOption('foreground', 'k')
+        self.projectChanged.connect(self.projEditWidget.setProject)
 
-    def restoreDockGeometry(self):
-        """
-        Call after any class-specific setup (e.g. making docks), as this will then
-        restore everything using saved QSettings()
-        """
-        
-        #Settings
-        settings = QSettings()
-        self.restoreGeometry(settings.value("geometry"))
-        self.restoreState(settings.value("state"))
-        
-    def addWindowMenuAction(self, action, section):
-        """
-        When you add a dock, this function also adds
-        an option to show/hide it form the 'Window' menu
+    def readSettings(self):
+        self.settings = QSettings(__organization__, self.name)
+        self.restoreGeometry(self.settings.value("geometry"))
+        self.restoreState(self.settings.value("windowState"))
 
-        :param action: Action to take when clicking item form 'Window' menu
-        :type action: QAction
-        :param section: Name of section used to group together
-        :type section: str
-        """
-        
-        #TODO: Should this be done with submenus?
-        if section != self.lastMenuActionSection:
-            self.windowMenu.addSeparator()
-        
-        self.lastMenuActionSection = section                
-        self.windowMenu.addAction(action)
-        
     def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea,
                 allowedAreas=Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea,
                 visible=True, addToWindows=True):
@@ -241,9 +214,8 @@ class MainChip(QMainWindow):
         
         #Add to "Windows" menu
         if addToWindows:
-            self.addWindowMenuAction(dock.toggleViewAction(), None)
-            self.enforceMenuOrder()
-        
+            self.windowMenu.addAction(dock.toggleViewAction())
+
         return dock
     
     def addSettings(self, tree, name):
@@ -259,10 +231,11 @@ class MainChip(QMainWindow):
                 self.tabifyDockWidget(self.settings_docks[index], self.settings_docks[index + 1])
         self.settings_docks[0].raise_()
 
-    def addTraceDock(self, name):
+    def addTraceWidget(self):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
         gw = GraphWidget()
-        return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
+        self.setCentralWidget(gw)
+        return gw
         
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
@@ -283,13 +256,6 @@ class MainChip(QMainWindow):
         self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
         return wid
 
-    # def execute(self, command):
-    #     try:
-    #         self.pythonConsole.interpreter.write(">>> " + command)
-    #         exec(command)
-    #     except Exception, e:
-    #         QMessageBox.information(self, "Error", e.message)
-
     def exceptionHook(self, etype, value, trace):
         """
         Handler for all unhandled exceptions.
@@ -297,16 +263,12 @@ class MainChip(QMainWindow):
         print "".join(traceback.format_exception(etype, value, trace))
         QMessageBox.information(self, u"Error", unicode(value))
 
-    def clearAllSettings(self):
-        """Clear all saved QSettings(), such as window location etc"""
-        util.globalSettings.clear()
-        
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
-        settings = QSettings()
-        settings.setValue("geometry", self.saveGeometry())
-        settings.setValue("state", self.saveState())
-        
+        self.settings = QSettings(__organization__, self.name)
+        self.settings.setValue("geometry", self.saveGeometry())
+        self.settings.setValue("windowState", self.saveState())
+
         if self.okToContinue():
             QMainWindow.closeEvent(self, event)
         else:
@@ -317,17 +279,17 @@ class MainChip(QMainWindow):
         self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
                                shortcut=QKeySequence.Open,
                                statusTip='Open Project File',
-                               triggered=self._openProject)
+                               triggered=self.openProject)
 
         self.saveAct = QAction(QIcon('save.png'), '&Save Project', self,
                                shortcut=QKeySequence.Save,
                                statusTip='Save current project to Disk',
-                               triggered=self._saveProject)
+                               triggered=self.saveProject)
 
         self.newAct = QAction(QIcon('new.png'), '&New Project', self,
                                shortcut=QKeySequence.New,
                                statusTip='Create new Project',
-                               triggered=self._newProject)
+                               triggered=self.newProject)
 
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
@@ -402,17 +364,6 @@ class MainChip(QMainWindow):
         self.helpMenu.addAction(self.helpListAct)
         self.helpMenu.addAction(self.helpAboutAct)
             
-    def enforceMenuOrder(self):
-        """Makes sure menus appear in correct order, required as they get reordered when we add a new item to one"""
-        fakeAction = QAction('Does Nothing', self, visible=False)
-        self.projectMenu.addAction(fakeAction)
-        fakeAction = QAction('Does Nothing', self, visible=False)
-        self.toolMenu.addAction(fakeAction)
-        fakeAction = QAction('Does Nothing', self, visible=False)
-        self.windowMenu.addAction(fakeAction)
-        fakeAction = QAction('Does Nothing', self, visible=False)
-        self.helpMenu.addAction(fakeAction)
-            
     def initUI(self, icon="cwicon"):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
@@ -432,11 +383,7 @@ class MainChip(QMainWindow):
         
     def updateTitleBar(self):
         """Update filename shown in title bar"""
-        if self.filename is not None:
-            fname = os.path.basename(self.filename)
-        else:
-            fname = "Untitled"
-        
+        fname = os.path.basename(self.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(self.dirty)
         
@@ -506,38 +453,28 @@ class MainChip(QMainWindow):
         
         #return QFileInfo(fullFileName).fileName()
                 
-    def _openProject(self, fname=None):
+    def openProject(self, fname=None):
         #TODO: close etc
-        
         if fname is None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
-        
-        if fname is not None:
-            self.openFile.emit(fname)
-            self.setCurrentFile(fname)
-       
-                
-    def _newProject(self):
-        self.newFile.emit()
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open File', '.','*.cwp','', QFileDialog.DontUseNativeDialog)
+            if not fname: return
 
-    def _saveProject(self):
-        self.saveFile.emit()
-        
+        self.setCurrentFile(fname)
+
     def project(self):
         return self._project
 
     def setProject(self, proj):
         self._project = proj
-        self.projEditWidget.setFilename(self._project.filename)
+        self.projEditWidget.setFilename(self._project.getFilename())
         self._project.valueChanged.connect(self.projEditWidget.projectChangedGUI)
         self.projectChanged.emit(self._project)
         self._project.filenameChanged.connect(self.projEditWidget.setFilename)
 
-                
     def openRecentFile(self):
         action = self.sender()
         if action:
-            self.openFile.emit(action.data())      
+            self.openFile(action.data())
 
     def okToContinue(self):
         # reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
@@ -653,13 +590,7 @@ class MainChip(QMainWindow):
         print "Status: " + msg
         self.statusBar().showMessage(msg)
 
-    def macWorkArounds(self):
-        # There is some odd error on Mac OS X where you get little rectangles near close buttons
-        # Calling this gets rid of them - reference to errors with modal system on QT Mac build have been found
-        # but haven't chased down actual cause yet
-        test = saveProjectDialog(self)
-           
-                                                       
+
 def main():    
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")

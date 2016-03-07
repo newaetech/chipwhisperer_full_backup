@@ -23,8 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-__version__ = "V3"
-
 import os.path
 import sys
 from functools import partial
@@ -38,23 +36,14 @@ from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.ui.MainChip import MainChip
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils import util
+from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter, ParameterTree
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+__name__ = "ChipWhisperer - Capture"
+__organization__ = "NewAE"
+__version__ = "V3"
+__author__ = "Colin O'Flynn"
 
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    #print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
 
 class ChipWhispererCapture(MainChip):
     def __init__(self, rootdir="."):
@@ -63,65 +52,26 @@ class ChipWhispererCapture(MainChip):
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
         util.globalSettings.setValue("cwcapture-starting-root", rootdir)
-        self._rootdir = rootdir
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self)
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
         self.paramTrees.append(self.glitchMonitor.paramTree)
 
         self.manager = CWCaptureAPI()
-
-        self.da = None
-        self.numTraces = 100
-        self.numSegments = 1
-
-        self.addToolbars()
-        self.addWaveforms()
-        self.addToolMenu()
-        self.restoreDockGeometry()
-        self.newFile.connect(self.newProject)
-        self.saveFile.connect(self.saveProject)
-
-        valid_scopes = CWCaptureAPI.getScopeModules(self._rootdir + "/scopes", self.showScriptParameter)
-        valid_targets =  CWCaptureAPI.getTargetModules(self._rootdir + "/targets", self.showScriptParameter)
-        valid_traces = CWCaptureAPI.getTraceFormats(self._rootdir + "/../common/traces")
-        valid_aux = CWCaptureAPI.getAuxiliaryModules(self._rootdir + "/auxiliary", self.showScriptParameter)
-        valid_acqPatterns = CWCaptureAPI.getAcqPatternModules(self.showScriptParameter)
-        self.addExampleScripts(CWCaptureAPI.getExampleScripts(self._rootdir + "/scripts"))
-
-        self.manager.setScope(valid_scopes["None"])
-        self.manager.setTarget(valid_targets["None"])
-        self.manager.setTraceClass(valid_traces["ChipWhisperer/Native"])
-        self.auxList = [valid_aux["None"]]
-        self.acqPattern = valid_acqPatterns['Basic']
+        self.manager.setupParameters(rootdir, self.showScriptParameter)
+        self.manager.setTraceManager(self.manageTraces)
         self.newProject()
 
-        self.cwParams = [
-                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.manager.getScope(), 'set':self.manager.setScope},
-                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.manager.getTarget(), 'set':self.manager.setTarget},
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.manager.getTraceClass(), 'set':self.manager.setTraceClass},
-                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.auxList[0], 'set':self.auxChanged},
-
-                # {'name':'Key Settings', 'type':'group', 'children':[
-                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
-                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
-                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
-                #    ]},
-
-                {'name':'Acquisition Settings', 'type':'group', 'children':[
-                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
-                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.setNumSegments, 'get':self.getNumSegments, 'tip':'Break capture into N segments, '
-                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
-                         'as each segment is buffered into RAM before being written to disk.'},
-                        {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
-                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.acqPattern, 'set':self.setAcqPattern},
-                    ]},
-                ]
-
+        self.addExampleScripts(CWCaptureAPI.getExampleScripts(rootdir + "/scripts"))
+        self.addToolbar()
+        self.addWaveforms()
+        self.addToolMenu()
         self.addSettingsDocks()
         self.dockifySettings()
         self.reloadParamList()
+        self.readSettings()
 
+        # Observers (callback methods)
         self.manager.signals.paramListUpdated.connect(self.reloadTargetParamList)
         self.manager.signals.newInputData.connect(self.newTargetData)
         self.manager.signals.connectStatus.connect(self.targetStatusChanged)
@@ -133,10 +83,10 @@ class ChipWhispererCapture(MainChip):
         self.manager.signals.scopeChanged.connect(self.scopeChanged)
         self.manager.signals.targetChanged.connect(self.targetChanged)
         self.manager.signals.traceChanged.connect(self.traceChanged)
+        self.manager.signals.auxChanged.connect(self.auxChanged)
+        self.manager.signals.acqPatternChanged.connect(self.reloadParamList)
 
     def scopeChanged(self):
-        self.ScopeToolbar.setEnabled(self.manager.hasScope())
-
         if self.manager.hasScope():
             self.manager.getScope().paramListUpdated.connect(self.reloadScopeParamList)
             self.manager.getScope().dataUpdated.connect(self.newScopeData)
@@ -144,27 +94,14 @@ class ChipWhispererCapture(MainChip):
             self.reloadScopeParamList()
 
     def targetChanged(self):
-        self.TargetToolbar.setEnabled(self.manager.hasTarget())
-
         if self.manager.hasTarget():
             self.manager.getTarget().connectStatus.connect(self.targetStatusChanged)
-            self.acqPattern.setTarget(self.manager.getTarget())
             self.reloadTargetParamList()
 
     def traceChanged(self):
         self.reloadTraceParamList()
 
-    def auxChanged(self, newaux):
-        self.auxList = [newaux]
-        try:
-            newaux.paramList()
-            newaux.paramListUpdated.connect(self.reloadAuxParamList)
-            self.reloadAuxParamList()
-            self.settingsAuxDock.setVisible(True)
-        except AttributeError:
-            self.settingsAuxDock.setVisible(False)
-        except TypeError:
-            self.settingsAuxDock.setVisible(False)
+    def auxChanged(self):
         self.reloadAuxParamList()
 
     def masterStatusChanged(self):
@@ -194,22 +131,6 @@ class ChipWhispererCapture(MainChip):
 
     def newTargetData(self, data):
         self.glitchMonitor.addResponse(data)
-
-    def setAcqPattern(self, pat):
-        self.acqPattern = pat
-        self.reloadParamList()
-
-    def getNumTraces(self):
-        return self.numTraces
-
-    def setNumTraces(self, t):
-        self.numTraces = t
-
-    def getNumSegments(self):
-        return self.numSegments
-
-    def setNumSegments(self, s):
-        self.numSegments = s
 
     def addExampleScripts(self, scripts):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
@@ -244,12 +165,12 @@ class ChipWhispererCapture(MainChip):
 
 
     def addWaveforms(self):
-        self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
+        self.waveformDock = self.addTraceWidget()
 
         #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
-        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()
+        self.waveformDock.setDefaultYRange(-0.5, 0.5)
+        self.waveformDock.YDefault()
 
     def addSettingsDocks(self):
         self.setupParametersTree()
@@ -266,7 +187,7 @@ class ChipWhispererCapture(MainChip):
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
 
-        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
+        self.params = Parameter.create(name='Generic Settings', type='group', children=self.manager.cwParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.generalParamTree.setParameters(self.params, showTop=False)
 
@@ -296,7 +217,7 @@ class ChipWhispererCapture(MainChip):
         ExtendedParameter.reloadParams(self.manager.getTraceClass().getParams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadAuxParamList(self):
-        ExtendedParameter.reloadParams(self.auxList[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.manager.getAuxiliaryModules()[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadParamList(self):
         ExtendedParameter.reloadParams(self.paramList(), self.generalParamTree, help_window=self.helpbrowser.helpwnd)
@@ -305,27 +226,23 @@ class ChipWhispererCapture(MainChip):
         p = []
         p.append(self.params)
 
-        if self.acqPattern is not None:
-            for par in self.acqPattern.paramList():
+        if self.manager.acqPattern is not None:
+            for par in self.manager.acqPattern.paramList():
                 p.append(par)
         return p
 
-    def newScopeData(self,  data=None, offset=0):
-        self.waveformDock.widget().passTrace(data, offset)
+    def newScopeData(self, data=None, offset=0):
+        self.waveformDock.passTrace(data, offset)
 
     def setConfigWidget(self, widget):
         self.configdock.setWidget(widget)
 
-    def addToolbars(self):
-        self.addCaptureTools()
-
-    def addCaptureTools(self):
+    def addToolbar(self):
+        # Capture
         self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
         self.capture1Act.triggered.connect(lambda: self.doCapture(self.capture1))
-        self.capture1Act.setCheckable(True)
         self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
         self.captureMAct.triggered.connect(lambda: self.doCapture(self.captureM))
-        self.captureMAct.setCheckable(True)
 
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
@@ -334,16 +251,7 @@ class ChipWhispererCapture(MainChip):
         self.captureStatusActionCon.triggered.connect(self.doConDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
-        self.CaptureToolbar = self.addToolBar('Capture Tools')
-        self.CaptureToolbar.setObjectName('Capture Toolbar')
-        self.CaptureToolbar.addAction(self.capture1Act)
-        self.CaptureToolbar.addAction(self.captureMAct)
-        self.CaptureToolbar.addWidget(QLabel('Master:'))
-        self.CaptureToolbar.addWidget(self.captureStatus)
-        # Unknown bug on MAC OS X requires this + the different name for setObjectName
-        self.CaptureToolbar.show()
-
-        # Scope Toolbar
+        # Scope
         self.scopeStatus = QToolButton()
         self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self)
         self.scopeStatusActionDis.triggered.connect(self.doConDisScope)
@@ -351,13 +259,7 @@ class ChipWhispererCapture(MainChip):
         self.scopeStatusActionCon.triggered.connect(self.doConDisScope)
         self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
 
-        self.ScopeToolbar = self.addToolBar('Scope Toolbar')
-        self.ScopeToolbar.setObjectName('Scope Toolbar')
-        self.ScopeToolbar.addWidget(QLabel('Scope:'))
-        self.ScopeToolbar.addWidget(self.scopeStatus)
-        self.ScopeToolbar.setEnabled(False)
-
-        # Target Toolbar
+        # Target
         self.targetStatus = QToolButton()
         self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self)
         self.targetStatusActionDis.triggered.connect(self.doConDisTarget)
@@ -365,19 +267,24 @@ class ChipWhispererCapture(MainChip):
         self.targetStatusActionCon.triggered.connect(self.doConDisTarget)
         self.targetStatus.setDefaultAction(self.targetStatusActionDis)
 
-        self.TargetToolbar = self.addToolBar('Target Toolbar')
-        self.TargetToolbar.setObjectName('Target Toolbar')
-        self.TargetToolbar.addWidget(QLabel('Target:'))
-        self.TargetToolbar.addWidget(self.targetStatus)
-        self.TargetToolbar.setEnabled(False)
-
         # Other Stuff
         self.miscValidateAction = QAction(QIcon(':/images/validate.png'), 'Validate', self)
         self.miscValidateAction.triggered.connect(self.validateSettings)
 
-        self.MiscToolbar = self.addToolBar('Misc Tools')
-        self.MiscToolbar.setObjectName('Misc Tools')
-        self.MiscToolbar.addAction(self.miscValidateAction)
+        self.toolBar = self.addToolBar('Tools')
+        self.toolBar.setObjectName('Tools')
+        self.toolBar.addAction(self.capture1Act)
+        self.toolBar.addAction(self.captureMAct)
+        self.toolBar.addSeparator()
+        self.toolBar.addWidget(QLabel('Master:'))
+        self.toolBar.addWidget(self.captureStatus)
+        self.toolBar.addWidget(QLabel('Scope:'))
+        self.toolBar.addWidget(self.scopeStatus)
+        self.toolBar.addWidget(QLabel('Target:'))
+        self.toolBar.addWidget(self.targetStatus)
+        self.toolBar.addSeparator()
+        self.toolBar.addAction(self.miscValidateAction)
+        self.toolBar.show()
 
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
@@ -414,10 +321,6 @@ class ChipWhispererCapture(MainChip):
         if self.project().dataDirIsDefault:
              vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
-        tracesPerRun = int(self.numTraces / self.numSegments)
-        if tracesPerRun > 10E3:
-             vw.addMessage("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb")
-
         if vw.numWarnings() > 0 or warnOnly == False:
             return vw.exec_()
         else:
@@ -425,30 +328,26 @@ class ChipWhispererCapture(MainChip):
 
     def newProject(self):
         self.setProject(ProjectFormat(self))
-        self.project().setProgramName("ChipWhisperer-Capture")
+        self.project().setProgramName(__name__)
         self.project().setProgramVersion(__version__)
         self.project().addParamTree(self)
         self.project().addParamTree(self.manager.getScope())
         self.project().addParamTree(self.manager.getTarget())
-        self.project().setTraceManager(self.manageTraces)
-        self.setCurrentFile(None)
-
-        # TODO: Fix this hack
-        self.macWorkArounds()
+        self.project().setTraceManager(self.manager.getTraceManager())
+        self.updateTitleBar()
 
     def saveProject(self):
         if self.project().hasFilename() == False :
-            # fname = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')[0]
+            # fname = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')[0]      # File Dialog sometimes will not show up with Mac OS
             fname, _ = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
             self.project().setFilename(fname)
-            self.setCurrentFile(fname)
 
         self.project().save()
         self.dirty = False
-        self.updateTitleBar()
         self.updateStatusBar("Project Saved")
+        self.updateTitleBar()
 
     def doCapture(self, callback):
         try:
@@ -462,25 +361,26 @@ class ChipWhispererCapture(MainChip):
             self.captureMAct.setChecked(False)
 
     def capture1(self):
-        self.manager.capture1(self.auxList, self.acqPattern)
+        self.manager.capture1()
         return "Capture-One Completed"
 
     def captureM(self):
-        cprog = CaptureProgressDialog(ntraces=self.numTraces, nsegs=self.numSegments)
+        cprog = CaptureProgressDialog(ntraces=self.manager.getNumTraces(), nsegs=self.manager.getNumSegments())
         cprog.startCapture()
         self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
         self.manager.signals.campaignDone.connect(cprog.incSeg)
         cprog.abortCapture.connect(self.manager.signals.abortCapture.emit)
-        self.manager.captureM(self.project().datadirectory, self.numTraces, self.numSegments, self.auxList, self.acqPattern)
+        self.manager.captureM(self.project().datadirectory)
         self.manager.signals.campaignDone.disconnect(cprog.incSeg)
         self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
         return "Capture-M Completed"
 
+
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
-    app.setOrganizationName("ChipWhisperer")
-    app.setApplicationName("Capture "+__version__)
+    app.setOrganizationName(__organization__)
+    app.setApplicationName(__name__ + " " + __version__)
     return app
 
 def main():

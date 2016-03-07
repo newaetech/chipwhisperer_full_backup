@@ -26,9 +26,9 @@
 #=================================================
 
 import os
-
 from PySide.QtCore import *
 from PySide.QtGui import *
+from chipwhisperer.common.ui.projectdiff_widget import ProjectDiffWidget
 
 class ProjectEditor(QTextEdit):
 
@@ -154,7 +154,8 @@ class ProjectTextEditor(QWidget):
         self.readFromDisk()
 
     def checkGUIChanged(self):
-        if self.project().diffWidget.checkDiff() == False:
+        pdiffw = ProjectDiffWidget(self, project=self.project())
+        if pdiffw.checkDiff() == False:
             self.setStatus("sync")
         else:
             self.setStatus("guichange")

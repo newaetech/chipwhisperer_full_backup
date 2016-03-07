@@ -27,6 +27,7 @@
 
 import ast
 import os.path
+import collections
 
 active_scope = [None]
 chipwhisperer_extra = None
@@ -117,6 +118,18 @@ def strListToList(strlist):
         return listeval
     except ValueError:
         raise ValueError("Failed to convert %s to list" % (strlist))
+
+def convert_to_str(data):
+    """
+    Converts all dictionary elements to string type - similar to what ConfigObj will
+    be doing when it saves and loads the data.
+    """
+    if isinstance(data, collections.Mapping):
+        return dict(map(convert_to_str, data.iteritems()))
+    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
+        return type(data)(map(convert_to_str, data))
+    else:
+        return str(data)
 
 def hexStrToByteArray(hexStr):
     ba = bytearray()

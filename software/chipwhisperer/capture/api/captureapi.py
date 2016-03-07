@@ -27,6 +27,7 @@ import importlib
 from datetime import *
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
+from chipwhisperer.common.api.tracemanager import TraceManager
 
 class CWCaptureAPI(object):
     """This is the manager class"""
@@ -36,6 +37,8 @@ class CWCaptureAPI(object):
         scopeChanged = util.Signal()
         targetChanged = util.Signal()
         traceChanged = util.Signal()
+        auxChanged = util.Signal()
+        acqPatternChanged = util.Signal()
         connectStatus = util.Signal()
         newInputData = util.Signal()
         newTextResponse = util.Signal()
@@ -46,12 +49,48 @@ class CWCaptureAPI(object):
 
     def __init__(self):
         self.signals = CWCaptureAPI.Signals()
-        self.numTraces = 100
-        self.numSegments = 1
         self._scope = None
         self._target = None
         self._traceClass = None
+        self._traceManager = None
         self.signals.abortCapture.connect(self.abortCapture)
+        self.numTraces = 100
+        self.numSegments = 1
+
+    def setupParameters(self, rootdir, showScriptParameter):
+        valid_scopes = CWCaptureAPI.getScopeModules(rootdir + "/scopes", showScriptParameter)
+        valid_targets =  CWCaptureAPI.getTargetModules(rootdir + "/targets", showScriptParameter)
+        valid_traces = CWCaptureAPI.getTraceFormats(rootdir + "/../common/traces")
+        valid_aux = CWCaptureAPI.getAuxiliaryModules(rootdir + "/auxiliary", showScriptParameter)
+        valid_acqPatterns = CWCaptureAPI.getAcqPatternModules(showScriptParameter)
+
+        self.setScope(valid_scopes["None"])
+        self.setTarget(valid_targets["None"])
+        self.setTraceClass(valid_traces["ChipWhisperer/Native"])
+        self.auxList = [valid_aux["None"]]
+        self.acqPattern = valid_acqPatterns['Basic']
+
+        self.cwParams = [
+                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.getScope(), 'set':self.setScope},
+                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.getTarget(), 'set':self.setTarget},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.getTraceClass(), 'set':self.setTraceClass},
+                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.auxList[0], 'set':self.setAux},
+
+                # {'name':'Key Settings', 'type':'group', 'children':[
+                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
+                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
+                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
+                #    ]},
+
+                {'name':'Acquisition Settings', 'type':'group', 'children':[
+                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.setNumTraces, 'get':self.getNumTraces},
+                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.setNumSegments, 'get':self.getNumSegments, 'tip':'Break capture into N segments, '
+                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
+                         'as each segment is buffered into RAM before being written to disk.'},
+                        # {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
+                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.acqPattern, 'set':self.setAcqPattern},
+                    ]},
+                ]
 
     def hasScope(self):
         return self._scope is not None
@@ -103,6 +142,21 @@ class CWCaptureAPI(object):
         self.signals.traceChanged.emit()
         self._traceClass = driver
 
+    def getTraceManager(self):
+        return self._traceManager
+
+    def setTraceManager(self, manager):
+        self._traceManager = manager
+
+    def setAux(self, aux):
+        self.auxList = [aux]
+        self.signals.auxChanged.emit()
+
+    def setAcqPattern(self, pat):
+        self.acqPattern = pat
+        self.acqPattern.setTarget(self.getTarget())
+        self.signals.acqPatternChanged.emit()
+
     def connectScope(self):
         self.getScope().con()
         if hasattr(self.getScope(), "qtadc"):
@@ -135,14 +189,14 @@ class CWCaptureAPI(object):
     def setNumTraces(self, t):
         self.numTraces = t
 
-    def setNumSegments(self, s):
-        self.numSegments = s
-
     def getNumSegments(self):
         return self.numSegments
 
-    def capture1(self, auxList, acqPattern):
-        ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=auxList, keyTextPattern=acqPattern)
+    def setNumSegments(self, s):
+        self.numSegments = s
+
+    def capture1(self):
+        ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
         ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
         ac.doSingleReading()
 
@@ -150,11 +204,11 @@ class CWCaptureAPI(object):
             print "Capture aborted"
             self._abortCapture = True
 
-    def captureM(self, datadirectory, numTraces, numSegments, auxList, acqPattern):
+    def captureM(self, datadirectory):
         overallstarttime = datetime.now()
         writerlist = []
         tcnt = 0
-        tracesPerRun = int(numTraces / numSegments)
+        tracesPerRun = int(self.numTraces / self.numSegments)
 
         # This system re-uses one wave buffer a bunch of times. This is required since the memory will become
         # fragmented, even though you are just freeing & reallocated the same size buffer. It's slightly less
@@ -164,7 +218,7 @@ class CWCaptureAPI(object):
         waveBuffer = None
         self._abortCapture = False
 
-        for i in range(0, numSegments):
+        for i in range(0, self.numSegments):
             currentTrace = self.getTraceClassInstance()
 
             # Load trace writer information
@@ -179,19 +233,18 @@ class CWCaptureAPI(object):
             if waveBuffer is not None:
                 currentTrace.setTraceBuffer(waveBuffer)
 
-            if auxList is not None:
-                for aux in auxList:
+            if self.auxList is not None:
+                for aux in self.auxList:
                     aux.setPrefix(baseprefix)
 
-            ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, auxList, acqPattern)
+            ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
             self.signals.abortCapture.connect(ac.abortCapture)
             self.signals.campaignStart.emit(baseprefix)
             ac.setMaxtraces(tracesPerRun)
 
-            ac.doReadings()
-#            ac.doReadings(addToList=self.manageTraces)
+            ac.doReadings(addToList=self._traceManager)
             self.signals.abortCapture.disconnect(ac.abortCapture)
 
             if self._abortCapture:
@@ -206,7 +259,6 @@ class CWCaptureAPI(object):
                 waveBuffer = currentTrace.traces
                 writerlist.append(currentTrace)
         print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
-
         return writerlist
 
     def validateSettings(self):
@@ -232,6 +284,10 @@ class CWCaptureAPI(object):
             ret.append(("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae"))
         except Exception as e:
             ret.append(("warn", "General Settings", e.message, "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727"))
+
+        tracesPerRun = int(self.numTraces / self.numSegments)
+        if tracesPerRun > 10E3:
+            ret.append(("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb"))
 
         return ret
 

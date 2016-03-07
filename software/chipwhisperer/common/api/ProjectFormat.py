@@ -24,19 +24,11 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
 import os
 import re
-import inspect
+import sys
 from chipwhisperer.common.utils import util
-
-#We always import PySide first, to force usage of PySide over PyQt
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+from chipwhisperer.common.api.dictdiffer import DictDiffer
 
 try:
     from configobj import ConfigObj  # import the module
@@ -44,58 +36,6 @@ except ImportError:
     print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
     sys.exit()
 
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    # print pg.systemInfo()
-
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.api.dictdiffer import DictDiffer
-
-def delete_keys_from_dict(dict_del, lst_keys):
-    for k in lst_keys:
-        try:
-            del dict_del[k]
-        except KeyError:
-            pass
-    for v in dict_del.values():
-        if isinstance(v, dict):
-            delete_keys_from_dict(v, lst_keys)
-
-def delete_objects_from_dict(d):
-    #todel = []
-    for key, value in d.iteritems():
-        if isinstance(value, (dict, list, tuple)):
-            delete_objects_from_dict(value)
-        
-        elif inspect.ismethod(value) or isinstance(value, QObject):
-            #todel.append(key)
-            #print key
-            d[key] = value.__class__.__name__
-            
-
-    #for k in todel:
-    #    del d[k]
-
-import collections
-
-def convert_to_str(data):
-    """
-    Converts all dictionary elements to string type - similar to what ConfigObj will
-    be doing when it saves and loads the data.
-    """
-    if isinstance(data, collections.Mapping):
-        return dict(map(convert_to_str, data.iteritems()))
-    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
-        return type(data)(map(convert_to_str, data))
-    else:
-        return str(data)
 
 class ConfigObjProj(ConfigObj):
     """
@@ -115,97 +55,29 @@ class ConfigObjProj(ConfigObj):
         if self._callback:
             self._callback(key)
 
-class ProjectDiffWidget(QWidget):
-    """Widget that displays differences between versions of the project file"""
-
-    def __init__(self, parent=None, project=None):
-        super(ProjectDiffWidget, self).__init__(parent)
-
-        self._project = project
-
-        hlayout = QHBoxLayout()
-
-        self.changedTree = ParameterTree()
-        self.addedTree = ParameterTree()
-        self.deletedTree = ParameterTree()
-
-        self.updateParamTree(self.changedTree, [], "Changed Sections")
-        self.updateParamTree(self.addedTree, [], "Added Sections")
-        self.updateParamTree(self.deletedTree, [], "Removed Sections")
-
-        hlayout.addWidget(self.changedTree)
-        hlayout.addWidget(self.addedTree)
-        hlayout.addWidget(self.deletedTree)
-
-        self.setLayout(hlayout)
-
-    def setProject(self, proj):
-        self._project = proj
-        # self._project.valueChanged.connect(self.doDiff)
-        
-    def updateParamTree(self, paramTree, changelist, name):
-        paramlist = []
-        for k in changelist:
-            paramlist.append({'name':k})
-        params = Parameter.create(name=name, type='group', children=paramlist)
-        ExtendedParameter.reloadParams([params], paramTree)
-
-    def checkDiff(self, ignored=None, updateGUI=False):
-        """
-        Check if there is a difference - returns True if so, and False
-        if no changes present. Also updates widget with overview of the
-        differences if requested with updateGUI
-        """
-        if self._project.traceManager:
-            self._project.saveTraceManager()
-
-        disk = convert_to_str(ConfigObjProj(infile=self._project.filename))
-        ram = convert_to_str(self._project.config)
-        diff = DictDiffer(ram, disk)
-
-        added = diff.added()
-        removed = diff.removed()
-        changed = diff.changed()
-
-        if updateGUI:
-            self.updateParamTree(self.changedTree, changed, "Changed Sections")
-            self.updateParamTree(self.addedTree, added, "Added Sections (not on disk)")
-            self.updateParamTree(self.deletedTree, removed, "Removed Sections (on disk)")
-
-        if (len(added) + len(removed) + len(changed)) == 0:
-            return False
-        return True
-
-
 class ProjectFormat(object):
 
-    # Filename changed
     filenameChanged = util.Signal()
-
-    # File changed on disk but perhaps not yet updated
     fileChangedOnDisk = util.Signal()
-
-    # Project settings changed but NOT saved anywhere yet
     valueChanged = util.Signal()
 
+    untitledFileName = ""
     def __init__(self, parent=None):
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
         self.paramListList = []        
-        self.filename = "untitled.cwp"
         self.directory = "."
         self.datadirectory = "default-data-dir/"
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self.traceManager = None
+        self.setFilename(ProjectFormat.untitledFileName)
         self.checkDataDirectory()
-        self.diffWidget = ProjectDiffWidget(parent, project=self)
-
         self.dataDirIsDefault = True
         
     def configObjChanged(self, key):
         self.valueChanged.emit(key)
 
     def hasFilename(self):
-        if self.filename == "untitled.cwp":
+        if self.filename == ProjectFormat.untitledFileName:
             return False
         else:
             return True
@@ -234,6 +106,9 @@ class ProjectFormat(object):
     def addWave(self, configfile):
         return       
         
+    def getFilename(self):
+        return self.filename
+
     def setFilename(self, f):
         self.filename = f
         self.config.filename = f        
@@ -262,7 +137,6 @@ class ProjectFormat(object):
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
 
         #TODO: readings????
-        
 
     def getDataFilepath(self, filename, subdirectory='analysis'):
         datadir = os.path.join(self.datadirectory, 'analysis')
@@ -277,8 +151,8 @@ class ProjectFormat(object):
                 
     def checkDataConfig(self, config, requiredSettings):
         """Check a configuration section for various settings"""
-        requiredSettings = convert_to_str(requiredSettings)
-        config = convert_to_str(config)
+        requiredSettings = util.convert_to_str(requiredSettings)
+        config = util.convert_to_str(config)
         return set(requiredSettings.items()).issubset(set(config.items()))
 
     def getDataConfig(self, sectionName="Aux Data", subsectionName=None, requiredSettings=None):
@@ -355,3 +229,21 @@ class ProjectFormat(object):
         self.config.write()
         self.fileChangedOnDisk.emit()
     
+    def checkDiff(self):
+        """
+        Check if there is a difference - returns True if so, and False
+        if no changes present. Also updates widget with overview of the
+        differences if requested with updateGUI
+        """
+        if self.traceManager:
+            self.saveTraceManager()
+
+        disk = util.convert_to_str(ConfigObjProj(infile=self.filename))
+        ram = util.convert_to_str(self.config)
+        diff = DictDiffer(ram, disk)
+
+        added = diff.added()
+        removed = diff.removed()
+        changed = diff.changed()
+
+        return added, removed, changed
