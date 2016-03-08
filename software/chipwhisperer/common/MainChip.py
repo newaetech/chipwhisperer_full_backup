@@ -196,11 +196,7 @@ class MainChip(QMainWindow):
         self.originalStdout = None
         self.helpbrowser = HelpBrowser()
         
-        #Fake widget for dock
-        #TODO: Would be nice if this auto-resized to keep small, but not amount of playing
-        #with size policy or min/max sizes has worked.
-        fake = QWidget()
-        self.setCentralWidget(fake)
+        self.setCentralWidget(None)
         
         self.paramScripting = self.addConsole("Script Commands", visible=False)
         self.addPythonConsole()
