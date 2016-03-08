@@ -28,7 +28,6 @@
 import os
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.ui.projectdiff_widget import ProjectDiffWidget
 
 class ProjectEditor(QTextEdit):
 
@@ -61,9 +60,7 @@ class ProjectEditor(QTextEdit):
 
 
 class ProjectTextEditor(QWidget):
-
     fileChanged = Signal()
-
 
     def __init__(self, parent=None):
         super(ProjectTextEditor, self).__init__(parent)
@@ -154,8 +151,7 @@ class ProjectTextEditor(QWidget):
         self.readFromDisk()
 
     def checkGUIChanged(self):
-        pdiffw = ProjectDiffWidget(self, project=self.project())
-        if pdiffw.checkDiff() == False:
+        if not self.project().hasDiffs():
             self.setStatus("sync")
         else:
             self.setStatus("guichange")
@@ -227,9 +223,7 @@ class ProjectHighlighter (QSyntaxHighlighter):
     """Syntax highlighter for the Python language.
     """
     # Python operators
-    operators = [
-        '=',
-    ]
+    operators = ['=',]
 
     def __init__(self, document):
         QSyntaxHighlighter.__init__(self, document)

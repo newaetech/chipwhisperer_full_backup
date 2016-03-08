@@ -32,22 +32,17 @@ from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.ui.MainChip import MainChip
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils import util
 from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
 
-__name__ = "ChipWhisperer - Capture"
-__organization__ = "NewAE"
-__version__ = "V3"
 __author__ = "Colin O'Flynn"
-
 
 class ChipWhispererCapture(MainChip):
     def __init__(self, rootdir="."):
-        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture " + __version__), icon="cwiconC")
+        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture " + MainChip.__version__), icon="cwiconC")
         self.console = self.addConsole()
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
@@ -165,12 +160,12 @@ class ChipWhispererCapture(MainChip):
 
 
     def addWaveforms(self):
-        self.waveformDock = self.addTraceWidget()
+        self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
 
         #TODO: FIX THIS HACK
         #Should be something in ScopeInterface class maybe
-        self.waveformDock.setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.YDefault()
+        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
+        self.waveformDock.widget().YDefault()
 
     def addSettingsDocks(self):
         self.setupParametersTree()
@@ -232,7 +227,7 @@ class ChipWhispererCapture(MainChip):
         return p
 
     def newScopeData(self, data=None, offset=0):
-        self.waveformDock.passTrace(data, offset)
+        self.waveformDock.widget().passTrace(data, offset)
 
     def setConfigWidget(self, widget):
         self.configdock.setWidget(widget)
@@ -318,36 +313,13 @@ class ChipWhispererCapture(MainChip):
         for i in self.manager.validateSettings():
             vw.addMessage(*i)
 
-        if self.project().dataDirIsDefault:
+        if self.project().isUntitled():
              vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
         if vw.numWarnings() > 0 or warnOnly == False:
             return vw.exec_()
         else:
             return True
-
-    def newProject(self):
-        self.setProject(ProjectFormat(self))
-        self.project().setProgramName(__name__)
-        self.project().setProgramVersion(__version__)
-        self.project().addParamTree(self)
-        self.project().addParamTree(self.manager.getScope())
-        self.project().addParamTree(self.manager.getTarget())
-        self.project().setTraceManager(self.manager.getTraceManager())
-        self.updateTitleBar()
-
-    def saveProject(self):
-        if self.project().hasFilename() == False :
-            # fname = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp')[0]      # File Dialog sometimes will not show up with Mac OS
-            fname, _ = QFileDialog.getSaveFileName(self, 'Save New File', '.','*.cwp','', QFileDialog.DontUseNativeDialog)
-            if not fname: return
-
-            self.project().setFilename(fname)
-
-        self.project().save()
-        self.dirty = False
-        self.updateStatusBar("Project Saved")
-        self.updateTitleBar()
 
     def doCapture(self, callback):
         try:
@@ -379,8 +351,8 @@ class ChipWhispererCapture(MainChip):
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
-    app.setOrganizationName(__organization__)
-    app.setApplicationName(__name__ + " " + __version__)
+    app.setOrganizationName(MainChip.__organization__)
+    app.setApplicationName(MainChip.__name__ + " - Capture " + MainChip.__version__)
     return app
 
 def main():

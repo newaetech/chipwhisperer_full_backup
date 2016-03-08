@@ -23,7 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 __author__ = "Colin O'Flynn"
-__organization__ = "NewAE"
 
 import os
 import sys
@@ -34,6 +33,9 @@ import chipwhisperer.common.ui.PythonConsole
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.tracemanager_dialog import TraceManagerDialog
 from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
+from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter, ParameterTree
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -51,40 +53,80 @@ except ImportError:
     sys.exit()
 
 
-class saveProjectDialog(QDialog):
-    def __init__(self, parent=None):
-        super(saveProjectDialog, self).__init__(parent)
+class ProjectDiffWidget(QWidget):
+    """Widget that displays differences between versions of the project file"""
+
+    def __init__(self, parent=None, project=None):
+        super(ProjectDiffWidget, self).__init__(parent)
+        self._project = project
+
+        hlayout = QHBoxLayout()
+
+        self.changedTree = ParameterTree()
+        self.addedTree = ParameterTree()
+        self.deletedTree = ParameterTree()
+
+        self.updateParamTree(self.changedTree, [], "Changed Sections")
+        self.updateParamTree(self.addedTree, [], "Added Sections")
+        self.updateParamTree(self.deletedTree, [], "Removed Sections")
+
+        hlayout.addWidget(self.changedTree)
+        hlayout.addWidget(self.addedTree)
+        hlayout.addWidget(self.deletedTree)
+
+        self.setLayout(hlayout)
+        self.checkDiff()
+
+    def updateParamTree(self, paramTree, changelist, name):
+        paramlist = []
+        for k in changelist:
+            paramlist.append({'name':k})
+        params = Parameter.create(name=name, type='group', children=paramlist)
+        ExtendedParameter.reloadParams([params], paramTree)
+
+    def checkDiff(self, ignored=None, updateGUI=False):
+        """
+        Check if there is a difference - returns True if so, and False
+        if no changes present. Also updates widget with overview of the
+        differences if requested with updateGUI
+        """
+        added, removed, changed = self._project.checkDiff()
+        if updateGUI:
+            self.updateParamTree(self.changedTree, changed, "Changed Sections")
+            self.updateParamTree(self.addedTree, added, "Added Sections (not on disk)")
+            self.updateParamTree(self.deletedTree, removed, "Removed Sections (on disk)")
+
+
+class SaveProjectDialog(QDialog):
+
+    def __init__(self, parent):
+        super(SaveProjectDialog, self).__init__(parent)
         self.setModal(True)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Save unsaved changes?"))
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
         layout.addWidget(self.buttonBox)
-               
+
         self.setWindowTitle("Unsaved Changes Detected")
         self._lastpushed = QDialogButtonBox.RejectRole
 
-        if self.parent() and self.parent().project():
-                detailedWidget = self.parent().project().diffWidget
+        detailedWidget = ProjectDiffWidget(self, project=self.parent().project())
+        detailedWidget.checkDiff(updateGUI=True)
 
-                if detailedWidget.checkDiff(updateGUI=True) == False:
-                    self._lastpushed = QDialogButtonBox.NoRole
-                    QTimer.singleShot(0, self.reject)
-                    return
+        detailedLayout = QVBoxLayout()
+        detailedLayout.addWidget(detailedWidget)
+        detailedHidableWidget = QWidget()
+        detailedHidableWidget.setLayout(detailedLayout)
 
-                detailedLayout = QVBoxLayout()
-                detailedLayout.addWidget(detailedWidget)
-                detailedHidableWidget = QWidget()
-                detailedHidableWidget.setLayout(detailedLayout)
+        detailedHidableWidget.hide()
 
-                detailedHidableWidget.hide()
-            
-                pbShowDetails = QPushButton("Show Details")
-                pbShowDetails.clicked.connect(detailedHidableWidget.show)
-                detailpblayout = QHBoxLayout()
-                detailpblayout.addWidget(pbShowDetails)
-                detailpblayout.addStretch()
-                layout.addLayout(detailpblayout)
-                layout.addWidget(detailedHidableWidget)
+        pbShowDetails = QPushButton("Show Details")
+        pbShowDetails.clicked.connect(detailedHidableWidget.show)
+        detailpblayout = QHBoxLayout()
+        detailpblayout.addWidget(pbShowDetails)
+        detailpblayout.addStretch()
+        layout.addLayout(detailpblayout)
+        layout.addWidget(detailedHidableWidget)
         
         self.setLayout(layout)
 
@@ -98,29 +140,33 @@ class saveProjectDialog(QDialog):
     def value(self):
         return self._lastpushed
 
-#     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-#     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+    @staticmethod
+    def getSaveProjectDialog(parent, project):
+        if not project.hasDiffs():
+            return QDialogButtonBox.NoRole
+        dialog = SaveProjectDialog(parent)
+        dialog.exec_()
+        return dialog.value()
 
 
 class ModuleListDialog(QDialog):
     def __init__(self, lmFunc):
         super(ModuleListDialog, self).__init__()
         self.setWindowTitle("Enabled Modules")
-               
+
         modules = lmFunc()
-               
+
         table = QTableWidget(len(modules), 3, self)
         table.setHorizontalHeaderLabels(["Module", "Enabled", "Details"])
-        
+
         for indx,itm in enumerate(modules):
             table.setItem(indx, 0, QTableWidgetItem(itm[0]))
             table.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
             table.setItem(indx, 2, QTableWidgetItem(itm[2]))
-        
-        
+
         layout = QVBoxLayout()
         layout.addWidget(table)
-        self.setLayout(layout)        
+        self.setLayout(layout)
 
 class OutLog:
     def __init__(self, edit, out=None, color=None, origStdout=None):
@@ -164,6 +210,10 @@ class MainChip(QMainWindow):
        
     """
 
+    __name__ = "ChipWhisperer"
+    __organization__ = "NewAE"
+    __version__ = "V3"
+
     settings_docks = []
     MaxRecentFiles = 4
 
@@ -173,17 +223,16 @@ class MainChip(QMainWindow):
     #app.setApplicationName()
     #app.setWindowIcon()    
 
-    projectChanged = Signal(object)
-
     def __init__(self, name="Demo", icon="cwicon"):
         super(MainChip, self).__init__()
+        self.settings = QSettings()
         sys.excepthook = self.exceptionHook
         self.manageTraces = TraceManagerDialog(self)
         self.name = name
-        self.dirty = True
         self.lastMenuActionSection = None
         self.paramTrees = []
         self.originalStdout = None
+        self.setCentralWidget(None)
         self.projEditWidget = ProjectTextEditor(self)
         self.initUI(icon)
         self.helpbrowser = HelpBrowser(self)
@@ -191,10 +240,8 @@ class MainChip(QMainWindow):
         self.pythonConsole = self.addPythonConsole()
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        self.projectChanged.connect(self.projEditWidget.setProject)
 
     def readSettings(self):
-        self.settings = QSettings(__organization__, self.name)
         self.restoreGeometry(self.settings.value("geometry"))
         self.restoreState(self.settings.value("windowState"))
 
@@ -231,11 +278,9 @@ class MainChip(QMainWindow):
                 self.tabifyDockWidget(self.settings_docks[index], self.settings_docks[index + 1])
         self.settings_docks[0].raise_()
 
-    def addTraceWidget(self):
-        """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
-        gw = GraphWidget()
-        self.setCentralWidget(gw)
-        return gw
+    def addTraceDock(self, name):
+        """Add a new GraphWidget in a dock, you can get the GW with .widget()"""
+        return self.addDock(GraphWidget(), name=name, area=Qt.RightDockWidgetArea)
         
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
@@ -265,7 +310,6 @@ class MainChip(QMainWindow):
 
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
-        self.settings = QSettings(__organization__, self.name)
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.setValue("windowState", self.saveState())
 
@@ -276,20 +320,26 @@ class MainChip(QMainWindow):
 
     def createFileActions(self):
         """Add the file actions (open/save/new)"""
-        self.openAct = QAction(QIcon('open.png'), '&Open Project', self,
+        self.openRec = QMenu('Open &Recent')
+
+        self.openAct = QAction(QIcon('open.png'), '&Open', self,
                                shortcut=QKeySequence.Open,
                                statusTip='Open Project File',
                                triggered=self.openProject)
 
-        self.saveAct = QAction(QIcon('save.png'), '&Save Project', self,
+        self.saveAct = QAction(QIcon('save.png'), '&Save', self,
                                shortcut=QKeySequence.Save,
                                statusTip='Save current project to Disk',
                                triggered=self.saveProject)
 
-        self.newAct = QAction(QIcon('new.png'), '&New Project', self,
+        self.newAct = QAction(QIcon('new.png'), '&New', self,
                                shortcut=QKeySequence.New,
                                statusTip='Create new Project',
                                triggered=self.newProject)
+
+        self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
+                statusTip="Exit the application",
+                triggered=self.close)
 
         for i in range(MainChip.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
@@ -307,8 +357,8 @@ class MainChip(QMainWindow):
         """Tells the User"""
         QMessageBox.about(self, 'About', '<h3>ChipWhisperer' + u'\u2122' + '</h3>'
                                          '<h4>Copyright Information</h4>'
-                                         'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2014. <br>'
-                                         'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2014.'
+                                         'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2016. <br>'
+                                         'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2016.'
                                          '<h4>License Information</h4>'
                                          'Released under the GPLv3 License, see <a href="http://www.gnu.org/copyleft/gpl.html">License Details</a>.<br>'
                                          'Various parts of this project may be released under additional open-source licenses such as the BSD License '
@@ -342,9 +392,11 @@ class MainChip(QMainWindow):
         self.fileMenu.addAction(self.openAct)
         self.fileMenu.addAction(self.saveAct)
 #        self.fileMenu.addAction(self.importAct)
-        self.separatorAct = self.fileMenu.addSeparator()
+        self.fileMenu.addMenu(self.openRec)
         for i in range(MainChip.MaxRecentFiles):
-            self.fileMenu.addAction(self.recentFileActs[i])       
+            self.openRec.addAction(self.recentFileActs[i])
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.exitAct)
         
         self.projectMenu = self.menuBar().addMenu("&Project")
         self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.manageTraces.show)
@@ -376,16 +428,14 @@ class MainChip(QMainWindow):
         self.recentFileActs = []
         self.createFileActions()
         self.createMenus()
-
-        self.updateRecentFileActions()       
-
+        self.updateRecentFileActions()
         self.show()
         
     def updateTitleBar(self):
         """Update filename shown in title bar"""
         fname = os.path.basename(self.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
-        self.setWindowModified(self.dirty)
+        self.setWindowModified(True)
         
     def listModulesShow(self):
         """Opens the Dialog which shows loaded/unloaded modules"""
@@ -396,55 +446,42 @@ class MainChip(QMainWindow):
         """Should return a list of all possible imports, used to test which modules are missing"""
         return [["MainChip", True, ""]]
 
-    def setCurrentFile(self, fname):
-        """Set current project filename, adds it to recent file list"""
-        self.filename = fname
-        
+    def projectChanged(self):
+        """Add File to recent file list"""
         self.updateTitleBar()
         
-        if fname is None:
-            return
+        if self.project().isUntitled(): return
         
-        settings = QSettings()
-        files = settings.value('recentFileList', [" ", " ", " ", " "])
-        
+        files = self.settings.value('recentFileList')
+        if files is None:
+            files = []
+
         try:
-            files.remove(fname)
-        except ValueError:
-            pass
-        except AttributeError:
+            files.remove(self.project().getFilename())
+        except Exception:
             pass
 
-        files.insert(0, fname)
-        del files[MainChip.MaxRecentFiles:]
+        files.insert(0, self.project().getFilename())
+        numRecentFiles = min(len(files), MainChip.MaxRecentFiles)
+        files = files[:numRecentFiles]
 
-        settings = QSettings()
-        settings.setValue('recentFileList', files)
-        for widget in QApplication.topLevelWidgets():
-            if isinstance(widget, MainChip):
-                widget.updateRecentFileActions()
+        self.settings.setValue('recentFileList', files)
+        self.updateRecentFileActions()
 
     def updateRecentFileActions(self):
         """Update & Load the list of recent files"""
-        settings = QSettings()
-        files = settings.value('recentFileList')
-        files_no = 0
+        files = self.settings.value('recentFileList')
+        if files is not None:
+            files_no = 0
+            for f in files:
+                text = "&%d %s" % (files_no+1, self.strippedName(f))
+                self.recentFileActs[files_no].setText(text)
+                self.recentFileActs[files_no].setData(f)
+                self.recentFileActs[files_no].setVisible(True)
+                files_no = files_no + 1
 
-        if files:
-            files_no = len(files)
-
-        numRecentFiles = min(files_no, MainChip.MaxRecentFiles)
-
-        for i in range(numRecentFiles):
-            text = "&%d %s" % (i + 1, self.strippedName(files[i]))
-            self.recentFileActs[i].setText(text)
-            self.recentFileActs[i].setData(files[i])
-            self.recentFileActs[i].setVisible(True)
-
-        for j in range(numRecentFiles, MainChip.MaxRecentFiles):
-            self.recentFileActs[j].setVisible(False)
-
-        self.separatorAct.setVisible((numRecentFiles > 0))
+            for j in range(files_no, MainChip.MaxRecentFiles):
+                self.recentFileActs[j].setVisible(False)
 
     def strippedName(self, fullFileName):
         (filepath, filename) = os.path.split(fullFileName)
@@ -453,13 +490,39 @@ class MainChip(QMainWindow):
         
         #return QFileInfo(fullFileName).fileName()
                 
-    def openProject(self, fname=None):
-        #TODO: close etc
+    def openProject(self, fname = None):
         if fname is None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open File', '.','*.cwp','', QFileDialog.DontUseNativeDialog)
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
         self.setCurrentFile(fname)
+
+    def newProject(self):
+        self.setProject(ProjectFormat(self))
+        self.project().setProgramName(self.__name__)
+        self.project().setProgramVersion(self.__version__)
+        self.project().addParamTree(self)
+        self.project().addParamTree(self.manager.getScope())
+        self.project().addParamTree(self.manager.getTarget())
+        self.project().setTraceManager(self.manager.getTraceManager())
+        self.projectChanged()
+        self.project().signals.statusChanged.connect(self.projectChanged)
+
+    def saveProject(self):
+        if self.project().isUntitled():
+            fd = QFileDialog(self, 'Save New File', './projects/', 'ChipWhisperer Project (*.cwp)')
+            fd.setOption(QFileDialog.DontUseNativeDialog)
+            fd.setDefaultSuffix('cwp')
+            fd.setAcceptMode(QFileDialog.AcceptSave)
+            fd.setViewMode(QFileDialog.Detail)
+            if fd.exec_() != QDialog.Accepted:
+                return
+
+            fname = fd.selectedFiles()[0]
+            self.project().setFilename(fname)
+
+        self.project().save()
+        self.updateStatusBar("Project Saved")
 
     def project(self):
         return self._project
@@ -467,9 +530,9 @@ class MainChip(QMainWindow):
     def setProject(self, proj):
         self._project = proj
         self.projEditWidget.setFilename(self._project.getFilename())
-        self._project.valueChanged.connect(self.projEditWidget.projectChangedGUI)
-        self.projectChanged.emit(self._project)
-        self._project.filenameChanged.connect(self.projEditWidget.setFilename)
+        self._project.signals.valueChanged.connect(self.projEditWidget.projectChangedGUI)
+        self.projEditWidget.setProject(self._project)
+        self._project.signals.statusChanged.connect(lambda: self.projEditWidget.setFilename(self.project().getFilename()))
 
     def openRecentFile(self):
         action = self.sender()
@@ -478,16 +541,17 @@ class MainChip(QMainWindow):
 
     def okToContinue(self):
         # reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
-        savedialog = saveProjectDialog(self)
-        savedialog.exec_()
-        reply = savedialog.value()
+        reply = SaveProjectDialog.getSaveProjectDialog(self, self.project())
         if reply == QDialogButtonBox.RejectRole:
             return False
-        elif reply == QDialogButtonBox.AcceptRole:
+        elif reply == QDialogButtonBox.YesRole:
             self.saveProject()
+            return True
+        elif reply == QDialogButtonBox.NoRole:
+            return True
+        else:
+            raise AttributeError("Invalid role: %s" % str(reply))
 
-        return True
-           
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
         #print top.name()

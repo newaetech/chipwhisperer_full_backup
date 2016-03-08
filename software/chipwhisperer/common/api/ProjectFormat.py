@@ -56,31 +56,27 @@ class ConfigObjProj(ConfigObj):
             self._callback(key)
 
 class ProjectFormat(object):
+    class Signals(object):
+        filenameChanged = util.Signal()
+        fileChangedOnDisk = util.Signal()
+        valueChanged = util.Signal()
+        statusChanged = util.Signal()
 
-    filenameChanged = util.Signal()
-    fileChangedOnDisk = util.Signal()
-    valueChanged = util.Signal()
-
-    untitledFileName = ""
+    untitledFileName = "tmp/default.cwp"
     def __init__(self, parent=None):
+        self.signals = ProjectFormat.Signals()
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
         self.paramListList = []        
-        self.directory = "."
-        self.datadirectory = "default-data-dir/"
+        self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self.traceManager = None
         self.setFilename(ProjectFormat.untitledFileName)
-        self.checkDataDirectory()
-        self.dataDirIsDefault = True
-        
-    def configObjChanged(self, key):
-        self.valueChanged.emit(key)
 
-    def hasFilename(self):
-        if self.filename == ProjectFormat.untitledFileName:
-            return False
-        else:
-            return True
+    def configObjChanged(self, key):
+        self.signals.valueChanged.emit(key)
+
+    def isUntitled(self):
+        return self.filename == ProjectFormat.untitledFileName
 
     def setTraceManager(self, manager):
         self.traceManager = manager
@@ -113,11 +109,10 @@ class ProjectFormat(object):
         self.filename = f
         self.config.filename = f        
         self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
-        self.checkDataDirectory()
-        self.dataDirIsDefault = False
-        self.filenameChanged.emit(self.filename)
+        self.createDataDirectory()
+        self.signals.statusChanged.emit()
         
-    def checkDataDirectory(self):
+    def createDataDirectory(self):
         # Check if data-directory exists?
         if not os.path.isdir(self.datadirectory):
             os.mkdir(self.datadirectory)
@@ -135,6 +130,7 @@ class ProjectFormat(object):
             self.setFilename(f)
 
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
+        self.signals.statusChanged.emit()
 
         #TODO: readings????
 
@@ -182,7 +178,6 @@ class ProjectFormat(object):
 
         return sections
 
-
     def addDataConfig(self, settings=None, sectionName="Aux Data", subsectionName=None):
         # Check configuration file to find incrementing number
         maxNumber = 0
@@ -227,8 +222,9 @@ class ProjectFormat(object):
         self.config[pn]['General Settings'] =  self.settingsDict
 
         self.config.write()
-        self.fileChangedOnDisk.emit()
-    
+        self.signals.fileChangedOnDisk.emit()
+        self.signals.statusChanged.emit()
+
     def checkDiff(self):
         """
         Check if there is a difference - returns True if so, and False
@@ -247,3 +243,9 @@ class ProjectFormat(object):
         changed = diff.changed()
 
         return added, removed, changed
+
+    def hasDiffs(self):
+        added, removed, changed = self.checkDiff()
+        if (len(added) + len(removed) + len(changed)) == 0:
+            return False
+        return True
