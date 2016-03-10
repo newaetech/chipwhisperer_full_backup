@@ -40,6 +40,7 @@ class CWCoreAPI(object):
 
     def __init__(self):
         self.paramTrees = []
+        self._traceManager = None
         self.signals = self.Signals()
 
     def project(self):

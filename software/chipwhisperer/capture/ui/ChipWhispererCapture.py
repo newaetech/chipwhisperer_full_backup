@@ -47,12 +47,10 @@ class ChipWhispererCapture(MainChip):
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
         util.globalSettings.setValue("cwcapture-starting-root", rootdir)
         self.esm = EncryptionStatusMonitor(self)
-        self.serialTerminal = SerialTerminalDialog(self)
+        self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
         self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
-
         self.cwAPI.setupParameters(rootdir, self.showScriptParameter)
-        self.cwAPI.setTraceManager(self.manageTraces)
         self.newProject()
 
         self.addExampleScripts(CWCaptureAPI.getExampleScripts(rootdir + "/scripts"))

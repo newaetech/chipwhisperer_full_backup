@@ -218,6 +218,7 @@ class MainChip(QMainWindow):
         self.name = name
         sys.excepthook = self.exceptionHook
         self.manageTraces = TraceManagerDialog(self)
+        self.cwAPI.setTraceManager(self.manageTraces)
         self.projEditWidget = ProjectTextEditor(self)
         self.lastMenuActionSection = None
         self.originalStdout = None

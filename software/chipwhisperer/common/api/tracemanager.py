@@ -24,13 +24,19 @@
 
 __author__ = "Colin O'Flynn"
 
+import os.path
+from chipwhisperer.common.utils import util
+
 class TraceManager(object):
     """
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
     block of traces. This class is used to handle the remapping.
     """
 
+    secName = "Trace Management"
+
     def __init__(self):
+        self.tracesChanged = util.Signal()
         self.NumTrace = 0
         self.NumPoint = 0
         self.lastMapped = None
@@ -39,6 +45,11 @@ class TraceManager(object):
     def newProject(self):
         self.traceList = []
         return
+
+    def saveProject(self, config, configfilename):
+        for indx, t in enumerate(self.traceList):
+            config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
+            config[self.secName]['enabled%d' % indx] = str(t.enabled)
 
     def getSegmentList(self, start=0, end=-1):
         """
@@ -128,3 +139,7 @@ class TraceManager(object):
 
     def numTrace(self):
         return self.NumTrace
+
+    def append(self, ti):
+        self.traceList.append(ti)
+        self.tracesChanged.emit()

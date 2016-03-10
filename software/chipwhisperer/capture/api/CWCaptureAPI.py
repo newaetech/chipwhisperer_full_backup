@@ -51,7 +51,6 @@ class CWCaptureAPI(CWCoreAPI):
         self._scope = None
         self._target = None
         self._traceClass = None
-        self._traceManager = None
         self.signals.abortCapture.connect(self.abortCapture)
         self.numTraces = 100
         self.numSegments = 1
@@ -203,6 +202,8 @@ class CWCaptureAPI(CWCoreAPI):
         self._abortCapture = False
 
         for i in range(0, self.numSegments):
+            if self._abortCapture:
+                break
             currentTrace = self.getTraceClassInstance()
 
             # Load trace writer information
@@ -231,9 +232,6 @@ class CWCaptureAPI(CWCoreAPI):
             ac.doReadings(addToList=self._traceManager)
             self.signals.abortCapture.disconnect(ac.abortCapture)
 
-            if self._abortCapture:
-                break
-
             tcnt += tracesPerRun
             print "%d Captures Completed" % tcnt
             self.signals.campaignDone.emit()
@@ -242,6 +240,7 @@ class CWCaptureAPI(CWCoreAPI):
             if self.hasTraceClass():
                 waveBuffer = currentTrace.traces
                 writerlist.append(currentTrace)
+
         print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
         return writerlist
 
