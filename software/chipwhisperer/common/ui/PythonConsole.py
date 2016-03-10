@@ -116,8 +116,10 @@ passing a dict as the "locals" argument.
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Up:
                 self.go_history(-1)
+                return True
             elif event.key() == QtCore.Qt.Key_Down:
                 self.go_history(1)
+                return True
         return False
 
     def go_history(self,offset):
@@ -130,10 +132,11 @@ passing a dict as the "locals" argument.
         except IndexError:
             line = ""
         self.ui.input.setText(line)
+        self.ui.input.end(False)
 
 
 if __name__ == "__main__":
-    import sys, os
+    import sys
     app = QtGui.QApplication(sys.argv)
     win = QtGui.QMainWindow()
     win.setCentralWidget(QPythonConsole())

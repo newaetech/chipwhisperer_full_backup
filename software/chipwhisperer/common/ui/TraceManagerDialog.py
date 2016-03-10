@@ -39,15 +39,13 @@ import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.api.tracemanager import TraceManager
+from chipwhisperer.common.api.TraceManager import TraceManager
 
 sys.path.append('../common')
 
 class TraceManagerDialog(QDialog, TraceManager):
     """Manages traces associated with some project"""
-    tracesChanged = Signal()
 
-    secName = "Trace Management"
     def __init__(self, parent):
         QDialog.__init__(self, parent)
         TraceManager.__init__(self)
@@ -63,7 +61,8 @@ class TraceManagerDialog(QDialog, TraceManager):
         attrHeaders.insert(0, "Enabled")
         self.table = QTableWidget(0, len(attrHeaders))
         self.table.setHorizontalHeaderLabels(attrHeaders)
-
+        layout.setContentsMargins(5,5,5,5)
+        layout.setSpacing(5)
         layout.addWidget(self.table)
 
         #temp = QPushButton("Add Blank")
@@ -84,8 +83,8 @@ class TraceManagerDialog(QDialog, TraceManager):
 
         # Set dialog layout
         self.setLayout(layout)
-
         self.setWindowTitle("Trace Management")
+        self.resize(800, 300)
 
     def checkProject(self, ask=True):
         #Check trace attributes
@@ -93,11 +92,6 @@ class TraceManagerDialog(QDialog, TraceManager):
             self.traceList[i].checkTrace()
 
         #Check out config
-
-    def saveProject(self, config, configfilename):
-        for indx, t in enumerate(self.traceList):
-            config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
-            config[self.secName]['enabled%d' % indx] = str(t.enabled)
 
     def loadProject(self, configfilename):
         config = ConfigParser.RawConfigParser()
@@ -212,10 +206,10 @@ class TraceManagerDialog(QDialog, TraceManager):
         #self.updatePreview()
 
     def append(self, ti):
-        self.traceList.append(ti)
+        super(TraceManagerDialog,self).append(ti)
         self.addRow(ti)
-        self.tracesChanged.emit()
-        #self.updatePreview()
+        self.table.resizeRowsToContents()
+        self.table.resizeColumnsToContents()
 
     def importExisting(self, fname=None):
 

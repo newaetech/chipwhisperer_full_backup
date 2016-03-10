@@ -26,17 +26,16 @@
 import importlib
 from datetime import *
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
-from chipwhisperer.common.api.tracemanager import TraceManager
 
-class CWCaptureAPI(object):
+class CWCaptureAPI(CWCoreAPI):
     """This is the manager class"""
 
-    class Signals():
+    class Signals(CWCoreAPI.Signals):
         paramListUpdated = util.Signal()
         scopeChanged = util.Signal()
         targetChanged = util.Signal()
-        traceChanged = util.Signal()
         auxChanged = util.Signal()
         acqPatternChanged = util.Signal()
         connectStatus = util.Signal()
@@ -48,7 +47,7 @@ class CWCaptureAPI(object):
         abortCapture = util.Signal()
 
     def __init__(self):
-        self.signals = CWCaptureAPI.Signals()
+        super(CWCaptureAPI, self).__init__()
         self._scope = None
         self._target = None
         self._traceClass = None
@@ -128,26 +127,6 @@ class CWCaptureAPI(object):
         self.signals.paramListUpdated.emit()
         self.signals.targetChanged.emit()
 
-    def hasTraceClass(self):
-        return self._traceClass is not None
-
-    def getTraceClassInstance(self):
-        if not self.hasTraceClass(): raise Exception("Trace format not defined")
-        return self._traceClass(self._traceClass.getParams)
-
-    def getTraceClass(self):
-        return self._traceClass
-
-    def setTraceClass(self, driver):
-        self.signals.traceChanged.emit()
-        self._traceClass = driver
-
-    def getTraceManager(self):
-        return self._traceManager
-
-    def setTraceManager(self, manager):
-        self._traceManager = manager
-
     def setAux(self, aux):
         self.auxList = [aux]
         self.signals.auxChanged.emit()
@@ -166,6 +145,11 @@ class CWCaptureAPI(object):
          if hasattr(self.getTarget(), "setOpenADC") and hasattr(self, "oadc") and self.oadc:
              self.getTarget().setOpenADC(self.oadc)
          self.getTarget().con()
+
+    def doConDis(self):
+        """DEPRECATED: Is here just for compatibility reasons"""
+        print "Method doConDis() is deprecated... use connect() or disconnect() instead"
+        self.connect()
 
     def connect(self):
         try:
@@ -204,7 +188,7 @@ class CWCaptureAPI(object):
             print "Capture aborted"
             self._abortCapture = True
 
-    def captureM(self, datadirectory):
+    def captureM(self):
         overallstarttime = datetime.now()
         writerlist = []
         tcnt = 0
@@ -226,7 +210,7 @@ class CWCaptureAPI(object):
             baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
             prefix = baseprefix + "_"
             currentTrace.config.setAttr("prefix", prefix)
-            currentTrace.config.setConfigFilename(datadirectory + "traces/config_" + prefix + ".cfg")
+            currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
             currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
             currentTrace.setTraceHint(tracesPerRun)
 
@@ -328,19 +312,6 @@ class CWCaptureAPI(object):
             except Exception as e:
                 print "Warning: Could not import auxiliary module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return resp
-
-    @staticmethod
-    def getTraceFormats(dir):
-        resp = {}
-        for f in util.getPyFiles(dir):
-            try:
-                i = importlib.import_module('chipwhisperer.common.traces.' + f)
-                mod = i.getClass()
-                resp[mod.getName()] = mod
-            except Exception as e:
-                print "Warning: Could not import trace format module " + f + ": " + str(e)
-        # print "Loaded target modules: " + resp.__str__()
         return resp
 
     @staticmethod

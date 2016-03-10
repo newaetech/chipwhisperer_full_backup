@@ -109,6 +109,13 @@ class ProjectTextEditor(QWidget):
         
     def setProject(self, proj):
         self._project = proj
+        self._project.signals.valueChanged.connect(self.projectChangedGUI)
+        self._project.signals.statusChanged.connect(self.update)
+        self.update()
+
+    def update(self):
+        self.fnameTextBox.setText(self._project.getFilename())
+        self.readFromDisk()
 
     def project(self):
         return self._project
@@ -144,12 +151,6 @@ class ProjectTextEditor(QWidget):
 
         self.statusTextbox.setPalette(p)
 
-    def setFilename(self, fname):
-        fname = os.path.normpath(fname)
-        self._filename = fname
-        self.fnameTextBox.setText(fname)
-        self.readFromDisk()
-
     def checkGUIChanged(self):
         if not self.project().hasDiffs():
             self.setStatus("sync")
@@ -159,7 +160,7 @@ class ProjectTextEditor(QWidget):
     def readFromDisk(self):
         self.editWindow.clear()
         try:
-            with open(self._filename) as fp:
+            with open(self._project.getFilename()) as fp:
                 for line in fp:
                     self.editWindow.moveCursor(QTextCursor.End)
                     self.editWindow.insertPlainText(line)
@@ -170,7 +171,7 @@ class ProjectTextEditor(QWidget):
             self.setStatus("nofile")
 
     def writeToDisk(self):
-        f = open(self._filename, 'w')
+        f = open(self._project.getFilename(), 'w')
         filecontents = self.editWindow.toPlainText()
         f.write(filecontents)
         f.close()
@@ -179,7 +180,7 @@ class ProjectTextEditor(QWidget):
         self.checkGUIChanged()
 
     def openFolderProject(self):
-        QDesktopServices.openUrl(QUrl("file:///%s" % os.path.dirname(self._filename), QUrl.TolerantMode))
+        QDesktopServices.openUrl(QUrl("file:///%s" % os.path.dirname(self._project.getFilename()), QUrl.TolerantMode))
 
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()

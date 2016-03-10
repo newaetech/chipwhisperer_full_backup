@@ -31,11 +31,11 @@ from datetime import datetime
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 import chipwhisperer.common.ui.PythonConsole
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
-from chipwhisperer.common.ui.tracemanager_dialog import TraceManagerDialog
+from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter, ParameterTree
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import util
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -110,7 +110,7 @@ class SaveProjectDialog(QDialog):
         self.setWindowTitle("Unsaved Changes Detected")
         self._lastpushed = QDialogButtonBox.RejectRole
 
-        detailedWidget = ProjectDiffWidget(self, project=self.parent().project())
+        detailedWidget = ProjectDiffWidget(self, project=self.parent().cwAPI.project())
         detailedWidget.checkDiff(updateGUI=True)
 
         detailedLayout = QVBoxLayout()
@@ -149,24 +149,24 @@ class SaveProjectDialog(QDialog):
         return dialog.value()
 
 
-class ModuleListDialog(QDialog):
-    def __init__(self, lmFunc):
-        super(ModuleListDialog, self).__init__()
-        self.setWindowTitle("Enabled Modules")
-
-        modules = lmFunc()
-
-        table = QTableWidget(len(modules), 3, self)
-        table.setHorizontalHeaderLabels(["Module", "Enabled", "Details"])
-
-        for indx,itm in enumerate(modules):
-            table.setItem(indx, 0, QTableWidgetItem(itm[0]))
-            table.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
-            table.setItem(indx, 2, QTableWidgetItem(itm[2]))
-
-        layout = QVBoxLayout()
-        layout.addWidget(table)
-        self.setLayout(layout)
+# class ModuleListDialog(QDialog):
+#     def __init__(self, lmFunc):
+#         super(ModuleListDialog, self).__init__()
+#         self.setWindowTitle("Enabled Modules")
+#
+#         modules = lmFunc()
+#
+#         table = QTableWidget(len(modules), 3, self)
+#         table.setHorizontalHeaderLabels(["Module", "Enabled", "Details"])
+#
+#         for indx,itm in enumerate(modules):
+#             table.setItem(indx, 0, QTableWidgetItem(itm[0]))
+#             table.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
+#             table.setItem(indx, 2, QTableWidgetItem(itm[2]))
+#
+#         layout = QVBoxLayout()
+#         layout.addWidget(table)
+#         self.setLayout(layout)
 
 class OutLog:
     def __init__(self, edit, out=None, color=None, origStdout=None):
@@ -184,8 +184,8 @@ class OutLog:
     def write(self, m):
         # Still redirect to original STDOUT
 
+        tc = self.edit.textColor()
         if self.color:
-            tc = self.edit.textColor()
             self.edit.setTextColor(self.color)
 
         self.edit.moveCursor(QTextCursor.End)
@@ -209,53 +209,41 @@ class MainChip(QMainWindow):
     .. image:: /images/mainchip-demo.png
        
     """
-
-    __name__ = "ChipWhisperer"
-    __organization__ = "NewAE"
-    __version__ = "V3"
-
-    settings_docks = []
     MaxRecentFiles = 4
 
-    #Be sure to set things with:
-    #QApplication()
-    #app.setOrganizationName()
-    #app.setApplicationName()
-    #app.setWindowIcon()    
-
-    def __init__(self, name="Demo", icon="cwicon"):
+    def __init__(self, cwCoreAPI, name="Demo", icon="cwicon"):
         super(MainChip, self).__init__()
+        self.cwAPI = cwCoreAPI
         self.settings = QSettings()
+        self.name = name
         sys.excepthook = self.exceptionHook
         self.manageTraces = TraceManagerDialog(self)
-        self.name = name
-        self.lastMenuActionSection = None
-        self.paramTrees = []
-        self.originalStdout = None
-        self.setCentralWidget(None)
         self.projEditWidget = ProjectTextEditor(self)
+        self.lastMenuActionSection = None
+        self.originalStdout = None
         self.initUI(icon)
+        self.setCentralWidget(None)
+        self.setDockNestingEnabled(True)
         self.helpbrowser = HelpBrowser(self)
-        self.paramScripting = self.addConsole("Script Commands", visible=False)
-        self.pythonConsole = self.addPythonConsole()
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
+        self.cwAPI.signals.parametersChanged.connect(QCoreApplication.processEvents)
 
     def readSettings(self):
         self.restoreGeometry(self.settings.value("geometry"))
         self.restoreState(self.settings.value("windowState"))
 
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea,
-                allowedAreas=Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea,
+    def addDock(self, dockWidget, name="Settings", area=Qt.TopDockWidgetArea,
+                allowedAreas=Qt.AllDockWidgetAreas,
                 visible=True, addToWindows=True):
         """Add a dockwidget to the main window, which also adds it to the 'Windows' menu"""
         #Configure dock
         dock = QDockWidget(name)
-        dock.setAllowedAreas(allowedAreas)
         dock.setWidget(dockWidget)
+        dock.setAllowedAreas(allowedAreas)
         dock.setObjectName(name)
         self.addDockWidget(area, dock)
-        
+
         if visible == False:
             dock.toggleViewAction()
         
@@ -267,39 +255,39 @@ class MainChip(QMainWindow):
     
     def addSettings(self, tree, name):
         """Adds a dockwidget designed to store a ParameterTree, also adds to 'Windows' menu"""
-        self.paramTrees.append(tree)
-        dock = self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)
-        self.settings_docks.append(dock)
+        self.cwAPI.paramTrees.append(tree)
+        dock = self.addDock(tree, name=name, area=Qt.TopDockWidgetArea)
+        dock.setMaximumWidth(560)
         return dock
 
-    def dockifySettings(self):
-        if len(self.settings_docks) > 1:
-            for index in range(0, len(self.settings_docks) - 1):
-                self.tabifyDockWidget(self.settings_docks[index], self.settings_docks[index + 1])
-        self.settings_docks[0].raise_()
+    def tabifyDocks(self, docks):
+        for index in range(1, len(docks)):
+            self.tabifyDockWidget(docks[index-1], docks[index])
+        docks[0].raise_()
 
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget()"""
-        return self.addDock(GraphWidget(), name=name, area=Qt.RightDockWidgetArea)
+        return self.addDock(GraphWidget(), name=name, area=Qt.TopDockWidgetArea)
         
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
-        self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
-
         if redirectStdOut:
             if self.originalStdout is None:
                 self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
             sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0), origStdout=self.originalStdout)
 
-        return console    
+        return self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
     
     def addPythonConsole(self, name="Python Console", visible=False):
         """Add a python console, inside which you can access the Python interpreter"""
         wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
-        self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
-        return wid
+        return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
+
+    def clearAllSettings(self):
+        """Clear all saved QSettings(), such as window location etc"""
+        self.settings.clear()
 
     def exceptionHook(self, etype, value, trace):
         """
@@ -401,6 +389,8 @@ class MainChip(QMainWindow):
         self.projectMenu = self.menuBar().addMenu("&Project")
         self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.manageTraces.show)
         self.projectMenu.addAction(self.traceManageAct)
+        self.consolidateAct = QAction('&Consolidate', self, statusTip='Copy trace files to project directory', triggered=self.consolidateDialog)
+        self.projectMenu.addAction(self.consolidateAct)
         self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit Project File', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
             
@@ -410,10 +400,10 @@ class MainChip(QMainWindow):
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpManualAct = QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog)
-        self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
+        # self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
         self.helpAboutAct = QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog)
         self.helpMenu.addAction(self.helpManualAct)
-        self.helpMenu.addAction(self.helpListAct)
+        # self.helpMenu.addAction(self.helpListAct)
         self.helpMenu.addAction(self.helpAboutAct)
             
     def initUI(self, icon="cwicon"):
@@ -421,47 +411,51 @@ class MainChip(QMainWindow):
         self.statusBar()
         self.setWindowTitle(self.name)
         self.setWindowIcon(QIcon(":/images/%s.png" % icon))
-        
-        #Project editor dock        
-        self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.RightDockWidgetArea, visible=False, addToWindows=False)
-        
         self.recentFileActs = []
         self.createFileActions()
+        self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
+
+        # Project editor dock
+        self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
+        self.consoleDock = self.addConsole()
+        self.pythonConsoleDock = self.addPythonConsole()
+        self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
+        self.setBaseSize(800,600)
         self.show()
         
     def updateTitleBar(self):
         """Update filename shown in title bar"""
-        fname = os.path.basename(self.project().getFilename())
+        fname = os.path.basename(self.cwAPI.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(True)
         
-    def listModulesShow(self):
-        """Opens the Dialog which shows loaded/unloaded modules"""
-        ml = ModuleListDialog(self.listModules)
-        ml.exec_()
-
-    def listModules(self):
-        """Should return a list of all possible imports, used to test which modules are missing"""
-        return [["MainChip", True, ""]]
+    # def listModulesShow(self):
+    #     """Opens the Dialog which shows loaded/unloaded modules"""
+    #     ml = ModuleListDialog(self.listModules)
+    #     ml.exec_()
+    #
+    # def listModules(self):
+    #     """Should return a list of all possible imports, used to test which modules are missing"""
+    #     return [["MainChip", True, ""]]
 
     def projectChanged(self):
         """Add File to recent file list"""
         self.updateTitleBar()
         
-        if self.project().isUntitled(): return
+        if self.cwAPI.project().isUntitled(): return
         
         files = self.settings.value('recentFileList')
         if files is None:
             files = []
 
         try:
-            files.remove(self.project().getFilename())
+            files.remove(self.cwAPI.project().getFilename())
         except Exception:
             pass
 
-        files.insert(0, self.project().getFilename())
+        files.insert(0, self.cwAPI.project().getFilename())
         numRecentFiles = min(len(files), MainChip.MaxRecentFiles)
         files = files[:numRecentFiles]
 
@@ -474,7 +468,7 @@ class MainChip(QMainWindow):
         if files is not None:
             files_no = 0
             for f in files:
-                text = "&%d %s" % (files_no+1, self.strippedName(f))
+                text = "&%d %s" % (files_no+1, util.strippedName(f))
                 self.recentFileActs[files_no].setText(text)
                 self.recentFileActs[files_no].setData(f)
                 self.recentFileActs[files_no].setVisible(True)
@@ -483,33 +477,16 @@ class MainChip(QMainWindow):
             for j in range(files_no, MainChip.MaxRecentFiles):
                 self.recentFileActs[j].setVisible(False)
 
-    def strippedName(self, fullFileName):
-        (filepath, filename) = os.path.split(fullFileName)
-        (base, toplevel) = os.path.split(filepath)
-        return toplevel + "/" + filename
-        
-        #return QFileInfo(fullFileName).fileName()
-                
     def openProject(self, fname = None):
         if fname is None:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
-        self.setCurrentFile(fname)
-
-    def newProject(self):
-        self.setProject(ProjectFormat(self))
-        self.project().setProgramName(self.__name__)
-        self.project().setProgramVersion(self.__version__)
-        self.project().addParamTree(self)
-        self.project().addParamTree(self.manager.getScope())
-        self.project().addParamTree(self.manager.getTarget())
-        self.project().setTraceManager(self.manager.getTraceManager())
-        self.projectChanged()
-        self.project().signals.statusChanged.connect(self.projectChanged)
+        self.cwAPI.openProject(self, fname)
 
     def saveProject(self):
-        if self.project().isUntitled():
+        fname = self.cwAPI.project().getFilename()
+        if self.cwAPI.project().isUntitled():
             fd = QFileDialog(self, 'Save New File', './projects/', 'ChipWhisperer Project (*.cwp)')
             fd.setOption(QFileDialog.DontUseNativeDialog)
             fd.setDefaultSuffix('cwp')
@@ -519,20 +496,20 @@ class MainChip(QMainWindow):
                 return
 
             fname = fd.selectedFiles()[0]
-            self.project().setFilename(fname)
 
-        self.project().save()
+        self.cwAPI.saveProject(fname)
         self.updateStatusBar("Project Saved")
 
-    def project(self):
-        return self._project
+    def newProject(self):
+        self.cwAPI.newProject()
+        self.projectChanged()
+        self.cwAPI.project().signals.statusChanged.connect(self.projectChanged)
+        self.updateStatusBar("New Project Created")
+        self.projEditWidget.setProject(self.cwAPI.project())
 
     def setProject(self, proj):
-        self._project = proj
-        self.projEditWidget.setFilename(self._project.getFilename())
-        self._project.signals.valueChanged.connect(self.projEditWidget.projectChangedGUI)
-        self.projEditWidget.setProject(self._project)
-        self._project.signals.statusChanged.connect(lambda: self.projEditWidget.setFilename(self.project().getFilename()))
+        self.cwAPI.setProject(proj)
+        self.projEditWidget.setProject(self.cwAPI.project())
 
     def openRecentFile(self):
         action = self.sender()
@@ -540,8 +517,7 @@ class MainChip(QMainWindow):
             self.openFile(action.data())
 
     def okToContinue(self):
-        # reply = QMessageBox.question(self, "%s - Unsaved Changes"%self.name, "Save unsaved changes?",QMessageBox.Yes|QMessageBox.No|QMessageBox.Cancel)
-        reply = SaveProjectDialog.getSaveProjectDialog(self, self.project())
+        reply = SaveProjectDialog.getSaveProjectDialog(self, self.cwAPI.project())
         if reply == QDialogButtonBox.RejectRole:
             return False
         elif reply == QDialogButtonBox.YesRole:
@@ -552,70 +528,42 @@ class MainChip(QMainWindow):
         else:
             raise AttributeError("Invalid role: %s" % str(reply))
 
-    def _setParameter_children(self, top, path, value, echo):
-        """Descends down a given path, looking for value to set"""
-        #print top.name()
-        if top.name() == path[0]:
-            if len(path) > 1:
-                for c in top.children():
-                    self._setParameter_children(c, path[1:], value, echo)
-            else:
-                #Check if this is a dictionary/list
-                if "values" in top.opts:
-                    try:
-                        if isinstance(top.opts["values"], dict):
-                            value = top.opts["values"][value]                        
-                    except TypeError:
-                        pass   
-                    
-                if echo == False:
-                    top.opts["echooff"] = True
-                    
-                if top.opts["type"] == "action":
-                    top.activate()           
-                else:
-                    top.setValue(value)
-                    
-                raise ValueError()
-           
-    def setParameter(self, parameter, echo=False):
-        """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
-        path = parameter[:-1]
-        value = parameter[-1]
-        
-        try:
-            for t in self.paramTrees:
-                for i in range(0, t.invisibleRootItem().childCount()):
-                    self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
-            
-            print "Parameter not found: %s"%str(parameter)
-        except ValueError:
-            #A little klunky: we use exceptions to tell us the system DID work as intended
-            pass          
-        except IndexError:
-            raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))     
-          
-        #User might be calling these in a row, need to process all events
-        QCoreApplication.processEvents()
-            
+    def consolidateDialog(self):
+        msgBox = QMessageBox()
+        msgBox.setText("Consolidate will copy all data into the project directory.")
+        msgBox.setInformativeText("Do you want to keep the original trace files?")
+        msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+        msgBox.setDefaultButton(QMessageBox.Yes)
+        ret = msgBox.exec_()
+
+        if ret == QMessageBox.Yes:
+            self.cwAPI.project().consolidate(keepOriginals = True)
+        elif ret == QMessageBox.No:
+            self.cwAPI.project().consolidate(keepOriginals = False)
+
+    def updateStatusBar(self, message):
+        msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
+        print "Status: " + msg
+        self.statusBar().showMessage(msg)
+
     def showScriptParameter(self, param,  changes, topParam):
         """
         This function is used to tell the user what they should pass to setParameter
         in order to recreate a system. This will automatically be called if the module
         has done the following:
-        
+
         When calling ExtendedParameter.setupParameter(), have passed a reference to 'self' like this::
-          
+
            ExtendedParameter.setupExtended(self.params, self)
-              
+
         Have a function called paramTreeChanged in the class which calls showScriptParameter (this function).
         Typically done like the following, where self.showScriptParameter is setup in the setupExtended() call. You
         might need to pass the reference to this instance down to lower modules.::
-          
+
             def paramTreeChanged(self, param, changes):
                 if self.showScriptParameter is not None:
-                    self.showScriptParameter(param, changes, self.params)                
-        
+                    self.showScriptParameter(param, changes, self.params)
+
         """
         for param, change, data in changes:
             ppath = topParam.childPath(param)
@@ -627,39 +575,32 @@ class MainChip(QMainWindow):
 
             #Don't pollute script output with readonly things
             if param.opts["readonly"] == True:
-                continue            
-            
+                continue
+
             if "echooff" in param.opts:
                 if param.opts["echooff"] == True:
                     param.opts["echooff"] = False
-                    continue             
-            
-            if "values" in param.opts:            
+                    continue
+
+            if "values" in param.opts:
                 if not hasattr(param.opts["values"], 'iteritems'):
                     name.append(data)
-                else:    
+                else:
                     for k, v in param.opts["values"].iteritems():
                         if v == data:
                             name.append(k)
 
-                    
+
             else:
-                name.append(data)   
-            
-           
-            self.paramScripting.append(str(name))
+                name.append(data)
 
-    def updateStatusBar(self, message):
-        msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
-        print "Status: " + msg
-        self.statusBar().showMessage(msg)
-
+            self.paramScriptingDock.widget().append(str(name))
 
 def main():    
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Window Demo")
-    ex = MainChip(app.applicationName())
+    ex = MainChip(CWCoreAPI(), app.applicationName())
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

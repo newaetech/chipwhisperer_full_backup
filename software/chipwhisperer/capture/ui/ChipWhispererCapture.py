@@ -27,7 +27,7 @@ import os.path
 import sys
 from functools import partial
 from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.capture.api.captureapi import CWCaptureAPI
+from chipwhisperer.capture.api.CWCaptureAPI import CWCaptureAPI
 from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
@@ -42,55 +42,52 @@ __author__ = "Colin O'Flynn"
 
 class ChipWhispererCapture(MainChip):
     def __init__(self, rootdir="."):
-        super(ChipWhispererCapture, self).__init__(name=("ChipWhisperer" + u"\u2122" + " Capture " + MainChip.__version__), icon="cwiconC")
-        self.console = self.addConsole()
+        super(ChipWhispererCapture, self).__init__(CWCaptureAPI() , name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCaptureAPI.__version__), icon="cwiconC")
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
         util.globalSettings.setValue("cwcapture-starting-root", rootdir)
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self)
         self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
-        self.paramTrees.append(self.glitchMonitor.paramTree)
+        self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
 
-        self.manager = CWCaptureAPI()
-        self.manager.setupParameters(rootdir, self.showScriptParameter)
-        self.manager.setTraceManager(self.manageTraces)
+        self.cwAPI.setupParameters(rootdir, self.showScriptParameter)
+        self.cwAPI.setTraceManager(self.manageTraces)
         self.newProject()
 
         self.addExampleScripts(CWCaptureAPI.getExampleScripts(rootdir + "/scripts"))
         self.addToolbar()
-        self.addWaveforms()
         self.addToolMenu()
         self.addSettingsDocks()
-        self.dockifySettings()
+        self.addWaveforms()
         self.reloadParamList()
         self.readSettings()
 
         # Observers (callback methods)
-        self.manager.signals.paramListUpdated.connect(self.reloadTargetParamList)
-        self.manager.signals.newInputData.connect(self.newTargetData)
-        self.manager.signals.connectStatus.connect(self.targetStatusChanged)
-        self.manager.signals.newTextResponse.connect(self.esm.newData)
-        self.manager.signals.traceDone.connect(self.glitchMonitor.traceDone)
-        self.manager.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
-        self.manager.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
-        self.manager.signals.connectStatus.connect(self.targetStatusChanged)
-        self.manager.signals.scopeChanged.connect(self.scopeChanged)
-        self.manager.signals.targetChanged.connect(self.targetChanged)
-        self.manager.signals.traceChanged.connect(self.traceChanged)
-        self.manager.signals.auxChanged.connect(self.auxChanged)
-        self.manager.signals.acqPatternChanged.connect(self.reloadParamList)
+        self.cwAPI.signals.paramListUpdated.connect(self.reloadTargetParamList)
+        self.cwAPI.signals.newInputData.connect(self.newTargetData)
+        self.cwAPI.signals.connectStatus.connect(self.targetStatusChanged)
+        self.cwAPI.signals.newTextResponse.connect(self.esm.newData)
+        self.cwAPI.signals.traceDone.connect(self.glitchMonitor.traceDone)
+        self.cwAPI.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
+        self.cwAPI.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
+        self.cwAPI.signals.connectStatus.connect(self.targetStatusChanged)
+        self.cwAPI.signals.scopeChanged.connect(self.scopeChanged)
+        self.cwAPI.signals.targetChanged.connect(self.targetChanged)
+        self.cwAPI.signals.traceChanged.connect(self.traceChanged)
+        self.cwAPI.signals.auxChanged.connect(self.auxChanged)
+        self.cwAPI.signals.acqPatternChanged.connect(self.reloadParamList)
 
     def scopeChanged(self):
-        if self.manager.hasScope():
-            self.manager.getScope().paramListUpdated.connect(self.reloadScopeParamList)
-            self.manager.getScope().dataUpdated.connect(self.newScopeData)
-            self.manager.getScope().connectStatus.connect(self.scopeStatusChanged)
+        if self.cwAPI.hasScope():
+            self.cwAPI.getScope().paramListUpdated.connect(self.reloadScopeParamList)
+            self.cwAPI.getScope().dataUpdated.connect(self.newScopeData)
+            self.cwAPI.getScope().connectStatus.connect(self.scopeStatusChanged)
             self.reloadScopeParamList()
 
     def targetChanged(self):
-        if self.manager.hasTarget():
-            self.manager.getTarget().connectStatus.connect(self.targetStatusChanged)
+        if self.cwAPI.hasTarget():
+            self.cwAPI.getTarget().connectStatus.connect(self.targetStatusChanged)
             self.reloadTargetParamList()
 
     def traceChanged(self):
@@ -108,7 +105,7 @@ class ChipWhispererCapture(MainChip):
 
     def scopeStatusChanged(self):
         """Callback when scope connection successful"""
-        if self.manager.getScope().getStatus():
+        if self.cwAPI.getScope().getStatus():
             self.scopeStatus.setDefaultAction(self.scopeStatusActionCon)
         else:
             self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
@@ -117,7 +114,7 @@ class ChipWhispererCapture(MainChip):
 
     def targetStatusChanged(self):
         """Callback when target connection successful"""
-        if self.manager.getTarget().getStatus():
+        if self.cwAPI.getTarget().getStatus():
             self.targetStatus.setDefaultAction(self.targetStatusActionCon)
         else:
             self.targetStatus.setDefaultAction(self.targetStatusActionDis)
@@ -140,7 +137,7 @@ class ChipWhispererCapture(MainChip):
 
     def runScript(self, mod):
         self.updateStatusBar("Running Script: %s" % mod.name())
-        m = mod.userScript(self)
+        m = mod.userScript(self.cwAPI)
         m.run()
         self.updateStatusBar("Finished Script: %s" % mod.name())
 
@@ -174,6 +171,8 @@ class ChipWhispererCapture(MainChip):
         self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
         self.settingsTraceDock = self.addSettings(self.traceParamTree, "Trace Settings")
         self.settingsAuxDock = self.addSettings(self.auxParamTree, "Aux Settings")
+        self.tabifyDocks([self.settingsGeneralDock, self.settingsScopeDock, self.settingsTargetDock,
+                          self.settingsTraceDock, self.settingsAuxDock])
 
     def setupParametersTree(self):
         self.generalParamTree = ParameterTree()
@@ -182,7 +181,7 @@ class ChipWhispererCapture(MainChip):
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
 
-        self.params = Parameter.create(name='Generic Settings', type='group', children=self.manager.cwParams)
+        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwAPI.cwParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.generalParamTree.setParameters(self.params, showTop=False)
 
@@ -193,26 +192,26 @@ class ChipWhispererCapture(MainChip):
 
         self._scopeToolMenuItems = []
 
-        if self.manager.hasScope():
-            ExtendedParameter.reloadParams(self.manager.getScope().paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
+        if self.cwAPI.hasScope():
+            ExtendedParameter.reloadParams(self.cwAPI.getScope().paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
 
             # Check for any tools to add too
-            if hasattr(self.manager.getScope(), "guiActions"):
+            if hasattr(self.cwAPI.getScope(), "guiActions"):
                 self._scopeToolMenuItems.append(self.toolMenu.addSeparator())
-                for act in self.manager.getScope().guiActions(self):
+                for act in self.cwAPI.getScope().guiActions(self):
                     self._scopeToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
 
         for act in self._scopeToolMenuItems:
             self.toolMenu.addAction(act)
 
     def reloadTargetParamList(self):
-        ExtendedParameter.reloadParams(self.manager.getTarget().paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.cwAPI.getTarget().paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadTraceParamList(self):
-        ExtendedParameter.reloadParams(self.manager.getTraceClass().getParams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.cwAPI.getTraceClass().getParams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadAuxParamList(self):
-        ExtendedParameter.reloadParams(self.manager.getAuxiliaryModules()[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.cwAPI.getAuxiliaryModules()[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadParamList(self):
         ExtendedParameter.reloadParams(self.paramList(), self.generalParamTree, help_window=self.helpbrowser.helpwnd)
@@ -221,8 +220,8 @@ class ChipWhispererCapture(MainChip):
         p = []
         p.append(self.params)
 
-        if self.manager.acqPattern is not None:
-            for par in self.manager.acqPattern.paramList():
+        if self.cwAPI.acqPattern is not None:
+            for par in self.cwAPI.acqPattern.paramList():
                 p.append(par)
         return p
 
@@ -283,37 +282,37 @@ class ChipWhispererCapture(MainChip):
 
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
-            self.manager.connectScope()
+            self.cwAPI.connectScope()
             self.updateStatusBar("Scope Connected")
         else:
-            self.manager.disconnectScope()
+            self.cwAPI.disconnectScope()
             self.updateStatusBar("Scope Disconnected")
 
     def doConDisTarget(self):
         if self.targetStatus.defaultAction() == self.targetStatusActionDis:
-            self.manager.connectTarget()
+            self.cwAPI.connectTarget()
             self.updateStatusBar("Target Connected")
         else:
-            self.manager.disconnectTarget()
+            self.cwAPI.disconnectTarget()
             self.updateStatusBar("Target Disconnected")
 
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:
-            self.manager.connect()
+            self.cwAPI.connect()
             self.updateStatusBar("Target and Scope Connected")
         else:
-            self.manager.disconnect()
+            self.cwAPI.disconnect()
             self.updateStatusBar("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog(onlyOkButton=not warnOnly)
 
-        for i in self.manager.validateSettings():
+        for i in self.cwAPI.validateSettings():
             vw.addMessage(*i)
 
-        if self.project().isUntitled():
+        if self.cwAPI.project().isUntitled():
              vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
         if vw.numWarnings() > 0 or warnOnly == False:
@@ -333,26 +332,26 @@ class ChipWhispererCapture(MainChip):
             self.captureMAct.setChecked(False)
 
     def capture1(self):
-        self.manager.capture1()
+        self.cwAPI.capture1()
         return "Capture-One Completed"
 
     def captureM(self):
-        cprog = CaptureProgressDialog(ntraces=self.manager.getNumTraces(), nsegs=self.manager.getNumSegments())
+        cprog = CaptureProgressDialog(ntraces=self.cwAPI.getNumTraces(), nsegs=self.cwAPI.getNumSegments())
         cprog.startCapture()
-        self.manager.signals.traceDone.connect(cprog.traceDoneSlot)
-        self.manager.signals.campaignDone.connect(cprog.incSeg)
-        cprog.abortCapture.connect(self.manager.signals.abortCapture.emit)
-        self.manager.captureM(self.project().datadirectory)
-        self.manager.signals.campaignDone.disconnect(cprog.incSeg)
-        self.manager.signals.traceDone.disconnect(cprog.traceDoneSlot)
+        self.cwAPI.signals.traceDone.connect(cprog.traceDoneSlot)
+        self.cwAPI.signals.campaignDone.connect(cprog.incSeg)
+        cprog.abortCapture.connect(self.cwAPI.signals.abortCapture.emit)
+        self.cwAPI.captureM()
+        self.cwAPI.signals.campaignDone.disconnect(cprog.incSeg)
+        self.cwAPI.signals.traceDone.disconnect(cprog.traceDoneSlot)
         return "Capture-M Completed"
 
 
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
-    app.setOrganizationName(MainChip.__organization__)
-    app.setApplicationName(MainChip.__name__ + " - Capture " + MainChip.__version__)
+    app.setOrganizationName(CWCaptureAPI.__organization__)
+    app.setApplicationName(CWCaptureAPI.__name__ + " - Capture ")
     return app
 
 def main():

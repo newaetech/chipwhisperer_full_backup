@@ -55,6 +55,7 @@ class ConfigObjProj(ConfigObj):
         if self._callback:
             self._callback(key)
 
+
 class ProjectFormat(object):
     class Signals(object):
         filenameChanged = util.Signal()
@@ -135,7 +136,7 @@ class ProjectFormat(object):
         #TODO: readings????
 
     def getDataFilepath(self, filename, subdirectory='analysis'):
-        datadir = os.path.join(self.datadirectory, 'analysis')
+        datadir = os.path.join(self.datadirectory, subdirectory)
         fname = os.path.join(datadir, filename)
         relfname = os.path.relpath(fname, os.path.split(self.config.filename)[0])
         fname = os.path.normpath(fname)
@@ -144,7 +145,7 @@ class ProjectFormat(object):
 
     def convertDataFilepathAbs(self, relativepath):
         return os.path.join(os.path.split(self.filename)[0], relativepath)
-                
+
     def checkDataConfig(self, config, requiredSettings):
         """Check a configuration section for various settings"""
         requiredSettings = util.convert_to_str(requiredSettings)
@@ -249,3 +250,20 @@ class ProjectFormat(object):
         if (len(added) + len(removed) + len(changed)) == 0:
             return False
         return True
+
+    def consolidate(self, keepOriginals = True):
+        for indx, t in enumerate(self.traceManager.traceList):
+            destinationDir = os.path.normpath(self.datadirectory + "traces/")
+            config = ConfigObj(t.config.configFilename())
+            prefix = config['Trace Config']['prefix']
+            tracePath = os.path.normpath(os.path.split(t.config.configFilename())[0])
+
+            if destinationDir == tracePath: continue
+
+            for traceFile in os.listdir(tracePath):
+                if traceFile.startswith(prefix):
+                    util.copyFile(os.path.normpath(tracePath + "/" + traceFile), destinationDir, keepOriginals)
+
+            util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
+            t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
+        self.signals.statusChanged.emit()

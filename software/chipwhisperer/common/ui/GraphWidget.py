@@ -101,12 +101,11 @@ class GraphWidget(QWidget):
         self.colorDialog = ColorDialog()
 
         QWidget.__init__(self)
-        layout = QVBoxLayout()
-
         self.pw = pg.PlotWidget(name="Power Trace View")
         self.pw.setLabel('top', 'Power Trace View')
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
+        self.pw.getPlotItem().setContentsMargins(5,5,10,1)
         vb = self.pw.getPlotItem().getViewBox()
         vb.setMouseMode(vb.RectMode)
         vb.sigStateChanged.connect(self.VBStateChanged)
@@ -150,11 +149,13 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(self.actionPersistance)
         self.GraphToolbar.addAction(setColour)
         self.GraphToolbar.addAction(clear)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0,0,0,0)
+        layout.setSpacing(0)
         layout.addWidget(self.GraphToolbar)
-        
         layout.addWidget(self.pw)        
         self.setLayout(layout)
-
         self.setDefaults()
 
     def setDefaults(self):
@@ -239,11 +240,11 @@ class GraphWidget(QWidget):
         
     def xLocked(self, enabled):
         """Lock X axis, such it doesn't change with new data"""
-        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.XAxis, ~enabled)
+        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.XAxis, not enabled)
         
     def yLocked(self, enabled):
         """Lock Y axis, such it doesn't change with new data"""
-        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
+        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
     def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).

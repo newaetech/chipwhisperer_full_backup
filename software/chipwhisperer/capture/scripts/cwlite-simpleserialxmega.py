@@ -66,7 +66,6 @@ class userScript(QObject):
     def __init__(self, capture):
         super(userScript, self).__init__()
         self.capture = capture
-                
 
     def run(self):
         cap = self.capture

@@ -28,6 +28,7 @@
 import ast
 import os.path
 import collections
+import shutil
 
 active_scope = [None]
 chipwhisperer_extra = None
@@ -65,6 +66,17 @@ class Settings(object):
 
 
 globalSettings = Settings()
+
+def copyFile(source, destination, keepOriginals = True):
+    if keepOriginals:
+        shutil.copy2(source, destination)
+    else:
+        shutil.move(source, destination)
+
+def strippedName(fullFileName):
+    (filepath, filename) = os.path.split(fullFileName)
+    (base, toplevel) = os.path.split(filepath)
+    return toplevel + "/" + filename
 
 def appendAndForwardErrorMessage(msg, e):
     raise type(e)(msg + "\n  -> " + str(e))
