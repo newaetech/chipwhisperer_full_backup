@@ -28,14 +28,16 @@ import os
 import sys
 import traceback
 from datetime import datetime
-from chipwhisperer.common.ui.GraphWidget import GraphWidget
+
+from pyqtgraph.parametertree import Parameter, ParameterTree
+
 import chipwhisperer.common.ui.PythonConsole
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter, ParameterTree
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import util
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -268,7 +270,10 @@ class MainChip(QMainWindow):
 
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget()"""
-        return self.addDock(GraphWidget(), name=name, area=Qt.TopDockWidgetArea)
+        self.waveformDock = self.addDock(GraphWidget(), name=name, area=Qt.TopDockWidgetArea)
+        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
+        self.waveformDock.widget().YDefault()
+        return self.waveformDock
         
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""

@@ -36,7 +36,7 @@ except ImportError:
 
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
 class ResyncPeakDetect(PreprocessingBase):

@@ -34,15 +34,15 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter, ParameterTree
-from chipwhisperer.common.GraphWidget import GraphWidget
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
 
 #Setup scripts/examples
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import PartitionDisplay
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
 
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
 
 class TraceExplorerDialog(QDialog, AutoScript):
     """Open dialog to explore trace properties, data graphs, etc"""

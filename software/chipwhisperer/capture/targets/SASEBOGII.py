@@ -24,8 +24,9 @@
 #=================================================
 
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
 from TargetTemplate import TargetTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     import ftd2xx as ft

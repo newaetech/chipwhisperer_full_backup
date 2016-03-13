@@ -24,15 +24,17 @@
 #=================================================
 
 import time
+
 import serial
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.api.scan as scan
+
 import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
-from chipwhisperer.common.utils import util
-from TargetTemplate import TargetTemplate
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
+import chipwhisperer.common.api.scan as scan
+from TargetTemplate import TargetTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 try:
     # OrderedDict is new in 2.7

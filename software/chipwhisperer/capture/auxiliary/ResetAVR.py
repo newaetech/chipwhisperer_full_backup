@@ -24,11 +24,14 @@
 #=================================================
 
 import time
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.utils import util
 from subprocess import call
+
+from pyqtgraph.parametertree import Parameter
+
+from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+
 
 def getInstance(*args):
     return ResetAVR(*args)

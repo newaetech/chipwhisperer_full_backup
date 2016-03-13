@@ -26,10 +26,12 @@
 #=================================================
 
 import zipfile
-import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
-from chipwhisperer.common.utils import util
+
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
+import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 glitchaddr = 51
 glitchoffsetaddr = 25

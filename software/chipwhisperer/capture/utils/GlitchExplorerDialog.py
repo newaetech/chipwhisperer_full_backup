@@ -24,22 +24,18 @@
 #=================================================
 
 # Python standard imports
+import math
+import pickle
 import sys
 from datetime import datetime
-import pickle
-import math
 
 # External libraries
 from PySide.QtCore import *
 from PySide.QtGui import *
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-import pyqtgraph.parametertree.parameterTypes as pTypes
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+from pyqtgraph.parametertree import Parameter, ParameterTree
 
 # CW/OpenADC
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ui.ParameterTypesCustom
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 class TuningParameter(QObject):

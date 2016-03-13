@@ -33,13 +33,16 @@ must install
 
 import collections
 import time
-from picoscope import ps6000
-from picoscope import ps5000a
+
 from picoscope import ps2000
+from picoscope import ps5000a
+from picoscope import ps6000
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.utils import util
+
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+
 
 def getInstance(*args):
     return PicoScopeInterface(*args)

@@ -24,13 +24,15 @@
 
 __author__ = "Colin O'Flynn"
 
-import numpy as np
-import TraceContainerConfig
 import copy
 import re
-import pstats, cProfile #For profiling support (not 100% needed)
+
+import numpy as np
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
+import TraceContainerConfig
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
 
 class parameters(object):
     def __init__(self, openMode=False):

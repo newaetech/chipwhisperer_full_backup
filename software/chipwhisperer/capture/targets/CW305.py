@@ -26,11 +26,12 @@
 import math
 import time
 from functools import partial
+
 from pyqtgraph.parametertree import Parameter
+
 from TargetTemplate import TargetTemplate
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 def getInstance(*args):

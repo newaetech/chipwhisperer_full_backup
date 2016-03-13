@@ -37,7 +37,7 @@ except ImportError:
 
 import os
 import numpy as np
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     from pyqtgraph.parametertree import Parameter
@@ -51,8 +51,8 @@ try:
 except ImportError:
     multivariate_normal = None
 
-from chipwhisperer.common.autoscript import AutoScript
-from chipwhisperer.common.traces.utils import strListToList
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import util
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import leakage
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
@@ -315,7 +315,7 @@ class ProfilingTemplate(AutoScript, QObject):
             if f["partitiontype"] != t["partitiontype"]:
                 print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
 
-            if (strListToList(str(f["poi"])) != t["poi"]).any():
+            if (util.strListToList(str(f["poi"])) != t["poi"]).any():
                 print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
 
         return templates
@@ -327,7 +327,7 @@ class ProfilingTemplate(AutoScript, QObject):
 
         for s in section:
             poistr = str(s["poi"])
-            poieval = strListToList(poistr)
+            poieval = util.strListToList(poistr)
             poiList.append(s.copy())
             poiList[-1]["poi"] = poieval
 

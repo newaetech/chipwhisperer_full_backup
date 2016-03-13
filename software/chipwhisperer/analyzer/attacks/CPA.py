@@ -26,47 +26,27 @@
 #=================================================
 
 
-import sys
 from datetime import datetime
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-#from joblib import Parallel, delayed
-
-try:
-    from pyqtgraph.parametertree import Parameter
-    #print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
-
 from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
 from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
 from chipwhisperer.analyzer.attacks.CPAProgressive_CAccel import CPAProgressive_CAccel
+from AttackGenericParameters import AttackGenericParameters
 
 #TEMPORARY - NOT FOR REAL USE
 from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
-
-from AttackGenericParameters import AttackGenericParameters
 
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        self.console=console
+    def __init__(self, parent=None, showScriptParameter=None):
         self.showScriptParameter=showScriptParameter
         super(CPA, self).__init__(parent)
 

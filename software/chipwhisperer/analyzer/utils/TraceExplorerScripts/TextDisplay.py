@@ -33,8 +33,8 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import pyqtgraph as pg
 
-from chipwhisperer.common.autoscript import AutoScript
-from chipwhisperer.common.utils import list2hexstr
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import util
 
 class TextDisplay(AutoScript, QObject):
 
@@ -67,9 +67,9 @@ class TextDisplay(AutoScript, QObject):
             tout = self.traceManager().getTextout(tnum)
             k = self.traceManager().getKnownKey(tnum)
 
-            self.tablewid.setItem(tnum, 0, QTableWidgetItem(list2hexstr(tin)))
-            self.tablewid.setItem(tnum, 1, QTableWidgetItem(list2hexstr(tout)))
-            self.tablewid.setItem(tnum, 2, QTableWidgetItem(list2hexstr(k)))
+            self.tablewid.setItem(tnum, 0, QTableWidgetItem(util.list2hexstr(tin)))
+            self.tablewid.setItem(tnum, 1, QTableWidgetItem(util.list2hexstr(tout)))
+            self.tablewid.setItem(tnum, 2, QTableWidgetItem(util.list2hexstr(k)))
 
 
 

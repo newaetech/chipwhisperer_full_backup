@@ -35,7 +35,7 @@ except ImportError:
     sys.exit()
 
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
 import numpy as np

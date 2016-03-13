@@ -26,11 +26,9 @@
 #=================================================
 
 import sys
-from functools import partial
-import numpy as np
 
+import numpy as np
 from PySide.QtCore import *
-from PySide.QtGui import *
 
 try:
     from pyqtgraph.parametertree import Parameter
@@ -38,8 +36,7 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ui.ParameterTypesCustom
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 sadcfgaddr = 53
 saddataaddr = 54

@@ -25,10 +25,11 @@
 __author__ = "Colin O'Flynn"
 
 from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
+from pyqtgraph.parametertree import ParameterTree
+
 import chipwhisperer.common.traces.TraceContainerTypes
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
 from chipwhisperer.common.utils import util
 
 try:

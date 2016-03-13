@@ -22,11 +22,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-from TargetTemplate import TargetTemplate
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.utils import util
 import hid
+from pyqtgraph.parametertree import Parameter
+
+from TargetTemplate import TargetTemplate
+
 
 def getInstance(*args):
     return ChipWhispererSPI(*args)
@@ -88,7 +88,7 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
     def setupParameters(self):

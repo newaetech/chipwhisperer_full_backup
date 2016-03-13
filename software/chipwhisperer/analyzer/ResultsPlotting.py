@@ -34,7 +34,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from chipwhisperer.common.GraphWidget import GraphWidget
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils.util import hexstr2list
 
 from datetime import datetime
@@ -53,8 +53,8 @@ except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.qrc_resources
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+import chipwhisperer.common.ui.qrc_resources
 
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)
@@ -128,7 +128,6 @@ class ResultsPlotting(QObject):
         self.corrgraph.setAttack(attack)
         self.saveresults.setAttack(attack)
         self.attackSettingsChanged()
-
 
     def attackSettingsChanged(self):
         """Attack settings have changed, so pass required changes to other modules such as plotting"""

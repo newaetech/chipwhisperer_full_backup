@@ -26,8 +26,10 @@
 #=================================================
 
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
+
 
 def getInstance(*args):
     return AuxiliaryTemplate(*args)

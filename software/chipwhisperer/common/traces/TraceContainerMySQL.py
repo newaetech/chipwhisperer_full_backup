@@ -23,11 +23,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import pickle
+
 import numpy as np
-import TraceContainer
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
+import TraceContainer
 from TraceContainerConfig import makeAttrDict
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     import umysql as sql

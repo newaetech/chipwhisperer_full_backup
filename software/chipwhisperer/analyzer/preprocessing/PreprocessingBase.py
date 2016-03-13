@@ -34,9 +34,9 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
 
 class PreprocessingBase(AutoScript, QObject):
     """

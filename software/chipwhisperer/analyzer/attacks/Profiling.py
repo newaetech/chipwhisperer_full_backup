@@ -37,7 +37,7 @@ except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     from pyqtgraph.parametertree import Parameter

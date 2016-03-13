@@ -38,7 +38,7 @@ import random
 import numpy as np
 
 from pyqtgraph.parametertree import Parameter
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
 

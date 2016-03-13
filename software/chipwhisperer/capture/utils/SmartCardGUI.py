@@ -23,12 +23,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import sys
-import serial
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-
-import time
 
 try:
     # OrderedDict is new in 2.7
@@ -42,8 +39,7 @@ try:
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
-    
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
 from chipwhisperer.common.utils.util import hexstr2list
 
 class APDUFilter(QObject):

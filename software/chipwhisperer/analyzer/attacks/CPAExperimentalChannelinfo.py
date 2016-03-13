@@ -35,7 +35,7 @@ except ImportError:
 
 import numpy as np
 import scipy as sp
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 try:

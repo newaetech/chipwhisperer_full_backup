@@ -28,16 +28,17 @@
 import sys
 
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.capture.ui.qt as openadc_qt
+
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
-import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
-from chipwhisperer.common.utils import util
-from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite_Loader, CWCRev2_Loader
+import chipwhisperer.capture.ui.qt as openadc_qt
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite_Loader, CWCRev2_Loader
+from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
+from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 try:
     # OrderedDict is new in 2.7

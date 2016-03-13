@@ -25,11 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
+
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
+from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
 
 CODE_READ       = 0x80

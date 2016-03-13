@@ -23,12 +23,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import time
+
 import serial
 from pyqtgraph.parametertree import Parameter
+
 from TargetTemplate import TargetTemplate
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import USART as CWLite_USART
 from chipwhisperer.common.api import scan
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
 
 def getInstance(*args):
     return SimpleSerial(*args)

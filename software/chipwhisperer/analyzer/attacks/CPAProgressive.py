@@ -31,9 +31,9 @@ import numpy as np
 import inspect
 from pyqtgraph.parametertree import Parameter
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""

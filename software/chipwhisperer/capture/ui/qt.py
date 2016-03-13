@@ -13,7 +13,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 
 import chipwhisperer.capture.api.OpenADCInterface as openadc
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     import pyqtgraph as pg

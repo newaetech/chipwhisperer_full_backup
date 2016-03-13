@@ -24,17 +24,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-from functools import partial
 import time
 
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
+from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0

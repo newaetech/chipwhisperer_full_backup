@@ -23,10 +23,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.utils import util
 from pyqtgraph.parametertree import Parameter
+
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 try:
     from Crypto.Cipher import AES

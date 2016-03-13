@@ -38,7 +38,7 @@ except ImportError:
 import numpy as np
 import random
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT

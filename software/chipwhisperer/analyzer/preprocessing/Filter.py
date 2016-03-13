@@ -25,23 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
+from scipy import signal
 
-# from functools import partial
-import scipy as sp
-# import numpy as np
-        
 class Filter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
@@ -49,7 +37,7 @@ class Filter(PreprocessingBase):
      
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateScript},
+                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"signal.butter"}, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
                          {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
@@ -64,7 +52,7 @@ class Filter(PreprocessingBase):
         # Setup imports required
         self.importsAppend("import scipy as sp")
 
-    def setFilterForm(self, filtform=sp.signal.butter):
+    def setFilterForm(self, filtform=signal.butter):
         """Set the filter type in object"""
         self.filterForm = filtform
 
@@ -98,7 +86,7 @@ class Filter(PreprocessingBase):
             if trace is None:
                 return None
             
-            filttrace = sp.signal.lfilter(self.b, self.a, trace)
+            filttrace = signal.lfilter(self.b, self.a, trace)
             
             return filttrace
             

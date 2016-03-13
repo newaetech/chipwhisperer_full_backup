@@ -27,10 +27,12 @@
 
 import time
 from functools import partial
+
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.utils import util
+
 import ChipWhispererGlitch
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0

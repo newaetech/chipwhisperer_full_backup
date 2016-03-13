@@ -26,17 +26,17 @@
 import os.path
 import sys
 from functools import partial
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter, ParameterTree
 from chipwhisperer.capture.api.CWCaptureAPI import CWCaptureAPI
 from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.MainChip import MainChip
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils import util
-from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter, ParameterTree
 
 __author__ = "Colin O'Flynn"
 
@@ -57,7 +57,7 @@ class ChipWhispererCapture(MainChip):
         self.addToolbar()
         self.addToolMenu()
         self.addSettingsDocks()
-        self.addWaveforms()
+        self.addTraceDock("Capture Waveform (Channel 1)")
         self.reloadParamList()
         self.readSettings()
 
@@ -152,15 +152,6 @@ class ChipWhispererCapture(MainChip):
 
         # Keep track of add-ins
         self._scopeToolMenuItems = []
-
-
-    def addWaveforms(self):
-        self.waveformDock = self.addTraceDock("Capture Waveform (Channel 1)")
-
-        #TODO: FIX THIS HACK
-        #Should be something in ScopeInterface class maybe
-        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()
 
     def addSettingsDocks(self):
         self.setupParametersTree()

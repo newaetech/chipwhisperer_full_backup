@@ -33,9 +33,9 @@ import platform
 from ctypes import *
 from pyqtgraph.parametertree import Parameter
 
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
 
 
 class aesmodel_setup_t(Structure):

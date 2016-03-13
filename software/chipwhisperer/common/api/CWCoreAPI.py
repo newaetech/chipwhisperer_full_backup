@@ -58,6 +58,17 @@ class CWCoreAPI(object):
         self.project().addParamTree(self.getTarget())
         self.project().setTraceManager(self.getTraceManager())
 
+    def openProject(self, fname):
+        self.setProject(ProjectFormat(self))
+        self.project().setProgramName(self.__name__)
+        self.project().setProgramVersion(self.__version__)
+        self.project().setTraceManager(self.getTraceManager())
+        self.project().setFilename(fname)
+        self.project().load()
+
+        #Open project file & read in everything
+        self.project().traceManager.loadProject(fname)
+
     def saveProject(self, fname):
         self.project().setFilename(fname)
         self.project().save()

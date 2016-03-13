@@ -32,7 +32,7 @@ except ImportError:
     dicttype = dict
 
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
 import chipwhisperer.capture.ui.qt as openadc_qt

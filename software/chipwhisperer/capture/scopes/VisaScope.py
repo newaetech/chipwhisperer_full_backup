@@ -27,11 +27,14 @@
 
 
 import time
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.utils import util
-from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 from visa import *
+
+from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+
 
 def getInstance(*args):
     return VisaScopeInterface(*args)

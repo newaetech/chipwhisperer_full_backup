@@ -24,9 +24,12 @@
 #=================================================
 
 import random
-import chipwhisperer.common.utils.util as util
-from chipwhisperer.capture.api.ExtendedParameter import ExtendedParameter
+
 from pyqtgraph.parametertree import Parameter
+
+import chipwhisperer.common.utils.util as util
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
 
 class AcquisitionController():
     class Signals:

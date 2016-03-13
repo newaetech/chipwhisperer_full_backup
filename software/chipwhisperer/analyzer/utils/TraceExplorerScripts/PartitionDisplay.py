@@ -34,7 +34,7 @@ from PySide.QtGui import *
 import pyqtgraph as pg
 
 from chipwhisperer.analyzer.utils.Partition import Partition
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
 
 class DifferenceModeTTest(QObject):
     sectionName = "Difference of Partitions using Welch's T-Test"
