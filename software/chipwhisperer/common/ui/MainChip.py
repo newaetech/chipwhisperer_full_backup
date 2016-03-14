@@ -231,6 +231,8 @@ class MainChip(QMainWindow):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.cwAPI.signals.parametersChanged.connect(QCoreApplication.processEvents)
+        self.cwAPI.signals.newProject.connect(lambda: self.projEditWidget.setProject(self.cwAPI.project()))
+        self.cwAPI.signals.newProject.connect(lambda: self.cwAPI.project().signals.statusChanged.connect(self.projectChanged))
 
     def readSettings(self):
         self.restoreGeometry(self.settings.value("geometry"))
@@ -483,12 +485,19 @@ class MainChip(QMainWindow):
             for j in range(files_no, MainChip.MaxRecentFiles):
                 self.recentFileActs[j].setVisible(False)
 
+    def openRecentFile(self):
+        action = self.sender()
+        if action:
+            self.openProject(action.data())
+
     def openProject(self, fname = None):
+        self.okToContinue()
         if fname is None:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
-        self.cwAPI.openProject(self, fname)
+        self.cwAPI.openProject(fname)
+        self.updateStatusBar("Opening Project: " + fname)
 
     def saveProject(self):
         fname = self.cwAPI.project().getFilename()
@@ -507,22 +516,16 @@ class MainChip(QMainWindow):
         self.updateStatusBar("Project Saved")
 
     def newProject(self):
+        self.okToContinue()
         self.cwAPI.newProject()
-        self.projectChanged()
-        self.cwAPI.project().signals.statusChanged.connect(self.projectChanged)
         self.updateStatusBar("New Project Created")
-        self.projEditWidget.setProject(self.cwAPI.project())
 
     def setProject(self, proj):
         self.cwAPI.setProject(proj)
-        self.projEditWidget.setProject(self.cwAPI.project())
-
-    def openRecentFile(self):
-        action = self.sender()
-        if action:
-            self.openFile(action.data())
 
     def okToContinue(self):
+        if self.cwAPI.project() is None: return False
+
         reply = SaveProjectDialog.getSaveProjectDialog(self, self.cwAPI.project())
         if reply == QDialogButtonBox.RejectRole:
             return False

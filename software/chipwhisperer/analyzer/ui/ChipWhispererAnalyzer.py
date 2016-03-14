@@ -33,6 +33,7 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.MainChip import MainChip
 #from ResultsDialog import ResultsDialog
 from chipwhisperer.analyzer.attacks.CPA import CPA
+from chipwhisperer.analyzer.api.CWAnalizerAPI import CWAnalizerAPI
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
@@ -54,18 +55,13 @@ class ChipWhispererAnalyzer(MainChip):
 
     def __init__(self):
         super(ChipWhispererAnalyzer, self).__init__(CWAnalizerAPI(), name="ChipWhisperer" + u"\u2122" + " Analyzer V2", icon="cwiconA")
+        self.cwAPI.setupParameters("", self.showScriptParameter)
         self.results = ResultsPlotting()
         #self.resultsDialog = ResultsDialog(self)
         #self.addShowStats()
         self.addTraceDock("Waveform Display")
 
         self.plotInputEach = False
-
-        self.da = None
-        self.numTraces = 100
-
-        self.traceLimits = 0
-        self.pointLimits = 0
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -111,7 +107,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.setupPreprocessorChain()
 
         # print self.findParam('attackfilelist').items
-
+        self.cwAPI.signals.projectChanged.connect(lambda: self.traceExplorerDialog.setProject(self.project()))
 
     def listModules(self):
         """Overload this to test imports"""

@@ -33,9 +33,10 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 class AcquisitionController():
     class Signals:
-        traceDone = util.Signal()
-        captureDone = util.Signal()
-        newTextResponse = util.Signal()
+        def __init__(self):
+            self.traceDone = util.Signal()
+            self.captureDone = util.Signal()
+            self.newTextResponse = util.Signal()
 
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
         self.target = target

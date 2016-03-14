@@ -109,7 +109,7 @@ class ProjectTextEditor(QWidget):
         
     def setProject(self, proj):
         self._project = proj
-        self._project.signals.valueChanged.connect(self.projectChangedGUI)
+        self._project.signals.dirty.connect(self.checkGUIChanged)
         self._project.signals.statusChanged.connect(self.update)
         self.update()
 
@@ -159,6 +159,11 @@ class ProjectTextEditor(QWidget):
 
     def readFromDisk(self):
         self.editWindow.clear()
+
+        if self._project.isUntitled():
+            self.setStatus("nofile")
+            return
+
         try:
             with open(self._project.getFilename()) as fp:
                 for line in fp:

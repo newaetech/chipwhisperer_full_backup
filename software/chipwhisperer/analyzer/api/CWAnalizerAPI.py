@@ -31,14 +31,24 @@ import chipwhisperer.analyzer.preprocessing.Preprocessing as Preprocessing
 from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from functools import partial
 from chipwhisperer.analyzer.attacks.CPA import CPA
+from chipwhisperer.common.utils import util
 
 
 class CWAnalizerAPI(CWCoreAPI):
+
+    class Signals(CWCoreAPI.Signals):
+        reloadParamListPreprocessing = util.Signal()
+        reloadAttackParamList = util.Signal()
 
     def __init__(self):
         super(CWAnalizerAPI, self).__init__()
         self.numPreprocessingStep = 4
         self.preprocessingListGUI = [None] * self.numPreprocessingStep
+        self.da = None
+        self.numTraces = 100
+        self.traceLimits = 0
+        self.pointLimits = 0
+        self.signals.projectChanged.connect(lambda: self.attack.setProject(self.project()))
 
     def setupParameters(self, rootdir, showScriptParameter):
         valid_atacks = {'CPA':CPA(self, showScriptParameter=showScriptParameter),
@@ -46,7 +56,6 @@ class CWAnalizerAPI(CWCoreAPI):
 
         self.utilList = []
         self.scriptList = []
-
 
         self.cwParams = [
                 {'name':'Attack Script', 'type':'group', 'children':[
@@ -76,18 +85,19 @@ class CWAnalizerAPI(CWCoreAPI):
         """
         self.preprocessingListGUI[num] = module
         if module:
-            module.paramListUpdated.connect(self.reloadParamListPreprocessing)
+            module.paramListUpdated.connect(self.signals.reloadParamListPreprocessing.emit)
             module.scriptsUpdated.connect(self.reloadScripts)
-        self.reloadParamListPreprocessing()
+        self.signals.reloadParamListPreprocessing.emit()
+        # self.reloadParamListPreprocessing()
         self.reloadScripts()
 
     def setAttack(self, attack):
         """Set the attack module, reloading GUI and connecting appropriate signals"""
 
         self.attack = attack
-        self.reloadAttackParamList()
+        self.signals.self.reloadAttackParamList.emit()
         self.results.setAttack(self.attack)
-        self.attack.paramListUpdated.connect(self.reloadAttackParamList)
+        self.attack.paramListUpdated.connect(self.signals.self.reloadAttackParamList.emit)
         self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
 
         # Sometimes required
@@ -226,12 +236,6 @@ class CWAnalizerAPI(CWCoreAPI):
         mod.setTraceManager(self.traces)
 
         # self.reloadScripts()
-
-    def openProject(self, fname):
-        super(CWAnalizerAPI, self).openProject(fname)
-        # Ensure attack knows about this project
-        self.attack.setProject(self.project())
-        self.traceExplorerDialog.setProject(self.project())
 
     def reloadScripts(self):
         """Rewrite the auto-generated analyzer script, using settings from the GUI"""

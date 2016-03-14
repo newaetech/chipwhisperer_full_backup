@@ -58,10 +58,11 @@ class ConfigObjProj(ConfigObj):
 
 class ProjectFormat(object):
     class Signals(object):
-        filenameChanged = util.Signal()
-        fileChangedOnDisk = util.Signal()
-        valueChanged = util.Signal()
-        statusChanged = util.Signal()
+        def __init__(self):
+            self.filenameChanged = util.Signal()
+            self.fileChangedOnDisk = util.Signal()
+            self.dirty = util.Observable(True)
+            self.statusChanged = util.Signal()
 
     untitledFileName = "tmp/default.cwp"
     def __init__(self, parent=None):
@@ -74,13 +75,14 @@ class ProjectFormat(object):
         self.setFilename(ProjectFormat.untitledFileName)
 
     def configObjChanged(self, key):
-        self.signals.valueChanged.emit(key)
+        self.signals.dirty.setValue(True)
 
     def isUntitled(self):
         return self.filename == ProjectFormat.untitledFileName
 
     def setTraceManager(self, manager):
         self.traceManager = manager
+        self.traceManager.dirty.connect(lambda: self.signals.dirty.setValue(self.traceManager.dirty.value() or self.signals.dirty.value()))
     
     def setProgramName(self, name):
         self.settingsDict['Program Name']=name
@@ -126,14 +128,13 @@ class ProjectFormat(object):
         if not os.path.isdir(os.path.join(self.datadirectory, 'analysis')):
             os.mkdir(os.path.join(self.datadirectory, 'analysis'))
 
-    def load(self, f=None):
+    def load(self, f = None):
         if f is not None:
             self.setFilename(f)
 
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
-        self.signals.statusChanged.emit()
-
-        #TODO: readings????
+        self.traceManager.loadProject(self.filename)
+        self.signals.dirty.setValue(False)
 
     def getDataFilepath(self, filename, subdirectory='analysis'):
         datadir = os.path.join(self.datadirectory, subdirectory)
@@ -225,6 +226,7 @@ class ProjectFormat(object):
         self.config.write()
         self.signals.fileChangedOnDisk.emit()
         self.signals.statusChanged.emit()
+        self.signals.dirty.setValue(False)
 
     def checkDiff(self):
         """
@@ -246,6 +248,8 @@ class ProjectFormat(object):
         return added, removed, changed
 
     def hasDiffs(self):
+        if self.signals.dirty.value(): return True
+
         added, removed, changed = self.checkDiff()
         if (len(added) + len(removed) + len(changed)) == 0:
             return False

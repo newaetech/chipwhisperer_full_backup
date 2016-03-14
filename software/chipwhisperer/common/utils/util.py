@@ -182,8 +182,9 @@ class Observable(Signal):
         self.data = value
 
     def setValue(self, value):
-        self.data = value
-        self.emit()
+        if value != self.data:
+            self.data = value
+            self.emit()
 
     def value(self):
         return self.data

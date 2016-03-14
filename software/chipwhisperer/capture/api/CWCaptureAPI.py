@@ -33,18 +33,20 @@ class CWCaptureAPI(CWCoreAPI):
     """This is the manager class"""
 
     class Signals(CWCoreAPI.Signals):
-        paramListUpdated = util.Signal()
-        scopeChanged = util.Signal()
-        targetChanged = util.Signal()
-        auxChanged = util.Signal()
-        acqPatternChanged = util.Signal()
-        connectStatus = util.Signal()
-        newInputData = util.Signal()
-        newTextResponse = util.Signal()
-        traceDone = util.Signal()
-        campaignStart = util.Signal()
-        campaignDone = util.Signal()
-        abortCapture = util.Signal()
+        def __init__(self):
+            super(CWCaptureAPI.Signals, self).__init__()
+            self.paramListUpdated = util.Signal()
+            self.scopeChanged = util.Signal()
+            self.targetChanged = util.Signal()
+            self.auxChanged = util.Signal()
+            self.acqPatternChanged = util.Signal()
+            self.connectStatus = util.Signal()
+            self.newInputData = util.Signal()
+            self.newTextResponse = util.Signal()
+            self.traceDone = util.Signal()
+            self.campaignStart = util.Signal()
+            self.campaignDone = util.Signal()
+            self.abortCapture = util.Signal()
 
     def __init__(self):
         super(CWCaptureAPI, self).__init__()
@@ -223,14 +225,11 @@ class CWCaptureAPI(CWCoreAPI):
                     aux.setPrefix(baseprefix)
 
             ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
+            ac.setMaxtraces(tracesPerRun)
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
-            self.signals.abortCapture.connect(ac.abortCapture)
             self.signals.campaignStart.emit(baseprefix)
-            ac.setMaxtraces(tracesPerRun)
-
             ac.doReadings(addToList=self._traceManager)
-            self.signals.abortCapture.disconnect(ac.abortCapture)
 
             tcnt += tracesPerRun
             print "%d Captures Completed" % tcnt

@@ -35,12 +35,15 @@ class CWCoreAPI(object):
     __version__ = "V3.0"
 
     class Signals(object):
-        parametersChanged = util.Signal()
-        traceChanged = util.Signal()
+        def __init__(self):
+            self.parametersChanged = util.Signal()
+            self.traceChanged = util.Signal()
+            self.newProject = util.Signal()
 
     def __init__(self):
         self.paramTrees = []
         self._traceManager = None
+        self._project = None
         self.signals = self.Signals()
 
     def project(self):
@@ -48,6 +51,7 @@ class CWCoreAPI(object):
 
     def setProject(self, proj):
         self._project = proj
+        self.signals.newProject.emit()
 
     def newProject(self):
         self.setProject(ProjectFormat(self))
@@ -56,18 +60,16 @@ class CWCoreAPI(object):
         self.project().addParamTree(self)
         self.project().addParamTree(self.getScope())
         self.project().addParamTree(self.getTarget())
+        self.getTraceManager().newProject()
         self.project().setTraceManager(self.getTraceManager())
 
     def openProject(self, fname):
         self.setProject(ProjectFormat(self))
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
+        self.getTraceManager().newProject()
         self.project().setTraceManager(self.getTraceManager())
-        self.project().setFilename(fname)
-        self.project().load()
-
-        #Open project file & read in everything
-        self.project().traceManager.loadProject(fname)
+        self.project().load(fname)
 
     def saveProject(self, fname):
         self.project().setFilename(fname)

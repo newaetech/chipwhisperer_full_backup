@@ -26,7 +26,6 @@ __author__ = "Colin O'Flynn"
 
 import sys
 import os.path
-import re
 import shutil
 import glob
 from PySide.QtCore import *
@@ -86,6 +85,11 @@ class TraceManagerDialog(QDialog, TraceManager):
         self.setWindowTitle("Trace Management")
         self.resize(800, 300)
 
+    def newProject(self):
+        super(TraceManagerDialog,self).newProject()
+        self.table.clearContents()
+        self.table.setRowCount(0)
+
     def checkProject(self, ask=True):
         #Check trace attributes
         for i in range(0, self.table.rowCount()):
@@ -94,40 +98,18 @@ class TraceManagerDialog(QDialog, TraceManager):
         #Check out config
 
     def loadProject(self, configfilename):
-        config = ConfigParser.RawConfigParser()
-        config.read(configfilename)
-        alltraces = config.items(self.secName)
-
-        self.newProject()
-
-        fdir = os.path.split(configfilename)[0] + "/"
-
-        for t in alltraces:
-            if t[0].startswith("tracefile"):
-                fname = fdir + t[1]
-                fname = os.path.normpath(fname.replace("\\", "/"))
-                # print "Opening %s"%fname
-                ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
-                ti.config.loadTrace(fname)
-                self.traceList.append(ti)
-                self.addRow(ti)
-
-            if t[0].startswith("enabled"):
-                tnum = re.findall(r'[0-9]+', t[0])
-                self.table.cellWidget(int(tnum[0]), self.findCol("Enabled")).setChecked(t[1] == "True")
-
+        super(TraceManagerDialog, self).loadProject(configfilename)
+        for indx, t in enumerate(self.traceList):
+            self.addRow(t)
         self.validateTable()
 
     def findCol(self, name):
         """ Function is a hack/cheat to deal with movable headers if they become enabled """
-        cols = self.table.columnCount()
-
-        for i in range(0, cols):
+        for i in range(0, self.table.columnCount()):
             if self.table.horizontalHeaderItem(i).text() == name:
                 return i
 
-        raise ValueError("findCol argument not in table: %s"%name)
-
+        raise ValueError("findCol argument not in table: %s" % name)
 
     def addRow(self, trace=None, location=None):
         if location == None:
@@ -136,10 +118,9 @@ class TraceManagerDialog(QDialog, TraceManager):
         self.table.insertRow(location)
         row = self.table.rowCount()-1
         cb = QCheckBox()
-        cb.setChecked(True)
+        cb.setChecked(trace.enabled)
         cb.clicked.connect(self.validateTable)
         self.table.setCellWidget(row, self.findCol("Enabled"), cb)
-
         if trace:
             for t in trace.config.attrHeaderValues():
                 try:
@@ -159,16 +140,12 @@ class TraceManagerDialog(QDialog, TraceManager):
                 except ValueError:
                     pass
 
-        self.validateTable()
-
     def validateTable(self):
         startTrace = 0
         for i in range(0, self.table.rowCount()):
             if self.table.cellWidget(i, self.findCol("Enabled")).isChecked():
-                if not hasattr(self.traceList[i], 'enabled'):
-                    self.tracesChanged.emit()
-                elif self.traceList[i].enabled == False:
-                    self.tracesChanged.emit()
+                if hasattr(self.traceList[i], 'enabled') and self.traceList[i].enabled == False:
+                    self.dirty.setValue(True)
                 self.traceList[i].enabled = True
                 tlen = self.traceList[i].numTraces()
                 self.traceList[i].mappedRange = [startTrace, startTrace+tlen-1]
@@ -187,17 +164,16 @@ class TraceManagerDialog(QDialog, TraceManager):
                     # self.traceList[i].loadAllTraces(path, pref)
 
             else:
-                if not hasattr(self.traceList[i], 'enabled'):
-                    self.tracesChanged.emit()
-                elif self.traceList[i].enabled == True:
-                    self.tracesChanged.emit()
+                if hasattr(self.traceList[i], 'enabled') and self.traceList[i].enabled == True:
+                    self.dirty.setValue(True)
                 self.traceList[i].enabled = False
                 self.traceList[i].mappedRange = None
                 self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
 
-        self.UpdateTraces()
+        self.updateTraces()
         #self.updatePreview()
-        self.tracesChanged.emit()
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)
@@ -208,11 +184,9 @@ class TraceManagerDialog(QDialog, TraceManager):
     def append(self, ti):
         super(TraceManagerDialog,self).append(ti)
         self.addRow(ti)
-        self.table.resizeRowsToContents()
-        self.table.resizeColumnsToContents()
+        self.validateTable()
 
     def importExisting(self, fname=None):
-
         tmi = TraceManagerImport(self)
         tmi.exec_()
 

@@ -24,37 +24,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
+
 from collections import OrderedDict
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.utils.util import hexstr2list
-
 from datetime import datetime
 from functools import partial
 import copy
-
 import numpy as np
-
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    # print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from pyqtgraph.parametertree import Parameter
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
+from chipwhisperer.common.utils.util import hexstr2list
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ui.qrc_resources
 
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)
