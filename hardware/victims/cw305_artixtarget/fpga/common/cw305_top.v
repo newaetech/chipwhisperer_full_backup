@@ -135,6 +135,10 @@ module cw305_top(
         .wren(~usb_wrn),
         .rden(~usb_rdn),
         
+        .user_led(led3),
+        .dipsw_1(sw1),
+        .dipsw_2(sw2),
+                
         .exttrigger_in(usb_trigger),
         
         .pll_clk1(pll_clk1),

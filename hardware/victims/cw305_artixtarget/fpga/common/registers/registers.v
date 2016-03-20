@@ -2,25 +2,43 @@
 
 //
 `default_nettype none 
-//////////////////////////////////////////////////////////////////////////////////
-// Company: Diff
-// Engineer: 
-// 
-// Create Date: 11/08/2015 04:20:59 PM
-// Design Name: 
-// Module Name: registers
-// Project Name: 
-// Target Devices: 
-// Tool Versions: 
-// Description: 
-// 
-// Dependencies: 
-// 
-// Revision:
-// Revision 0.01 - File Created
-// Additional Comments:
-// 
-//////////////////////////////////////////////////////////////////////////////////
+
+
+/*  Registers:	 
+	 0x00 - Identify	 	 
+	   [  0  0  1  0  1  1  1  0 ]	   		
+		  Always reads as 0x2E
+		  
+     0x01 - Crypt Type     
+       [ B7 B6 B5 B4 B3 B2 B1 B0 ]
+       
+     0x02 - Crypt Revision       
+       [ B7 B6 B5 B4 B3 B2 B1 B0 ]
+         
+     0x10 - Board LED Settings     
+       [  x  x  x  x  x  x  x L0 ]
+       
+          L0 = Blue LED, 1 = On 
+ 
+     0x20 - Clock Settings
+       [  x  x  x O1 O0 I1 I0 OV ]
+         
+          OV = Override DIP-Switches
+               1 = Clock Source & Output
+                   come from this register.
+               0 = Clock Source & Output
+                   come from DIP switch setting.
+                   
+          I = Input Source
+              I1 I0
+               0 0 = use PLL1
+               1 0 = Use 20-pin HS-In
+               
+          O = Output Enables
+              O1 O0
+               0 0 = Outputs low
+               0 1 = 20pin HS-Out is crypto-clock
+*/
 
 `define REG_IDENTIFY        21'h000
 `define REG_LED             21'h010
@@ -49,6 +67,11 @@ module registers(
     input wire           rden,
     
     /* LEDs                     */
+    output wire         user_led,
+    
+    /* DIP Switches */
+    input wire          dipsw_1,
+    input wire          dipsw_2,
     
     /* Other Hardware           */
     input wire           exttrigger_in, /* External trigger */
@@ -100,6 +123,8 @@ module registers(
     reg [CT_WIDTH-1:0] reg_crypt_cipherout;
     reg [CT_WIDTH-1:0] reg_crypt_cipherin;
     
+    assign user_led = reg_led[0];
+    
     reg start_int;
     reg start_int2;
     
@@ -143,6 +168,8 @@ module registers(
         if (wren) begin
             if (addr == `REG_LED) begin
                 reg_led <= datain;
+            end else if (addr == `REG_CLKSETTINGS) begin
+                reg_clk_settings <= datain;
             end
         end
     end
@@ -155,7 +182,6 @@ module registers(
     always @(posedge clk)
         if (wren) begin
             case (addr_masked)
-                `REG_CLKSETTINGS:       if (addr_bytecnt == 8'h00) reg_clk_settings <= datain;
                 `REG_CRYPT_SETTINGS:    if (addr_bytecnt == 8'h00) reg_crypt_settings <= datain; 
                 `REG_CRYPT_TEXTIN:      reg_crypt_textin[addr_bytecnt*8 +: 8] <= datain;
                 //`REG_CRYPT_TEXTOUT:     reg_crypt_textout[addr_bytecnt*8 +: 8] <= datain;
@@ -186,13 +212,44 @@ module registers(
             `REG_CRYPT_CIPHEROUT:   data_intout <= reg_crypt_cipherout[addr_bytecnt*8 +: 8];
             `REG_CRYPT_KEY:         data_intout <= reg_crypt_key[addr_bytecnt*8 +: 8];
             default: begin
-                data_intout <= 8'h00;
+                data_intout <= 8'hBA; //0xBA marks bad data for debug purposes
             end
         endcase
      end
     end
     
     /* Select crypto clock based on registers + DIP switches */
-    assign cryptoclk = pll_clk1;
+    wire cclk_src_is_ext;
+    assign cclk_src_is_ext = (reg_clk_settings[2:0] == 3'b001) ? 0 : //Registers = PLL1
+                             (reg_clk_settings[2:0] == 3'b101) ? 1 : //Registers = 20pin
+                             ((reg_clk_settings[0] == 1'b0) && (dipsw_1 == 1'b1)) ? 1: //DIP = 20pin
+                             0; //Default PLL1
+                             
+    wire cclk_output_ext;              
+    assign cclk_output_ext = ((reg_clk_settings[0] == 1'b1) && (reg_clk_settings[4:3] == 2'b00)) ? 0 : //Registers = off
+                             ((reg_clk_settings[0] == 1'b1) && (reg_clk_settings[4:3] == 2'b01)) ? 1 : //Registers = on
+                             ((reg_clk_settings[0] == 1'b0) && (dipsw_2 == 1'b1)) ? 1 : //DIP = on
+                             0; //Default off
+    BUFGCTRL CCLK_MUX (
+       .O(cryptoclk),      // 1-bit output: Clock output
+       .CE0(1'b1),         // 1-bit input: Clock enable input for I0
+       .CE1(1'b1),         // 1-bit input: Clock enable input for I1
+       .I0(pll_clk1),      // 1-bit input: Primary clock
+       .I1(cw_clkin),      // 1-bit input: Secondary clock
+       .IGNORE0(1'b1),     // 1-bit input: Clock ignore input for I0
+       .IGNORE1(1'b1),     // 1-bit input: Clock ignore input for I1
+       .S0(~cclk_src_is_ext),  // 1-bit input: Clock select for I0
+       .S1(cclk_src_is_ext)  // 1-bit input: Clock select for I1
+    );    
+    
+    ODDR CWOUT_ODDR (
+       .Q(cw_clkout),   // 1-bit DDR output
+       .C(cryptoclk),   // 1-bit clock input
+       .CE(cclk_output_ext), // 1-bit clock enable input
+       .D1(1'b1), // 1-bit data input (positive edge)
+       .D2(1'b0), // 1-bit data input (negative edge)
+       .R(1'b0),   // 1-bit reset
+       .S(1'b0)    // 1-bit set
+    );
     
 endmodule
