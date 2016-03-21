@@ -193,7 +193,8 @@ void ctrl_writemem_bulk(void){
 	FPGA_setlock(fpga_blockout);
 	
 	/* Set address */
-	//FPGA_setaddr(address);
+	//Not required - this is done automatically via the XMEM interface
+	//instead of using a "cheater" port.
 	
 	/* Transaction done in generic callback */
 }

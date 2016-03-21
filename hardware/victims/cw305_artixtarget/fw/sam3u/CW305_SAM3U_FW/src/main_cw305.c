@@ -68,7 +68,7 @@ void fpga_pins(bool enabled)
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A1, PIN_EBI_DATA_BUS_FLAG2);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A2, PIN_EBI_DATA_BUS_FLAG1);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A3, PIN_EBI_DATA_BUS_FLAG1);
-		pio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIN_EBI_DATA_BUS_FLAG1);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIN_EBI_DATA_BUS_FLAG1);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A5, PIN_EBI_DATA_BUS_FLAG1);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A6, PIN_EBI_DATA_BUS_FLAG1);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A7, PIN_EBI_DATA_BUS_FLAG1);
@@ -92,12 +92,12 @@ void fpga_pins(bool enabled)
 			
 		/* FPGA External memory interface */
 		//Allow sync writing to address pins
-		gpio_configure_group(FPGA_ADDR_PORT, FPGA_ADDR_PINS, (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT));
-		pio_enable_output_write(FPGA_ADDR_PORT, FPGA_ADDR_PINS);
+		//gpio_configure_group(FPGA_ADDR_PORT, FPGA_ADDR_PINS, (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT));
+		//pio_enable_output_write(FPGA_ADDR_PORT, FPGA_ADDR_PINS);
 			
 		//ALE pin under SW control
-		gpio_configure_pin(FPGA_ALE_GPIO, FPGA_ALE_FLAGS);
-		gpio_set_pin_high(FPGA_ALE_GPIO);
+		//gpio_configure_pin(FPGA_ALE_GPIO, FPGA_ALE_FLAGS);
+		//gpio_set_pin_high(FPGA_ALE_GPIO);
 			
 		//Force FPGA trigger
 		gpio_configure_pin(FPGA_TRIGGER_GPIO, FPGA_TRIGGER_FLAGS);
@@ -133,7 +133,7 @@ void fpga_pins(bool enabled)
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A1, PIO_INPUT);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A2, PIO_INPUT);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A3, PIO_INPUT);
-		pio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIO_INPUT);
+		gpio_configure_pin(PIN_EBI_ADDR_BUS_A4, PIO_INPUT);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A5, PIO_INPUT);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A6, PIO_INPUT);
 		gpio_configure_pin(PIN_EBI_ADDR_BUS_A7, PIO_INPUT);
@@ -221,14 +221,15 @@ int main(void)
 	| SMC_SETUP_NCS_WR_SETUP(1)
 	| SMC_SETUP_NRD_SETUP(1)
 	| SMC_SETUP_NCS_RD_SETUP(1));
-	smc_set_pulse_timing(SMC, 0, SMC_PULSE_NWE_PULSE(1)
+	smc_set_pulse_timing(SMC, 0, SMC_PULSE_NWE_PULSE(3)
 	| SMC_PULSE_NCS_WR_PULSE(1)
 	| SMC_PULSE_NRD_PULSE(3)
 	| SMC_PULSE_NCS_RD_PULSE(1));
-	smc_set_cycle_timing(SMC, 0, SMC_CYCLE_NWE_CYCLE(2)
+	smc_set_cycle_timing(SMC, 0, SMC_CYCLE_NWE_CYCLE(4)
 	| SMC_CYCLE_NRD_CYCLE(4));
 	smc_set_mode(SMC, 0, SMC_MODE_READ_MODE | SMC_MODE_WRITE_MODE
 	| SMC_MODE_DBW_BIT_8);
+	
 	
 	ui_init();
 
