@@ -39,9 +39,7 @@ def getInstance(*args):
 class TargetTemplate(object):
     params = None
 
-    def __init__(self, showScriptParameter=None):
-        """Pass None/None if you don't have/want showScriptParameter"""
-        self.showScriptParameter = showScriptParameter
+    def __init__(self):
         self.paramListUpdated = util.Signal()
         self.newInputData = util.Signal()
         self.connectStatus = util.Observable(False)

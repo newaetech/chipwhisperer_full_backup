@@ -181,8 +181,7 @@ class ChipWhispererDigitalPattern(object):
 
     paramListUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None):
-
+    def __init__(self):
         self.cwAdv = CWAdvTrigger()   
 
         paramSS = [
@@ -210,11 +209,6 @@ class ChipWhispererDigitalPattern(object):
         self.oa = None
         self.params = Parameter.create(name='Digital Pattern Trigger Module', type='group', children=paramSS)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
-        
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
 
     def reset(self, ignored=None):
         # Reload pattern

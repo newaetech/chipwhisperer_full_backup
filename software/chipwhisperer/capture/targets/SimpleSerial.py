@@ -47,10 +47,6 @@ class SimpleSerial_serial(TargetTemplate):
         ExtendedParameter.setupExtended(self.params, self)
         self.ser = None
 
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
-
     def paramList(self):
         return [self.params]
 
@@ -160,10 +156,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self._regVer = 0
-
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
 
     def systemClk(self):
         return 30E6
@@ -330,9 +322,9 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
 class SimpleSerial(TargetTemplate):
     def setupParameters(self):
-        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
-                                                                                "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter),
-                                                                                "ChipWhisperer-Lite":SimpleSerial_ChipWhispererLite(showScriptParameter=self.showScriptParameter)},
+        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(),
+                                                                                "ChipWhisperer":SimpleSerial_ChipWhisperer(),
+                                                                                "ChipWhisperer-Lite":SimpleSerial_ChipWhispererLite()},
                                                                                 'value':"System Serial Port", 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},

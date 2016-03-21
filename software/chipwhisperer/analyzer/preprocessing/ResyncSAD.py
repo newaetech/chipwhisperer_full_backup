@@ -25,20 +25,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
         
+def getInstance(*args):
+    return ResyncSAD(*args)
+
+
 class ResyncSAD(PreprocessingBase):
     """
     Resync by minimizing the SAD.
@@ -49,19 +44,18 @@ class ResyncSAD(PreprocessingBase):
                   "as the shift amount for that trace."
 
     def setupParameters(self):
-
         self.rtrace = 0
         self.debugReturnSad = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
+                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
                          # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
         
-        self.params = Parameter.create(name='Minimize Sum of Absolute Difference', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ccStart = 0
         self.ccEnd = 1
@@ -158,3 +152,6 @@ class ResyncSAD(PreprocessingBase):
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)
+
+    def getName(self):
+        return "Resync: Sum-of-Difference"

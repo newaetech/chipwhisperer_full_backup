@@ -87,7 +87,7 @@ class OpenADCQt(QObject):
 
     dataUpdated = Signal(list, int)
 
-    def __init__(self, MainWindow=None, includePreview=True, setupLayout=True, includeParameters=True, showScriptParameter=None):
+    def __init__(self, MainWindow=None, includePreview=True, setupLayout=True, includeParameters=True):
         super(OpenADCQt,  self).__init__()
         self.offset = 0.5
         self.ser = None
@@ -100,7 +100,6 @@ class OpenADCQt(QObject):
 
         self.timerStatusRefresh = QTimer(self)
         self.timerStatusRefresh.timeout.connect(self.statusRefresh)
-        self.showScriptParameter = showScriptParameter
 
         if setupLayout:
             self.setupLayout(MainWindow, includePreview, includeParameters)
@@ -136,10 +135,6 @@ class OpenADCQt(QObject):
 
     def getLayout(self):
         return self.masterLayout
-
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
 
     def setupParameterTree(self, makeTree=True):
         if self.adc_settings is None:

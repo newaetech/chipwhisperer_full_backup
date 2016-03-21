@@ -57,12 +57,12 @@ class CWCaptureAPI(CWCoreAPI):
         self.numTraces = 100
         self.numSegments = 1
 
-    def setupParameters(self, rootdir, showScriptParameter):
-        valid_scopes = CWCaptureAPI.getScopeModules(rootdir + "/scopes", showScriptParameter)
-        valid_targets =  CWCaptureAPI.getTargetModules(rootdir + "/targets", showScriptParameter)
+    def setupParameters(self, rootdir):
+        valid_scopes = CWCaptureAPI.getScopeModules(rootdir + "/scopes")
+        valid_targets =  CWCaptureAPI.getTargetModules(rootdir + "/targets")
         valid_traces = CWCaptureAPI.getTraceFormats(rootdir + "/../common/traces")
-        valid_aux = CWCaptureAPI.getAuxiliaryModules(rootdir + "/auxiliary", showScriptParameter)
-        valid_acqPatterns = CWCaptureAPI.getAcqPatternModules(showScriptParameter)
+        valid_aux = CWCaptureAPI.getAuxiliaryModules(rootdir + "/auxiliary")
+        valid_acqPatterns = CWCaptureAPI.getAcqPatternModules()
 
         self.setScope(valid_scopes["None"])
         self.setTarget(valid_targets["None"])
@@ -274,12 +274,12 @@ class CWCaptureAPI(CWCoreAPI):
         return ret
 
     @staticmethod
-    def getScopeModules(dir, showScriptParameter):
+    def getScopeModules(dir):
         resp = {}
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.scopes.' + f)
-                mod = i.getInstance(showScriptParameter)
+                mod = i.getInstance()
                 resp[mod.getName()] = mod
             except Exception as e:
                 print "Warning: Could not import scope module " + f + ": " + str(e)
@@ -287,12 +287,12 @@ class CWCaptureAPI(CWCoreAPI):
         return resp
 
     @staticmethod
-    def getTargetModules(dir, showScriptParameter):
+    def getTargetModules(dir):
         resp = {}
         for t in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.targets.' + t)
-                mod = i.getInstance(showScriptParameter)
+                mod = i.getInstance()
                 resp[mod.getName()] = mod
             except Exception as e:
                 print "Warning: Could not import target module " + t + ": " + str(e)
@@ -300,12 +300,12 @@ class CWCaptureAPI(CWCoreAPI):
         return resp
 
     @staticmethod
-    def getAuxiliaryModules(dir, showScriptParameter):
+    def getAuxiliaryModules(dir):
         resp = {}
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
-                mod = i.getInstance(showScriptParameter)
+                mod = i.getInstance()
                 resp[mod.getName()] = mod
             except Exception as e:
                 print "Warning: Could not import auxiliary module " + f + ": " + str(e)
@@ -325,11 +325,11 @@ class CWCaptureAPI(CWCoreAPI):
         return resp
 
     @staticmethod
-    def getAcqPatternModules(showScriptParameter):
+    def getAcqPatternModules():
         resp = {}
-        resp["Basic"] = AcqKeyTextPattern_Basic(showScriptParameter=showScriptParameter)
+        resp["Basic"] = AcqKeyTextPattern_Basic()
         if AcqKeyTextPattern_CRITTest:
-            resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest(showScriptParameter=showScriptParameter)
+            resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
         # print "Loaded Patterns: " + resp.__str__()
         return resp
 

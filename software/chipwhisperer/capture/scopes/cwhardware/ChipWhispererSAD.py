@@ -56,7 +56,7 @@ class ChipWhispererSAD(QObject):
     STATUS_RESET_MASK = 1<<0
     STATUS_START_MASK = 1 << 1
              
-    def __init__(self, showScriptParameter=None, CWMainWindow=None):
+    def __init__(self, CWMainWindow=None):
 
         self.waveformDock = CWMainWindow.waveformDock
         self.waveformDock.widget().dataChanged.connect(self.dataChanged)
@@ -78,11 +78,6 @@ class ChipWhispererSAD(QObject):
         self.sadref = [0]
         self.params = Parameter.create(name='SAD Trigger Module', type='group', children=paramSS)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
-        
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
 
     def dataChanged(self, data, offset):
         """ Called when data in the trace window has changed. Used to update the limits for the point selection dialog. """

@@ -63,6 +63,9 @@ classmapping = {
 
 
 class ExtendedParameter():
+
+    paramScriptingOutput = None
+
     @staticmethod
     def getAllParameters(self, parent=None):
         """Causes the 'get' function for all parameters to be called (if present)."""
@@ -162,9 +165,6 @@ class ExtendedParameter():
             curParam.sigTreeStateChanged.connect(parent.paramTreeChanged)
             parent.findParam = types.MethodType(ExtendedParameter.findParam, parent)
 
-            if not hasattr(parent, 'showScriptParameter'):
-                parent.showScriptParameter = None
-
     ## If anything changes in the tree, print a message
     @staticmethod
     def change(param, changes):
@@ -201,8 +201,7 @@ class ExtendedParameter():
 
     @staticmethod
     def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+            ExtendedParameter.showScriptParameter(param, changes, self.params)
 
     @staticmethod
     def reloadParams(lst, paramtree, help_window=None):
@@ -251,6 +250,56 @@ class ExtendedParameter():
 
         return None
 
+    @staticmethod
+    def showScriptParameter(param,  changes, topParam):
+        """
+        This function is used to tell the user what they should pass to setParameter
+        in order to recreate a system. This will automatically be called if the module
+        has done the following:
+
+        When calling ExtendedParameter.setupParameter(), have passed a reference to 'self' like this::
+
+           ExtendedParameter.setupExtended(self.params, self)
+
+        Have a function called paramTreeChanged in the class which calls showScriptParameter (this function).
+        Typically done like the following, where self.showScriptParameter is setup in the setupExtended() call. You
+        might need to pass the reference to this instance down to lower modules.::
+
+            def paramTreeChanged(self, param, changes):
+                if self.showScriptParameter is not None:
+                    self.showScriptParameter(param, changes, self.params)
+
+        """
+        for param, change, data in changes:
+            ppath = topParam.childPath(param)
+            if ppath is None:
+                name = [param.name()]
+            else:
+                ppath.insert(0, topParam.name())
+                name = ppath
+
+            #Don't pollute script output with readonly things
+            if param.opts["readonly"] == True:
+                continue
+
+            if "echooff" in param.opts:
+                if param.opts["echooff"] == True:
+                    param.opts["echooff"] = False
+                    continue
+
+            if "values" in param.opts:
+                if not hasattr(param.opts["values"], 'iteritems'):
+                    name.append(data)
+                else:
+                    for k, v in param.opts["values"].iteritems():
+                        if v == data:
+                            name.append(k)
+
+
+            else:
+                name.append(data)
+
+            ExtendedParameter.paramScriptingOutput.append(str(name))
 
 if __name__ == '__main__':
     import pyqtgraph as pg

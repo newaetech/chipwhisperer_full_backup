@@ -25,7 +25,11 @@
 __author__ = "Colin O'Flynn"
 
 import os.path
+import re
 from chipwhisperer.common.utils import util
+import chipwhisperer.common.traces.TraceContainerConfig
+import chipwhisperer.common.traces.TraceContainerNative
+import ConfigParser
 
 class TraceManager(object):
     """
@@ -36,20 +40,46 @@ class TraceManager(object):
     secName = "Trace Management"
 
     def __init__(self):
+        self.dirty = util.Observable(True)
         self.tracesChanged = util.Signal()
         self.NumTrace = 0
         self.NumPoint = 0
         self.lastMapped = None
-        self.newProject()
+        self.traceList = []
 
     def newProject(self):
         self.traceList = []
-        return
+        self.dirty.setValue(True)
+        self.tracesChanged.emit()
 
     def saveProject(self, config, configfilename):
         for indx, t in enumerate(self.traceList):
             config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.secName]['enabled%d' % indx] = str(t.enabled)
+        self.dirty.setValue(False)
+
+    def loadProject(self, configfilename):
+        config = ConfigParser.RawConfigParser()
+        config.read(configfilename)
+        alltraces = config.items(self.secName)
+
+        self.newProject()
+
+        fdir = os.path.split(configfilename)[0] + "/"
+
+        for t in alltraces:
+            if t[0].startswith("tracefile"):
+                fname = fdir + t[1]
+                fname = os.path.normpath(fname.replace("\\", "/"))
+                # print "Opening %s"%fname
+                ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
+                ti.config.loadTrace(fname)
+                self.traceList.append(ti)
+            if t[0].startswith("enabled"):
+                tnum = re.findall(r'[0-9]+', t[0])
+                self.traceList[int(tnum[0])].enabled = t[1] == "True"
+        self.dirty.setValue(False)
+        self.tracesChanged.emit()
 
     def getSegmentList(self, start=0, end=-1):
         """
@@ -114,7 +144,7 @@ class TraceManager(object):
         t = self.findMappedTrace(n)
         return t.getKnownKey(n - t.mappedRange[0])
 
-    def UpdateTraces(self):
+    def updateTraces(self):
         #Find total (last mapped range)
         num = []
         pts = []
@@ -133,6 +163,7 @@ class TraceManager(object):
             self.NumPoint = 0
         else:
             self.NumPoint = max(pts)
+        self.tracesChanged.emit()
 
     def numPoint(self):
         return self.NumPoint
@@ -141,5 +172,7 @@ class TraceManager(object):
         return self.NumTrace
 
     def append(self, ti):
+        ti.enabled = True
         self.traceList.append(ti)
+        self.dirty.setValue(True)
         self.tracesChanged.emit()

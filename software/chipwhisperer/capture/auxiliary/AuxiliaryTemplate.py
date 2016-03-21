@@ -37,8 +37,7 @@ def getInstance(*args):
 class AuxiliaryTemplate():
     paramListUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
+    def __init__(self):
         self.setupParameters()
         self.prefix = ""
 

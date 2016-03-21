@@ -50,10 +50,8 @@ def getInstance(*args):
 class ReaderTemplate(object):
     paramListUpdated = util.Signal()
     
-    def __init__(self, showScriptParameter):
-        """Pass None/None if you don't have/want showScriptParameter"""
-        super(ReaderTemplate, self).__init__()        
-        self.showScriptParameter = showScriptParameter
+    def __init__(self):
+        super(ReaderTemplate, self).__init__()
         self.setupParameters()
 
     def setupParameters(self):
@@ -101,8 +99,8 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     REQ_CFG_PROTOCOL = 0x02
     REQ_CFG_TXRX = 0x05
     
-    def __init__(self, showScriptParameter=None):
-        super(ReaderChipWhispererLiteSCard, self).__init__(showScriptParameter)
+    def __init__(self):
+        super(ReaderChipWhispererLiteSCard, self).__init__()
         
     def setupParameters(self):         
         ssParams = [  {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
@@ -225,8 +223,8 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
 
 class ReaderSystemSER(ReaderTemplate):
     
-    def __init__(self, showScriptParameter=None):
-        super(ReaderSystemSER, self).__init__(showScriptParameter)
+    def __init__(self):
+        super(ReaderSystemSER, self).__init__()
         
     def setupParameters(self):
         self.ser = None     
@@ -379,11 +377,11 @@ class ReaderSystemSER(ReaderTemplate):
 
 class ReaderChipWhispererSER(ReaderTemplate):
     
-    def __init__(self, showScriptParameter=None):
-        super(ReaderChipWhispererSER, self).__init__(showScriptParameter)
+    def __init__(self):
+        super(ReaderChipWhispererSER, self).__init__()
         
     def setupParameters(self):
-        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)
+        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer()
         self.ser.setupParameters()              
         self.params = self.ser.params
         self.params.addChildren([{'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
@@ -542,8 +540,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
 
 class ReaderChipWhispererUSI(ReaderTemplate):
     
-    def __init__(self, showScriptParameter=None):
-        super(ReaderChipWhispererUSI, self).__init__(showScriptParameter)
+    def __init__(self):
+        super(ReaderChipWhispererUSI, self).__init__()
         self.usi = ChipWhispererTargets.CWUniversalSerial()
 
     def setupParameters(self):
@@ -650,8 +648,8 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         pass
     
 class ReaderChipWhispererSCard(ReaderTemplate):
-    def __init__(self, showScriptParameter=None):
-        super(ReaderChipWhispererSCard, self).__init__(showScriptParameter)
+    def __init__(self):
+        super(ReaderChipWhispererSCard, self).__init__()
         self.scard = ChipWhispererTargets.CWSCardIntegrated()
         
 
@@ -705,8 +703,8 @@ except ImportError:
     
 class ReaderPCSC(ReaderTemplate):    
 
-    def __init__(self, showScriptParameter=None):
-        super(ReaderPCSC, self).__init__(showScriptParameter)
+    def __init__(self):
+        super(ReaderPCSC, self).__init__()
         
         if AnyCardType is None:
             raise ImportError("smartcard libraries missing")           
@@ -791,8 +789,7 @@ class ReaderPCSC(ReaderTemplate):
 class ProtocolTemplate(object):
     paramListUpdated = util.Signal()
     
-    def __init__(self, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
+    def __init__(self):
         self.hw = None
         self.setupParameters()
 

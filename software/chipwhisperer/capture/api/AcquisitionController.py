@@ -183,8 +183,7 @@ class AcquisitionController():
         self.running = False
 
 class AcqKeyTextPattern_Base(object):
-    def __init__(self, showScriptParameter=None, target=None):
-        self.showScriptParameter = showScriptParameter
+    def __init__(self, target=None):
         self.params = Parameter.create(name='Key/Text Pattern', type='group', children=self.setupParams())
         ExtendedParameter.setupExtended(self.params, self)
         self._target = target

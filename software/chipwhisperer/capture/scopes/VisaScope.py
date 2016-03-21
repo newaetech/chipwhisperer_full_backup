@@ -52,9 +52,8 @@ class VisaScope(object):
 
     header = ":SYSTem:HEADer OFF\n"
 
-    def __init__(self,showScriptParameter=None):
+    def __init__(self):
         super(VisaScope, self).__init__()
-        self.showScriptParameter = showScriptParameter
         self.visaInst = None
 
         scopeParams = [
@@ -324,18 +323,18 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 class VisaScopeInterface(ScopeTemplate):
     dataUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None):
+    def __init__(self):
         super(VisaScopeInterface, self).__init__()
         self.scopetype = None
         self.datapoints = []
 
         try:
-            mso54831d = VisaScopeInterface_MSO54831D(showScriptParameter=showScriptParameter)
+            mso54831d = VisaScopeInterface_MSO54831D()
         except ImportError:
             mso54831d = None
 
         try:
-            dso1024A = VisaScopeInterface_DSO1024A(showScriptParameter=showScriptParameter)
+            dso1024A = VisaScopeInterface_DSO1024A()
         except ImportError:
             dso1024A = None
 
@@ -365,15 +364,10 @@ class VisaScopeInterface(ScopeTemplate):
 
         self.params = Parameter.create(name='VISA Scope Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
 
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst

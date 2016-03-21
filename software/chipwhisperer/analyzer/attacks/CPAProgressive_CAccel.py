@@ -178,16 +178,13 @@ class CPAProgressive_CAccel(AutoScript, QObject):
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
+    def __init__(self, targetModel, leakageFunction, parent=None):
         super(CPAProgressive_CAccel, self).__init__()
 
         resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
         self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
-        if showScriptParameter is not None:
-            self.showScriptParameter = showScriptParameter
-            # print self.showScriptParameter
         ExtendedParameter.setupExtended(self.params, self)
 
         self.model = targetModel

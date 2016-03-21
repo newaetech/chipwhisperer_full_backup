@@ -30,6 +30,10 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 from scipy import signal
 
+def getInstance(*args):
+    return Filter(*args)
+
+
 class Filter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
@@ -42,9 +46,9 @@ class Filter(PreprocessingBase):
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
                          {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
-        self.params = Parameter.create(name='Filter', type='group', children=ssParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.updateScript()
@@ -93,3 +97,5 @@ class Filter(PreprocessingBase):
         else:
             return self.trace.getTrace(n)       
 
+    def getName(self):
+        return "Digital Filter"

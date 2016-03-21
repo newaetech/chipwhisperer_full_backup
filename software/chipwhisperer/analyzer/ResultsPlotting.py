@@ -228,7 +228,6 @@ class ResultsPlotData(GraphWidget):
 
             ]
 
-
     def paramList(self):
         """Returns parameter list"""
         return [self.params]
@@ -499,6 +498,7 @@ class OutputVsTime(ResultsPlotData):
 
         self.drawData(xrangelist, data, enabledlist)
 
+
 class PGEVsTrace(ResultsPlotData):
     """
     Plots Partial Guessing Entropy (PGE) vs Traces in Attack
@@ -634,6 +634,7 @@ class PGEVsTrace(ResultsPlotData):
         except StopIteration:
             pass
 
+
 class CorrelationVsTrace(ResultsPlotData):
     """
     Plots maximum correlation vs number of traces in attack.
@@ -653,10 +654,8 @@ class CorrelationVsTrace(ResultsPlotData):
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
-
     def updateData(self):
         pass
-
 
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
@@ -852,8 +851,8 @@ class ResultsTable(QObject):
             else:
                 self.table.setColumnHidden(bnum, True)
 
-        self.table.resizeRowsToContents()
         self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
         self.ResultsTable.setVisible(True)
 
 
@@ -866,7 +865,6 @@ class ResultsSave(QObject):
         self._filename = None
         self._enabled = False
         self.dataarray = None
-
 
     def paramList(self):
         """Returns list for parameter tree in settings dock"""

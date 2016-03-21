@@ -27,40 +27,26 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #===========================================================
 
-import sys
 from datetime import datetime
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
+from PySide.QtCore import *
+from PySide.QtGui import *
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-    # print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from pyqtgraph.parametertree import Parameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.attacks.ProfilingTemplate import ProfilingTemplate
-
 from AttackGenericParameters import AttackGenericParameters
+
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        self.console=console
-        self.showScriptParameter=showScriptParameter
-        super(Profiling, self).__init__(parent)
+    def __init__(self, traceExplorerDialog):
+        self.traceExplorerDialog = traceExplorerDialog
+        AttackBaseClass.__init__(self)
+        AttackGenericParameters.__init__(self)
 
         # Do not use absolute
         self.useAbs = False
@@ -71,9 +57,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
 
                        #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()
-                        },
+                       {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
                       ]
         self.params = Parameter.create(name='Attack', type='group', children=attackParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -113,7 +97,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.addFunction("init", "setProject", "userScript.project()")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
-        self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self, console=self.console)
+        self.attack = analysisAlgorithm(self)
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
         self.traceManagerChanged.connect(self.attack.setTraceManager)
@@ -129,7 +113,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
 #    def setAlgo(self, algo):
-#        self.attack = algo(self, showScriptParameter=self.showScriptParameter)
+#        self.attack = algo(self)
 #        if self.traceManager() is not None:
 #            self.attack.setTraceManager(self.traceManager())
 #
@@ -167,7 +151,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         #    return inpkey
 
     def doAttack(self):
-
         start = datetime.now()
         self.attack.setReportingInterval(self.getReportingInterval())
 
@@ -217,7 +200,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         end = datetime.now()
         self.log("Attack Time: %s" % str(end - start))
         self.attackDone.emit()
-
 
     def statsReady(self):
         self.statsUpdated.emit()

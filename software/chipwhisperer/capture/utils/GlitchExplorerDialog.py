@@ -45,10 +45,8 @@ class TuningParameter(QObject):
     nameChanged = Signal(int, str)
     tracesreqChanged = Signal(int, int)
 
-    def __init__(self, num, showScriptParameter=None):
+    def __init__(self, num):
         super(TuningParameter, self).__init__()
-        self.showScriptParameter = showScriptParameter
-
         self.paramNum = num
 
         paramTemplate = [
@@ -125,11 +123,8 @@ class TuningParameter(QObject):
 
 
 class GlitchExplorerDialog(QDialog):
-    def __init__(self, parent, showScriptParameter=None):
+    def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
-
-        self.showScriptParameter = showScriptParameter
-
         self.setWindowTitle("Glitch Explorer")
 
         self.mainLayout = QVBoxLayout()
@@ -239,7 +234,7 @@ class GlitchExplorerDialog(QDialog):
         while numparams > len(self.tuneParamList):
             #Add parameters
             #p = Parameter.create(name='Tuning Parameter %d' % len(self.tuneParamList), type='group', children=self.glitchTuneParamTemplate)
-            p = TuningParameter(len(self.tuneParamList), showScriptParameter=self.showScriptParameter)
+            p = TuningParameter(len(self.tuneParamList))
             self.tuneParamList.append(p)
 
             # Do stuff

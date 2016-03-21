@@ -33,7 +33,7 @@ def getInstance(*args):
     return ScopeTemplate(*args)
 
 class ScopeTemplate(object):
-    def __init__(self, showScriptParameter=None):
+    def __init__(self):
         self.connectStatus = util.Observable(False)
         self.dataUpdated = util.Signal()
         self.paramListUpdated = util.Signal()

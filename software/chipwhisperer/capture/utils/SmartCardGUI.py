@@ -118,7 +118,7 @@ class APDUFilter(QObject):
             return False
 
 class SmartCardGUICard(QDialog):
-    def __init__(self, parent, showScriptParameter=None):
+    def __init__(self, parent):
         super(SmartCardGUICard, self).__init__(parent)
         self.setWindowTitle("Smartcard Explorer")
         

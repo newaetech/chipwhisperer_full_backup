@@ -25,22 +25,16 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-
 import numpy as np
 import scipy as sp
         
+def getInstance(*args):
+    return ResyncCrossCorrelation(*args)
+
+
 class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
@@ -54,11 +48,11 @@ class ResyncCrossCorrelation(PreprocessingBase):
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
-        self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.ccStart = 0
@@ -127,3 +121,6 @@ class ResyncCrossCorrelation(PreprocessingBase):
         cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
         self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
         self.refmaxsize = max(cross[self.ccStart:self.ccEnd])
+
+    def getName(self):
+        return "Resync: Cross Correlation"

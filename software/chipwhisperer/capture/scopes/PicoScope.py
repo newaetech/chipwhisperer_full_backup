@@ -51,8 +51,7 @@ class PicoScope(object):
     paramListUpdated = util.Signal()
     dataUpdated = util.Signal()
 
-    def __init__(self, psClass, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
+    def __init__(self, psClass):
         self.ps = psClass
         
         chlist = {}
@@ -167,7 +166,7 @@ class PicoScope(object):
 class PicoScopeInterface(ScopeTemplate):
     dataUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None):
+    def __init__(self):
         super(PicoScopeInterface, self).__init__()
         self.scopetype = None
         self.datapoints = []
@@ -185,12 +184,7 @@ class PicoScopeInterface(ScopeTemplate):
         
         self.params = Parameter.create(name='PicoScope Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
-        
-    #def paramTreeChanged(self, param, changes):        
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst

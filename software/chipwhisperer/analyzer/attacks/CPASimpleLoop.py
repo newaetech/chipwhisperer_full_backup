@@ -44,7 +44,7 @@ class CPASimpleLoop(QObject):
     all the traces have been run through the attack.
     """
 
-    def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
+    def __init__(self, targetModel, leakageFunction, parent=None):
         super(CPASimpleLoop, self).__init__()
         self.model = targetModel
         self.leakage = leakageFunction

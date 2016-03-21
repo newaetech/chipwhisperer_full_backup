@@ -42,15 +42,15 @@ __author__ = "Colin O'Flynn"
 
 class ChipWhispererCapture(MainChip):
     def __init__(self, rootdir="."):
-        super(ChipWhispererCapture, self).__init__(CWCaptureAPI() , name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCaptureAPI.__version__), icon="cwiconC")
+        super(ChipWhispererCapture, self).__init__(CWCaptureAPI() , name=("ChipWhisperer" + u"\u2122" + " Capture " + self.__version__), icon="cwiconC")
 
         # This is a hack for paths hardcoded into the application. todo: fix this properly.
         util.globalSettings.setValue("cwcapture-starting-root", rootdir)
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
-        self.glitchMonitor = GlitchExplorerDialog(self, showScriptParameter=self.showScriptParameter)
+        self.glitchMonitor = GlitchExplorerDialog(self)
         self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
-        self.cwAPI.setupParameters(rootdir, self.showScriptParameter)
+        self.cwAPI.setupParameters(rootdir)
         self.newProject()
 
         self.addExampleScripts(CWCaptureAPI.getExampleScripts(rootdir + "/scripts"))
@@ -59,7 +59,7 @@ class ChipWhispererCapture(MainChip):
         self.addSettingsDocks()
         self.addTraceDock("Capture Waveform (Channel 1)")
         self.reloadParamList()
-        self.readSettings()
+        self.restoreSettings()
 
         # Observers (callback methods)
         self.cwAPI.signals.paramListUpdated.connect(self.reloadTargetParamList)
@@ -132,12 +132,6 @@ class ChipWhispererCapture(MainChip):
             subMenu.addAction(QAction(script.name(), self, statusTip=script.tip(), triggered=partial(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
-
-    def runScript(self, mod):
-        self.updateStatusBar("Running Script: %s" % mod.name())
-        m = mod.userScript(self.cwAPI)
-        m.run()
-        self.updateStatusBar("Finished Script: %s" % mod.name())
 
     def addToolMenu(self):
         self.TerminalAct = QAction('Open Terminal', self,

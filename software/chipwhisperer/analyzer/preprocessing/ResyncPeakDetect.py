@@ -25,19 +25,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
+
+def getInstance(*args):
+    return ResyncPeakDetect(*args)
+
 
 class ResyncPeakDetect(PreprocessingBase):
     """
@@ -55,12 +50,12 @@ class ResyncPeakDetect(PreprocessingBase):
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
 
-        self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ccStart = 0
         self.ccEnd = 0
@@ -132,3 +127,6 @@ class ResyncPeakDetect(PreprocessingBase):
         else:
             self.refmaxloc = np.argmin(reftrace)
             self.refmaxsize = min(reftrace)
+
+    def getName(self):
+        return "Resync: Peak Detect"

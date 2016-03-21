@@ -25,46 +25,27 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
+from PySide.QtCore import *
+from PySide.QtGui import *
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter, ParameterTree
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-
-#Setup scripts/examples
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import PartitionDisplay
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
-
 from chipwhisperer.common.api.autoscript import AutoScript
 
-class TraceExplorerDialog(QDialog, AutoScript):
+class TraceExplorerDialog(QMainWindow, AutoScript):
     """Open dialog to explore trace properties, data graphs, etc"""
 
     def __init__(self, parent):
-        super(TraceExplorerDialog, self).__init__(parent)
-        self.autoScriptInit()
+        QMainWindow.__init__(self, parent)
+        AutoScript.__init__(self)
 
+        self.autoScriptInit()
         self.setWindowTitle("Trace Explorer")
         self.setObjectName("Trace Explorer")
 
-        self.qwindow = QMainWindow()
-        self.parent = parent
-
-        self._tmanager = None
-        self._project = None
-
-        # We want to use dock widgets, but need a QMainWindow for this to work
-        # thus we place a QMainWindow inside the QDialog. Great Success.
-        layout = QVBoxLayout()
-        layout.addWidget(self.qwindow)
-        self.setLayout(layout)
+        self.setCentralWidget(None)
 
         # Add example scripts to this list
         self.exampleScripts = [PartitionDisplay(self), TextDisplay(self)]
@@ -72,20 +53,18 @@ class TraceExplorerDialog(QDialog, AutoScript):
         # Add Scripts
         self.setupCommonScripts()
 
-        self.qwindow.setParent(self)
-
         self.graphDockList = []
         self.getGraphWidgets(["Basic Plot"])
 
         self.progressBar = QProgressDialog(self)
         self.progressBar.setWindowModality(Qt.WindowModal)
 
-    def showEvent(self, event):
-        QDialog.showEvent(self, event)
-        self.updateChildren()
+    # def showEvent(self, event):
+    #     QDialog.showEvent(self, event)
+    #     self.updateChildren()
 
     def setupCommonScripts(self):
-        # Setup parameter tree
+        # Setup parameer tree
 
         self.commonScriptParams = []
 
@@ -94,49 +73,30 @@ class TraceExplorerDialog(QDialog, AutoScript):
             example.scriptsUpdated.connect(self.updateScripts)
             example.runScriptFunction.connect(self.runScriptFunction.emit)
 
-
         self.paramCommonScripts = Parameter.create(name='Common Scripts', type='group', children=self.commonScriptParams)
+        self.params = self.paramCommonScripts
         ExtendedParameter.setupExtended(self.paramCommonScripts, self)
         self.paramTreeCommonScripts = ParameterTree()
         self.paramTreeCommonScripts.setParameters(self.paramCommonScripts, showTop=False)
 
-        self.commonScriptsDock = self.addDock(self.paramTreeCommonScripts, "Common Scripts")
-
-        self.params = self.paramCommonScripts
+        self.commonScriptsDock = self.addDock(self.paramTreeCommonScripts, "Common Scipts", area=Qt.LeftDockWidgetArea)
 
         self.updateScripts()
 
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea):
-        """Add a dockwidget to the main window"""
+    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.AllDockWidgetAreas):
         # Configure dock
         dock = QDockWidget(name)
         dock.setAllowedAreas(allowedAreas)
         dock.setWidget(dockWidget)
         dock.setObjectName(name)
-        self.qwindow.addDockWidget(area, dock)
+        self.addDockWidget(area, dock)
         return dock
 
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
-        gw = GraphWidget()
-        return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
-
-
-    def setTraceSource(self, tmanager):
-        """Set the input trace source"""
-        self._tmanager = tmanager
-
-    def setProject(self, project):
-        self._project = project
-
-    def project(self):
-        return self._project
+        return self.addDock(GraphWidget(), name=name, area=Qt.RightDockWidgetArea)
 
 ####COMMON SCRIPTING STUFF
-
-    def traceManager(self):
-        """Get the trace information"""
-        return self._tmanager
 
     def getGraphWidgets(self, nameList=["Unknown"]):
         """Setup graph widgets (e.g. graphs) in the Window, and return a reference to them"""

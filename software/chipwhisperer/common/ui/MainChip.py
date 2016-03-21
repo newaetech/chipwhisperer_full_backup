@@ -28,9 +28,7 @@ import os
 import sys
 import traceback
 from datetime import datetime
-
 from pyqtgraph.parametertree import Parameter, ParameterTree
-
 import chipwhisperer.common.ui.PythonConsole
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
@@ -234,7 +232,7 @@ class MainChip(QMainWindow):
         self.cwAPI.signals.newProject.connect(lambda: self.projEditWidget.setProject(self.cwAPI.project()))
         self.cwAPI.signals.newProject.connect(lambda: self.cwAPI.project().signals.statusChanged.connect(self.projectChanged))
 
-    def readSettings(self):
+    def restoreSettings(self):
         self.restoreGeometry(self.settings.value("geometry"))
         self.restoreState(self.settings.value("windowState"))
 
@@ -296,6 +294,10 @@ class MainChip(QMainWindow):
     def clearAllSettings(self):
         """Clear all saved QSettings(), such as window location etc"""
         self.settings.clear()
+
+    def reset(self):
+        self.clearAllSettings()
+        sys.exit()
 
     def exceptionHook(self, etype, value, trace):
         """
@@ -417,7 +419,6 @@ class MainChip(QMainWindow):
     def initUI(self, icon="cwicon"):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
-        self.setWindowTitle(self.name)
         self.setWindowIcon(QIcon(":/images/%s.png" % icon))
         self.recentFileActs = []
         self.createFileActions()
@@ -427,6 +428,7 @@ class MainChip(QMainWindow):
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
+        ExtendedParameter.paramScriptingOutput = self.paramScriptingDock.widget()
         self.consoleDock = self.addConsole()
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
@@ -555,55 +557,13 @@ class MainChip(QMainWindow):
         print "Status: " + msg
         self.statusBar().showMessage(msg)
 
-    def showScriptParameter(self, param,  changes, topParam):
-        """
-        This function is used to tell the user what they should pass to setParameter
-        in order to recreate a system. This will automatically be called if the module
-        has done the following:
-
-        When calling ExtendedParameter.setupParameter(), have passed a reference to 'self' like this::
-
-           ExtendedParameter.setupExtended(self.params, self)
-
-        Have a function called paramTreeChanged in the class which calls showScriptParameter (this function).
-        Typically done like the following, where self.showScriptParameter is setup in the setupExtended() call. You
-        might need to pass the reference to this instance down to lower modules.::
-
-            def paramTreeChanged(self, param, changes):
-                if self.showScriptParameter is not None:
-                    self.showScriptParameter(param, changes, self.params)
-
-        """
-        for param, change, data in changes:
-            ppath = topParam.childPath(param)
-            if ppath is None:
-                name = [param.name()]
-            else:
-                ppath.insert(0, topParam.name())
-                name = ppath
-
-            #Don't pollute script output with readonly things
-            if param.opts["readonly"] == True:
-                continue
-
-            if "echooff" in param.opts:
-                if param.opts["echooff"] == True:
-                    param.opts["echooff"] = False
-                    continue
-
-            if "values" in param.opts:
-                if not hasattr(param.opts["values"], 'iteritems'):
-                    name.append(data)
-                else:
-                    for k, v in param.opts["values"].iteritems():
-                        if v == data:
-                            name.append(k)
-
-
-            else:
-                name.append(data)
-
-            self.paramScriptingDock.widget().append(str(name))
+    def runScript(self, mod):
+        if mod is None:
+            return
+        self.updateStatusBar("Running Script: %s" % mod.name())
+        m = mod.userScript(self.cwAPI)
+        m.run()
+        self.updateStatusBar("Finished Script: %s" % mod.name())
 
 def main():    
     app = QApplication(sys.argv)

@@ -39,7 +39,8 @@ from chipwhisperer.common.utils import util
 class TextDisplay(AutoScript, QObject):
 
     def __init__(self, parent):
-        super(TextDisplay, self).__init__(parent)
+        AutoScript.__init__(self)
+        QObject.__init__(self, parent)
         self.parent = parent
         self.defineName()
         self.addDock()
@@ -52,28 +53,18 @@ class TextDisplay(AutoScript, QObject):
              {'name':'Update/Display Table', 'type':'action', 'action':self.updateTable},
              ]
 
-    def traceManager(self):
-        return self.parent.traceManager()
-    #    if self._tmanager is None and self.parent is not None:
-    #        self._tmanager = self.parent.traceManager()
-#        return self._tmanager
-
     def updateTable(self):
         self.dock.show()
-        tend = self.traceManager().numTrace()
+        tend = CWCoreAPI.getInstance().getTraceManager().numTrace()
         self.tablewid.setRowCount(tend)
         for tnum in range(0,tend):
-            tin = self.traceManager().getTextin(tnum)
-            tout = self.traceManager().getTextout(tnum)
-            k = self.traceManager().getKnownKey(tnum)
+            tin = CWCoreAPI.getInstance().getTraceManager().getTextin(tnum)
+            tout = CWCoreAPI.getInstance().getTraceManager().getTextout(tnum)
+            k = CWCoreAPI.getInstance().getTraceManager().getKnownKey(tnum)
 
             self.tablewid.setItem(tnum, 0, QTableWidgetItem(util.list2hexstr(tin)))
             self.tablewid.setItem(tnum, 1, QTableWidgetItem(util.list2hexstr(tout)))
             self.tablewid.setItem(tnum, 2, QTableWidgetItem(util.list2hexstr(k)))
-
-
-
-
 
     def addDock(self):
 

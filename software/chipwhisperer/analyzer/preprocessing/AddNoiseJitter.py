@@ -25,22 +25,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
 import random
 import numpy as np
-
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
+def getInstance(*args):
+    return AddNoiseJitter(*args)
 
 class AddNoiseJitter(PreprocessingBase):
     """
@@ -53,9 +45,9 @@ class AddNoiseJitter(PreprocessingBase):
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':True, 'set':self.updateScript},
                          {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':0, 'limits':(0, 1000), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
-        self.params = Parameter.create(name='Add Random Jitter', type='group', children=ssParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.maxJitter = 0
         self.updateScript()
@@ -80,6 +72,9 @@ class AddNoiseJitter(PreprocessingBase):
             
         else:
             return self.trace.getTrace(n)       
+
+    def getName(self):
+        return "Add Noise: Time Jitter"
 
         
 # This function stolen from: http://stackoverflow.com/questions/2777907/python-numpy-roll-with-padding

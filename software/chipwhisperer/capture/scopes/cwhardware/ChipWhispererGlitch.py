@@ -56,7 +56,7 @@ class ChipWhispererGlitch():
 
     paramListUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None, cwtype="cwrev2"):
+    def __init__(self, cwtype="cwrev2"):
         paramSS = [
                 {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
                 {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
@@ -76,7 +76,6 @@ class ChipWhispererGlitch():
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
-        self.showScriptParameter = showScriptParameter
 
         # Check if we've got partial reconfiguration stuff for this scope
         try:
@@ -137,12 +136,8 @@ class ChipWhispererGlitch():
             lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55)
             self.findParam('offset').setLimits(lim)
 
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
 
     def setOpenADC(self, oa):
-
         if self.prEnabled:
             self.prCon.con(oa)
 

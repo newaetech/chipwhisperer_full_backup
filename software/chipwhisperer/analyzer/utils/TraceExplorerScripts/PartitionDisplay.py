@@ -28,13 +28,13 @@
 from functools import partial
 import numpy as np
 import copy
-
 from PySide.QtCore import *
 from PySide.QtGui import *
 import pyqtgraph as pg
-
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+
 
 class DifferenceModeTTest(QObject):
     sectionName = "Difference of Partitions using Welch's T-Test"
@@ -42,11 +42,9 @@ class DifferenceModeTTest(QObject):
     differenceType = "Welch's T-Test"
 
     def difference(self, numkeys, numparts, trace, numpoints, stats, pbDialog=None):
-
         means = stats["mean"]
         var = stats["variance"]
         num = stats["number"]
-
 
         if pbDialog:
             pbDialog.setMinimum(0)
@@ -235,10 +233,12 @@ class POI(QWidget):
             self.mainTable.setCellWidget(bnum, 1, QLineEdit(str(maxarray)))
         return {"poi":self.poiArray}
 
+
 class PartitionDisplay(AutoScript, QObject):
 
     def __init__(self, parent):
-        super(PartitionDisplay, self).__init__(parent)
+        AutoScript.__init__(self)
+        QObject.__init__(self, parent)
         self.parent = parent
         self.defineName()
 
@@ -311,13 +311,6 @@ class PartitionDisplay(AutoScript, QObject):
                 self.graph.setColorInt(bnum, self.numKeys)
                 self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)))
 
-    def traceManager(self):
-        return self.parent.traceManager()
-    #    if self._tmanager is None and self.parent is not None:
-    #        self._tmanager = self.parent.traceManager()
-#        return self._tmanager
-
-
     def updateScript(self, ignored=None):
         ##Partitioning & Differences
         try:
@@ -355,9 +348,8 @@ class PartitionDisplay(AutoScript, QObject):
                           obj='ted')
 
     def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False, traces=None, tRange=(0, -1), progressBar=None):
-
         if traces is None:
-            traces = self.traceManager()
+            traces = CWCoreAPI.getInstance().getTraceManager()
 
         if tRange[1] < 0:
             tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
@@ -476,7 +468,7 @@ class PartitionDisplay(AutoScript, QObject):
     def generatePartitionDiffs(self, diffModule, statsInfo={"partclass":None, "stats":None}, saveFile=False, loadFile=False, traces=None, tRange=(0, -1), progressBar=None):
 
         if traces is None:
-            traces = self.traceManager()
+            traces = CWCoreAPI.getInstance().getTraceManager()
 
         if tRange[1] < 0:
             tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
@@ -589,10 +581,5 @@ class PartitionDisplay(AutoScript, QObject):
         # self.parent.findParam('poi-pointrng').setValue((0, len(SADList[0])))
         self.redrawPlot()
 
-
     def runAction(self):
         self.runScriptFunction.emit('TraceExplorerDialog_PartitionDisplay_displayPartitionStats')
-
-
-
-

@@ -49,7 +49,7 @@ ADDR_IOROUTE = 55
 class ChipWhispererExtra(object):
     paramListUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None, cwtype="cwrev2"):
+    def __init__(self, cwtype="cwrev2"):
         #self.cwADV = CWAdvTrigger()
 
         if cwtype == "cwrev2":
@@ -61,17 +61,11 @@ class ChipWhispererExtra(object):
 
         self.params = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
 
         self.enableGlitch = True
 
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(showScriptParameter, cwtype=cwtype)
-
-
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype=cwtype)
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)

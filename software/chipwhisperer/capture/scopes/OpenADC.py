@@ -75,9 +75,7 @@ def getInstance(*args):
 class OpenADCInterface_NAEUSBChip():
     paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ztexParams = [
                       # No Parameters for NAEUSBChip
                   ]
@@ -98,15 +96,10 @@ class OpenADCInterface_NAEUSBChip():
             self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
 
-
         # if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         # else:
         #    self.cwAdvancedSettings = None
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def __del__(self):
         if self.ser != None:
@@ -167,9 +160,7 @@ class OpenADCInterface_NAEUSBChip():
 class OpenADCInterface_FTDI():
     paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ftdiParams = [
                       {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
                       {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
@@ -190,10 +181,6 @@ class OpenADCInterface_FTDI():
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         #else:
         #    self.cwAdvancedSettings = None
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def setSerialNumber(self, snum):
         self.serialNumber = snum
@@ -262,9 +249,7 @@ class OpenADCInterface_FTDI():
 class OpenADCInterface_Serial():
     paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ftdiParams = [
                       {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
                       {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
@@ -344,9 +329,7 @@ class OpenADCInterface_Serial():
 class OpenADCInterface_ZTEX():
     paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, showScriptParameter=None):
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ztexParams = [
                       #No Parameters for ZTEX
                   ]
@@ -371,10 +354,6 @@ class OpenADCInterface_ZTEX():
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         #else:
         #    self.cwAdvancedSettings = None
-
-    #def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def __del__(self):
         if self.ser != None:
@@ -457,32 +436,32 @@ class OpenADCInterface_ZTEX():
 class OpenADCInterface(ScopeTemplate):
     dataUpdated = util.Signal()
 
-    def __init__(self, showScriptParameter=None):
+    def __init__(self):
         super(OpenADCInterface, self).__init__()
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, showScriptParameter=showScriptParameter)
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
         self.datapoints = []
 
         try:
-            cwrev2 = OpenADCInterface_ZTEX(self.qtadc, showScriptParameter=showScriptParameter)
+            cwrev2 = OpenADCInterface_ZTEX(self.qtadc)
         except ImportError, e:
             print "Failed to enable CWRev2, Error: %s" % str(e)
             cwrev2 = None
 
         try:
-            ftdi = OpenADCInterface_FTDI(self.qtadc, showScriptParameter=showScriptParameter)
+            ftdi = OpenADCInterface_FTDI(self.qtadc)
         except ImportError:
             ftdi = None
 
         try:
-            cwser = OpenADCInterface_Serial(self.qtadc, showScriptParameter=showScriptParameter)
+            cwser = OpenADCInterface_Serial(self.qtadc)
         except ImportError:
             cwser = None
 
         try:
-            cwlite = OpenADCInterface_NAEUSBChip(self.qtadc, showScriptParameter=showScriptParameter)
+            cwlite = OpenADCInterface_NAEUSBChip(self.qtadc)
         except ImportError, e:
             print "Failed to enable CW-Lite, Error: %s" % str(e)
             cwlite = None
@@ -526,7 +505,6 @@ class OpenADCInterface(ScopeTemplate):
 
         self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
 
     #     self.refreshTimer = QTimer()
@@ -543,10 +521,6 @@ class OpenADCInterface(ScopeTemplate):
     #         self.refreshTimer.start()
     #     else:
     #         self.refreshTimer.stop()
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
@@ -570,16 +544,16 @@ class OpenADCInterface(ScopeTemplate):
                     cwtype = "cwrev2"
 
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter, cwtype=cwtype)
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype=cwtype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
                 util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter)
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
                     self.advancedSAD.setOpenADC(self.qtadc)
 
-                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.showScriptParameter)
+                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()
                     self.digitalPattern.setOpenADC(self.qtadc)
 
                 self.paramListUpdated.emit()

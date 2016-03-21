@@ -25,26 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-
-# from functools import partial
 import scipy as sp
 import scipy.fftpack
 import numpy as np
 
 from matplotlib.mlab import find
-        
+
+def getInstance(*args):
+    return DecimationClockRecovery(*args)
+
 def fft(signal, freq=None):
     FFT = abs(scipy.fft(signal))
     # FFTdb = 20*scipy.log10(FFT)
@@ -55,6 +47,7 @@ def fft(signal, freq=None):
     # return (freqs, FFTdb)
 
     print FFT
+
 
 class DecimationClockRecovery(PreprocessingBase):
     """
@@ -75,9 +68,10 @@ class DecimationClockRecovery(PreprocessingBase):
                                 {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript}, ]},
                          {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
         
-        self.params = Parameter.create(name='Clock Decimation', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.updateScript()
@@ -180,9 +174,9 @@ class DecimationClockRecovery(PreprocessingBase):
             #print len(filttrace)
             
             return filttrace
-           
-            
+
         else:
             return self.trace.getTrace(n)       
-    
-   
+
+    def getName(self):
+        return "Decimation: Clock Recovery"

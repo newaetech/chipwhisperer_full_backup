@@ -33,6 +33,7 @@ class CWCoreAPI(object):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE"
     __version__ = "V3.0"
+    instance = None
 
     class Signals(object):
         def __init__(self):
@@ -45,6 +46,11 @@ class CWCoreAPI(object):
         self._traceManager = None
         self._project = None
         self.signals = self.Signals()
+        CWCoreAPI.instance = self
+
+    @staticmethod
+    def getInstance():
+        return CWCoreAPI.instance
 
     def project(self):
         return self._project
@@ -58,8 +64,8 @@ class CWCoreAPI(object):
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
         self.project().addParamTree(self)
-        self.project().addParamTree(self.getScope())
-        self.project().addParamTree(self.getTarget())
+        # self.project().addParamTree(self.getScope())
+        # self.project().addParamTree(self.getTarget())
         self.getTraceManager().newProject()
         self.project().setTraceManager(self.getTraceManager())
 

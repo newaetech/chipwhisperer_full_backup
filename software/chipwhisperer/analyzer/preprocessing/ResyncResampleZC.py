@@ -25,15 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
@@ -41,6 +32,10 @@ from pyqtgraph.parametertree import Parameter
 from matplotlib.mlab import find
 import scipy.signal as sig
         
+def getInstance(*args):
+    return ResyncResampleZC(*args)
+
+
 class ResyncResampleZC(PreprocessingBase):
     """
     Resync using Resampling based on Zero-Crossing Bins.
@@ -55,10 +50,10 @@ class ResyncResampleZC(PreprocessingBase):
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
                          {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
         
-        self.params = Parameter.create(name='Resample Bins', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.updateScript()
@@ -75,7 +70,6 @@ class ResyncResampleZC(PreprocessingBase):
                             zclevel,
                             binlength
                             ))
-
 
     def setReference(self, rtraceno=0, zcoffset=0.0, binlength=0):
         self.rtrace = rtraceno
@@ -143,3 +137,6 @@ class ResyncResampleZC(PreprocessingBase):
             targdata[(i - 1) * targlen:i * targlen] = sig.resample(data[indices[i - 1]:indices[i]], targlen)
 
         return targdata
+
+    def getName(self):
+        return "Resync: Resample based on Zero-Crossing"

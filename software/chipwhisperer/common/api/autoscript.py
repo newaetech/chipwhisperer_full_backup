@@ -125,22 +125,16 @@ class SmartStatements(object):
             self._selfreplacement = sp[0] + "." + newstr + sp[1]
 
 
-
 class AutoScript(object):
     """Base functions for getting/setting stuff to make main script file"""
 
-    scriptsUpdated = util.Signal()
-    runScriptFunction = util.Signal()
-
-    def __init__(self, parent=None):
+    def __init__(self):
         self.autoScriptInit()
-        
+        self.scriptsUpdated = util.Signal()
+        self.runScriptFunction = util.Signal()
+
     def autoScriptInit(self):
         self.clearStatements()
-        self.updateDelayTimer = QTimer(self)
-        self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
-        self.updateDelayTimer.setSingleShot(True)
-        self.updateDelayTimer.setInterval(250)
 
     def clearStatements(self):
         self.importStatements = []
@@ -151,7 +145,8 @@ class AutoScript(object):
     def importsAppend(self, statement):
         if statement not in self.importStatements:
             self.importStatements.append(statement)
-        self.updateDelayTimer.start()
+        # self.updateDelayTimer.start()
+        self.scriptsUpdated.emit()
 
     def getImportStatements(self):
         return self.importStatements
@@ -162,7 +157,8 @@ class AutoScript(object):
 
     def addFunction(self, key, funcstr, argstr, varassignment=None, obj='self', loc=None):
         self._smartstatements[key].addFunctionCall(funcstr, argstr, varassignment=varassignment, obj=obj, loc=loc)
-        self.updateDelayTimer.start()
+        # self.updateDelayTimer.start()
+        self.scriptsUpdated.emit()
 
     def mergeGroups(self, key, otherscript, prefix=""):
         for k in otherscript._smartstatements[key]._statements:
@@ -179,11 +175,13 @@ class AutoScript(object):
                 self.addVariable(key, k["objname"], k["values"])
             else:
                 raise ValueError("Invalid type: %s" % k["type"])
-        self.updateDelayTimer.start()
+        self.scriptsUpdated.emit()
+        # self.updateDelayTimer.start()
 
     def delFunction(self, key, funcstr):
         self._smartstatements[key].delFunctionCall(funcstr)
-        self.updateDelayTimer.start()
+        # self.updateDelayTimer.start()
+        self.scriptsUpdated.emit()
 
     def addVariable(self, key, varname, values, loc=None):
         self._smartstatements[key].addVariableAssignment(varname, values, loc=None)
@@ -191,13 +189,12 @@ class AutoScript(object):
     def getStatements(self, key):
         return self._smartstatements[key].statements()
 
+
 class AutoScriptBase(object):
 
-    def __init__(self, parent=None, showScriptParameter=None):
+    def __init__(self, project):
         super(AutoScriptBase, self).__init__()
-        self.parent = parent
-        self.showScriptParameter = showScriptParameter
-        self._project = None
+        self._project = project
 
     def initProject(self):
         pass
@@ -230,6 +227,4 @@ class AutoScriptBase(object):
         self._project = project
 
     def project(self):
-        if self._project is None and self.parent:
-            self._project = self.parent.project()
         return self._project

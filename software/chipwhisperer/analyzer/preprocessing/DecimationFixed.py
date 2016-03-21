@@ -25,22 +25,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-
-# from functools import partial
-import scipy as sp
 import numpy as np
+
+def getInstance(*args):
+    return DecimationFixed(*args)
 
         
 class DecimationFixed(PreprocessingBase):
@@ -55,9 +46,10 @@ class DecimationFixed(PreprocessingBase):
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
                          # {'name':'Decimation Type', 'values':''}
+                         {'name':'Description', 'type':'text', 'value':self.descrString}
                       ]
         
-        self.params = Parameter.create(name='Fixed Decimation', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.setDecimationFactor(1)
         self.updateScript()
@@ -89,5 +81,6 @@ class DecimationFixed(PreprocessingBase):
             
         else:
             return self.trace.getTrace(n)       
-    
-   
+
+    def getName(self):
+        return "Decimation: Fixed"
