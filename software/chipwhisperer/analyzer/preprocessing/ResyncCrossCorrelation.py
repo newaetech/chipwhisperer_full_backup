@@ -31,15 +31,16 @@ from pyqtgraph.parametertree import Parameter
 import numpy as np
 import scipy as sp
         
-def getInstance(*args):
-    return ResyncCrossCorrelation(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncCrossCorrelation
 
 
 class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-
+    name = "Resync: Cross Correlation"
     descrString = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
@@ -50,7 +51,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -121,6 +122,3 @@ class ResyncCrossCorrelation(PreprocessingBase):
         cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
         self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
         self.refmaxsize = max(cross[self.ccStart:self.ccEnd])
-
-    def getName(self):
-        return "Resync: Cross Correlation"

@@ -34,8 +34,9 @@ import numpy as np
 
 from matplotlib.mlab import find
 
-def getInstance(*args):
-    return DecimationClockRecovery(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return DecimationClockRecovery
 
 def fft(signal, freq=None):
     FFT = abs(scipy.fft(signal))
@@ -54,6 +55,7 @@ class DecimationClockRecovery(PreprocessingBase):
     Attempts Clock recovery & then decimates based on that
     """
 
+    name = "Decimation: Clock Recovery"
     descrString = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
                   "decimate to only points of interest.\n****CURRENTLY NOT SUPPORTED****"
      
@@ -68,7 +70,7 @@ class DecimationClockRecovery(PreprocessingBase):
                                 {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript}, ]},
                          {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
@@ -176,7 +178,4 @@ class DecimationClockRecovery(PreprocessingBase):
             return filttrace
 
         else:
-            return self.trace.getTrace(n)       
-
-    def getName(self):
-        return "Decimation: Clock Recovery"
+            return self.trace.getTrace(n)

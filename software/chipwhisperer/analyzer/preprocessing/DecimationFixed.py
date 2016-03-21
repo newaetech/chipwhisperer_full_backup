@@ -30,8 +30,9 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 import numpy as np
 
-def getInstance(*args):
-    return DecimationFixed(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return DecimationFixed
 
         
 class DecimationFixed(PreprocessingBase):
@@ -39,14 +40,15 @@ class DecimationFixed(PreprocessingBase):
     Decimate by fixed amount
     """
 
+    name = "Decimation: Fixed"
     descrString = "Decimate by a fixed factor"
-     
+
     def setupParameters(self):
 
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
                          # {'name':'Decimation Type', 'values':''}
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
@@ -66,7 +68,7 @@ class DecimationFixed(PreprocessingBase):
             trace = self.trace.getTrace(n)
             if trace is None:
                 return None
-            
+
             decfactor = self._decfactor
 
             # outtrace = np.zeros(len(trace))
@@ -78,9 +80,6 @@ class DecimationFixed(PreprocessingBase):
                 outtrace[idx] = trace[val]
 
             return outtrace
-            
-        else:
-            return self.trace.getTrace(n)       
 
-    def getName(self):
-        return "Decimation: Fixed"
+        else:
+            return self.trace.getTrace(n)

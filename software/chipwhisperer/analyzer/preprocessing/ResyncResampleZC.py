@@ -32,14 +32,16 @@ from pyqtgraph.parametertree import Parameter
 from matplotlib.mlab import find
 import scipy.signal as sig
         
-def getInstance(*args):
-    return ResyncResampleZC(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncResampleZC
 
 
 class ResyncResampleZC(PreprocessingBase):
     """
     Resync using Resampling based on Zero-Crossing Bins.
     """
+    name = "Resync: Resample based on Zero-Crossing"
     descrString = "Deals with resampling 'bins' based on zero-crossing detection"
 
     def setupParameters(self):
@@ -50,7 +52,7 @@ class ResyncResampleZC(PreprocessingBase):
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
                          {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
@@ -137,6 +139,3 @@ class ResyncResampleZC(PreprocessingBase):
             targdata[(i - 1) * targlen:i * targlen] = sig.resample(data[indices[i - 1]:indices[i]], targlen)
 
         return targdata
-
-    def getName(self):
-        return "Resync: Resample based on Zero-Crossing"

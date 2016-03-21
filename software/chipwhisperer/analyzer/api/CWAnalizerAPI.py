@@ -109,7 +109,7 @@ class CWAnalizerAPI(CWCoreAPI):
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
-                mod = i.getInstance(tracerManager, waveformWidget)
+                mod = i.getClass()(tracerManager, waveformWidget)
                 resp[mod.getName()] = mod
             except Exception as e:
                 print "Warning: Could not import preprocessing module " + f + ": " + str(e)

@@ -31,21 +31,23 @@ from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
-def getInstance(*args):
-    return AddNoiseJitter(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return AddNoiseJitter
 
 class AddNoiseJitter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
 
+    name = "Add Noise: Time Jitter"
     descrString = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
                   "in actual analysis."
      
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':True, 'set':self.updateScript},
                          {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':0, 'limits':(0, 1000), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -71,10 +73,7 @@ class AddNoiseJitter(PreprocessingBase):
             return roll_zeropad(trace, jit)
             
         else:
-            return self.trace.getTrace(n)       
-
-    def getName(self):
-        return "Add Noise: Time Jitter"
+            return self.trace.getTrace(n)
 
         
 # This function stolen from: http://stackoverflow.com/questions/2777907/python-numpy-roll-with-padding

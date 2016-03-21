@@ -30,14 +30,16 @@ from chipwhisperer.analyzer.preprocessing.PreprocessingBase import Preprocessing
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
         
-def getInstance(*args):
-    return ResyncSAD(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncSAD
 
 
 class ResyncSAD(PreprocessingBase):
     """
     Resync by minimizing the SAD.
     """
+    name = "Resync: Sum-of-Difference"
     descrString = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
@@ -52,7 +54,7 @@ class ResyncSAD(PreprocessingBase):
                          {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
                          # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
@@ -152,6 +154,3 @@ class ResyncSAD(PreprocessingBase):
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)
-
-    def getName(self):
-        return "Resync: Sum-of-Difference"

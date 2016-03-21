@@ -30,14 +30,16 @@ from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 
-def getInstance(*args):
-    return PreprocessingBase(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return PreprocessingBase
 
 
 class PreprocessingBase(AutoScript):
     """
     Base Class for all preprocessing modules
     """
+    name = "None"
     descrString = ""
 
     def __init__(self, traceSource, graphwidget):
@@ -53,7 +55,7 @@ class PreprocessingBase(AutoScript):
         """Setup parameters specific to preprocessing module"""
         ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
                     # PUT YOUR PARAMETERS HERE
-                    {'name':'Description', 'type':'text', 'value':self.descrString}]
+                    {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}]
         self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
@@ -115,4 +117,4 @@ class PreprocessingBase(AutoScript):
         return self.trace.findMappedTrace(n)
 
     def getName(self):
-        return "None"
+        return self.name

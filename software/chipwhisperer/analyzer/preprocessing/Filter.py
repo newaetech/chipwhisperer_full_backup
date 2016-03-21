@@ -30,15 +30,18 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 from scipy import signal
 
-def getInstance(*args):
-    return Filter(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return Filter
 
 
 class Filter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
-     
+    name = "Digital Filter"
+    descrString = "..." #TODO: put something here
+
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"signal.butter"}, 'set':self.updateScript},
@@ -46,7 +49,7 @@ class Filter(PreprocessingBase):
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
                          {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -95,7 +98,4 @@ class Filter(PreprocessingBase):
             return filttrace
             
         else:
-            return self.trace.getTrace(n)       
-
-    def getName(self):
-        return "Digital Filter"
+            return self.trace.getTrace(n)

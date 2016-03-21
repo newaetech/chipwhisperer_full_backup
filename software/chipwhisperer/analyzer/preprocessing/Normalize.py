@@ -31,8 +31,9 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 import numpy as np
      
-def getInstance(*args):
-    return Normalize(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return Normalize
 
 
 class NormBase(QWidget):
@@ -116,7 +117,9 @@ class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
-     
+    name = "Resync: Sum-of-Difference"
+    descrString = "..." #TODO: put something here
+
     def setupParameters(self):
 
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
@@ -125,7 +128,7 @@ class Normalize(PreprocessingBase):
                          {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
                          {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
      #                    {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
@@ -237,6 +240,3 @@ class Normalize(PreprocessingBase):
     #        self.findParam('ptrange').setValue((0, points))
     #        self.ptStart = 0
     #        self.ptEnd = points
-
-    def getName(self):
-        return "Resync: Sum-of-Difference"

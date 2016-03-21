@@ -30,15 +30,16 @@ from chipwhisperer.analyzer.preprocessing.PreprocessingBase import Preprocessing
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 
-def getInstance(*args):
-    return ResyncPeakDetect(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncPeakDetect
 
 
 class ResyncPeakDetect(PreprocessingBase):
     """
     Resyncronize based on peak value.
     """
-
+    name = "Resync: Peak Detect"
     descrString = "Line up traces so peak (either max positive or max negative) within" \
     " some given range of points all aligns. For each trace the following must hold or the trace is rejected:\n" \
     "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
@@ -52,7 +53,7 @@ class ResyncPeakDetect(PreprocessingBase):
                          {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
                          {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
 
         self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
@@ -127,6 +128,3 @@ class ResyncPeakDetect(PreprocessingBase):
         else:
             self.refmaxloc = np.argmin(reftrace)
             self.refmaxsize = min(reftrace)
-
-    def getName(self):
-        return "Resync: Peak Detect"

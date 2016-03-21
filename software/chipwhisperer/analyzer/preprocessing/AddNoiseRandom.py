@@ -30,8 +30,9 @@ from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
-def getInstance(*args):
-    return AddNoiseRandom(*args)
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return AddNoiseRandom
 
 
 class AddNoiseRandom(PreprocessingBase):
@@ -39,12 +40,13 @@ class AddNoiseRandom(PreprocessingBase):
     Does some crap
     """
 
+    name = "Add Noise: Amplitude"
     descrString = "Add random noise"
      
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -71,6 +73,3 @@ class AddNoiseRandom(PreprocessingBase):
             
         else:
             return self.trace.getTrace(n)
-
-    def getName(self):
-        return "Add Noise: Amplitude"
