@@ -44,16 +44,15 @@ class DecimationFixed(PreprocessingBase):
     descrString = "Decimate by a fixed factor"
 
     def setupParameters(self):
-
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
+        self.setDecimationFactor(1)
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
+                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript},
                          # {'name':'Decimation Type', 'values':''}
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.setDecimationFactor(1)
         self.updateScript()
 
     def updateScript(self, ignored=None):

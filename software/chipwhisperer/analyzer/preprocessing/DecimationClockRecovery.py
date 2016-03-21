@@ -61,7 +61,7 @@ class DecimationClockRecovery(PreprocessingBase):
      
     def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Filter Design', 'type':'group', 'children':[
                                 # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
                                 {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateScript},
@@ -73,7 +73,7 @@ class DecimationClockRecovery(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.updateScript()

@@ -112,17 +112,16 @@ class normlinfunc(NormBase):
         return (t - f1) / f2
 
 
-
 class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
-    name = "Resync: Sum-of-Difference"
-    descrString = "..." #TODO: put something here
+    name = "Normalize"
+    descrString = "Normalizes by standard deviation"
 
     def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":normmean, "y=(x-mean(x))/stddev(x)":normmeanstd, "y=(x-f1(z))/f2(z)":normlinfunc}, 'set':self.updateNormClass},
                          {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
                          {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
@@ -131,7 +130,7 @@ class Normalize(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.updateNormClass(normmean)
         self.ptStart = 0

@@ -40,10 +40,10 @@ class Filter(PreprocessingBase):
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
     name = "Digital Filter"
-    descrString = "..." #TODO: put something here
+    descrString = "Frequency specific filter"
 
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"signal.butter"}, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
@@ -51,7 +51,7 @@ class Filter(PreprocessingBase):
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
+        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.updateScript()

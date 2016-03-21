@@ -25,10 +25,9 @@
 
 import os.path
 import sys
-from functools import partial
 from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
-from chipwhisperer.capture.api.CWCaptureAPI import CWCaptureAPI
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
@@ -41,19 +40,16 @@ from chipwhisperer.common.utils import util
 __author__ = "Colin O'Flynn"
 
 class ChipWhispererCapture(MainChip):
-    def __init__(self, rootdir="."):
-        super(ChipWhispererCapture, self).__init__(CWCaptureAPI() , name=("ChipWhisperer" + u"\u2122" + " Capture " + self.__version__), icon="cwiconC")
+    def __init__(self, rootdir):
+        super(ChipWhispererCapture, self).__init__(CWCoreAPI(rootdir), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
-        # This is a hack for paths hardcoded into the application. todo: fix this properly.
-        util.globalSettings.setValue("cwcapture-starting-root", rootdir)
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
         self.glitchMonitor = GlitchExplorerDialog(self)
         self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
-        self.cwAPI.setupParameters(rootdir)
+        self.setupParameters()
         self.newProject()
 
-        self.addExampleScripts(CWCaptureAPI.getExampleScripts(rootdir + "/scripts"))
         self.addToolbar()
         self.addToolMenu()
         self.addSettingsDocks()
@@ -75,6 +71,41 @@ class ChipWhispererCapture(MainChip):
         self.cwAPI.signals.traceChanged.connect(self.traceChanged)
         self.cwAPI.signals.auxChanged.connect(self.auxChanged)
         self.cwAPI.signals.acqPatternChanged.connect(self.reloadParamList)
+
+    def setupParameters(self):
+        valid_scopes = CWCoreAPI.getScopeModules(self.cwAPI.getRootDir() + "/scopes")
+        valid_targets =  CWCoreAPI.getTargetModules(self.cwAPI.getRootDir() + "/targets")
+        valid_traces = CWCoreAPI.getTraceFormats(self.cwAPI.getRootDir() + "/../common/traces")
+        valid_aux = CWCoreAPI.getAuxiliaryModules(self.cwAPI.getRootDir() + "/auxiliary")
+        valid_acqPatterns = CWCoreAPI.getAcqPatternModules()
+
+        self.cwAPI.setScope(valid_scopes["None"])
+        self.cwAPI.setTarget(valid_targets["None"])
+        self.cwAPI.setTraceClass(valid_traces["ChipWhisperer/Native"])
+        self.cwAPI.setAux(valid_aux["None"])
+        self.cwAPI.setAcqPattern(valid_acqPatterns['Basic'])
+
+        self.cwParams = [
+                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.cwAPI.getScope(), 'set':self.cwAPI.setScope},
+                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.cwAPI.getTarget(), 'set':self.cwAPI.setTarget},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.cwAPI.getTraceClass(), 'set':self.cwAPI.setTraceClass},
+                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.cwAPI.auxList[0], 'set':self.cwAPI.setAux},
+
+                # {'name':'Key Settings', 'type':'group', 'children':[
+                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
+                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
+                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
+                #    ]},
+
+                {'name':'Acquisition Settings', 'type':'group', 'children':[
+                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.cwAPI.setNumTraces, 'get':self.cwAPI.getNumTraces},
+                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.cwAPI.setNumSegments, 'get':self.cwAPI.getNumSegments, 'tip':'Break capture into N segments, '
+                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
+                         'as each segment is buffered into RAM before being written to disk.'},
+                        # {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
+                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.cwAPI.acqPattern, 'set':self.cwAPI.setAcqPattern},
+                    ]},
+                ]
 
     def scopeChanged(self):
         if self.cwAPI.hasScope():
@@ -122,17 +153,6 @@ class ChipWhispererCapture(MainChip):
     def newTargetData(self, data):
         self.glitchMonitor.addResponse(data)
 
-    def addExampleScripts(self, scripts):
-        self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
-        self.projectMenu.addSeparator()
-        self.projectMenu.addAction(self.exampleScriptAct)
-        subMenu = QMenu("Submenu", self)
-
-        for script in scripts:
-            subMenu.addAction(QAction(script.name(), self, statusTip=script.tip(), triggered=partial(self.runScript, script)))
-
-        self.exampleScriptAct.setMenu(subMenu)
-
     def addToolMenu(self):
         self.TerminalAct = QAction('Open Terminal', self,
                                    statusTip='Open Simple Serial Terminal',
@@ -164,7 +184,7 @@ class ChipWhispererCapture(MainChip):
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
 
-        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwAPI.cwParams)
+        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.generalParamTree.setParameters(self.params, showTop=False)
 
@@ -292,7 +312,33 @@ class ChipWhispererCapture(MainChip):
         # Validate settings from all modules before starting multi-capture
         vw = ValidationDialog(onlyOkButton=not warnOnly)
 
-        for i in self.cwAPI.validateSettings():
+        ret = []
+        try:
+            ret.extend(self.cwAPI.getTarget().validateSettings())
+        except AttributeError:
+            ret.append(("info", "Target Module", "Target has no validateSettings()", "Internal Error", "73b08424-3865-4274-8fd7-dd213ede2c46"))
+        except Exception as e:
+            ret.append(("warn", "General Settings", e.message, "Specify Target Module", "2351e3b0-e5fe-11e3-ac10-0800200c9a66"))
+
+        try:
+            ret.extend(self.cwAPI.getScope().validateSettings())
+        except AttributeError:
+            ret.append(("info", "Scope Module", "Scope has no validateSettings()", "Internal Error", "d19be31d-ad1a-4533-80dc-9423dfa92753"))
+        except Exception as e:
+            ret.append(("warn", "General Settings", e.message, "Specify Scope Module", "325de1cf-0d47-4ed8-8e9f-77d8f9cf2d5f"))
+
+        try:
+            ret.extend(self.cwAPI.getTraceClass()().validateSettings())
+        except AttributeError:
+            ret.append(("info", "Writer Module", "Writer has no validateSettings()", "Internal Error", "d7b3a9a1-83f0-4b4d-92b9-3d7dcf6304ae"))
+        except Exception as e:
+            ret.append(("warn", "General Settings", e.message, "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727"))
+
+        tracesPerRun = int(self.cwAPI.numTraces / self.cwAPI.numSegments)
+        if tracesPerRun > 10E3:
+            ret.append(("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb"))
+
+        for i in ret:
             vw.addMessage(*i)
 
         if self.cwAPI.project().isUntitled():
@@ -333,8 +379,8 @@ class ChipWhispererCapture(MainChip):
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
-    app.setOrganizationName(CWCaptureAPI.__organization__)
-    app.setApplicationName(CWCaptureAPI.__name__ + " - Capture ")
+    app.setOrganizationName(CWCoreAPI.__organization__)
+    app.setApplicationName(CWCoreAPI.__name__ + " - Capture ")
     return app
 
 def main():

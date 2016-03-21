@@ -44,11 +44,11 @@ class AddNoiseRandom(PreprocessingBase):
     descrString = "Add random noise"
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
+        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self._maxNoise = 0
         self.updateScript()
@@ -70,6 +70,5 @@ class AddNoiseRandom(PreprocessingBase):
                 return trace
             else:
                 return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
-            
         else:
             return self.trace.getTrace(n)

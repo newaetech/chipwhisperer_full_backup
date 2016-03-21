@@ -27,8 +27,8 @@ __author__ = "Colin O'Flynn"
 import os.path
 import sys
 from PySide.QtGui import *
+from PySide.QtCore import *
 from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_native
-from chipwhisperer.common.utils import util
 import numpy as np
 from time import gmtime, strftime
 from TraceContainer import TraceContainer
@@ -237,9 +237,9 @@ class ImportDPAv3Dialog(QDialog):
         return self.parent.parent.cwp.traceslocation + "/" + "config_" + self.prefixDirLE.text() + ".cfg"
        
     def selectInfo(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings.value("dpav3_last_file"), 'info.xml')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("dpav3_last_file"), 'info.xml')
         if fname:
-            util.globalSettings.setValue("dpav3_last_file", fname)
+            QSettings().setValue("dpav3_last_file", fname)
             trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()
             trimport.loadInfo(os.path.dirname(fname))
             self.trimport = trimport

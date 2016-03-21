@@ -26,8 +26,6 @@
 #=================================================
 
 import pickle
-import os.path
-import time
 
 class PartialReconfigData(object):
     """ Handles a single partial reconfiguration file. """
@@ -95,7 +93,6 @@ class PartialReconfigDataOffsetWidth(object):
     #       stuff like the offset/width format is hard coded. It's not ideal but it works.
 
     def load(self, filelike):
-
         data = pickle.load(filelike)
         self.dataList = data
         klist = list(data['values'].keys())
@@ -108,7 +105,6 @@ class PartialReconfigDataOffsetWidth(object):
         self.limitList.append((min(offset), max(offset)))
 
     def getPartialBitstream(self, indxlst):
-
         data = list(self.dataList['base'])
 
         # Expected is "(offset, width)"

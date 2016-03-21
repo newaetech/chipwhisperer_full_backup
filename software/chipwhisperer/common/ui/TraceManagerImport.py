@@ -25,12 +25,11 @@
 __author__ = "Colin O'Flynn"
 
 from PySide.QtGui import *
+from PySide.QtCore import *
 from pyqtgraph.parametertree import ParameterTree
-
 import chipwhisperer.common.traces.TraceContainerTypes
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
-from chipwhisperer.common.utils import util
 
 try:
     from traces.TraceContainerMySQL import TraceContainerMySQL
@@ -95,15 +94,13 @@ class TraceManagerImport(QDialog):
     def updateConfigData(self):
         if self.tmanager is not None:
             self.tmanager.updateConfigData()
-            
+
     def loadCfg(self, fname=None):
-	if fname is None:
-	        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings.value("trace_last_file"), '*.cfg')
+        if fname is None:
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("trace_last_file"), '*.cfg')
 
         if fname:
-            util.globalSettings.setValue("trace_last_file", fname)
-
-        if fname:
+            QSettings().setValue("trace_last_file", fname)
             self.modName.setEnabled(False)
             
             #Figure out what format this is in
@@ -118,5 +115,3 @@ class TraceManagerImport(QDialog):
             self.tmanager.config.loadTrace(fname)
             self.tmanager.loadAllConfig()
             ExtendedParameter.reloadParams(self.tmanager.getParams.paramList(), self.paramTree)
-            
-            

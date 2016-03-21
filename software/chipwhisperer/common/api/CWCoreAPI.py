@@ -26,8 +26,10 @@ __author__ = "Colin O'Flynn"
 
 import traceback
 import importlib
+from datetime import *
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util
+from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
 class CWCoreAPI(object):
     __name__ = "ChipWhisperer"
@@ -40,17 +42,180 @@ class CWCoreAPI(object):
             self.parametersChanged = util.Signal()
             self.traceChanged = util.Signal()
             self.newProject = util.Signal()
+            self.reloadAttackParamList = util.Signal()
+            self.attackChanged = util.Signal()
+            self.paramListUpdated = util.Signal()
+            self.scopeChanged = util.Signal()
+            self.targetChanged = util.Signal()
+            self.auxChanged = util.Signal()
+            self.acqPatternChanged = util.Signal()
+            self.connectStatus = util.Signal()
+            self.newInputData = util.Signal()
+            self.newTextResponse = util.Signal()
+            self.traceDone = util.Signal()
+            self.campaignStart = util.Signal()
+            self.campaignDone = util.Signal()
+            self.abortCapture = util.Signal()
 
-    def __init__(self):
+    def __init__(self, rootDir):
+        self.rootDir = rootDir
         self.paramTrees = []
         self._traceManager = None
         self._project = None
+        self._scope = None
+        self._target = None
+        self._traceClass = None
+        self.da = None
+        self.numTraces = 100
+        self.numSegments = 1
+        self.traceLimits = 0
+        self.pointLimits = 0
+        self.results = None
         self.signals = self.Signals()
+        self.signals.abortCapture.connect(self.abortCapture)
         CWCoreAPI.instance = self
 
-    @staticmethod
-    def getInstance():
-        return CWCoreAPI.instance
+    def getRootDir(self):
+        return self.rootDir
+
+    def hasScope(self):
+        return self._scope is not None
+
+    def getScope(self):
+        if not self.hasScope(): raise Exception("Scope Module not loaded")
+        return self._scope
+
+    def setScope(self, driver):
+        self._scope = driver
+        util.active_scope = self._scope
+        self.signals.scopeChanged.emit()
+
+    def hasTarget(self):
+        return self._target is not None
+
+    def getTarget(self):
+        if not self.hasTarget(): raise Exception("Target Module not loaded")
+        return self._target
+
+    def setTarget(self, driver):
+        self._target = driver
+        self._target.paramListUpdated.connect(self.signals.paramListUpdated.emit)
+        self._target.newInputData.connect(self.signals.newInputData.emit)
+        self.signals.paramListUpdated.emit()
+        self.signals.targetChanged.emit()
+
+    def setAux(self, aux):
+        self.auxList = [aux]
+        self.signals.auxChanged.emit()
+
+    def setAcqPattern(self, pat):
+        self.acqPattern = pat
+        self.acqPattern.setTarget(self.getTarget())
+        self.signals.acqPatternChanged.emit()
+
+    def connectScope(self):
+        self.getScope().con()
+        if hasattr(self.getScope(), "qtadc"):
+            self.getTarget().setOpenADC(self.getScope().qtadc.ser)
+
+    def connectTarget(self):
+        self.getTarget().con()
+
+    def doConDis(self):
+        """DEPRECATED: Is here just for compatibility reasons"""
+        print "Method doConDis() is deprecated... use connect() or disconnect() instead"
+        self.connect()
+
+    def connect(self):
+        try:
+            self.connectScope()
+        finally:
+            self.connectTarget()
+
+    def disconnectScope(self):
+        self.getScope().dis()
+
+    def disconnectTarget(self):
+        self.getTarget().dis()
+
+    def disconnect(self):
+        self.disconnectScope()
+        self.disconnectTarget()
+
+    def getNumTraces(self):
+        return self.numTraces
+
+    def setNumTraces(self, t):
+        self.numTraces = t
+
+    def getNumSegments(self):
+        return self.numSegments
+
+    def setNumSegments(self, s):
+        self.numSegments = s
+
+    def capture1(self):
+        ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
+        ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+        ac.doSingleReading()
+
+    def abortCapture(self):
+            print "Capture aborted"
+            self._abortCapture = True
+
+    def captureM(self):
+        overallstarttime = datetime.now()
+        writerlist = []
+        tcnt = 0
+        tracesPerRun = int(self.numTraces / self.numSegments)
+
+        # This system re-uses one wave buffer a bunch of times. This is required since the memory will become
+        # fragmented, even though you are just freeing & reallocated the same size buffer. It's slightly less
+        # clear but it ensures you don't suddently have a capture interrupted with a memory error. This can
+        # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
+        # the 1GB limit that a 32-bit process would expect to give you trouble at.
+        waveBuffer = None
+        self._abortCapture = False
+
+        for i in range(0, self.numSegments):
+            if self._abortCapture:
+                break
+            currentTrace = self.getTraceClassInstance()
+
+            # Load trace writer information
+            starttime = datetime.now()
+            baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
+            prefix = baseprefix + "_"
+            currentTrace.config.setAttr("prefix", prefix)
+            currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
+            currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+            currentTrace.setTraceHint(tracesPerRun)
+
+            if waveBuffer is not None:
+                currentTrace.setTraceBuffer(waveBuffer)
+
+            if self.auxList is not None:
+                for aux in self.auxList:
+                    aux.setPrefix(baseprefix)
+
+            ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
+            ac.setMaxtraces(tracesPerRun)
+            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+            ac.signals.traceDone.connect(self.signals.traceDone.emit)
+            self.signals.campaignStart.emit(baseprefix)
+            ac.doReadings(addToList=self._traceManager)
+
+            tcnt += tracesPerRun
+            print "%d Captures Completed" % tcnt
+            self.signals.campaignDone.emit()
+
+            # Re-use the wave buffer for later segments
+            if self.hasTraceClass():
+                waveBuffer = currentTrace.traces
+                writerlist.append(currentTrace)
+
+        print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
+        return writerlist
 
     def project(self):
         return self._project
@@ -76,6 +241,7 @@ class CWCoreAPI(object):
         self.getTraceManager().newProject()
         self.project().setTraceManager(self.getTraceManager())
         self.project().load(fname)
+        self.attack.setProject(self.project())
 
     def saveProject(self, fname):
         self.project().setFilename(fname)
@@ -100,6 +266,60 @@ class CWCoreAPI(object):
 
     def setTraceManager(self, manager):
         self._traceManager = manager
+
+    def getAttack(self):
+        return self.attack
+
+    def setAttack(self, attack):
+        """Set the attack module, reloading GUI and connecting appropriate signals"""
+
+        self.attack = attack
+        self.signals.reloadAttackParamList.emit()
+        self.results.setAttack(self.attack)
+        self.attack.paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
+        self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
+
+        # Sometimes required
+        if hasattr(self, "traces") and self.traces:
+            self.attack.setTraceManager(self.traces)
+
+        self.attack.setProject(self.project())
+        self.signals.attackChanged.emit()
+
+    def doAttack(self, mod):
+        """Called when the 'Do Attack' button is pressed, or can be called via API
+        to cause attack to run"""
+
+        print "Attacking..."
+        # mod.initProject()
+
+        # Setup trace sources etc, this calls the
+        # .initPreprocessing itself
+        # it also resets the setTraces in the passed 'mod',
+        # which is REQUIRED for proper functioning!
+        mod.initAnalysis()
+        mod.initReporting(self.results)
+        mod.doAnalysis()
+        mod.doneAnalysis()
+        mod.doneReporting()
+
+        # print "Attack Started"
+        # if self.results:
+        #    self.results.setTraceManager(self.traces)
+        #
+        # if self.attack:
+        #    self.attack.setTraceManager(self.traces)
+        #    self.attack.doAttack()
+
+        # print "Attack Done"
+
+    def setTraceLimits(self, traces=None, points=None):
+        """When traces is loaded, Tell everything default point/trace range"""
+
+        #Set parameters for attack
+        self.traceLimits = traces
+        self.pointLimits = points
+        self.attack.setTraceLimits(traces, points)
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
@@ -147,6 +367,23 @@ class CWCoreAPI(object):
         self.signals.parametersChanged.emit()
 
     @staticmethod
+    def getInstance():
+        return CWCoreAPI.instance
+
+    @staticmethod
+    def getPreprocessingModules(dir, tracerManager, waveformWidget):
+        resp = {}
+        for f in util.getPyFiles(dir):
+            try:
+                i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
+                mod = i.getClass()(tracerManager, waveformWidget)
+                resp[mod.getName()] = mod
+            except Exception as e:
+                print "Warning: Could not import preprocessing module " + f + ": " + str(e)
+        # print "Loaded preprocessing modules: " + resp.__str__()
+        return resp
+
+    @staticmethod
     def getTraceFormats(dir):
         resp = {}
         for f in util.getPyFiles(dir):
@@ -157,4 +394,64 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "Warning: Could not import trace format module " + f + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
+        return resp
+
+    @staticmethod
+    def getScopeModules(dir):
+        resp = {}
+        for f in util.getPyFiles(dir):
+            try:
+                i = importlib.import_module('chipwhisperer.capture.scopes.' + f)
+                mod = i.getInstance()
+                resp[mod.getName()] = mod
+            except Exception as e:
+                print "Warning: Could not import scope module " + f + ": " + str(e)
+        # print "Loaded scope modules: " + resp.__str__()
+        return resp
+
+    @staticmethod
+    def getTargetModules(dir):
+        resp = {}
+        for t in util.getPyFiles(dir):
+            try:
+                i = importlib.import_module('chipwhisperer.capture.targets.' + t)
+                mod = i.getInstance()
+                resp[mod.getName()] = mod
+            except Exception as e:
+                print "Warning: Could not import target module " + t + ": " + str(e)
+        # print "Loaded target modules: " + resp.__str__()
+        return resp
+
+    @staticmethod
+    def getAuxiliaryModules(dir):
+        resp = {}
+        for f in util.getPyFiles(dir):
+            try:
+                i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
+                mod = i.getInstance()
+                resp[mod.getName()] = mod
+            except Exception as e:
+                print "Warning: Could not import auxiliary module " + f + ": " + str(e)
+        # print "Loaded scope modules: " + resp.__str__()
+        return resp
+
+    @staticmethod
+    def getExampleScripts(dir):
+        resp = []
+        for f in util.getPyFiles(dir):
+            try:
+                m = importlib.import_module('chipwhisperer.capture.scripts.' + f)
+                resp.append(m)
+            except Exception as e:
+                print "Warning: Could not import example script " + f + ": " + str(e)
+        # print "Loaded scripts: " + resp.__str__()
+        return resp
+
+    @staticmethod
+    def getAcqPatternModules():
+        resp = {}
+        resp["Basic"] = AcqKeyTextPattern_Basic()
+        if AcqKeyTextPattern_CRITTest:
+            resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
+        # print "Loaded Patterns: " + resp.__str__()
         return resp

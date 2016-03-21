@@ -30,14 +30,12 @@ import shutil
 import glob
 from PySide.QtCore import *
 from PySide.QtGui import *
-
 import ConfigParser
 import pstats, cProfile #For profiling support (not 100% needed)
 import chipwhisperer.common.traces.TraceContainerConfig
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
-from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.TraceManager import TraceManager
 
 sys.path.append('../common')
@@ -196,9 +194,9 @@ class TraceManagerDialog(QDialog, TraceManager):
 
     def copyExisting(self, fname=None):
         if fname == None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', util.globalSettings.value("trace_last_file"),'*.cfg')
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("trace_last_file"),'*.cfg')
             if fname:
-                util.globalSettings.setValue("trace_last_file", fname)
+                QSettings().setValue("trace_last_file", fname)
 
         if fname:
             #Get our project directory

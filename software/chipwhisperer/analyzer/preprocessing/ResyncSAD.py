@@ -48,7 +48,7 @@ class ResyncSAD(PreprocessingBase):
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
@@ -57,7 +57,7 @@ class ResyncSAD(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ccStart = 0
         self.ccEnd = 1

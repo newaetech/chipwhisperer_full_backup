@@ -27,6 +27,7 @@ __author__ = "Colin O'Flynn"
 import os
 import sys
 import traceback
+from functools import partial
 from datetime import datetime
 from pyqtgraph.parametertree import Parameter, ParameterTree
 import chipwhisperer.common.ui.PythonConsole
@@ -214,7 +215,6 @@ class MainChip(QMainWindow):
     def __init__(self, cwCoreAPI, name="Demo", icon="cwicon"):
         super(MainChip, self).__init__()
         self.cwAPI = cwCoreAPI
-        self.settings = QSettings()
         self.name = name
         sys.excepthook = self.exceptionHook
         self.manageTraces = TraceManagerDialog(self)
@@ -233,8 +233,8 @@ class MainChip(QMainWindow):
         self.cwAPI.signals.newProject.connect(lambda: self.cwAPI.project().signals.statusChanged.connect(self.projectChanged))
 
     def restoreSettings(self):
-        self.restoreGeometry(self.settings.value("geometry"))
-        self.restoreState(self.settings.value("windowState"))
+        self.restoreGeometry(QSettings().value("geometry"))
+        self.restoreState(QSettings().value("windowState"))
 
     def addDock(self, dockWidget, name="Settings", area=Qt.TopDockWidgetArea,
                 allowedAreas=Qt.AllDockWidgetAreas,
@@ -293,7 +293,7 @@ class MainChip(QMainWindow):
 
     def clearAllSettings(self):
         """Clear all saved QSettings(), such as window location etc"""
-        self.settings.clear()
+        QSettings().clear()
 
     def reset(self):
         self.clearAllSettings()
@@ -308,8 +308,8 @@ class MainChip(QMainWindow):
 
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
-        self.settings.setValue("geometry", self.saveGeometry())
-        self.settings.setValue("windowState", self.saveState())
+        QSettings().setValue("geometry", self.saveGeometry())
+        QSettings().setValue("windowState", self.saveState())
 
         if self.okToContinue():
             QMainWindow.closeEvent(self, event)
@@ -425,6 +425,7 @@ class MainChip(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
+        self.addExampleScripts(CWCoreAPI.getExampleScripts(self.cwAPI.getRootDir() + "/scripts"))
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
@@ -435,6 +436,17 @@ class MainChip(QMainWindow):
         self.setBaseSize(800,600)
         self.show()
         
+    def addExampleScripts(self, scripts):
+        self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
+        self.projectMenu.addSeparator()
+        self.projectMenu.addAction(self.exampleScriptAct)
+        subMenu = QMenu("Submenu", self)
+
+        for script in scripts:
+            subMenu.addAction(QAction(script.name(), self, statusTip=script.tip(), triggered=partial(self.runScript, script)))
+
+        self.exampleScriptAct.setMenu(subMenu)
+
     def updateTitleBar(self):
         """Update filename shown in title bar"""
         fname = os.path.basename(self.cwAPI.project().getFilename())
@@ -456,7 +468,7 @@ class MainChip(QMainWindow):
         
         if self.cwAPI.project().isUntitled(): return
         
-        files = self.settings.value('recentFileList')
+        files = QSettings().value('recentFileList')
         if files is None:
             files = []
 
@@ -469,12 +481,12 @@ class MainChip(QMainWindow):
         numRecentFiles = min(len(files), MainChip.MaxRecentFiles)
         files = files[:numRecentFiles]
 
-        self.settings.setValue('recentFileList', files)
+        QSettings().setValue('recentFileList', files)
         self.updateRecentFileActions()
 
     def updateRecentFileActions(self):
         """Update & Load the list of recent files"""
-        files = self.settings.value('recentFileList')
+        files = QSettings().value('recentFileList')
         if files is not None:
             files_no = 0
             for f in files:

@@ -26,12 +26,11 @@
 #=================================================
 
 import zipfile
-
 from pyqtgraph.parametertree import Parameter
-
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 glitchaddr = 51
 glitchoffsetaddr = 25
@@ -45,6 +44,7 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
+
 class ChipWhispererGlitch():
     """
     Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA module inserted into other systems.
@@ -56,7 +56,7 @@ class ChipWhispererGlitch():
 
     paramListUpdated = util.Signal()
 
-    def __init__(self, cwtype="cwrev2"):
+    def __init__(self, cwtype, scope):
         paramSS = [
                 {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
                 {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
@@ -90,12 +90,12 @@ class ChipWhispererGlitch():
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if util.globalSettings.value("%s-fpga-bitstream-mode" % settingprefix) == "zip":
-                fileloc = util.globalSettings.value("%s-zipbitstream-location" % settingprefix)
+            if scope.cwFirmwareConfig.useFPGAZip:
+                fileloc = scope.cwFirmwareConfig.loader.bsZipLoc
 
                 if fileloc:
                     if fileloc.startswith("."):
-                        fileloc = util.globalSettings.value("cwcapture-starting-root") + "/" + fileloc
+                        fileloc = CWCoreAPI.getInstance().getRootDir() + "/" + fileloc
                     zfile = zipfile.ZipFile(fileloc, "r")
 
                     if cwtype == "cwlite":

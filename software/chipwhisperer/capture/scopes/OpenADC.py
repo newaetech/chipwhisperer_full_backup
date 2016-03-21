@@ -433,6 +433,7 @@ class OpenADCInterface_ZTEX():
         return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()],  # Can' use Config/Setup... name with MacOS
                ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
+
 class OpenADCInterface(ScopeTemplate):
     dataUpdated = util.Signal()
 
@@ -544,7 +545,7 @@ class OpenADCInterface(ScopeTemplate):
                     cwtype = "cwrev2"
 
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype=cwtype)
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
                 util.chipwhisperer_extra = self.advancedSettings

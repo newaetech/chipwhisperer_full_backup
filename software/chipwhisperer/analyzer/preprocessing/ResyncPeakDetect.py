@@ -48,7 +48,7 @@ class ResyncPeakDetect(PreprocessingBase):
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
                          {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
@@ -56,7 +56,7 @@ class ResyncPeakDetect(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
 
-        self.params = Parameter.create(name=self.getName(), type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ccStart = 0
         self.ccEnd = 0

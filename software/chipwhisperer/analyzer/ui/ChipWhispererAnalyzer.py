@@ -35,7 +35,7 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.MainChip import MainChip
 #from ResultsDialog import ResultsDialog
 from chipwhisperer.analyzer.attacks.CPA import CPA
-from chipwhisperer.analyzer.api.CWAnalizerAPI import CWAnalizerAPI
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
@@ -58,9 +58,8 @@ class ChipWhispererAnalyzer(MainChip):
     done through PySide signals/slots.
     """
 
-    def __init__(self, rootdir="."):
-        super(ChipWhispererAnalyzer, self).__init__(CWAnalizerAPI(), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWAnalizerAPI.__version__, icon="cwiconA")
-        self.rootdir = rootdir
+    def __init__(self, rootdir):
+        super(ChipWhispererAnalyzer, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addTraceDock("Waveform Display")
 
         self.preprocessingListGUI = [None, None, None, None]
@@ -83,9 +82,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.traceExplorerDialog.runScriptFunction.connect(self.runFunc)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
-        self.valid_atacks = {'CPA':CPA(),
-         'Profiling':Profiling(self.traceExplorerDialog)}
-        self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.rootdir + "/preprocessing", self.cwAPI.getTraceManager(), self.waveformDock.widget())
+        self.valid_atacks = {'CPA':CPA(), 'Profiling':Profiling(self.traceExplorerDialog)}
+        self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.cwAPI.getTraceManager(), self.waveformDock.widget())
 
         self.addToolbars()
         self.addSettingsDocks()

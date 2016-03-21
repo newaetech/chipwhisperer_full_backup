@@ -53,10 +53,10 @@ class PreprocessingBase(AutoScript):
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+        ssParams = [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
                     # PUT YOUR PARAMETERS HERE
                     {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}]
-        self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
+        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
 
     def updateScript(self, ignored=None):

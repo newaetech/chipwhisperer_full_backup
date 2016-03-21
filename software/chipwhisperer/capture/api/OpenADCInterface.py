@@ -805,7 +805,7 @@ class OpenADCInterface():
         self.ddrMode = False
         self.sysFreq = 0
 
-        self.settings();
+        self.settings()
 
         #self.params = OpenADCSettings(self)
 

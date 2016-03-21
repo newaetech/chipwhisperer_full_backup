@@ -30,42 +30,25 @@ import os.path
 import collections
 import shutil
 
-active_scope = [None]
-chipwhisperer_extra = None
 
-class SettingsManager(object):
-    def __init__(self):
-        self.settingsList = {}
-
-    def getSettingsFor(self, name):
-        if not self.settingsList.has_key(name):
-            self.settingsList[name] = Settings()
-        return self.settingsList[name]
-
-    def write(self):
-        pass
-
-    def read(self):
-        pass
-
-class Settings(object):
-    def __init__(self):
-        self.dictionary = {}
-
-    def value(self, key):
-        if(self.dictionary.has_key(key)):
-            return self.dictionary[key]
-        else:
-            return ""
-
-    def setValue(self, key, value):
-        self.dictionary[key] = value
-
-    def clear(self):
-        self.dictionary.clear()
-
-
-globalSettings = Settings()
+# class Settings(object):
+#     def __init__(self):
+#         self.dictionary = {}
+#
+#     def value(self, key):
+#         if(self.dictionary.has_key(key)):
+#             return self.dictionary[key]
+#         else:
+#             return ""
+#
+#     def setValue(self, key, value):
+#         self.dictionary[key] = value
+#
+#     def clear(self):
+#         self.dictionary.clear()
+#
+#
+# globalSettings = Settings()
 
 def copyFile(source, destination, keepOriginals = True):
     if keepOriginals:

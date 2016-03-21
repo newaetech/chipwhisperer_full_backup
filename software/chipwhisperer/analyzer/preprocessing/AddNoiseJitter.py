@@ -35,6 +35,7 @@ def getClass():
     """"Returns the Main Class in this Module"""
     return AddNoiseJitter
 
+
 class AddNoiseJitter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
@@ -45,13 +46,13 @@ class AddNoiseJitter(PreprocessingBase):
                   "in actual analysis."
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':True, 'set':self.updateScript},
-                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':0, 'limits':(0, 1000), 'set':self.updateScript},
+        self.maxJitter = 0
+        ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':self.enabled, 'set':self.updateScript},
+                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name=self.getName(), type='group', children=ssParams)
+        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.maxJitter = 0
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -71,7 +72,6 @@ class AddNoiseJitter(PreprocessingBase):
             jit = random.randint(-self.maxJitter, self.maxJitter)
 
             return roll_zeropad(trace, jit)
-            
         else:
             return self.trace.getTrace(n)
 

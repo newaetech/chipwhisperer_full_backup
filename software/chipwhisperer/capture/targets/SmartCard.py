@@ -975,7 +975,7 @@ class SmartCard(TargetTemplate):
     def setupParameters(self):
         self.oa=None
         self.driver = None
-        self.scgui = SCGUI.SmartCardGUICard(self.parent())
+        self.scgui = SCGUI.SmartCardGUICard(None)
         
         supported_readers = dicttype()
         supported_readers["Select Reader"] = None
