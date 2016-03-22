@@ -79,6 +79,11 @@ class ChipWhispererCapture(MainChip):
         valid_traces = CWCoreAPI.getTraceFormats(self.cwAPI.getRootDir() + "/../common/traces")
         valid_aux = CWCoreAPI.getAuxiliaryModules(self.cwAPI.getRootDir() + "/auxiliary")
         valid_acqPatterns = CWCoreAPI.getAcqPatternModules()
+        
+        if len(valid_scopes) == 0:
+            raise IOError("Failed to load scope modules, either modules missing, import error, " +
+                          "or running main file from unusual directory without passing location " +
+                          "of install.")
 
         self.cwAPI.setScope(valid_scopes["None"])
         self.cwAPI.setTarget(valid_targets["None"])
@@ -383,14 +388,11 @@ def makeApplication():
     app.setApplicationName(CWCoreAPI.__name__ + " - Capture ")
     return app
 
-def main():
+def main(cwdir):
     app = makeApplication()
 
-    #print os.getcwd()
-    #cwdir = os.path.join('chipwhisperer', 'capture')
-    
-    #TODO - should we prompt user for this location?
-    cwdir = "../"
+    #print os.getcwd()   
+    #TODO - should we prompt user for cwdir if not found?
 
     # Create and show the form
     window = ChipWhispererCapture(cwdir)
@@ -400,4 +402,4 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    main()
+    main(cwdir = "../")

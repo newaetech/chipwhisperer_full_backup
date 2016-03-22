@@ -398,7 +398,7 @@ class CWCoreAPI(object):
                 print "INFO: Could not import preprocessing module " + f + ": " + str(e)
         # print "Loaded preprocessing modules: " + resp.__str__()
         
-        return resp
+        return _module_reorder(resp)
 
     @staticmethod
     def getTraceFormats(dir):
@@ -413,7 +413,7 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import trace format module " + f + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
-        return resp
+        return _module_reorder(resp)
 
     @staticmethod
     def getScopeModules(dir):

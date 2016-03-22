@@ -11,4 +11,6 @@ if __name__ == '__main__':
         myappid = u'newaetech.chipwhisperer.analyzer.git'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-    main()
+    cwdir = os.path.join('chipwhisperer', 'analyzer')
+
+    main(cwdir)
