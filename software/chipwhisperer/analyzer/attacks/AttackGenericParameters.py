@@ -26,8 +26,7 @@
 #=================================================
 
 
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 
@@ -79,8 +78,7 @@ class AttackGenericParameters(AutoScript):
                         },
                       ]
 
-        self.params = Parameter.create(name='Attack Settings', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Attack Settings', type='group', children=attackParams)
         self.updateBytesVisible()
 
     def setAbsoluteMode(self, mode):
@@ -148,13 +146,12 @@ class AttackGenericParameters(AutoScript):
 
 ############ Trace-Specific
     def setupTraceParam(self):
-        self.traceParams = Parameter.create(name='Trace Setup', type='group', children=[
+        self.traceParams = ConfigParameter.create_extended(self, name='Trace Setup', type='group', children=[
             {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.updateGenericScript},
             {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
             {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'set':self.updateGenericScript},
             ])
-        ExtendedParameter.setupExtended(self.traceParams, self)
 
         self.addFunction("init", "setTraceStart", "0")
         self.addFunction("init", "setTracesPerAttack", "1")
@@ -195,8 +192,7 @@ class AttackGenericParameters(AutoScript):
 
 ############# Points-Specific
     def setupPointsParam(self):
-        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
-        ExtendedParameter.setupExtended(self.pointsParams, self)
+        self.pointsParams = ConfigParameter.create_extended(self, name='Point Setup', type='group', children=self.getPointList())
 
     def getPointList(self):
     #    if self.allPointsSame == False:

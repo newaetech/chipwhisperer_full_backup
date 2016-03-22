@@ -30,12 +30,12 @@ from datetime import datetime
 from functools import partial
 import copy
 import numpy as np
-from pyqtgraph.parametertree import Parameter
+
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils.util import hexstr2list
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)
@@ -82,8 +82,7 @@ class ResultsPlotting(QObject):
                          {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKeyStr, 'readonly':True},
                          {'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.saveresults.setEnabled}
                       ]
-        self.params = Parameter.create(name="General Parameters", type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name="General Parameters", type='group', children=resultsParams)
 
     def paramList(self):
         """Returns list of parameters for parameter tree GUI display"""
@@ -217,8 +216,7 @@ class ResultsPlotData(GraphWidget):
         self.highlightTop = True
 
         resultsParams = self.genericParameters()
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def genericParameters(self):
         return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
@@ -455,8 +453,7 @@ class OutputVsTime(ResultsPlotData):
         #                 {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
         #              ]
         resultsParams = self.genericParameters()
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def getPrange(self, bnum, diffs):
         """Get a list of all points for a given byte number statistic"""
@@ -518,8 +515,7 @@ class PGEVsTrace(ResultsPlotData):
                          {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
                          {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},
                       ]
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def copyPGE(self, dontCopy=False, addPlotMatlab=True):
         """Copy the Partial Guessing Entropy (PGE) to clipboard for use in other programs"""
@@ -651,8 +647,7 @@ class CorrelationVsTrace(ResultsPlotData):
         self.numPerms = permPerSubkey
 
         resultsParams = self.genericParameters()
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def updateData(self):
         pass
@@ -742,8 +737,7 @@ class ResultsTable(QObject):
                          {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
                       ]
 
-        self.params = Parameter.create(name='Ranked Table', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Ranked Table', type='group', children=resultsParams)
 
         self.updateMode = self.findParam('updateMode').value()
 

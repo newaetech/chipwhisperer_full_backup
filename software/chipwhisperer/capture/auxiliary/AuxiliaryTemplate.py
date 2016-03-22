@@ -25,11 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from pyqtgraph.parametertree import Parameter
-
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
-
 
 def getInstance(*args):
     return AuxiliaryTemplate(*args)
@@ -44,8 +41,7 @@ class AuxiliaryTemplate():
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
 
     def paramList(self):
         p = [self.params]

@@ -26,8 +26,7 @@
 #=================================================
 
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from scipy import signal
 
 def getClass():
@@ -51,8 +50,7 @@ class Filter(PreprocessingBase):
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
 
         self.updateScript()
         

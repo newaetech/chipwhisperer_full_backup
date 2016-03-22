@@ -28,10 +28,8 @@
 import time
 from functools import partial
 
-from pyqtgraph.parametertree import Parameter
-
 import ChipWhispererGlitch
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 CODE_READ = 0x80
@@ -59,8 +57,7 @@ class ChipWhispererExtra(object):
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 
-        self.params = Parameter.create(name='CW Extra', type='group', children=self.cwEXTRA.param)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='CW Extra', type='group', children=self.cwEXTRA.param)
 
         self.enableGlitch = True
 

@@ -26,8 +26,7 @@
 #=================================================
 
 import numpy as np
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
 def getClass():
@@ -48,8 +47,7 @@ class AddNoiseRandom(PreprocessingBase):
                          {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
         self._maxNoise = 0
         self.updateScript()
 

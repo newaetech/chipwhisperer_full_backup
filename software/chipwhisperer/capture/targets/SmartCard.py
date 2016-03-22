@@ -32,8 +32,7 @@ import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
 import chipwhisperer.common.api.scan as scan
-from TargetTemplate import TargetTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 try:
@@ -57,8 +56,7 @@ class ReaderTemplate(object):
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)    
             
     def paramList(self):
         p = [self.params]
@@ -106,8 +104,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
         ssParams = [  {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
                       {'name':'ATR', 'key':'atr', 'type':'str'},                              
                       ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         
         self.protocol = 0            
         
@@ -233,8 +230,7 @@ class ReaderSystemSER(ReaderTemplate):
                                 {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
                                 {'name':'ATR', 'key':'atr', 'type':'str'}                                
                                 ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
 
     def updateSerial(self):
         serialnames = scan.scan()
@@ -547,8 +543,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
     def setupParameters(self):
         ssParams = [{'name':'Baud', 'type':'int', 'value':9600, 'set':self.setBaud}                                                            
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)       
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)   
 
     def setBaud(self, brate):
         """Set baud rate of reader"""
@@ -659,8 +654,7 @@ class ReaderChipWhispererSCard(ReaderTemplate):
                     {'name':'Answer To Reset (ATR)', 'key':'atr', 'type':'str', 'value':'', 'readonly':True},
                     {'name':'Reset Card', 'type':'action', 'action':self.reset},                                                        
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)       
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
 
     def reset(self):
         atr = self.scard.reset()
@@ -712,8 +706,7 @@ class ReaderPCSC(ReaderTemplate):
     def setupParameters(self):
         ssParams = [{'name':'Keep-Alive Interval (off=0)', 'type':'int', 'value':2, 'set':self.setKeepalive}                                                            
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)    
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         
         
         self.timeoutTimer = QTimer()  
@@ -796,8 +789,7 @@ class ProtocolTemplate(object):
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
             
     def setSomething(self):
         pass
@@ -837,8 +829,7 @@ class ProtocolSASEBOWCardOS(ProtocolTemplate):
     def setupParameters(self):
         """No parameters"""
         #ssParams = []        
-        #self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        #ExtendedParameter.setupExtended(self.params, self)
+        #self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
         self.params = None
         
     def loadEncryptionKey(self, key):
@@ -868,8 +859,7 @@ class ProtocolDPAv42(ProtocolTemplate):
     def setupParameters(self):
         """No parameters"""
         #ssParams = []        
-        #self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        #ExtendedParameter.setupExtended(self.params, self)
+        #self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
         self.params = None
         
     def loadEncryptionKey(self, key):
@@ -1001,8 +991,7 @@ class SmartCard(TargetTemplate):
                     {'name':'SmartCard Explorer', 'type':'action', 'action':self.scgui.show}
                                                                            
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
 
     def __del__(self):
         self.close()

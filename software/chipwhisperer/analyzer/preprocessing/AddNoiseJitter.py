@@ -27,8 +27,7 @@
 
 import random
 import numpy as np
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 
 def getClass():
@@ -51,8 +50,7 @@ class AddNoiseJitter(PreprocessingBase):
                          {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
         self.updateScript()
 
     def updateScript(self, ignored=None):

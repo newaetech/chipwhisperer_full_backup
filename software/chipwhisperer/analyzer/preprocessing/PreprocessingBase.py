@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
@@ -56,8 +56,7 @@ class PreprocessingBase(AutoScript):
         ssParams = [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
                     # PUT YOUR PARAMETERS HERE
                     {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}]
-        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
 
     def updateScript(self, ignored=None):
         pass

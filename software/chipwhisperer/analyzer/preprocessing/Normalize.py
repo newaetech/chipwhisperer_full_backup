@@ -27,8 +27,7 @@
 
 from PySide.QtGui import *
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import numpy as np
      
 def getClass():
@@ -130,8 +129,7 @@ class Normalize(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.updateNormClass(normmean)
         self.ptStart = 0
         self.ptEnd = 0

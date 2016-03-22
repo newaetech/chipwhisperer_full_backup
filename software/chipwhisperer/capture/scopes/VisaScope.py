@@ -28,11 +28,10 @@
 
 import time
 
-from pyqtgraph.parametertree import Parameter
 from visa import *
 
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 
@@ -68,8 +67,7 @@ class VisaScope(object):
         for t in self.getAdditionalParams():
             scopeParams.append(t)
 
-        self.params = Parameter.create(name='Scope Settings', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Scope Settings', type='group', children=scopeParams)
 
     def getAdditionalParams(self):
         """Override this to define additional parameters"""
@@ -362,8 +360,7 @@ class VisaScopeInterface(ScopeTemplate):
                        {'name':'Example Strings', 'type':'list', 'values':['', 'TCPIP0::192.168.2.100::inst0::INSTR'], 'value':'', 'set':self.exampleString},
                       ]
 
-        self.params = Parameter.create(name='VISA Scope Interface', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='VISA Scope Interface', type='group', children=scopeParams)
         self.setCurrentScope(defscope)
 
     def exampleString(self, newstr):

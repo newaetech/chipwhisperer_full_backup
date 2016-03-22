@@ -28,10 +28,9 @@ import copy
 import re
 
 import numpy as np
-from pyqtgraph.parametertree import Parameter
 
 import TraceContainerConfig
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 def getClass():
     return TraceContainer
@@ -44,9 +43,8 @@ class parameters(object):
                         {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
                         {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
                       ]}]
-        self.params = Parameter.create(name='Trace Configuration', type='group', children=traceParams)
+        self.params = ConfigParameter.create_extended(self, name='Trace Configuration', type='group', children=traceParams)
         self.traceParams = traceParams
-        ExtendedParameter.setupExtended(self.params, self)
         
     def paramList(self):
         return [self.params]

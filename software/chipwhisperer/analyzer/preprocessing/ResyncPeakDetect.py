@@ -27,8 +27,7 @@
 
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 def getClass():
     """"Returns the Main Class in this Module"""
@@ -56,8 +55,7 @@ class ResyncPeakDetect(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
 
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.ccStart = 0
         self.ccEnd = 0
         self.limit = 0

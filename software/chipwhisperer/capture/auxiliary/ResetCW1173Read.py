@@ -25,12 +25,12 @@
 
 import time
 
+#For QTimer
 from PySide.QtCore import *
 from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter
 
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 
@@ -45,8 +45,7 @@ class ResetCW1173Read(AuxiliaryTemplate):
                     {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
                     {'name':'Test Reset', 'type':'action', 'action':self.testReset}
                     ]
-        self.params = Parameter.create(name='Reset AVR/XMEGA via CW-Lite', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Reset AVR/XMEGA via CW-Lite', type='group', children=ssParams)
 
     def captureInit(self):
         pass

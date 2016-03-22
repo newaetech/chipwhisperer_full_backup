@@ -28,12 +28,18 @@ import time
 from functools import partial
 import os.path
 
-from pyqtgraph.parametertree import Parameter
-
 from TargetTemplate import TargetTemplate
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
+try:
+    from PySide.QtCore import QSettings
+except ImportError:
+    class QSettings(object):
+        def value(self, name):
+            return None
+        def setValue(self, name, val):
+            pass
 
 def getInstance(*args):
     return CW305(*args)
@@ -91,8 +97,7 @@ class CW305(TargetTemplate):
                             {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
                             ]},
                     ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)  
         self.oa = None
         
     def fpga_write(self, addr, data):

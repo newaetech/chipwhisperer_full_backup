@@ -25,11 +25,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from pyqtgraph.parametertree import Parameter
-
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 CODE_READ       = 0x80
@@ -207,8 +205,7 @@ class ChipWhispererDigitalPattern(object):
                 ]
             
         self.oa = None
-        self.params = Parameter.create(name='Digital Pattern Trigger Module', type='group', children=paramSS)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Digital Pattern Trigger Module', type='group', children=paramSS)
 
     def reset(self, ignored=None):
         # Reload pattern

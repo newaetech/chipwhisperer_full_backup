@@ -27,10 +27,9 @@ import time
 
 import numpy as np
 from matplotlib.mlab import find
-from pyqtgraph.parametertree import Parameter
 
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 try:
@@ -109,8 +108,7 @@ class FrequencyMeasure(AuxiliaryTemplate):
 
 
         ssParams = [{'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}]
-        self.params = Parameter.create(name='Frequency Measurement', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Frequency Measurement', type='group', children=ssParams)
 
     def setConnection(self, con):
         self.fm = freqMeasure(con)

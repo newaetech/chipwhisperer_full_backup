@@ -26,11 +26,8 @@
 import random
 import time
 
-from pyqtgraph.parametertree import Parameter
-
 import chipwhisperer.common.utils.util as util
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 class AcquisitionController():
     class Signals:
@@ -190,8 +187,7 @@ class AcquisitionController():
 
 class AcqKeyTextPattern_Base(object):
     def __init__(self, target=None):
-        self.params = Parameter.create(name='Key/Text Pattern', type='group', children=self.setupParams())
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Key/Text Pattern', type='group', children=self.setupParams())
         self._target = target
         self._initPattern()
 

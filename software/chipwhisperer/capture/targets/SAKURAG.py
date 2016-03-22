@@ -31,8 +31,7 @@ try:
 except ImportError:
     dicttype = dict
 
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
 import chipwhisperer.capture.ui.qt as openadc_qt
@@ -265,8 +264,7 @@ class SakuraG(TargetTemplate):
                     {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
                     {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
                    ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
         self.oa = None
         self.fixedStart = True
         self.hw = self.findParam('conn').value()

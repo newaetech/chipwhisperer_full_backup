@@ -30,13 +30,8 @@ import sys
 import numpy as np
 from PySide.QtCore import *
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
 
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 sadcfgaddr = 53
 saddataaddr = 54
@@ -76,8 +71,7 @@ class ChipWhispererSAD(QObject):
         self.oldhigh = None
         self.oa = None
         self.sadref = [0]
-        self.params = Parameter.create(name='SAD Trigger Module', type='group', children=paramSS)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='SAD Trigger Module', type='group', children=paramSS)
 
     def dataChanged(self, data, offset):
         """ Called when data in the trace window has changed. Used to update the limits for the point selection dialog. """

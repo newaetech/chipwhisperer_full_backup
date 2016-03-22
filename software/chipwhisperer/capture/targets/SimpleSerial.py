@@ -24,75 +24,77 @@
 #=================================================
 import time
 
-import serial
-from pyqtgraph.parametertree import Parameter
-
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import USART as CWLite_USART
 from chipwhisperer.common.api import scan
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 def getInstance(*args):
     return SimpleSerial(*args)
 
-class SimpleSerial_serial(TargetTemplate):
-    def setupParameters(self):
-        ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
-                    {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-                    {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
-                    ]
-        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
+try:
+    import serial
 
-        ExtendedParameter.setupExtended(self.params, self)
-        self.ser = None
-
-    def paramList(self):
-        return [self.params]
-
-    def updateSerial(self):
-        serialnames = scan.scan()
-        self.findParam('port').setLimits(serialnames)
-        if len(serialnames) > 0:
-            self.findParam('port').setValue(serialnames[0])
-
-    def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
-        pass
-
-    def write(self, string):
-        return self.ser.write(string)
-
-    def read(self, num=0, timeout=100):
-        return self.ser.read(num)
-
-    def flush(self):
-        self.ser.flushInput()
-
-    def flushInput(self):
-        self.ser.flushInput()
-
-    def close(self):
-        if self.ser is not None:
-            self.ser.close()
+    class SimpleSerial_serial(TargetTemplate):
+        def setupParameters(self):
+            ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
+                        {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
+                        {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
+                        ]
+            self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
             self.ser = None
-
-    def con(self):
-        if self.ser == None:
-
-            # Open serial port if not already
-            self.ser = serial.Serial()
-            self.ser.port     = self.findParam('port').value()
-            self.ser.baudrate = self.findParam('baud').value()
-            self.ser.timeout  = 2     # 2 second timeout
-            self.ser.open()
-
+    
+        def paramList(self):
+            return [self.params]
+    
+        def updateSerial(self):
+            serialnames = scan.scan()
+            self.findParam('port').setLimits(serialnames)
+            if len(serialnames) > 0:
+                self.findParam('port').setValue(serialnames[0])
+                
+                
+        def selectionChanged(self):
+            self.updateSerial()
+    
+        def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
+            pass
+    
+        def write(self, string):
+            return self.ser.write(string)
+    
+        def read(self, num=0, timeout=100):
+            return self.ser.read(num)
+    
+        def flush(self):
+            self.ser.flushInput()
+    
+        def flushInput(self):
+            self.ser.flushInput()
+    
+        def close(self):
+            if self.ser is not None:
+                self.ser.close()
+                self.ser = None
+    
+        def con(self):
+            if self.ser == None:
+    
+                # Open serial port if not already
+                self.ser = serial.Serial()
+                self.ser.port     = self.findParam('port').value()
+                self.ser.baudrate = self.findParam('baud').value()
+                self.ser.timeout  = 2     # 2 second timeout
+                self.ser.open()
+                
+except ImportError:
+    SimpleSerial_serial = None
 
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
 
-        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self.cwlite_usart = None
         self.oa = None
 
@@ -137,6 +139,9 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
 
     def setOpenADC(self, oa):
         self.usbdev = oa._usbdev
+        
+    def selectionChanged(self):
+        pass
 
 class SimpleSerial_ChipWhisperer(TargetTemplate):
     CODE_READ       = 0x80
@@ -153,8 +158,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                     {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
                                     'set':self.setParity, 'readonly':True},
                     ]
-        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self._regVer = 0
 
     def systemClk(self):
@@ -319,13 +323,25 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         self.checkVersion()
         self.params.getAllParameters()
         self.connectStatus.setValue(True)
+        
+    def selectionChanged(self):
+        pass
 
 class SimpleSerial(TargetTemplate):
     def setupParameters(self):
-        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(),
-                                                                                "ChipWhisperer":SimpleSerial_ChipWhisperer(),
-                                                                                "ChipWhisperer-Lite":SimpleSerial_ChipWhispererLite()},
-                                                                                'value':"System Serial Port", 'set':self.setConnection},
+        
+        ser_cons = {}
+        
+        if SimpleSerial_serial:
+            ser_cons["System Serial Port"] = SimpleSerial_serial()
+        
+        ser_cons["ChipWhisperer"] = SimpleSerial_ChipWhisperer()
+        ser_cons["ChipWhisperer-Lite"] = SimpleSerial_ChipWhispererLite()
+        
+        defser = ser_cons["ChipWhisperer-Lite"]
+        
+        
+        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defser, 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
                     {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
@@ -338,8 +354,7 @@ class SimpleSerial(TargetTemplate):
                     #                                                                 'DE:AD:BE:EF':':',
                     #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
                     ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.ser = None
         self.keylength = 16
         self.input = ""
@@ -365,6 +380,8 @@ class SimpleSerial(TargetTemplate):
         self.paramListUpdated.emit()
         if self.oa and hasattr(self.ser, "setOpenADC"):
             self.ser.setOpenADC(self.oa)
+        self.ser.selectionChanged()
+
 
     def paramList(self):
         p = [self.params]

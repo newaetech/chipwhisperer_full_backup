@@ -27,8 +27,7 @@
 
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from matplotlib.mlab import find
 import scipy.signal as sig
         
@@ -55,8 +54,7 @@ class ResyncResampleZC(PreprocessingBase):
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
         self.updateScript()
 

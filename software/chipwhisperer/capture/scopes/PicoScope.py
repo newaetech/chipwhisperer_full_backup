@@ -37,10 +37,9 @@ import time
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
-from pyqtgraph.parametertree import Parameter
 
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 
@@ -86,8 +85,7 @@ class PicoScope(object):
         for t in self.getAdditionalParams():
             scopeParams.append(t)
 
-        self.params = Parameter.create(name='Scope Settings', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params, self)  
+        self.params = ConfigParameter.create_extended(self, name='Scope Settings', type='group', children=scopeParams)
             
     def getAdditionalParams(self):
         """Override this to define additional parameters"""
@@ -182,8 +180,7 @@ class PicoScopeInterface(ScopeTemplate):
         scopeParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
                       ]
         
-        self.params = Parameter.create(name='PicoScope Interface', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='PicoScope Interface', type='group', children=scopeParams)
         self.setCurrentScope(defscope)
 
     def passUpdated(self, lst, offset):

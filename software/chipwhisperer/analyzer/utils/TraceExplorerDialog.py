@@ -27,8 +27,8 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter, ParameterTree
+from pyqtgraph.parametertree import ParameterTree
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import PartitionDisplay
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
@@ -73,9 +73,8 @@ class TraceExplorerDialog(QMainWindow, AutoScript):
             example.scriptsUpdated.connect(self.updateScripts)
             example.runScriptFunction.connect(self.runScriptFunction.emit)
 
-        self.paramCommonScripts = Parameter.create(name='Common Scripts', type='group', children=self.commonScriptParams)
+        self.paramCommonScripts = ConfigParameter.create_extended(self, name='Common Scripts', type='group', children=self.commonScriptParams)
         self.params = self.paramCommonScripts
-        ExtendedParameter.setupExtended(self.paramCommonScripts, self)
         self.paramTreeCommonScripts = ParameterTree()
         self.paramTreeCommonScripts.setParameters(self.paramCommonScripts, showTop=False)
 

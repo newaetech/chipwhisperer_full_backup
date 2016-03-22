@@ -29,8 +29,6 @@
 
 from PySide.QtGui import *
 import numpy as np
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
 import scipy
 
 try:
@@ -38,6 +36,7 @@ try:
 except ImportError:
     multivariate_normal = None
 
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
@@ -179,8 +178,7 @@ class ProfilingTemplate(AutoScript):
                             {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
                             ]},
                          ]
-        self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Template Attack', type='group', children=resultsParams)
 
         self.addGroup("generateTemplates")
 

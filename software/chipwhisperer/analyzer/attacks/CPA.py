@@ -28,8 +28,7 @@
 from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
@@ -68,8 +67,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                         },
                       ]
 
-        self.params = Parameter.create(name='Attack', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Attack', type='group', children=attackParams)
 
         self.setAnalysisAlgorithm(CPAProgressive, None, None)
         self.updateBytesVisible()

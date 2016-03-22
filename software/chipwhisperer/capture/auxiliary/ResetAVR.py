@@ -26,10 +26,8 @@
 import time
 from subprocess import call
 
-from pyqtgraph.parametertree import Parameter
-
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 
@@ -44,8 +42,7 @@ class ResetAVR(AuxiliaryTemplate):
                     {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
                     {'name':'Test Reset', 'type':'action', 'action':self.testReset}
                     ]
-        self.params = Parameter.create(name='Reset AVR via STK500', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Reset AVR via STK500', type='group', children=ssParams)
 
     def captureInit(self):
         pass

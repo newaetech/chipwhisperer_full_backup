@@ -23,9 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from pyqtgraph.parametertree import Parameter
-
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 try:
@@ -48,8 +46,7 @@ class TargetTemplate(object):
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)   
                         
     def setSomething(self):
         """Here you would send value to the reader hardware"""

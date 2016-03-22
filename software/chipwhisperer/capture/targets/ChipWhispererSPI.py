@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import hid
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 from TargetTemplate import TargetTemplate
 
@@ -88,15 +88,12 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
 class ChipWhispererSPI(TargetTemplate):
     def setupParameters(self):
         self.hdev = HIDSPI()
         ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
                     ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.keylength = 16
 
     def setKeyLen(self, klen):

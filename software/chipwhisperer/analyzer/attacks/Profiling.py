@@ -30,8 +30,7 @@
 from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
@@ -59,8 +58,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
                       ]
-        self.params = Parameter.create(name='Attack', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Attack', type='group', children=attackParams)
 
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()

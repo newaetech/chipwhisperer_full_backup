@@ -29,10 +29,9 @@ import time
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter
 
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 
@@ -51,8 +50,7 @@ class GPIOToggle(AuxiliaryTemplate):
                     {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
                     {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
                     ]
-        self.params = Parameter.create(name='GPIO Toggle', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='GPIO Toggle', type='group', children=ssParams)
 
         self.pin = None
         self.lastPin = None

@@ -181,8 +181,7 @@ class Partition(QObject):
         # ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
         #            # PUT YOUR PARAMETERS HERE
         #            {'name':'Desc', 'type':'text', 'value':self.descrString}]
-        # self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
-        # ExtendedParameter.setupExtended(self.params, self)
+        # self.params = ConfigParameter.create_extended(self, name='Name of Module', type='group', children=ssParams)
 
         self.setPartMethod(PartitionRandvsFixed)
 

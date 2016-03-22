@@ -29,9 +29,8 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import numpy as np
 import inspect
-from pyqtgraph.parametertree import Parameter
 
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
 
@@ -173,7 +172,7 @@ class CPAProgressive(AutoScript, QObject):
         resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
-        self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
+        self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.model = targetModel

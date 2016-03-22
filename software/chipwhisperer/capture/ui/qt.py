@@ -13,12 +13,12 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 
 import chipwhisperer.capture.api.OpenADCInterface as openadc
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 try:
     import pyqtgraph as pg
     import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+    from pyqtgraph.parametertree import ParameterTree, ParameterItem, registerParameterType
 except ImportError:
     print "*************************************************"
     print "*************************************************"
@@ -139,10 +139,10 @@ class OpenADCQt(QObject):
     def setupParameterTree(self, makeTree=True):
         if self.adc_settings is None:
             self.adc_settings = openadc.OpenADCSettings()
-            self.params = Parameter.create(name='OpenADC', type='group', children=self.adc_settings.parameters(doUpdate=False))
+            self.params = ConfigParameter.create_extended(self, name='OpenADC', type='group', children=self.adc_settings.parameters(doUpdate=False))
             #ExtendedParameter.setupExtended(self.params)
-            ep = ExtendedParameter()
-            ep.setupExtended(self.params, self)
+            #ep = ExtendedParameter()
+            #ep.setupExtended(self.params, self)
 
             #todo: this is a somewhat insane way to cut through the layers
             self.adc_settings.setFindParam(self.findParam)

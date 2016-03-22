@@ -26,9 +26,8 @@
 #=================================================
 
 import zipfile
-from pyqtgraph.parametertree import Parameter
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
@@ -123,8 +122,7 @@ class ChipWhispererGlitch():
 
         # self.prEnabled = False
 
-        self.params = Parameter.create(name='Glitch Module', type='group', children=paramSS)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Glitch Module', type='group', children=paramSS)
 
         if self.prEnabled:
             # Enable glitch width, check what we've got access to

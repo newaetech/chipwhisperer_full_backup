@@ -23,10 +23,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from pyqtgraph.parametertree import Parameter
-
 from TargetTemplate import TargetTemplate
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 try:
     import ftd2xx as ft
@@ -191,8 +189,7 @@ class SaseboGII(TargetTemplate):
     def setupParameters(self):
         """Parameter Definition."""
         ssParams = []
-        self.params = Parameter.create(name='SASEBO-GII Parameters', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='SASEBO-GII Parameters', type='group', children=ssParams)
             
     def setOpenADC(self, oadc):
         pass

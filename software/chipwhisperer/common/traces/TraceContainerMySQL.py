@@ -25,12 +25,10 @@
 import pickle
 
 import numpy as np
-from pyqtgraph.parametertree import Parameter
 
 import TraceContainer
 from TraceContainerConfig import makeAttrDict
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 try:
     import umysql as sql
 except ImportError, e:
@@ -63,8 +61,7 @@ class parameters(object):
 
         self.traceParams = traceParams
 
-        self.params = Parameter.create(name='MySQL Settings', type='group', children=traceParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='MySQL Settings', type='group', children=traceParams)
 
     def setFormat(self, fmt):
         self.fmt = fmt

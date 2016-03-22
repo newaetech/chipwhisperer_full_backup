@@ -34,9 +34,8 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
 
-# CW/OpenADC
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
 
 class TuningParameter(QObject):
 
@@ -60,8 +59,7 @@ class TuningParameter(QObject):
             {'name':'Mode', 'type':'list', 'key':'mode', 'values':["Linear"], 'set':self.updateParams},
             ]
 
-        self.params = Parameter.create(name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
         self.cnt = 0
         self.updateParams()
 
@@ -154,8 +152,7 @@ class GlitchExplorerDialog(QDialog):
                             ]
 
 
-        self.params = Parameter.create(name='Glitch Explorer', type='group', children=self.glitchParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Glitch Explorer', type='group', children=self.glitchParams)
         self.paramTree = ParameterTree()
 
         self.reloadParameters()

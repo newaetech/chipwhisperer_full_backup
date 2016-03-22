@@ -27,7 +27,6 @@
 
 import sys
 
-from pyqtgraph.parametertree import Parameter
 
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
@@ -37,7 +36,7 @@ from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite_Loader, CWCRev2_Loader
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 try:
@@ -93,8 +92,7 @@ class OpenADCInterface_NAEUSBChip():
         else:
             self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
             self.scope = oadcInstance
-            self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
-            ExtendedParameter.setupExtended(self.params, self)
+            self.params = ConfigParameter.create_extended(self, name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
 
         # if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
@@ -174,8 +172,7 @@ class OpenADCInterface_FTDI():
         else:
             self.ser = None
             self.scope = oadcInstance
-            self.params = Parameter.create(name='OpenADC-FTDI', type='group', children=ftdiParams)
-            ExtendedParameter.setupExtended(self.params, self)
+            self.params = ConfigParameter.create_extended(self, name='OpenADC-FTDI', type='group', children=ftdiParams)
 
         #if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
@@ -263,8 +260,7 @@ class OpenADCInterface_Serial():
         else:
             self.ser = None
             self.scope = oadcInstance
-            self.params = Parameter.create(name='OpenADC-Serial', type='group', children=ftdiParams)
-            ExtendedParameter.setupExtended(self.params, self)
+            self.params = ConfigParameter.create_extended(self, name='OpenADC-Serial', type='group', children=ftdiParams)
 
     def setPortName(self, snum):
         self.portName = snum
@@ -346,8 +342,7 @@ class OpenADCInterface_ZTEX():
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
             self.scope = oadcInstance
-            self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
-            ExtendedParameter.setupExtended(self.params, self)
+            self.params = ConfigParameter.create_extended(self, name='OpenADC-ZTEX', type='group', children=ztexParams)
             self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
 
         #if target_chipwhisperer_extra is not None:
@@ -504,8 +499,7 @@ class OpenADCInterface(ScopeTemplate):
                        # {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
 
-        self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='OpenADC Interface', type='group', children=scopeParams)
         self.setCurrentScope(defscope)
 
     #     self.refreshTimer = QTimer()

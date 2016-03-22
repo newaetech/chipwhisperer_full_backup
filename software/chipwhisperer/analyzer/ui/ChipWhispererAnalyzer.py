@@ -31,7 +31,6 @@ from datetime import *
 import os.path
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from functools import partial
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.MainChip import MainChip
 #from ResultsDialog import ResultsDialog
 from chipwhisperer.analyzer.attacks.CPA import CPA
@@ -43,7 +42,8 @@ from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from PySide.QtCore import *
 from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter, ParameterTree
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from functools import partial
@@ -320,8 +320,7 @@ class ChipWhispererAnalyzer(MainChip):
                         ]}
                     ]},
                 ]
-        self.params = Parameter.create(name='Generic Settings', type='group', children=self.cwParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Generic Settings', type='group', children=self.cwParams)
         self.paramTree = ParameterTree()
         self.paramTree.setParameters(self.params, showTop=False)
         self.preprocessingParamTree = ParameterTree()
