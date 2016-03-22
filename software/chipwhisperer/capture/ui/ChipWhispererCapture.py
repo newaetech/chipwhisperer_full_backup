@@ -81,7 +81,7 @@ class ChipWhispererCapture(MainChip):
 
         self.cwAPI.setScope(valid_scopes["None"])
         self.cwAPI.setTarget(valid_targets["None"])
-        self.cwAPI.setTraceClass(valid_traces["ChipWhisperer/Native"])
+        self.cwAPI.setTraceClass(valid_traces["None"])
         self.cwAPI.setAux(valid_aux["None"])
         self.cwAPI.setAcqPattern(valid_acqPatterns['Basic'])
 
@@ -386,8 +386,14 @@ def makeApplication():
 def main():
     app = makeApplication()
 
+    #print os.getcwd()
+    #cwdir = os.path.join('chipwhisperer', 'capture')
+    
+    #TODO - should we prompt user for this location?
+    cwdir = "../"
+
     # Create and show the form
-    window = ChipWhispererCapture(os.path.join('chipwhisperer', 'capture'))
+    window = ChipWhispererCapture(cwdir)
     window.show()
 
     # Run the main Qt loop

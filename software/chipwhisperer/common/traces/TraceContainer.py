@@ -33,6 +33,9 @@ from pyqtgraph.parametertree import Parameter
 import TraceContainerConfig
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
+def getClass():
+    return TraceContainer
+
 
 class parameters(object):
     def __init__(self, openMode=False):

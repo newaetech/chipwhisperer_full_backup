@@ -36,7 +36,7 @@ import chipwhisperer.common.traces.TraceContainerConfig
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
-from chipwhisperer.common.api.TraceManager import TraceManager
+from chipwhisperer.common.api.tracemanager import TraceManager
 
 sys.path.append('../common')
 

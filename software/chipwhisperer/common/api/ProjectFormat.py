@@ -118,7 +118,7 @@ class ProjectFormat(object):
     def createDataDirectory(self):
         # Check if data-directory exists?
         if not os.path.isdir(self.datadirectory):
-            os.mkdir(self.datadirectory)
+            os.makedirs(self.datadirectory)
 
         # Make trace storage directory too
         if not os.path.isdir(os.path.join(self.datadirectory, 'traces')):

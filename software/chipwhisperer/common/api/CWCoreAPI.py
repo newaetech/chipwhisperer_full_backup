@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2016, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Colin O'Flynn"
+__author__ = "NewAE Technology Inc."
 
 import traceback
 import importlib
@@ -30,6 +30,22 @@ from datetime import *
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
+
+try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    dicttype = OrderedDict
+except ImportError:
+    dicttype = dict
+    
+def _module_reorder(resp):
+    #None is first, then alphabetical
+    newresp = dicttype()
+    if 'None' in resp:
+        newresp['None'] = resp['None']
+        del resp['None']
+    newresp.update(sorted(resp.items(), key=lambda t: t[0]))   
+    return newresp
 
 class CWCoreAPI(object):
     __name__ = "ChipWhisperer"
@@ -372,68 +388,72 @@ class CWCoreAPI(object):
 
     @staticmethod
     def getPreprocessingModules(dir, tracerManager, waveformWidget):
-        resp = {}
+        resp = dicttype()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
                 mod = i.getClass()(tracerManager, waveformWidget)
                 resp[mod.getName()] = mod
             except Exception as e:
-                print "Warning: Could not import preprocessing module " + f + ": " + str(e)
+                print "INFO: Could not import preprocessing module " + f + ": " + str(e)
         # print "Loaded preprocessing modules: " + resp.__str__()
+        
         return resp
 
     @staticmethod
     def getTraceFormats(dir):
-        resp = {}
+        resp = dicttype()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.common.traces.' + f)
+                if not hasattr(i, 'getClass'):
+                    continue
                 mod = i.getClass()
                 resp[mod.getName()] = mod
             except Exception as e:
-                print "Warning: Could not import trace format module " + f + ": " + str(e)
+                print "INFO: Could not import trace format module " + f + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
         return resp
 
     @staticmethod
     def getScopeModules(dir):
-        resp = {}
+        resp = dicttype()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.scopes.' + f)
                 mod = i.getInstance()
                 resp[mod.getName()] = mod
             except Exception as e:
-                print "Warning: Could not import scope module " + f + ": " + str(e)
+                print "INFO: Could not import scope module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return resp
+        
+        return _module_reorder(resp)
 
     @staticmethod
     def getTargetModules(dir):
-        resp = {}
+        resp = dicttype()
         for t in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.targets.' + t)
                 mod = i.getInstance()
                 resp[mod.getName()] = mod
             except Exception as e:
-                print "Warning: Could not import target module " + t + ": " + str(e)
+                print "INFO: Could not import target module " + t + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
-        return resp
+        return _module_reorder(resp)
 
     @staticmethod
     def getAuxiliaryModules(dir):
-        resp = {}
+        resp = dicttype()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
                 mod = i.getInstance()
                 resp[mod.getName()] = mod
             except Exception as e:
-                print "Warning: Could not import auxiliary module " + f + ": " + str(e)
+                print "INFO: Could not import auxiliary module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return resp
+        return _module_reorder(resp)
 
     @staticmethod
     def getExampleScripts(dir):
@@ -443,15 +463,15 @@ class CWCoreAPI(object):
                 m = importlib.import_module('chipwhisperer.capture.scripts.' + f)
                 resp.append(m)
             except Exception as e:
-                print "Warning: Could not import example script " + f + ": " + str(e)
+                print "INFO: Could not import example script " + f + ": " + str(e)
         # print "Loaded scripts: " + resp.__str__()
         return resp
 
     @staticmethod
     def getAcqPatternModules():
-        resp = {}
+        resp = dicttype()
         resp["Basic"] = AcqKeyTextPattern_Basic()
         if AcqKeyTextPattern_CRITTest:
             resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
         # print "Loaded Patterns: " + resp.__str__()
-        return resp
+        return _module_reorder(resp)
