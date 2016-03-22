@@ -25,11 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
 
-class ValidationDialog(QDialog):
+class ValidationDialog(qtFixes.QDialog):
 
     def __init__(self, parent=None, onlyOkButton=False):
         super(ValidationDialog, self).__init__(parent)

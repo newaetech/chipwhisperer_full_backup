@@ -150,7 +150,8 @@ class OpenADCInterface_NAEUSBChip():
             self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
         if not hasattr(self, 'cwliteAVR'):
             self.cwliteAVR = AVRProgrammerDialog(mainWindow)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()], # Can' use Config... name with MacOS
+        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show], # Can' use Config... name with MacOS
                 ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired],
                 ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
                 ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
@@ -425,7 +426,8 @@ class OpenADCInterface_ZTEX():
         return p
 
     def guiActions(self, mainWindow):
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()],  # Can' use Config/Setup... name with MacOS
+        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
                ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
 

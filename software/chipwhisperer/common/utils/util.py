@@ -30,26 +30,6 @@ import os.path
 import collections
 import shutil
 
-
-# class Settings(object):
-#     def __init__(self):
-#         self.dictionary = {}
-#
-#     def value(self, key):
-#         if(self.dictionary.has_key(key)):
-#             return self.dictionary[key]
-#         else:
-#             return ""
-#
-#     def setValue(self, key, value):
-#         self.dictionary[key] = value
-#
-#     def clear(self):
-#         self.dictionary.clear()
-#
-#
-# globalSettings = Settings()
-
 def copyFile(source, destination, keepOriginals = True):
     if keepOriginals:
         shutil.copy2(source, destination)

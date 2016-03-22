@@ -24,12 +24,12 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
 import os.path
 import shutil
 import glob
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 import ConfigParser
 import pstats, cProfile #For profiling support (not 100% needed)
 import chipwhisperer.common.traces.TraceContainerConfig
@@ -38,9 +38,8 @@ from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
 from chipwhisperer.common.api.tracemanager import TraceManager
 
-sys.path.append('../common')
 
-class TraceManagerDialog(QDialog, TraceManager):
+class TraceManagerDialog(qtFixes.QDialog, TraceManager):
     """Manages traces associated with some project"""
 
     def __init__(self, parent):

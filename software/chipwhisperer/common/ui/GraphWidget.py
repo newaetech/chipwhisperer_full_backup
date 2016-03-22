@@ -22,13 +22,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 import pyqtgraph as pg
-import chipwhisperer.common.ui.qrc_resources
 
-class ColorDialog(QDialog):
+
+class ColorDialog(qtFixes.QDialog):
     """
     Simple dialog to pick colours for the trace data.
     """

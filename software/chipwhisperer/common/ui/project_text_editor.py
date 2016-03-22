@@ -28,6 +28,8 @@
 import os
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
+
 
 class ProjectEditor(QTextEdit):
 
@@ -78,7 +80,7 @@ class ProjectTextEditor(QWidget):
         pbReloadFile = QPushButton("Reload Editor from Disk")
         pbReloadFile.clicked.connect(self.readFromDisk)
 
-        self.statusTextbox = QLineEdit("")
+        self.statusTextbox = qtFixes.QLineEdit("")
         statusLayout = QHBoxLayout()
         statusLayout.addWidget(QLabel("Status:"))
         statusLayout.addWidget(self.statusTextbox)
@@ -86,7 +88,7 @@ class ProjectTextEditor(QWidget):
         statusLayout.addWidget(pbReloadFile)
         mainLayout.addLayout(statusLayout)
 
-        self.fnameTextBox = QLineEdit("")
+        self.fnameTextBox = qtFixes.QLineEdit("")
         self.fnameTextBox.setReadOnly(True)
         barLayout = QHBoxLayout()
         barLayout.addWidget(QLabel("Filename:"))

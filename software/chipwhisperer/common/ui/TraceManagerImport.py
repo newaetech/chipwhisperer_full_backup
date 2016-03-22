@@ -30,13 +30,15 @@ from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.traces.TraceContainerTypes
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
 try:
     from traces.TraceContainerMySQL import TraceContainerMySQL
 except ImportError:
     TraceContainerMySQL = None
-    
-class TraceManagerImport(QDialog):
+
+
+class TraceManagerImport(qtFixes.QDialog):
     def __init__(self, parent=None):        
         super(TraceManagerImport, self).__init__(parent)
         self.parent = parent

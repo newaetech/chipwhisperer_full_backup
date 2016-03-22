@@ -35,6 +35,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
 class PartitionHDLastRound(object):
 
@@ -122,7 +123,7 @@ class PartitionRandDebug(object):
         return [random.randint(0, self.numRand - 1)]
 
 
-class PartitionDialog(QDialog):
+class PartitionDialog(qtFixes.QDialog):
     """Open dialog to run partioning"""
 
     def __init__(self, parent, partInst):

@@ -33,12 +33,10 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import AVRISP
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_avr
 from chipwhisperer.capture.utils.IntelHex import IntelHex
-from chipwhisperer.common.utils import util
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
 
-# import chipwhisperer.capture.global_mod as global_mod
-
-class AVRProgrammerDialog(QDialog):
+class AVRProgrammerDialog(qtFixes.QDialog):
     def __init__(self, parent=None):
         super(AVRProgrammerDialog, self).__init__(parent)
         # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
@@ -49,7 +47,7 @@ class AVRProgrammerDialog(QDialog):
         layout = QVBoxLayout()
 
         layoutFW = QHBoxLayout()
-        self.flashLocation = QLineEdit()
+        self.flashLocation = qtFixes.QLineEdit()
         flashFileButton = QPushButton("Find")
         flashFileButton.clicked.connect(self.findFlash)
         layoutFW.addWidget(QLabel("FLASH File"))
@@ -81,13 +79,13 @@ class AVRProgrammerDialog(QDialog):
         writeFuseBut = QPushButton("Write Fuses")
         writeFuseBut.clicked.connect(self.writeFuses)
 
-        self.lowfuseLine = QLineEdit("?")
+        self.lowfuseLine = qtFixes.QLineEdit("?")
         self.lowfuseLine.setMaxLength(2)
         self.lowfuseLine.setFixedWidth(25)
-        self.highfuseLine = QLineEdit("?")
+        self.highfuseLine = qtFixes.QLineEdit("?")
         self.highfuseLine.setMaxLength(2)
         self.highfuseLine.setFixedWidth(25)
-        self.extfuseLine = QLineEdit("?")
+        self.extfuseLine = qtFixes.QLineEdit("?")
         self.extfuseLine.setMaxLength(2)
         self.extfuseLine.setFixedWidth(25)
 
