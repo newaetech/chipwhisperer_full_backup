@@ -40,19 +40,13 @@ class DataAnalysis(object):
 
         self.knownkey = knownkey
 
-
     def calculate(self, useAbs=True):
-
         nkeys = len(self.knownkey)
         nhyp = len(self.rawdata[0]["diffsmax"][0])
         ntests = len(self.rawdata)
-
-
         data = {}
 
-
         for tindex in range(0, ntests):
-
             tnum = self.rawdata[tindex]["tracecnt"][0]
 
             print tnum

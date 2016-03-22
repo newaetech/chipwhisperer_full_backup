@@ -202,7 +202,7 @@ class OutLog:
         if self.origStdout:
             self.origStdout.write(m)
 
-class MainChip(QMainWindow):
+class CWMainGUI(QMainWindow):
     """
     This is the base GUI class, used for both the Analyzer and Capture software. It defines a number of
     useful features such as the ability to add docks, setting windows, consoles for logging errors, etc. 
@@ -214,7 +214,7 @@ class MainChip(QMainWindow):
     MaxRecentFiles = 4
 
     def __init__(self, cwCoreAPI, name="Demo", icon="cwicon"):
-        super(MainChip, self).__init__()
+        super(CWMainGUI, self).__init__()
         self.cwAPI = cwCoreAPI
         self.name = name
         sys.excepthook = self.exceptionHook
@@ -340,7 +340,7 @@ class MainChip(QMainWindow):
                 statusTip="Exit the application",
                 triggered=self.close)
 
-        for i in range(MainChip.MaxRecentFiles):
+        for i in range(CWMainGUI.MaxRecentFiles):
             self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
 
     def helpdialog(self):
@@ -392,7 +392,7 @@ class MainChip(QMainWindow):
         self.fileMenu.addAction(self.saveAct)
 #        self.fileMenu.addAction(self.importAct)
         self.fileMenu.addMenu(self.openRec)
-        for i in range(MainChip.MaxRecentFiles):
+        for i in range(CWMainGUI.MaxRecentFiles):
             self.openRec.addAction(self.recentFileActs[i])
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAct)
@@ -405,18 +405,16 @@ class MainChip(QMainWindow):
         self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit Project File', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
             
-        self.toolMenu= self.menuBar().addMenu("&Tools")
-            
+        self.toolMenu = self.menuBar().addMenu("&Tools")
+
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpManualAct = QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog)
         # self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
-        self.helpAboutAct = QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog)
-        self.helpMenu.addAction(self.helpManualAct)
-        # self.helpMenu.addAction(self.helpListAct)
-        self.helpMenu.addAction(self.helpAboutAct)
-            
+        self.helpMenu.addAction(QAction('&Clear All Settings', self, statusTip='Restore All Settings to Default Values', triggered=self.clearAllSettings))
+        self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
+        self.helpMenu.addAction(QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog))
+
     def initUI(self, icon="cwicon"):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
@@ -478,7 +476,7 @@ class MainChip(QMainWindow):
             pass
 
         files.insert(0, self.cwAPI.project().getFilename())
-        numRecentFiles = min(len(files), MainChip.MaxRecentFiles)
+        numRecentFiles = min(len(files), CWMainGUI.MaxRecentFiles)
         files = files[:numRecentFiles]
 
         QSettings().setValue('recentFileList', files)
@@ -496,7 +494,7 @@ class MainChip(QMainWindow):
                 self.recentFileActs[files_no].setVisible(True)
                 files_no = files_no + 1
 
-            for j in range(files_no, MainChip.MaxRecentFiles):
+            for j in range(files_no, CWMainGUI.MaxRecentFiles):
                 self.recentFileActs[j].setVisible(False)
 
     def openRecentFile(self):
@@ -518,7 +516,7 @@ class MainChip(QMainWindow):
         if self.cwAPI.project().isUntitled():
             fd = QFileDialog(self, 'Save New File', './projects/', 'ChipWhisperer Project (*.cwp)')
             fd.setOption(QFileDialog.DontUseNativeDialog)
-            fd.setDefaultSuffix('cwp')
+            fd.setDefaultSuffix('cwp') # Will not append the file extension if using the static file dialog
             fd.setAcceptMode(QFileDialog.AcceptSave)
             fd.setViewMode(QFileDialog.Detail)
             if fd.exec_() != QDialog.Accepted:
@@ -577,11 +575,12 @@ class MainChip(QMainWindow):
         m.run()
         self.updateStatusBar("Finished Script: %s" % mod.name())
 
+
 def main():    
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Window Demo")
-    ex = MainChip(CWCoreAPI(), app.applicationName())
+    ex = CWMainGUI(CWCoreAPI(), app.applicationName())
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

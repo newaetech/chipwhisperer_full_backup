@@ -25,19 +25,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
 from datetime import *
 import os.path
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
-from functools import partial
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.ui.MainChip import MainChip
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 #from ResultsDialog import ResultsDialog
 from chipwhisperer.analyzer.attacks.CPA import CPA
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
-from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
@@ -49,7 +45,8 @@ from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from functools import partial
 from chipwhisperer.analyzer.attacks.CPA import CPA
 
-class ChipWhispererAnalyzer(MainChip):
+
+class CWAnalyzerGUI(CWMainGUI):
     """ Main ChipWhisperer Analyzer GUI Window Class.
 
     You can run this class from another Python script if you wish to, which gives you the ability
@@ -59,11 +56,10 @@ class ChipWhispererAnalyzer(MainChip):
     """
 
     def __init__(self, rootdir):
-        super(ChipWhispererAnalyzer, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+        super(CWAnalyzerGUI, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addTraceDock("Waveform Display")
 
         self.preprocessingListGUI = [None, None, None, None]
-
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self)})
         self.scriptList[0]['filename'] = self.scriptList[0]['widget'].filename
@@ -120,10 +116,6 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadScripts()
         self.cwAPI.getAttack().scriptsUpdated.connect(self.reloadScripts)
         self.cwAPI.getAttack().runScriptFunction.connect(self.runScriptFunction)
-
-    def listModules(self):
-        """Overload this to test imports"""
-        return ListAllModules()
 
     def editorDocks(self):
         """Ensure we have a script editor window for each referenced analyzer script file"""
@@ -535,7 +527,6 @@ class ChipWhispererAnalyzer(MainChip):
 
         # self.reloadScripts()
 
-
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         if defpoint == -1:
             defpoint = points
@@ -556,7 +547,6 @@ class ChipWhispererAnalyzer(MainChip):
             self.findParam('pointrng').setValue((0, defpoint))
 
 
-
 def makeApplication():
     # Create the Qt Application
     app = QApplication(sys.argv)
@@ -568,7 +558,7 @@ def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = ChipWhispererAnalyzer(os.path.join('chipwhisperer', 'analyzer'))
+    window = CWAnalyzerGUI(os.path.join('chipwhisperer', 'analyzer'))
     window.show()
 
     # Run the main Qt loop

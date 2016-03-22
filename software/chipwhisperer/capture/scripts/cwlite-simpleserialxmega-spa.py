@@ -35,7 +35,7 @@
 
 #Setup path
 import sys
-import chipwhisperer.capture.ui.ChipWhispererCapture as cwc
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc
 
 #Check for PySide
 try:
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     #app.setApplicationName("Capture V2 Scripted")
     
     #Get main module
-    capture = cwc.ChipWhispererCapture()
+    capture = cwc.CWCaptureGUI()
     
     #Show window - even if not used
     capture.show()
