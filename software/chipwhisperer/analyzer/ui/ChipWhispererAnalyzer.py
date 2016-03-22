@@ -563,15 +563,15 @@ def makeApplication():
     app.setApplicationName("Analyzer V2")
     return app
 
-def main():
+def main(cwdir):
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = ChipWhispererAnalyzer(os.path.join('chipwhisperer', 'analyzer'))
+    window = ChipWhispererAnalyzer(cwdir)
     window.show()
 
     # Run the main Qt loop
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    main()
+    main(cwdir = "../")
