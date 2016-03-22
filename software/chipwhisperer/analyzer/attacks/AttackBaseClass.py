@@ -25,38 +25,19 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from chipwhisperer.common.utils import util
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-class AttackBaseClass(QObject):
+class AttackBaseClass(object):
     """Generic Attack Interface"""
 
-    #statsUpdated called new data is available
-    statsUpdated = Signal()
-    
-    #attack done called once entire attack is complete, stats are available. Note that the
-    #statsUpdated() signal is not called even though new data is available, which avoids
-    #double-processing data
-    attackDone = Signal()
-    
-    def __init__(self, parent=None, console=None):
-        super(AttackBaseClass, self).__init__(parent)
-        self._parent = parent
-        if console: self.console = console
+    def __init__(self):
+        #statsUpdated called new data is available
+        self.statsUpdated = util.Signal()
 
-    def log(self, sr, level=None):
-        if hasattr(self, 'console') and self.console:
-            self.console.append(sr)
-        else:
-            print sr
-
+        #attack done called once entire attack is complete, stats are available. Note that the
+        #statsUpdated() signal is not called even though new data is available, which avoids
+        #double-processing data
+        self.attackDone = util.Signal()
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
@@ -66,7 +47,7 @@ class AttackBaseClass(QObject):
         self.attackDone.emit()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        self.statusUpdated.emit()
+        self.statsUpdated.emit()
     
     def getStatistics(self):
         return None

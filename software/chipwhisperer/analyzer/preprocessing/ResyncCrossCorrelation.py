@@ -25,40 +25,35 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-
 import numpy as np
 import scipy as sp
         
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncCrossCorrelation
+
+
 class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-
+    name = "Resync: Cross Correlation"
     descrString = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
         self.ccStart = 0

@@ -24,27 +24,20 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
-from PySide.QtCore import *
-from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
-from openadc.ExtendedParameter import ExtendedParameter
 
-class AuxiliaryTemplate(QObject):
-    paramListUpdated = Signal(list)
+def getInstance(*args):
+    return AuxiliaryTemplate(*args)
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(AuxiliaryTemplate, self).__init__(parent)
-        self.console = console
-        self.showScriptParameter = showScriptParameter
+class AuxiliaryTemplate():
+    paramListUpdated = util.Signal()
+
+    def __init__(self):
         self.setupParameters()
         self.prefix = ""
 
@@ -64,12 +57,6 @@ class AuxiliaryTemplate(QObject):
         """Close system if needed"""
         print "Aux: Closing"
         self.close()
-
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
 
     def close(self):
         """Close target, disconnect if required"""
@@ -98,3 +85,6 @@ class AuxiliaryTemplate(QObject):
 
     def setPrefix(self, prefix):
         self.prefix = prefix
+
+    def getName(self):
+        return "None"

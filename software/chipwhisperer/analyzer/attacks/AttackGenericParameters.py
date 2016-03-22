@@ -26,19 +26,10 @@
 #=================================================
 
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import util
 
 def enforceLimits(value, limits):
     if value < limits[0]:
@@ -47,21 +38,13 @@ def enforceLimits(value, limits):
         value = limits[1]
     return value
 
-from functools import partial
 
-class AttackGenericParameters(AutoScript, QObject):
-    paramListUpdated = Signal(list)
-    traceManagerChanged = Signal(object)
-    projectChanged = Signal(QObject)
-    settingsChanged = Signal(QObject)
-    traceLimitsChanged = Signal(int, int)
-
-    def __init__(self, MainWindow=None, console=None, showScriptParameter=None):
-        super(AttackGenericParameters, self).__init__(MainWindow)
+class AttackGenericParameters(AutoScript):
+    def __init__(self):
+        super(AttackGenericParameters, self).__init__()
         self._tmanager = None
         self._project = None
 
-        self.MainWindow = MainWindow
         self.maxSubKeys = 32
         self.useAbs = True
 
@@ -73,14 +56,15 @@ class AttackGenericParameters(AutoScript, QObject):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.console = console
-        #if showScriptParameter is not None:
-        #    self.showScriptParameter = showScriptParameter
+        self.paramListUpdated = util.Signal()
+        self.traceManagerChanged = util.Signal()
+        self.projectChanged = util.Signal()
+        self.settingsChanged = util.Signal()
+        self.traceLimitsChanged = util.Signal()
 
         self.setupTraceParam()
         self.setupPointsParam()
         self.setupParameters()
-
 
     def setupParameters(self):
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
@@ -306,8 +290,6 @@ class AttackGenericParameters(AutoScript, QObject):
             self.startPoint[bnum] = start
             self.endPoint[bnum] = end
         self.paramListUpdated.emit(None)
-
-
 
     # def setAllPointsSame(self, val):
     #    self.allPointsSame = val

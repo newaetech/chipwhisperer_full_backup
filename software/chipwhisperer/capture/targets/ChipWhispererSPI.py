@@ -22,19 +22,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
+import hid
+from pyqtgraph.parametertree import Parameter
 
 from TargetTemplate import TargetTemplate
-import hid
+
+
+def getInstance(*args):
+    return ChipWhispererSPI(*args)
 
 class HIDSPI(object):
     CMDSPI = 0x01
     CMDBOOT = 0xFE
-
 
     def findCWSPI(self, VID=0x03EB, PID=0xBAED):
         print "Detecting HID device..."
@@ -89,17 +88,9 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
-    paramListUpdated = Signal(list)
-
     def setupParameters(self):
         self.hdev = HIDSPI()
         ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
@@ -107,7 +98,6 @@ class ChipWhispererSPI(TargetTemplate):
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.keylength = 16
-
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -123,12 +113,7 @@ class ChipWhispererSPI(TargetTemplate):
 
     def con(self):  
         self.hdev.findCWSPI()
-
-    def dis(self):
-        self.close()
-
-    def close(self):
-        return
+        self.connectStatus.setValue(True)
 
     def init(self):
         return
@@ -172,3 +157,9 @@ class ChipWhispererSPI(TargetTemplate):
             return kin[0:blen]
 
         return kin
+
+    def validateSettings(self):
+        return []
+
+    def getName(self):
+        return "ChipWhisperer SPI"

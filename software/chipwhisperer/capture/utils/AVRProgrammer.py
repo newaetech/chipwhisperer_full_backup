@@ -24,17 +24,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from datetime import datetime
 import os.path
 import time
-
+from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
-
-from chipwhisperer.capture.scopes.ChipWhispererLite import AVRISP
-from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_avr
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import AVRISP
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_avr
 from chipwhisperer.capture.utils.IntelHex import IntelHex
+from chipwhisperer.common.utils import util
+
+
 # import chipwhisperer.capture.global_mod as global_mod
 
 class AVRProgrammerDialog(QDialog):
@@ -144,7 +145,7 @@ class AVRProgrammerDialog(QDialog):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("avr-flash-location"), '*.hex')
         if fname:
             self.flashLocation.setText(fname)
-            QSettings().setValue("avr-flash-location", fname)
+            self.settings.setValue("avr-flash-location", fname)
 
     def readSignature(self, close=True):
         self.avr.find()

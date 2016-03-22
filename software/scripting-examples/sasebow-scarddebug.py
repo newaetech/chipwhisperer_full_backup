@@ -45,8 +45,7 @@ except ImportError:
 
 #Import the ChipWhispererCapture module
 import chipwhisperer.capture.ChipWhispererCapture as cwc
-import chipwhisperer.capture.scopes.ChipWhispererExtra as cwe
-from chipwhisperer.capture.targets.ChipWhispererTargets import CWUniversalSerial
+from chipwhisperer.capture.ChipWhispererTargets import CWUniversalSerial
 
 
 exitWhenDone=False

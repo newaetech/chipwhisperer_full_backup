@@ -22,27 +22,19 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
-from PySide.QtCore import *
-from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter
+
+from TargetTemplate import TargetTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     import ftd2xx as ft
 except OSError:  # also catches WindowsError
     raise ImportError
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
-
-import ChipWhispererTargets
-from TargetTemplate import TargetTemplate
+def getInstance(*args):
+    return SaseboGII(*args)
 
 class SaseboGIIDPAContest(object):
     def init(self):
@@ -196,8 +188,6 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
-    paramListUpdated = Signal(list) 
-     
     def setupParameters(self):
         """Parameter Definition."""
         ssParams = []
@@ -210,9 +200,6 @@ class SaseboGII(TargetTemplate):
     def paramList(self):
         p = [self.params]
         return p
-    
-    def dis(self):
-        self.close()
 
     def con(self):   
         try:
@@ -226,7 +213,8 @@ class SaseboGII(TargetTemplate):
         
         #Init
         self.init()
-        
+        self.connectStatus.setValue(True)
+
         return True
 
     def disconnect(self):
@@ -238,6 +226,9 @@ class SaseboGII(TargetTemplate):
             self.sasebo.read(num)
 
     def write(self, address, MSB, LSB):
+        if self.connectStatus.value()==False:
+            raise Exception("Can't write to the target while disconected. Connect to it first.")
+
         msg = bytearray(5)
 
         msg[0] = 0x01;
@@ -251,7 +242,11 @@ class SaseboGII(TargetTemplate):
         #msg = bytearray(strmsg)
         #print "Write: %x %x %x %x %x"%(msg[0],msg[1],msg[2],msg[3],msg[4])
 
-        self.sasebo.write(strmsg)
+        try:
+            self.sasebo.write(strmsg)
+        except Exception, e:
+            self.dis()
+            raise e
 
     def read(self, address):
         self.flush()
@@ -370,3 +365,9 @@ class SaseboGII(TargetTemplate):
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
+
+    def validateSettings(self):
+        return []
+
+    def getName(self):
+        return "SASEBO GII"

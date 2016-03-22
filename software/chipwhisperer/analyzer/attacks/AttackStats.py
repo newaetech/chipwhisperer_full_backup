@@ -38,7 +38,7 @@ except ImportError:
 from subprocess import Popen, PIPE
 
 import numpy as np
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 try:
     import pyqtgraph as pg

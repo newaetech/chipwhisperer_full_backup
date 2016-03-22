@@ -24,23 +24,23 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from datetime import datetime
 import os.path
 import time
-
-from chipwhisperer.capture.scopes.ChipWhispererLite import XMEGAPDI
-from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_xmega
-from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.capture.utils.IntelHex import IntelHex
+from datetime import datetime
 
 from PySide.QtCore import *
 from PySide.QtGui import *
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import XMEGAPDI
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_xmega
+from chipwhisperer.capture.utils.IntelHex import IntelHex
+from chipwhisperer.common.utils import util
+
 
 class XMEGAProgrammerDialog(QDialog):
     def __init__(self, parent=None):
         super(XMEGAProgrammerDialog, self).__init__(parent)
         # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
-
         self.xmega = XMEGAProgrammer()
 
         self.setWindowTitle("ChipWhisperer-Lite XMEGA Programmer")

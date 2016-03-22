@@ -35,7 +35,7 @@ except ImportError:
 
 import numpy as np
 import scipy as sp
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 try:
@@ -319,7 +319,7 @@ class CPAExperimentalChannelinfo(QObject):
     """
     paramListUpdated = Signal(list)
 
-    def __init__(self, model, showScriptParameter=None, parent=None):
+    def __init__(self, model, parent=None):
         super(CPAExperimentalChannelinfo, self).__init__()
 
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},

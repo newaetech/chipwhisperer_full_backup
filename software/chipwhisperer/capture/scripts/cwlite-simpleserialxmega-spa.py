@@ -35,9 +35,7 @@
 
 #Setup path
 import sys
-
-#Import the ChipWhispererCapture module
-import chipwhisperer.capture.ChipWhispererCapture as cwc
+import chipwhisperer.capture.ui.ChipWhispererCapture as cwc
 
 #Check for PySide
 try:
@@ -46,10 +44,6 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-
-import thread
-
-import scipy.io as sio
 
 exitWhenDone=False
 
@@ -78,8 +72,8 @@ class userScript(QObject):
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer-Lite'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'ChipWhisperer Lite'])
+        cap.setParameter(['Target Connection', 'Connection', 'ChipWhisperer-Lite'])
+        cap.setParameter(['OpenADC Interface', 'Connection', 'ChipWhisperer Lite'])
 
         #Load FW (must be configured in GUI first)
         # cap.FWLoaderGo()

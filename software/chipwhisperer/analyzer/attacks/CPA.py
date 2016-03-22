@@ -25,50 +25,26 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
 from datetime import datetime
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-#from joblib import Parallel, delayed
-
-try:
-    from pyqtgraph.parametertree import Parameter
-    #print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
-
 from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
 from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
 from chipwhisperer.analyzer.attacks.CPAProgressive_CAccel import CPAProgressive_CAccel
-
-#TEMPORARY - NOT FOR REAL USE
-from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
-
 from AttackGenericParameters import AttackGenericParameters
-
+from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo #TEMPORARY - NOT FOR REAL USE
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        self.console=console
-        self.showScriptParameter=showScriptParameter
-        super(CPA, self).__init__(parent)
+    def __init__(self):
+        AttackBaseClass.__init__(self)
+        AttackGenericParameters.__init__(self)
 
     def setupParameters(self):
         cpaalgos = {'Progressive':CPAProgressive,
@@ -119,7 +95,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         return self._targetbytes
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
-        self.attack = analysisAlgorithm(hardwareModel, leakageModel, showScriptParameter=self.showScriptParameter, parent=self)
+        self.attack = analysisAlgorithm(hardwareModel, leakageModel)
 
         try:
             self.attackParams = self.attack.paramList()[0]
@@ -132,7 +108,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
     def updateScript(self, ignored=None):
-
         self.importsAppend("from chipwhisperer.analyzer.attacks.CPA import CPA")
 
         analysAlgoStr = self.findParam('CPA_algo').value().__name__
@@ -159,9 +134,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         else:
             return inpkey
 
-
     def doAttack(self):
-
         start = datetime.now()
 
         self.attack.setTargetBytes(self.targetBytes())
@@ -185,12 +158,11 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             try:
                 self.attack.addTraces(self.trace, (startingTrace, endingTrace), progress, pointRange=self.getPointRange())
             except KeyboardInterrupt:
-                self.log("Attack ABORTED... stopping")
+                print "Attack ABORTED... stopping"
 
         end = datetime.now()
-        self.log("Attack Time: %s" % str(end - start))
+        print "Attack Time: %s" % str(end - start)
         self.attackDone.emit()
-
 
     def statsReady(self):
         self.statsUpdated.emit()

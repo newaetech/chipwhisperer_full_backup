@@ -22,24 +22,23 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
+from PySide.QtCore import *
+from PySide.QtGui import *
+from pyqtgraph.parametertree import Parameter
 
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+
+
+def getInstance(*args):
+    return ResetCW1173Read(*args)
 
 class ResetCW1173Read(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def setupParameters(self):
         ssParams = [{'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
@@ -83,3 +82,6 @@ class ResetCW1173Read(AuxiliaryTemplate):
         while(self._sleeping):
             time.sleep(0.01)
             QApplication.processEvents()
+
+    def getName(self):
+        return "Reset AVR/XMEGA via CW-Lite"

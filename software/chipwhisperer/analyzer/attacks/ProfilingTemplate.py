@@ -26,44 +26,31 @@
 #
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #============================================================================
-import sys
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-import os
+from PySide.QtGui import *
 import numpy as np
-from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
 import scipy
+
 try:
     from scipy.stats import multivariate_normal
 except ImportError:
     multivariate_normal = None
 
-from chipwhisperer.common.autoscript import AutoScript
-from chipwhisperer.common.traces.utils import strListToList
+from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import leakage
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.utils.Partition import Partition
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
+from chipwhisperer.common.utils import util
 
-class TemplateBasic(AutoScript, QObject):
+class TemplateBasic(AutoScript):
     """
     Template using Multivariate Stats (mean + covariance matrix)
     """
-    scriptsUpdated = Signal()
+    scriptsUpdated = util.Signal()
 
     def __init__(self, tmanager=None):
         super(TemplateBasic, self).__init__()
@@ -169,18 +156,16 @@ class TemplateBasic(AutoScript, QObject):
         return self.template
 
 
-class ProfilingTemplate(AutoScript, QObject):
+class ProfilingTemplate(AutoScript):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = Signal(list)
-    notifyUser = Signal(str, str)
+    paramListUpdated = util.Signal()
+    notifyUser = util.Signal()
 
-    def __init__(self, parent, showScriptParameter=None, tmanager=None, console=None):
-        super(ProfilingTemplate, self).__init__()
-        if console:
-            self.console = console
-        self.setParent(parent)
+    def __init__(self, parent):
+        AutoScript.__init__(self)
+        self.parent = parent
         self._tmanager = None
         self._project = None
 
@@ -188,16 +173,13 @@ class ProfilingTemplate(AutoScript, QObject):
                             ]},
                          {'name':'Generate New Template', 'type':'group', 'children':[
                             {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                            {'name':'Trace End', 'key':'tgenstop', 'value':self.parent().traceMax, 'type':'int', 'set':self.updateScript},
+                            {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'set':self.updateScript},
                             {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
                             {'name':'Read POI', 'type':'action', 'action':self.updateScript},
                             {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
                             ]},
                          ]
         self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
-        if showScriptParameter is not None:
-            self.showScriptParameter = showScriptParameter
-            # print self.showScriptParameter
         ExtendedParameter.setupExtended(self.params, self)
 
         self.addGroup("generateTemplates")
@@ -210,10 +192,6 @@ class ProfilingTemplate(AutoScript, QObject):
         # Not needed as setProfileAlgorithm calls this
         # self.updateScript()
 
-    def log(self, s):
-        if hasattr(self, 'console') and self.console:
-            self.console.append(s)
-
     def setProfileAlgorithm(self, algo):
         self.profiling = algo()
         self.profiling.setTraceManager(self._tmanager)
@@ -222,29 +200,30 @@ class ProfilingTemplate(AutoScript, QObject):
         self.updateScript()
 
     def updateScript(self, ignored=None):
+        pass
        # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
-
-        ted = self.parent().parent().utilList[0].exampleScripts[0]
-
-        self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
-        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
-
-        if self.findParam('poimode').value() == 0:
-            self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
-            self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
-            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
-        else:
-            poidata = self.loadPOIs()[-1]
-            self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
-            self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
-            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
-
-        self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
-
-        #Save template data to project
-        self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
-
-        self.scriptsUpdated.emit()
+       #
+       #  ted = self.parent.traceExplorerDialog.exampleScripts[0]
+       #
+       #  self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
+       #  self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+       #
+       #  if self.findParam('poimode').value() == 0:
+       #      self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
+       #      self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
+       #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
+       #  else:
+       #      poidata = self.loadPOIs()[-1]
+       #      self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
+       #      self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
+       #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
+       #
+       #  self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
+       #
+       #  #Save template data to project
+       #  self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
+       #
+       #  self.scriptsUpdated.emit()
 
     def paramList(self):
         return [self.params]
@@ -255,7 +234,6 @@ class ProfilingTemplate(AutoScript, QObject):
         tstart.setLimits((0, traces))
         tend.setValue(traces)
         tend.setLimits((1, traces))
-
 
     def setByteList(self, brange):
         self.brange = brange
@@ -315,7 +293,7 @@ class ProfilingTemplate(AutoScript, QObject):
             if f["partitiontype"] != t["partitiontype"]:
                 print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
 
-            if (strListToList(str(f["poi"])) != t["poi"]).any():
+            if (util.strListToList(str(f["poi"])) != t["poi"]).any():
                 print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
 
         return templates
@@ -327,7 +305,7 @@ class ProfilingTemplate(AutoScript, QObject):
 
         for s in section:
             poistr = str(s["poi"])
-            poieval = strListToList(poistr)
+            poieval = util.strListToList(poistr)
             poiList.append(s.copy())
             poiList[-1]["poi"] = poieval
 
@@ -406,7 +384,6 @@ class ProfilingTemplate(AutoScript, QObject):
 
                     if progressBar.wasCanceled():
                         raise KeyboardInterrupt
-
 
             # Do plotting if required
             if (tnum % tdiff) == 0 and self.sr:

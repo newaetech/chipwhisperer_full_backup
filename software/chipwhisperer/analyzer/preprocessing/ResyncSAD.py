@@ -25,43 +25,39 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
         
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncSAD
+
+
 class ResyncSAD(PreprocessingBase):
     """
     Resync by minimizing the SAD.
     """
+    name = "Resync: Sum-of-Difference"
     descrString = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."
 
     def setupParameters(self):
-
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
+                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
                          # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
                          # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name='Minimize Sum of Absolute Difference', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.ccStart = 0
         self.ccEnd = 1

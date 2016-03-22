@@ -24,19 +24,15 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
-
-import numpy as np
-import TraceContainerConfig
-
 import copy
 import re
 
-#For profiling support (not 100% needed)
-import pstats, cProfile
-
+import numpy as np
 from pyqtgraph.parametertree import Parameter
-from openadc.ExtendedParameter import ExtendedParameter
+
+import TraceContainerConfig
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
 
 class parameters(object):
     def __init__(self, openMode=False):
@@ -122,8 +118,7 @@ class TraceContainer(object):
         self.config.setAttr("numTraces", self.numTraces())
         self.config.setAttr("numPoints", self.numPoints())      
 
-    def addWave(self, trace, dtype=None):                
-
+    def addWave(self, trace, dtype=None):
         try:
             if self.traces is None:
                 if dtype is None:
@@ -216,9 +211,7 @@ class TraceContainer(object):
                             pass
 
                     return self.config.config[sname]
-
         return None
-
 
     def addAuxDataConfig(self, newmodule):
         """Add a new module to the config file, place in aux data"""
@@ -251,7 +244,6 @@ class TraceContainer(object):
         self.config.syncFile(sectionname=newdict["sectionName"])
 
         return newdict
-
 
     def prepareDisk(self):
         """Placeholder called after creating a new file setup, but before actually writing traces to it"""
@@ -288,14 +280,17 @@ class TraceContainer(object):
         """Writer is done, can close/save any files."""               
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
 
-    def validateSettings(self, vw):
+    def validateSettings(self):
         """Check settings, log any messages to special setup window"""
-        pass
+        return []
 
     def isLoaded(self):
         """Returns true if you can use getTrace, getTextin, etc methods"""
         return self._isloaded
 
+    @staticmethod
+    def getName():
+        return "None"
         
         
 if __name__ == "__main__":

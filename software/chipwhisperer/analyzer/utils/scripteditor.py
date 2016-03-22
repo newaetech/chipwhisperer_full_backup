@@ -116,7 +116,6 @@ class MainScriptEditor(QWidget):
         # Save time file was last modified
         self.markClean()
 
-
     def saveSliderPosition(self):
         self._sliderPosition = self.editWindow.verticalScrollBar().value()
 

@@ -28,11 +28,11 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 
 class SerialTerminalDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, cwAPI):
         super(SerialTerminalDialog, self).__init__(parent)
 
         self.parent = parent
-
+        self.cwAPI = cwAPI
         self.mainLayout = QVBoxLayout()
 
         ### Layout for text boxes
@@ -151,8 +151,7 @@ class SerialTerminalDialog(QDialog):
             bavail = self.driver.inWaiting()
         
     def tryCon(self):
-        self.driver = None
-        self.driver = self.parent.target.driver.ser
+        self.driver = self.cwAPI.getTarget().ser
         self.driver.con()
 
         self.textIn.setEnabled(True)

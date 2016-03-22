@@ -26,6 +26,9 @@ import os
 import numpy as np
 import TraceContainer
 
+def getClass():
+    return TraceContainerNative
+
 class TraceContainerNative(TraceContainer.TraceContainer):
 
     def copyTo(self, srcTraces=None):
@@ -122,6 +125,7 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         self.setDirty(False)
 
     def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
+        print "unloading"
         self.saveAllTraces(os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
 
         # Release memory associated with data in case this isn't deleted
@@ -136,3 +140,6 @@ class TraceContainerNative(TraceContainer.TraceContainer):
             self.keylist = None
             self.knownkey = None
 
+    @staticmethod
+    def getName():
+        return "ChipWhisperer/Native"

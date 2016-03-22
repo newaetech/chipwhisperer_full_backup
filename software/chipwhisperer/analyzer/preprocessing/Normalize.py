@@ -25,20 +25,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
+from PySide.QtGui import *
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
 import numpy as np
      
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return Normalize
+
+
 class NormBase(QWidget):
     """Base Class for Normalization"""
     UseF1Coeff = False
@@ -115,24 +112,25 @@ class normlinfunc(NormBase):
         return (t - f1) / f2
 
 
-
 class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
-     
+    name = "Normalize"
+    descrString = "Normalizes by standard deviation"
+
     def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":normmean, "y=(x-mean(x))/stddev(x)":normmeanstd, "y=(x-f1(z))/f2(z)":normlinfunc}, 'set':self.updateNormClass},
                          {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
                          {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
                          {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
      #                    {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name='Normalize Traces', type='group', children=resultsParams)
+        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
         self.updateNormClass(normmean)
         self.ptStart = 0
@@ -241,9 +239,3 @@ class Normalize(PreprocessingBase):
     #        self.findParam('ptrange').setValue((0, points))
     #        self.ptStart = 0
     #        self.ptEnd = points
-
-
-
-
-        
-    

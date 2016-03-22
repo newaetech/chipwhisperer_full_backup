@@ -22,12 +22,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
+
 import time
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
 try:
     # OrderedDict is new in 2.7
     from collections import OrderedDict
@@ -35,21 +31,19 @@ try:
 except ImportError:
     dicttype = dict
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
-import openadc.qt as openadc_qt
+import chipwhisperer.capture.ui.qt as openadc_qt
 
 try:
     import ftd2xx as ft
 except OSError:  # Also catches WindowsError
     raise ImportError
+
+def getInstance(*args):
+    return SakuraG(*args)
 
 class ChipWhispererComm(object):
     CODE_READ = 0x80
@@ -319,7 +313,8 @@ class SakuraG(TargetTemplate):
         if hwok:
             # Init
             self.init()
-        
+        self.connectStatus.setValue(True)
+
         return hwok
 
     def reset(self):
@@ -412,3 +407,9 @@ class SakuraG(TargetTemplate):
 
     def go(self):
         self.hw.write(0x0002, 0x00, 0x01)
+
+    def validateSettings(self):
+        return []
+
+    def getName(self):
+        return "SAKURA G"

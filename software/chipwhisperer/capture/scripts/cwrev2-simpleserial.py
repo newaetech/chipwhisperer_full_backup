@@ -37,7 +37,7 @@
 import sys
 
 #Import the ChipWhispererCapture module
-import chipwhisperer.capture.ChipWhispererCapture as cwc
+import chipwhisperer.capture.ui.ChipWhispererCapture as cwc
 
 #Check for PySide
 try:
@@ -78,7 +78,7 @@ class userScript(QObject):
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer'])
+        cap.setParameter(['Target Connection', 'Connection', 'ChipWhisperer'])
 
         #Load FW (must be configured in GUI first)
         # cap.FWLoaderGo()

@@ -22,26 +22,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
-
 from subprocess import call
 
+from pyqtgraph.parametertree import Parameter
+
+from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+
+
+def getInstance(*args):
+    return ResetAVR(*args)
+
 class ResetAVR(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def setupParameters(self):
         ssParams = [{'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
@@ -58,7 +54,6 @@ class ResetAVR(AuxiliaryTemplate):
         pass
 
     def traceArm(self):
-
         # If using STK500
         stk500 = self.findParam('stk500path').value()
         ret = call([stk500, "-d%s" % self.findParam('part').value(), "-s", "-cUSB"])
@@ -68,16 +63,14 @@ class ResetAVR(AuxiliaryTemplate):
 
         time.sleep(1)
 
-
         # If using AVRDude
         # call(["avrdude"])
 
     def traceDone(self):
         pass
 
-
     def testReset(self):
         self.traceArm()
 
-
-
+    def getName(self):
+        return "Reset AVR via ISP-MKII"

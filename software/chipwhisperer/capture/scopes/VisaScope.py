@@ -26,29 +26,22 @@
 #=================================================
 
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from visa import *
 import time
 
-class VisaScope(QWidget):
-    paramListUpdated = Signal(list)
-    dataUpdated = Signal(list, int)
+from pyqtgraph.parametertree import Parameter
+from visa import *
+
+from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
+
+
+def getInstance(*args):
+    return VisaScopeInterface(*args)
+
+class VisaScope(object):
+    paramListUpdated = util.Signal()
+    dataUpdated = util.Signal()
 
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
@@ -57,12 +50,10 @@ class VisaScope(QWidget):
 
     yScales = {"10 V":10, "5 V":5, "2 V":2, "500 mV":500E-3, "250 mV":250E-3, "100 mV":100E-3, "50 mV":50E-3}
 
-    header =        ":SYSTem:HEADer OFF\n"
+    header = ":SYSTem:HEADer OFF\n"
 
-    def __init__(self,console=None,showScriptParameter=None):
+    def __init__(self):
         super(VisaScope, self).__init__()
-        self.showScriptParameter = showScriptParameter
-        self.console = console
         self.visaInst = None
 
         scopeParams = [
@@ -74,13 +65,8 @@ class VisaScope(QWidget):
                       {'name':'Download Size', 'key':'xdisprange', 'type':'int', 'limits':(0,1E9)},
                   ]
 
-
-
-
         for t in self.getAdditionalParams():
             scopeParams.append(t)
-
-
 
         self.params = Parameter.create(name='Scope Settings', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
@@ -334,24 +320,21 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
 
 
-class VisaScopeInterface(QObject):
-    connectStatus = Signal(bool)
-    dataUpdated = Signal(list, int)
-    paramListUpdated = Signal(list)
+class VisaScopeInterface(ScopeTemplate):
+    dataUpdated = util.Signal()
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        super(VisaScopeInterface, self).__init__(parent)
-        self.parent = parent
+    def __init__(self):
+        super(VisaScopeInterface, self).__init__()
         self.scopetype = None
         self.datapoints = []
 
         try:
-            mso54831d = VisaScopeInterface_MSO54831D(console=console, showScriptParameter=showScriptParameter)
+            mso54831d = VisaScopeInterface_MSO54831D()
         except ImportError:
             mso54831d = None
 
         try:
-            dso1024A = VisaScopeInterface_DSO1024A(console=console, showScriptParameter=showScriptParameter)
+            dso1024A = VisaScopeInterface_DSO1024A()
         except ImportError:
             dso1024A = None
 
@@ -361,12 +344,12 @@ class VisaScopeInterface(QObject):
         scope_cons = {}
 
         if mso54831d:
-            mso54831d.paramListUpdated.connect(self.emitParamListUpdated)
+            mso54831d.paramListUpdated.connect(self.paramListUpdated)
             mso54831d.dataUpdated.connect(self.passUpdated)
             scope_cons["Agilent MSO 54831D"] = mso54831d
 
         if dso1024A:
-            dso1024A.paramListUpdated.connect(self.emitParamListUpdated)
+            dso1024A.paramListUpdated.connect(self.paramListUpdated)
             dso1024A.dataUpdated.connect(self.passUpdated)
             scope_cons["Agilent DSO 1024A"] = dso1024A
 
@@ -381,18 +364,10 @@ class VisaScopeInterface(QObject):
 
         self.params = Parameter.create(name='VISA Scope Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
 
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
-
-    def emitParamListUpdated(self):
-        self.paramListUpdated.emit(self.paramList())
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst
@@ -402,18 +377,18 @@ class VisaScopeInterface(QObject):
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
         if update:
-            self.paramListUpdated.emit(self.paramList())
+            self.paramListUpdated.emit()
 
     def con(self):
         if self.scopetype is not None:
             self.scopetype.con(self.findParam('connStr').value())
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(True)
 
 
     def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()
-            self.connectStatus.emit(True)
+            self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         self.datapoints = l
@@ -422,7 +397,11 @@ class VisaScopeInterface(QObject):
             self.dataUpdated.emit(l, offset)
 
     def arm(self):
-        self.scopetype.arm()
+        try:
+            self.scopetype.arm()
+        except Exception, e:
+            self.dis()
+            raise e
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
@@ -435,8 +414,13 @@ class VisaScopeInterface(QObject):
         if self.scopetype is not None:
             for a in self.scopetype.paramList(): p.append(a)
 
-
         #if self.advancedSettings is not None:
         #    for a in self.advancedSettings.paramList(): p.append(a)
 
         return p
+
+    def validateSettings(self):
+        return []
+
+    def getName(self):
+        return "VISA Scope"

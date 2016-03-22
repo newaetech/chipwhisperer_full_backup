@@ -24,24 +24,19 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
-from PySide.QtCore import *
-from PySide.QtGui import *
 import os.path
-sys.path.append('../.')
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-import tracereader_dpacontestv3
-import tracereader_native
-import re
+import sys
+from PySide.QtGui import *
+from PySide.QtCore import *
+from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_native
 import numpy as np
-from scipy import signal
 from time import gmtime, strftime
-
-#For profiling support (not 100% needed)
-import pstats, cProfile
-
 from TraceContainer import TraceContainer
+
+sys.path.append('../.')
+
+def getClass():
+    return TraceContainerDPAv3
 
 class TraceContainerDPAv3(TraceContainer):
     def __init__(self):
@@ -49,7 +44,7 @@ class TraceContainerDPAv3(TraceContainer):
         self.dir = "."
 
     def setDirectory(self, directory):
-        self.dir = directory;
+        self.dir = directory
 
         os.mkdir(directory)
 
@@ -146,6 +141,10 @@ class TraceContainerDPAv3(TraceContainer):
         self.wavef.close()
         self.keyf.close()
 
+    @staticmethod
+    def getName():
+        return "DPAContestv3"
+
 class ImportDPAv3Dialog(QDialog):   
     def __init__(self, parent=None):
         super(ImportDPAv3Dialog, self).__init__(parent)
@@ -238,7 +237,7 @@ class ImportDPAv3Dialog(QDialog):
         return self.parent.parent.cwp.traceslocation + "/" + "config_" + self.prefixDirLE.text() + ".cfg"
        
     def selectInfo(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("dpav3_last_file"),'info.xml')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("dpav3_last_file"), 'info.xml')
         if fname:
             QSettings().setValue("dpav3_last_file", fname)
             trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()

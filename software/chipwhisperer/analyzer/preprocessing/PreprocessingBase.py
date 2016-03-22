@@ -25,46 +25,42 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import util
 
-class PreprocessingBase(AutoScript, QObject):
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return PreprocessingBase
+
+
+class PreprocessingBase(AutoScript):
     """
     Base Class for all preprocessing modules
     """
-    paramListUpdated = Signal(list)
+    name = "None"
+    descrString = ""
 
-    descrString = "The person who made this module failed to supply a descrString. They made a bad module" \
-                  " and should feel bad."
-
-    def __init__(self, parent, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
+    def __init__(self, traceSource, graphwidget):
+        """Pass None if you don't want graphwidget"""
         super(PreprocessingBase, self).__init__()
-        self.console = console
-        self.showScriptParameter = showScriptParameter
-        self.parent = parent
-        self.NumTrace = 1
+        self.graphwidget = graphwidget
         self.enabled = True
-        self.setTraceSource(parent.manageTraces.iface)
+        self.setTraceSource(traceSource)
         self.setupParameters()
+        self.paramListUpdated = util.Signal()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+        ssParams = [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
                     # PUT YOUR PARAMETERS HERE
-                    {'name':'Desc', 'type':'text', 'value':self.descrString}]
-        self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
+                    {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}]
+        self.params = Parameter.create(name=self.name, type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)
+
+    def updateScript(self, ignored=None):
+        pass
 
     def paramList(self):
         """Returns the parameter list"""
@@ -120,4 +116,5 @@ class PreprocessingBase(AutoScript, QObject):
     def findMappedTrace(self, n):
         return self.trace.findMappedTrace(n)
 
-
+    def getName(self):
+        return self.name

@@ -24,37 +24,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
+
 from collections import OrderedDict
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from chipwhisperer.common.GraphWidget import GraphWidget
-from chipwhisperer.common.utils import hexstr2list
-
 from datetime import datetime
 from functools import partial
 import copy
-
 import numpy as np
-
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    # print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.qrc_resources
+from pyqtgraph.parametertree import Parameter
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
+from chipwhisperer.common.utils.util import hexstr2list
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 class ResultsPlotting(QObject):
     paramListUpdated = Signal(list)
@@ -128,7 +109,6 @@ class ResultsPlotting(QObject):
         self.corrgraph.setAttack(attack)
         self.saveresults.setAttack(attack)
         self.attackSettingsChanged()
-
 
     def attackSettingsChanged(self):
         """Attack settings have changed, so pass required changes to other modules such as plotting"""
@@ -247,7 +227,6 @@ class ResultsPlotData(GraphWidget):
                 # {'name':''}
 
             ]
-
 
     def paramList(self):
         """Returns parameter list"""
@@ -519,6 +498,7 @@ class OutputVsTime(ResultsPlotData):
 
         self.drawData(xrangelist, data, enabledlist)
 
+
 class PGEVsTrace(ResultsPlotData):
     """
     Plots Partial Guessing Entropy (PGE) vs Traces in Attack
@@ -654,6 +634,7 @@ class PGEVsTrace(ResultsPlotData):
         except StopIteration:
             pass
 
+
 class CorrelationVsTrace(ResultsPlotData):
     """
     Plots maximum correlation vs number of traces in attack.
@@ -673,10 +654,8 @@ class CorrelationVsTrace(ResultsPlotData):
         self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
         ExtendedParameter.setupExtended(self.params, self)
 
-
     def updateData(self):
         pass
-
 
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
@@ -872,8 +851,8 @@ class ResultsTable(QObject):
             else:
                 self.table.setColumnHidden(bnum, True)
 
-        self.table.resizeRowsToContents()
         self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
         self.ResultsTable.setVisible(True)
 
 
@@ -886,7 +865,6 @@ class ResultsSave(QObject):
         self._filename = None
         self._enabled = False
         self.dataarray = None
-
 
     def paramList(self):
         """Returns list for parameter tree in settings dock"""

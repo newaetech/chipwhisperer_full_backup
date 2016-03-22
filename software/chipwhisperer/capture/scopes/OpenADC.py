@@ -25,8 +25,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
 import sys
+
+from pyqtgraph.parametertree import Parameter
+
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
+import chipwhisperer.capture.ui.qt as openadc_qt
+from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite_Loader, CWCRev2_Loader
+from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
+from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.utils import util
 
 try:
     # OrderedDict is new in 2.7
@@ -34,28 +46,6 @@ try:
     dicttype = OrderedDict
 except ImportError:
     dicttype = dict
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-try:
-    import openadc.qt as openadc_qt
-except ImportError:
-    print "ERROR: openadc.qt is required for this program"
-    sys.exit()
-
 try:
     import ftd2xx as ft
 except:
@@ -75,33 +65,23 @@ except ImportError:
     serial = None
 
 try:
-    import chipwhisperer.capture.scopes.ChipWhispererLite as CWL
+    import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
 except ImportError:
     CWL = None
 
-import chipwhisperer.capture.scopes.ChipWhispererExtra as ChipWhispererExtra
-import chipwhisperer.capture.scopes.ChipWhispererSAD as ChipWhispererSAD
-import chipwhisperer.capture.scopes.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
-from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.scopes.ChipWhispererFWLoader import FWLoaderConfig
-import chipwhisperer.capture.global_mod as global_mod
+def getInstance(*args):
+    return OpenADCInterface(*args)
 
-class OpenADCInterface_NAEUSBChip(QWidget):
-    paramListUpdated = Signal(list)
+class OpenADCInterface_NAEUSBChip():
+    paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
-        QWidget.__init__(self)
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ztexParams = [
                       # No Parameters for NAEUSBChip
                   ]
 
-        self.console = console
         self.ser = None
         self._toolActs = []
-
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -111,69 +91,35 @@ class OpenADCInterface_NAEUSBChip(QWidget):
                 missingInfo += " usb"
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
-            self.setupTools()
+            self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
-
 
         # if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         # else:
         #    self.cwAdvancedSettings = None
 
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
-
     def __del__(self):
         if self.ser != None:
             self.ser.close()
 
-    def setupTools(self):
-
-        self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console, mode="cwlite")
-
-        self.CWFirmwareConfigAct = QAction('CW Firmware Preferences', self,
-                               statusTip='Configure ChipWhisperer FW Paths',
-                               triggered=self.CWFirmwareConfig.show)
-
-        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-                               statusTip='Download Firmware+FPGA To Hardware',
-                               triggered=self.CWFirmwareConfig.loadRequired)
-        
-        self.cwliteXMEGA = XMEGAProgrammerDialog(global_mod.main_window)
-
-        self.xmegaProgramAct = QAction('CW-Lite XMEGA Programmer', self,
-                                       statusTip='Open XMEGA Programmer (ChipWhisperer-Lite Only)',
-                                       triggered=self.cwliteXMEGA.show)
-
-        self.cwliteAVR = AVRProgrammerDialog(global_mod.main_window)
-
-        self.avrProgramAct = QAction('CW-Lite AVR Programmer', self,
-                                       statusTip='Open AVR Programmer (ChipWhisperer-Lite Only)',
-                                       triggered=self.cwliteAVR.show)
-
-        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct, self.xmegaProgramAct, self.avrProgramAct]
-
     def con(self):
         if self.ser == None:
-
             dev = CWL.CWLiteUSB()
 
             try:
                 dev.con()
             except IOError, e:
                 exctype, value = sys.exc_info()[:2]
-                QMessageBox.warning(None, "ChipWhisperer USB", str(exctype) + str(value))
-                raise IOError(e)
+                raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
 
             if dev is None:
-                QMessageBox.warning(None, "ChipWhisperer USB", "Could not open USB Device")
                 raise IOError("Could not open USB Device")
             
-            self.CWFirmwareConfig.setCWLiteUSBInterface(dev)
-            self.CWFirmwareConfig.loadRequired()
+            self.cwFirmwareConfig.setInterface(dev)
+            self.cwFirmwareConfig.loadRequired()
 
             self.cwliteXMEGA.setUSBInterface(dev)
             self.cwliteAVR.setUSBInterface(dev)
@@ -182,13 +128,10 @@ class OpenADCInterface_NAEUSBChip(QWidget):
 
         try:
             self.scope.con(self.ser)
-            self.console.append("OpenADC Found, Connecting")
+            print("OpenADC Found, Connecting")
         except IOError, e:
             exctype, value = sys.exc_info()[:2]
-            self.console.append("OpenADC Error: %s" % (str(exctype) + str(value)))
-            self.console.append("Did you download FPGA data to ChipWhisperer?")
-            QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
-            raise IOError(e)
+            raise IOError("OpenADC: " + (str(exctype) + str(value)) + " - Did you download FPGA data to ChipWhisperer?")
 
     def dis(self):
         if self.ser != None:
@@ -202,31 +145,32 @@ class OpenADCInterface_NAEUSBChip(QWidget):
             return "None?"
 
     def paramList(self):
-        p = [self.params]
-        return p
+        return [self.params]
 
-    def guiActions(self):
-        return self._toolActs
+    def guiActions(self, mainWindow):
+        if not hasattr(self, 'cwliteXMEGA'):
+            self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
+        if not hasattr(self, 'cwliteAVR'):
+            self.cwliteAVR = AVRProgrammerDialog(mainWindow)
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()], # Can' use Config... name with MacOS
+                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired],
+                ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
+                ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
 
-class OpenADCInterface_FTDI(QWidget):
-    paramListUpdated = Signal(list)
+class OpenADCInterface_FTDI():
+    paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
-        QWidget.__init__(self)
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ftdiParams = [
                       {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
                       {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
                   ]
 
-        self.console = console
         self.serialNumber = None
 
         if (openadc_qt is None) or (ft is None):
             self.ser = None
             raise ImportError("Needed imports for FTDI missing")
-            return
         else:
             self.ser = None
             self.scope = oadcInstance
@@ -237,10 +181,6 @@ class OpenADCInterface_FTDI(QWidget):
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         #else:
         #    self.cwAdvancedSettings = None
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
 
     def setSerialNumber(self, snum):
         self.serialNumber = snum
@@ -266,9 +206,7 @@ class OpenADCInterface_FTDI(QWidget):
             print("OpenADC Found, Connecting")
         except IOError,e:
             exctype, value = sys.exc_info()[:2]
-            print("OpenADC Error: %s"%(str(exctype) + str(value)))
-            QMessageBox.warning(None, "FTDI Port", str(exctype) + str(value))
-            raise IOError(e)
+            raise IOError("OpenADC Error: %s"%(str(exctype) + str(value)) + " - " + e.message)
 
         #if self.cwAdvancedSettings:
         #    self.cwAdvancedSettings.setOpenADC(self.scope)
@@ -277,7 +215,6 @@ class OpenADCInterface_FTDI(QWidget):
         if self.ser != None:
             self.ser.close()
             self.ser = None
-
 
     def serialRefresh(self):
         serialnames = ft.listDevices()
@@ -289,7 +226,7 @@ class OpenADCInterface_FTDI(QWidget):
                 p.setLimits(serialnames)
                 p.setValue(serialnames[0])
 
-        self.paramListUpdated.emit(self.paramList())
+        self.paramListUpdated.emit()
 
     def read(self, N=0, debug=False):
         return bytearray(self.dev.read(N))
@@ -309,25 +246,20 @@ class OpenADCInterface_FTDI(QWidget):
         #    for a in self.cwAdvancedSettings.paramList(): p.append(a)
         return p
 
-class OpenADCInterface_Serial(QWidget):
-    paramListUpdated = Signal(list)
+class OpenADCInterface_Serial():
+    paramListUpdated = util.Signal()
 
-    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
-        QWidget.__init__(self)
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ftdiParams = [
                       {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
                       {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
                   ]
 
-        self.console = console
         self.ser = None
 
         if (openadc_qt is None) or (serial is None):
             self.ser = None
             raise ImportError("Needed imports for serial missing")
-            return
         else:
             self.ser = None
             self.scope = oadcInstance
@@ -345,9 +277,8 @@ class OpenADCInterface_Serial(QWidget):
         if self.ser == None:
             self.ser = serial.Serial()
             self.ser.port     = self.portName
-            self.ser.baudrate = 512000;
+            self.ser.baudrate = 512000
             self.ser.timeout  = 2     # 2 second timeout
-
 
             attempts = 4
             while attempts > 0:
@@ -362,19 +293,15 @@ class OpenADCInterface_Serial(QWidget):
 
         try:
             self.scope.con(self.ser)
-            self.console.append("OpenADC Found, Connecting")
+            print("OpenADC Found, Connecting")
         except IOError,e:
             exctype, value = sys.exc_info()[:2]
-            self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
-            QMessageBox.warning(None, "Serial Port", str(exctype) + str(value))
-            raise IOError(e)
-
+            raise IOError("OpenADC Error (Serial Port): %s"%(str(exctype) + str(value)))
 
     def dis(self):
         if self.ser != None:
             self.ser.close()
             self.ser = None
-
 
     def serialRefresh(self):
         serialnames = scan.scan()
@@ -386,7 +313,7 @@ class OpenADCInterface_Serial(QWidget):
                 p.setLimits(serialnames)
                 p.setValue(serialnames[0])
 
-        self.paramListUpdated.emit(self.paramList())
+        self.paramListUpdated.emit()
 
     def getTextName(self):
         try:
@@ -399,22 +326,16 @@ class OpenADCInterface_Serial(QWidget):
         return p
 
 
+class OpenADCInterface_ZTEX():
+    paramListUpdated = util.Signal()
 
-class OpenADCInterface_ZTEX(QWidget):
-    paramListUpdated = Signal(list)
-
-    def __init__(self, oadcInstance, console=None, showScriptParameter=None):
-        QWidget.__init__(self)
-        self.showScriptParameter = showScriptParameter
-
+    def __init__(self, oadcInstance):
         ztexParams = [
                       #No Parameters for ZTEX
                   ]
 
-        self.console = console
         self.ser = None
         self._toolActs = []
-
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -427,51 +348,31 @@ class OpenADCInterface_ZTEX(QWidget):
             self.scope = oadcInstance
             self.params = Parameter.create(name='OpenADC-ZTEX', type='group', children=ztexParams)
             ExtendedParameter.setupExtended(self.params, self)
-            self.setupTools()
-
+            self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
 
         #if target_chipwhisperer_extra is not None:
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         #else:
         #    self.cwAdvancedSettings = None
 
-    #def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
-
     def __del__(self):
         if self.ser != None:
             self.ser.close()
-
-    def setupTools(self):
-        self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
-
-        self.CWFirmwareConfigAct = QAction('CW Firmware Preferences', self,
-                               statusTip='Configure ChipWhisperer FW Paths',
-                               triggered=self.CWFirmwareConfig.show)
-
-        self.CWFirmwareGoAct = QAction('Download CW Firmware', self,
-                               statusTip='Download Firmware+FPGA To Hardware',
-                               triggered=self.CWFirmwareConfig.loadRequired)
-        
-        self._toolActs = [self.CWFirmwareConfigAct, self.CWFirmwareGoAct]
 
     def con(self):
         if self.ser == None:
 
             # Download firmware if required
-            self.CWFirmwareConfig.loadRequired()
+            self.cwFirmwareConfig.loadRequired()
 
             try:
                 dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
             except IOError, e:
                 exctype, value = sys.exc_info()[:2]
-                QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
-                raise IOError(e)
+                raise IOError("FX2 Port " +  str(exctype) + str(value))
 
             if dev is None:
-                QMessageBox.warning(None, "FX2 Port", "Could not open USB Device")
-                raise IOError("Could not open USB Device")
+                raise IOError("FX2 Port. Could not open USB Device")
 
             dev.set_configuration()
 
@@ -483,19 +384,15 @@ class OpenADCInterface_ZTEX(QWidget):
 
         try:
             self.scope.con(self.ser)
-            self.console.append("OpenADC Found, Connecting")
+            print("OpenADC Found, Connecting")
         except IOError,e:
             exctype, value = sys.exc_info()[:2]
-            self.console.append("OpenADC Error: %s"%(str(exctype) + str(value)))
-            self.console.append("Did you download firmware/FPGA data to ChipWhisperer?")
-            QMessageBox.warning(None, "FX2 Port", str(exctype) + str(value))
-            raise IOError(e)
+            raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
 
     def dis(self):
         if self.ser != None:
             self.ser.close()
             self.ser = None
-
 
     def read(self, N=0, debug=False):
         try:
@@ -532,41 +429,40 @@ class OpenADCInterface_ZTEX(QWidget):
         p = [self.params]
         return p
 
-    def guiActions(self):
-        return self._toolActs
+    def guiActions(self, mainWindow):
+        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', lambda: FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig).show()],  # Can' use Config/Setup... name with MacOS
+               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
-class OpenADCInterface(QObject):
-    connectStatus = Signal(bool)
-    dataUpdated = Signal(list, int)
-    paramListUpdated = Signal(list)
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        super(OpenADCInterface, self).__init__(parent)
-        self.parent = parent
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False, console=console, showScriptParameter=showScriptParameter)
+class OpenADCInterface(ScopeTemplate):
+    dataUpdated = util.Signal()
+
+    def __init__(self):
+        super(OpenADCInterface, self).__init__()
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
         self.datapoints = []
 
         try:
-            cwrev2 = OpenADCInterface_ZTEX(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+            cwrev2 = OpenADCInterface_ZTEX(self.qtadc)
         except ImportError, e:
             print "Failed to enable CWRev2, Error: %s" % str(e)
             cwrev2 = None
 
         try:
-            ftdi = OpenADCInterface_FTDI(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+            ftdi = OpenADCInterface_FTDI(self.qtadc)
         except ImportError:
             ftdi = None
 
         try:
-            cwser = OpenADCInterface_Serial(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+            cwser = OpenADCInterface_Serial(self.qtadc)
         except ImportError:
             cwser = None
 
         try:
-            cwlite = OpenADCInterface_NAEUSBChip(self.qtadc, console=console, showScriptParameter=showScriptParameter)
+            cwlite = OpenADCInterface_NAEUSBChip(self.qtadc)
         except ImportError, e:
             print "Failed to enable CW-Lite, Error: %s" % str(e)
             cwlite = None
@@ -577,26 +473,26 @@ class OpenADCInterface(QObject):
         cw_cons = dicttype()
 
         if cwrev2:
-            cwrev2.paramListUpdated.connect(self.emitParamListUpdated)
+            cwrev2.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["ChipWhisperer Rev2"] = cwrev2
 
         if cwlite:
-            cwlite.paramListUpdated.connect(self.emitParamListUpdated)
+            cwlite.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["ChipWhisperer Lite"] = cwlite
 
         if ftdi:
-            ftdi.paramListUpdated.connect(self.emitParamListUpdated)
+            ftdi.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
 
         if cwser:
-            cwser.paramListUpdated.connect(self.emitParamListUpdated)
+            cwser.paramListUpdated.connect(self.paramListUpdated.emit)
             cw_cons["Serial Port (LX9)"] = cwser
 
         if cw_cons == {}:
             # If no scopes could be found, add a dummy entry so the
             # app can at least start up
             cw_cons["None"] = None
-            QMessageBox.warning(None, "OpenADC", "No supported scope found!")
+            print("OpenADC: No supported scope found!")
 
 
         # Bonus Modules for ChipWhisperer
@@ -604,46 +500,38 @@ class OpenADCInterface(QObject):
         self.advancedSAD = None
         self.digitalPattern = None
 
-        scopeParams = [{'name':'connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
-                       {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
+        scopeParams = [{'name':'Connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
+                       # {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
 
         self.params = Parameter.create(name='OpenADC Interface', type='group', children=scopeParams)
         ExtendedParameter.setupExtended(self.params, self)
-        self.showScriptParameter = showScriptParameter
         self.setCurrentScope(defscope)
 
-        self.refreshTimer = QTimer()
-        self.refreshTimer.timeout.connect(self.dcmTimeout)
-        self.refreshTimer.setInterval(1000)
+    #     self.refreshTimer = QTimer()
+    #     self.refreshTimer.timeout.connect(self.dcmTimeout)
+    #     self.refreshTimer.setInterval(1000)
+    #
+    # def dcmTimeout(self):
+    #     if self.parent:
+    #         self.parent.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
+    #         self.parent.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
 
-    def dcmTimeout(self):
-        if self.parent:
-            self.parent.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
-            self.parent.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
-
-    def setAutorefreshDCM(self, enabled):
-        if enabled:
-            self.refreshTimer.start()
-        else:
-            self.refreshTimer.stop()
-
-    def emitParamListUpdated(self):
-        self.paramListUpdated.emit(self.paramList())
-
-    # def paramTreeChanged(self, param, changes):
-    #    if self.showScriptParameter is not None:
-    #        self.showScriptParameter(param, changes, self.params)
+    # def setAutorefreshDCM(self, enabled):
+    #     if enabled:
+    #         self.refreshTimer.start()
+    #     else:
+    #         self.refreshTimer.stop()
 
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
         if update:
-            self.paramListUpdated.emit(self.paramList())
+            self.paramListUpdated.emit()
 
     def con(self):
         if self.scopetype is not None:
             self.scopetype.con()
-            self.refreshTimer.start()
+            # self.refreshTimer.start()
 
             # TODO Fix this hack
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
@@ -657,28 +545,27 @@ class OpenADCInterface(QObject):
                     cwtype = "cwrev2"
 
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self.showScriptParameter, cwtype=cwtype)
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
-                global_mod.chipwhisperer_extra = self.advancedSettings
+                util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.showScriptParameter, self.parent)
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
                     self.advancedSAD.setOpenADC(self.qtadc)
 
-                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.showScriptParameter, self.parent)
+                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()
                     self.digitalPattern.setOpenADC(self.qtadc)
 
-                self.paramListUpdated.emit(None)
+                self.paramListUpdated.emit()
 
-            self.connectStatus.emit(True)
-
+            self.connectStatus.setValue(True)
 
     def dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()
-            self.refreshTimer.stop()
-            self.connectStatus.emit(True)
+            # self.refreshTimer.stop()
+            self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
         self.datapoints = l
@@ -687,10 +574,18 @@ class OpenADCInterface(QObject):
             self.dataUpdated.emit(l, offset)
 
     def arm(self):
+        if self.connectStatus.value() is False:
+            raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
         # self.advancedSettings.glitch.resetDCMs()
         if self.advancedSettings:
             self.advancedSettings.armPreScope()
-        self.qtadc.arm()
+
+        try:
+            self.qtadc.arm()
+        except Exception, e:
+            self.dis()
+            raise e
+
         if self.advancedSettings:
             self.advancedSettings.armPostScope()
 
@@ -719,10 +614,15 @@ class OpenADCInterface(QObject):
 
         return p
 
-    def guiActions(self):
+    def guiActions(self, mainWindow):
         if self.scopetype and hasattr(self.scopetype, "guiActions"):
-            return self.scopetype.guiActions()
+            return self.scopetype.guiActions(mainWindow)
         else:
             return []
 
+    def validateSettings(self):
+        return []
+
+    def getName(self):
+        return "ChipWhisperer/OpenADC"
 
