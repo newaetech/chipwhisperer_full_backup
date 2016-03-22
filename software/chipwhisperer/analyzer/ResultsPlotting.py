@@ -695,10 +695,8 @@ class ResultsTable(QObject):
         super(ResultsTable, self).__init__()
 
         self.orfunction = None
-
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-
         self.pgeBrush = QBrush(QColor(253,255,205))
         pgehdr = QTableWidgetItem("PGE")
         self.table.setVerticalHeaderItem(0,pgehdr)

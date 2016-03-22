@@ -27,6 +27,7 @@
 
 from datetime import *
 import os.path
+import sys
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
@@ -59,7 +60,6 @@ class CWAnalyzerGUI(CWMainGUI):
         super(CWAnalyzerGUI, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addTraceDock("Waveform Display")
 
-        self.preprocessingListGUI = [None, None, None, None]
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self)})
         self.scriptList[0]['filename'] = self.scriptList[0]['widget'].filename
@@ -80,6 +80,8 @@ class CWAnalyzerGUI(CWMainGUI):
         self.utilList = [self.traceExplorerDialog]
         self.valid_atacks = {'CPA':CPA(), 'Profiling':Profiling(self.traceExplorerDialog)}
         self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.cwAPI.getTraceManager(), self.waveformDock.widget())
+        self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
+                                     self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -294,7 +296,7 @@ class CWAnalyzerGUI(CWMainGUI):
                     ]},
 
                 {'name':'Pre-Processing', 'type':'group', 'children':
-                    [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
+                    [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
 
                 {'name':'Attack', 'type':'group', 'children':[
                     {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':'CPA', 'set':self.cwAPI.setAttack},
@@ -324,6 +326,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.results.paramListUpdated.connect(self.reloadParamListResults)
 
         self.reloadParamListResults()
+        self.reloadParamListPreprocessing()
 
     def setPreprocessing(self, num, module):
         """Insert the preprocessing module selected from the GUI into the list of active modules.

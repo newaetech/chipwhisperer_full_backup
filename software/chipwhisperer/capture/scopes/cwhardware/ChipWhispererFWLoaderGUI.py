@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAM3LoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from PySide.QtGui import *
