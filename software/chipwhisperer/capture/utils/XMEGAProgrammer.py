@@ -34,10 +34,10 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import XMEGAPDI
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_xmega
 from chipwhisperer.capture.utils.IntelHex import IntelHex
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 
 
-class XMEGAProgrammerDialog(qtFixes.QDialog):
+class XMEGAProgrammerDialog(QtFixes.QDialog):
     def __init__(self, parent=None):
         super(XMEGAProgrammerDialog, self).__init__(parent)
         # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
@@ -47,7 +47,7 @@ class XMEGAProgrammerDialog(qtFixes.QDialog):
         layout = QVBoxLayout()
 
         layoutFW = QHBoxLayout()
-        self.flashLocation = qtFixes.QLineEdit()
+        self.flashLocation = QtFixes.QLineEdit()
         flashFileButton = QPushButton("Find")
         flashFileButton.clicked.connect(self.findFlash)
         layoutFW.addWidget(QLabel("FLASH File"))

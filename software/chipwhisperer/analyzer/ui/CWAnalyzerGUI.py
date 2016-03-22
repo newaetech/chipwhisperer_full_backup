@@ -25,18 +25,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
 from datetime import *
 import os.path
+import sys
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
-from functools import partial
-from chipwhisperer.common.ui.MainChip import MainChip
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 #from ResultsDialog import ResultsDialog
 from chipwhisperer.analyzer.attacks.CPA import CPA
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
-from chipwhisperer.analyzer.ListAllModules import ListAllModules
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
@@ -49,7 +46,8 @@ from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from functools import partial
 from chipwhisperer.analyzer.attacks.CPA import CPA
 
-class ChipWhispererAnalyzer(MainChip):
+
+class CWAnalyzerGUI(CWMainGUI):
     """ Main ChipWhisperer Analyzer GUI Window Class.
 
     You can run this class from another Python script if you wish to, which gives you the ability
@@ -59,10 +57,8 @@ class ChipWhispererAnalyzer(MainChip):
     """
 
     def __init__(self, rootdir):
-        super(ChipWhispererAnalyzer, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+        super(CWAnalyzerGUI, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addTraceDock("Waveform Display")
-
-        self.preprocessingListGUI = [None, None, None, None]
 
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self)})
@@ -84,6 +80,8 @@ class ChipWhispererAnalyzer(MainChip):
         self.utilList = [self.traceExplorerDialog]
         self.valid_atacks = {'CPA':CPA(), 'Profiling':Profiling(self.traceExplorerDialog)}
         self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.cwAPI.getTraceManager(), self.waveformDock.widget())
+        self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
+                                     self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -120,10 +118,6 @@ class ChipWhispererAnalyzer(MainChip):
         self.reloadScripts()
         self.cwAPI.getAttack().scriptsUpdated.connect(self.reloadScripts)
         self.cwAPI.getAttack().runScriptFunction.connect(self.runScriptFunction)
-
-    def listModules(self):
-        """Overload this to test imports"""
-        return ListAllModules()
 
     def editorDocks(self):
         """Ensure we have a script editor window for each referenced analyzer script file"""
@@ -302,7 +296,7 @@ class ChipWhispererAnalyzer(MainChip):
                     ]},
 
                 {'name':'Pre-Processing', 'type':'group', 'children':
-                    [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
+                    [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
 
                 {'name':'Attack', 'type':'group', 'children':[
                     {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':'CPA', 'set':self.cwAPI.setAttack},
@@ -331,6 +325,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.results.paramListUpdated.connect(self.reloadParamListResults)
 
         self.reloadParamListResults()
+        self.reloadParamListPreprocessing()
 
     def setPreprocessing(self, num, module):
         """Insert the preprocessing module selected from the GUI into the list of active modules.
@@ -534,7 +529,6 @@ class ChipWhispererAnalyzer(MainChip):
 
         # self.reloadScripts()
 
-
     def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
         if defpoint == -1:
             defpoint = points
@@ -553,7 +547,6 @@ class ChipWhispererAnalyzer(MainChip):
         if points:
             self.findParam('pointrng').setLimits((0, points))
             self.findParam('pointrng').setValue((0, defpoint))
-
 
 
 def makeApplication():

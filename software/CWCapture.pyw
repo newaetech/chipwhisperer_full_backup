@@ -2,7 +2,7 @@
 import ctypes
 import os
 
-from chipwhisperer.capture.ui.ChipWhispererCapture import main
+from chipwhisperer.capture.ui.CWCaptureGUI import main
 
 if __name__ == '__main__':
 

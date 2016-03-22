@@ -10,7 +10,6 @@ embedded in your GUI.
 
 """
 
-import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
 
@@ -71,6 +70,7 @@ class _QPythonConsoleUI(object):
         self.prompt.setText(">>> ")
         layout2.addWidget(self.prompt)
         self.input = QtGui.QLineEdit(parent)
+        self.input.setAttribute(QtCore.Qt.WA_MacShowFocusRect, False)
         layout2.addWidget(self.input)
         layout.addLayout(layout2)
 

@@ -39,5 +39,5 @@ class QLineEdit(qtg.QLineEdit):
 class QDialog(qtg.QDialog):
     """Makes it easy to show and raise the window at the same time"""
     def show(self, *args, **kwargs):
-        super(QDialog, self).show( *args, **kwargs)
+        super(QDialog, self).show(*args, **kwargs)
         self.raise_()

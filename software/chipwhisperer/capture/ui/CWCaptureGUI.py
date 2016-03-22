@@ -33,16 +33,14 @@ from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMon
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.ui.MainChip import MainChip
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
-from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 
-__author__ = "Colin O'Flynn"
 
-class ChipWhispererCapture(MainChip):
+class CWCaptureGUI(CWMainGUI):
     def __init__(self, rootdir):
-        super(ChipWhispererCapture, self).__init__(CWCoreAPI(rootdir), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
+        super(CWCaptureGUI, self).__init__(CWCoreAPI(rootdir), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
         self.esm = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)

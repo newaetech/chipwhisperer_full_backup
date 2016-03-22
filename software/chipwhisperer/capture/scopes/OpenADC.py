@@ -26,14 +26,13 @@
 #=================================================
 
 import sys
-
-
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.ui.qt as openadc_qt
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig, FWLoaderConfigGUI, CWLite_Loader, CWCRev2_Loader
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.common.api.config_parameter import ConfigParameter
@@ -68,8 +67,10 @@ try:
 except ImportError:
     CWL = None
 
+
 def getInstance(*args):
     return OpenADCInterface(*args)
+
 
 class OpenADCInterface_NAEUSBChip():
     paramListUpdated = util.Signal()

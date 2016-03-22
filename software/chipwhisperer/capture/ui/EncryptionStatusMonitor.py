@@ -24,18 +24,18 @@
 #=================================================
 
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 
 
-class EncryptionStatusMonitor(qtFixes.QDialog):
+class EncryptionStatusMonitor(QtFixes.QDialog):
     def __init__(self, parent):
         super(EncryptionStatusMonitor, self).__init__(parent)
 
         self.dLayout = QVBoxLayout()
 
         self.textResultsLayout = QGridLayout()
-        self.textInLine = qtFixes.QLineEdit()
-        self.textOutLine = qtFixes.QLineEdit()
+        self.textInLine = QtFixes.QLineEdit()
+        self.textOutLine = QtFixes.QLineEdit()
         self.textResultsLayout.addWidget(QLabel("Text In "), 0, 0)
         self.textInLine.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textInLine, 0, 1)
@@ -43,12 +43,12 @@ class EncryptionStatusMonitor(qtFixes.QDialog):
         self.textOutLine.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textOutLine, 1, 1)
         self.textResultsLayout.addWidget(QLabel("Expected"), 2, 0)
-        self.textOutExpected = qtFixes.QLineEdit()
+        self.textOutExpected = QtFixes.QLineEdit()
         self.textOutExpected.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
 
         self.textResultsLayout.addWidget(QLabel("Enc. Key"), 3, 0)
-        self.textEncKey = qtFixes.QLineEdit()
+        self.textEncKey = QtFixes.QLineEdit()
         self.textEncKey.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textEncKey, 3, 1)
 

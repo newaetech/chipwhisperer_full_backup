@@ -27,11 +27,11 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 
 imagePath = '../common/images/'
 
-class AttackProgressDialog(qtFixes.QDialog):
+class AttackProgressDialog(QtFixes.QDialog):
     def __init__(self, parent=None):
         super(AttackProgressDialog, self).__init__(parent)
         self.min = 0

@@ -29,7 +29,7 @@ import shutil
 import glob
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 import ConfigParser
 import pstats, cProfile #For profiling support (not 100% needed)
 import chipwhisperer.common.traces.TraceContainerConfig
@@ -39,7 +39,7 @@ from TraceManagerImport import TraceManagerImport
 from chipwhisperer.common.api.tracemanager import TraceManager
 
 
-class TraceManagerDialog(qtFixes.QDialog, TraceManager):
+class TraceManagerDialog(QtFixes.QDialog, TraceManager):
     """Manages traces associated with some project"""
 
     def __init__(self, parent):

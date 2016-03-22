@@ -30,7 +30,7 @@ import numpy as np
 import copy
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 import pyqtgraph as pg
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.api.autoscript import AutoScript
@@ -232,7 +232,7 @@ class POI(QWidget):
             self.poiArray.append(maxarray)
 
             self.mainTable.setItem(bnum, 0, QTableWidgetItem("%d" % bnum))
-            self.mainTable.setCellWidget(bnum, 1, qtFixes.QLineEdit(str(maxarray)))
+            self.mainTable.setCellWidget(bnum, 1, QtFixes.QLineEdit(str(maxarray)))
         return {"poi":self.poiArray}
 
 

@@ -7,7 +7,7 @@
 # file which should have came with this code.
 
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 from PySide import QtWebKit
 from docutils import core, io
 import sys
@@ -72,7 +72,7 @@ def html_body(input_string, source_path=None, destination_path=None,
     return fragment
 
 
-class HelpBrowser(qtFixes.QDialog):
+class HelpBrowser(QtFixes.QDialog):
 
     def __init__(self, parent=None):
         super(HelpBrowser, self).__init__(parent)
