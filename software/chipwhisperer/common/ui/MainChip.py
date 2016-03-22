@@ -38,6 +38,7 @@ from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
 from chipwhisperer.common.utils import util
+import chipwhisperer.common.ui.qrc_resources
 
 #We always import PySide first, to force usage of PySide over PyQt
 try:
@@ -434,7 +435,6 @@ class MainChip(QMainWindow):
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
         self.setBaseSize(800,600)
-        self.show()
         
     def addExampleScripts(self, scripts):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')

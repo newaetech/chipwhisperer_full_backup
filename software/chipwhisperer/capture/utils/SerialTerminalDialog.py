@@ -26,8 +26,10 @@
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
-class SerialTerminalDialog(QDialog):
+
+class SerialTerminalDialog(qtFixes.QDialog):
     def __init__(self, parent, cwAPI):
         super(SerialTerminalDialog, self).__init__(parent)
 
@@ -39,7 +41,7 @@ class SerialTerminalDialog(QDialog):
         self.textLayouts = QGridLayout()
 
         self.textOut = QTextEdit()
-        self.textIn = QLineEdit()
+        self.textIn = qtFixes.QLineEdit()
         self.textIn.returnPressed.connect(self.returnPressedIn)
 
         self.textInSend = QPushButton("Send")

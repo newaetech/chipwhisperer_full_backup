@@ -22,18 +22,20 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from PySide.QtCore import *
-from PySide.QtGui import *
 
-class EncryptionStatusMonitor(QDialog):
+from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
+
+
+class EncryptionStatusMonitor(qtFixes.QDialog):
     def __init__(self, parent):
         super(EncryptionStatusMonitor, self).__init__(parent)
 
         self.dLayout = QVBoxLayout()
 
         self.textResultsLayout = QGridLayout()
-        self.textInLine = QLineEdit()
-        self.textOutLine = QLineEdit()
+        self.textInLine = qtFixes.QLineEdit()
+        self.textOutLine = qtFixes.QLineEdit()
         self.textResultsLayout.addWidget(QLabel("Text In "), 0, 0)
         self.textInLine.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textInLine, 0, 1)
@@ -41,12 +43,12 @@ class EncryptionStatusMonitor(QDialog):
         self.textOutLine.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textOutLine, 1, 1)
         self.textResultsLayout.addWidget(QLabel("Expected"), 2, 0)
-        self.textOutExpected = QLineEdit()
+        self.textOutExpected = qtFixes.QLineEdit()
         self.textOutExpected.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textOutExpected, 2, 1)
 
         self.textResultsLayout.addWidget(QLabel("Enc. Key"), 3, 0)
-        self.textEncKey = QLineEdit()
+        self.textEncKey = qtFixes.QLineEdit()
         self.textEncKey.setReadOnly(True)
         self.textResultsLayout.addWidget(self.textEncKey, 3, 1)
 

@@ -30,6 +30,7 @@ import numpy as np
 import copy
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 import pyqtgraph as pg
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.api.autoscript import AutoScript
@@ -79,6 +80,7 @@ class DifferenceModeTTest(QObject):
             pbDialog.setValue(numkeys * numparts)
 
         return SADSeg
+
 
 class DifferenceModeSAD(QObject):
     sectionName = "Difference of Partitions using SAD"
@@ -149,6 +151,7 @@ class DifferenceMode(QObject):
             return None
         return trace.loadAuxData(cfg["filename"])
 
+
 class POI(QWidget):
     def __init__(self, parent):
         super(POI, self).__init__()
@@ -206,7 +209,6 @@ class POI(QWidget):
         if startPoint == endPoint:
             endPoint += 1
 
-
         for bnum in range(0, len(self.diffs)):
 
             maxarray = []
@@ -230,7 +232,7 @@ class POI(QWidget):
             self.poiArray.append(maxarray)
 
             self.mainTable.setItem(bnum, 0, QTableWidgetItem("%d" % bnum))
-            self.mainTable.setCellWidget(bnum, 1, QLineEdit(str(maxarray)))
+            self.mainTable.setCellWidget(bnum, 1, qtFixes.QLineEdit(str(maxarray)))
         return {"poi":self.poiArray}
 
 

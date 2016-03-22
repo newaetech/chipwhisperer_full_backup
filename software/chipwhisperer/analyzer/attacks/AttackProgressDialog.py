@@ -25,18 +25,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+from PySide.QtCore import *
+from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
 imagePath = '../common/images/'
 
-class AttackProgressDialog(QDialog):
+class AttackProgressDialog(qtFixes.QDialog):
     def __init__(self, parent=None):
         super(AttackProgressDialog, self).__init__(parent)
         self.min = 0

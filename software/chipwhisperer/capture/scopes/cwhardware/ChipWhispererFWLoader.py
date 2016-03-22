@@ -33,7 +33,6 @@ from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFi
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAM3LoaderConfig
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
-
 class CWCRev2_Loader(object):
     def __init__(self):
         self.name = "cwcrev2"
@@ -104,6 +103,8 @@ class FWLoaderConfig(object):
         self.loader.loadRequired(self.loadFPGA, forceFirmware)
 
     def loadFirmware(self):
+        if self.loader.driver is None: raise Exception("Driver not loaded. Connect hardware before loading.")
+
         if hasattr(self.loader, 'loadFirmware'):
             self.loader.loadFirmware(self.loader.fwFLoc)
             print "Firmware loaded"
@@ -113,6 +114,8 @@ class FWLoaderConfig(object):
 
     def loadFPGA(self):
         """Load the FPGA bitstream"""
+        if self.loader.driver is None: raise Exception("Driver not loaded. Connect hardware before loading.")
+
         if self.useFPGAZip:
             zfile = zipfile.ZipFile(self.loader.bsZipLoc, "r")
             self.loader.loadFPGA(zfile.open(self.loader.bsZipLoc_filename))
@@ -130,13 +133,13 @@ class FWLoaderConfig(object):
 
 from PySide.QtGui import *
 from PySide.QtCore import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
-class FWLoaderConfigGUI(QDialog):
+class FWLoaderConfigGUI(qtFixes.QDialog):
     def __init__(self, parent, fwLoaderConfig):
         super(FWLoaderConfigGUI, self).__init__(parent)
         self.fwLoaderConfig = fwLoaderConfig
         self.setWindowTitle("ChipWhisperer (%s) Firmware Loader Configuration " % self.fwLoaderConfig.loader.name)
-
         layout = QVBoxLayout()
 
         gbFPGAMode = QGroupBox("FPGA Mode Selection")
@@ -154,7 +157,7 @@ class FWLoaderConfigGUI(QDialog):
         radioDebug.setChecked(not self.fwLoaderConfig.useFPGAZip)
 
         layoutFW = QHBoxLayout()
-        self.firmwareLocation = QLineEdit()
+        self.firmwareLocation = qtFixes.QLineEdit()
         firmwareButton = QPushButton("Find")
         firmwareButton.clicked.connect(self.findFirmware)
         layoutFW.addWidget(QLabel("USB Firmware"))
@@ -165,7 +168,7 @@ class FWLoaderConfigGUI(QDialog):
             layout.addLayout(layoutFW)
 
         layoutBitZip = QHBoxLayout()
-        self.bitZipLocation = QLineEdit()
+        self.bitZipLocation = qtFixes.QLineEdit()
         bitZipButton = QPushButton("Find")
         bitZipButton.clicked.connect(self.findZipBitstream)
         layoutBitZip.addWidget(QLabel("FPGA .zip (Release)"))
@@ -174,7 +177,7 @@ class FWLoaderConfigGUI(QDialog):
         layout.addLayout(layoutBitZip)
 
         layoutBit = QHBoxLayout()
-        self.bitDebugLocation = QLineEdit()
+        self.bitDebugLocation = qtFixes.QLineEdit()
         bitButton = QPushButton("Find")
         bitButton.clicked.connect(self.findDebugBitstream)
         layoutBit.addWidget(QLabel("FPGA .bit file (DEBUG ONLY)"))
@@ -203,10 +206,13 @@ class FWLoaderConfigGUI(QDialog):
         if isinstance(self.fwLoaderConfig.loader, CWLite_Loader):
             layout.addWidget(gbSAMFW)
 
-        self.setFPGAModeRelease(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name) == "zip")
-        self.bitZipLocation.setText(QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name) if QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name)!="" else self.fwLoaderConfig.loader.bsZipLoc)
-        self.bitDebugLocation.setText(QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name) if QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name)!="" else self.fwLoaderConfig.loader.bsLoc)
-        self.firmwareLocation.setText(QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name) if QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name)!="" else self.fwLoaderConfig.loader.fwFLoc)
+        self.setFPGAModeRelease(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name) != "debug")
+        self.fwLoaderConfig.loader.bsZipLoc = QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader.bsZipLoc)
+        self.bitZipLocation.setText(self.fwLoaderConfig.loader.bsZipLoc)
+        self.fwLoaderConfig.loader.bsLoc = QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader.bsLoc)
+        self.bitDebugLocation.setText(self.fwLoaderConfig.loader.bsLoc)
+        self.fwLoaderConfig.loader.fwFLoc = QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader.fwFLoc)
+        self.firmwareLocation.setText(self.fwLoaderConfig.loader.fwFLoc)
         self.setLayout(layout)
 
     def readFirmwareVersion(self):
@@ -216,7 +222,7 @@ class FWLoaderConfigGUI(QDialog):
             self.samfwVersionLatest.setText("Latest FW Version: %d.%d" % (self.fwLoaderConfig.loader.driver.fwversion_latest[0], self.fwLoaderConfig.loader.driver.fwversion_latest[1]))
 
     def loadFPGA(self):
-        self.fwLoaderConfig.loadFPGA(self.bitZipLocation.isEnabled())
+        self.fwLoaderConfig.loadFPGA()
 
     def setFPGAModeRelease(self, mode):
         self.bitZipLocation.setEnabled(mode)

@@ -22,10 +22,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
+import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+from chipwhisperer.common.utils.util import hexstr2list
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
 try:
     # OrderedDict is new in 2.7
@@ -34,13 +36,6 @@ try:
 except ImportError:
     dicttype = dict
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.common.utils.util import hexstr2list
 
 class APDUFilter(QObject):
         
@@ -117,7 +112,7 @@ class APDUFilter(QObject):
             # we don't care about other events
             return False
 
-class SmartCardGUICard(QDialog):
+class SmartCardGUICard(qtFixes.QDialog):
     def __init__(self, parent):
         super(SmartCardGUICard, self).__init__(parent)
         self.setWindowTitle("Smartcard Explorer")

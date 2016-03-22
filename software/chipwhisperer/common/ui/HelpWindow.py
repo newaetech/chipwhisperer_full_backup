@@ -6,11 +6,12 @@
 # This project is released under the Modified FreeBSD License. See LICENSE
 # file which should have came with this code.
 
-from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qtFixes as qtFixes
 from PySide import QtWebKit
 from docutils import core, io
 import sys
+
 
 def html_parts(input_string, source_path=None, destination_path=None,
                input_encoding='unicode', doctitle=True,
@@ -70,7 +71,8 @@ def html_body(input_string, source_path=None, destination_path=None,
         fragment = fragment.encode(output_encoding)
     return fragment
 
-class HelpBrowser(QDialog):
+
+class HelpBrowser(qtFixes.QDialog):
 
     def __init__(self, parent=None):
         super(HelpBrowser, self).__init__(parent)

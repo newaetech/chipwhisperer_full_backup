@@ -28,8 +28,10 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.utils import util
+import chipwhisperer.common.utils.qtFixes as qtFixes
 
-class CaptureProgressDialog(QDialog):
+
+class CaptureProgressDialog(qtFixes.QDialog):
     def __init__(self, parent=None, ntraces=0, nsegs=0):
         super(CaptureProgressDialog, self).__init__(parent)
         self.abortCapture = util.Signal()
