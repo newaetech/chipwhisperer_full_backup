@@ -24,10 +24,12 @@
 #=================================================
 
 import time
-
 import serial
-from pyqtgraph.parametertree import Parameter
 
+#Used by PC/SC Only
+from PySide.QtCore import QTimer
+
+from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
 import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
@@ -695,6 +697,7 @@ try:
 except ImportError:
     AnyCardType = None
     
+   
 class ReaderPCSC(ReaderTemplate):    
 
     def __init__(self):

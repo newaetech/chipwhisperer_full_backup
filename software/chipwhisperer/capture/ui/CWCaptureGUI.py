@@ -393,7 +393,7 @@ def main(cwdir):
     #TODO - should we prompt user for cwdir if not found?
 
     # Create and show the form
-    window = ChipWhispererCapture(cwdir)
+    window = CWCaptureGUI(cwdir)
     window.show()
 
     # Run the main Qt loop

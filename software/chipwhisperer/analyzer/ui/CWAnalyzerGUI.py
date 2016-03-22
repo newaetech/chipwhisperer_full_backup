@@ -560,7 +560,7 @@ def main(cwdir):
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = ChipWhispererAnalyzer(cwdir)
+    window = CWAnalyzer(cwdir)
     window.show()
 
     # Run the main Qt loop

@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAM3LoaderConfig
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader as ChipWhispererFWLoader
 from PySide.QtGui import *
 from PySide.QtCore import *
 import chipwhisperer.common.utils.QtFixes as QtFixes
@@ -100,7 +100,7 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         gbSAMFW.setLayout(layoutSAMFW)
         self.readFirmwareVersion()
 
-        if isinstance(self.fwLoaderConfig.loader, FWLoaderConfig.CWLite_Loader):
+        if isinstance(self.fwLoaderConfig.loader, ChipWhispererFWLoader.CWLite_Loader):
             layout.addWidget(gbSAMFW)
 
         self.setFPGAModeRelease(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name) != "debug")
