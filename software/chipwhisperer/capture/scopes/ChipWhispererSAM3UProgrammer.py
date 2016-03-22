@@ -46,6 +46,7 @@ class Samba(object):
 
         self.ser = ser
 
+        # Auto-baud
         if not usbmode:
             ser.write("\x80")
             ser.flush()
@@ -158,10 +159,13 @@ class Samba(object):
             raise AttributeError("Buffer length not as reported")
 
         self.ser.write("S%08X,%08X#" % (addr, size))
-        # Flush to ensure transactions arrive seperately to bootloader
+        # Flush to ensure transactions arrive separately to bootloader
         # (Otherwise error)
         self.flush()
         bwritten = self.ser.write(bytearray(buf))
+
+        if (bwritten != len(buf)):
+            raise IOError("Failed to write %d bytes, only %d written" % (len(buf), bwritten))
 
     def _read_buf(self, addr, size):
         """ Read a buffer """
@@ -171,9 +175,10 @@ class Samba(object):
 
         buf = []
 
-        # The SAM firmware has a bug reading powers of 2 over 32 bytes
-        # via USB.  If that is the case here, then read the first byte
-        # with a readByte and then read one less than the requested size.
+        # Note from BOSSA:
+        #   The SAM firmware has a bug reading powers of 2 over 32 bytes
+        #   via USB.  If that is the case here, then read the first byte
+        #   with a readByte and then read one less than the requested size.
         if self.usbmode and (size > 32) and not (size & (size - 1)):
             buf.extend(self.read_byte(addr))
             addr = addr + 1
@@ -228,7 +233,7 @@ class Samba(object):
             i = i + page_size
             bytesleft = bytesleft - page_size
 
-        print "Programmed that bitch"
+        print "FWUP: Program Successful"
 
     def verify(self, bindata, doprint=False):
         """ Verify a buffer that was written into chip """
@@ -260,7 +265,7 @@ class Samba(object):
             bufferB = self.flash.readPage(page_num)
 
             if bytearray(buf) != bytearray(bufferB):
-                print "Verify FAILED at %d" % i
+                print "FWUP: Verify FAILED at %d" % i
                 return False
                 # print "fail at %d"%i
                 # print "".join(["%02x"%ord(a) for a in buf])
@@ -271,6 +276,8 @@ class Samba(object):
 
             i = i + page_size
             bytesleft = bytesleft - page_size
+
+        print "FWUP: Verify successful"
 
         return True
 
@@ -413,7 +420,7 @@ class EefcFlash(object):
 
     def getLockRegion(self, region):
         if (region >= self.lockRegions):
-            raise AttrError("Invalid flash region")
+            raise AttributeError("Invalid flash region")
 
         self.waitFSR()
 
@@ -434,7 +441,7 @@ class EefcFlash(object):
     def setLockRegion(self, region, enable):
 
         if (region >= self.lockRegions):
-            raise AttrError("Invalid flash region")
+            raise AttributeError("Invalid flash region")
 
         if (enable != self.getLockRegion(region)):
             if (self.planes == 2) and (region >= self.lockRegions / 2):
@@ -502,7 +509,7 @@ class EefcFlash(object):
 
     def getBootFlash(self):
         self.waitFSR()
-        self.writeFCR0(EEFC_FCMD_GGPB, 0)
+        self.writeFCR0(self.EEFC_FCMD_GGPB, 0)
         self.waitFSR()
         if self.can_brownout:
             cb = 3
@@ -549,9 +556,10 @@ class EefcFlash(object):
         if (page >= self.pages):
             raise AttributeError("Invalid page")
 
-        # The SAM3 firmware has a bug where it returns all zeros for reads
-        # directly from the flash so instead, we copy the flash page to
-        # SRAM and read it from there.
+        # Note from BOSSA:
+        #  The SAM3 firmware has a bug where it returns all zeros for reads
+        #  directly from the flash so instead, we copy the flash page to
+        #  SRAM and read it from there.
 
         if self._onBufferA:
             self.word_copy.set_dst_addr(self._pageBufferA)
@@ -600,6 +608,7 @@ class EefcFlash(object):
         return self.samba.read_word(self.EEFC1_FRR)
 
 if __name__ == "__main__":
+    # Example usage
     sam = Samba()
     sam.con('com46')
     sam.erase()
