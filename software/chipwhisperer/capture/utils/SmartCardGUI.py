@@ -27,7 +27,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.utils.util import hexstr2list
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 
 try:
     # OrderedDict is new in 2.7
@@ -112,7 +112,7 @@ class APDUFilter(QObject):
             # we don't care about other events
             return False
 
-class SmartCardGUICard(qtFixes.QDialog):
+class SmartCardGUICard(QtFixes.QDialog):
     def __init__(self, parent):
         super(SmartCardGUICard, self).__init__(parent)
         self.setWindowTitle("Smartcard Explorer")

@@ -31,7 +31,7 @@ from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
@@ -119,7 +119,7 @@ class TuningParameter(QObject):
             raise ValueError("Unknown Increment Type %s" % mode)
 
 
-class GlitchExplorerDialog(qtFixes.QDialog):
+class GlitchExplorerDialog(QtFixes.QDialog):
     def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
         self.setWindowTitle("Glitch Explorer")

@@ -32,11 +32,11 @@ import os.path
 from sys import platform as _platform
 from subprocess import Popen, PIPE
 import platform
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
-class SAM3LoaderConfig(qtFixes.QDialog):
+class SAM3LoaderConfig(QtFixes.QDialog):
     def __init__(self, parent=None, cwliteUSB=None):
         super(SAM3LoaderConfig, self).__init__(parent)
         self.cwLiteUSB = cwliteUSB
@@ -69,7 +69,7 @@ class SAM3LoaderConfig(qtFixes.QDialog):
         layoutSAMGB = QVBoxLayout()
 
         layoutBOSSA = QHBoxLayout()
-        self.BOSSALocation = qtFixes.QLineEdit()
+        self.BOSSALocation = QtFixes.QLineEdit()
         BOSSAButton = QPushButton("Find")
         BOSSAButton.clicked.connect(self.findBOSSA)
         layoutBOSSA.addWidget(QLabel("bossac binary"))
@@ -77,7 +77,7 @@ class SAM3LoaderConfig(qtFixes.QDialog):
         layoutBOSSA.addWidget(BOSSAButton)
 
         layoutFW = QHBoxLayout()
-        self.firmwareLocation = qtFixes.QLineEdit()
+        self.firmwareLocation = QtFixes.QLineEdit()
         firmwareButton = QPushButton("Find")
         firmwareButton.clicked.connect(self.findFirmware)
         layoutFW.addWidget(QLabel("SAM3U Firmware"))

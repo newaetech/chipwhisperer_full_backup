@@ -26,10 +26,10 @@
 #=================================================
 
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 
 
-class ValidationDialog(qtFixes.QDialog):
+class ValidationDialog(QtFixes.QDialog):
 
     def __init__(self, parent=None, onlyOkButton=False):
         super(ValidationDialog, self).__init__(parent)

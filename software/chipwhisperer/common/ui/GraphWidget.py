@@ -24,11 +24,11 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 import pyqtgraph as pg
 
 
-class ColorDialog(qtFixes.QDialog):
+class ColorDialog(QtFixes.QDialog):
     """
     Simple dialog to pick colours for the trace data.
     """

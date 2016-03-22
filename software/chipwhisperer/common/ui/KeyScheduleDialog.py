@@ -27,11 +27,11 @@
 
 import sys
 from PySide.QtGui import *
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.util import hexstr2list
 
-class KeyScheduleDialog(qtFixes.QDialog):
+class KeyScheduleDialog(QtFixes.QDialog):
 
     def __init__(self, parent=None):
         super(KeyScheduleDialog, self).__init__(parent)
@@ -47,13 +47,13 @@ class KeyScheduleDialog(qtFixes.QDialog):
         self.outmode.addItem("0xAA, 0xBB, 0xCC... 0xEE, 0xFF", ["0x", ", "])
         self.outmode.currentIndexChanged.connect(self.inTextChanged)
 
-        self.indata = qtFixes.QLineEdit("")
+        self.indata = QtFixes.QLineEdit("")
         self.indata.setFont(QFont("Courier"))
 
         self.keysched = QTextEdit("")
         self.keysched.setFont(QFont("Courier"))
 
-        self.outkey = qtFixes.QLineEdit("")
+        self.outkey = QtFixes.QLineEdit("")
         self.outkey.setReadOnly(True)
         self.outkey.setFont(QFont("Courier"))
 

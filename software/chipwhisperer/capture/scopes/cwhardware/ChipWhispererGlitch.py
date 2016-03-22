@@ -207,8 +207,8 @@ class ChipWhispererGlitch():
             print "Glitch Module not present?"
             return
 
-        LSB = fine & 0x00FF;
-        MSB = (fine & 0x0100) >> 8;
+        LSB = fine & 0x00FF
+        MSB = (fine & 0x0100) >> 8
 
         current[0] = LSB #7..0
         current[1] = (current[1] & ~0x01) | MSB #15..8
@@ -231,11 +231,11 @@ class ChipWhispererGlitch():
             print "Glitch Module not present?"
             return
 
-        LSB = fine & 0x00FF;
-        MSB = (fine & 0x0100) >> 8;
+        LSB = fine & 0x00FF
+        MSB = (fine & 0x0100) >> 8
 
-        current[1] = (current[1] & 0x01) | ((LSB & 0x7F) << 1);
-        current[2] = (current[2] & ~0x03) | ((LSB >> 7) | (MSB << 1));
+        current[1] = (current[1] & 0x01) | ((LSB & 0x7F) << 1)
+        current[2] = (current[2] & ~0x03) | ((LSB >> 7) | (MSB << 1))
 
         #Start adjust
         current[2] = current[2] | 0x04  # 23..16
@@ -289,7 +289,7 @@ class ChipWhispererGlitch():
         """Check if the DCMs are locked and print results """
 
         stat = self.getDCMStatus()
-        print "DCM1: Phase %d, Locked %r"%(stat[0], stat[2])
+        print "DCM1: Phase %d, Locked %r" % (stat[0], stat[2])
         print "DCM2: Phase %d, Locked %r" % (stat[1], stat[3])
 
     def setNumGlitches(self, num):

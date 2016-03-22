@@ -32,7 +32,7 @@ from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_nat
 import numpy as np
 from time import gmtime, strftime
 from TraceContainer import TraceContainer
-import chipwhisperer.common.utils.qtFixes as qtFixes
+import chipwhisperer.common.utils.QtFixes as QtFixes
 
 
 def getClass():
@@ -147,7 +147,7 @@ class TraceContainerDPAv3(TraceContainer):
         return "DPAContestv3"
 
 
-class ImportDPAv3Dialog(qtFixes.QDialog):
+class ImportDPAv3Dialog(QtFixes.QDialog):
     def __init__(self, parent=None):
         super(ImportDPAv3Dialog, self).__init__(parent)
         self.parent = parent
@@ -160,7 +160,7 @@ class ImportDPAv3Dialog(qtFixes.QDialog):
 
         fileL = QHBoxLayout()
         fileL.addWidget(QLabel("info.xml file:"))
-        self.fileLE = qtFixes.QLineEdit()
+        self.fileLE = QtFixes.QLineEdit()
         #self.fileLE.setEnabled(False)
         fileL.addWidget(self.fileLE)
         filePB = QPushButton("Select info.xml")
@@ -173,18 +173,18 @@ class ImportDPAv3Dialog(qtFixes.QDialog):
 
         ### Settings found in info.xml, can be changed by user
 
-        self.LETraces = qtFixes.QLineEdit()
+        self.LETraces = QtFixes.QLineEdit()
         self.LETraces.setEnabled(False)
 
-        self.LEPoints = qtFixes.QLineEdit()
+        self.LEPoints = QtFixes.QLineEdit()
         self.LEPoints.setEnabled(False)
 
-        self.LEScope = qtFixes.QLineEdit()
-        self.LETargetHW = qtFixes.QLineEdit()
-        self.LETargetSW = qtFixes.QLineEdit()
-        self.LEDate = qtFixes.QLineEdit()
+        self.LEScope = QtFixes.QLineEdit()
+        self.LETargetHW = QtFixes.QLineEdit()
+        self.LETargetSW = QtFixes.QLineEdit()
+        self.LEDate = QtFixes.QLineEdit()
 
-        self.LENotes = qtFixes.QLineEdit()
+        self.LENotes = QtFixes.QLineEdit()
 
         settingsL = QGridLayout()
         settingsL.addWidget(QLabel("Traces:"), 0, 0)
@@ -217,12 +217,12 @@ class ImportDPAv3Dialog(qtFixes.QDialog):
         importL = QGridLayout()
 
         importL.addWidget(QLabel("Target Dir:"), 0, 0)
-        targetDirLE = qtFixes.QLineEdit()
+        targetDirLE = QtFixes.QLineEdit()
         targetDirLE.setText("./traces/")
         targetDirLE.setEnabled(False)
         importL.addWidget(targetDirLE, 0, 1)
 
-        self.prefixDirLE = qtFixes.QLineEdit()
+        self.prefixDirLE = QtFixes.QLineEdit()
         self.prefixDirLE.setText("001")
         importL.addWidget(QLabel("Prefix:"), 0, 2)
         importL.addWidget(self.prefixDirLE, 0, 3)
