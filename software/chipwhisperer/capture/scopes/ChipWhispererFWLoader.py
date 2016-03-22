@@ -282,7 +282,7 @@ class FWLoaderConfig(QDialog):
             if not os.path.isfile(fileloc):
                 raise IOError("Failed to find firmware file at %s. You may have to "%fileloc + 
                               "manually set the location of this file on your system from the" +
-                              "'Config CW Firmware' dialog.")
+                              "'CW Firmware Preferences' dialog.")
                 
             zfile = zipfile.ZipFile(fileloc, "r")
 

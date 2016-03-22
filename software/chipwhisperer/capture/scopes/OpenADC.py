@@ -134,7 +134,7 @@ class OpenADCInterface_NAEUSBChip(QWidget):
 
         self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console, mode="cwlite")
 
-        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
+        self.CWFirmwareConfigAct = QAction('CW Firmware Preferences', self,
                                statusTip='Configure ChipWhisperer FW Paths',
                                triggered=self.CWFirmwareConfig.show)
 
@@ -446,7 +446,7 @@ class OpenADCInterface_ZTEX(QWidget):
     def setupTools(self):
         self.CWFirmwareConfig = FWLoaderConfig(self, console=self.console)
 
-        self.CWFirmwareConfigAct = QAction('Config CW Firmware', self,
+        self.CWFirmwareConfigAct = QAction('CW Firmware Preferences', self,
                                statusTip='Configure ChipWhisperer FW Paths',
                                triggered=self.CWFirmwareConfig.show)
 

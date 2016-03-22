@@ -76,7 +76,7 @@ class ColorDialog(QDialog):
         clayout.addWidget(self.cbColor)
         clayout.addStretch()
 
-        self.color = colorInt
+        self.colorInt = colorInt
         
         layout.addLayout(clayout)
         
@@ -190,7 +190,7 @@ class GraphWidget(QWidget):
 
         if self.colorDialog.exec_():
             data = self.colorDialog.getValues()
-            self.color = self.setColorInt(data[0], 9)
+            self.setColorInt(data[0], 9)
             self.acolor = data[0]
             self.autocolor = data[1]
         
@@ -250,11 +250,11 @@ class GraphWidget(QWidget):
         
     def xLocked(self, enabled):
         """Lock X axis, such it doesn't change with new data"""
-        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.XAxis, ~enabled)
+        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.XAxis, not enabled)
         
     def yLocked(self, enabled):
         """Lock Y axis, such it doesn't change with new data"""
-        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, ~enabled)
+        self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
     def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).

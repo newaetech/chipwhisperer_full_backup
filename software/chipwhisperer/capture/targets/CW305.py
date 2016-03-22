@@ -99,6 +99,15 @@ class CW305(TargetTemplate):
         self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
         ExtendedParameter.setupExtended(self.params, self)      
         self.oa = None
+        
+    def fpga_write(self, addr, data):
+        """ Write to specified address """
+        return self.cwtestusb.cmdWriteMem(addr, data)
+        
+    def fpga_read(self, addr, readlen):
+        """ Read from address """
+        data = self.cwtestusb.cmdReadMem(addr, readlen)
+        return data
 
     def usb_clk_setenabled(self, status):
         """ Turn on or off the Data Clock to the FPGA """
@@ -398,7 +407,13 @@ class CW305(TargetTemplate):
         if os.path.isfile(self._fpgabs):
             return self._fpgabs
         else:
-            raise IOError("FPGA Bitstream not configured or %s not a file." % str(self._fpgabs))
+            # Try the user
+            self.gui_selectfpga()
+
+            if self._fpgabs is None:
+                raise IOError("FPGA Bitstream not configured or %s not a file." % str(self._fpgabs))
+
+            return self._fpgabs
 
         # # Example of a version of this that hard-codes a bitstream
         # return r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp_vivado\CW305_VivadoSample\CW305_VivadoSample.runs\impl_1\cw305_blockexample.bit"
@@ -436,7 +451,8 @@ class CW305(TargetTemplate):
             self.cwtestusb.FPGAProgram(open(bsfile, "rb"))
             stoptime = datetime.now()
             print "FPGA Config time: %s" % str(stoptime - starttime)
-        self.cwtestusb.cmdWriteMem(0x100, [0])
+        self.usb_clk_setenabled(True)
+        self.fpga_write(0x100, [0])
         self.params.getAllParameters()
         self.cdce906init()
 
@@ -446,39 +462,48 @@ class CW305(TargetTemplate):
 
     def loadEncryptionKey(self, key):
         """Write encryption key to FPGA"""
+        self.key = key
         key = key[::-1]
-        self.cwtestusb.cmdWriteMem(0x200, key)
+        self.fpga_write(0x200, key)
 
     def loadInput(self, inputtext):
         """Write input to FPGA"""
+        self.input = inputtext
         text = inputtext[::-1]
-        self.cwtestusb.cmdWriteMem(0x300, text)
+        self.fpga_write(0x300, text)
 
     def isDone(self):
         """Check if FPGA is done"""
-        result = self.cwtestusb.cmdReadMem(0x110, 1)[0]
+        result = self.fpga_read(0x110, 1)[0]
 
         if result == 0x00:
             return False
         else:
-            self.cwtestusb.cmdWriteMem(0x100, [0])
+            # Clear trigger
+            self.fpga_write(0x100, [0])
+            # LED Off
+            self.fpga_write(0x10, [0])
             return True
         
     def readOutput(self):
         """"Read output from FPGA"""
-        data = self.cwtestusb.cmdReadMem(0x600, 16)
-        data = data[::-1]        
+        data = self.fpga_read(0x600, 16)
+        data = data[::-1]
         return data
 
     def go(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
         if self.findParam('clkusbautooff').value():
             self.usb_clk_setenabled(False)
+            
+        #LED On
+        self.fpga_write(0x10, [0x01])
+            
 
         time.sleep(0.01)
         self.usb_trigger_toggle()
-        # self.cwtestusb.cmdWriteMem(0x100, [1])
-        # self.cwtestusb.cmdWriteMem(0x100, [0])
+        # self.FPGAWrite(0x100, [1])
+        # self.FPGAWrite(0x100, [0])
 
         if self.findParam('clkusbautooff').value():
             time.sleep(self.findParam('clksleeptime').value() / 1000.0)

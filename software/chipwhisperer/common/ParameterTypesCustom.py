@@ -98,7 +98,7 @@ class RangeParameterItem(WidgetParameterItem):
         defs = {
                 'value': 0, 'min': None, 'max': None, 'int': True,
                 'step': 1.0, 'minStep': 1.0, 'dec': False, 'fixedsize':0,
-                'siPrefix': False, 'suffix': ''
+                'siPrefix': False, 'suffix': '', 'visible':True,
             }
         defs.update(opts)
 

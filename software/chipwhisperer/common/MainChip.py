@@ -231,8 +231,8 @@ class MainChip(QMainWindow):
         self.lastMenuActionSection = section                
         self.windowMenu.addAction(action)
         
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea,
-                allowedAreas=Qt.TopDockWidgetArea | Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea,
+    def addDock(self, dockWidget, name="Settings", area=Qt.TopDockWidgetArea,
+                allowedAreas=Qt.AllDockWidgetAreas,
                 visible=True, addToWindows=True):
         """Add a dockwidget to the main window, which also adds it to the 'Windows' menu"""
         #Configure dock
@@ -255,7 +255,7 @@ class MainChip(QMainWindow):
     def addSettings(self, tree, name):
         """Adds a dockwidget designed to store a ParameterTree, also adds to 'Windows' menu"""
         self.paramTrees.append(tree)
-        dock = self.addDock(tree, name=name, area=Qt.LeftDockWidgetArea)
+        dock = self.addDock(tree, name=name, area=Qt.TopDockWidgetArea)
         self.settings_docks.append(dock)
         return dock
 
@@ -268,7 +268,7 @@ class MainChip(QMainWindow):
     def addTraceDock(self, name):
         """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
         gw = GraphWidget()
-        return self.addDock(gw, name=name, area=Qt.RightDockWidgetArea)
+        return self.addDock(gw, name=name, area=Qt.TopDockWidgetArea)
         
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
@@ -412,7 +412,7 @@ class MainChip(QMainWindow):
         self.setWindowIcon(QIcon(":/images/%s.png" % icon))
         
         #Project editor dock        
-        self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.RightDockWidgetArea, visible=False, addToWindows=False)
+        self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         
         self.recentFileActs = []
         self.createFileActions()
@@ -502,7 +502,7 @@ class MainChip(QMainWindow):
         #TODO: close etc
         
         if fname is None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open file','.','*.cwp')
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', '.', '*.cwp', '', QFileDialog.DontUseNativeDialog)
         
         if fname is not None:
             self.openFile.emit(fname)
@@ -538,10 +538,14 @@ class MainChip(QMainWindow):
         reply = savedialog.value()
         if reply == QDialogButtonBox.RejectRole:
             return False
-        elif reply == QDialogButtonBox.AcceptRole:
+        elif reply == QDialogButtonBox.YesRole:
             self.saveProject()
+            return True
+        elif reply == QDialogButtonBox.NoRole:
+            return True
+        else:
+            raise AttributeError("Invalid role: %s" % str(reply))
 
-        return True
            
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""

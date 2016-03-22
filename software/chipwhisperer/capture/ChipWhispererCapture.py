@@ -744,14 +744,14 @@ class ChipWhispererCapture(MainChip):
                 con = False
 
         #Triggered from API
-        try:
-            if con:
-                self.target.con()
-                self.statusBar().showMessage("Target Connected")
-            else:
-                self.target.dis()
-        except IOError, e:
-            self.console.append("Target Error: %s"%str(e))
+        # try:
+        if con:
+            self.target.con()
+            self.statusBar().showMessage("Target Connected")
+        else:
+            self.target.dis()
+        # except IOError, e:
+        #   self.console.append("Target Error: %s" % str(sys.exc_info())
 
 
     def doConDisScope(self, con=None):
@@ -1007,6 +1007,7 @@ class ChipWhispererCapture(MainChip):
     def saveProject(self):
         if self.project().hasFilename() == False:
             fd = QFileDialog(self, 'Save New File', '.', '*.cwp')
+            fd.setOption(QFileDialog.DontUseNativeDialog)
             fd.setDefaultSuffix('cwp')
             fd.setAcceptMode(QFileDialog.AcceptSave)
             fd.setViewMode(QFileDialog.Detail)

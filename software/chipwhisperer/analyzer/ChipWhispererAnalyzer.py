@@ -170,7 +170,7 @@ class ChipWhispererAnalyzer(MainChip):
         self.addSettingsDocks()
 
         for d in self.results.dockList():
-            self.addDockWidget(Qt.RightDockWidgetArea, d)
+            self.addDockWidget(Qt.TopDockWidgetArea, d)
             self.addWindowMenuAction(d.toggleViewAction(), "Results")
             self.enforceMenuOrder()
 
@@ -215,7 +215,7 @@ class ChipWhispererAnalyzer(MainChip):
             # No previous dock, do setup
             if 'dock' not in script.keys():
                 script['widget'].editWindow.runFunction.connect(partial(self.runScriptFunction, filename=script['filename']))
-                script['dock'] = self.addDock(script['widget'], name=dockname, area=Qt.RightDockWidgetArea)
+                script['dock'] = self.addDock(script['widget'], name=dockname, area=Qt.TopDockWidgetArea)
 
             # Dock present, check if name changed
             if script['dock'].windowTitle() != dockname:
@@ -562,7 +562,8 @@ class ChipWhispererAnalyzer(MainChip):
         """Plot the input trace(s) as given by the GUI settings."""
 
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
-        self.waveformDock.widget().clearPushed()
+        if self.waveformDock.widget().actionPersistance.isChecked() == False:
+            self.waveformDock.widget().clearPushed()
         self.setupPreprocessorChain()
 
         tstart = self.findParam('tracerng').value()[0]

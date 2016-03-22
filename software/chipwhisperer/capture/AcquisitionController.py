@@ -33,6 +33,7 @@ except ImportError:
     sys.exit()
 
 import random
+import time
 
 from openadc.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.qrc_resources
@@ -90,8 +91,13 @@ class AcquisitionController(QObject):
         self.target.loadInput(plaintext)
         self.target.go()
 
-        while self.target.isDone() == False:
-            continue
+        timeout = 50
+        while self.target.isDone() == False and timeout:
+            timeout -= 1
+            time.sleep(0.01)
+            
+        if timeout == 0:
+            print "WARNING: Target timeout"
 
         # print "DEBUG: Target go()"
 
