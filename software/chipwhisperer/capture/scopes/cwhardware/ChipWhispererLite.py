@@ -548,6 +548,16 @@ class AVRISP(object):
     ISP_STATUS_CONN_FAIL_SCK = 0x04
     ISP_STATUS_TGT_NOT_DETECTED = 0x10
     ISP_STATUS_TGT_REVERSE_INSERTED = 0x20
+    
+    STATUS_TEXT_DESC = {
+        0x00:"OK",
+        0x80:"Timeout",
+        0x81:"Busy Timeout",
+        0x82:"Parameter Missing",
+        0xC0:"Command Failed",
+        0xC9:"Command Unknown",
+        0x10:"Target not detected"
+    };
 
     ISP_PARAM_BUILD_NUMBER_LOW = 0x80
     ISP_PARAM_BUILD_NUMBER_HIGH = 0x81
@@ -587,8 +597,12 @@ class AVRISP(object):
         # Check status
         if checkStatus:
             status = self._avrDoRead(cmd=0x0020, dlen=2)
-            if status[1] != 0x00:
-                raise IOError("AVR-ISP Command %x failed: err=%x" % (status[0], status[1]))
+            if status[1] != 0x00:                
+                status_txt = "0x%02x"%status[1]
+                if status[1] in self.STATUS_TEXT_DESC:
+                    status_txt = status_txt + " (%s)"%self.STATUS_TEXT_DESC[status[1]]                
+                
+                raise IOError("AVR-ISP Command 0x%02x failed: err=%s" % (status[0],status_txt))
 
     def _avrDoRead(self, cmd, dlen=1):
         """

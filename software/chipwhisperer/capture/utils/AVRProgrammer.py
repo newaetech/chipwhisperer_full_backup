@@ -132,9 +132,13 @@ class AVRProgrammerDialog(QtFixes.QDialog):
             self.clockMode.setText("Enable Slow Clock Mode")
 
     def reject(self):
+        #Ensure we disable slow-clock mode
         if self.clockMode.isChecked():
             self.clockMode.setChecked(False)
             self.toggleSlowClock()
+            
+        #Release AVR
+        self.avr.close()
 
         QDialog.reject(self)
 
