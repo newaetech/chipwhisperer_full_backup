@@ -106,7 +106,7 @@ class CWCaptureGUI(CWMainGUI):
                         {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.cwAPI.setNumSegments, 'get':self.cwAPI.getNumSegments, 'tip':'Break capture into N segments, '
                          'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
                          'as each segment is buffered into RAM before being written to disk.'},
-                        # {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
+                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
                         {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.cwAPI.acqPattern, 'set':self.cwAPI.setAcqPattern},
                     ]},
                 ]
