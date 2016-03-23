@@ -30,6 +30,7 @@ import usb.core
 import usb.util
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_xmega, supported_avr
 from chipwhisperer.common.utils import util
+from usb.core import USBError
 
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
@@ -1046,7 +1047,10 @@ class CWLiteUSB(object):
         """
         # self._usbdev.close()
         if self._usbdev:
-            usb.util.dispose_resources(self._usbdev)
+            try:
+                usb.util.dispose_resources(self._usbdev)
+            except usb.USBError, e:
+                print "INFO: USB Failure calling dispose_resources: %s"%str(e)
     
     def readFwVersion(self):
         try:
