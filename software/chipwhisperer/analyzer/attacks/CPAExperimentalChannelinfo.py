@@ -37,7 +37,7 @@ import numpy as np
 import scipy as sp
 
 
-from chipwhisperer.capture.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 
 from functools import partial

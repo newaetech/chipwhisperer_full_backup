@@ -560,7 +560,7 @@ def main(cwdir):
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = CWAnalyzer(cwdir)
+    window = CWAnalyzerGUI(cwdir)
     window.show()
 
     # Run the main Qt loop

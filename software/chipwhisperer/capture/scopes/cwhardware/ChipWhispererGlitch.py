@@ -94,8 +94,8 @@ class ChipWhispererGlitch():
                 fileloc = scope.cwFirmwareConfig.loader._bsZipLoc
 
                 if fileloc:
-                    if fileloc.startswith("."):
-                        fileloc = os.path.join(CWCoreAPI.getInstance().getRootDir(), fileloc)
+                    #if fileloc.startswith("."):
+                    #    fileloc = os.path.join(CWCoreAPI.getInstance().getRootDir(), fileloc)
                     zfile = zipfile.ZipFile(fileloc, "r")
 
                     if cwtype == "cwlite":
