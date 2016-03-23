@@ -112,7 +112,7 @@ class CWLite_Loader(CW_Loader):
         self._bsZipLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"))
         self._bsZipLoc_filename = "cwlite_interface.bit"
         self._bsLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"))
-
+        self._fwFLoc = ""
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
@@ -152,7 +152,7 @@ class FWLoaderConfig(object):
             strdate = self.fpga_bitstream_date()
             print "FPGA: DEBUG MODE: Using .bit file, date: %s" % strdate
         
-        self.loader.loadFPGA(self.loader.fpga_bitstream())
+        self.loader.loadFPGA()
         print "FPGA programmed"
 
     def setInterface(self, dev):
