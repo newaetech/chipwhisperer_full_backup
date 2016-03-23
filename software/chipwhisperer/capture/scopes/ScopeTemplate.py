@@ -61,9 +61,11 @@ class ScopeTemplate(object):
         pass
 
     def arm(self):
-        if self.connectStatus.value() is False:
-            raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
-        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
+        pass
+        #NOTE - if reimplementing this, should always check for connection first
+        #if self.connectStatus.value() is False:
+        #    raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+        #raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         pass
