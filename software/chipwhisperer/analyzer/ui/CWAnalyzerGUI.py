@@ -78,28 +78,16 @@ class CWAnalyzerGUI(CWMainGUI):
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
         self.valid_atacks = {'CPA':CPA(), 'Profiling':Profiling(self.traceExplorerDialog)}
+        self.cwAPI.setAttack(self.valid_atacks["CPA"])
         self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.cwAPI.getTraceManager(), self.waveformDock.widget())
         self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
                                      self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
 
         self.addToolbars()
         self.addSettingsDocks()
-
-        self.windowMenu.addSeparator()
-        for d in self.results.dockList():
-            self.addDockWidget(Qt.TopDockWidgetArea, d)
-            self.windowMenu.addAction(d.toggleViewAction())
-            # self.addWindowMenuAction(d.toggleViewAction(), "Results")
-            # self.enforceMenuOrder()
-
+        self.addResultDocks()
         self.editorDocks()
         self.restoreSettings()
-
-        self.tabifyDocks([self.settingsNormalDock, self.settingsPreprocessingDock, self.settingsAttackDock,
-                          self.settingsPostProcessingDock, self.settingsResultsDock])
-
-        for d in self.results.dockList():
-            self.tabifyDockWidget(self.waveformDock, d)
 
         self.newProject()
 
@@ -109,7 +97,6 @@ class CWAnalyzerGUI(CWMainGUI):
         self.cwAPI.signals.attackChanged.connect(self.attackChanged)
         self.cwAPI.signals.reloadAttackParamList.connect(self.reloadAttackParamList)
 
-        self.cwAPI.setAttack(self.valid_atacks["CPA"])
         self.reloadScripts()
         self.setupPreprocessorChain()
 
@@ -122,13 +109,12 @@ class CWAnalyzerGUI(CWMainGUI):
         """Ensure we have a script editor window for each referenced analyzer script file"""
 
         for script in self.scriptList:
-
             dockname = "Analysis Script: %s" % script['dockname']
 
             # No previous dock, do setup
             if 'dock' not in script.keys():
                 script['widget'].editWindow.runFunction.connect(partial(self.runScriptFunction, filename=script['filename']))
-                script['dock'] = self.addDock(script['widget'], name=dockname, area=Qt.TopDockWidgetArea)
+                script['dock'] = self.addDock(script['widget'], name=dockname, area=Qt.BottomDockWidgetArea)
 
             # Dock present, check if name changed
             if script['dock'].windowTitle() != dockname:
@@ -275,14 +261,25 @@ class CWAnalyzerGUI(CWMainGUI):
     #    self.projectMenu.addAction(self.statsShowAct)
 
     def addSettingsDocks(self):
-        """Add settings dock to main window"""
-
         self.setupParametersTree()
         self.settingsNormalDock = self.addSettings(self.paramTree, "General")
         self.settingsPreprocessingDock = self.addSettings(self.preprocessingParamTree, "Preprocessing")
         self.settingsAttackDock = self.addSettings(self.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.postprocessingParamTree, "Postprocessing")
         self.settingsResultsDock = self.addSettings(self.resultsParamTree, "Results")
+
+        self.tabifyDocks([self.settingsNormalDock, self.settingsPreprocessingDock, self.settingsAttackDock,
+                          self.settingsPostProcessingDock, self.settingsResultsDock])
+
+    def addResultDocks(self):
+        self.windowMenu.addSeparator()
+        for d in self.results.dockList():
+            self.addDockWidget(Qt.TopDockWidgetArea, d)
+            self.windowMenu.addAction(d.toggleViewAction())
+
+        docks = [self.waveformDock]
+        docks.extend(self.results.dockList())
+        self.tabifyDocks(docks)
 
     def setupParametersTree(self):
         """Setup all parameter trees so they can be reloaded later with changes"""
@@ -298,7 +295,7 @@ class CWAnalyzerGUI(CWMainGUI):
                     [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
 
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':'CPA', 'set':self.cwAPI.setAttack},
+                    {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':self.cwAPI.getAttack(), 'set':self.cwAPI.setAttack},
                     ]},
 
                 {'name':'Post-Processing', 'type':'group'},
@@ -324,6 +321,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.results.paramListUpdated.connect(self.reloadParamListResults)
 
         self.reloadParamListResults()
+        self.reloadAttackParamList()
         self.reloadParamListPreprocessing()
 
     def setPreprocessing(self, num, module):

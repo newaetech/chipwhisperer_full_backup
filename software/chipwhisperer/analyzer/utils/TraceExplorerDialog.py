@@ -59,9 +59,9 @@ class TraceExplorerDialog(QMainWindow, AutoScript):
         self.progressBar = QProgressDialog(self)
         self.progressBar.setWindowModality(Qt.WindowModal)
 
-    # def showEvent(self, event):
-    #     QDialog.showEvent(self, event)
-    #     self.updateChildren()
+    def showEvent(self, event):
+        QDialog.showEvent(self, event)
+        self.updateChildren()
 
     def setupCommonScripts(self):
         # Setup parameer tree
