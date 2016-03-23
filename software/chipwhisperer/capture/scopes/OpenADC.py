@@ -117,17 +117,14 @@ class OpenADCInterface_NAEUSBChip():
             except IOError, e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
-
-            if dev is None:
-                raise IOError("Could not open USB Device")
             
-            self.cwFirmwareConfig.setInterface(dev)
+            self.cwFirmwareConfig.setInterface(dev.fpga)
             self.cwFirmwareConfig.loadRequired()
 
-            self.cwliteXMEGA.setUSBInterface(dev)
-            self.cwliteAVR.setUSBInterface(dev)
+            self.cwliteXMEGA.setUSBInterface(dev.xmega)
+            self.cwliteAVR.setUSBInterface(dev.avr)
 
-            self.ser = dev
+            self.ser = dev.usbdev()
 
         try:
             self.scope.con(self.ser)
@@ -469,8 +466,8 @@ class OpenADCInterface(ScopeTemplate):
             print "Failed to enable CW-Lite, Error: %s" % str(e)
             cwlite = None
 
-        self.setCurrentScope(cwrev2, False)
-        defscope = cwrev2
+        self.setCurrentScope(cwlite, False)
+        defscope = cwlite
 
         cw_cons = dicttype()
 
@@ -513,8 +510,8 @@ class OpenADCInterface(ScopeTemplate):
     def dcmTimeout(self):
         try:
             self.qtadc.sc.getStatus()
-            #The following happen with signals, so a failure will likely occur outside of the try...except
-            #For this reason we do the call to .getStatus() to verify USB connection first
+            # The following happen with signals, so a failure will likely occur outside of the try...except
+            # For this reason we do the call to .getStatus() to verify USB connection first
             CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
             CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
         except Exception, e:

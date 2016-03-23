@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2016, NewAE Technology Inc
+# Copyright (c) 2014-2016, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -20,28 +20,4 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-#=================================================
-
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
-from chipwhisperer.hardware.naeusb.fpga import FPGA
-from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
-from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
-from chipwhisperer.hardware.naeusb.serial import USART
-
-class CWLiteUSB(object):
-
-    def __init__(self):
-
-        self._cwusb = NAEUSB()
-
-        # Connect required modules up here
-        self.fpga = FPGA(self._cwusb)
-        self.xmega = XMEGAPDI(self._cwusb)
-        self.avr = AVRISP(self._cwusb)
-        self.usart = USART(self._cwusb)
-
-    def con(self):
-        self._cwusb.con()
-
-    def usbdev(self):
-        return self._cwusb
+#==========================================================================
