@@ -217,7 +217,7 @@ class CWCaptureGUI(CWMainGUI):
         ExtendedParameter.reloadParams(self.cwAPI.getTraceClass().getParams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadAuxParamList(self):
-        ExtendedParameter.reloadParams(self.cwAPI.getAuxiliaryModules()[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.cwAPI.getAux()[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadParamList(self):
         ExtendedParameter.reloadParams(self.paramList(), self.generalParamTree, help_window=self.helpbrowser.helpwnd)
