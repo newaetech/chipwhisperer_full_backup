@@ -101,7 +101,7 @@ class CWCRev2_Loader(CW_Loader):
         time.sleep(1)
         self.driver.probe()
 
-    def loadFPGA(self, filelike):
+    def loadFPGA(self):
         self.driver.configureFpgaLS(self.fpga_bitstream())
 
 
