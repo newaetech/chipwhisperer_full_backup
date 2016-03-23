@@ -10,6 +10,7 @@ embedded in your GUI.
 
 """
 
+import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
 

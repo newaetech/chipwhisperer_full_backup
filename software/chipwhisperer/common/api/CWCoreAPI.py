@@ -143,10 +143,8 @@ class CWCoreAPI(object):
         self.connect()
 
     def connect(self):
-        try:
-            self.connectScope()
-        finally:
-            self.connectTarget()
+        self.connectScope()
+        self.connectTarget()            
 
     def disconnectScope(self):
         self.getScope().dis()

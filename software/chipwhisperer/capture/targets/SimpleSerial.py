@@ -326,6 +326,9 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         
     def selectionChanged(self):
         pass
+    
+    def setOpenADC(self, oa):
+        self.oa = oa.scope.sc
 
 class SimpleSerial(TargetTemplate):
     def setupParameters(self):

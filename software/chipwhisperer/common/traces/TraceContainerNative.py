@@ -125,7 +125,6 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         self.setDirty(False)
 
     def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
-        print "unloading"
         self.saveAllTraces(os.path.dirname(self.config.configFilename()), prefix=self.config.attr("prefix"))
 
         # Release memory associated with data in case this isn't deleted

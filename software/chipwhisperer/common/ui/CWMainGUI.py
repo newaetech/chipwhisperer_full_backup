@@ -232,6 +232,8 @@ class CWMainGUI(QMainWindow):
         self.cwAPI.signals.parametersChanged.connect(QCoreApplication.processEvents)
         self.cwAPI.signals.newProject.connect(lambda: self.projEditWidget.setProject(self.cwAPI.project()))
         self.cwAPI.signals.newProject.connect(lambda: self.cwAPI.project().signals.statusChanged.connect(self.projectChanged))
+        
+        CWMainGUI.instance = self
 
     def restoreSettings(self):
         self.restoreGeometry(QSettings().value("geometry"))
@@ -574,6 +576,10 @@ class CWMainGUI(QMainWindow):
         m = mod.userScript(self.cwAPI)
         m.run()
         self.updateStatusBar("Finished Script: %s" % mod.name())
+        
+    @staticmethod
+    def getInstance():
+        return CWMainGUI.instance
 
 
 def main():    

@@ -30,6 +30,7 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as Ch
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.ui.qt as openadc_qt
+import chipwhisperer.capture.ui.CWCaptureGUI
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
@@ -529,6 +530,7 @@ class OpenADCInterface(ScopeTemplate):
 
     def con(self):
         if self.scopetype is not None:
+            
             self.scopetype.con()
             # self.refreshTimer.start()
 
@@ -550,7 +552,7 @@ class OpenADCInterface(ScopeTemplate):
                 util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(chipwhisperer.capture.ui.CWCaptureGUI.CWCaptureGUI.getInstance())
                     self.advancedSAD.setOpenADC(self.qtadc)
 
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()

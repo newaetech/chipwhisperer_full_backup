@@ -27,6 +27,9 @@ try:
     from pyqtgraph.parametertree import Parameter
     from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
     
+    #Do not remove - this import is unused, but it affects other imports
+    import chipwhisperer.common.ui.ParameterTypesCustom
+    
     
     #Default parameter - uses pyqtgraph to store
     class ConfigParameter(Parameter):
