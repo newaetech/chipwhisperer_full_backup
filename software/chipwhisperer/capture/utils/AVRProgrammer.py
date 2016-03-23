@@ -147,7 +147,7 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("avr-flash-location"), '*.hex')
         if fname:
             self.flashLocation.setText(fname)
-            self.settings.setValue("avr-flash-location", fname)
+            QSettings().setValue("avr-flash-location", fname)
 
     def readSignature(self, close=True):
         self.avr.find()
