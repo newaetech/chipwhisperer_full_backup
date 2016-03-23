@@ -41,6 +41,8 @@ from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperim
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
 
+    name = "CPA"
+
     def __init__(self):
         AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
@@ -55,7 +57,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if CPAProgressive_CAccel is not None:
             cpaalgos['Progressive-C Accel'] = CPAProgressive_CAccel
 
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
+        attackParams = [{'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
                         {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
@@ -67,7 +69,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                         },
                       ]
 
-        self.params = ConfigParameter.create_extended(self, name='Attack', type='group', children=attackParams)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
 
         self.setAnalysisAlgorithm(CPAProgressive, None, None)
         self.updateBytesVisible()

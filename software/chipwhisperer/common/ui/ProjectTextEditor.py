@@ -81,6 +81,7 @@ class ProjectTextEditor(QWidget):
         pbReloadFile.clicked.connect(self.readFromDisk)
 
         self.statusTextbox = QtFixes.QLineEdit("")
+        self.statusTextbox.setReadOnly(True)
         statusLayout = QHBoxLayout()
         statusLayout.addWidget(QLabel("Status:"))
         statusLayout.addWidget(self.statusTextbox)

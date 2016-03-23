@@ -718,7 +718,7 @@ class ResultsTable(QObject):
         self.ResultsTable.setObjectName("Results Table")
         self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
         self.ResultsTable.setWidget(fullTable)
-        self.ResultsTable.setVisible(False)
+        self.ResultsTable.setVisible(True)
         self.ResultsTable.visibilityChanged.connect(self.visibleChanged)
 
         self.numKeys = subkeys

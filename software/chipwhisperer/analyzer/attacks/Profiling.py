@@ -42,6 +42,7 @@ from AttackGenericParameters import AttackGenericParameters
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
 
+    name = "Profiling"
     def __init__(self, traceExplorerDialog):
         self.traceExplorerDialog = traceExplorerDialog
         AttackBaseClass.__init__(self)
@@ -58,7 +59,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
                       ]
-        self.params = ConfigParameter.create_extended(self, name='Attack', type='group', children=attackParams)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
 
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
