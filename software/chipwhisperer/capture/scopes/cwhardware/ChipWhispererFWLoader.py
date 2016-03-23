@@ -149,7 +149,7 @@ class FWLoaderConfig(object):
 
         #Print if in debug mode
         if self.loader.fpga_bitstream_date():
-            strdate = self.fpga_bitstream_date()
+            strdate = self.loader.fpga_bitstream_date()
             print "FPGA: DEBUG MODE: Using .bit file, date: %s" % strdate
         
         self.loader.loadFPGA()
