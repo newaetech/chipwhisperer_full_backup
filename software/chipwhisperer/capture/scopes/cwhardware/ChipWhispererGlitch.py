@@ -26,6 +26,7 @@
 #=================================================
 
 import zipfile
+import os
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
@@ -89,12 +90,12 @@ class ChipWhispererGlitch():
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if scope.cwFirmwareConfig.useFPGAZip:
-                fileloc = scope.cwFirmwareConfig.loader.bsZipLoc
+            if scope.cwFirmwareConfig.loader._release_mode:
+                fileloc = scope.cwFirmwareConfig.loader._bsZipLoc
 
                 if fileloc:
                     if fileloc.startswith("."):
-                        fileloc = CWCoreAPI.getInstance().getRootDir() + "/" + fileloc
+                        fileloc = os.path.join(CWCoreAPI.getInstance().getRootDir(), fileloc)
                     zfile = zipfile.ZipFile(fileloc, "r")
 
                     if cwtype == "cwlite":

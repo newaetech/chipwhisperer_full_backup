@@ -104,12 +104,12 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
             layout.addWidget(gbSAMFW)
 
         self.setFPGAModeRelease(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name) != "debug")
-        self.fwLoaderConfig.loader.bsZipLoc = QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader.bsZipLoc)
-        self.bitZipLocation.setText(self.fwLoaderConfig.loader.bsZipLoc)
-        self.fwLoaderConfig.loader.bsLoc = QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader.bsLoc)
-        self.bitDebugLocation.setText(self.fwLoaderConfig.loader.bsLoc)
-        self.fwLoaderConfig.loader.fwFLoc = QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader.fwFLoc)
-        self.firmwareLocation.setText(self.fwLoaderConfig.loader.fwFLoc)
+        self.fwLoaderConfig.loader._bsZipLoc = QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._bsZipLoc)
+        self.bitZipLocation.setText(self.fwLoaderConfig.loader._bsZipLoc)
+        self.fwLoaderConfig.loader._bsLoc = QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._bsLoc)
+        self.bitDebugLocation.setText(self.fwLoaderConfig.loader._bsLoc)
+        self.fwLoaderConfig.loader._fwFLoc = QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._fwFLoc)
+        self.firmwareLocation.setText(self.fwLoaderConfig.loader._fwFLoc)
         self.setLayout(layout)
 
     def readFirmwareVersion(self):
@@ -131,21 +131,21 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name), '*.bit')
         if fname:
             self.bitDebugLocation.setText(fname)
-            self.fwLoaderConfig.loader.bsLoc = fname
+            self.fwLoaderConfig.loader._bsLoc = fname
             QSettings().setValue("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name, fname)
 
     def findZipBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Zip Firmware', QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name), '*.zip')
         if fname:
             self.bitZipLocation.setText(fname)
-            self.fwLoaderConfig.loader.bsZipLoc = fname
+            self.fwLoaderConfig.loader._bsZipLoc = fname
             QSettings().setValue("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name, fname)
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware', QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name), '*.ihx')
         if fname:
             self.firmwareLocation.setText(fname)
-            self.fwLoaderConfig.loader.fwFLoc = fname
+            self.fwLoaderConfig.loader._fwFLoc = fname
             QSettings().setValue("%s-firmware-location" % self.fwLoaderConfig.loader.name, fname)
 
     def upgradeSAM3(self):

@@ -30,7 +30,6 @@ import sys
 import numpy as np
 from PySide.QtCore import *
 
-
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 sadcfgaddr = 53

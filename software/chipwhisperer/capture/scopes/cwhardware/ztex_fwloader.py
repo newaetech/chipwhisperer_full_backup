@@ -323,7 +323,9 @@ class Ztex1v1(object):
         size = 0
         try:
             # Read entire thing in
-            with fwFileLike as f: inputStream = f.read()
+            #with fwFileLike as f: inputStream = f.read()
+            inputStream = fwFileLike.read()
+            fwFileLike.close()
             streamCnt = 0
 
             j = transactionBytes
@@ -344,7 +346,7 @@ class Ztex1v1(object):
 
         except IOError as e:
             # raise BitstreamReadException(e.getLocalizedMessage())
-            print "haha"
+            print "Shit - IO Error in configureFpgaLS"
 
         if size < 64 or size % 64 == 0:
             raise ValueError("Invalid file size: " + str(size))

@@ -4,7 +4,6 @@
 # Copyright (c) 2016, NewAE Technology Inc
 # All rights reserved.
 #
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -31,21 +30,52 @@ import time
 import zipfile
 import os.path
 
+class CW_Loader(object):
+    """ Base class for ChipWhisperer targets that help loading of FPGA data """
+    
+    def fpga_bitstream_date(self):
+        """ In 'debug' mode returns date bitstream was modified, returns 'None' in release mode """
+        
+        if self._release_mode:
+            return None
+        else:
+            bsdate = os.path.getmtime(self._bsLoc)
+            return time.ctime(bsdate)
+        
+    def fpga_bitstream(self):
+        """ Returns FPGA bitstream in use (either debug or release) """
+        
+        if self._release_mode:
+            if not os.path.isfile(self._bsZipLoc):
+                raise IOError("FPGA Zip-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsZipLoc)
+            zfile = zipfile.ZipFile(self._bsZipLoc, "r")
+            return zfile.open(self._bsZipLoc_filename)
+        else:
+            if not os.path.isfile(self._bsLoc):
+                raise IOError("FPGA bit-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsLoc)
+            return open(self._bsLoc, "rb")
+            
+    def setFPGAMode(self, release_mode):
+        """ Release mode uses a zip-file with everything, otherwise expect seperate .bit file """
+        
+        self._release_mode = release_mode
 
-class CWCRev2_Loader(object):
+    
+
+class CWCRev2_Loader(CW_Loader):
     def __init__(self):
         self.name = "cwcrev2"
         self.driver = Ztex1v1()
-        self.fwFLoc = CWCoreAPI.getInstance().getRootDir() + "/../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"
-        self.bsZipLoc = CWCoreAPI.getInstance().getRootDir() + "/../../../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"
-        self.bsZipLoc_filename = "interface.bit"
-        self.bsLoc = CWCoreAPI.getInstance().getRootDir() + "/../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"
-
+        self._fwFLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))
+        self._bsZipLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"))
+        self._bsZipLoc_filename = "interface.bit"
+        self._bsLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"))
+    
     def loadRequired(self, callback, forceFirmware=False):
         self.driver.probe(True)
 
         if self.driver.firmwareProgrammed == False or forceFirmware:
-            self.loadFirmware(self.fwFLoc)
+            self.loadFirmware()
         else:
             print "EZ-USB Microcontroller: Skipped firmware download (already done)"
 
@@ -63,30 +93,32 @@ class CWCRev2_Loader(object):
         else:
             print "FPGA: Skipped configuration (already done)"
 
-    def loadFirmware(self, file):
-        f = IhxFile(file)
+    def loadFirmware(self):
+        if not os.path.isfile(self._fwFLoc):
+                raise IOError("Firmware ihx-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._fwFLoc)
+        f = IhxFile(self._fwFLoc)
         self.driver.uploadFirmware(f)
         time.sleep(1)
         self.driver.probe()
 
-    def loadFPGA(self, file):
-        self.driver.configureFpgaLS(file.open("interface.bit"))
+    def loadFPGA(self, filelike):
+        self.driver.configureFpgaLS(self.fpga_bitstream())
 
 
-class CWLite_Loader(object):
+class CWLite_Loader(CW_Loader):
     def __init__(self):
         self.name = "cwlite"
         self.driver = None
-        self.fwFLoc = ""
-        self.bsZipLoc = CWCoreAPI.getInstance().getRootDir() + "/../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"
-        self.bsZipLoc_filename = "cwlite_interface.bit"
-        self.bsLoc = CWCoreAPI.getInstance().getRootDir() + "/../../../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"
+        self._bsZipLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"))
+        self._bsZipLoc_filename = "cwlite_interface.bit"
+        self._bsLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../../../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"))
+
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
 
-    def loadFPGA(self, file):
-        self.driver.FPGAProgram(file)
+    def loadFPGA(self):
+        self.driver.FPGAProgram(self.fpga_bitstream())
 
     def setInterface(self, driver):
         self.driver = driver
@@ -105,25 +137,22 @@ class FWLoaderConfig(object):
         if self.loader.driver is None: raise Exception("Driver not loaded. Connect hardware before loading.")
 
         if hasattr(self.loader, 'loadFirmware'):
-            self.loader.loadFirmware(self.loader.fwFLoc)
+            self.loader.loadFirmware()
             print "Firmware loaded"
 
     def setFPGAMode(self, useFPGAZip):
-        self.useFPGAZip = useFPGAZip
+        self.loader.setFPGAMode(useFPGAZip)
 
     def loadFPGA(self):
         """Load the FPGA bitstream"""
         if self.loader.driver is None: raise Exception("Driver not loaded. Connect hardware before loading.")
 
-        if self.useFPGAZip:
-            zfile = zipfile.ZipFile(self.loader.bsZipLoc, "r")
-            self.loader.loadFPGA(zfile.open(self.loader.bsZipLoc_filename))
-
-        else:
-            # Get bitstream date, print for user
-            bsdate = os.path.getmtime(self.loader.bsLoc)
-            print "FPGA: DEBUG MODE: Using .bit file, date: %s" % time.ctime(bsdate)
-            self.loader.loadFPGA(open(self.loader.bsLoc, "rb"))
+        #Print if in debug mode
+        if self.loader.fpga_bitstream_date():
+            strdate = self.fpga_bitstream_date()
+            print "FPGA: DEBUG MODE: Using .bit file, date: %s" % strdate
+        
+        self.loader.loadFPGA(self.loader.fpga_bitstream())
         print "FPGA programmed"
 
     def setInterface(self, dev):
