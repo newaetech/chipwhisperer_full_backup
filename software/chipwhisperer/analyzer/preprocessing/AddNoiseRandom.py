@@ -35,10 +35,6 @@ def getClass():
 
 
 class AddNoiseRandom(PreprocessingBase):
-    """
-    Does some crap
-    """
-
     name = "Add Noise: Amplitude"
     descrString = "Add random noise"
      

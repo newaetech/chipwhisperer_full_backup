@@ -27,8 +27,11 @@
 
 from chipwhisperer.common.utils import util
 
+
 class AttackBaseClass(object):
     """Generic Attack Interface"""
+
+    name = "None"
 
     def __init__(self):
         #statsUpdated called new data is available
@@ -85,3 +88,5 @@ class AttackBaseClass(object):
         else:
             return self._pointRange
 
+    def getName(self):
+        return self.name

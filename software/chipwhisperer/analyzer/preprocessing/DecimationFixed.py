@@ -35,10 +35,6 @@ def getClass():
 
         
 class DecimationFixed(PreprocessingBase):
-    """
-    Decimate by fixed amount
-    """
-
     name = "Decimation: Fixed"
     descrString = "Decimate by a fixed factor"
 

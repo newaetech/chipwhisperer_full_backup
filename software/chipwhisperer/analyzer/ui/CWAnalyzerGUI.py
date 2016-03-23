@@ -77,7 +77,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.traceExplorerDialog.runScriptFunction.connect(self.runFunc)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
-        self.valid_atacks = {'CPA':CPA(), 'Profiling':Profiling(self.traceExplorerDialog)}
+        self.valid_atacks = {CPA.name:CPA(), Profiling.name:Profiling(self.traceExplorerDialog)}
         self.cwAPI.setAttack(self.valid_atacks["CPA"])
         self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.cwAPI.getTraceManager(), self.waveformDock.widget())
         self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
@@ -190,7 +190,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
         plist = []
         for p in self.preprocessingListGUI:
-            if p:
+            if p and p.getName()!="None":
                 for item in p.paramList():
                     plist.append(item)
         ExtendedParameter.reloadParams(plist, self.preprocessingParamTree)
