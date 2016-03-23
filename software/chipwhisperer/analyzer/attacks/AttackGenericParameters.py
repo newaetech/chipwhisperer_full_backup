@@ -162,10 +162,10 @@ class AttackGenericParameters(AutoScript):
         self.singleEmit = True
 
     def updateGenericScript(self, ignored=None):
-        runs = ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams)
-        atraces = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
-        strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
-        ri = ExtendedParameter.findParam(ExtendedParameter, 'reportinterval', self.traceParams)
+        runs = self.findParam('runs', self.traceParams)
+        atraces = self.findParam('atraces', self.traceParams)
+        strace = self.findParam('strace', self.traceParams)
+        ri = self.findParam('reportinterval', self.traceParams)
 
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
 
@@ -243,9 +243,9 @@ class AttackGenericParameters(AutoScript):
         # self.addFunction("init", "setTracesPerAttack", "%d" % traces)
         # self.addFunction("init", "setIterations", "%d" % 1)
 
-        strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
-        ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams).setValue(1)
-        atrace = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
+        strace = self.findParam('strace', self.traceParams)
+        self.findParam('runs', self.traceParams).setValue(1)
+        atrace = self.findParam('atraces', self.traceParams)
 
         strace.setValue(0)
         strace.setLimits((0,traces))

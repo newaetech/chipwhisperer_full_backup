@@ -44,6 +44,7 @@ import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from functools import partial
 from chipwhisperer.analyzer.attacks.CPA import CPA
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 class CWAnalyzerGUI(CWMainGUI):
@@ -70,7 +71,6 @@ class CWAnalyzerGUI(CWMainGUI):
         #self.resultsDialog = ResultsDialog(self)
         #self.addShowStats()
 
-        self.scriptList = []
         self.plotInputEach = False
         self.traceExplorerDialog = TraceExplorerDialog(self)
         self.traceExplorerDialog.scriptsUpdated.connect(self.reloadScripts)

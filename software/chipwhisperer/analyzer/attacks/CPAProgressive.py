@@ -173,7 +173,6 @@ class CPAProgressive(AutoScript, QObject):
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
         self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
 
         self.model = targetModel
         self.leakage = leakageFunction
