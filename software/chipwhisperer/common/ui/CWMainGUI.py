@@ -36,7 +36,7 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
-from chipwhisperer.common.ui.project_text_editor import ProjectTextEditor
+from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import util
 import chipwhisperer.common.ui.qrc_resources
 
