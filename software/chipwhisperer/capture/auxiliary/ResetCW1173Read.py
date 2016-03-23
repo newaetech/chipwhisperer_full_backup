@@ -32,6 +32,7 @@ from PySide.QtGui import *
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
 def getInstance(*args):
@@ -56,9 +57,9 @@ class ResetCW1173Read(AuxiliaryTemplate):
     def traceArmPost(self):
         target = self.findParam('target').value()
         if target == 'xmega (PDI)':
-            self.parent().scope.scopetype.cwliteXMEGA.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.cwliteXMEGA.readSignature()
         else:
-            self.parent().scope.scopetype.cwliteAVR.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.cwliteAVR.readSignature()
 
         dly = self.findParam('toggledelay').value()
         if dly > 0:

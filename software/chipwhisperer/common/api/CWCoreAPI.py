@@ -124,6 +124,9 @@ class CWCoreAPI(object):
         self.auxList = [aux]
         self.signals.auxChanged.emit()
 
+    def getAux(self):
+        return self.auxList
+
     def setAcqPattern(self, pat):
         self.acqPattern = pat
         self.acqPattern.setTarget(self.getTarget())

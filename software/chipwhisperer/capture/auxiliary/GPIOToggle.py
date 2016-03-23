@@ -33,6 +33,7 @@ from PySide.QtGui import *
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
 def getInstance(*args):
@@ -66,7 +67,7 @@ class GPIOToggle(AuxiliaryTemplate):
 
 
     def checkMode(self):
-        cwa = self.parent().scope.advancedSettings.cwEXTRA
+        cwa = CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA
 
         if self.pin != self.lastPin:
             # Turn off last used pin
@@ -94,15 +95,15 @@ class GPIOToggle(AuxiliaryTemplate):
     def trigger(self):
         print "AUXIO: Trigger pin %d" % self.pin
         self.checkMode()
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
         self.nonblockingSleep(self.triglength)
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
         self.nonblockingSleep(self.postdelay)
 
 
     def captureInit(self):
         self.checkMode()
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
 
         if self.triglocation == 0:
             self.trigger()
