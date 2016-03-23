@@ -234,6 +234,8 @@ class CWMainGUI(QMainWindow):
         self.cwAPI.signals.newProject.connect(lambda: self.cwAPI.project().signals.statusChanged.connect(self.projectChanged))
         
         CWMainGUI.instance = self
+        
+        cwCoreAPI._timer_class = QTimer
 
     def restoreSettings(self):
         self.restoreGeometry(QSettings().value("geometry"))
