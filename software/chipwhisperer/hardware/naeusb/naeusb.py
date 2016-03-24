@@ -189,6 +189,12 @@ class NAEUSB(object):
 
         return data
 
+    def enter_bootloader(self, forreal=False):
+        """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
+
+        if forreal:
+            self.sendCtrl(0x22, 3)
+
     def flushInput(self):
         """Dump all the crap left over"""
         try:
