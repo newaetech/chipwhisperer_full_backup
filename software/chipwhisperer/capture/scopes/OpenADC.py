@@ -40,6 +40,7 @@ from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 try:
     # OrderedDict is new in 2.7
@@ -116,24 +117,21 @@ class OpenADCInterface_NAEUSBChip():
             except IOError, e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
-
-            if dev is None:
-                raise IOError("Could not open USB Device")
             
-            self.cwFirmwareConfig.setInterface(dev)
+            self.cwFirmwareConfig.setInterface(dev.fpga)
             self.cwFirmwareConfig.loadRequired()
 
-            self.cwliteXMEGA.setUSBInterface(dev)
-            self.cwliteAVR.setUSBInterface(dev)
+            self.cwliteXMEGA.setUSBInterface(dev.xmega)
+            self.cwliteAVR.setUSBInterface(dev.avr)
 
-            self.ser = dev
+            self.ser = dev.usbdev()
 
         try:
             self.scope.con(self.ser)
             print("OpenADC Found, Connecting")
         except IOError, e:
             exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC: " + (str(exctype) + str(value)) + " - Did you download FPGA data to ChipWhisperer?")
+            raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
     def dis(self):
         if self.ser != None:
@@ -468,8 +466,8 @@ class OpenADCInterface(ScopeTemplate):
             print "Failed to enable CW-Lite, Error: %s" % str(e)
             cwlite = None
 
-        self.setCurrentScope(cwrev2, False)
-        defscope = cwrev2
+        self.setCurrentScope(cwlite, False)
+        defscope = cwlite
 
         cw_cons = dicttype()
 
@@ -502,26 +500,29 @@ class OpenADCInterface(ScopeTemplate):
         self.digitalPattern = None
 
         scopeParams = [{'name':'Connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
-                       # {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
+                       {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
 
         self.params = ConfigParameter.create_extended(self, name='OpenADC Interface', type='group', children=scopeParams)
         self.setCurrentScope(defscope)
+        self.refreshTimer = CWCoreAPI.getInstance().runTask(self.dcmTimeout, 1)
+    
+    def dcmTimeout(self):
+        try:
+            self.qtadc.sc.getStatus()
+            # The following happen with signals, so a failure will likely occur outside of the try...except
+            # For this reason we do the call to .getStatus() to verify USB connection first
+            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
+            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
+        except Exception, e:
+            self.dis()
+            raise e
 
-    #     self.refreshTimer = QTimer()
-    #     self.refreshTimer.timeout.connect(self.dcmTimeout)
-    #     self.refreshTimer.setInterval(1000)
-    #
-    # def dcmTimeout(self):
-    #     if self.parent:
-    #         self.parent.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
-    #         self.parent.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
-
-    # def setAutorefreshDCM(self, enabled):
-    #     if enabled:
-    #         self.refreshTimer.start()
-    #     else:
-    #         self.refreshTimer.stop()
+    def setAutorefreshDCM(self, enabled):
+        if enabled:
+            self.refreshTimer.start()
+        else:
+            self.refreshTimer.stop()
 
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
@@ -532,7 +533,7 @@ class OpenADCInterface(ScopeTemplate):
         if self.scopetype is not None:
             
             self.scopetype.con()
-            # self.refreshTimer.start()
+            self.refreshTimer.start()
 
             # TODO Fix this hack
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
@@ -564,9 +565,9 @@ class OpenADCInterface(ScopeTemplate):
 
     def dis(self):
         if self.scopetype is not None:
-            self.scopetype.dis()
-            # self.refreshTimer.stop()
+            self.refreshTimer.stop()
             self.connectStatus.setValue(False)
+            self.scopetype.dis()
 
     def doDataUpdated(self,  l, offset=0):
         self.datapoints = l

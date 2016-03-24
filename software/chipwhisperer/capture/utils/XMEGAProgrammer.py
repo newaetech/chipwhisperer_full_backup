@@ -30,9 +30,7 @@ from datetime import datetime
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import XMEGAPDI
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite_progdevice import supported_xmega
+from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 import chipwhisperer.common.utils.QtFixes as QtFixes
 
@@ -147,23 +145,20 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
         self.statusLine.append("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
 
     def setUSBInterface(self, iface):
-        self.xmega.setUSBInterface(iface._usbdev)
+        self.xmega.setUSBInterface(iface)
 
 
 class XMEGAProgrammer(object):
     
     def __init__(self):
         super(XMEGAProgrammer, self).__init__()
-        self._usbiface = None
         self.supported_chips = supported_xmega
-        self.xmega = XMEGAPDI()
         self._logging = None
         self._foundchip = False
 
     def setUSBInterface(self, iface):
-        self._usbiface = iface
         self._foundchip = False
-        self.xmega.setUSB(iface)
+        self.xmega = iface
         self.xmega.setChip(self.supported_chips[0])
 
     def find(self):
@@ -234,26 +229,3 @@ class XMEGAProgrammer(object):
             print text
         else:
             self._logging(text)
-
-
-if __name__ == '__main__':
-    cwtestusb = CWLiteUSB()
-    cwtestusb.con()
-
-    fname = r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\firmware\xmega-glitch\simpleserial.hex"
-
-    xmega = XMEGAProgrammer()
-    xmega.setUSBInterface(cwtestusb._usbdev)
-    xmega.find()
-    try:
-        print "Erasing"
-        xmega.erase("chip")
-    except IOError:
-        print "**chip-erase timeout, workaround enabled**"
-        time.sleep(0.1)
-        xmega.xmega.enablePDI(False)
-        xmega.xmega.enablePDI(True)
-    # xmega.program(fname, "flash")
-    print "%02x" % xmega.xmega.readMemory(0x8f0025, 1)[0]
-    xmega.close()
-

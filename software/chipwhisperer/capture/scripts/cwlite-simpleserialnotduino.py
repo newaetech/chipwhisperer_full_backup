@@ -54,10 +54,10 @@ import scipy.io as sio
 exitWhenDone=False
 
 def name():
-    return "ChipWhisperer-Rev2: SimpleSerial Target"
+    return "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
 
 def tip():
-    return "SimpleSerial with CW Target Board"
+    return "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
 
 def pe():
     QCoreApplication.processEvents()
@@ -78,8 +78,8 @@ class userScript(QObject):
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['OpenADC Interface', 'Connection', 'ChipWhisperer Rev2'])
-        cap.setParameter(['Target Connection', 'Connection', 'ChipWhisperer'])
+        cap.setParameter(['Target Connection', 'Connection', 'ChipWhisperer-Lite'])
+        cap.setParameter(['OpenADC Interface', 'Connection', 'ChipWhisperer Lite'])
 
         #Load FW (must be configured in GUI first)
         # cap.FWLoaderGo()
@@ -88,7 +88,7 @@ class userScript(QObject):
         #for setParameter() calls, but everything else REQUIRES this
         pe()
 
-        cap.doConDis()
+        cap.connect()
         
         pe()
         pe()
@@ -96,10 +96,12 @@ class userScript(QObject):
         pe()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
-                      ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
-                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
+        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial RXD'],
+                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial TXD'],
+                      ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
+                      ['CW Extra', 'CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
                       ['OpenADC', 'Trigger Setup', 'Offset', 1500],
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
@@ -145,7 +147,7 @@ if __name__ == '__main__':
     #app.setApplicationName("Capture V2 Scripted")
     
     #Get main module
-    capture = cwc.CWCaptureGUI()
+    capture = cwc.ChipWhispererCapture()
     
     #Show window - even if not used
     capture.show()

@@ -25,9 +25,9 @@
 import time
 
 from TargetTemplate import TargetTemplate
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite import USART as CWLite_USART
 from chipwhisperer.common.api import scan
 from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 
 def getInstance(*args):
     return SimpleSerial(*args)
@@ -133,12 +133,12 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
 
     def con(self):
         self.params.getAllParameters()
-        self.cwlite_usart = CWLite_USART(self.usbdev)
+        self.cwlite_usart = CWL_USART(self.oa)
         self.cwlite_usart.init(baud=self.findParam('baud').value())
         self.connectStatus.setValue(True)
 
     def setOpenADC(self, oa):
-        self.usbdev = oa._usbdev
+        self.oa = oa
         
     def selectionChanged(self):
         pass

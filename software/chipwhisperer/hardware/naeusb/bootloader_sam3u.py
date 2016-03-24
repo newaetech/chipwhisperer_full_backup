@@ -28,6 +28,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+#Avoid namespace collision with 'serial'
+from __future__ import absolute_import
 import serial
 import time
 

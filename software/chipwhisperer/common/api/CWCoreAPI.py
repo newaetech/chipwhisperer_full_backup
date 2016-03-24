@@ -52,6 +52,27 @@ class CWCoreAPI(object):
     __organization__ = "NewAE"
     __version__ = "V3.0"
     instance = None
+    
+    class fake_timer(object):
+        """ Replicates basic QTimer() API but does nothing """
+        def __init__(self):
+            self.timeout = self
+            
+        def connect(self, callback):
+            pass
+            
+        def setInterval(self, ms_timeout):
+            pass
+        
+        def start(self):
+            pass
+        
+        def stop(self):
+            pass
+        
+        def setSingleShot(self, _):
+            pass
+
 
     class Signals(object):
         def __init__(self):
@@ -88,6 +109,7 @@ class CWCoreAPI(object):
         self.results = None
         self.signals = self.Signals()
         self.signals.abortCapture.connect(self.abortCapture)
+        self._timer_class = self.fake_timer
         CWCoreAPI.instance = self
 
     def getRootDir(self):
@@ -350,6 +372,15 @@ class CWCoreAPI(object):
             raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))
 
         self.signals.parametersChanged.emit()
+
+    def runTask(self, task, timeout_in_s, single_shot = False, start_timer = False):
+        timer = self._timer_class()
+        timer.timeout.connect(task)
+        timer.setInterval(int(timeout_in_s * 1000))
+        timer.setSingleShot(single_shot)
+        if start_timer:
+            timer.start()
+        return timer
 
     @staticmethod
     def getInstance():

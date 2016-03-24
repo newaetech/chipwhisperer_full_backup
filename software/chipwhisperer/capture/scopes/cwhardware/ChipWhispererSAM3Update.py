@@ -1,10 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2015, NewAE Technology Inc
+# Copyright (c) 2015-2016, NewAE Technology Inc
 # All rights reserved.
-#
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -29,30 +27,42 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 import os.path
-from sys import platform as _platform
-from subprocess import Popen, PIPE
-import platform
 import chipwhisperer.common.utils.QtFixes as QtFixes
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+import openadc.scan as scan
+from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 
 
 class SAM3LoaderConfig(QtFixes.QDialog):
     def __init__(self, parent=None, cwliteUSB=None):
         super(SAM3LoaderConfig, self).__init__(parent)
-        self.cwLiteUSB = cwliteUSB
+
+        if cwliteUSB:
+            self.cwLiteUSB = cwliteUSB._usb
+        else:
+            self.cwLiteUSB = None
 
         self.setWindowTitle("SAM3U Firmware Loader")
         layout = QVBoxLayout()
 
         gbSAMMode = QGroupBox("Step 1. Enable Bootloader")
         layoutGB = QVBoxLayout()
-        pbBootmode = QPushButton("Enable Bootloader Mode")
-        pbBootmode.clicked.connect(self.enableBootloader)
+
+        if self.cwLiteUSB:
+            pbBootmode = QPushButton("Enable Bootloader Mode")
+            pbBootmode.clicked.connect(self.enableBootloader)
+            layoutGB.addWidget(pbBootmode)
+        else:
+            labelUnconnected = QLabel("USB not connected. If you have not yet enabled bootload mode: close this dialog, " +
+                                      "connect to the scope/target, and open it again. If you have already enabled bootload " +
+                                      "mode skip to Step 2.")
+            labelUnconnected.setWordWrap(True)
+            layoutGB.addWidget(labelUnconnected)
+
         labelWarnBoot1 = QLabel("WARNING: Bootload mode will stay enabled until new firmware is loaded.")
         labelWarnBoot2 = QLabel("NOTE: This only works on firmware 0.11 or later. Short 'ERASE' jumper to enable bootloader mode on earlier firmwares.")
         labelWarnBoot1.setWordWrap(True)
         labelWarnBoot2.setWordWrap(True)
-        layoutGB.addWidget(pbBootmode)
         layoutGB.addWidget(labelWarnBoot1)
         layoutGB.addWidget(labelWarnBoot2)
         gbSAMMode.setLayout(layoutGB)
@@ -60,21 +70,7 @@ class SAM3LoaderConfig(QtFixes.QDialog):
 
         gbSAMProgram = QGroupBox("Step 2. Program Binary")
 
-        BOSSADesc = QLabel("The following will run the command 'bossac -e -w -v -b SAM3UFW.bin'." +
-                           " The ChipWhisperer system comes with a 'bossac' binary for Windows " +
-                           " and Linux 32-bit. You can download other versions from the BOSSA " +
-                           "website.")
-        BOSSADesc.setWordWrap(True)
-
         layoutSAMGB = QVBoxLayout()
-
-        layoutBOSSA = QHBoxLayout()
-        self.BOSSALocation = QtFixes.QLineEdit()
-        BOSSAButton = QPushButton("Find")
-        BOSSAButton.clicked.connect(self.findBOSSA)
-        layoutBOSSA.addWidget(QLabel("bossac binary"))
-        layoutBOSSA.addWidget(self.BOSSALocation)
-        layoutBOSSA.addWidget(BOSSAButton)
 
         layoutFW = QHBoxLayout()
         self.firmwareLocation = QtFixes.QLineEdit()
@@ -84,21 +80,30 @@ class SAM3LoaderConfig(QtFixes.QDialog):
         layoutFW.addWidget(self.firmwareLocation)
         layoutFW.addWidget(firmwareButton)
 
-        pbProgram = QPushButton("Run bossac")
-        pbProgram.clicked.connect(self.runBossa)
+        self.serlist = QComboBox()
+        serrefresh = QPushButton("Update List")
+        serrefresh.clicked.connect(self.serialRefresh)
 
-        self.bossaOut = QTextEdit("BOSSA Output here\n\n")
-        self.bossaOut.setReadOnly(True)
+        layoutSerList = QHBoxLayout()
+        layoutSerList.addWidget(self.serlist)
+        layoutSerList.addWidget(serrefresh)
 
-        layoutSAMGB.addWidget(BOSSADesc)
-        layoutSAMGB.addLayout(layoutBOSSA)
+        pbProgram = QPushButton("Run Program")
+        pbProgram.clicked.connect(self.runSamba)
+
+        self.programStatus = QTextEdit("You will have to wait for device to attach as a serial port. Once this " +
+                                       "happens, press the 'Update List' button and select the proper serial port." +
+                                       " Then hit 'Run Program' to update your device.")
+        self.programStatus.setReadOnly(True)
+
         layoutSAMGB.addLayout(layoutFW)
+        layoutSAMGB.addLayout(layoutSerList)
         layoutSAMGB.addWidget(pbProgram)
-        layoutSAMGB.addWidget(self.bossaOut)
+        layoutSAMGB.addWidget(self.programStatus)
+        #layoutSAMGB.addWidget(self.bossaOut)
         gbSAMProgram.setLayout(layoutSAMGB)
         layout.addWidget(gbSAMProgram)
 
-        bossaLoc = QSettings().value("bossa-location")
         sam3uFWLoc = QSettings().value("cwlite-sam3u-firmware-location")
 
         rootprefix = CWCoreAPI.getInstance().getRootDir() + "/"
@@ -109,24 +114,12 @@ class SAM3LoaderConfig(QtFixes.QDialog):
                 sam3uFWLoc = str(defLocfwF)
                 QSettings().setValue("cwlite-sam3u-firmware-location", sam3uFWLoc)
 
-        if not bossaLoc:
-            if _platform == "linux" or _platform == "linux2":
-                suffix = "lin32"
-            else:
-                suffix = "win32.exe"
-            defbossaLoc = rootprefix + "../../../hardware/capture/chipwhisperer-lite/sam3u_fw/bossa/bossac-%s" % suffix
-            if os.path.isfile(defbossaLoc):
-                bossaLoc = str(defbossaLoc)
-                QSettings().setValue("bossa-location", bossaLoc)
-
-        self.BOSSALocation.setText(bossaLoc)
         self.firmwareLocation.setText(sam3uFWLoc)
-
 
         gbDone = QGroupBox("Step 3. Reset")
         gbDoneLayout = QHBoxLayout()
         gbDone.setLayout(gbDoneLayout)
-        gbDoneLabel = QLabel("If the above succeeds, you need to power-cycle the target. Unplug & replug target. You will also " +
+        gbDoneLabel = QLabel("If the above succeeds, you need to power-cycle the target. Unplug & replug target. You may also " +
                              "need to close and re-open ChipWhisperer-Capture.")
         gbDoneLabel.setWordWrap(True)
         gbDoneLayout.addWidget(gbDoneLabel)
@@ -134,44 +127,44 @@ class SAM3LoaderConfig(QtFixes.QDialog):
 
         self.setLayout(layout)
 
-    def findBOSSA(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Find bossac Executable', QSettings().value("bossa-location"), '*')
-        if fname:
-            self.BOSSALocation.setText(fname)
-            QSettings().setValue("bossa-location", fname)
-
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware',  QSettings().value("cwlite-sam3u-firmware-location"), '*.bin')
         if fname:
             self.firmwareLocation.setText(fname)
             QSettings().setValue("cwlite-sam3u-firmware-location", fname)
 
-    def runBossa(self):
-        # Windows seems to require this?
-        if platform.system() == 'Windows':
-            self.shellRequired = True
-        else:
-            self.shellRequired = False
-
-        cmd = [os.path.normpath(self.BOSSALocation.text()),
-              '-e', '-w', '-v', '-b',
-              os.path.normpath(self.firmwareLocation.text())]
-
-        process = Popen(cmd, stdout=PIPE, stderr=PIPE, shell=self.shellRequired)
-        stdout, stderr = process.communicate()
-        process.wait()
-
-        self.bossaOut.append(stdout + stderr)
-
     def enableBootloader(self, ask=True):
         if ask:
             # Check user isn't dumb
             reply = QMessageBox.warning(self, "Bootloader Warning", "Clicking 'YES' will enable bootloader mode. To disable this mode you " +
-                                              "must load new firmware, it will not be cleared by power cycling. Please check bossac works " +
-                                              "on your platform first. If you have trouble see documentation, or ask at newae.com/forum.", QMessageBox.Yes | QMessageBox.No,
+                                              "must load new firmware, it will not be cleared by power cycling. If you have trouble see " +
+                                              "documentation, or ask at https://newae.com/forum.", QMessageBox.Yes | QMessageBox.No,
                                               QMessageBox.No)
 
             if reply != QMessageBox.Yes:
                 return
 
-        self.cwLiteUSB.sendCtrl(0x22, 3)
+        self.cwLiteUSB.enter_bootloader(True)
+
+    def runSamba(self):
+        sam = Samba()
+
+        self.programStatus.setText("Attempting to connect to %s\n"%self.serlist.currentText())
+        sam.con(self.serlist.currentText())
+        self.programStatus.append("Erasing...\n")
+        sam.erase()
+        self.programStatus.append("Programming %s\n"%(self.firmwareLocation.text()))
+        data = open(self.firmwareLocation.text(),'rb').read()
+        sam.write(data)
+        if sam.verify(data):
+            self.programStatus.append("Program OK (Verify Passed!)\n")
+            sam.flash.setBootFlash(True)
+        else:
+            self.programStatus.append("Verify FAILED\n")
+        sam.ser.close()
+
+    def serialRefresh(self):
+        serialnames = scan.scan()
+        self.serlist.clear()
+        for s in serialnames:
+            self.serlist.addItem(s)
