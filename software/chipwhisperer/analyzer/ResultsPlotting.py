@@ -807,7 +807,7 @@ class ResultsTable(QObject):
         when 'attackDone' is True."""
 
         # Process known key via attack
-        nk = self.attack.trace.getKnownKey(self.startTrace)
+        nk = self.attack.traceSource().getKnownKey(self.startTrace)
         nk = self.attack.processKnownKey(nk)
 
         # If GUI has override, process it too

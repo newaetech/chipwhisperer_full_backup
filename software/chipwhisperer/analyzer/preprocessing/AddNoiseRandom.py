@@ -56,7 +56,7 @@ class AddNoiseRandom(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -65,4 +65,4 @@ class AddNoiseRandom(PreprocessingBase):
             else:
                 return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)

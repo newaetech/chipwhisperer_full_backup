@@ -220,7 +220,7 @@ class Normalize(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
 
             if trace is None:
                 return None
@@ -228,11 +228,11 @@ class Normalize(PreprocessingBase):
 
             return proc
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
 
     # def init(self):
     #    if self.ptEnd == 0:
-    #        points = np.shape(self.trace.getTrace(0))[0]
+    #        points = np.shape(self.trace().getTrace(0))[0]
     #        self.findParam('ptrange').setLimits((0, points))
     #        self.findParam('ptrange').setValue((0, points))
     #        self.ptStart = 0

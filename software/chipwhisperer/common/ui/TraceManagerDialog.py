@@ -36,22 +36,18 @@ import chipwhisperer.common.traces.TraceContainerConfig
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
-from chipwhisperer.common.api.tracemanager import TraceManager
 
 
-class TraceManagerDialog(QtFixes.QDialog, TraceManager):
+class TraceManagerDialog(QtFixes.QDialog):
     """Manages traces associated with some project"""
 
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        TraceManager.__init__(self)
-        self.parent = parent
         #This module is interface for others
         layout = QVBoxLayout()
 
         #Get labels in use
-        exampleConfig = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig()
-        attrs = exampleConfig.attrHeaderValues()
+        attrs = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig().attrHeaderValues()
         attrHeaders = [i["header"] for i in attrs]
         attrHeaders.insert(0, "Mapped Range")
         attrHeaders.insert(0, "Enabled")
@@ -82,95 +78,56 @@ class TraceManagerDialog(QtFixes.QDialog, TraceManager):
         self.setWindowTitle("Trace Management")
         self.resize(800, 300)
 
-    def newProject(self):
-        super(TraceManagerDialog,self).newProject()
-        self.table.clearContents()
-        self.table.setRowCount(0)
+    def setTraceManager(self, traceManager):
+        self._traceManager = traceManager
+        self._traceManager.tracesChanged.connect(self.refresh)
 
     def checkProject(self, ask=True):
         #Check trace attributes
         for i in range(0, self.table.rowCount()):
-            self.traceList[i].checkTrace()
+            self._traceManager.traceList[i].checkTrace()
 
-        #Check out config
+    def refresh(self):
+        self.table.setRowCount(len(self._traceManager.traceList))
+        for p, t in enumerate(self._traceManager.traceList):
+            cb = QCheckBox()
+            cb.setChecked(t.enabled)
+            cb.clicked.connect(self.updateRanges)
+            self.table.setCellWidget(p, self.findCol("Enabled"), cb)
+            if t:
+                for column in t.config.attrHeaderValues():
+                    try:
+                        col = self.findCol(column["header"])
+                        wid = QTableWidgetItem("%s" % t.config.attr(column["name"]))
+                        attrDict = t.config.attrDict(column["name"])
+                        try:
+                            isEditable = attrDict["editable"]
+                        except KeyError:
+                            isEditable = False
 
-    def loadProject(self, configfilename):
-        super(TraceManagerDialog, self).loadProject(configfilename)
-        for indx, t in enumerate(self.traceList):
-            self.addRow(t)
-        self.validateTable()
+                        if isEditable == False:
+                            wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
+
+                        self.table.setItem(p, col, wid)
+                    except ValueError:
+                        pass
+                if t.enabled:
+                    self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d" % (t.mappedRange[0], t.mappedRange[1])))
+                else:
+                    self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem(""))
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
     def findCol(self, name):
         """ Function is a hack/cheat to deal with movable headers if they become enabled """
         for i in range(0, self.table.columnCount()):
             if self.table.horizontalHeaderItem(i).text() == name:
                 return i
-
         raise ValueError("findCol argument not in table: %s" % name)
 
-    def addRow(self, trace=None, location=None):
-        if location == None:
-            location = self.table.rowCount()
-
-        self.table.insertRow(location)
-        row = self.table.rowCount()-1
-        cb = QCheckBox()
-        cb.setChecked(trace.enabled)
-        cb.clicked.connect(self.validateTable)
-        self.table.setCellWidget(row, self.findCol("Enabled"), cb)
-        if trace:
-            for t in trace.config.attrHeaderValues():
-                try:
-                    col = self.findCol(t["header"])
-                    wid = QTableWidgetItem("%s"%trace.config.attr(t["name"]))
-                    attrDict = trace.config.attrDict(t["name"])
-                    try:
-                        isEditable = attrDict["editable"]
-                    except KeyError:
-                        isEditable = False
-
-                    if isEditable == False:
-                        wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
-
-                    self.table.setItem(row, col, wid)
-
-                except ValueError:
-                    pass
-
-    def validateTable(self):
-        startTrace = 0
+    def updateRanges(self):
         for i in range(0, self.table.rowCount()):
-            if self.table.cellWidget(i, self.findCol("Enabled")).isChecked():
-                if hasattr(self.traceList[i], 'enabled') and self.traceList[i].enabled == False:
-                    self.dirty.setValue(True)
-                self.traceList[i].enabled = True
-                tlen = self.traceList[i].numTraces()
-                self.traceList[i].mappedRange = [startTrace, startTrace+tlen-1]
-                self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d"%(startTrace, startTrace+tlen-1)))
-                startTrace = startTrace + tlen
-
-                if self.traceList[i].traces is None:
-                    if self.traceList[i].config.configFilename() is not None:
-                        path = os.path.split(self.traceList[i].config.configFilename())[0]
-                        pref = self.traceList[i].config.attr("prefix")
-                    else:
-                        path = None
-                        pref = None
-                    self.traceList[i].directory = path
-                    self.traceList[i].prefix = pref
-                    # self.traceList[i].loadAllTraces(path, pref)
-
-            else:
-                if hasattr(self.traceList[i], 'enabled') and self.traceList[i].enabled == True:
-                    self.dirty.setValue(True)
-                self.traceList[i].enabled = False
-                self.traceList[i].mappedRange = None
-                self.table.setItem(i, self.findCol("Mapped Range"), QTableWidgetItem(""))
-
-        self.updateTraces()
-        #self.updatePreview()
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
+            self._traceManager.setEnabled(i, self.table.cellWidget(i, self.findCol("Enabled")).isChecked())
 
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)
@@ -178,26 +135,20 @@ class TraceManagerDialog(QtFixes.QDialog, TraceManager):
         self.importExisting(imp.getTraceCfgFile())
         #self.updatePreview()
 
-    def append(self, ti):
-        super(TraceManagerDialog,self).append(ti)
-        self.addRow(ti)
-        self.validateTable()
-
     def importExisting(self, fname=None):
         tmi = TraceManagerImport(self)
         tmi.exec_()
 
         if tmi.getTrace() is not None:
             tmi.updateConfigData()
-            self.append(tmi.getTrace())
+            self._traceManager.append(tmi.getTrace())
 
     def copyExisting(self, fname=None):
         if fname == None:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("trace_last_file"),'*.cfg')
-            if fname:
-                QSettings().setValue("trace_last_file", fname)
 
         if fname:
+            QSettings().setValue("trace_last_file", fname)
             #Get our project directory
             targetdir = self.parent.cwp.traceslocation + "/"
             cfgname = os.path.split(fname)[1]
@@ -208,7 +159,6 @@ class TraceManagerDialog(QtFixes.QDialog, TraceManager):
             config = ConfigParser.RawConfigParser()
             config.read(fname)
             prefix = config.get("Trace Config", "prefix")
-            newprefix = prefix
 
             #Check if we'll be overwriting things
             newprefix = prefix
@@ -236,6 +186,6 @@ class TraceManagerDialog(QtFixes.QDialog, TraceManager):
             #Add new trace to file list
             ti = TraceFormatNative()
             ti.config.loadTrace(newcfgname)
-            self.append(ti)
+            self._traceManager.append(ti)
 
 

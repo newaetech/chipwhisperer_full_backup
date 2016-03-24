@@ -108,7 +108,7 @@ class DecimationClockRecovery(PreprocessingBase):
             self._order = order
 
         try:
-            fftdata = scipy.fft(self.trace.getTrace(tnum))
+            fftdata = scipy.fft(self.traceSource.getTrace(tnum))
             fftdata = abs(fftdata[2:(len(fftdata) / 2)])
             maxindx = fftdata.argmax() + 2
             centerfreq = float(maxindx) / float(len(fftdata) + 2)
@@ -130,7 +130,7 @@ class DecimationClockRecovery(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -176,4 +176,4 @@ class DecimationClockRecovery(PreprocessingBase):
             return filttrace
 
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)

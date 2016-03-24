@@ -41,7 +41,7 @@ def enforceLimits(value, limits):
 class AttackGenericParameters(AutoScript):
     def __init__(self):
         super(AttackGenericParameters, self).__init__()
-        self._tmanager = None
+        self._traceSource = None
         self._project = None
 
         self.maxSubKeys = 32
@@ -126,16 +126,13 @@ class AttackGenericParameters(AutoScript):
                 blist.append(p)
         return blist
 
-    def traceManager(self):
-        return self._tmanager
+    def setTraceSource(self, traceSource):
+        """Set the input trace source"""
+        self._traceSource = traceSource
+        self.traceManagerChanged.emit(traceSource)
 
-    def setTraceManager(self, tmanager):
-        self._tmanager = tmanager
-
-        # Temp - should replace these calls with .trace()
-        self.trace = tmanager
-
-        self.traceManagerChanged.emit(tmanager)
+    def traceSource(self):
+        return self._traceSource
 
     def setProject(self, proj):
         self._project = proj

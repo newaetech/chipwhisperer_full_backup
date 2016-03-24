@@ -48,7 +48,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
+                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript},
                          # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
@@ -57,7 +57,6 @@ class ResyncCrossCorrelation(PreprocessingBase):
         self.ccEnd = 0
         
         self.updateScript()
-
         
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
@@ -81,7 +80,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
@@ -100,7 +99,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
             return trace
             
         else:
-            return self.trace.getTrace(n)       
+            return self.traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -113,9 +112,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         if self.enabled == False:
             return
 
-        self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
+        self.reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         self.reftrace = self.reftrace[::-1]
         #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
+        cross = sp.signal.fftconvolve(self.traceSource.getTrace(tnum), self.reftrace, mode='valid')
         self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
         self.refmaxsize = max(cross[self.ccStart:self.ccEnd])

@@ -122,7 +122,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceManager", "userScript.traceManager()")
+        self.addFunction("init", "setTraceSource", "userScript.ppOutput")
         self.addFunction("init", "setProject", "userScript.project()")
 
     def processKnownKey(self, inpkey):
@@ -156,7 +156,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
             #TODO:  pointRange=self.TraceRangeList[1:17]
             try:
-                self.attack.addTraces(self.trace, (startingTrace, endingTrace), progress, pointRange=self.getPointRange())
+                self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progress, pointRange=self.getPointRange())
             except KeyboardInterrupt:
                 print "Attack ABORTED... stopping"
 

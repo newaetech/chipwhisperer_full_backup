@@ -92,7 +92,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        self.addFunction("init", "setTraceManager", "userScript.traceManager()")
+        self.addFunction("init", "setSourceManager", "userScript.ppOutput")
         self.addFunction("init", "setProject", "userScript.project()")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
@@ -113,8 +113,8 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
 #    def setAlgo(self, algo):
 #        self.attack = algo(self)
-#        if self.traceManager() is not None:
-#            self.attack.setTraceManager(self.traceManager())
+#        if self.setTraceSource() is not None:
+#            self.attack.setTraceSource(self.setTraceSource())
 #
 #        if self.project() is not None:
 #            self.attack.setProject(self.project())
@@ -170,7 +170,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             print "%d-%d"%(startingTrace, endingTrace)
 
             for i in range(startingTrace, endingTrace):
-                d = self.trace.getTrace(i)
+                d = self.traceSource().getTrace(i)
 
                 if d is None:
                     continue
@@ -178,8 +178,8 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                 d = d[startingPoint:endingPoint]
 
                 data.append(d)
-                textins.append(self.trace.getTextin(i))
-                textouts.append(self.trace.getTextout(i))
+                textins.append(self.traceSource().getTextin(i))
+                textouts.append(self.traceSource().getTextout(i))
 
             #self.attack.clearStats()
             self.attack.setByteList(self.bytesEnabled())

@@ -41,7 +41,6 @@ except ImportError:
 class TraceManagerImport(QtFixes.QDialog):
     def __init__(self, parent=None):        
         super(TraceManagerImport, self).__init__(parent)
-        self.parent = parent
 
         layout = QVBoxLayout()
 

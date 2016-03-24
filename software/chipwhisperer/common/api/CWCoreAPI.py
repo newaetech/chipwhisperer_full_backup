@@ -76,7 +76,6 @@ class CWCoreAPI(object):
     def __init__(self, rootDir):
         self.rootDir = rootDir
         self.paramTrees = []
-        self._traceManager = None
         self._project = None
         self._scope = None
         self._target = None
@@ -220,7 +219,7 @@ class CWCoreAPI(object):
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
             self.signals.campaignStart.emit(baseprefix)
-            ac.doReadings(addToList=self._traceManager)
+            ac.doReadings(addToList=self.project().traceManager())
 
             tcnt += tracesPerRun
             print "%d Captures Completed" % tcnt
@@ -248,15 +247,11 @@ class CWCoreAPI(object):
         self.project().addParamTree(self)
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
-        self.getTraceManager().newProject()
-        self.project().setTraceManager(self.getTraceManager())
 
     def openProject(self, fname):
         self.setProject(ProjectFormat(self))
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
-        self.getTraceManager().newProject()
-        self.project().setTraceManager(self.getTraceManager())
         self.project().load(fname)
         self.attack.setProject(self.project())
 
@@ -278,57 +273,30 @@ class CWCoreAPI(object):
         self.signals.traceChanged.emit()
         self._traceClass = driver
 
-    def getTraceManager(self):
-        return self._traceManager
-
-    def setTraceManager(self, manager):
-        self._traceManager = manager
-
     def getAttack(self):
         return self.attack
 
     def setAttack(self, attack):
         """Set the attack module, reloading GUI and connecting appropriate signals"""
-
         self.attack = attack
         self.signals.reloadAttackParamList.emit()
         self.results.setAttack(self.attack)
         self.attack.paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
         self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
-
-        # Sometimes required
-        if hasattr(self, "traces") and self.traces:
-            self.attack.setTraceManager(self.traces)
-
         self.attack.setProject(self.project())
         self.signals.attackChanged.emit()
 
     def doAttack(self, mod):
-        """Called when the 'Do Attack' button is pressed, or can be called via API
-        to cause attack to run"""
-
+        """Called when the 'Do Attack' button is pressed, or can be called via API  to cause attack to run"""
         print "Attacking..."
         # mod.initProject()
-
-        # Setup trace sources etc, this calls the
-        # .initPreprocessing itself
-        # it also resets the setTraces in the passed 'mod',
-        # which is REQUIRED for proper functioning!
+        mod.initPreprocessing(self.project().traceManager())
         mod.initAnalysis()
         mod.initReporting(self.results)
         mod.doAnalysis()
         mod.doneAnalysis()
         mod.doneReporting()
-
-        # print "Attack Started"
-        # if self.results:
-        #    self.results.setTraceManager(self.traces)
-        #
-        # if self.attack:
-        #    self.attack.setTraceManager(self.traces)
-        #    self.attack.doAttack()
-
-        # print "Attack Done"
+        print "Attack Done"
 
     def setTraceLimits(self, traces=None, points=None):
         """When traces is loaded, Tell everything default point/trace range"""
@@ -388,17 +356,16 @@ class CWCoreAPI(object):
         return CWCoreAPI.instance
 
     @staticmethod
-    def getPreprocessingModules(dir, tracerManager, waveformWidget):
+    def getPreprocessingModules(dir, waveformWidget):
         resp = dicttype()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
-                mod = i.getClass()(tracerManager, waveformWidget)
+                mod = i.getClass()(graphWidget = waveformWidget)
                 resp[mod.getName()] = mod
             except Exception as e:
                 print "INFO: Could not import preprocessing module " + f + ": " + str(e)
         # print "Loaded preprocessing modules: " + resp.__str__()
-        
         return _module_reorder(resp)
 
     @staticmethod
@@ -427,7 +394,6 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import scope module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        
         return _module_reorder(resp)
 
     @staticmethod

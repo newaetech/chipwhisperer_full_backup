@@ -26,7 +26,6 @@
 #=================================================
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from pyqtgraph.parametertree import Parameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 
@@ -38,16 +37,20 @@ def getClass():
 class PreprocessingBase(AutoScript):
     """
     Base Class for all preprocessing modules
+    Derivate Classes work like this:
+        - setupParameters and updateScript are used by the GUI to create the parameters list and generate the API scripts
+          You need to pass the graphWidget reference in the constructor in order to allow access to it
+        - the other methods are used by the API to apply the preprocessing filtering
+          You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
     name = "None"
     descrString = ""
 
-    def __init__(self, traceSource, graphwidget):
-        """Pass None if you don't want graphwidget"""
+    def __init__(self, traceSource = None, graphWidget=None):
         super(PreprocessingBase, self).__init__()
-        self.graphwidget = graphwidget
+        self.graphWidget = graphWidget
         self.enabled = True
-        self.setTraceSource(traceSource)
+        self.traceSource = traceSource
         self.setupParameters()
         self.paramListUpdated = util.Signal()
 
@@ -72,48 +75,41 @@ class PreprocessingBase(AutoScript):
     def getTrace(self, n):
         """Get trace number n"""
         if self.enabled:
-            trace = self.trace.getTrace(n)
-
+            trace = self.traceSource.getTrace(n)
             # Do your preprocessing here
-
             return trace
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
 
     def getTextin(self, n):
         """Get text-in number n"""
-        return self.trace.getTextin(n)
+        return self.traceSource.getTextin(n)
 
     def getTextout(self, n):
         """Get text-out number n"""
-        return self.trace.getTextout(n)
+        return self.traceSource.getTextout(n)
 
     def getKnownKey(self, n=None):
         """Get known-key number n"""
-        return self.trace.getKnownKey(n)
+        return self.traceSource.getKnownKey(n)
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
-        pass
-
-    def setTraceSource(self, tmanager):
-        """Set the input trace source"""
-        self.trace = tmanager
 
     def numPoint(self):
-        return self.trace.numPoint()
+        return self.traceSource.numPoint()
 
     def numTrace(self):
-        return self.trace.numTrace()
+        return self.traceSource.numTrace()
 
     def getSegmentList(self):
-        return self.trace.getSegmentList()
+        return self.traceSource.getSegmentList()
 
     def getAuxData(self, n, auxDic):
-        return self.trace.getAuxData(n, auxDic)
+        return self.traceSource.getAuxData(n, auxDic)
 
     def findMappedTrace(self, n):
-        return self.trace.findMappedTrace(n)
+        return self.traceSource.findMappedTrace(n)
 
     def getName(self):
         return self.name

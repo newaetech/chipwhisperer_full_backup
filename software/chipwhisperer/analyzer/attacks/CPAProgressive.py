@@ -26,9 +26,8 @@
 #=================================================
 
 from PySide.QtCore import *
-from PySide.QtGui import *
 import numpy as np
-import inspect
+import math
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
@@ -46,11 +45,9 @@ class CPAProgressiveOneSubkey(object):
         self.sumh = [0]*256
         self.sumht = [0]*256
         self.totalTraces = 0
-
         self.modelstate = {'knownkey':None}
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
-
         diffs = [0]*256
         self.totalTraces += numtraces
 
@@ -142,7 +139,7 @@ class CPAProgressiveOneSubkey(object):
 
             if progressBar:
                 progressBar.setValue(pbcnt)
-                progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces), bnum)
+                progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces-1), bnum)
                 pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
                     raise KeyboardInterrupt
@@ -159,6 +156,7 @@ class CPAProgressiveOneSubkey(object):
             #    diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
 
         return (diffs, pbcnt)
+
 
 class CPAProgressive(AutoScript, QObject):
     """
@@ -199,12 +197,11 @@ class CPAProgressive(AutoScript, QObject):
 
         self.all_diffs = range(0,16)
 
-        numtraces = tracerange[1] - tracerange[0]
+        numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:
-            pbcnt = 0
             progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
+            progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval))
 
         pbcnt = 0
         cpa = [None]*(max(brange)+1)
@@ -230,7 +227,6 @@ class CPAProgressive(AutoScript, QObject):
             brange_bf = [0]
             brange_df = brange
 
-
         for bnum_df in brange_df:
             tstart = 0
             tend = self._reportingInterval
@@ -241,7 +237,6 @@ class CPAProgressive(AutoScript, QObject):
 
                 if tstart > numtraces:
                     tstart = numtraces
-
 
                 data = []
                 textins = []

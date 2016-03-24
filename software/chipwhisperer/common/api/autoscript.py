@@ -217,12 +217,6 @@ class AutoScriptBase(object):
     def doneReporting(self):
         pass
 
-    def setTraceManager(self, tmanager):
-        self._tmanager = tmanager
-
-    def traceManager(self):
-        return self._tmanager
-
     def setProject(self, project):
         self._project = project
 

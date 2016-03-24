@@ -29,6 +29,7 @@ import re
 import sys
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
+from chipwhisperer.common.api.TraceManager import TraceManager
 
 try:
     from configobj import ConfigObj  # import the module
@@ -71,7 +72,8 @@ class ProjectFormat(object):
         self.paramListList = []        
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
-        self.traceManager = None
+        self._traceManager = TraceManager()
+        self._traceManager.dirty.connect(lambda: self.signals.dirty.setValue(self._traceManager.dirty.value() or self.signals.dirty.value()))
         self.setFilename(ProjectFormat.untitledFileName)
 
     def configObjChanged(self, key):
@@ -80,10 +82,9 @@ class ProjectFormat(object):
     def isUntitled(self):
         return self.filename == ProjectFormat.untitledFileName
 
-    def setTraceManager(self, manager):
-        self.traceManager = manager
-        self.traceManager.dirty.connect(lambda: self.signals.dirty.setValue(self.traceManager.dirty.value() or self.signals.dirty.value()))
-    
+    def traceManager(self):
+        return self._traceManager
+
     def setProgramName(self, name):
         self.settingsDict['Program Name']=name
     
@@ -133,7 +134,7 @@ class ProjectFormat(object):
             self.setFilename(f)
 
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
-        self.traceManager.loadProject(self.filename)
+        self._traceManager.loadProject(self.filename)
         self.signals.dirty.setValue(False)
 
     def getDataFilepath(self, filename, subdirectory='analysis'):
@@ -206,8 +207,7 @@ class ProjectFormat(object):
         if 'Trace Management' not in self.config:
             self.config['Trace Management'] = {}
             
-        if self.traceManager:
-            self.traceManager.saveProject(self.config, self.filename)
+        self._traceManager.saveProject(self.config, self.filename)
 
     def save(self):
         if self.filename is None:
@@ -234,8 +234,7 @@ class ProjectFormat(object):
         if no changes present. Also updates widget with overview of the
         differences if requested with updateGUI
         """
-        if self.traceManager:
-            self.saveTraceManager()
+        self.saveTraceManager()
 
         disk = util.convert_to_str(ConfigObjProj(infile=self.filename))
         ram = util.convert_to_str(self.config)
@@ -256,7 +255,7 @@ class ProjectFormat(object):
         return True
 
     def consolidate(self, keepOriginals = True):
-        for indx, t in enumerate(self.traceManager.traceList):
+        for indx, t in enumerate(self._traceManager.traceList):
             destinationDir = os.path.normpath(self.datadirectory + "traces/")
             config = ConfigObj(t.config.configFilename())
             prefix = config['Trace Config']['prefix']

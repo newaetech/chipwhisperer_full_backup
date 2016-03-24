@@ -218,8 +218,7 @@ class CWMainGUI(QMainWindow):
         self.cwAPI = cwCoreAPI
         self.name = name
         sys.excepthook = self.exceptionHook
-        self.manageTraces = TraceManagerDialog(self)
-        self.cwAPI.setTraceManager(self.manageTraces)
+        self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
         self.lastMenuActionSection = None
         self.originalStdout = None
@@ -230,10 +229,15 @@ class CWMainGUI(QMainWindow):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.cwAPI.signals.parametersChanged.connect(QCoreApplication.processEvents)
-        self.cwAPI.signals.newProject.connect(lambda: self.projEditWidget.setProject(self.cwAPI.project()))
-        self.cwAPI.signals.newProject.connect(lambda: self.cwAPI.project().signals.statusChanged.connect(self.projectChanged))
-        
+        self.cwAPI.signals.newProject.connect(self.projectChanged)
+        self.cwAPI.newProject()
         CWMainGUI.instance = self
+
+    def projectChanged(self):
+        self.traceManagerDialog.setTraceManager(self.cwAPI.project().traceManager())
+        self.projEditWidget.setProject(self.cwAPI.project())
+        self.cwAPI.project().signals.statusChanged.connect(self.statusChanged)
+        self.statusChanged()
 
     def restoreSettings(self):
         self.restoreGeometry(QSettings().value("geometry"))
@@ -400,7 +404,7 @@ class CWMainGUI(QMainWindow):
         self.fileMenu.addAction(self.exitAct)
         
         self.projectMenu = self.menuBar().addMenu("&Project")
-        self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.manageTraces.show)
+        self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.traceManagerDialog.show)
         self.projectMenu.addAction(self.traceManageAct)
         self.consolidateAct = QAction('&Consolidate', self, statusTip='Copy trace files to project directory', triggered=self.consolidateDialog)
         self.projectMenu.addAction(self.consolidateAct)
@@ -462,7 +466,7 @@ class CWMainGUI(QMainWindow):
     #     """Should return a list of all possible imports, used to test which modules are missing"""
     #     return [["MainChip", True, ""]]
 
-    def projectChanged(self):
+    def statusChanged(self):
         """Add File to recent file list"""
         self.updateTitleBar()
         
@@ -505,7 +509,8 @@ class CWMainGUI(QMainWindow):
             self.openProject(action.data())
 
     def openProject(self, fname = None):
-        self.okToContinue()
+        if not self.okToContinue():
+            return
         if fname is None:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return

@@ -49,8 +49,8 @@ class ResyncSAD(PreprocessingBase):
         self.debugReturnSad = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
-                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
+                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript},
+                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript},
                          # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
                          # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
@@ -92,7 +92,7 @@ class ResyncSAD(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             sad = self.findSAD(trace)
@@ -119,7 +119,7 @@ class ResyncSAD(PreprocessingBase):
             return trace
             
         else:
-            return self.trace.getTrace(n)       
+            return self.traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -142,13 +142,12 @@ class ResyncSAD(PreprocessingBase):
         return sadarray
         
     def calcRefTrace(self, tnum):
-        
         #If not enabled stop
         if self.enabled == False:
             return
         
-        self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
-        sad = self.findSAD(self.trace.getTrace(tnum))
+        self.reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
+        sad = self.findSAD(self.traceSource.getTrace(tnum))
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)

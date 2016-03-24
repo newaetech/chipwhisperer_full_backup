@@ -43,7 +43,7 @@ class Filter(PreprocessingBase):
 
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"signal.butter"}, 'set':self.updateScript},
+                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
                          {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
@@ -87,7 +87,7 @@ class Filter(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -96,4 +96,4 @@ class Filter(PreprocessingBase):
             return filttrace
             
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)

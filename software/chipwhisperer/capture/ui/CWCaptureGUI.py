@@ -47,7 +47,6 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitor = GlitchExplorerDialog(self)
         self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
         self.setupParameters()
-        self.newProject()
 
         self.addToolbar()
         self.addToolMenu()

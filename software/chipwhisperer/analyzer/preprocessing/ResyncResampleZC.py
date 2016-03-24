@@ -79,7 +79,7 @@ class ResyncResampleZC(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -91,7 +91,7 @@ class ResyncResampleZC(PreprocessingBase):
             return newtrace
             
         else:
-            return self.trace.getTrace(n)       
+            return self.traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -101,15 +101,13 @@ class ResyncResampleZC(PreprocessingBase):
         except ValueError:
             pass
 
-        
     def calcRefTrace(self, tnum):
-        
         #If not enabled stop
         if self.enabled == False:
             return
         
         if self.binlen == 0:
-            self.reftrace = self.trace.getTrace(tnum) - self.zcoffset
+            self.reftrace = self.traceSource.getTrace(tnum) - self.zcoffset
             ind = self.findZerocrossing(self.reftrace)
             self.binlen = self.findAvgLength(ind)
 

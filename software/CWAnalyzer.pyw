@@ -1,7 +1,6 @@
 # Calls ChipWhisperer w/o the annoying window
 import ctypes
 import os
-
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import main
 
 if __name__ == '__main__':

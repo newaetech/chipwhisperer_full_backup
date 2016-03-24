@@ -63,7 +63,7 @@ class AddNoiseJitter(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -71,7 +71,7 @@ class AddNoiseJitter(PreprocessingBase):
 
             return roll_zeropad(trace, jit)
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
 
         
 # This function stolen from: http://stackoverflow.com/questions/2777907/python-numpy-roll-with-padding

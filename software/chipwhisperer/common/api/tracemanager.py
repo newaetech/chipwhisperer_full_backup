@@ -78,8 +78,16 @@ class TraceManager(object):
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
                 self.traceList[int(tnum[0])].enabled = t[1] == "True"
+        self.updateRanges()
         self.dirty.setValue(False)
         self.tracesChanged.emit()
+
+    def setEnabled(self, pos, enabled):
+        if  self.traceList[pos].enabled != enabled:
+            self.traceList[pos].enabled = enabled
+            self.dirty.setValue(True)
+            self.updateRanges()
+            self.tracesChanged.emit()
 
     def getSegmentList(self, start=0, end=-1):
         """
@@ -144,26 +152,43 @@ class TraceManager(object):
         t = self.findMappedTrace(n)
         return t.getKnownKey(n - t.mappedRange[0])
 
+    def updateRanges(self):
+        startTrace = 0
+        for t in self.traceList:
+            if t.enabled:
+                tlen = t.numTraces()
+                t.mappedRange = [startTrace, startTrace+tlen-1]
+                startTrace = startTrace + tlen
+                if t.traces is None:
+                    if t.config.configFilename() is not None:
+                        path = os.path.split(t.config.configFilename())[0]
+                        pref = t.config.attr("prefix")
+                    else:
+                        path = None
+                        pref = None
+                    t.directory = path
+                    t.prefix = pref
+            else:
+                t.mappedRange = None
+        self.updateTraces()
+
     def updateTraces(self):
         #Find total (last mapped range)
         num = []
         pts = []
+        self.NumTrace = 0
+        self.NumPoint = 0
 
         for t in self.traceList:
             if t.mappedRange is not None:
                 num.append(t.mappedRange[1])
                 pts.append(int(t.config.attr("numPoints")))
 
-        if not num:
-            self.NumTrace = 0
-        else:
+        if num:
             self.NumTrace = max(num)
 
-        if not pts:
-            self.NumPoint = 0
-        else:
+        if pts:
             self.NumPoint = max(pts)
-        self.tracesChanged.emit()
 
     def numPoint(self):
         return self.NumPoint
@@ -175,4 +200,5 @@ class TraceManager(object):
         ti.enabled = True
         self.traceList.append(ti)
         self.dirty.setValue(True)
+        self.updateRanges()
         self.tracesChanged.emit()

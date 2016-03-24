@@ -50,7 +50,7 @@ class ResyncPeakDetect(PreprocessingBase):
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphwidget, 'set':self.updateScript},
+                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript},
                          {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
@@ -84,11 +84,10 @@ class ResyncPeakDetect(PreprocessingBase):
         self.ccEnd = refrange[1]
         self.init()
 
-
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             if str.lower(self.type) == 'max':
@@ -110,7 +109,7 @@ class ResyncPeakDetect(PreprocessingBase):
             return trace
 
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
 
     def init(self):
         try:
@@ -119,7 +118,7 @@ class ResyncPeakDetect(PreprocessingBase):
             self.findParam('enabled').setValue(False)
 
     def calcRefTrace(self, tnum):
-        reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
+        reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         if self.type == 'Max':
             self.refmaxloc = np.argmax(reftrace)
             self.refmaxsize = max(reftrace)

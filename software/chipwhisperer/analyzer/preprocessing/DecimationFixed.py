@@ -58,7 +58,7 @@ class DecimationFixed(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
 
@@ -75,4 +75,4 @@ class DecimationFixed(PreprocessingBase):
             return outtrace
 
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
