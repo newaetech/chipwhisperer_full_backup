@@ -27,14 +27,10 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #===========================================================
 
-from datetime import datetime
-from PySide.QtCore import *
-from PySide.QtGui import *
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
-from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.attacks.ProfilingTemplate import ProfilingTemplate
 from AttackGenericParameters import AttackGenericParameters
 
@@ -149,8 +145,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         # else:
         #    return inpkey
 
-    def doAttack(self):
-        start = datetime.now()
+    def doAttack(self, progressBar):
         self.attack.setReportingInterval(self.getReportingInterval())
 
         #TODO: support start/end point different per byte
@@ -162,12 +157,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
             endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
 
-            # print "%d-%d"%(startingPoint, endingPoint)
             data = []
             textins = []
             textouts = []
-
-            print "%d-%d"%(startingTrace, endingTrace)
 
             for i in range(startingTrace, endingTrace):
                 d = self.traceSource().getTrace(i)
@@ -185,24 +177,14 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             self.attack.setByteList(self.bytesEnabled())
             self.attack.setStatsReadyCallback(self.statsReady)
 
-            progress = AttackProgressDialog()
-            progress.setWindowModality(Qt.WindowModal)
-            progress.setMinimumDuration(1000)
-            progress.offset = startingTrace
-
             #TODO:  pointRange=self.TraceRangeList[1:17]
-            try:
-                self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progress)
-            except KeyboardInterrupt:
-                self.log("Attack ABORTED... stopping")
+            self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
 
-        end = datetime.now()
-        self.log("Attack Time: %s" % str(end - start))
         self.attackDone.emit()
 
     def statsReady(self):
         self.statsUpdated.emit()
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

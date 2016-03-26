@@ -25,13 +25,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from datetime import datetime
-from PySide.QtCore import *
-from PySide.QtGui import *
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
-from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
 from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
 from chipwhisperer.analyzer.attacks.CPAProgressive_CAccel import CPAProgressive_CAccel
@@ -134,9 +130,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         else:
             return inpkey
 
-    def doAttack(self):
-        start = datetime.now()
-
+    def doAttack(self, progressBar):
         self.attack.setTargetBytes(self.targetBytes())
         self.attack.setReportingInterval(self.getReportingInterval())
 
@@ -146,27 +140,14 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         for itNum in range(1, self.getIterations()+1):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
             endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
-
-            print "Traces %d-%d" % (startingTrace, endingTrace)
-
-            progress = AttackProgressDialog()
-            progress.setWindowModality(Qt.WindowModal)
-            progress.setMinimumDuration(1000)
-            progress.offset = startingTrace
-
             #TODO:  pointRange=self.TraceRangeList[1:17]
-            try:
-                self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progress, pointRange=self.getPointRange())
-            except KeyboardInterrupt:
-                print "Attack ABORTED... stopping"
+            self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
 
-        end = datetime.now()
-        print "Attack Time: %s" % str(end - start)
         self.attackDone.emit()
 
     def statsReady(self):
         self.statsUpdated.emit()
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

@@ -25,27 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 
-class CPASimpleLoop(QObject):
+
+class CPASimpleLoop(object):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
     This attack does not provide trace-by-trace statistics however, you can only gather results once
     all the traces have been run through the attack.
     """
 
-    def __init__(self, targetModel, leakageFunction, parent=None):
-        super(CPASimpleLoop, self).__init__()
+    def __init__(self, targetModel, leakageFunction):
         self.model = targetModel
         self.leakage = leakageFunction
         self.stats = DataTypeDiffs()
@@ -117,12 +108,11 @@ class CPASimpleLoop(QObject):
                 sumden1 = sumden1 + hdiff * hdiff
                 sumden2 = sumden2 + tdiff * tdiff
 
-            if progressBar:
-                progressBar.setValue(pbcnt)
-                #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
-                pbcnt = pbcnt + 1
-                if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
+            progressBar.updateStatus(pbcnt, (bnum, key))
+            pbcnt = pbcnt + 1
+
+            if progressBar.wasCanceled():
+                raise KeyboardInterrupt
 
             diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
 
@@ -141,16 +131,11 @@ class CPASimpleLoop(QObject):
         # Not used for simpleloop
         pass
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
+    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None, tracesLoop=None):
         brange=self.brange
 
         self.all_diffs = range(0,16)
-
-        if progressBar:
-            pbcnt = 0
-            progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256)
-
+        progressBar.setMaximum(len(brange) * 256)
         numtraces = tracerange[1] - tracerange[0]
 
         # Load all traces

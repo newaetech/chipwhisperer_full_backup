@@ -27,8 +27,10 @@ __author__ = "NewAE Technology Inc."
 import traceback
 import importlib
 from datetime import *
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
 try:
@@ -92,7 +94,6 @@ class CWCoreAPI(object):
             self.traceDone = util.Signal()
             self.campaignStart = util.Signal()
             self.campaignDone = util.Signal()
-            self.abortCapture = util.Signal()
 
     def __init__(self, rootDir):
         self.rootDir = rootDir
@@ -101,6 +102,7 @@ class CWCoreAPI(object):
         self._scope = None
         self._target = None
         self._traceClass = None
+        self._attack = None
         self.da = None
         self.numTraces = 100
         self.numSegments = 1
@@ -108,7 +110,6 @@ class CWCoreAPI(object):
         self.pointLimits = 0
         self.results = None
         self.signals = self.Signals()
-        self.signals.abortCapture.connect(self.abortCapture)
         self._timer_class = self.fake_timer
         CWCoreAPI.instance = self
 
@@ -197,12 +198,12 @@ class CWCoreAPI(object):
         ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
         ac.doSingleReading()
 
-    def abortCapture(self):
-            print "Capture aborted"
-            self._abortCapture = True
+    def captureM(self, progressBar = None):
+        if not progressBar:
+            progressBar = ProgressBar()
+        progressBar.setText("Current Segment = %d Current Trace = %d")
+        progressBar.setMaximum(self.numTraces)
 
-    def captureM(self):
-        overallstarttime = datetime.now()
         writerlist = []
         tcnt = 0
         tracesPerRun = int(self.numTraces / self.numSegments)
@@ -213,11 +214,8 @@ class CWCoreAPI(object):
         # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
         # the 1GB limit that a 32-bit process would expect to give you trouble at.
         waveBuffer = None
-        self._abortCapture = False
-
         for i in range(0, self.numSegments):
-            if self._abortCapture:
-                break
+            if progressBar.wasAborted(): break
             currentTrace = self.getTraceClassInstance()
 
             # Load trace writer information
@@ -240,11 +238,12 @@ class CWCoreAPI(object):
             ac.setMaxtraces(tracesPerRun)
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
+            ac.signals.traceDone.connect(lambda: progressBar.updateStatus(ac.currentTrace, (i, ac.currentTrace)))
             self.signals.campaignStart.emit(baseprefix)
-            ac.doReadings(addToList=self.project().traceManager())
+
+            # ac.doReadings(addToList=self.project().traceManager())
 
             tcnt += tracesPerRun
-            print "%d Captures Completed" % tcnt
             self.signals.campaignDone.emit()
 
             # Re-use the wave buffer for later segments
@@ -252,7 +251,7 @@ class CWCoreAPI(object):
                 waveBuffer = currentTrace.traces
                 writerlist.append(currentTrace)
 
-        print "Capture delta time: %s" % (str(datetime.now() - overallstarttime))
+        progressBar.close()
         return writerlist
 
     def project(self):
@@ -275,7 +274,8 @@ class CWCoreAPI(object):
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
         self.project().load(fname)
-        self.attack.setProject(self.project())
+        if self.getAttack():
+            self.getAttack().setProject(self.project())
 
     def saveProject(self, fname):
         self.project().setFilename(fname)
@@ -296,29 +296,30 @@ class CWCoreAPI(object):
         self._traceClass = driver
 
     def getAttack(self):
-        return self.attack
+        return self._attack
 
     def setAttack(self, attack):
         """Set the attack module, reloading GUI and connecting appropriate signals"""
-        self.attack = attack
+        self._attack = attack
         self.signals.reloadAttackParamList.emit()
-        self.results.setAttack(self.attack)
-        self.attack.paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
-        self.attack.setTraceLimits(self.traceLimits, self.pointLimits)
-        self.attack.setProject(self.project())
+        self.results.setAttack(self.getAttack())
+        self.getAttack().paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
+        self.getAttack().setTraceLimits(self.traceLimits, self.pointLimits)
+        self.getAttack().setProject(self.project())
         self.signals.attackChanged.emit()
 
-    def doAttack(self, mod):
-        """Called when the 'Do Attack' button is pressed, or can be called via API  to cause attack to run"""
-        print "Attacking..."
+    def doAttack(self, mod, progressBar = None):
+        """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
+        if not progressBar: progressBar = ProgressBar()
+
         # mod.initProject()
         mod.initPreprocessing(self.project().traceManager())
         mod.initAnalysis()
         mod.initReporting(self.results)
-        mod.doAnalysis()
+        mod.doAnalysis(progressBar)
         mod.doneAnalysis()
         mod.doneReporting()
-        print "Attack Done"
+        progressBar.close()
 
     def setTraceLimits(self, traces=None, points=None):
         """When traces is loaded, Tell everything default point/trace range"""
@@ -326,7 +327,7 @@ class CWCoreAPI(object):
         #Set parameters for attack
         self.traceLimits = traces
         self.pointLimits = points
-        self.attack.setTraceLimits(traces, points)
+        self.getAttack().setTraceLimits(traces, points)
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""

@@ -25,13 +25,12 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
 import numpy as np
 import math
-
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import util
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -136,16 +135,10 @@ class CPAProgressiveOneSubkey(object):
             #if sumden.any() < 1E-12:
             #    print "WARNING: sumden small"
 
-
-            if progressBar:
-                progressBar.setValue(pbcnt)
-                progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces-1), bnum)
-                pbcnt = pbcnt + 1
-                if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
-
-                if progressBar.wasSkipped():
-                    return (diffs, pbcnt)
+            progressBar.updateStatus(pbcnt, (self.totalTraces-numtraces, self.totalTraces-1, bnum))
+            pbcnt = pbcnt + 1
+            if progressBar.wasAborted():
+                break
 
             diffs[key] = sumnum / np.sqrt(sumden)
 
@@ -158,11 +151,11 @@ class CPAProgressiveOneSubkey(object):
         return (diffs, pbcnt)
 
 
-class CPAProgressive(AutoScript, QObject):
+class CPAProgressive(AutoScript):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = Signal(list)
+    paramListUpdated = util.Signal()
 
     def __init__(self, targetModel, leakageFunction):
         super(CPAProgressive, self).__init__()
@@ -192,16 +185,14 @@ class CPAProgressive(AutoScript, QObject):
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None):
         brange=self.brange
 
         self.all_diffs = range(0,16)
 
         numtraces = tracerange[1] - tracerange[0] + 1
-
-        if progressBar:
-            progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval))
+        progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
+        progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval))
 
         pbcnt = 0
         cpa = [None]*(max(brange)+1)
@@ -269,7 +260,6 @@ class CPAProgressive(AutoScript, QObject):
                     else:
                         bnum = bnum_df
 
-
                     skip = False
                     if (self.stats.simplePGE(bnum) != 0) or (skipPGE == False):
                         if isinstance(pointRange, list):
@@ -281,8 +271,7 @@ class CPAProgressive(AutoScript, QObject):
                     else:
                         skip = True
 
-                    if progressBar.wasSkipped() or skip:
-                        progressBar.clearSkipped()
+                    if skip:
                         pbcnt = brangeMap[bnum] * 256 * (numtraces / self._reportingInterval + 1)
 
                         if bf is False:

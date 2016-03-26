@@ -26,9 +26,9 @@
 import os.path
 import sys
 from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter, ParameterTree
+from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.capture.ui.CaptureProgressDialog import CaptureProgressDialog
+from chipwhisperer.common.ui.ProgressBarGUI import ProgressBarGUI
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
@@ -42,7 +42,7 @@ class CWCaptureGUI(CWMainGUI):
     def __init__(self, rootdir):
         super(CWCaptureGUI, self).__init__(CWCoreAPI(rootdir), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
-        self.esm = EncryptionStatusMonitor(self)
+        self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
         self.glitchMonitor = GlitchExplorerDialog(self)
         self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
@@ -59,7 +59,7 @@ class CWCaptureGUI(CWMainGUI):
         self.cwAPI.signals.paramListUpdated.connect(self.reloadTargetParamList)
         self.cwAPI.signals.newInputData.connect(self.newTargetData)
         self.cwAPI.signals.connectStatus.connect(self.targetStatusChanged)
-        self.cwAPI.signals.newTextResponse.connect(self.esm.newData)
+        self.cwAPI.signals.newTextResponse.connect(self.encryptionStatusMonitor.newData)
         self.cwAPI.signals.traceDone.connect(self.glitchMonitor.traceDone)
         self.cwAPI.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.cwAPI.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
@@ -105,7 +105,7 @@ class CWCaptureGUI(CWMainGUI):
                         {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.cwAPI.setNumSegments, 'get':self.cwAPI.getNumSegments, 'tip':'Break capture into N segments, '
                          'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
                          'as each segment is buffered into RAM before being written to disk.'},
-                         {'name':'Open Monitor', 'type':'action', 'action':self.esm.show},
+                         {'name':'Open Monitor', 'type':'action', 'action':self.encryptionStatusMonitor.show},
                         {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.cwAPI.acqPattern, 'set':self.cwAPI.setAcqPattern},
                     ]},
                 ]
@@ -367,14 +367,7 @@ class CWCaptureGUI(CWMainGUI):
         return "Capture-One Completed"
 
     def captureM(self):
-        cprog = CaptureProgressDialog(ntraces=self.cwAPI.getNumTraces(), nsegs=self.cwAPI.getNumSegments())
-        cprog.startCapture()
-        self.cwAPI.signals.traceDone.connect(cprog.traceDoneSlot)
-        self.cwAPI.signals.campaignDone.connect(cprog.incSeg)
-        cprog.abortCapture.connect(self.cwAPI.signals.abortCapture.emit)
-        self.cwAPI.captureM()
-        self.cwAPI.signals.campaignDone.disconnect(cprog.incSeg)
-        self.cwAPI.signals.traceDone.disconnect(cprog.traceDoneSlot)
+        self.cwAPI.captureM(ProgressBarGUI(self, "Capture in Progress"))
         return "Capture-M Completed"
 
 
