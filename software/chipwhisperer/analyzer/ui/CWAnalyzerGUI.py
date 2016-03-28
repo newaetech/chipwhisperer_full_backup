@@ -66,7 +66,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.plotInputEach = False
         self.traceExplorerDialog = TraceExplorerDialog(self)
         self.traceExplorerDialog.scriptsUpdated.connect(self.reloadScripts)
-        self.traceExplorerDialog.runScriptFunction.connect(self.runFunc)
+        self.traceExplorerDialog.runScriptFunction.connect(self.runScriptFunction)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
         self.valid_atacks = {CPA.name:CPA(), Profiling.name:Profiling(self.traceExplorerDialog)}
@@ -141,7 +141,6 @@ class CWAnalyzerGUI(CWMainGUI):
             # Set as default for attacks etc
             self.defaultEditor = thisEditor
 
-
     def setPlotInputEach(self, enabled):
         self.plotInputEach = enabled
 
@@ -156,9 +155,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.AttackToolbar.addAction(attack)
         self.AttackToolbar.show()
 
-
         # Add utilities
-
         self.UtilitiesTraceExplorer = QAction('Trace Explorer', self,
                                statusTip='Get information on traces',
                                triggered=self.traceExplorerDialog.show)
@@ -354,14 +351,9 @@ class CWAnalyzerGUI(CWMainGUI):
         if mod is None:
             return None
 
-        script = mod.userScript(self)
-        script.initPreprocessing(self.cwAPI.project().traceManager())
+        script = mod.userScript(self.cwAPI.project())
+        script.initPreprocessing()
         return script
-
-    def runFunc(self, name):
-        # TODO: We should be doing this correctly, this hack is bad ;_;
-        # name = "TraceExplorerDialog_PartitionDisplay_" + name
-        self.runScriptFunction(name)
 
     def runScriptFunction(self, funcname, filename=None):
         """Loads a given script and runs a specific function within it."""
@@ -393,7 +385,7 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.append("from chipwhisperer.common.api.autoscript import AutoScriptBase", 0)
 
         # Get imports from preprocessing
-        mse.append("#Imports from Preprocessing", 0)
+        mse.append("# Imports from Preprocessing", 0)
         mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
         for p in self.preprocessingListGUI:
             if p:
@@ -401,12 +393,12 @@ class CWAnalyzerGUI(CWMainGUI):
                 for i in imports: mse.append(i, 0)
 
         # Get imports from capture
-        mse.append("#Imports from Capture", 0)
+        mse.append("# Imports from Capture", 0)
         for i in self.cwAPI.getAttack().getImportStatements():
             mse.append(i, 0)
 
         # Some other imports
-        mse.append("#Imports from utilList", 0)
+        mse.append("# Imports from utilList", 0)
         for index, util in enumerate(self.utilList):
             if hasattr(util, '_smartstatements') and util.isVisible():
                 for i in util.getImportStatements(): mse.append(i, 0)
@@ -419,10 +411,10 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.append("def initProject(self):", 1)
         mse.append("pass")
 
-        mse.append("def initPreprocessing(self, traceSource):", 1)
+        mse.append("def initPreprocessing(self):", 1)
 
         # Get init from preprocessing
-        lastOutput = "traceSource"
+        lastOutput = "self.project().traceManager()"
         for i, p in enumerate(self.preprocessingListGUI):
             if p and p.getName() != "None":
                 classname = type(p).__name__
@@ -439,7 +431,6 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.append('self.attack = %s()' % type(self.cwAPI.getAttack()).__name__)
         for s in self.cwAPI.getAttack().getStatements('init'):
             mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
-        mse.append('return self.attack')
 
         # Get init from reporting
         mse.append("def initReporting(self, results):", 1)
@@ -460,7 +451,6 @@ class CWAnalyzerGUI(CWMainGUI):
                 for s in self.cwAPI.getAttack().getStatements(k):
                     mse.append(s.replace("self.", "self.cwAPI.getAttack().").replace("userScript.", "self."))
 
-
         # Get other commands from other utilities
         for index, util in enumerate(self.utilList):
             if hasattr(util, '_smartstatements') and util.isVisible():
@@ -476,24 +466,13 @@ class CWAnalyzerGUI(CWMainGUI):
 
         mse.restoreSliderPosition()
 
-    def setTraceLimits(self, traces=None, points=None, deftrace=1, defpoint=-1):
-        if defpoint == -1:
-            defpoint = points
-
-        self.cwAPI.setTraceLimits(traces, points)
+    def setTraceLimits(self, traces, points):
+        self.cwAPI.getAttack().setTraceLimits(traces, points)
         # Set local parameters for trace viewer
-        if traces is not None:
-            self.findParam('tracerng').setLimits((0, traces))
-            # TODO: Bug in pyqtgraph maybe - if call with just deftrace &
-            #setLimits was called with (0,0), the setValue(1) is ignored which is OK,
-            #but then calling setLimits with higher value followed by setValue still
-            #has no effect??
-            #WORKAROUND: use min(traces,deftrace) to ensure don't set value beyond limit for now
-            self.findParam('tracerng').setValue((0, min(traces, deftrace)))
-
-        if points:
-            self.findParam('pointrng').setLimits((0, points))
-            self.findParam('pointrng').setValue((0, defpoint))
+        self.findParam('tracerng').setLimits((0, traces))
+        self.findParam('tracerng').setValue((0, min(traces, 1)))
+        self.findParam('pointrng').setLimits((0, points))
+        self.findParam('pointrng').setValue((0, points))
 
 
 def makeApplication():

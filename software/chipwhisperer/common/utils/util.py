@@ -30,6 +30,26 @@ import os.path
 import collections
 import shutil
 
+class FakeQTimer(object):
+    """ Replicates basic QTimer() API but does nothing """
+    def __init__(self):
+        self.timeout = self
+
+    def connect(self, callback):
+        pass
+
+    def setInterval(self, ms_timeout):
+        pass
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def setSingleShot(self, _):
+        pass
+
 def copyFile(source, destination, keepOriginals = True):
     if keepOriginals:
         shutil.copy2(source, destination)

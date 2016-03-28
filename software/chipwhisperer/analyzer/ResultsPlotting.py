@@ -223,7 +223,6 @@ class ResultsPlotData(GraphWidget):
                 {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
                 {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True},
                 # {'name':''}
-
             ]
 
     def paramList(self):
@@ -431,6 +430,7 @@ class ResultsPlotData(GraphWidget):
             pass
 
         self.pw.setVisible(True)
+
 
 class OutputVsTime(ResultsPlotData):
     """
@@ -932,6 +932,3 @@ class ResultsSave(QObject):
 
     def setEnabled(self, enabled):
         self._enabled = enabled
-
-
-

@@ -193,7 +193,6 @@ class AutoScript(object):
 class AutoScriptBase(object):
 
     def __init__(self, project):
-        super(AutoScriptBase, self).__init__()
         self._project = project
 
     def initProject(self):
@@ -216,9 +215,6 @@ class AutoScriptBase(object):
 
     def doneReporting(self):
         pass
-
-    def setProject(self, project):
-        self._project = project
 
     def project(self):
         return self._project

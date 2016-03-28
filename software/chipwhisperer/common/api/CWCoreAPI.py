@@ -27,7 +27,6 @@ __author__ = "NewAE Technology Inc."
 import traceback
 import importlib
 from datetime import *
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
@@ -54,27 +53,6 @@ class CWCoreAPI(object):
     __organization__ = "NewAE"
     __version__ = "V3.0"
     instance = None
-    
-    class fake_timer(object):
-        """ Replicates basic QTimer() API but does nothing """
-        def __init__(self):
-            self.timeout = self
-            
-        def connect(self, callback):
-            pass
-            
-        def setInterval(self, ms_timeout):
-            pass
-        
-        def start(self):
-            pass
-        
-        def stop(self):
-            pass
-        
-        def setSingleShot(self, _):
-            pass
-
 
     class Signals(object):
         def __init__(self):
@@ -106,11 +84,9 @@ class CWCoreAPI(object):
         self.da = None
         self.numTraces = 100
         self.numSegments = 1
-        self.traceLimits = 0
-        self.pointLimits = 0
         self.results = None
         self.signals = self.Signals()
-        self._timer_class = self.fake_timer
+        self._timer_class = util.FakeQTimer
         CWCoreAPI.instance = self
 
     def getRootDir(self):
@@ -270,12 +246,8 @@ class CWCoreAPI(object):
         # self.project().addParamTree(self.getTarget())
 
     def openProject(self, fname):
-        self.setProject(ProjectFormat(self))
-        self.project().setProgramName(self.__name__)
-        self.project().setProgramVersion(self.__version__)
+        self.newProject()
         self.project().load(fname)
-        if self.getAttack():
-            self.getAttack().setProject(self.project())
 
     def saveProject(self, fname):
         self.project().setFilename(fname)
@@ -298,36 +270,26 @@ class CWCoreAPI(object):
     def getAttack(self):
         return self._attack
 
-    def setAttack(self, attack):
+    def setAttack(self, attack): # Move to GUI??
         """Set the attack module, reloading GUI and connecting appropriate signals"""
         self._attack = attack
         self.signals.reloadAttackParamList.emit()
-        self.results.setAttack(self.getAttack())
         self.getAttack().paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
-        self.getAttack().setTraceLimits(self.traceLimits, self.pointLimits)
-        self.getAttack().setProject(self.project())
+        self.getAttack().setTraceLimits(self.project().traceManager().NumTrace, self.project().traceManager().NumPoint)
         self.signals.attackChanged.emit()
 
     def doAttack(self, mod, progressBar = None):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
         if not progressBar: progressBar = ProgressBar()
 
-        # mod.initProject()
-        mod.initPreprocessing(self.project().traceManager())
+        mod.initProject()
+        mod.initPreprocessing()
         mod.initAnalysis()
         mod.initReporting(self.results)
         mod.doAnalysis(progressBar)
         mod.doneAnalysis()
         mod.doneReporting()
         progressBar.close()
-
-    def setTraceLimits(self, traces=None, points=None):
-        """When traces is loaded, Tell everything default point/trace range"""
-
-        #Set parameters for attack
-        self.traceLimits = traces
-        self.pointLimits = points
-        self.getAttack().setTraceLimits(traces, points)
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
