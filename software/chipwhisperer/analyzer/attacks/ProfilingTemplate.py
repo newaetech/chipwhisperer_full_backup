@@ -27,7 +27,6 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #============================================================================
 
-from PySide.QtGui import *
 import numpy as np
 import scipy
 
@@ -36,11 +35,11 @@ try:
 except ImportError:
     multivariate_normal = None
 
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.utils.Partition import Partition
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
 from chipwhisperer.common.utils import util
@@ -67,16 +66,8 @@ class TemplateBasic(AutoScript):
     def project(self):
         return self._project
 
-    def generate(self, trange, poiList, partMethod, showProgressBar=True):
+    def generate(self, trange, poiList, partMethod, progressBar=ProgressBar('Generating Templates')):
         """Generate templates for all partitions over entire trace range"""
-
-        if showProgressBar:
-            progressBar = QProgressDialog()
-            # progressBar.setWindowModality(Qt.WindowModal)
-            # progressBar.setMinimumDuration(1000)
-            # progressBar.offset = trange[0]
-        else:
-            progressBar = None
 
         # Number of subkeys
         subkeys = len(poiList)
@@ -94,11 +85,8 @@ class TemplateBasic(AutoScript):
         # partData = generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None)
         # partData = partObj.loadPartitions(trange)
 
-        if progressBar:
-            progressBar.setWindowTitle('Generating Templates')
-            progressBar.setLabelText('Generating Trace Matrix')
-            progressBar.setMinimum(0)
-            progressBar.setMaximum(tend - tstart + subkeys)
+        progressBar.setText('Generating Trace Matrix')
+        progressBar.setMaximum(tend - tstart + subkeys)
 
         for tnum in range(tstart, tend):
             # partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
@@ -107,14 +95,11 @@ class TemplateBasic(AutoScript):
             for bnum in range(0, subkeys):
                 templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
 
-            if progressBar:
-                progressBar.setValue(tnum - tstart)
-                if progressBar.wasCanceled():
-                    progressBar.setValue(progressBar.maximum())
-                    return None
+            progressBar.updateStatus(tnum - tstart)
+            if progressBar.wasAborted():
+                return None
 
-        if progressBar:
-            progressBar.setLabelText('Generating Trace Covariance and Mean Matrices')
+        progressBar.setText('Generating Trace Covariance and Mean Matrices')
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
@@ -128,11 +113,9 @@ class TemplateBasic(AutoScript):
                     print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
                     templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
 
-            if progressBar:
-                progressBar.setValue(tend + bnum)
-                if progressBar.wasCanceled():
-                    progressBar.setValue(progressBar.maximum())
-                    return None
+            progressBar.updateStatus(tend + bnum)
+            if progressBar.wasAborted():
+                return None
 
 
                 # except ValueError:
@@ -151,6 +134,8 @@ class TemplateBasic(AutoScript):
          "poi":poiList,
          "partitiontype":partMethod.__class__.__name__
         }
+
+        progressBar.close()
 
         return self.template
 
@@ -324,10 +309,9 @@ class ProfilingTemplate(AutoScript):
 
         tdiff = self._reportinginterval
 
-        if progressBar:
-            progressBar.setMinimum(0)
-            progressBar.setMaximum(16 * len(traces))
-            pcnt = 0
+        progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
+        progressBar.setMaximum(16 * len(traces))
+        pcnt = 0
 
         for tnum in range(0, len(traces)):
             for bnum in range(0, 16):
@@ -375,13 +359,11 @@ class ProfilingTemplate(AutoScript):
                 results[bnum] += newresults
                 self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
 
-                if progressBar:
-                    progressBar.setValue(pcnt)
-                    progressBar.updateStatus((tnum, len(traces)), bnum)
-                    pcnt += 1
+                progressBar.updateStatus(pcnt, (tnum, len(traces)-1, bnum))
+                pcnt += 1
 
-                    if progressBar.wasCanceled():
-                        raise KeyboardInterrupt
+                if progressBar.wasAborted():
+                    raise KeyboardInterrupt
 
             # Do plotting if required
             if (tnum % tdiff) == 0 and self.sr:

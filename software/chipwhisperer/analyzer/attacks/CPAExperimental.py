@@ -25,50 +25,32 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
-from datetime import datetime
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from subprocess import Popen, PIPE
-
 import numpy as np
-import scipy as sp
-from openadc.ExtendedParameter import ExtendedParameter
 
-from attacks.AttackStats import DataTypeDiffs
 
-class AttackCPA_Bayesian(QObject):
+class AttackCPA_Bayesian(object):
     """
     Bayesian CPA, as described in .
     """
 
     def __init__(self, model):
-        super(AttackCPA_Bayesian, self).__init__()
         self.model = model
 
     def setByteList(self, brange):
         self.brange = brange
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
+    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
 
-        foundkey = []
+        # foundkey = []
 
         self.all_diffs = range(0,16)
 
-        if progressBar:
-            pbcnt = 0
-            progressBar.setMinimum(0)
-            progressBar.setMaximum(len(brange) * 256)
+        pbcnt = 0
+        progressBar.setText("Byte %02d: Hyp=%02x")
+        progressBar.setMaximum(len(brange) * 256)
 
         # Load all traces
         data = []
@@ -165,14 +147,12 @@ class AttackCPA_Bayesian(QObject):
                 else:
                     raise RuntimeError("algo not defined")
 
-                if progressBar:
-                    progressBar.setValue(pbcnt)
-                    #progressBar.setLabelText("Byte %02d: Hyp=%02x"%(bnum, key))
-                    pbcnt = pbcnt + 1
-                    if progressBar.wasCanceled():
-                        raise KeyboardInterrupt
+                progressBar.updateStatus(pbcnt, (bnum, key))
+                pbcnt = pbcnt + 1
 
                 diffs[key] = sumstd
+                if progressBar.wasCanceled():
+                    return
 
             #Gotten all stddevs - now process algorithm
 
@@ -204,8 +184,6 @@ class AttackCPA_Bayesian(QObject):
             #foundbyte = diffs.index(max(diffs))
             #foundkey.append(foundbyte)
 #            print "%2x "%foundbyte,
-
-
 
     def _getResult(self, bnum, hyprange=None):
         if hyprange == None:

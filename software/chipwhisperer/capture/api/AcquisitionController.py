@@ -161,14 +161,14 @@ class AcquisitionController():
             for aux in self.auxList:
                 aux.traceArm()
 
-        nt = 0
+        self.currentTrace = 0
 
-        while (nt < self.maxtraces) and self.running:
+        while (self.currentTrace < self.maxtraces) and self.running:
             if self.doSingleReading(True, None) == True:
                 if self.writer is not None:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
-                nt = nt + 1
-                self.signals.traceDone.emit(nt, self.scope.datapoints, self.scope.offset)
+                self.currentTrace = self.currentTrace + 1
+                self.signals.traceDone.emit(self.currentTrace)
 
         if self.auxList is not None:
             for aux in self.auxList:

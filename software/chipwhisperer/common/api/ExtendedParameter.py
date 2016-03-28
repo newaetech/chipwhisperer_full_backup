@@ -8,15 +8,11 @@
 # file which should have came with this code.
 
 import types
-from functools import partial
-from pyqtgraph.Qt import QtGui, QtCore
-
-# This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
-# They are especially helpful for the work done here
-
 from pyqtgraph.parametertree.parameterTypes import *
 from chipwhisperer.common.utils import util
 
+# This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
+# They are especially helpful for the work done here
 
 class WidgetParameterItemHelp(WidgetParameterItem):
     def __init__(self, *args, **kwargs):
@@ -201,7 +197,7 @@ class ExtendedParameter():
 
     @staticmethod
     def paramTreeChanged(self, param, changes):
-            ExtendedParameter.showScriptParameter(param, changes, self.params)
+        ExtendedParameter.showScriptParameter(param, changes, self.params)
 
     @staticmethod
     def reloadParams(lst, paramtree, help_window=None):
@@ -294,21 +290,16 @@ class ExtendedParameter():
                     for k, v in param.opts["values"].iteritems():
                         if v == data:
                             name.append(k)
-
-
             else:
                 name.append(data)
 
             ExtendedParameter.paramScriptingOutput.append(str(name))
 
 if __name__ == '__main__':
-    import pyqtgraph as pg
     from pyqtgraph.Qt import QtCore, QtGui
 
     app = QtGui.QApplication([])
-    import pyqtgraph.parametertree.parameterTypes as pTypes
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-
 
     class submodule(QtCore.QObject):
         paramListUpdated = util.Signal()
@@ -409,7 +400,6 @@ if __name__ == '__main__':
             if self.module is not None:
                 for a in self.module.paramList(): p.append(a)
             return p
-
 
     m = maintest()
 
