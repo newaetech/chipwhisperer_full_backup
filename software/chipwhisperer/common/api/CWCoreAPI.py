@@ -86,7 +86,7 @@ class CWCoreAPI(object):
         self.numSegments = 1
         self.results = None
         self.signals = self.Signals()
-        self._timer_class = util.FakeQTimer
+        self._timerClass = util.FakeQTimer
         CWCoreAPI.instance = self
 
     def getRootDir(self):
@@ -337,7 +337,7 @@ class CWCoreAPI(object):
         self.signals.parametersChanged.emit()
 
     def runTask(self, task, timeout_in_s, single_shot = False, start_timer = False):
-        timer = self._timer_class()
+        timer = self._timerClass()
         timer.timeout.connect(task)
         timer.setInterval(int(timeout_in_s * 1000))
         timer.setSingleShot(single_shot)

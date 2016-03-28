@@ -66,6 +66,9 @@ class ProgressBar(object):
         return self.aborted
 
     def close(self):
+        if self.currentProgress != self.maximum:
+            print self.title + ": Warning, closing before or after 100%: " + "currentProgress = %d and maximum = %d" % (self.currentProgress, self.maximum)
+
         print self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime))
 
     def setMaximum(self, value):

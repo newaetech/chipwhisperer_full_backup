@@ -61,7 +61,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.scriptList[0]['dockname'] = 'Auto-Generated'
         self.defaultEditor = self.scriptList[0]
 
-        self.cwAPI.results = ResultsPlotting() # TODO: Improve!!
+        self.cwAPI.results = ResultsPlotting() # Displays attack status/results
 
         self.plotInputEach = False
         self.traceExplorerDialog = TraceExplorerDialog(self)
@@ -434,10 +434,10 @@ class CWAnalyzerGUI(CWMainGUI):
 
         # Get init from reporting
         mse.append("def initReporting(self, results):", 1)
-        # mse.append("results.clear()")
+        mse.append("# Configures the attack observers (usually a set of GUI widgets)")
         mse.append("results.setAttack(self.attack)")
         mse.append("results.setTraceManager(self.ppOutput)")
-        mse.append("self.results = results")
+        # mse.append("self.results = results")
 
         mse.append("def doAnalysis(self, progressBar):", 1)
         mse.append("self.attack.doAttack(progressBar)")

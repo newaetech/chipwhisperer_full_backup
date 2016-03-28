@@ -140,7 +140,7 @@ class CPAProgressiveOneSubkey(object):
             if progressBar.wasAborted():
                 break
 
-            diffs[key] = sumnum / np.sqrt(sumden)
+            diffs[key] = sumnum / np.sqrt(sumden) #TODO: zero division error here
 
             # if padafter > 0:
             #    diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
@@ -192,7 +192,7 @@ class CPAProgressive(AutoScript):
 
         numtraces = tracerange[1] - tracerange[0] + 1
         progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
-        progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval))
+        progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
 
         pbcnt = 0
         cpa = [None]*(max(brange)+1)
