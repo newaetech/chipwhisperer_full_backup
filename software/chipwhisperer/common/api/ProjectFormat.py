@@ -29,7 +29,7 @@ import re
 import sys
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
-from chipwhisperer.common.api.TraceManager import TraceManager
+from chipwhisperer.common.api.tracemanager import TraceManager
 
 try:
     from configobj import ConfigObj  # import the module
