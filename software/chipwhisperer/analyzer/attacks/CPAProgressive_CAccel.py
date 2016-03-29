@@ -158,11 +158,11 @@ class CPAProgressiveOneSubkey(object):
                 c_aesmodel_setup_t_ptr(mstate),
                  guessdata.ctypes.data_as(POINTER(c_double)))
       
-        progressBar.updateStatus(pbcnt, (self.anstate.totalTraces - numtraces, self.anstate.totalTraces-1, bnum))
+        if progressBar:
+            progressBar.updateStatus(pbcnt, (self.anstate.totalTraces - numtraces, self.anstate.totalTraces-1, bnum))
+            if progressBar.wasCanceled():
+                    raise KeyboardInterrupt
         pbcnt = pbcnt + 256
-
-        if progressBar.wasCanceled():
-            raise KeyboardInterrupt
 
         return (guessdata, pbcnt)
 
@@ -208,7 +208,8 @@ class CPAProgressive_CAccel(AutoScript):
 
         numtraces = tracerange[1] - tracerange[0]
 
-        progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
+        if progressBar:
+            progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
         #self.all_diffs, pb = zip(*r)

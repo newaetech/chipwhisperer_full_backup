@@ -85,8 +85,9 @@ class TemplateBasic(AutoScript):
         # partData = generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None)
         # partData = partObj.loadPartitions(trange)
 
-        progressBar.setText('Generating Trace Matrix')
-        progressBar.setMaximum(tend - tstart + subkeys)
+        if progressBar:
+            progressBar.setText('Generating Trace Matrix')
+            progressBar.setMaximum(tend - tstart + subkeys)
 
         for tnum in range(tstart, tend):
             # partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
@@ -95,11 +96,13 @@ class TemplateBasic(AutoScript):
             for bnum in range(0, subkeys):
                 templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
 
-            progressBar.updateStatus(tnum - tstart)
-            if progressBar.wasAborted():
-                return None
+            if progressBar:
+                progressBar.updateStatus(tnum - tstart)
+                if progressBar.wasAborted():
+                    return None
 
-        progressBar.setText('Generating Trace Covariance and Mean Matrices')
+        if progressBar:
+            progressBar.setText('Generating Trace Covariance and Mean Matrices')
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
@@ -113,10 +116,10 @@ class TemplateBasic(AutoScript):
                     print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
                     templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
 
-            progressBar.updateStatus(tend + bnum)
-            if progressBar.wasAborted():
-                return None
-
+            if progressBar:
+                progressBar.updateStatus(tend + bnum)
+                if progressBar.wasAborted():
+                    return None
 
                 # except ValueError:
                 #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
@@ -135,7 +138,8 @@ class TemplateBasic(AutoScript):
          "partitiontype":partMethod.__class__.__name__
         }
 
-        progressBar.close()
+        if progressBar:
+            progressBar.close()
 
         return self.template
 
@@ -309,8 +313,9 @@ class ProfilingTemplate(AutoScript):
 
         tdiff = self._reportinginterval
 
-        progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
-        progressBar.setMaximum(16 * len(traces))
+        if progressBar:
+            progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
+            progressBar.setMaximum(16 * len(traces))
         pcnt = 0
 
         for tnum in range(0, len(traces)):
@@ -359,11 +364,11 @@ class ProfilingTemplate(AutoScript):
                 results[bnum] += newresults
                 self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
 
-                progressBar.updateStatus(pcnt, (tnum, len(traces)-1, bnum))
+                if progressBar:
+                    progressBar.updateStatus(pcnt, (tnum, len(traces)-1, bnum))
+                    if progressBar.wasAborted():
+                        raise KeyboardInterrupt
                 pcnt += 1
-
-                if progressBar.wasAborted():
-                    raise KeyboardInterrupt
 
             # Do plotting if required
             if (tnum % tdiff) == 0 and self.sr:

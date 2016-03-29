@@ -150,10 +150,11 @@ class CPAProgressiveOneSubkey(object):
             #if sumden.any() < 1E-12:
             #    print "WARNING: sumden small"
 
-            progressBar.updateStatus(pbcnt, (self.totalTraces-numtraces, self.totalTraces-1, bnum))
+            if progressBar:
+                progressBar.updateStatus(pbcnt, (self.totalTraces-numtraces, self.totalTraces-1, bnum))
+                if progressBar.wasAborted():
+                    break
             pbcnt = pbcnt + 1
-            if progressBar.wasAborted():
-                break
 
             diffs[key] = sumnum / np.sqrt(sumden)
 
@@ -214,10 +215,11 @@ class MinDistOneSubkey(object):
 
                 self.diff[key] += -abs(traces[tnum] - self.template[bnum][hypint])
 
-            progressBar.updateStatus(pbcnt, (self.totalTraces - numtraces, self.totalTraces-1, bnum))
+            if progressBar:
+                progressBar.updateStatus(pbcnt, (self.totalTraces - numtraces, self.totalTraces-1, bnum))
+                if progressBar.wasAborted():
+                    break
             pbcnt = pbcnt + 1
-            if progressBar.wasAborted():
-                break
 
         return (self.diff, pbcnt)
 
@@ -277,12 +279,9 @@ class TemplateOneSubkey(object):
             if progressBar:
                 progressBar.setValue(pbcnt)
                 progressBar.updateStatus((self.totalTraces - numtraces, self.totalTraces), bnum)
-                pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
-
-                if progressBar.wasSkipped():
-                    return (self.diff, pbcnt)
+                    break
+            pbcnt = pbcnt + 1
 
         return (self.diff, pbcnt)
 
@@ -330,10 +329,8 @@ class CPAExperimentalChannelinfo(object):
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256 * (numtraces/tdiff + 1))
 
-        pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
         #self.all_diffs, pb = zip(*r)
-        #pbcnt = 0
         cpa = [None]*(max(brange)+1)
         for bnum in brange:
             cpa[bnum] = CPAProgressiveOneSubkey()
@@ -394,6 +391,7 @@ class CPAExperimentalChannelinfo(object):
             tend = tdiff
 
             while tstart < numtraces:
+                pbcnt = 0
                 if tend > numtraces:
                     tend = numtraces
 
@@ -438,10 +436,8 @@ class CPAExperimentalChannelinfo(object):
                     else:
                         skip = True
 
-                    if progressBar.wasSkipped() or skip:
-                        progressBar.clearSkipped()
+                    if skip:
                         pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
-
                         if bf is False:
                             tstart = numtraces
 
@@ -450,9 +446,6 @@ class CPAExperimentalChannelinfo(object):
 
                 if self.sr is not None:
                     self.sr()
-
-            if progressBar is not None:
-                pbcnt = 0
 
     def getStatistics(self):
         return self.stats

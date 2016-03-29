@@ -108,13 +108,13 @@ class CPASimpleLoop(object):
                 sumden1 = sumden1 + hdiff * hdiff
                 sumden2 = sumden2 + tdiff * tdiff
 
-            progressBar.updateStatus(pbcnt, (bnum, key))
-            pbcnt = pbcnt + 1
-
-            if progressBar.wasCanceled():
-                raise KeyboardInterrupt
-
             diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
+
+            if progressBar:
+                progressBar.updateStatus(pbcnt, (bnum, key))
+                if progressBar.wasCanceled():
+                    raise KeyboardInterrupt
+            pbcnt = pbcnt + 1
 
             # if padafter > 0:
             #    diffs[key] = np.concatenate([diffs[key], np.zeros(padafter)])
@@ -134,8 +134,10 @@ class CPASimpleLoop(object):
     def addTraces(self, tracedata, tracerange, progressBar, pointRange=None, tracesLoop=None):
         brange=self.brange
 
+        if progressBar:
+            progressBar.setMaximum(len(brange) * 256)
+
         self.all_diffs = range(0,16)
-        progressBar.setMaximum(len(brange) * 256)
         numtraces = tracerange[1] - tracerange[0]
 
         # Load all traces

@@ -49,8 +49,9 @@ class AttackCPA_Bayesian(object):
         self.all_diffs = range(0,16)
 
         pbcnt = 0
-        progressBar.setText("Byte %02d: Hyp=%02x")
-        progressBar.setMaximum(len(brange) * 256)
+        if progressBar:
+            progressBar.setText("Byte %02d: Hyp=%02x")
+            progressBar.setMaximum(len(brange) * 256)
 
         # Load all traces
         data = []
@@ -147,12 +148,13 @@ class AttackCPA_Bayesian(object):
                 else:
                     raise RuntimeError("algo not defined")
 
-                progressBar.updateStatus(pbcnt, (bnum, key))
-                pbcnt = pbcnt + 1
-
                 diffs[key] = sumstd
-                if progressBar.wasCanceled():
-                    return
+
+                if progressBar:
+                    progressBar.updateStatus(pbcnt, (bnum, key))
+                    if progressBar and progressBar.wasCanceled():
+                        return
+                pbcnt = pbcnt + 1
 
             #Gotten all stddevs - now process algorithm
 
