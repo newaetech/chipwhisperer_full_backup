@@ -186,7 +186,7 @@ class CPAProgressive(AutoScript):
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         brange=self.brange
 
         self.all_diffs = range(0,16)
@@ -279,6 +279,9 @@ class CPAProgressive(AutoScript):
 
                         if bf is False:
                             tstart = numtraces
+
+                    if progressBar and progressBar.wasAborted():
+                        return
 
                 tend += self._reportingInterval
                 tstart += self._reportingInterval

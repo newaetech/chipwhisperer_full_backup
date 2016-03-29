@@ -40,7 +40,7 @@ class AddNoiseRandom(PreprocessingBase):
      
     def setupParameters(self):
         ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
+                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)

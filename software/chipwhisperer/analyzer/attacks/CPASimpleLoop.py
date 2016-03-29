@@ -131,7 +131,7 @@ class CPASimpleLoop(object):
         # Not used for simpleloop
         pass
 
-    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None, tracesLoop=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
         brange=self.brange
 
         if progressBar:

@@ -39,7 +39,7 @@ class AttackCPA_Bayesian(object):
     def setByteList(self, brange):
         self.brange = brange
 
-    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None, algo="log", tracesLoop=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange

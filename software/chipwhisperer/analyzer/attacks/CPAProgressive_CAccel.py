@@ -199,7 +199,7 @@ class CPAProgressive_CAccel(AutoScript):
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, tracedata, tracerange, progressBar, pointRange=None):
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         brange=self.brange
 
         foundkey = []

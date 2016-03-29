@@ -38,15 +38,15 @@ from chipwhisperer.common.utils.util import hexstr2list
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 class ResultsPlotting(QObject):
+    """Interface to main program, various routines for plotting output data"""
+
     paramListUpdated = Signal(list)
 
-    """Interface to main program, various routines for plotting output data"""
     def __init__(self):
         super(ResultsPlotting, self).__init__()
 
         self.override = None
 
-        #ResultsTable manages class
         self.table = ResultsTable()
         self.table.setKeyOverride(self.processKnownKey)
 
@@ -93,7 +93,7 @@ class ResultsPlotting(QObject):
     def dockList(self):
         """Return list of docks"""
 
-        return [self.table.ResultsTable, self.GraphOutputDock, self.PGEGraphDock, self.CorrelationOutputDock]
+        return [self.table.resultsTable, self.GraphOutputDock, self.PGEGraphDock, self.CorrelationOutputDock]
 
     def setAttack(self, attack):
         """Pass the attack to all plotting devices. They pull stats from the attack directly, and listen to attackDone/statusUpdated signals."""
@@ -714,12 +714,12 @@ class ResultsTable(QObject):
 
         fullLayout.addWidget(self.table)
 
-        self.ResultsTable = QDockWidget("Results Table")
-        self.ResultsTable.setObjectName("Results Table")
-        self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.ResultsTable.setWidget(fullTable)
-        self.ResultsTable.setVisible(True)
-        self.ResultsTable.visibilityChanged.connect(self.visibleChanged)
+        self.resultsTable = QDockWidget("Results Table")
+        self.resultsTable.setObjectName("Results Table")
+        self.resultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+        self.resultsTable.setWidget(fullTable)
+        self.resultsTable.setVisible(True)
+        self.resultsTable.visibilityChanged.connect(self.visibleChanged)
 
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -729,7 +729,7 @@ class ResultsTable(QObject):
         self.useSingle = False
 
         resultsParams = [
-                         {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.ResultsTable.setVisible},
+                         {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.resultsTable.setVisible},
                          {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
                          {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
                          {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
@@ -750,7 +750,7 @@ class ResultsTable(QObject):
     def visibleChanged(self):
         """Called when visibility changed, ensures GUI matches real setting"""
 
-        visible = self.ResultsTable.isVisible()
+        visible = self.resultsTable.isVisible()
         self.findParam('show').setValue(visible)
 
     def setUpdateMode(self, mode):
@@ -778,7 +778,6 @@ class ResultsTable(QObject):
 
         self._knownkey = knownkey
 
-
     def knownkey(self):
         """Get the known key"""
         if self.orfunction:
@@ -790,7 +789,6 @@ class ResultsTable(QObject):
         """Set key override function in case we don't want to use one from attack"""
 
         self.orfunction = orfunc
-
 
     def setAbsoluteMode(self, enabled):
         """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
@@ -845,7 +843,7 @@ class ResultsTable(QObject):
 
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
-        self.ResultsTable.setVisible(True)
+        self.resultsTable.setVisible(True)
 
 
 class ResultsSave(QObject):

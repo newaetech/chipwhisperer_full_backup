@@ -61,9 +61,6 @@ class ProgressBarGUI(QtFixes.QDialog, ProgressBar):
         self.pbar.setValue((self.currentProgress/self.maximum) * 100)
         QApplication.processEvents()
 
-    def abort(self):
-        super(ProgressBarGUI, self).abort()
-
     def close(self):
         ProgressBar.close(self)
         QtFixes.QDialog.close(self)
