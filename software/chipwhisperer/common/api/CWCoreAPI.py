@@ -178,7 +178,7 @@ class CWCoreAPI(object):
         if not progressBar:
             progressBar = ProgressBar()
         progressBar.setText("Current Segment = %d Current Trace = %d")
-        progressBar.setMaximum(self.numTraces)
+        progressBar.setMaximum(self.numTraces - 1)
 
         writerlist = []
         tcnt = 0
@@ -215,6 +215,7 @@ class CWCoreAPI(object):
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
             ac.signals.traceDone.connect(lambda: progressBar.updateStatus(ac.currentTrace, (i, ac.currentTrace)))
+            ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
             self.signals.campaignStart.emit(baseprefix)
 
             ac.doReadings(addToList=self.project().traceManager())
@@ -227,6 +228,8 @@ class CWCoreAPI(object):
                 waveBuffer = currentTrace.traces
                 writerlist.append(currentTrace)
 
+            if progressBar and progressBar.wasAborted():
+                break
         progressBar.close()
         return writerlist
 

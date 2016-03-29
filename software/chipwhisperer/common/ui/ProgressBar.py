@@ -32,7 +32,7 @@ class ProgressBarText(object):
     def __init__(self, title = "Progress", textMask ="Initializing...", textValues = None):
         self.title = title
         self.last = self.currentProgress = 0
-        self.maximum = 100.0
+        self.maximum = 100
         self.textMask = textMask
         self.textValues = textValues
         self.startTime = datetime.now()
@@ -74,7 +74,7 @@ class ProgressBarText(object):
         print self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime))
 
     def setMaximum(self, value):
-        self.maximum = value
+        self.maximum = float(value)
 
     def printAll(self, value):
         self.printAll = value

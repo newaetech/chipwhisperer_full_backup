@@ -27,6 +27,7 @@ __author__ = "Colin O'Flynn"
 import os.path
 import shutil
 import glob
+from functools import partial
 from PySide.QtCore import *
 from PySide.QtGui import *
 import chipwhisperer.common.utils.QtFixes as QtFixes
@@ -50,6 +51,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         attrHeaders = [i["header"] for i in attrs]
         attrHeaders.insert(0, "Mapped Range")
         attrHeaders.insert(0, "Enabled")
+        attrHeaders.append("X")
         self.table = QTableWidget(0, len(attrHeaders))
         self.table.setHorizontalHeaderLabels(attrHeaders)
         layout.setContentsMargins(5,5,5,5)
@@ -75,7 +77,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         # Set dialog layout
         self.setLayout(layout)
         self.setWindowTitle("Trace Management")
-        self.resize(800, 300)
+        self.resize(850, 300)
 
     def setTraceManager(self, traceManager):
         self._traceManager = traceManager
@@ -89,6 +91,10 @@ class TraceManagerDialog(QtFixes.QDialog):
     def refresh(self):
         self.table.setRowCount(len(self._traceManager.traceList))
         for p, t in enumerate(self._traceManager.traceList):
+            tb = QPushButton("X")
+            tb.setFixedSize(18,18)
+            tb.clicked.connect(partial(self._traceManager.removeTrace, p))
+            self.table.setCellWidget(p, self.findCol("X"), tb)
             cb = QCheckBox()
             cb.setChecked(t.enabled)
             cb.clicked.connect(self.updateRanges)

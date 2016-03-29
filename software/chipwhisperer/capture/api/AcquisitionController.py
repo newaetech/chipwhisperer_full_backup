@@ -167,8 +167,8 @@ class AcquisitionController():
             if self.doSingleReading(True, None) == True:
                 if self.writer is not None:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
-                self.currentTrace = self.currentTrace + 1
                 self.signals.traceDone.emit()
+                self.currentTrace = self.currentTrace + 1
 
         if self.auxList is not None:
             for aux in self.auxList:
