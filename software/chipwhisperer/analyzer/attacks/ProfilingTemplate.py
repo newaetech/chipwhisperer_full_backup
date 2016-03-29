@@ -66,7 +66,7 @@ class TemplateBasic(AutoScript):
     def project(self):
         return self._project
 
-    def generate(self, trange, poiList, partMethod, progressBar=ProgressBar('Generating Templates')):
+    def generate(self, trange, poiList, partMethod, progressBar=None):
         """Generate templates for all partitions over entire trace range"""
 
         # Number of subkeys

@@ -103,23 +103,20 @@ class SaveProjectDialog(QDialog):
 
     def __init__(self, parent):
         super(SaveProjectDialog, self).__init__(parent)
+        self.setWindowTitle("Unsaved Changes Detected")
         self.setModal(True)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Save unsaved changes?"))
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
         layout.addWidget(self.buttonBox)
 
-        self.setWindowTitle("Unsaved Changes Detected")
-        self._lastpushed = QDialogButtonBox.RejectRole
-
         detailedWidget = ProjectDiffWidget(self, project=self.parent().cwAPI.project())
         detailedWidget.checkDiff(updateGUI=True)
-
         detailedLayout = QVBoxLayout()
         detailedLayout.addWidget(detailedWidget)
+
         detailedHidableWidget = QWidget()
         detailedHidableWidget.setLayout(detailedLayout)
-
         detailedHidableWidget.hide()
 
         pbShowDetails = QPushButton("Show Details")
@@ -132,6 +129,7 @@ class SaveProjectDialog(QDialog):
         
         self.setLayout(layout)
 
+        self._lastpushed = QDialogButtonBox.RejectRole
         self.buttonBox.clicked.connect(self.setValue)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)

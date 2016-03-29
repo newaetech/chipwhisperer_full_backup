@@ -62,7 +62,7 @@ except ImportError:
 
 try:
     import serial
-    import openadc.scan as scan
+    import chipwhisperer.common.utils.Scan as scan
 except ImportError:
     serial = None
 

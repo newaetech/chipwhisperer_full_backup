@@ -217,7 +217,7 @@ class CWCoreAPI(object):
             ac.signals.traceDone.connect(lambda: progressBar.updateStatus(ac.currentTrace, (i, ac.currentTrace)))
             self.signals.campaignStart.emit(baseprefix)
 
-            # ac.doReadings(addToList=self.project().traceManager())
+            ac.doReadings(addToList=self.project().traceManager())
 
             tcnt += tracesPerRun
             self.signals.campaignDone.emit()

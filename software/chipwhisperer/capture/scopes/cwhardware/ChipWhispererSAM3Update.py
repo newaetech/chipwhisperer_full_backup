@@ -29,7 +29,7 @@ from PySide.QtGui import *
 import os.path
 import chipwhisperer.common.utils.QtFixes as QtFixes
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-import openadc.scan as scan
+import chipwhisperer.common.utils.Scan as scan
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 
 

@@ -28,7 +28,7 @@ from datetime import *
 import sys
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
-from chipwhisperer.common.ui.ProgressBarGUI import ProgressBarGUI
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
@@ -197,7 +197,7 @@ class CWAnalyzerGUI(CWMainGUI):
                 self.traceManagerDialog.show()
             return
 
-        self.cwAPI.doAttack(self.setupScriptModule(), ProgressBarGUI(self, "Analysis in Progress"))
+        self.cwAPI.doAttack(self.setupScriptModule(), ProgressBar("Analysis in Progress"))
 
     def reloadAttackParamList(self, list=None):
         """Reloads parameter tree in GUI when attack changes"""

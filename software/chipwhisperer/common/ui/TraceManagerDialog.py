@@ -43,7 +43,6 @@ class TraceManagerDialog(QtFixes.QDialog):
 
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        #This module is interface for others
         layout = QVBoxLayout()
 
         #Get labels in use

@@ -28,7 +28,7 @@ import sys
 from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.ui.ProgressBarGUI import ProgressBarGUI
+from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
@@ -367,7 +367,7 @@ class CWCaptureGUI(CWMainGUI):
         return "Capture-One Completed"
 
     def captureM(self):
-        self.cwAPI.captureM(ProgressBarGUI(self, "Capture in Progress"))
+        self.cwAPI.captureM(ProgressBar("Capture in Progress"))
         return "Capture-M Completed"
 
 

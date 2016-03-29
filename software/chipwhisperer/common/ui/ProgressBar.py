@@ -25,8 +25,10 @@
 
 from datetime import *
 
+class AbortedEvent(Exception):
+    pass
 
-class ProgressBar(object):
+class ProgressBarText(object):
     def __init__(self, title = "Progress", textMask ="Initializing...", textValues = None):
         self.title = title
         self.last = self.currentProgress = 0
@@ -76,3 +78,54 @@ class ProgressBar(object):
 
     def printAll(self, value):
         self.printAll = value
+
+try:
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+
+    class ProgressBarGUI(QDialog, ProgressBarText):
+        def __init__(self, title = "Progress", textMask = "Initializing...", textValues = None):
+
+            ProgressBarText.__init__(self, title = title, textMask = textMask, textValues = textValues)
+            QDialog.__init__(self, None)
+
+            self.setModal(True)
+            # self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & (not Qt.WindowContextHelpButtonHint))
+            self.setWindowTitle(title)
+            self.resize(200,100)
+
+            clayout = QHBoxLayout()
+            clayout.addStretch()
+            cancel = QPushButton("Abort")
+            cancel.clicked.connect(self.abort)
+            clayout.addWidget(cancel)
+
+            self.pbar = QProgressBar()
+            self.pbar.setTextVisible(True)
+            self.textLabel = QLabel(self.textMask)
+
+            layout = QVBoxLayout()
+            layout.addWidget(self.textLabel)
+            layout.addWidget(self.pbar)
+            layout.addLayout(clayout)
+            self.setLayout(layout)
+            self.show()
+            QApplication.processEvents()
+
+        def updateStatus(self, currentProgress, textValues = None):
+            super(ProgressBarGUI, self).updateStatus(currentProgress, textValues)
+            self.textLabel.setText(self.getText())
+            self.pbar.setValue((self.currentProgress/self.maximum) * 100)
+            QApplication.processEvents()
+
+        def close(self):
+            ProgressBarText.close(self)
+            QDialog.close(self)
+
+    actualProgressBar = ProgressBarGUI
+
+except ImportError:
+    actualProgressBar = ProgressBarText
+
+class ProgressBar(actualProgressBar):
+    pass

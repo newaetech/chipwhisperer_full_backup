@@ -113,8 +113,8 @@ passing a dict as the "locals" argument.
         else:
             self.ui.prompt.setText(">>> ")
         
-    def eventFilter(self,obj,event):
-        if event.type() == QtCore.QEvent.KeyPress:
+    def eventFilter(self, obj, event):
+        if hasattr(event, "type") and event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Up:
                 self.go_history(-1)
                 return True
