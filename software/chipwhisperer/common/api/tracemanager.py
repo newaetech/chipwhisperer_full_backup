@@ -40,7 +40,7 @@ class TraceManager(object):
     secName = "Trace Management"
 
     def __init__(self):
-        self.dirty = util.Observable(True)
+        self.dirty = util.Observable(False)
         self.tracesChanged = util.Signal()
         self.NumTrace = 0
         self.NumPoint = 0
@@ -49,10 +49,11 @@ class TraceManager(object):
 
     def newProject(self):
         self.traceList = []
-        self.dirty.setValue(True)
+        self.dirty.setValue(False)
         self.tracesChanged.emit()
 
     def saveProject(self, config, configfilename):
+        config[self.secName].clear()
         for indx, t in enumerate(self.traceList):
             config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.secName]['enabled%d' % indx] = str(t.enabled)
@@ -78,16 +79,17 @@ class TraceManager(object):
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
                 self.traceList[int(tnum[0])].enabled = t[1] == "True"
-        self.updateRanges()
+        self._wasModified()
         self.dirty.setValue(False)
-        self.tracesChanged.emit()
+
+    def removeTrace(self, pos):
+        self.traceList.pop(pos)
+        self._wasModified()
 
     def setEnabled(self, pos, enabled):
         if  self.traceList[pos].enabled != enabled:
             self.traceList[pos].enabled = enabled
-            self.dirty.setValue(True)
-            self.updateRanges()
-            self.tracesChanged.emit()
+            self._wasModified()
 
     def getSegmentList(self, start=0, end=-1):
         """
@@ -199,6 +201,9 @@ class TraceManager(object):
     def append(self, ti):
         ti.enabled = True
         self.traceList.append(ti)
+        self._wasModified()
+
+    def _wasModified(self):
         self.dirty.setValue(True)
         self.updateRanges()
         self.tracesChanged.emit()

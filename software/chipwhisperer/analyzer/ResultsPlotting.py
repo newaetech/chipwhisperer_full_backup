@@ -694,7 +694,7 @@ class ResultsTable(QObject):
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.pgeBrush = QBrush(QColor(253,255,205))
         pgehdr = QTableWidgetItem("PGE")
-        self.table.setVerticalHeaderItem(0,pgehdr)
+        self.table.setVerticalHeaderItem(0, pgehdr)
         for i in range(1,permPerSubkey+1):
             self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d"%(i-1)))
 
@@ -708,17 +708,16 @@ class ResultsTable(QObject):
 
         self.table.resizeColumnsToContents()
 
-        fullTable = QWidget()
         fullLayout = QVBoxLayout()
+        fullTable = QWidget()
         fullTable.setLayout(fullLayout)
-
         fullLayout.addWidget(self.table)
 
         self.resultsTable = QDockWidget("Results Table")
         self.resultsTable.setObjectName("Results Table")
         self.resultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
         self.resultsTable.setWidget(fullTable)
-        self.resultsTable.setVisible(True)
+        self.resultsTable.setVisible(False)
         self.resultsTable.visibilityChanged.connect(self.visibleChanged)
 
         self.numKeys = subkeys

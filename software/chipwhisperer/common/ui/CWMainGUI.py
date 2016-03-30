@@ -272,6 +272,7 @@ class CWMainGUI(QMainWindow):
 
     def tabifyDocks(self, docks):
         for index in range(1, len(docks)):
+            docks[index].show()
             self.tabifyDockWidget(docks[index-1], docks[index])
         docks[0].raise_()
 
