@@ -66,7 +66,7 @@ class ProjectFormat(object):
             self.statusChanged = util.Signal()
 
     untitledFileName = "tmp/default.cwp"
-    def __init__(self, parent=None):
+    def __init__(self):
         self.signals = ProjectFormat.Signals()
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
         self.paramListList = []        

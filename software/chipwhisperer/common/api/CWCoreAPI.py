@@ -241,7 +241,7 @@ class CWCoreAPI(object):
         self.signals.newProject.emit()
 
     def newProject(self):
-        self.setProject(ProjectFormat(self))
+        self.setProject(ProjectFormat())
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
         self.project().addParamTree(self)
