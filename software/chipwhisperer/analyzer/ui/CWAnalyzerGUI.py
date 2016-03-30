@@ -116,7 +116,6 @@ class CWAnalyzerGUI(CWMainGUI):
 
         # Find filename
         thisEditor = None
-
         for e in self.scriptList:
             if e['filename'] == filename:
                 thisEditor = e
@@ -187,7 +186,7 @@ class CWAnalyzerGUI(CWMainGUI):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
 
         #Check if traces enabled
-        if self.cwAPI.project().traceManager().NumTrace == 0:
+        if self.cwAPI.project().traceManager().numTrace == 0:
             msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project. Open Trace Manager?",
                                        QMessageBox.NoButton, self)
             msgBox.addButton("Yes", QMessageBox.AcceptRole)
@@ -207,7 +206,7 @@ class CWAnalyzerGUI(CWMainGUI):
         """Traces changed due to loading new project or adjustment in trace manager,
         so adjust limits displayed and re-plot the new input trace"""
 
-        self.setTraceLimits(self.cwAPI.project().traceManager().NumTrace, self.cwAPI.project().traceManager().NumPoint)
+        self.setTraceLimits(self.cwAPI.project().traceManager().numTrace, self.cwAPI.project().traceManager().numPoint)
         self.plotInputTrace()
         self.reloadScripts()
 

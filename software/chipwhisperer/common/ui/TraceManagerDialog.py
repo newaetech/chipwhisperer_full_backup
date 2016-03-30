@@ -40,18 +40,18 @@ from TraceManagerImport import TraceManagerImport
 
 
 class TraceManagerDialog(QtFixes.QDialog):
-    """Manages traces associated with some project"""
+    """Manages traces associated with some project's trace manager."""
 
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        self.setWindowTitle("Trace Management")
+        self.setWindowTitle("Traces Management")
         layout = QVBoxLayout()
 
         #Get labels in use
-        attrs = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig().attrHeaderValues()
-        attrHeaders = [i["header"] for i in attrs]
-        attrHeaders.insert(0, "Mapped Range")
+        self.attrs = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig().attrHeaderValues()
+        attrHeaders = [i["header"] for i in self.attrs]
         attrHeaders.insert(0, "Options")
+        attrHeaders.insert(1, "Mapped Range")
         self.table = QTableWidget(0, len(attrHeaders))
         self.table.setHorizontalHeaderLabels(attrHeaders)
         layout.setContentsMargins(5,5,5,5)
@@ -79,15 +79,18 @@ class TraceManagerDialog(QtFixes.QDialog):
         self.resize(850, 300)
 
     def setTraceManager(self, traceManager):
+        """Defines the current observed TraceManager."""
         self._traceManager = traceManager
         self._traceManager.tracesChanged.connect(self.refresh)
 
     def checkProject(self, ask=True):
-        #Check trace attributes
+        """Checks trace attributes."""
         for i in range(0, self.table.rowCount()):
             self._traceManager.traceList[i].checkTrace()
 
     def refresh(self):
+        """Populates the table."""
+        self.disconnect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
         self.table.setRowCount(len(self._traceManager.traceList))
         for p, t in enumerate(self._traceManager.traceList):
             cb = QCheckBox()
@@ -106,6 +109,7 @@ class TraceManagerDialog(QtFixes.QDialog):
             pLayout.setContentsMargins(0,0,0,0)
             self.table.setCellWidget(p, self.findCol("Options"), tmp)
             if t:
+                self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if t.enabled else ""))
                 for column in t.config.attrHeaderValues():
                     try:
                         col = self.findCol(column["header"])
@@ -120,29 +124,33 @@ class TraceManagerDialog(QtFixes.QDialog):
                         self.table.setItem(p, col, wid)
                     except ValueError:
                         pass
-                if t.enabled:
-                    self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem("%d-%d" % (t.mappedRange[0], t.mappedRange[1])))
-                else:
-                    self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem(""))
+
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
         self.table.horizontalHeader().setStretchLastSection(True)
+        self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
+
+    def cellChanged(self, row, column):
+        for i in self.attrs:
+            if i["header"] == self.table.horizontalHeaderItem(column).text():
+                attrName = i["name"]
+
+        if attrName:
+            self._traceManager.traceList[row].config.setAttr(attrName, self.table.item(row,column).text())
+        self._traceManager.traceList[row].config.saveTrace()
 
     def removeTrace(self, pos):
+        """Confirm before removing traces at pos."""
         ret = QMessageBox.question(self, "Remove traces", "Traces #%d will be removed from the project. Do you confirm?" % (pos+1), QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
             self._traceManager.removeTrace(pos)
 
     def findCol(self, name):
-        """ Function is a hack/cheat to deal with movable headers if they become enabled """
+        """Function is a hack/cheat to deal with movable headers if they become enabled."""
         for i in range(0, self.table.columnCount()):
             if self.table.horizontalHeaderItem(i).text() == name:
                 return i
         raise ValueError("findCol argument not in table: %s" % name)
-
-    def updateRanges(self):
-        for i in range(0, self.table.rowCount()):
-            self._traceManager.setEnabled(i, self.table.cellWidget(i, self.findCol("Enabled")).isChecked())
 
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)

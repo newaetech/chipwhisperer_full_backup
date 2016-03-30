@@ -152,34 +152,30 @@ class AcquisitionController():
         self.key = data[0]
         self.textin = data[1]
 
-        if self.writer is not None:
+        if self.writer:
             self.writer.prepareDisk()
             self.writer.setKnownKey(self.key)
 
-        # TODO, what should this call be??
-        if self.auxList is not None:
+        if self.auxList:
             for aux in self.auxList:
                 aux.traceArm()
 
         self.currentTrace = 0
-
         while (self.currentTrace < self.maxtraces) and self.running:
             if self.doSingleReading(True, None) == True:
-                if self.writer is not None:
+                if self.writer:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
                 self.signals.traceDone.emit()
                 self.currentTrace = self.currentTrace + 1
 
-        if self.auxList is not None:
+        if self.auxList:
             for aux in self.auxList:
                 aux.captureComplete()
 
-        if self.writer is not None:
+        if self.writer:
             # Don't clear trace as we re-use the buffer
             self.writer.closeAll(clearTrace=False)
-
-        if addToList is not None:
-            if self.writer is not None:
+            if addToList:
                 addToList.append(self.writer)
 
         self.signals.captureDone.emit(self.running)

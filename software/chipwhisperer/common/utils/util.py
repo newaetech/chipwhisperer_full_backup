@@ -4,8 +4,6 @@
 # Copyright (c) 2014, NewAE Technology Inc
 # All rights reserved.
 #
-# Author: Colin O'Flynn
-#
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
 #
@@ -30,25 +28,23 @@ import os.path
 import collections
 import shutil
 
-class FakeQTimer(object):
-    """ Replicates basic QTimer() API but does nothing """
-    def __init__(self):
-        self.timeout = self
+try:
+    # OrderedDict is new in 2.7
+    from collections import OrderedDict
+    DictType = OrderedDict
+except ImportError:
+    DictType = dict
 
-    def connect(self, callback):
-        pass
 
-    def setInterval(self, ms_timeout):
-        pass
+def module_reorder(resp):
+    #None is first, then alphabetical
+    newresp = DictType()
+    if 'None' in resp:
+        newresp['None'] = resp['None']
+        del resp['None']
+    newresp.update(sorted(resp.items(), key=lambda t: t[0]))
+    return newresp
 
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def setSingleShot(self, _):
-        pass
 
 def copyFile(source, destination, keepOriginals = True):
     if keepOriginals:
@@ -56,13 +52,16 @@ def copyFile(source, destination, keepOriginals = True):
     else:
         shutil.move(source, destination)
 
+
 def strippedName(fullFileName):
     (filepath, filename) = os.path.split(fullFileName)
     (base, toplevel) = os.path.split(filepath)
     return toplevel + "/" + filename
 
+
 def appendAndForwardErrorMessage(msg, e):
     raise type(e)(msg + "\n  -> " + str(e))
+
 
 def list2hexstr(data, delim='', prefix=''):
     """
@@ -77,6 +76,7 @@ def list2hexstr(data, delim='', prefix=''):
     rstr = (delim + prefix).join(rstr)
     rstr = prefix + rstr
     return rstr
+
 
 def hexstr2list(data):
     """Convert a string with hex numbers into a list of numbers"""
@@ -100,6 +100,7 @@ def hexstr2list(data):
 
     return datalist
 
+
 def strListToList(strlist):
     """
     Convert string in form of '"[33, 42, 43]", "[24, 43, 4]"'
@@ -114,6 +115,7 @@ def strListToList(strlist):
     except ValueError:
         raise ValueError("Failed to convert %s to list" % (strlist))
 
+
 def convert_to_str(data):
     """
     Converts all dictionary elements to string type - similar to what ConfigObj will
@@ -126,11 +128,13 @@ def convert_to_str(data):
     else:
         return str(data)
 
+
 def hexStrToByteArray(hexStr):
     ba = bytearray()
     for s in hexStr.split():
         ba.append(int(s, 16))
     return ba
+
 
 def getPyFiles(dir):
     scriptList = []
@@ -140,6 +144,28 @@ def getPyFiles(dir):
             if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')):
                 scriptList.append(os.path.splitext(fn)[0])
     return scriptList
+
+
+class FakeQTimer(object):
+    """ Replicates basic QTimer() API but does nothing """
+    def __init__(self):
+        self.timeout = self
+
+    def connect(self, callback):
+        pass
+
+    def setInterval(self, ms_timeout):
+        pass
+
+    def start(self):
+        pass
+
+    def stop(self):
+        pass
+
+    def setSingleShot(self, _):
+        pass
+
 
 class Signal(object):
     def __init__(self):
@@ -159,6 +185,7 @@ class Signal(object):
     def disconnectAll(self):
         self.observers = []
 
+
 class Observable(Signal):
     def __init__(self, value):
         super(Observable, self).__init__()
@@ -171,8 +198,6 @@ class Observable(Signal):
 
     def value(self):
         return self.data
-
-    # value = property(fget=setValue, fset=value)
 
 # def delete_keys_from_dict(dict_del, lst_keys):
 #     for k in lst_keys:

@@ -27,8 +27,8 @@ import os
 
 class tracereader_native:
     def __init__(self):
-        self.NumTrace = None
-        self.NumPoint = None
+        self.numTrace = None
+        self.numPoint = None
         self.textints = None
         self.textouts = None
         self.knownkey = None
@@ -37,18 +37,18 @@ class tracereader_native:
         self.tracedtype = None
 
     def copyTo(self, srcTraces=None):
-        self.NumTrace = srcTraces.NumTrace
-        self.NumPoint = srcTraces.NumPoint
+        self.numTrace = srcTraces.numTrace
+        self.numPoint = srcTraces.numPoint
         self.knownkey = srcTraces.knownkey
 
-        self.textins = np.zeros([self.NumTrace, 16], dtype=np.uint8)
-        for n in range(0, self.NumTrace):
+        self.textins = np.zeros([self.numTrace, 16], dtype=np.uint8)
+        for n in range(0, self.numTrace):
             tin = srcTraces.textins[n]
             self.textins[n] = map(int, tin, [16]*len(tin))
         
 
-        self.textouts = np.zeros([self.NumTrace, 16], dtype=np.uint8)
-        for n in range(0, self.NumTrace):
+        self.textouts = np.zeros([self.numTrace, 16], dtype=np.uint8)
+        for n in range(0, self.numTrace):
             tout = srcTraces.textouts[n]
             self.textouts[n] = map(int, tout, [16]*len(tout))
 
@@ -62,15 +62,14 @@ class tracereader_native:
         #Traces copied in means not saved
         self.tracesSaved = False
         
-        
     def loadAllTraces(self, directory=None, prefix=""):
         self.traces = np.load(directory + "/%straces.npy"%prefix)
         self.textins = np.load(directory + "/%stextin.npy"%prefix)
         self.textouts = np.load(directory + "/%stextout.npy"%prefix)
         self.knownkey = np.load(directory + "/%sknownkey.npy"%prefix)
 
-        self.NumTrace = self.traces.shape[0]
-        self.NumPoint = self.traces.shape[1]
+        self.numTrace = self.traces.shape[0]
+        self.numPoint = self.traces.shape[1]
 
         #Traces loaded means saved
         self.tracesSaved = True
@@ -84,10 +83,10 @@ class tracereader_native:
         self.tracesSaved = True
 
     def numPoints(self):
-        return self.NumPoint
+        return self.numPoint
 
     def numTraces(self):
-        return self.NumTrace
+        return self.numTrace
 
     def getTrace(self, n):
         data = self.traces[n]

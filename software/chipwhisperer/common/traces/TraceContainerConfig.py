@@ -91,7 +91,6 @@ class TraceContainerConfig(object):
     # changed = has value changed since being written to disk?
     # headerLabel = short description/name used for header label in trace management dialog
     #
-           
 
     def __init__(self, configfile=None):
         """If a config file is given, will attempt to load that file"""
@@ -100,9 +99,9 @@ class TraceContainerConfig(object):
                 "moduleName":"native",
                 "module":None,
                 "values":{
-                    "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format"},
-                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"Num Traces"},
-                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"Num Points"},
+                    "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format", "editable":False},
+                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"Num Traces", "editable":False},
+                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"Num Points", "editable":False},
                     "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Cap. Date", "editable":True},
                     "prefix":{"order":4, "value":None, "desc":"Prefix of all files if applicable", "changed":False},
                     "targetHW":{"order":5, "value":"unknown", "desc":"Description of Target (DUT) Hardware", "changed":False, "headerLabel":"Target HW", "editable":True},
@@ -183,7 +182,7 @@ class TraceContainerConfig(object):
         
     def setAttr(self, attr, value, moduleName=None):
         """Set value of attribute in internal DB"""
-        mod = self.module(attr,moduleName)   
+        mod = self.module(attr,moduleName)
         mod["values"][attr]["value"] = value
         mod["values"][attr]["changed"] = True 
                

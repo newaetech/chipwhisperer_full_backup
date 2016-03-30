@@ -28,8 +28,8 @@ import xml.etree.ElementTree as ET
 
 class tracereader_dpacontestv3:
     def __init__(self):
-        self.NumTrace = None
-        self.NumPoint = None
+        self.numTrace = None
+        self.numPoint = None
         self.textints = None
         self.textouts = None
         self.knownkey = None
@@ -45,11 +45,11 @@ class tracereader_dpacontestv3:
         tree = ET.parse(os.path.join(directory, 'info.xml'))
         root = tree.getroot()
         self.xmlroot = root
-        NumTrace = int(root.findall('NumTrace')[0].text)
-        NumPoint = int(root.findall('NumPoint')[0].text)
+        numTrace = int(root.findall('NumTrace')[0].text)
+        numPoint = int(root.findall('NumPoint')[0].text)
 
-        self.NumTrace = NumTrace
-        self.NumPoint = NumPoint        
+        self.numTrace = numTrace
+        self.numPoint = numPoint
         
     def loadAllTraces(self, directory=None):
         if directory == None:
@@ -57,7 +57,7 @@ class tracereader_dpacontestv3:
         else:
             self.directory = directory
             
-        if (self.NumTrace == None):
+        if (self.numTrace == None):
             self.loadInfo(directory)
 
         self.traces = np.loadtxt(os.path.join(directory, 'wave.txt'), ndmin=2)
@@ -86,10 +86,10 @@ class tracereader_dpacontestv3:
             self.knownkey = None
 
     def numPoints(self):
-        return self.NumPoint
+        return self.numPoint
 
     def numTraces(self):
-        return self.NumTrace
+        return self.numTrace
 
     def getTrace(self, n):
         data = self.traces[n]

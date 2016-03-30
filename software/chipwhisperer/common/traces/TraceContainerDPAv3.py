@@ -248,8 +248,8 @@ class ImportDPAv3Dialog(QtFixes.QDialog):
 
             self.fileLE.setText(fname)
 
-            self.LEPoints.setText("%d"%trimport.NumPoint)
-            self.LETraces.setText("%d"%trimport.NumTrace)
+            self.LEPoints.setText("%d"%trimport.numPoint)
+            self.LETraces.setText("%d"%trimport.numTrace)
 
             self.LEScope.setText(trimport.xmlroot.findall('Instrument')[0].text)
             self.LEDate.setText(trimport.xmlroot.findall('Date')[0].text)

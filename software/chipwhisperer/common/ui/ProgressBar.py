@@ -25,9 +25,6 @@
 
 from datetime import *
 
-class AbortedEvent(Exception):
-    pass
-
 class ProgressBarText(object):
     def __init__(self, title = "Progress", textMask ="Initializing...", textValues = None):
         self.title = title
@@ -110,13 +107,13 @@ try:
             layout.addLayout(clayout)
             self.setLayout(layout)
             self.show()
-            QApplication.processEvents()
+            QCoreApplication.processEvents()
 
         def updateStatus(self, currentProgress, textValues = None):
             super(ProgressBarGUI, self).updateStatus(currentProgress, textValues)
             self.textLabel.setText(self.getText())
             self.pbar.setValue((self.currentProgress/self.maximum) * 100)
-            QApplication.processEvents()
+            QCoreApplication.processEvents()
 
         def close(self):
             ProgressBarText.close(self)

@@ -22,35 +22,17 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "NewAE Technology Inc."
-
 import traceback
 import importlib
-from datetime import *
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-    
-def _module_reorder(resp):
-    #None is first, then alphabetical
-    newresp = dicttype()
-    if 'None' in resp:
-        newresp['None'] = resp['None']
-        del resp['None']
-    newresp.update(sorted(resp.items(), key=lambda t: t[0]))   
-    return newresp
 
 class CWCoreAPI(object):
     __name__ = "ChipWhisperer"
-    __organization__ = "NewAE"
+    __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
     instance = None
 
@@ -81,7 +63,6 @@ class CWCoreAPI(object):
         self._target = None
         self._traceClass = None
         self._attack = None
-        self.da = None
         self.numTraces = 100
         self.numSegments = 1
         self.results = None
@@ -176,7 +157,7 @@ class CWCoreAPI(object):
 
     def captureM(self, progressBar = None):
         if not progressBar:
-            progressBar = ProgressBar()
+            progressBar = ProgressBarText()
         progressBar.setText("Current Segment = %d Current Trace = %d")
         progressBar.setMaximum(self.numTraces - 1)
 
@@ -198,9 +179,14 @@ class CWCoreAPI(object):
             starttime = datetime.now()
             baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
             prefix = baseprefix + "_"
-            currentTrace.config.setAttr("prefix", prefix)
             currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
+            currentTrace.config.setAttr("prefix", prefix)
             currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+            currentTrace.config.setAttr("targetHW", self.getTarget().getName())
+            currentTrace.config.setAttr("targetSW", "unknown")
+            currentTrace.config.setAttr("scopeName", self.getScope().getName())
+            currentTrace.config.setAttr("scopeSampleRate", 0)
+            currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self.auxList))
             currentTrace.setTraceHint(tracesPerRun)
 
             if waveBuffer is not None:
@@ -278,7 +264,7 @@ class CWCoreAPI(object):
         self._attack = attack
         self.signals.reloadAttackParamList.emit()
         self.getAttack().paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
-        self.getAttack().setTraceLimits(self.project().traceManager().NumTrace, self.project().traceManager().NumPoint)
+        self.getAttack().setTraceLimits(self.project().traceManager().numTrace, self.project().traceManager().numPoint)
         self.signals.attackChanged.emit()
 
     def doAttack(self, mod, progressBar = None):
@@ -349,12 +335,8 @@ class CWCoreAPI(object):
         return timer
 
     @staticmethod
-    def getInstance():
-        return CWCoreAPI.instance
-
-    @staticmethod
     def getPreprocessingModules(dir, waveformWidget):
-        resp = dicttype()
+        resp = util.DictType()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
@@ -363,11 +345,11 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import preprocessing module " + f + ": " + str(e)
         # print "Loaded preprocessing modules: " + resp.__str__()
-        return _module_reorder(resp)
+        return util.module_reorder(resp)
 
     @staticmethod
     def getTraceFormats(dir):
-        resp = dicttype()
+        resp = util.DictType()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.common.traces.' + f)
@@ -378,11 +360,11 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import trace format module " + f + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
-        return _module_reorder(resp)
+        return util.module_reorder(resp)
 
     @staticmethod
     def getScopeModules(dir):
-        resp = dicttype()
+        resp = util.DictType()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.scopes.' + f)
@@ -391,11 +373,11 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import scope module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return _module_reorder(resp)
+        return util.module_reorder(resp)
 
     @staticmethod
     def getTargetModules(dir):
-        resp = dicttype()
+        resp = util.DictType()
         for t in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.targets.' + t)
@@ -404,11 +386,11 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import target module " + t + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
-        return _module_reorder(resp)
+        return util.module_reorder(resp)
 
     @staticmethod
     def getAuxiliaryModules(dir):
-        resp = dicttype()
+        resp = util.DictType()
         for f in util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
@@ -417,7 +399,7 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import auxiliary module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return _module_reorder(resp)
+        return util.module_reorder(resp)
 
     @staticmethod
     def getExampleScripts(dir):
@@ -433,9 +415,13 @@ class CWCoreAPI(object):
 
     @staticmethod
     def getAcqPatternModules():
-        resp = dicttype()
+        resp = util.DictType()
         resp["Basic"] = AcqKeyTextPattern_Basic()
         if AcqKeyTextPattern_CRITTest:
             resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
         # print "Loaded Patterns: " + resp.__str__()
-        return _module_reorder(resp)
+        return util.module_reorder(resp)
+
+    @staticmethod
+    def getInstance():
+        return CWCoreAPI.instance

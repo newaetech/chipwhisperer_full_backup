@@ -22,8 +22,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Colin O'Flynn"
-
 import os.path
 import re
 from chipwhisperer.common.utils import util
@@ -31,10 +29,12 @@ import chipwhisperer.common.traces.TraceContainerConfig
 import chipwhisperer.common.traces.TraceContainerNative
 import ConfigParser
 
+
 class TraceManager(object):
     """
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
-    block of traces. This class is used to handle the remapping.
+    block of traces. This class is used to handle the remapping and provide methods to save,
+    load and manage the traces.
     """
 
     secName = "Trace Management"
@@ -42,12 +42,13 @@ class TraceManager(object):
     def __init__(self):
         self.dirty = util.Observable(False)
         self.tracesChanged = util.Signal()
-        self.NumTrace = 0
-        self.NumPoint = 0
+        self.numTrace = 0
+        self.numPoint = 0
         self.lastMapped = None
         self.traceList = []
 
     def newProject(self):
+        """Creates a new empty set of traces"""
         self.traceList = []
         self.dirty.setValue(False)
         self.tracesChanged.emit()
@@ -79,17 +80,17 @@ class TraceManager(object):
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
                 self.traceList[int(tnum[0])].enabled = t[1] == "True"
-        self._wasModified()
+        self.setModified()
         self.dirty.setValue(False)
 
     def removeTrace(self, pos):
         self.traceList.pop(pos)
-        self._wasModified()
+        self.setModified()
 
     def setEnabled(self, pos, enabled):
         if  self.traceList[pos].enabled != enabled:
             self.traceList[pos].enabled = enabled
-            self._wasModified()
+            self.setModified()
 
     def getSegmentList(self, start=0, end=-1):
         """
@@ -97,7 +98,7 @@ class TraceManager(object):
         """
         tnum = start
         if end == -1:
-            end = self.NumTrace
+            end = self.numTrace
 
         dataDict = {'offsetList':[], 'lengthList':[]}
 
@@ -178,8 +179,8 @@ class TraceManager(object):
         #Find total (last mapped range)
         num = []
         pts = []
-        self.NumTrace = 0
-        self.NumPoint = 0
+        self.numTrace = 0
+        self.numPoint = 0
 
         for t in self.traceList:
             if t.mappedRange is not None:
@@ -187,23 +188,23 @@ class TraceManager(object):
                 pts.append(int(t.config.attr("numPoints")))
 
         if num:
-            self.NumTrace = max(num)
+            self.numTrace = max(num)
 
         if pts:
-            self.NumPoint = max(pts)
+            self.numPoint = max(pts)
 
     def numPoint(self):
-        return self.NumPoint
+        return self.numPoint
 
     def numTrace(self):
-        return self.NumTrace
+        return self.numTrace
 
     def append(self, ti):
         ti.enabled = True
         self.traceList.append(ti)
-        self._wasModified()
+        self.setModified()
 
-    def _wasModified(self):
+    def setModified(self):
         self.dirty.setValue(True)
         self.updateRanges()
         self.tracesChanged.emit()

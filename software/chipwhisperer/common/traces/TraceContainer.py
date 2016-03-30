@@ -22,21 +22,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Colin O'Flynn"
-
 import copy
 import re
-
 import numpy as np
-
 import TraceContainerConfig
 from chipwhisperer.common.api.config_parameter import ConfigParameter
+
 
 def getClass():
     return TraceContainer
 
 
-class parameters(object):
+class Parameters(object):
     def __init__(self, openMode=False):
         self.fmt = None
         traceParams = [{'name':'Trace Configuration', 'type':'group', 'children':[
@@ -49,6 +46,7 @@ class parameters(object):
     def paramList(self):
         return [self.params]
 
+
 class TraceContainer(object):
     """
     TraceContainer holds traces for the system to operate on. This can include both reading in traces for analysis, and
@@ -58,10 +56,11 @@ class TraceContainer(object):
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
     
-    getParams = parameters()
-    getParamsClass = parameters
+    getParams = Parameters()
+    getParamsClass = Parameters
     
     def __init__(self, params=None, configfile=None):
+        self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
         self.textins = []
         self.textouts = []
         self.keylist = []
@@ -78,8 +77,6 @@ class TraceContainer(object):
         
         if params is not None:
             self.getParams = params
-        
-        self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
 
     def setDirty(self, dirty):
         self.dirty = dirty
@@ -114,7 +111,7 @@ class TraceContainer(object):
         self.addTextin(textin)
         self.addTextout(textout)
         self.addKey(key)
-        
+
     def writeDataToConfig(self):
         self.config.setAttr("numTraces", self.numTraces())
         self.config.setAttr("numPoints", self.numPoints())      
@@ -302,5 +299,3 @@ if __name__ == "__main__":
     test.addTrace(wave, None, None, None)
     print test.numTraces()
     print test.numPoints()
-
-        
