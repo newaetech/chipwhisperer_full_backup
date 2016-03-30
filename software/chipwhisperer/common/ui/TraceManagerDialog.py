@@ -93,11 +93,11 @@ class TraceManagerDialog(QtFixes.QDialog):
             cb = QCheckBox()
             cb.setChecked(t.enabled)
             cb.clicked.connect(partial(self._traceManager.setEnabled, p, not t.enabled))
-            cb.setToolTip("Enable/disable trace")
+            cb.setToolTip("Enable/disable traces")
             tb = QPushButton("x")
             tb.setFixedSize(14,14)
-            tb.setToolTip("Delete trace")
-            tb.clicked.connect(partial(self._traceManager.removeTrace, p))
+            tb.setToolTip("Remove traces")
+            tb.clicked.connect(partial(self.removeTrace, p))
             tmp = QWidget()
             pLayout = QHBoxLayout(tmp)
             pLayout.addWidget(cb)
@@ -127,6 +127,11 @@ class TraceManagerDialog(QtFixes.QDialog):
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
         self.table.horizontalHeader().setStretchLastSection(True)
+
+    def removeTrace(self, pos):
+        ret = QMessageBox.question(self, "Remove traces", "Traces #%d will be removed from the project. Do you confirm?" % (pos+1), QMessageBox.Yes | QMessageBox.No)
+        if ret == QMessageBox.Yes:
+            self._traceManager.removeTrace(pos)
 
     def findCol(self, name):
         """ Function is a hack/cheat to deal with movable headers if they become enabled """
