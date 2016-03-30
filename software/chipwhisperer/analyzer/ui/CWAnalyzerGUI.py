@@ -90,7 +90,6 @@ class CWAnalyzerGUI(CWMainGUI):
     def projectChanged(self):
         super(CWAnalyzerGUI, self).projectChanged()
         self.cwAPI.project().traceManager().tracesChanged.connect(self.tracesChanged)
-        self.cwAPI.project().traceManager().tracesChanged.connect(self.reloadScripts)
 
     def attackChanged(self):
         self.reloadScripts()
@@ -210,6 +209,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
         self.setTraceLimits(self.cwAPI.project().traceManager().NumTrace, self.cwAPI.project().traceManager().NumPoint)
         self.plotInputTrace()
+        self.reloadScripts()
 
     def plotInputTrace(self):
         """Plot the input trace(s) as given by the GUI settings."""

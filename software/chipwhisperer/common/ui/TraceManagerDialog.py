@@ -44,14 +44,14 @@ class TraceManagerDialog(QtFixes.QDialog):
 
     def __init__(self, parent):
         QDialog.__init__(self, parent)
+        self.setWindowTitle("Trace Management")
         layout = QVBoxLayout()
 
         #Get labels in use
         attrs = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig().attrHeaderValues()
         attrHeaders = [i["header"] for i in attrs]
         attrHeaders.insert(0, "Mapped Range")
-        attrHeaders.insert(0, "Enabled")
-        attrHeaders.append("X")
+        attrHeaders.insert(0, "Options")
         self.table = QTableWidget(0, len(attrHeaders))
         self.table.setHorizontalHeaderLabels(attrHeaders)
         layout.setContentsMargins(5,5,5,5)
@@ -76,7 +76,6 @@ class TraceManagerDialog(QtFixes.QDialog):
 
         # Set dialog layout
         self.setLayout(layout)
-        self.setWindowTitle("Trace Management")
         self.resize(850, 300)
 
     def setTraceManager(self, traceManager):
@@ -91,14 +90,19 @@ class TraceManagerDialog(QtFixes.QDialog):
     def refresh(self):
         self.table.setRowCount(len(self._traceManager.traceList))
         for p, t in enumerate(self._traceManager.traceList):
-            tb = QPushButton("X")
-            tb.setFixedSize(18,18)
-            tb.clicked.connect(partial(self._traceManager.removeTrace, p))
-            self.table.setCellWidget(p, self.findCol("X"), tb)
             cb = QCheckBox()
             cb.setChecked(t.enabled)
-            cb.clicked.connect(self.updateRanges)
-            self.table.setCellWidget(p, self.findCol("Enabled"), cb)
+            cb.clicked.connect(partial(self._traceManager.setEnabled, p, not t.enabled))
+            tb = QPushButton("x")
+            tb.setFixedSize(14,14)
+            tb.clicked.connect(partial(self._traceManager.removeTrace, p))
+            tmp = QWidget()
+            pLayout = QHBoxLayout(tmp)
+            pLayout.addWidget(cb)
+            pLayout.addWidget(tb)
+            pLayout.setAlignment(Qt.AlignHCenter)
+            pLayout.setContentsMargins(0,0,0,0)
+            self.table.setCellWidget(p, self.findCol("Options"), tmp)
             if t:
                 for column in t.config.attrHeaderValues():
                     try:
@@ -106,12 +110,10 @@ class TraceManagerDialog(QtFixes.QDialog):
                         wid = QTableWidgetItem("%s" % t.config.attr(column["name"]))
                         attrDict = t.config.attrDict(column["name"])
                         try:
-                            isEditable = attrDict["editable"]
+                            if attrDict["editable"] == False:
+                                wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
                         except KeyError:
-                            isEditable = False
-
-                        if isEditable == False:
-                            wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
+                            pass
 
                         self.table.setItem(p, col, wid)
                     except ValueError:
@@ -122,6 +124,7 @@ class TraceManagerDialog(QtFixes.QDialog):
                     self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem(""))
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
+        self.table.horizontalHeader().setStretchLastSection(True)
 
     def findCol(self, name):
         """ Function is a hack/cheat to deal with movable headers if they become enabled """
