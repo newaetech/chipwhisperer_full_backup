@@ -27,16 +27,16 @@
 
 import sys
 
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 def getInstance(*args):
     return ScopeTemplate(*args)
 
 class ScopeTemplate(object):
     def __init__(self):
-        self.connectStatus = util.Observable(False)
-        self.dataUpdated = util.Signal()
-        self.paramListUpdated = util.Signal()
+        self.connectStatus = Util.Observable(False)
+        self.dataUpdated = Util.Signal()
+        self.paramListUpdated = Util.Signal()
 
     def dcmTimeout(self):
         pass

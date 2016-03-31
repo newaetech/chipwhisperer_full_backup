@@ -27,7 +27,7 @@ __author__ = "Colin O'Flynn"
 import os
 import re
 import sys
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
 
@@ -60,10 +60,10 @@ class ConfigObjProj(ConfigObj):
 class ProjectFormat(object):
     class Signals(object):
         def __init__(self):
-            self.filenameChanged = util.Signal()
-            self.fileChangedOnDisk = util.Signal()
-            self.dirty = util.Observable(True)
-            self.statusChanged = util.Signal()
+            self.filenameChanged = Util.Signal()
+            self.fileChangedOnDisk = Util.Signal()
+            self.dirty = Util.Observable(True)
+            self.statusChanged = Util.Signal()
 
     untitledFileName = "tmp/default.cwp"
     def __init__(self):
@@ -150,8 +150,8 @@ class ProjectFormat(object):
 
     def checkDataConfig(self, config, requiredSettings):
         """Check a configuration section for various settings"""
-        requiredSettings = util.convert_to_str(requiredSettings)
-        config = util.convert_to_str(config)
+        requiredSettings = Util.convert_to_str(requiredSettings)
+        config = Util.convert_to_str(config)
         return set(requiredSettings.items()).issubset(set(config.items()))
 
     def getDataConfig(self, sectionName="Aux Data", subsectionName=None, requiredSettings=None):
@@ -236,8 +236,8 @@ class ProjectFormat(object):
         """
         self.saveTraceManager()
 
-        disk = util.convert_to_str(ConfigObjProj(infile=self.filename))
-        ram = util.convert_to_str(self.config)
+        disk = Util.convert_to_str(ConfigObjProj(infile=self.filename))
+        ram = Util.convert_to_str(self.config)
         diff = DictDiffer(ram, disk)
 
         added = diff.added()
@@ -265,8 +265,8 @@ class ProjectFormat(object):
 
             for traceFile in os.listdir(tracePath):
                 if traceFile.startswith(prefix):
-                    util.copyFile(os.path.normpath(tracePath + "/" + traceFile), destinationDir, keepOriginals)
+                    Util.copyFile(os.path.normpath(tracePath + "/" + traceFile), destinationDir, keepOriginals)
 
-            util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
+            Util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
             t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
         self.signals.statusChanged.emit()

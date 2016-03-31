@@ -34,7 +34,7 @@ import numpy as np
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.utils.util import hexstr2list
+from chipwhisperer.common.utils.Util import hexstr2list
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 class ResultsPlotting(QObject):
@@ -141,9 +141,8 @@ class ResultsPlotting(QObject):
     def attackStatsUpdated(self):
         """New attack statistics available, replot/redraw graphs"""
 
-        self.startTrace = self.attack.getTraceStart()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.setStartTrace(self.startTrace)
+        self.table.setStartTrace(self.attack.getTraceStart())
         self.table.updateTable()
         self.corrgraph.updateData()
         self.updateKnownKey()

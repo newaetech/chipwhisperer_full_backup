@@ -25,7 +25,7 @@
 import traceback
 import importlib
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
 
@@ -38,22 +38,22 @@ class CWCoreAPI(object):
 
     class Signals(object):
         def __init__(self):
-            self.parametersChanged = util.Signal()
-            self.traceChanged = util.Signal()
-            self.newProject = util.Signal()
-            self.reloadAttackParamList = util.Signal()
-            self.attackChanged = util.Signal()
-            self.paramListUpdated = util.Signal()
-            self.scopeChanged = util.Signal()
-            self.targetChanged = util.Signal()
-            self.auxChanged = util.Signal()
-            self.acqPatternChanged = util.Signal()
-            self.connectStatus = util.Signal()
-            self.newInputData = util.Signal()
-            self.newTextResponse = util.Signal()
-            self.traceDone = util.Signal()
-            self.campaignStart = util.Signal()
-            self.campaignDone = util.Signal()
+            self.parametersChanged = Util.Signal()
+            self.traceChanged = Util.Signal()
+            self.newProject = Util.Signal()
+            self.reloadAttackParamList = Util.Signal()
+            self.attackChanged = Util.Signal()
+            self.paramListUpdated = Util.Signal()
+            self.scopeChanged = Util.Signal()
+            self.targetChanged = Util.Signal()
+            self.auxChanged = Util.Signal()
+            self.acqPatternChanged = Util.Signal()
+            self.connectStatus = Util.Signal()
+            self.newInputData = Util.Signal()
+            self.newTextResponse = Util.Signal()
+            self.traceDone = Util.Signal()
+            self.campaignStart = Util.Signal()
+            self.campaignDone = Util.Signal()
 
     def __init__(self, rootDir):
         self.rootDir = rootDir
@@ -67,7 +67,7 @@ class CWCoreAPI(object):
         self._numTraceSets = 1
         self.results = None
         self.signals = self.Signals()
-        self._timerClass = util.FakeQTimer
+        self._timerClass = Util.FakeQTimer
         CWCoreAPI.instance = self
 
     def getRootDir(self):
@@ -82,7 +82,7 @@ class CWCoreAPI(object):
 
     def setScope(self, driver):
         self._scope = driver
-        util.active_scope = self._scope
+        Util.active_scope = self._scope
         self.signals.scopeChanged.emit()
 
     def hasTarget(self):
@@ -205,12 +205,11 @@ class CWCoreAPI(object):
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
             ac.signals.traceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
             ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
+
             self.signals.campaignStart.emit(baseprefix)
-
             ac.doReadings(tracesDestination=self.project().traceManager())
-
-            tcnt += setSize
             self.signals.campaignDone.emit()
+            tcnt += setSize
 
             # Re-use the wave buffer for later segments
             if self.hasTraceClass():
@@ -268,7 +267,7 @@ class CWCoreAPI(object):
         self._attack = attack
         self.signals.reloadAttackParamList.emit()
         self.getAttack().paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
-        self.getAttack().setTraceLimits(self.project().traceManager().numTrace, self.project().traceManager().numPoint)
+        self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
         self.signals.attackChanged.emit()
 
     def doAttack(self, mod, progressBar = None):
@@ -340,8 +339,8 @@ class CWCoreAPI(object):
 
     @staticmethod
     def getPreprocessingModules(dir, waveformWidget):
-        resp = util.DictType()
-        for f in util.getPyFiles(dir):
+        resp = Util.DictType()
+        for f in Util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
                 mod = i.getClass()(graphWidget = waveformWidget)
@@ -349,12 +348,12 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import preprocessing module " + f + ": " + str(e)
         # print "Loaded preprocessing modules: " + resp.__str__()
-        return util.module_reorder(resp)
+        return Util.module_reorder(resp)
 
     @staticmethod
     def getTraceFormats(dir):
-        resp = util.DictType()
-        for f in util.getPyFiles(dir):
+        resp = Util.DictType()
+        for f in Util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.common.traces.' + f)
                 if not hasattr(i, 'getClass'):
@@ -364,12 +363,12 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import trace format module " + f + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
-        return util.module_reorder(resp)
+        return Util.module_reorder(resp)
 
     @staticmethod
     def getScopeModules(dir):
-        resp = util.DictType()
-        for f in util.getPyFiles(dir):
+        resp = Util.DictType()
+        for f in Util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.scopes.' + f)
                 mod = i.getInstance()
@@ -377,12 +376,12 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import scope module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return util.module_reorder(resp)
+        return Util.module_reorder(resp)
 
     @staticmethod
     def getTargetModules(dir):
-        resp = util.DictType()
-        for t in util.getPyFiles(dir):
+        resp = Util.DictType()
+        for t in Util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.targets.' + t)
                 mod = i.getInstance()
@@ -390,12 +389,12 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import target module " + t + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()
-        return util.module_reorder(resp)
+        return Util.module_reorder(resp)
 
     @staticmethod
     def getAuxiliaryModules(dir):
-        resp = util.DictType()
-        for f in util.getPyFiles(dir):
+        resp = Util.DictType()
+        for f in Util.getPyFiles(dir):
             try:
                 i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
                 mod = i.getInstance()
@@ -403,12 +402,12 @@ class CWCoreAPI(object):
             except Exception as e:
                 print "INFO: Could not import auxiliary module " + f + ": " + str(e)
         # print "Loaded scope modules: " + resp.__str__()
-        return util.module_reorder(resp)
+        return Util.module_reorder(resp)
 
     @staticmethod
     def getExampleScripts(dir):
         resp = []
-        for f in util.getPyFiles(dir):
+        for f in Util.getPyFiles(dir):
             try:
                 m = importlib.import_module('chipwhisperer.capture.scripts.' + f)
                 resp.append(m)
@@ -419,12 +418,12 @@ class CWCoreAPI(object):
 
     @staticmethod
     def getAcqPatternModules():
-        resp = util.DictType()
+        resp = Util.DictType()
         resp["Basic"] = AcqKeyTextPattern_Basic()
         if AcqKeyTextPattern_CRITTest:
             resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
         # print "Loaded Patterns: " + resp.__str__()
-        return util.module_reorder(resp)
+        return Util.module_reorder(resp)
 
     @staticmethod
     def getInstance():

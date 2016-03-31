@@ -40,15 +40,15 @@ from picoscope import ps6000
 
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 
 def getInstance(*args):
     return PicoScopeInterface(*args)
 
 class PicoScope(object):
-    paramListUpdated = util.Signal()
-    dataUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
+    dataUpdated = Util.Signal()
 
     def __init__(self, psClass):
         self.ps = psClass
@@ -162,7 +162,7 @@ class PicoScope(object):
         return False
 
 class PicoScopeInterface(ScopeTemplate):
-    dataUpdated = util.Signal()
+    dataUpdated = Util.Signal()
 
     def __init__(self):
         super(PicoScopeInterface, self).__init__()

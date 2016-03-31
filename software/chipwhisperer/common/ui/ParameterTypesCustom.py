@@ -3,19 +3,20 @@
 #
 # This file based on PyQtGraph parameterTypes.py
 #=================================================
+
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
 from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
-
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 class SigStuff(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)
     sigValueChanging = QtCore.Signal(object, object)  # (self, value)  sent immediately; no delay.
+
 
 class RangeParameterItem(WidgetParameterItem):
     """

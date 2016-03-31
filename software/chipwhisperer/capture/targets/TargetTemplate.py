@@ -24,7 +24,7 @@
 #=================================================
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 try:
     from Crypto.Cipher import AES
@@ -38,9 +38,9 @@ class TargetTemplate(object):
     params = None
 
     def __init__(self):
-        self.paramListUpdated = util.Signal()
-        self.newInputData = util.Signal()
-        self.connectStatus = util.Observable(False)
+        self.paramListUpdated = Util.Signal()
+        self.newInputData = Util.Signal()
+        self.connectStatus = Util.Observable(False)
         self.setupParameters()
 
     def setupParameters(self):

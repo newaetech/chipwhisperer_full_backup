@@ -24,7 +24,7 @@
 
 import os.path
 import re
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 import chipwhisperer.common.traces.TraceContainerConfig
 import chipwhisperer.common.traces.TraceContainerNative
 import ConfigParser
@@ -40,10 +40,10 @@ class TraceManager(object):
     secName = "Trace Management"
 
     def __init__(self):
-        self.dirty = util.Observable(False)
-        self.tracesChanged = util.Signal()
-        self.numTrace = 0
-        self.numPoint = 0
+        self.dirty = Util.Observable(False)
+        self.tracesChanged = Util.Signal()
+        self._numTraces = 0
+        self._numPoints = 0
         self.lastMapped = None
         self.traceSets = []
 
@@ -64,7 +64,6 @@ class TraceManager(object):
         config = ConfigParser.RawConfigParser()
         config.read(configfilename)
         alltraces = config.items(self.secName)
-
         self.newProject()
 
         fdir = os.path.split(configfilename)[0] + "/"
@@ -75,7 +74,10 @@ class TraceManager(object):
                 fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
                 ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
-                ti.config.loadTrace(fname)
+                try:
+                    ti.config.loadTrace(fname)
+                except Exception, e:
+                    print e.message
                 self.traceSets.append(ti)
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
@@ -87,10 +89,9 @@ class TraceManager(object):
         self.traceSets.pop(pos)
         self.setModified()
 
-    def setEnabled(self, pos, enabled):
-        if  self.traceSets[pos].enabled != enabled:
-            self.traceSets[pos].enabled = enabled
-            self.setModified()
+    def setTraceSetStatus(self, pos, newStatus):
+        self.traceSets[pos].enabled = newStatus
+        self.setModified()
 
     def getSegmentList(self, start=0, end=-1):
         """
@@ -98,7 +99,7 @@ class TraceManager(object):
         """
         tnum = start
         if end == -1:
-            end = self.numTrace
+            end = self._numTraces
 
         dataDict = {'offsetList':[], 'lengthList':[]}
 
@@ -177,27 +178,22 @@ class TraceManager(object):
 
     def updateTraces(self):
         #Find total (last mapped range)
-        num = []
-        pts = []
-        self.numTrace = 0
-        self.numPoint = 0
+        num = [0]
+        pts = [0]
 
         for t in self.traceSets:
             if t.mappedRange is not None:
                 num.append(t.mappedRange[1])
                 pts.append(int(t.config.attr("numPoints")))
 
-        if num:
-            self.numTrace = max(num)
+        self._numTraces = max(num)
+        self._numPoints = max(pts)
 
-        if pts:
-            self.numPoint = max(pts)
+    def numPoints(self):
+        return self._numPoints
 
-    def numPoint(self):
-        return self.numPoint
-
-    def numTrace(self):
-        return self.numTrace
+    def numTraces(self):
+        return self._numTraces
 
     def appendTraceSet(self, ti):
         ti.enabled = True

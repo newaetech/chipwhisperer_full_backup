@@ -26,13 +26,13 @@
 #=================================================
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 def getInstance(*args):
     return AuxiliaryTemplate(*args)
 
 class AuxiliaryTemplate():
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self):
         self.setupParameters()

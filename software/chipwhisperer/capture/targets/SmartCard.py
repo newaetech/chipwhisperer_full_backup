@@ -25,17 +25,15 @@
 
 import time
 import serial
-
 #Used by PC/SC Only
 from PySide.QtCore import QTimer
-
 from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
 import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
-import chipwhisperer.common.api.scan as scan
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import Scan
 
 try:
     # OrderedDict is new in 2.7
@@ -49,7 +47,7 @@ def getInstance(*args):
     return SmartCard(*args)
 
 class ReaderTemplate(object):
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
     
     def __init__(self):
         super(ReaderTemplate, self).__init__()
@@ -235,7 +233,7 @@ class ReaderSystemSER(ReaderTemplate):
         self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
 
     def updateSerial(self):
-        serialnames = scan.scan()
+        serialnames = Scan.scan()
         self.findParam('port').setLimits(serialnames)
         if len(serialnames) > 0:
             self.findParam('port').setValue(serialnames[0]) 
@@ -487,8 +485,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.ser.findParam('txbaud').setValue(9600)
         
         #Setup GPIO Pins
-        if hasattr(util.active_scope, 'advancedSettings') and util.active_scope.advancedSettings:
-            self.cwe = util.active_scope.advancedSettings
+        if hasattr(Util.active_scope, 'advancedSettings') and Util.active_scope.advancedSettings:
+            self.cwe = Util.active_scope.advancedSettings
             self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
             self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
             self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
@@ -783,7 +781,7 @@ class ReaderPCSC(ReaderTemplate):
         self.timeoutTimer.stop()
     
 class ProtocolTemplate(object):
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
     
     def __init__(self):
         self.hw = None
@@ -963,7 +961,7 @@ class ProtocolJCardTest(ProtocolTemplate):
         return self.resp
 
 class SmartCard(TargetTemplate):
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
      
     def setupParameters(self):
         self.oa=None

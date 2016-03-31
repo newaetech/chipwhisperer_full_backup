@@ -56,7 +56,9 @@ class TraceManagerDialog(QtFixes.QDialog):
         self.table.setHorizontalHeaderLabels(attrHeaders)
         layout.setContentsMargins(5,5,5,5)
         layout.setSpacing(5)
+        layout.addWidget(QLabel("Trace Sets:"))
         layout.addWidget(self.table)
+        layout.addWidget(QLabel("* Cell editions are saved immediately"))
 
         #temp = QPushButton("Add Blank")
         #temp.clicked.connect(self.addRow)
@@ -76,7 +78,7 @@ class TraceManagerDialog(QtFixes.QDialog):
 
         # Set dialog layout
         self.setLayout(layout)
-        self.resize(850, 300)
+        self.resize(950, 400)
 
     def setTraceManager(self, traceManager):
         """Defines the current observed TraceManager."""
@@ -91,15 +93,16 @@ class TraceManagerDialog(QtFixes.QDialog):
     def refresh(self):
         """Populates the table."""
         self.disconnect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
+        self.table.clearContents()
         self.table.setRowCount(len(self._traceManager.traceSets))
         for p, t in enumerate(self._traceManager.traceSets):
             cb = QCheckBox()
             cb.setChecked(t.enabled)
-            cb.clicked.connect(partial(self._traceManager.setEnabled, p, not t.enabled))
-            cb.setToolTip("Enable/disable traces")
+            cb.clicked.connect(partial(self._traceManager.setTraceSetStatus, p, not t.enabled))
+            cb.setToolTip("Enable/disable trace set")
             tb = QPushButton("x")
             tb.setFixedSize(14,14)
-            tb.setToolTip("Remove traces")
+            tb.setToolTip("Remove trace set")
             tb.clicked.connect(partial(self.removeTrace, p))
             tmp = QWidget()
             pLayout = QHBoxLayout(tmp)
@@ -109,23 +112,28 @@ class TraceManagerDialog(QtFixes.QDialog):
             pLayout.setContentsMargins(0,0,0,0)
             self.table.setCellWidget(p, self.findCol("Options"), tmp)
             if t:
-                rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if t.enabled else "")
+                rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if (t.enabled and t.numPoints()>0) else "")
                 rangeWidget.setFlags(rangeWidget.flags() & ~Qt.ItemIsEditable)
                 self.table.setItem(p, self.findCol("Mapped Range"), rangeWidget)
                 for column in t.config.attrHeaderValues():
                     col = self.findCol(column["header"])
-                    wid = QTableWidgetItem("%s" % t.config.attr(column["name"]))
-                    attribute = t.config.attrDict(column["name"])
-                    if not attribute.get("editable", True):
-                        wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
-                    self.table.setItem(p, col, wid)
+                    if col:
+                        wid = QTableWidgetItem("%s" % t.config.attr(column["name"]))
+                        traceAattribute = t.config.attrDict(column["name"])
+                        if not traceAattribute.get("editable", False):
+                            wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
+                        self.table.setItem(p, col, wid)
+                    else:
+                        print "Internal error: Column doesn't exists: " + column["header"]
+
             self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
 
         try:
             self.table.resizeColumnsToContents() #TODO: Fix a bug here related to data (?) attribute
             self.table.resizeRowsToContents()
-        except:
-            pass
+        except Exception:
+            print "Internal error: Could not resize the table"
+
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
 
@@ -140,7 +148,7 @@ class TraceManagerDialog(QtFixes.QDialog):
 
     def removeTrace(self, pos):
         """Confirm before removing traces at pos."""
-        ret = QMessageBox.question(self, "Remove traces", "Traces #%d will be removed from the project. Do you confirm?" % (pos), QMessageBox.Yes | QMessageBox.No)
+        ret = QMessageBox.question(self, "Remove traces", "Trace set #%d will be removed from the project.\nDo you confirm?" % (pos), QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
             self._traceManager.removeTraceSet(pos)
 
@@ -149,7 +157,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         for i in range(0, self.table.columnCount()):
             if self.table.horizontalHeaderItem(i).text() == name:
                 return i
-        raise ValueError("findCol argument not in table: %s" % name)
+        return None
 
     def importDPAv3(self):
         imp = ImportDPAv3Dialog(self)

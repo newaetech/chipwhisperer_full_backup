@@ -30,7 +30,7 @@ import math
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -156,7 +156,7 @@ class CPAProgressive(AutoScript):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, targetModel, leakageFunction):
         super(CPAProgressive, self).__init__()

@@ -39,7 +39,7 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWL
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 try:
@@ -77,7 +77,7 @@ def getInstance(*args):
 
 
 class OpenADCInterface_NAEUSBChip():
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
         ztexParams = [
@@ -159,7 +159,7 @@ class OpenADCInterface_NAEUSBChip():
                 ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
 
 class OpenADCInterface_FTDI():
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
         ftdiParams = [
@@ -247,7 +247,7 @@ class OpenADCInterface_FTDI():
         return p
 
 class OpenADCInterface_Serial():
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
         ftdiParams = [
@@ -326,7 +326,7 @@ class OpenADCInterface_Serial():
 
 
 class OpenADCInterface_ZTEX():
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
         ztexParams = [
@@ -434,7 +434,7 @@ class OpenADCInterface_ZTEX():
 
 
 class OpenADCInterface(ScopeTemplate):
-    dataUpdated = util.Signal()
+    dataUpdated = Util.Signal()
 
     def __init__(self):
         super(OpenADCInterface, self).__init__()
@@ -550,7 +550,7 @@ class OpenADCInterface(ScopeTemplate):
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
-                util.chipwhisperer_extra = self.advancedSettings
+                Util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(chipwhisperer.capture.ui.CWCaptureGUI.CWCaptureGUI.getInstance())

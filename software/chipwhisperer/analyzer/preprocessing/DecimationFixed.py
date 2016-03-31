@@ -39,7 +39,7 @@ class DecimationFixed(PreprocessingBase):
     descrString = "Decimate by a fixed factor"
 
     def setupParameters(self):
-        self.setDecimationFactor(1)
+        self.setDecimationFactor(2)
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript},
                          # {'name':'Decimation Type', 'values':''}

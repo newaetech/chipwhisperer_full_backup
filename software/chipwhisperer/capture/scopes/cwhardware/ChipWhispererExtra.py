@@ -30,7 +30,7 @@ from functools import partial
 
 import ChipWhispererGlitch
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -45,7 +45,7 @@ ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 
 class ChipWhispererExtra(object):
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, cwtype, scope):
         #self.cwADV = CWAdvTrigger()

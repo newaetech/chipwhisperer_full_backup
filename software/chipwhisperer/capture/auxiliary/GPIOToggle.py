@@ -32,7 +32,7 @@ from PySide.QtGui import *
 
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
@@ -40,7 +40,7 @@ def getInstance(*args):
     return GPIOToggle(*args)
 
 class GPIOToggle(AuxiliaryTemplate):
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         ssParams = [

@@ -25,12 +25,8 @@
 __author__ = "Colin O'Flynn"
 
 import sys
-from PySide.QtCore import *
-from PySide.QtGui import *
 import os
-
-#For profiling support (not 100% needed)
-#import pstats, cProfile
+#import pstats, cProfile #For profiling support (not 100% needed)
 
 try:
     from configobj import ConfigObj  # import the module
@@ -100,8 +96,8 @@ class TraceContainerConfig(object):
                 "module":None,
                 "values":{
                     "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format", "editable":False},
-                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"Num Traces", "editable":False},
-                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"Num Points", "editable":False},
+                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"# Traces", "editable":False},
+                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"# Points", "editable":False},
                     "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Cap. Date", "editable":False},
                     "prefix":{"order":4, "value":None, "desc":"Prefix of all files if applicable", "changed":False},
                     "targetHW":{"order":5, "value":"unknown", "desc":"Description of Target (DUT) Hardware", "changed":False, "headerLabel":"Target HW", "editable":True},
@@ -241,11 +237,12 @@ class TraceContainerConfig(object):
         
     def loadTrace(self, configfile=None):
         """Load config file. Syncs internal DB to File"""
-        if configfile:           
+        if configfile:
             self._configfile = os.path.normpath(configfile)
-        
+            if not os.path.isfile(configfile):
+                raise Exception("Error: Trace set config file doesn't exists: " + configfile)
+
         self.config = ConfigObj(self._configfile)
-            
         self.syncFile()
         
     def saveTrace(self, configfile = None):

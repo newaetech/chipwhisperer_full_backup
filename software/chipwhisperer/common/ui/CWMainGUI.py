@@ -37,7 +37,7 @@ from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 import chipwhisperer.common.ui.qrc_resources
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -495,7 +495,7 @@ class CWMainGUI(QMainWindow):
         if files is not None:
             files_no = 0
             for f in files:
-                text = "&%d %s" % (files_no+1, util.strippedName(f))
+                text = "&%d %s" % (files_no + 1, Util.strippedName(f))
                 self.recentFileActs[files_no].setText(text)
                 self.recentFileActs[files_no].setData(f)
                 self.recentFileActs[files_no].setVisible(True)

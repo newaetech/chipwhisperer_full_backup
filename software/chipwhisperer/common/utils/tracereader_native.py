@@ -37,8 +37,8 @@ class tracereader_native:
         self.tracedtype = None
 
     def copyTo(self, srcTraces=None):
-        self.numTrace = srcTraces.numTrace
-        self.numPoint = srcTraces.numPoint
+        self.numTrace = srcTraces.numTraces()
+        self.numPoint = srcTraces.numPoints()
         self.knownkey = srcTraces.knownkey
 
         self.textins = np.zeros([self.numTrace, 16], dtype=np.uint8)
