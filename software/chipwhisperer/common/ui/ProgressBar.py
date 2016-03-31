@@ -86,7 +86,8 @@ try:
             ProgressBarText.__init__(self, title = title, textMask = textMask, textValues = textValues)
             QDialog.__init__(self, None)
 
-            self.setModal(True)
+            self.setModal(False)
+            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
             # self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & (not Qt.WindowContextHelpButtonHint))
             self.setWindowTitle(title)
             self.resize(200,100)
