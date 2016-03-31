@@ -17,8 +17,27 @@
 */
 
 #include "aes-independant.h"
+#include "hal.h"
 
-#ifdef AVRCRYPTOLIB
+#if HW_CRYPTO
+
+void aes_indep_init(void)
+{
+    HW_AES128_Init();
+	
+}
+
+void aes_indep_key(uint8_t * key)
+{
+    HW_AES128_LoadKey(key);
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+    HW_AES128_Enc(pt);
+}
+
+#elif defined(AVRCRYPTOLIB)
 #include "aes128_enc.h"
 #include "aes_keyschedule.h"
 
