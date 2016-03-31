@@ -231,7 +231,7 @@ class CWMainGUI(QMainWindow):
         self.cwAPI.newProject()
         CWMainGUI.instance = self
         
-        cwCoreAPI._timer_class = QTimer
+        cwCoreAPI._timerClass = QTimer
 
     def projectChanged(self):
         self.traceManagerDialog.setTraceManager(self.cwAPI.project().traceManager())
