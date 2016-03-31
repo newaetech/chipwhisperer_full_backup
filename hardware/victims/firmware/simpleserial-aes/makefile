@@ -30,6 +30,9 @@
 
 ######### Specify your platform here
 
+# Processor frequency.
+F_CPU = 7372800
+
 #Multi-Target Board, AVR Device (ATMega328P)
 #PLATFORM = CW301_AVR
 
@@ -42,14 +45,10 @@ PLATFORM = CW303
 #NOTDUINO Kit (ATMega328P)
 #PLATFORM = CW304
 
-# Processor frequency.
-#     This will define a symbol, F_CPU, in all source code files equal to the 
-#     processor frequency. You can then use this symbol in your source code to 
-#     calculate timings. Do NOT tack on a 'UL' at the end, this will be done
-#     automatically to create a 32-bit value in your source code.
-F_CPU = 7372800
-#F_CPU = 2000000
+#802.15.4 Attack Platform (ATMega128RFA1)
+#PLATFORM = CW308_MEGARF
 #F_CPU = 16000000
+#CDEFS += -DHW_CRYPTO=1
 
 #Pull in require files
 HALPATH = ../hal
@@ -109,14 +108,18 @@ EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
 #       aes_keyschedule-asm.S \
 #	   aes_sbox-asm.S
 #CDEFS += -DAVRCRYPTOLIB  
+#VPATH += :../crypto/$(CRYPTO_LIB)/aes:../crypto/$(CRYPTO_LIB)/gf256mul
+#EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
 
 ########
 #From http://www.dpacontest.org/v4/rsm_doc.php which is a masked version
-#of AES-256
+#of AES-256. You must copy source files into ../crypto/dpav4/ directory yourself
 #CRYPTO_LIB = dpav4
 #SRC += aes_enc.c aes_keyschedule.c
 #ASRC += gf256mul.S aes_sbox-asm.S
-#CDEFS += -DDPAV4
+#CDEFS += -DDPAV4 -D"hal_trig1(a)" -D"hal_trig0(a)"
+#VPATH += :../crypto/$(CRYPTO_LIB)
+#EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)
 
 ##########################################################################
 ##########################################################################
