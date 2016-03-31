@@ -9,7 +9,7 @@
 
 import types
 from pyqtgraph.parametertree.parameterTypes import *
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 # This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
 # They are especially helpful for the work done here
@@ -302,7 +302,7 @@ if __name__ == '__main__':
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 
     class submodule(QtCore.QObject):
-        paramListUpdated = util.Signal()
+        paramListUpdated = Util.Signal()
 
         def __init__(self):
             super(submodule, self).__init__()
@@ -322,7 +322,7 @@ if __name__ == '__main__':
 
 
     class module(QtCore.QObject):
-        paramListUpdated = util.Signal()
+        paramListUpdated = Util.Signal()
 
         def __init__(self):
             super(module, self).__init__()
@@ -346,7 +346,7 @@ if __name__ == '__main__':
 
 
     class maintest(QtCore.QObject):
-        paramListUpdated = util.Signal()
+        paramListUpdated = Util.Signal()
 
         def __init__(self):
             super(maintest, self).__init__()

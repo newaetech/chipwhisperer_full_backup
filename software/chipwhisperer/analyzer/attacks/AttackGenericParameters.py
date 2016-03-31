@@ -28,7 +28,7 @@
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 def enforceLimits(value, limits):
     if value < limits[0]:
@@ -55,11 +55,11 @@ class AttackGenericParameters(AutoScript):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.paramListUpdated = util.Signal()
-        self.traceManagerChanged = util.Signal()
-        self.projectChanged = util.Signal()
-        self.settingsChanged = util.Signal()
-        self.traceLimitsChanged = util.Signal()
+        self.paramListUpdated = Util.Signal()
+        self.traceManagerChanged = Util.Signal()
+        self.projectChanged = Util.Signal()
+        self.settingsChanged = Util.Signal()
+        self.traceLimitsChanged = Util.Signal()
 
         self.setupTraceParam()
         self.setupPointsParam()

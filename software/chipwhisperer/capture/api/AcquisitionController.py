@@ -26,7 +26,7 @@
 import random
 import time
 
-import chipwhisperer.common.utils.util as util
+import chipwhisperer.common.utils.Util as util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 class AcquisitionController():

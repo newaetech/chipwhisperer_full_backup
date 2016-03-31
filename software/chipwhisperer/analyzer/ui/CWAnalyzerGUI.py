@@ -185,13 +185,9 @@ class CWAnalyzerGUI(CWMainGUI):
     def doAttack(self):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
 
-        #Check if traces enabled
-        if self.cwAPI.project().traceManager().numTrace == 0:
-            msgBox = QMessageBox(QMessageBox.Warning, "Trace Error", "No traces enabled in project. Open Trace Manager?",
-                                       QMessageBox.NoButton, self)
-            msgBox.addButton("Yes", QMessageBox.AcceptRole)
-            msgBox.addButton("No", QMessageBox.RejectRole)
-            if msgBox.exec_() == QMessageBox.AcceptRole:
+        if self.cwAPI.project().traceManager().numTraces() == 0:
+            ret = QMessageBox.question(self, "Attack Error", "No traces enabled in project.\nOpen Trace Manager?", QMessageBox.Yes | QMessageBox.No)
+            if ret == QMessageBox.Yes:
                 self.traceManagerDialog.show()
             return
 
@@ -206,7 +202,7 @@ class CWAnalyzerGUI(CWMainGUI):
         """Traces changed due to loading new project or adjustment in trace manager,
         so adjust limits displayed and re-plot the new input trace"""
 
-        self.setTraceLimits(self.cwAPI.project().traceManager().numTrace, self.cwAPI.project().traceManager().numPoint)
+        self.setTraceLimits(self.cwAPI.project().traceManager().numTraces(), self.cwAPI.project().traceManager().numPoints())
         self.plotInputTrace()
         self.reloadScripts()
 

@@ -28,14 +28,14 @@ from subprocess import call
 
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 
 def getInstance(*args):
     return ResetAVR(*args)
 
 class ResetAVR(AuxiliaryTemplate):
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         ssParams = [{'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},

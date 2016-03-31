@@ -531,7 +531,7 @@ class PartitionDisplay(AutoScript, QObject):
             traces = self.traceManager()
 
         if tRange[1] < 0:
-            tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
+            tRange = (tRange[0], traces.numTraces() + 1 + tRange[1])
 
         self.partObject.setPartMethod(differences["partclass"])
 

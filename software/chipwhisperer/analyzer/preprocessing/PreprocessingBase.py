@@ -27,7 +27,7 @@
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 def getClass():
     """"Returns the Main Class in this Module"""
@@ -52,7 +52,7 @@ class PreprocessingBase(AutoScript):
         self.enabled = True
         self.traceSource = traceSource
         self.setupParameters()
-        self.paramListUpdated = util.Signal()
+        self.paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
@@ -97,10 +97,10 @@ class PreprocessingBase(AutoScript):
         """Do any initilization required once all traces are loaded"""
 
     def numPoint(self):
-        return self.traceSource.numPoint()
+        return self.traceSource.numPoints()
 
     def numTrace(self):
-        return self.traceSource.numTrace()
+        return self.traceSource.numTraces()
 
     def getSegmentList(self):
         return self.traceSource.getSegmentList()

@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 
 class AttackBaseClass(object):
@@ -35,12 +35,12 @@ class AttackBaseClass(object):
 
     def __init__(self):
         #statsUpdated called new data is available
-        self.statsUpdated = util.Signal()
+        self.statsUpdated = Util.Signal()
 
         #attack done called once entire attack is complete, stats are available. Note that the
         #statsUpdated() signal is not called even though new data is available, which avoids
         #double-processing data
-        self.attackDone = util.Signal()
+        self.attackDone = Util.Signal()
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""

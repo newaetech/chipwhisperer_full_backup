@@ -25,16 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from functools import partial
-import numpy as np
-import copy
-
 from PySide.QtCore import *
 from PySide.QtGui import *
-import pyqtgraph as pg
-
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 class TextDisplay(AutoScript, QObject):
 
@@ -55,21 +50,19 @@ class TextDisplay(AutoScript, QObject):
 
     def updateTable(self):
         self.dock.show()
-        tend = CWCoreAPI.getInstance().getTraceManager().numTrace()
+        tend = CWCoreAPI.getInstance().getTraceManager().numTraces()
         self.tablewid.setRowCount(tend)
         for tnum in range(0,tend):
             tin = CWCoreAPI.getInstance().getTraceManager().getTextin(tnum)
             tout = CWCoreAPI.getInstance().getTraceManager().getTextout(tnum)
             k = CWCoreAPI.getInstance().getTraceManager().getKnownKey(tnum)
 
-            self.tablewid.setItem(tnum, 0, QTableWidgetItem(util.list2hexstr(tin)))
-            self.tablewid.setItem(tnum, 1, QTableWidgetItem(util.list2hexstr(tout)))
-            self.tablewid.setItem(tnum, 2, QTableWidgetItem(util.list2hexstr(k)))
+            self.tablewid.setItem(tnum, 0, QTableWidgetItem(Util.list2hexstr(tin)))
+            self.tablewid.setItem(tnum, 1, QTableWidgetItem(Util.list2hexstr(tout)))
+            self.tablewid.setItem(tnum, 2, QTableWidgetItem(Util.list2hexstr(k)))
 
     def addDock(self):
-
         self.tablewid = QTableWidget()
-
         self.tablewid.setRowCount(0)
         self.tablewid.setColumnCount(4)
         self.tablewid.setHorizontalHeaderLabels(["Text In", "Text Out", "Key", "Trace Data"])

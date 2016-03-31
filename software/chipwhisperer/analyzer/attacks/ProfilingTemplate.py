@@ -42,13 +42,13 @@ from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.utils.Partition import Partition
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 class TemplateBasic(AutoScript):
     """
     Template using Multivariate Stats (mean + covariance matrix)
     """
-    scriptsUpdated = util.Signal()
+    scriptsUpdated = Util.Signal()
 
     def __init__(self, tmanager=None):
         super(TemplateBasic, self).__init__()
@@ -148,8 +148,8 @@ class ProfilingTemplate(AutoScript):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = util.Signal()
-    notifyUser = util.Signal()
+    paramListUpdated = Util.Signal()
+    notifyUser = Util.Signal()
 
     def __init__(self, parent):
         AutoScript.__init__(self)
@@ -280,7 +280,7 @@ class ProfilingTemplate(AutoScript):
             if f["partitiontype"] != t["partitiontype"]:
                 print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
 
-            if (util.strListToList(str(f["poi"])) != t["poi"]).any():
+            if (Util.strListToList(str(f["poi"])) != t["poi"]).any():
                 print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
 
         return templates
@@ -292,7 +292,7 @@ class ProfilingTemplate(AutoScript):
 
         for s in section:
             poistr = str(s["poi"])
-            poieval = util.strListToList(poistr)
+            poieval = Util.strListToList(poistr)
             poiList.append(s.copy())
             poiList[-1]["poi"] = poieval
 

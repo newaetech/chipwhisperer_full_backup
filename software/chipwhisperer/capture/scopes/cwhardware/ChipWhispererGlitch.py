@@ -29,7 +29,7 @@ import zipfile
 import os
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 glitchaddr = 51
@@ -54,7 +54,7 @@ class ChipWhispererGlitch():
     CLKSOURCE1_BIT = 0b00000001
     CLKSOURCE_MASK = 0b00000011
 
-    paramListUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
 
     def __init__(self, cwtype, scope):
         paramSS = [

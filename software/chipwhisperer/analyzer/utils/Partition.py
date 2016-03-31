@@ -146,7 +146,7 @@ class PartitionDialog(QtFixes.QDialog):
 
         # TODO: Partition generation doesn't work
         pb.setMinimum(0)
-        pb.setMinimum(self.part.traceSource.numTrace())
+        pb.setMinimum(self.part.traceSource.numTraces())
 
         self.part.runPartitions(report=pb.setValue)
 
@@ -275,7 +275,7 @@ class Partition(QObject):
             partitionTable = self.createBlankTable(CWCoreAPI.getInstance().getTraceManager().findMappedTrace(start))
 
             if end == -1:
-                end = CWCoreAPI.getInstance().getTraceManager().numTrace()
+                end = CWCoreAPI.getInstance().getTraceManager().numTraces()
 
             tnum = start
             while tnum < end:

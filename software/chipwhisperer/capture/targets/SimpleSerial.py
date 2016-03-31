@@ -25,7 +25,7 @@
 import time
 
 from TargetTemplate import TargetTemplate
-from chipwhisperer.common.api import scan
+from chipwhisperer.common.utils.Scan import scan
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 

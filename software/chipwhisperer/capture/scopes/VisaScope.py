@@ -32,15 +32,15 @@ from visa import *
 
 from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 
 def getInstance(*args):
     return VisaScopeInterface(*args)
 
 class VisaScope(object):
-    paramListUpdated = util.Signal()
-    dataUpdated = util.Signal()
+    paramListUpdated = Util.Signal()
+    dataUpdated = Util.Signal()
 
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
@@ -319,7 +319,7 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
 
 class VisaScopeInterface(ScopeTemplate):
-    dataUpdated = util.Signal()
+    dataUpdated = Util.Signal()
 
     def __init__(self):
         super(VisaScopeInterface, self).__init__()

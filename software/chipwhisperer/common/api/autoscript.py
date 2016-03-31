@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import Util
 
 class SmartStatements(object):
     """
@@ -130,8 +130,8 @@ class AutoScript(object):
 
     def __init__(self):
         self.autoScriptInit()
-        self.scriptsUpdated = util.Signal()
-        self.runScriptFunction = util.Signal()
+        self.scriptsUpdated = Util.Signal()
+        self.runScriptFunction = Util.Signal()
 
     def autoScriptInit(self):
         self.clearStatements()
