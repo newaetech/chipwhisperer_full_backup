@@ -328,12 +328,12 @@ class CWMainGUI(QMainWindow):
         """Add the file actions (open/save/new)"""
         self.openRec = QMenu('Open &Recent')
 
-        self.openAct = QAction(QIcon('open.png'), '&Open', self,
+        self.openAct = QAction(QIcon('open.png'), '&Open...', self,
                                shortcut=QKeySequence.Open,
                                statusTip='Open Project File',
                                triggered=self.openProject)
 
-        self.saveAct = QAction(QIcon('save.png'), '&Save', self,
+        self.saveAct = QAction(QIcon('save.png'), '&Save...', self,
                                shortcut=QKeySequence.Save,
                                statusTip='Save current project to Disk',
                                triggered=self.saveProject)
@@ -396,9 +396,9 @@ class CWMainGUI(QMainWindow):
         self.fileMenu= self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.newAct)
         self.fileMenu.addAction(self.openAct)
+        self.fileMenu.addMenu(self.openRec)
         self.fileMenu.addAction(self.saveAct)
 #        self.fileMenu.addAction(self.importAct)
-        self.fileMenu.addMenu(self.openRec)
         for i in range(CWMainGUI.MaxRecentFiles):
             self.openRec.addAction(self.recentFileActs[i])
         self.fileMenu.addSeparator()

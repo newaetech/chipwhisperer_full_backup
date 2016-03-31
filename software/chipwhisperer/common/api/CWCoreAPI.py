@@ -63,8 +63,8 @@ class CWCoreAPI(object):
         self._target = None
         self._traceClass = None
         self._attack = None
-        self.numTraces = 100
-        self.numSegments = 1
+        self._numTraces = 100
+        self._numTraceSets = 1
         self.results = None
         self.signals = self.Signals()
         self._timerClass = util.FakeQTimer
@@ -138,17 +138,20 @@ class CWCoreAPI(object):
         self.disconnectScope()
         self.disconnectTarget()
 
-    def getNumTraces(self):
-        return self.numTraces
+    def numTraces(self):
+        return self._numTraces
 
     def setNumTraces(self, t):
-        self.numTraces = t
+        self._numTraces = t
 
-    def getNumSegments(self):
-        return self.numSegments
+    def numTraceSets(self):
+        return self._numTraceSets
 
-    def setNumSegments(self, s):
-        self.numSegments = s
+    def setNumTraceSets(self, s):
+        self._numTraceSets = s
+
+    def tracesPerSet(self):
+        return int(self._numTraces / self._numTraceSets)
 
     def capture1(self):
         ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
@@ -159,11 +162,10 @@ class CWCoreAPI(object):
         if not progressBar:
             progressBar = ProgressBarText()
         progressBar.setText("Current Segment = %d Current Trace = %d")
-        progressBar.setMaximum(self.numTraces - 1)
+        progressBar.setMaximum(self._numTraces - 1)
 
         writerlist = []
         tcnt = 0
-        tracesPerRun = int(self.numTraces / self.numSegments)
 
         # This system re-uses one wave buffer a bunch of times. This is required since the memory will become
         # fragmented, even though you are just freeing & reallocated the same size buffer. It's slightly less
@@ -171,7 +173,8 @@ class CWCoreAPI(object):
         # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
         # the 1GB limit that a 32-bit process would expect to give you trouble at.
         waveBuffer = None
-        for i in range(0, self.numSegments):
+        setSize = self.tracesPerSet()
+        for i in range(0, self._numTraceSets):
             if progressBar.wasAborted(): break
             currentTrace = self.getTraceClassInstance()
 
@@ -187,7 +190,7 @@ class CWCoreAPI(object):
             currentTrace.config.setAttr("scopeName", self.getScope().getName())
             currentTrace.config.setAttr("scopeSampleRate", 0)
             currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self.auxList))
-            currentTrace.setTraceHint(tracesPerRun)
+            currentTrace.setTraceHint(setSize)
 
             if waveBuffer is not None:
                 currentTrace.setTraceBuffer(waveBuffer)
@@ -197,16 +200,16 @@ class CWCoreAPI(object):
                     aux.setPrefix(baseprefix)
 
             ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
-            ac.setMaxtraces(tracesPerRun)
+            ac.setMaxtraces(setSize)
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.signals.traceDone.connect(self.signals.traceDone.emit)
-            ac.signals.traceDone.connect(lambda: progressBar.updateStatus(ac.currentTrace, (i, ac.currentTrace)))
+            ac.signals.traceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
             ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
             self.signals.campaignStart.emit(baseprefix)
 
-            ac.doReadings(addToList=self.project().traceManager())
+            ac.doReadings(tracesDestination=self.project().traceManager())
 
-            tcnt += tracesPerRun
+            tcnt += setSize
             self.signals.campaignDone.emit()
 
             # Re-use the wave buffer for later segments
@@ -216,6 +219,7 @@ class CWCoreAPI(object):
 
             if progressBar and progressBar.wasAborted():
                 break
+
         progressBar.close()
         return writerlist
 

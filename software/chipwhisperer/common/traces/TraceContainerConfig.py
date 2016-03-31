@@ -102,7 +102,7 @@ class TraceContainerConfig(object):
                     "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format", "editable":False},
                     "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"Num Traces", "editable":False},
                     "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"Num Points", "editable":False},
-                    "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Cap. Date", "editable":True},
+                    "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Cap. Date", "editable":False},
                     "prefix":{"order":4, "value":None, "desc":"Prefix of all files if applicable", "changed":False},
                     "targetHW":{"order":5, "value":"unknown", "desc":"Description of Target (DUT) Hardware", "changed":False, "headerLabel":"Target HW", "editable":True},
                     "targetSW":{"order":6, "value":"unknown", "desc":"Description of Target (DUT) Software", "changed":False, "headerLabel":"Target SW", "editable":True},

@@ -144,7 +144,7 @@ class AcquisitionController():
         if doAbort:
             self.running = False
 
-    def doReadings(self, addToList=None):
+    def doReadings(self, tracesDestination=None):
         self.running = True
 
         self._keyTextPattern.initPair()
@@ -175,8 +175,8 @@ class AcquisitionController():
         if self.writer:
             # Don't clear trace as we re-use the buffer
             self.writer.closeAll(clearTrace=False)
-            if addToList:
-                addToList.append(self.writer)
+            if tracesDestination:
+                tracesDestination.appendTraceSet(self.writer)
 
         self.signals.captureDone.emit(self.running)
         self.running = False

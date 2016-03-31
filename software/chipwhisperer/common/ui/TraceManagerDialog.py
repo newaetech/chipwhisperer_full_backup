@@ -86,13 +86,13 @@ class TraceManagerDialog(QtFixes.QDialog):
     def checkProject(self, ask=True):
         """Checks trace attributes."""
         for i in range(0, self.table.rowCount()):
-            self._traceManager.traceList[i].checkTrace()
+            self._traceManager.traceSets[i].checkTrace()
 
     def refresh(self):
         """Populates the table."""
         self.disconnect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
-        self.table.setRowCount(len(self._traceManager.traceList))
-        for p, t in enumerate(self._traceManager.traceList):
+        self.table.setRowCount(len(self._traceManager.traceSets))
+        for p, t in enumerate(self._traceManager.traceSets):
             cb = QCheckBox()
             cb.setChecked(t.enabled)
             cb.clicked.connect(partial(self._traceManager.setEnabled, p, not t.enabled))
@@ -109,41 +109,40 @@ class TraceManagerDialog(QtFixes.QDialog):
             pLayout.setContentsMargins(0,0,0,0)
             self.table.setCellWidget(p, self.findCol("Options"), tmp)
             if t:
-                self.table.setItem(p, self.findCol("Mapped Range"), QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if t.enabled else ""))
+                rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if t.enabled else "")
+                rangeWidget.setFlags(rangeWidget.flags() & ~Qt.ItemIsEditable)
+                self.table.setItem(p, self.findCol("Mapped Range"), rangeWidget)
                 for column in t.config.attrHeaderValues():
-                    try:
-                        col = self.findCol(column["header"])
-                        wid = QTableWidgetItem("%s" % t.config.attr(column["name"]))
-                        attrDict = t.config.attrDict(column["name"])
-                        try:
-                            if attrDict["editable"] == False:
-                                wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
-                        except KeyError:
-                            pass
+                    col = self.findCol(column["header"])
+                    wid = QTableWidgetItem("%s" % t.config.attr(column["name"]))
+                    attribute = t.config.attrDict(column["name"])
+                    if not attribute.get("editable", True):
+                        wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
+                    self.table.setItem(p, col, wid)
+            self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
 
-                        self.table.setItem(p, col, wid)
-                    except ValueError:
-                        pass
-
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
+        try:
+            self.table.resizeColumnsToContents() #TODO: Fix a bug here related to data (?) attribute
+            self.table.resizeRowsToContents()
+        except:
+            pass
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
 
     def cellChanged(self, row, column):
-        for i in self.attrs:
-            if i["header"] == self.table.horizontalHeaderItem(column).text():
-                attrName = i["name"]
-
-        if attrName:
-            self._traceManager.traceList[row].config.setAttr(attrName, self.table.item(row,column).text())
-        self._traceManager.traceList[row].config.saveTrace()
+        """Saves cell edition to the traceManager and .cfg file"""
+        for attr in self.attrs:
+            if attr["header"] == self.table.horizontalHeaderItem(column).text():
+                attrName = attr["name"]
+                self._traceManager.traceSets[row].config.setAttr(attrName, self.table.item(row,column).text())
+                self._traceManager.traceSets[row].config.saveTrace()
+                break
 
     def removeTrace(self, pos):
         """Confirm before removing traces at pos."""
-        ret = QMessageBox.question(self, "Remove traces", "Traces #%d will be removed from the project. Do you confirm?" % (pos+1), QMessageBox.Yes | QMessageBox.No)
+        ret = QMessageBox.question(self, "Remove traces", "Traces #%d will be removed from the project. Do you confirm?" % (pos), QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
-            self._traceManager.removeTrace(pos)
+            self._traceManager.removeTraceSet(pos)
 
     def findCol(self, name):
         """Function is a hack/cheat to deal with movable headers if they become enabled."""
@@ -164,7 +163,7 @@ class TraceManagerDialog(QtFixes.QDialog):
 
         if tmi.getTrace() is not None:
             tmi.updateConfigData()
-            self._traceManager.append(tmi.getTrace())
+            self._traceManager.appendTraceSet(tmi.getTrace())
 
     def copyExisting(self, fname=None):
         if fname == None:
@@ -209,6 +208,4 @@ class TraceManagerDialog(QtFixes.QDialog):
             #Add new trace to file list
             ti = TraceFormatNative()
             ti.config.loadTrace(newcfgname)
-            self._traceManager.append(ti)
-
-
+            self._traceManager.appendTraceSet(ti)

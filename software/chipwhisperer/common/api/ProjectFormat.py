@@ -255,7 +255,7 @@ class ProjectFormat(object):
         return True
 
     def consolidate(self, keepOriginals = True):
-        for indx, t in enumerate(self._traceManager.traceList):
+        for indx, t in enumerate(self._traceManager.traceSets):
             destinationDir = os.path.normpath(self.datadirectory + "traces/")
             config = ConfigObj(t.config.configFilename())
             prefix = config['Trace Config']['prefix']

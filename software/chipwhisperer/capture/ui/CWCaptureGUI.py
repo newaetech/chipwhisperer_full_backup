@@ -101,11 +101,12 @@ class CWCaptureGUI(CWMainGUI):
                 #    ]},
 
                 {'name':'Acquisition Settings', 'type':'group', 'children':[
-                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':100, 'set':self.cwAPI.setNumTraces, 'get':self.cwAPI.getNumTraces},
-                        {'name':'Capture Segments', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.cwAPI.setNumSegments, 'get':self.cwAPI.getNumSegments, 'tip':'Break capture into N segments, '
-                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSegments is small enough to avoid running out of system memory '
-                         'as each segment is buffered into RAM before being written to disk.'},
-                         {'name':'Open Monitor', 'type':'action', 'action':self.encryptionStatusMonitor.show},
+                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.cwAPI.numTraces(), 'set':self.cwAPI.setNumTraces, 'get':self.cwAPI.numTraces, 'linked':['Traces per Set']},
+                        {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.cwAPI.numTraceSets(), 'set':self.cwAPI.setNumTraceSets, 'get':self.cwAPI.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break capture into N set, '
+                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
+                         'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
+                        {'name':'Traces per Set', 'type':'int', 'value':self.cwAPI.tracesPerSet(), 'readonly':True, 'get':self.cwAPI.tracesPerSet},
+                        {'name':'Open Monitor', 'type':'action', 'action':self.encryptionStatusMonitor.show},
                         {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.cwAPI.acqPattern, 'set':self.cwAPI.setAcqPattern},
                     ]},
                 ]
@@ -240,7 +241,7 @@ class CWCaptureGUI(CWMainGUI):
         # Capture
         self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
         self.capture1Act.triggered.connect(lambda: self.doCapture(self.capture1))
-        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Multi', self)
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self)
         self.captureMAct.triggered.connect(lambda: self.doCapture(self.captureM))
 
         self.captureStatus = QToolButton()

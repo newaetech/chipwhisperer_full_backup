@@ -45,17 +45,17 @@ class TraceManager(object):
         self.numTrace = 0
         self.numPoint = 0
         self.lastMapped = None
-        self.traceList = []
+        self.traceSets = []
 
     def newProject(self):
         """Creates a new empty set of traces"""
-        self.traceList = []
+        self.traceSets = []
         self.dirty.setValue(False)
         self.tracesChanged.emit()
 
     def saveProject(self, config, configfilename):
         config[self.secName].clear()
-        for indx, t in enumerate(self.traceList):
+        for indx, t in enumerate(self.traceSets):
             config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.secName]['enabled%d' % indx] = str(t.enabled)
         self.dirty.setValue(False)
@@ -76,20 +76,20 @@ class TraceManager(object):
                 # print "Opening %s"%fname
                 ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
                 ti.config.loadTrace(fname)
-                self.traceList.append(ti)
+                self.traceSets.append(ti)
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
-                self.traceList[int(tnum[0])].enabled = t[1] == "True"
+                self.traceSets[int(tnum[0])].enabled = t[1] == "True"
         self.setModified()
         self.dirty.setValue(False)
 
-    def removeTrace(self, pos):
-        self.traceList.pop(pos)
+    def removeTraceSet(self, pos):
+        self.traceSets.pop(pos)
         self.setModified()
 
     def setEnabled(self, pos, enabled):
-        if  self.traceList[pos].enabled != enabled:
-            self.traceList[pos].enabled = enabled
+        if  self.traceSets[pos].enabled != enabled:
+            self.traceSets[pos].enabled = enabled
             self.setModified()
 
     def getSegmentList(self, start=0, end=-1):
@@ -119,7 +119,7 @@ class TraceManager(object):
                 self.lastMapped.unloadAllTraces()
                 self.lastMapped = None
 
-        for t in self.traceList:
+        for t in self.traceSets:
             if t.mappedRange:
                 if n >= t.mappedRange[0] and n <= t.mappedRange[1]:
                     if not t.isLoaded():
@@ -127,7 +127,7 @@ class TraceManager(object):
                     self.lastMapped = t
                     return t
 
-        raise ValueError("n = %d not in mapped range"%n)
+        raise ValueError("n = %d not in mapped range" % n)
 
     def getAuxData(self, n, auxDic):
         t = self.findMappedTrace(n)
@@ -157,7 +157,7 @@ class TraceManager(object):
 
     def updateRanges(self):
         startTrace = 0
-        for t in self.traceList:
+        for t in self.traceSets:
             if t.enabled:
                 tlen = t.numTraces()
                 t.mappedRange = [startTrace, startTrace+tlen-1]
@@ -182,7 +182,7 @@ class TraceManager(object):
         self.numTrace = 0
         self.numPoint = 0
 
-        for t in self.traceList:
+        for t in self.traceSets:
             if t.mappedRange is not None:
                 num.append(t.mappedRange[1])
                 pts.append(int(t.config.attr("numPoints")))
@@ -199,9 +199,9 @@ class TraceManager(object):
     def numTrace(self):
         return self.numTrace
 
-    def append(self, ti):
+    def appendTraceSet(self, ti):
         ti.enabled = True
-        self.traceList.append(ti)
+        self.traceSets.append(ti)
         self.setModified()
 
     def setModified(self):
