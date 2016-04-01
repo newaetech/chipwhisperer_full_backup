@@ -79,6 +79,8 @@ class TraceManagerDialog(QtFixes.QDialog):
         # Set dialog layout
         self.setLayout(layout)
         self.resize(950, 400)
+        self.table.resizeColumnsToContents()
+        self.table.resizeRowsToContents()
 
     def setTraceManager(self, traceManager):
         """Defines the current observed TraceManager."""
@@ -93,26 +95,29 @@ class TraceManagerDialog(QtFixes.QDialog):
     def refresh(self):
         """Populates the table."""
         self.disconnect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
-        self.table.clearContents()
+        # self.table.clearContents()
         self.table.setRowCount(len(self._traceManager.traceSets))
         for p, t in enumerate(self._traceManager.traceSets):
-            cb = QCheckBox()
-            cb.setChecked(t.enabled)
-            cb.clicked.connect(partial(self._traceManager.setTraceSetStatus, p, not t.enabled))
-            cb.setToolTip("Enable/disable trace set")
-            tb = QPushButton("x")
-            tb.setFixedSize(14,14)
-            tb.setToolTip("Remove trace set")
-            tb.clicked.connect(partial(self.removeTrace, p))
-            tmp = QWidget()
-            pLayout = QHBoxLayout(tmp)
-            pLayout.addWidget(cb)
-            pLayout.addWidget(tb)
-            pLayout.setAlignment(Qt.AlignHCenter)
-            pLayout.setContentsMargins(0,0,0,0)
-            self.table.setCellWidget(p, self.findCol("Options"), tmp)
+            i = self.table.cellWidget(p, 0)
+            if not i:
+                self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
+                cb = QCheckBox()
+                cb.setChecked(t.enabled)
+                cb.clicked.connect(partial(self.changeTraceStatus, p))
+                cb.setToolTip("Enable/disable trace set")
+                tb = QPushButton("x")
+                tb.setFixedSize(14,14)
+                tb.setToolTip("Remove trace set")
+                tb.clicked.connect(partial(self.removeTrace, p))
+                tmp = QWidget()
+                pLayout = QHBoxLayout(tmp)
+                pLayout.addWidget(cb)
+                pLayout.addWidget(tb)
+                pLayout.setAlignment(Qt.AlignHCenter)
+                pLayout.setContentsMargins(0,0,0,0)
+                self.table.setCellWidget(p, self.findCol("Options"), tmp)
             if t:
-                rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if (t.enabled and t.numPoints()>0) else "")
+                rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if (t.enabled and t.numTraces()>0) else "")
                 rangeWidget.setFlags(rangeWidget.flags() & ~Qt.ItemIsEditable)
                 self.table.setItem(p, self.findCol("Mapped Range"), rangeWidget)
                 for column in t.config.attrHeaderValues():
@@ -126,14 +131,6 @@ class TraceManagerDialog(QtFixes.QDialog):
                     else:
                         print "Internal error: Column doesn't exists: " + column["header"]
 
-            self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
-
-        try:
-            self.table.resizeColumnsToContents() #TODO: Fix a bug here related to data (?) attribute
-            self.table.resizeRowsToContents()
-        except Exception:
-            print "Internal error: Could not resize the table"
-
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
 
@@ -145,6 +142,9 @@ class TraceManagerDialog(QtFixes.QDialog):
                 self._traceManager.traceSets[row].config.setAttr(attrName, self.table.item(row,column).text())
                 self._traceManager.traceSets[row].config.saveTrace()
                 break
+
+    def changeTraceStatus(self, pos):
+        self._traceManager.setTraceSetStatus(pos, not self._traceManager.traceSets[pos].enabled)
 
     def removeTrace(self, pos):
         """Confirm before removing traces at pos."""
