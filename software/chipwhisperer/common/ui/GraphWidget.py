@@ -90,6 +90,7 @@ class GraphWidget(QWidget):
     
     
     def __init__(self):
+        QWidget.__init__(self)
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         
@@ -100,7 +101,6 @@ class GraphWidget(QWidget):
 
         self.colorDialog = ColorDialog()
 
-        QWidget.__init__(self)
         self.pw = pg.PlotWidget(name="Power Trace View")
         self.pw.setLabel('top', 'Power Trace View')
         self.pw.setLabel('bottom', 'Samples')

@@ -141,9 +141,7 @@ class ResultsPlotting(QObject):
     def attackStatsUpdated(self):
         """New attack statistics available, replot/redraw graphs"""
 
-        self.startTrace = self.attack.getTraceStart()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.setStartTrace(self.startTrace)
         self.table.updateTable()
         self.corrgraph.updateData()
         self.updateKnownKey()
@@ -693,8 +691,9 @@ class ResultsTable(QObject):
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.table.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
-        for i in range(1, permPerSubkey+1):
-            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d" % (i-1)))
+
+        for i in range(0, subkeys):
+            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d" % i))
 
         for i in range(0, subkeys):
             fi = QTableWidgetItem("")
@@ -702,13 +701,15 @@ class ResultsTable(QObject):
             fi.setTextAlignment(Qt.AlignCenter)
             self.table.setItem(0, i, fi)
 
-        for i in range(0, subkeys):
-            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d" % i))
+        for i in range(1, permPerSubkey+1):
+            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d" % (i-1)))
 
         self.table.horizontalHeader().setMinimumSectionSize(51)
         self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        fullLayout = QVBoxLayout()
+
         fullTable = QWidget()
+        fullLayout = QVBoxLayout()
+        fullLayout.setContentsMargins(5,5,5,5)
         fullTable.setLayout(fullLayout)
         fullLayout.addWidget(self.table)
 
@@ -761,11 +762,6 @@ class ResultsTable(QObject):
 
         self.enabledBytes = enabledbytes
 
-    def setStartTrace(self, starttrace):
-        """Set starting trace number"""
-
-        self.startTrace = starttrace
-
     def setAttack(self, attack):
         """Set source of statistics (i.e. attack)"""
 
@@ -803,7 +799,7 @@ class ResultsTable(QObject):
         when 'attackDone' is True."""
 
         # Process known key via attack
-        nk = self.attack.traceSource().getKnownKey(self.startTrace)
+        nk = self.attack.traceSource().getKnownKey(self.attack.getTraceStart())
         nk = self.attack.processKnownKey(nk)
 
         # If GUI has override, process it too
@@ -860,11 +856,6 @@ class ResultsSave(QObject):
         """Set what bytes to include in table"""
 
         self.enabledBytes = enabledbytes
-
-    def setStartTrace(self, starttrace):
-        """Set starting trace number"""
-
-        self.startTrace = starttrace
 
     def setAttack(self, attack):
         """Set source of statistics (i.e. attack)"""
