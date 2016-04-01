@@ -690,33 +690,27 @@ class ResultsTable(QObject):
         self.orfunction = None
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.table.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
+        self.table.horizontalHeader().setMinimumSectionSize(51)
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
         for i in range(0, subkeys):
             self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d" % i))
 
         for i in range(0, subkeys):
-            fi = QTableWidgetItem("")
-            fi.setBackground(QBrush(QColor(253, 255, 205)))
-            fi.setTextAlignment(Qt.AlignCenter)
-            self.table.setItem(0, i, fi)
+            cell = QTableWidgetItem("-")
+            cell.setBackground(QBrush(QColor(253, 255, 205)))
+            cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
+            cell.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(0, i, cell)
 
+        self.table.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
         for i in range(1, permPerSubkey+1):
             self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d" % (i-1)))
-
-        self.table.horizontalHeader().setMinimumSectionSize(51)
-        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-
-        fullTable = QWidget()
-        fullLayout = QVBoxLayout()
-        fullLayout.setContentsMargins(5,5,5,5)
-        fullTable.setLayout(fullLayout)
-        fullLayout.addWidget(self.table)
 
         self.resultsTable = QDockWidget("Results Table")
         self.resultsTable.setObjectName("Results Table")
         self.resultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
-        self.resultsTable.setWidget(fullTable)
+        self.resultsTable.setWidget(self.table)
         self.resultsTable.setVisible(False)
         self.resultsTable.visibilityChanged.connect(self.visibleChanged)
 
@@ -735,7 +729,6 @@ class ResultsTable(QObject):
                       ]
 
         self.params = ConfigParameter.create_extended(self, name='Ranked Table', type='group', children=resultsParams)
-
         self.updateMode = self.findParam('updateMode').value()
 
         #Update parameter tree
@@ -819,9 +812,10 @@ class ResultsTable(QObject):
 
                 if (self.updateMode == 'all') or attackDone:
                     for j in range(0, self.numPerms):
-                        wid = QTableWidgetItem("%02X\n%.4f" % (maxes[j]['hyp'],maxes[j]['value']))
-                        wid.setTextAlignment(Qt.AlignCenter)
-                        self.table.setItem(j+1, bnum, wid)
+                        cell = QTableWidgetItem("%02X\n%.4f" % (maxes[j]['hyp'],maxes[j]['value']))
+                        cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
+                        cell.setTextAlignment(Qt.AlignCenter)
+                        self.table.setItem(j+1, bnum, cell)
 
                         highlights = self.knownkey()
 

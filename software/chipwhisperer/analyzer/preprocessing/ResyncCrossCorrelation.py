@@ -48,7 +48,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
         self.debugReturnCorr = False
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript},
+                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
                          # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]

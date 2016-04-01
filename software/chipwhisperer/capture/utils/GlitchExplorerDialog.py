@@ -51,7 +51,7 @@ class TuningParameter(QObject):
             {'name':'Name', 'type':'str', 'key':'humanname', 'value':'Param #%d' % num, 'set':self.nameChange},
             {'name':'Script Command', 'type':'str', 'key':'script', 'value':'[]', 'set':self.updateParams},
             {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int},
-            {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'set':self.updateParams},
+            {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'default':(0, 10), 'set':self.updateParams},
             {'name':'Value', 'type':'float', 'key':'curval', 'value':1.0},
             {'name':'Step', 'type':'float', 'key':'step', 'value':1.0, 'set':self.updateParams},
             {'name':'Repeat', 'type':'int', 'key':'repeat', 'value':1, 'set':self.updateParams},

@@ -276,7 +276,7 @@ class PartitionDisplay(AutoScript, QObject):
 
               {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
                  {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
-                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'set':self.updatePOI},
+                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'set':self.updatePOI},
                  {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'set':self.updatePOI},
                  {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'set':self.updatePOI},
                  # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},

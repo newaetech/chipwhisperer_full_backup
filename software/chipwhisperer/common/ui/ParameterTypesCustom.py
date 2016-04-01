@@ -91,7 +91,6 @@ class RangeParameterItem(WidgetParameterItem):
         else:
             return True
 
-
     def makeLayout(self):
         self.sigs = SigStuff()
         opts = self.param.opts
@@ -169,24 +168,24 @@ registerParameterType('range', RangeParameter, override=True)
 
 class RangeParameterGraphItem(RangeParameterItem):
     def makeWidget(self):
-        l = self.makeLayout()
 
         graphIcon = QtGui.QIcon()
         graphIcon.addFile(':/images/wavelimits.png', state=QtGui.QIcon.On)
         graphIcon.addFile(':/images/wavelimitsoff.png', state=QtGui.QIcon.Off)
 
         self.graphBtn = QtGui.QPushButton()
+        self.graphBtn.setToolTip("Allows range selection by draging the interval boundaries on the graph")
         self.graphBtn.setFixedWidth(20)
         self.graphBtn.setFixedHeight(20)
         self.graphBtn.setIcon(graphIcon)
         self.graphBtn.setCheckable(True)
         self.graphBtn.clicked[bool].connect(self.buttonPressed)
 
+        l = self.makeLayout()
         l.addWidget(self.graphBtn)
-
+        l.addWidget(QtGui.QLabel("  "))
         w = QtGui.QWidget()
         w.setLayout(l)
-
         w.sigChanged = self.sigs.sigValueChanged
         w.sigChanging = self.sigs.sigValueChanging
         w.value = self.value

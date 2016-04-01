@@ -279,9 +279,9 @@ class CWAnalyzerGUI(CWMainGUI):
                 {'name':'Result Collection', 'type':'group', 'children':[
                     {'name':'Input Trace Plot', 'type':'group', 'children':[
                         {'name':'Enabled', 'type':'bool', 'value':True},
-                        {'name':'Redraw after Each (slower)', 'type':'bool', 'value':True, 'set':self.setPlotInputEach},
-                        {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0)},
-                        {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'graphwidget':self.waveformDock.widget()},
+                        {'name':'Redraw after Each', 'type':'bool', 'value':True, 'set':self.setPlotInputEach},
+                        {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'default':(0, 0)},
+                        {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'default':(0, 0), 'graphwidget':self.waveformDock.widget()},
                         {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
                         ]}
                     ]},

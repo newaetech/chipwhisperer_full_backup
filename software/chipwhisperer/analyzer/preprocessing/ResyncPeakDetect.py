@@ -50,7 +50,7 @@ class ResyncPeakDetect(PreprocessingBase):
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript},
+                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
                          {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
                          {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
