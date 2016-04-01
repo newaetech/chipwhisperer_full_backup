@@ -95,11 +95,9 @@ class TraceManagerDialog(QtFixes.QDialog):
     def refresh(self):
         """Populates the table."""
         self.disconnect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
-        # self.table.clearContents()
         self.table.setRowCount(len(self._traceManager.traceSets))
         for p, t in enumerate(self._traceManager.traceSets):
-            i = self.table.cellWidget(p, 0)
-            if not i:
+            if not self.table.cellWidget(p, 0): # check if the option buttons already exist
                 self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
                 cb = QCheckBox()
                 cb.setChecked(t.enabled)
@@ -129,7 +127,9 @@ class TraceManagerDialog(QtFixes.QDialog):
                             wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
                         self.table.setItem(p, col, wid)
                     else:
-                        print "Internal error: Column doesn't exists: " + column["header"]
+                        print "Internal Error: Column doesn't exists: " + column["header"]
+            else:
+                print "Internal Error: Set #%d should never be None: " % p # Otherwise there will be an empty line at the end of the table
 
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
@@ -137,8 +137,8 @@ class TraceManagerDialog(QtFixes.QDialog):
     def cellChanged(self, row, column):
         """Saves cell edition to the traceManager and .cfg file"""
         for attr in self.attrs:
-            if attr["header"] == self.table.horizontalHeaderItem(column).text():
-                attrName = attr["name"]
+            attrName = attr["name"]
+            if attrName == self.table.horizontalHeaderItem(column).text():
                 self._traceManager.traceSets[row].config.setAttr(attrName, self.table.item(row,column).text())
                 self._traceManager.traceSets[row].config.saveTrace()
                 break
