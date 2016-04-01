@@ -124,12 +124,12 @@ class ResultsPlotting(QObject):
         """Re-Read the Known Key from saved traces"""
 
         try:
-            nk = self.trace.getKnownKey(self.startTrace)
+            nk = self.trace.getKnownKey(self.attack.getTraceStart())
             nk = self.attack.processKnownKey(nk)
             self.graphoutput.setKnownKey(nk)
             self.corrgraph.setKnownKey(nk)
         except AttributeError, e:
-            print str(e)
+            print "WARNING: Failed to find KnownKey, error = %s"%str(e)
 
     def attackDone(self):
         """Attack is done, update everything"""
