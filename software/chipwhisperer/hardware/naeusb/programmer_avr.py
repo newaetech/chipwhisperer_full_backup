@@ -115,7 +115,15 @@ class ATMega48A(AVRBase):
        "eeprom":{"offset":0, "size":256, "pagesize":4}
      }
 
-supported_avr = [ATMega328P(), ATMega328(), ATMega168A(), ATMega168PA(), ATMega88A(), ATMega88PA(), ATMega48A(), ATMega48PA()]
+class ATMega128RFA1(AVRBase):
+        signature = [0x1e, 0xA7, 0x01]
+        name = "ATMega128RFA1"
+        memtypes = {
+            "flash": {"offset": 0, "size": 131072, "pagesize": 256},
+            "eeprom": {"offset": 0, "size": 4096, "pagesize": 8}
+        }
+
+supported_avr = [ATMega328P(), ATMega328(), ATMega168A(), ATMega168PA(), ATMega88A(), ATMega88PA(), ATMega48A(), ATMega48PA(), ATMega128RFA1()]
 
 class AVRISP(object):
 
