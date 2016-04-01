@@ -141,8 +141,9 @@ class ResultsPlotting(QObject):
     def attackStatsUpdated(self):
         """New attack statistics available, replot/redraw graphs"""
 
+        self.startTrace = self.attack.getTraceStart()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.setStartTrace(self.attack.getTraceStart())
+        self.table.setStartTrace(self.startTrace)
         self.table.updateTable()
         self.corrgraph.updateData()
         self.updateKnownKey()
@@ -691,22 +692,21 @@ class ResultsTable(QObject):
         self.orfunction = None
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.pgeBrush = QBrush(QColor(253,255,205))
-        pgehdr = QTableWidgetItem("PGE")
-        self.table.setVerticalHeaderItem(0, pgehdr)
-        for i in range(1,permPerSubkey+1):
-            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d"%(i-1)))
+        self.table.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
+        for i in range(1, permPerSubkey+1):
+            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d" % (i-1)))
 
-        for i in range(0,subkeys):
+        for i in range(0, subkeys):
             fi = QTableWidgetItem("")
-            fi.setBackground(self.pgeBrush)
-            self.table.setItem(0,i,fi)
+            fi.setBackground(QBrush(QColor(253, 255, 205)))
+            fi.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(0, i, fi)
 
-        for i in range(0,subkeys):
-            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d"%i))
+        for i in range(0, subkeys):
+            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d" % i))
 
-        self.table.resizeColumnsToContents()
-
+        self.table.horizontalHeader().setMinimumSectionSize(51)
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         fullLayout = QVBoxLayout()
         fullTable = QWidget()
         fullTable.setLayout(fullLayout)
@@ -819,13 +819,13 @@ class ResultsTable(QObject):
                 self.table.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
 
-                pgitm = QTableWidgetItem("%3d"%attackStats.pge[bnum])
-                pgitm.setBackground(self.pgeBrush)
-                self.table.setItem(0,bnum,pgitm)
+                self.table.item(0, bnum).setText("%d" % attackStats.pge[bnum])
 
                 if (self.updateMode == 'all') or attackDone:
-                    for j in range(0,self.numPerms):
-                        self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
+                    for j in range(0, self.numPerms):
+                        wid = QTableWidgetItem("%02X\n%.4f" % (maxes[j]['hyp'],maxes[j]['value']))
+                        wid.setTextAlignment(Qt.AlignCenter)
+                        self.table.setItem(j+1, bnum, wid)
 
                         highlights = self.knownkey()
 
@@ -838,9 +838,6 @@ class ResultsTable(QObject):
                                 pass
             else:
                 self.table.setColumnHidden(bnum, True)
-
-        self.table.resizeColumnsToContents()
-        self.table.resizeRowsToContents()
         self.resultsTable.setVisible(True)
 
 

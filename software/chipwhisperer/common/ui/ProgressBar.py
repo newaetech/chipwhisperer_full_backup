@@ -41,10 +41,13 @@ class ProgressBarText(object):
         self.textMask = textMask
 
     def getText(self):
+        if self.wasAborted():
+            return "Aborting..."
+
         if self.textValues:
             return self.textMask % self.textValues
-        else:
-            return self.textMask
+
+        return self.textMask
 
     def printStatus(self):
         print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getText() + ")"
@@ -59,7 +62,7 @@ class ProgressBarText(object):
 
     def abort(self):
         self.aborted = True
-        print self.title + ": Aborting..."
+        print self.title + ": " + self.getText()
 
     def wasAborted(self):
         return self.aborted

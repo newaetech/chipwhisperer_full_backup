@@ -139,8 +139,6 @@ class CPAProgressiveOneSubkey(object):
 
             if progressBar:
                 progressBar.updateStatus(pbcnt, (self.totalTraces-numtraces, self.totalTraces-1, bnum))
-                if progressBar.wasAborted():
-                    break
             pbcnt = pbcnt + 1
 
             # if padafter > 0:
