@@ -155,7 +155,6 @@ class AttackGenericParameters(AutoScript):
         self.addFunction("init", "setIterations", "1")
         self.addFunction("init", "setReportingInterval", "10")
 
-
         self.singleEmit = True
 
     def updateGenericScript(self, ignored=None):

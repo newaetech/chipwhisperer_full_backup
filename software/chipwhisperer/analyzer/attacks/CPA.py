@@ -139,7 +139,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         for itNum in range(1, self.getIterations()+1):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-            endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
+            endingTrace = startingTrace + self.getTraceNum() - 1
             #TODO:  pointRange=self.TraceRangeList[1:17]
             self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
 

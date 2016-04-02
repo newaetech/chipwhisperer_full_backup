@@ -192,7 +192,8 @@ class CPAProgressive(AutoScript):
         numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:
-            progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
+            progressBar.setText("Atacking %d traces from %d to %d" % (numtraces, tracerange[0], tracerange[1]) +
+                                "\nCurrent Trace = %d-%d Current Subkey = %d")
             progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
 
         pbcnt = 0

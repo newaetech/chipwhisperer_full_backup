@@ -83,9 +83,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
         self.cwAPI.signals.attackChanged.connect(self.attackChanged)
         self.cwAPI.signals.reloadAttackParamList.connect(self.reloadAttackParamList)
-
         self.reloadScripts()
-        # self.setupPreprocessorChain()
 
     def projectChanged(self):
         super(CWAnalyzerGUI, self).projectChanged()
