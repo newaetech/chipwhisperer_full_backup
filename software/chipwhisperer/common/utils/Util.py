@@ -180,7 +180,10 @@ class Signal(object):
 
     def emit(self, *arg):
         for observer in self.observers:
-            observer(*arg)
+            try:
+                observer(*arg)
+            except Exception, e:
+                print "Internal Error: Exceptions should not escape from observers. Received %s(\"%s\") from %s" % (type(e).__name__, e, observer)
 
     def disconnectAll(self):
         self.observers = []

@@ -50,7 +50,7 @@ class AttackCPA_Bayesian(object):
 
         pbcnt = 0
         if progressBar:
-            progressBar.setText("Byte %02d: Hyp=%02x")
+            progressBar.setStatusMask("Byte %02d: Hyp=%02x")
             progressBar.setMaximum(len(brange) * 256)
 
         # Load all traces
@@ -59,19 +59,16 @@ class AttackCPA_Bayesian(object):
         textouts = []
         knownkeys = []
         for i in range(tracerange[0], tracerange[1]):
-
             # Handle Offset
             tnum = i + tracerange[0]
-
-            d = tracedata.getTrace(tnum)
-
-            if d is None:
-                continue
-
-            data.append(d)
-            textins.append(tracedata.getTextin(tnum))
-            textouts.append(tracedata.getTextout(tnum))
-            knownkeys.append(tracedata.getKnownKey(tnum))
+            try:
+                data.append(tracedata.getTrace(tnum))
+                textins.append(tracedata.getTextin(tnum))
+                textouts.append(tracedata.getTextout(tnum))
+                knownkeys.append(tracedata.getKnownKey(tnum))
+            except Exception, e:
+                progressBar.abort(e.message)
+                return
 
         traces = np.array(data)
         textins = np.array(textins)

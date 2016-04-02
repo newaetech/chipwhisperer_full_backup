@@ -142,6 +142,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             endingTrace = startingTrace + self.getTraceNum() - 1
             #TODO:  pointRange=self.TraceRangeList[1:17]
             self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
+            if progressBar and progressBar.wasAborted():
+                return
 
         self.attackDone.emit()
 

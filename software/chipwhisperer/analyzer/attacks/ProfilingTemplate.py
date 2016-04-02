@@ -314,7 +314,7 @@ class ProfilingTemplate(AutoScript):
         tdiff = self._reportinginterval
 
         if progressBar:
-            progressBar.setText("Current Trace = %d-%d Current Subkey = %d")
+            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d")
             progressBar.setMaximum(16 * len(traces))
         pcnt = 0
 

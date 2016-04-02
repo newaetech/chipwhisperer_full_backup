@@ -192,8 +192,8 @@ class CPAProgressive(AutoScript):
         numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:
-            progressBar.setText("Atacking %d traces from %d to %d" % (numtraces, tracerange[0], tracerange[1]) +
-                                "\nCurrent Trace = %d-%d Current Subkey = %d")
+            progressBar.setText("Atacking %d traces from %d to %d" % (numtraces, tracerange[0], tracerange[1]))
+            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d")
             progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
 
         pbcnt = 0
@@ -240,15 +240,14 @@ class CPAProgressive(AutoScript):
                     # Handle Offset
                     tnum = i + tracerange[0]
 
-                    d = tracedata.getTrace(tnum)
-
-                    if d is None:
-                        continue
-
-                    data.append(d)
-                    textins.append(tracedata.getTextin(tnum))
-                    textouts.append(tracedata.getTextout(tnum))
-                    knownkeys.append(tracedata.getKnownKey(tnum))
+                    try:
+                        data.append(tracedata.getTrace(tnum))
+                        textins.append(tracedata.getTextin(tnum))
+                        textouts.append(tracedata.getTextout(tnum))
+                        knownkeys.append(tracedata.getKnownKey(tnum))
+                    except Exception, e:
+                        progressBar.abort(e.message)
+                        return
 
                 traces = np.array(data)
                 textins = np.array(textins)

@@ -25,32 +25,40 @@
 
 from datetime import *
 
+
 class ProgressBarText(object):
-    def __init__(self, title = "Progress", textMask ="Initializing...", textValues = None):
+    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None):
         self.title = title
         self.last = self.currentProgress = 0
         self.maximum = 100
-        self.textMask = textMask
+        self.text = text
+        self.statusMask = statusMask
         self.textValues = textValues
         self.startTime = datetime.now()
         self.aborted = False
         self.printAll = False
-        print self.title + ": " + self.getText()
+        self.setText(text)
+        print self.title + ": " + self.getStatusText()
 
-    def setText(self, textMask):
-        self.textMask = textMask
+    def setText(self, text):
+        if text:
+            self.text = text
+            print self.text
 
     def getText(self):
-        if self.wasAborted():
-            return "Aborting..."
+        return self.text + ":"
 
-        if self.textValues:
-            return self.textMask % self.textValues
+    def setStatusMask(self, statusTextMask):
+        self.statusMask = statusTextMask
+        self.textValues = None
 
-        return self.textMask
+    def getStatusText(self):
+        if self.textValues and not self.wasAborted():
+            return self.statusMask % self.textValues
+        return self.statusMask
 
     def printStatus(self):
-        print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getText() + ")"
+        print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
 
     def updateStatus(self, currentProgress, textValues = None):
         self.textValues = textValues
@@ -60,9 +68,12 @@ class ProgressBarText(object):
             self.last = currentProgress
             self.printStatus()
 
-    def abort(self):
+    def abort(self, message = None):
+        if not message:
+            message = "User request."
         self.aborted = True
-        print self.title + ": " + self.getText()
+        self.setStatusMask("Aborted (%d)" % message)
+        print self.title + ": " + self.getStatusText()
 
     def wasAborted(self):
         return self.aborted
@@ -84,9 +95,9 @@ try:
     from PySide.QtGui import *
 
     class ProgressBarGUI(QDialog, ProgressBarText):
-        def __init__(self, title = "Progress", textMask = "Initializing...", textValues = None):
+        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None):
 
-            ProgressBarText.__init__(self, title = title, textMask = textMask, textValues = textValues)
+            ProgressBarText.__init__(self, title = title, text=text, statusMask= statusMask, textValues = textValues)
             QDialog.__init__(self, None)
 
             self.setModal(False)
@@ -103,19 +114,29 @@ try:
 
             self.pbar = QProgressBar()
             self.pbar.setTextVisible(True)
-            self.textLabel = QLabel(self.textMask)
+            self.textLabel = QLabel(self.text)
+            self.statusLabel = QLabel(self.statusMask)
 
             layout = QVBoxLayout()
             layout.addWidget(self.textLabel)
             layout.addWidget(self.pbar)
+            layout.addWidget(self.statusLabel)
             layout.addLayout(clayout)
             self.setLayout(layout)
             self.show()
             QCoreApplication.processEvents()
 
+        def abort(self, message = None):
+            ProgressBarText.abort(self, message)
+            if message:
+                QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
+
+
         def updateStatus(self, currentProgress, textValues = None):
             super(ProgressBarGUI, self).updateStatus(currentProgress, textValues)
-            self.textLabel.setText(self.getText())
+            if self.getText():
+                self.textLabel.setText(self.getText())
+            self.statusLabel.setText(self.getStatusText())
             self.pbar.setValue((self.currentProgress/self.maximum) * 100)
             QCoreApplication.processEvents()
 

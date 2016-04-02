@@ -128,7 +128,7 @@ class TraceManager(object):
                     self.lastMapped = t
                     return t
 
-        raise ValueError("n = %d not in mapped range" % n)
+        raise ValueError("Error: Trace %d is not in mapped range." % n)
 
     def getAuxData(self, n, auxDic):
         t = self.findMappedTrace(n)

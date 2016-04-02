@@ -161,7 +161,7 @@ class CWCoreAPI(object):
     def captureM(self, progressBar = None):
         if not progressBar:
             progressBar = ProgressBarText()
-        progressBar.setText("Current Segment = %d Current Trace = %d")
+        progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
         progressBar.setMaximum(self._numTraces - 1)
 
         writerlist = []
