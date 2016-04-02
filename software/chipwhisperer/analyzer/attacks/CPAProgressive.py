@@ -186,14 +186,12 @@ class CPAProgressive(AutoScript):
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         brange=self.brange
-
         self.all_diffs = range(0,16)
-
         numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:
-            progressBar.setText("Atacking %d traces from %d to %d" % (numtraces, tracerange[0], tracerange[1]))
-            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d")
+            progressBar.setText("Attacking traces subset: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
+            progressBar.setStatusMask("Trace Interval: %d-%d. Current Subkey: %d")
             progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
 
         pbcnt = 0
@@ -255,7 +253,6 @@ class CPAProgressive(AutoScript):
                 # knownkeys = np.array(knownkeys)
 
                 for bnum_bf in brange_bf:
-
                     if bf:
                         bnum = bnum_bf
                     else:
@@ -284,7 +281,7 @@ class CPAProgressive(AutoScript):
                 tend += self._reportingInterval
                 tstart += self._reportingInterval
 
-                if self.sr is not None:
+                if self.sr:
                     self.sr()
 
     def getStatistics(self):

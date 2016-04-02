@@ -72,7 +72,7 @@ class ProgressBarText(object):
         if not message:
             message = "User request."
         self.aborted = True
-        self.setStatusMask("Aborted (%d)" % message)
+        self.setStatusMask("Aborted. Reason = " + message)
         print self.title + ": " + self.getStatusText()
 
     def wasAborted(self):
@@ -144,10 +144,7 @@ try:
             ProgressBarText.close(self)
             QDialog.close(self)
 
-    actualProgressBar = ProgressBarGUI
+    ProgressBar = ProgressBarGUI
 
 except ImportError:
-    actualProgressBar = ProgressBarText
-
-class ProgressBar(actualProgressBar):
-    pass
+    ProgressBar = ProgressBarText

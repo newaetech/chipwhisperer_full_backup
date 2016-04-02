@@ -555,7 +555,7 @@ class CWMainGUI(QMainWindow):
         elif reply == QDialogButtonBox.NoRole:
             return True
         else:
-            raise AttributeError("Invalid role: %s" % str(reply))
+            raise AttributeError("Internal Error: Invalid role: %s" % str(reply))
 
     def consolidateDialog(self):
         msgBox = QMessageBox()
