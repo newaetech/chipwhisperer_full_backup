@@ -137,7 +137,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
         self.mainSplitter.addWidget(self.table)
 
         self.glitchParams =[{'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
-                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters},
+                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters, 'readonly':False},
                             {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True},
                             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
                             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
@@ -217,7 +217,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
 
     def executeScriptCommand(self, paramNum, script):
         #print script
-        self.parent().setParameter(script)
+        self.parent().cwAPI.setParameter(script)
 
     def updateParameters(self, ignored=None):
         numparams = self.findParam('numtune').value()
