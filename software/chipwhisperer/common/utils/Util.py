@@ -27,6 +27,7 @@ import ast
 import os.path
 import collections
 import shutil
+import traceback
 
 try:
     # OrderedDict is new in 2.7
@@ -183,7 +184,8 @@ class Signal(object):
             try:
                 observer(*arg)
             except Exception, e:
-                print "Internal Error: Exceptions should not escape from observers. Received %s(\"%s\") from %s" % (type(e).__name__, e, observer)
+                print "Internal Error: Exceptions should not escape from observers. Received %s(\"%s\") from %s. Traceback:" % (type(e).__name__, e, observer)
+                traceback.print_exc()
 
     def disconnectAll(self):
         self.observers = []
