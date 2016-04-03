@@ -153,7 +153,7 @@ external code changes, this may eventually be instead rolled into the main codeb
     If instead you get an error something like ``make: *** No rule to make target `simpleserial.elf', needed by `elf'.  Stop.``, this means a required file was missing.
 
 2. Programming the target AVR is accomplished in one of two methods depending on your hardware. The ChipWhisperer Capture Rev 2 uses the external "AVR Studio"
-   program, whereas the CW1173 and CW1180 (ChipWhisperer-Lite based platforms) use a programmer menu from the ChipWhisperer-Capture software. To see details
+   program, whereas the CW1173 and CW1200 use a programmer menu from the ChipWhisperer-Capture software. To see details
    refer to either :ref:`cwcr2programmer` or :ref:`cwliteprogramming`.
 
 Linux
