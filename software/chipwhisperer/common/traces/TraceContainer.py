@@ -274,9 +274,10 @@ class TraceContainer(object):
         """Placeholder for copy/import command. Different from load as copies data INTO this classes format, possibly from another format"""
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
     
-    def closeAll(self):
+    def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
         """Writer is done, can close/save any files."""               
-        raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
+        #raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
+        pass
 
     def validateSettings(self):
         """Check settings, log any messages to special setup window"""

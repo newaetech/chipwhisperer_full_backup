@@ -135,7 +135,7 @@ class TraceContainerDPAv3(TraceContainer):
     def saveAllTraces(self):
         self.writeInfo()
         
-    def closeAll(self):
+    def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
         self.saveAllTraces()
         self.inf.close()
         self.outf.close()
