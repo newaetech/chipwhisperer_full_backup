@@ -49,7 +49,7 @@ class ProgressBarText(object):
         if self.text:
             return self.text + ":"
         else:
-            return ":"
+            return "<Internal Error - No Next with ProgressBarText> :"
 
     def setStatusMask(self, statusTextMask):
         self.statusMask = statusTextMask
