@@ -46,7 +46,10 @@ class ProgressBarText(object):
             print self.text
 
     def getText(self):
-        return self.text + ":"
+        if self.text:
+            return self.text + ":"
+        else:
+            return ":"
 
     def setStatusMask(self, statusTextMask):
         self.statusMask = statusTextMask
