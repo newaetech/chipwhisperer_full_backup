@@ -585,6 +585,10 @@ class CWMainGUI(QMainWindow):
 
         details = "".join(traceback.format_exception(etype, value, trace))
         print details
+        if issubclass(etype, Warning):
+            QMessageBox.warning(self, "Warning", value)
+            return
+
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:\n%s\n\n It is usually OK to continue, but save your work just in case.\n"
                     "If the error occurs again, please report it to the developer with the details bellow." % value, QMessageBox.Close, self)
