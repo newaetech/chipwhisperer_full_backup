@@ -32,7 +32,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.capture.utils.IntelHex import IntelHex
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 
 class XMEGAProgrammerDialog(QtFixes.QDialog):

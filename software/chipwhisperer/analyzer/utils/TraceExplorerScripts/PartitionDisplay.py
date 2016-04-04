@@ -30,7 +30,7 @@ import numpy as np
 import copy
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import pyqtgraph as pg
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.api.autoscript import AutoScript

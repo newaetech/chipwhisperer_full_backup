@@ -35,7 +35,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 class PartitionHDLastRound(object):
 

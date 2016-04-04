@@ -86,7 +86,7 @@ class TemplateBasic(AutoScript):
         # partData = partObj.loadPartitions(trange)
 
         if progressBar:
-            progressBar.setText('Generating Trace Matrix')
+            progressBar.setText('Generating Trace Matrix:')
             progressBar.setMaximum(tend - tstart + subkeys)
 
         for tnum in range(tstart, tend):
@@ -102,7 +102,7 @@ class TemplateBasic(AutoScript):
                     return None
 
         if progressBar:
-            progressBar.setText('Generating Trace Covariance and Mean Matrices')
+            progressBar.setText('Generating Trace Covariance and Mean Matrices:')
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):

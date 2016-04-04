@@ -117,6 +117,8 @@ class CWCoreAPI(object):
             self.getTarget().setOpenADC(self.getScope().qtadc.ser)
 
     def connectTarget(self):
+        if hasattr(self.getScope(), "qtadc"):
+            self.getTarget().setOpenADC(self.getScope().qtadc.ser)
         self.getTarget().con()
 
     def doConDis(self):

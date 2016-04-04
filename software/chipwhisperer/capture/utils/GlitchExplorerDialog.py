@@ -31,7 +31,7 @@ from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 

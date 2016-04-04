@@ -25,8 +25,7 @@
 __author__ = "Colin O'Flynn"
 
 import os
-import sys
-import traceback
+import sys, traceback
 from functools import partial
 from datetime import datetime
 from pyqtgraph.parametertree import Parameter, ParameterTree
@@ -37,6 +36,7 @@ from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
+from chipwhisperer.common.utils import qt_tweaks
 from chipwhisperer.common.utils import Util
 import chipwhisperer.common.ui.qrc_resources
 
@@ -215,7 +215,7 @@ class CWMainGUI(QMainWindow):
         super(CWMainGUI, self).__init__()
         self.cwAPI = cwCoreAPI
         self.name = name
-        sys.excepthook = self.exceptionHook
+        sys.excepthook = self.exceptionHandlerDialog
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
         self.lastMenuActionSection = None
@@ -306,13 +306,6 @@ class CWMainGUI(QMainWindow):
     def reset(self):
         self.clearAllSettings()
         sys.exit()
-
-    def exceptionHook(self, etype, value, trace):
-        """
-        Handler for all unhandled exceptions.
-        """
-        print "".join(traceback.format_exception(etype, value, trace))
-        QMessageBox.information(self, u"Error", unicode(value))
 
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
@@ -582,11 +575,25 @@ class CWMainGUI(QMainWindow):
         m = mod.userScript(self.cwAPI)
         m.run()
         self.updateStatusBar("Finished Script: %s" % mod.name())
-        
+
+    def exceptionHandlerDialog(self, etype, value, trace):
+        """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""
+
+        if issubclass(etype, KeyboardInterrupt): # So program can exit with Ctrl + C.
+            self.close()
+            return
+
+        details = "".join(traceback.format_exception(etype, value, trace))
+        print details
+        dialog = QMessageBox(QMessageBox.Critical, "Error",
+                    "An error has occurred:\n%s\n\n It is usually OK to continue, but save your work just in case.\n"
+                    "If the error occurs again, please report it to the developer with the details bellow." % value, QMessageBox.Close, self)
+        dialog.setDetailedText(details)
+        dialog.exec_()
+
     @staticmethod
     def getInstance():
         return CWMainGUI.instance
-
 
 def main():    
     app = QApplication(sys.argv)

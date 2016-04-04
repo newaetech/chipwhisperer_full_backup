@@ -30,7 +30,7 @@ from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.traces.TraceContainerTypes
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 try:
     from traces.TraceContainerMySQL import TraceContainerMySQL

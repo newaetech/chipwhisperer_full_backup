@@ -28,7 +28,6 @@
 import PySide.QtCore as qtc
 import PySide.QtGui as qtg
 
-
 class QLineEdit(qtg.QLineEdit):
     """Fixes a bug with Mac OS where the Frame would flicker the second time you call show()"""
     def __init__(self, *args, **kwargs):

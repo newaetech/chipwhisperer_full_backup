@@ -37,19 +37,18 @@ class ProgressBarText(object):
         self.startTime = datetime.now()
         self.aborted = False
         self.printAll = False
-        self.setText(text)
+        ProgressBarText.setText(self, text)
         print self.title + ": " + self.getStatusText()
 
     def setText(self, text):
         if text:
             self.text = text
             print self.text
+        else:
+            self.text = ""
 
     def getText(self):
-        if self.text:
-            return self.text + ":"
-        else:
-            return "<Internal Error - No Next with ProgressBarText> :"
+        return self.text
 
     def setStatusMask(self, statusTextMask):
         self.statusMask = statusTextMask
@@ -115,9 +114,9 @@ try:
             cancel.clicked.connect(self.abort)
             clayout.addWidget(cancel)
 
+            self.textLabel = QLabel(self.getText())
             self.pbar = QProgressBar()
             self.pbar.setTextVisible(True)
-            self.textLabel = QLabel(self.text)
             self.statusLabel = QLabel(self.statusMask)
 
             layout = QVBoxLayout()
@@ -129,16 +128,17 @@ try:
             self.show()
             QCoreApplication.processEvents()
 
+        def setText(self, text):
+            ProgressBarText.setText(self, text)
+            self.textLabel.setText(self.getText())
+
         def abort(self, message = None):
             ProgressBarText.abort(self, message)
             if message:
                 QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
 
-
         def updateStatus(self, currentProgress, textValues = None):
             super(ProgressBarGUI, self).updateStatus(currentProgress, textValues)
-            if self.getText():
-                self.textLabel.setText(self.getText())
             self.statusLabel.setText(self.getStatusText())
             self.pbar.setValue((self.currentProgress/self.maximum) * 100)
             QCoreApplication.processEvents()

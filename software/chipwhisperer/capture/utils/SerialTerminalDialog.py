@@ -26,7 +26,7 @@
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 
 class SerialTerminalDialog(QtFixes.QDialog):

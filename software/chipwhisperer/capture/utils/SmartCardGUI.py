@@ -27,7 +27,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.utils.Util import hexstr2list
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 try:
     # OrderedDict is new in 2.7

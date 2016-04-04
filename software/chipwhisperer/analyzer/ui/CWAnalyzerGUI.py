@@ -26,23 +26,23 @@
 
 from datetime import *
 import sys
+from PySide.QtCore import *
+from PySide.QtGui import *
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
+import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
-from PySide.QtCore import *
-from PySide.QtGui import *
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from pyqtgraph.parametertree import ParameterTree
-import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 from chipwhisperer.analyzer.attacks.Profiling import Profiling
 from chipwhisperer.analyzer.attacks.CPA import CPA
 from functools import partial
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 class CWAnalyzerGUI(CWMainGUI):
@@ -70,7 +70,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
         self.valid_atacks = {CPA.name:CPA(), Profiling.name:Profiling(self.traceExplorerDialog)}
-        self.cwAPI.setAttack(self.valid_atacks["CPA"])
+        self.setAttack(self.valid_atacks["CPA"])
         self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.waveformDock.widget())
         self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
                                      self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
@@ -269,7 +269,7 @@ class CWAnalyzerGUI(CWMainGUI):
                     [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
 
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':self.cwAPI.getAttack(), 'set':self.cwAPI.setAttack},
+                    {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':self.cwAPI.getAttack(), 'set':self.setAttack},
                     ]},
 
                 {'name':'Post-Processing', 'type':'group'},
@@ -310,6 +310,10 @@ class CWAnalyzerGUI(CWMainGUI):
             module.scriptsUpdated.connect(self.reloadScripts)
         self.reloadParamListPreprocessing()
         self.reloadScripts()
+
+    def setAttack(self, module):
+        self.cwAPI.setAttack(module)
+        self.cwAPI.getAttack().scriptsUpdated.connect(self.reloadScripts)
 
     def reloadParamListResults(self, lst=None):
         """Reload parameter tree for results settings, ensuring GUI matches loaded modules."""

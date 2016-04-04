@@ -29,7 +29,7 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAM3Update import SAM3
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader as ChipWhispererFWLoader
 from PySide.QtGui import *
 from PySide.QtCore import *
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 
 class FWLoaderConfigGUI(QtFixes.QDialog):

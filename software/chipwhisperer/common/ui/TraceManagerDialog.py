@@ -30,7 +30,7 @@ import glob
 from functools import partial
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import ConfigParser
 import pstats, cProfile #For profiling support (not 100% needed)
 import chipwhisperer.common.traces.TraceContainerConfig

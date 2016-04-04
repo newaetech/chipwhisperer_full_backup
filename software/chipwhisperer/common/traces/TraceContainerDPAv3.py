@@ -32,7 +32,7 @@ from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_nat
 import numpy as np
 from time import gmtime, strftime
 from TraceContainer import TraceContainer
-import chipwhisperer.common.utils.QtFixes as QtFixes
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 
 def getClass():

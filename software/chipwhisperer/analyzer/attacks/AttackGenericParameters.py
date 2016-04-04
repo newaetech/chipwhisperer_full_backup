@@ -191,18 +191,9 @@ class AttackGenericParameters(AutoScript):
         self.pointsParams = ConfigParameter.create_extended(self, name='Point Setup', type='group', children=self.getPointList())
 
     def getPointList(self):
-    #    if self.allPointsSame == False:
-    #        init = [{'name':'Byte %d'%bnum, 'type':'group', 'children': [
-    #                    {'name':'Starting Point', 'type':'int', 'value':self.startPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
-    #                    {'name':'Ending Point', 'type':'int', 'value':self.endPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
-    #                    {'name':'Copy from Output Graph', 'type':'action', 'action':partial(self.copyPointsFromOutput, bnum)},
-    #                    {'name':'Copy from Trace Graph', 'type':'action', 'action':partial(self.copyPointsFromTrace, bnum)},
-    #                    ]} for bnum in range(0, 16)]
-    #    else:
+    #   init = [{'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'value':(0,0), 'limits':(self.startPoint[0], self.endPoint[0]), 'default':(0, 0), 'set':self.updateGenericScript, 'graphwidget':self.waveformDock.widget()},
         init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
                     {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
-    #                {'name':'Copy from Output Graph', 'type':'action', 'action':self.copyPointsFromOutput},
-    #                {'name':'Copy from Trace Graph', 'type':'action', 'action':self.copyPointsFromTrace},
                     ]
     #
     #    #NOT ACTUALLY SUPPORTED
