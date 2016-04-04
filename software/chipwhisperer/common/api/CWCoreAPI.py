@@ -213,12 +213,10 @@ class CWCoreAPI(object):
             self.signals.campaignDone.emit()
             tcnt += setSize
 
-            # Re-use the wave buffer for later segments
-            if self.hasTraceClass():
-                waveBuffer = currentTrace.traces
-                writerlist.append(currentTrace)
+            waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments
+            writerlist.append(currentTrace)
 
-            if progressBar and progressBar.wasAborted():
+            if progressBar.wasAborted():
                 break
 
         progressBar.close()

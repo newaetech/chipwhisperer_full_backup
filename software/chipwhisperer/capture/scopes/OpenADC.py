@@ -442,7 +442,6 @@ class OpenADCInterface(ScopeTemplate):
         self.qtadc.setupParameterTree(False)
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
-        self.datapoints = []
 
         try:
             cwrev2 = OpenADCInterface_ZTEX(self.qtadc)

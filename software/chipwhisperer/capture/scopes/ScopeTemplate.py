@@ -37,6 +37,7 @@ class ScopeTemplate(object):
         self.connectStatus = Util.Observable(False)
         self.dataUpdated = Util.Signal()
         self.paramListUpdated = Util.Signal()
+        self.datapoints = []
 
     def dcmTimeout(self):
         pass

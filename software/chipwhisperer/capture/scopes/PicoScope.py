@@ -167,7 +167,6 @@ class PicoScopeInterface(ScopeTemplate):
     def __init__(self):
         super(PicoScopeInterface, self).__init__()
         self.scopetype = None
-        self.datapoints = []
 
         scope_cons = {}
         scope_cons["PS6000"] = ps6000.PS6000(connect=False)

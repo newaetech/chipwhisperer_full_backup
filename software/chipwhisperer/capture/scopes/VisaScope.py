@@ -324,7 +324,6 @@ class VisaScopeInterface(ScopeTemplate):
     def __init__(self):
         super(VisaScopeInterface, self).__init__()
         self.scopetype = None
-        self.datapoints = []
 
         try:
             mso54831d = VisaScopeInterface_MSO54831D()
