@@ -113,7 +113,7 @@ class CPASimpleLoop(object):
             if progressBar:
                 progressBar.updateStatus(pbcnt, (bnum, key))
                 if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
+                    break
             pbcnt = pbcnt + 1
 
             # if padafter > 0:

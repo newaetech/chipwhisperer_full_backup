@@ -160,8 +160,7 @@ class CPAProgressiveOneSubkey(object):
       
         if progressBar:
             progressBar.updateStatus(pbcnt, (self.anstate.totalTraces - numtraces, self.anstate.totalTraces-1, bnum))
-            if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
+
         pbcnt = pbcnt + 256
 
         return (guessdata, pbcnt)

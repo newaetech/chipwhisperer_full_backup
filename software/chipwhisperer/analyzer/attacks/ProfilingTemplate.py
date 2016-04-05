@@ -367,7 +367,7 @@ class ProfilingTemplate(AutoScript):
                 if progressBar:
                     progressBar.updateStatus(pcnt, (tnum, len(traces)-1, bnum))
                     if progressBar.wasAborted():
-                        raise KeyboardInterrupt
+                        return
                 pcnt += 1
 
             # Do plotting if required

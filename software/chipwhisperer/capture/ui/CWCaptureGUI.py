@@ -288,16 +288,16 @@ class CWCaptureGUI(CWMainGUI):
 
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
-            self.cwAPI.connectScope()
-            self.updateStatusBar("Scope Connected")
+            if self.cwAPI.connectScope():
+                self.updateStatusBar("Scope Connected")
         else:
             self.cwAPI.disconnectScope()
             self.updateStatusBar("Scope Disconnected")
 
     def doConDisTarget(self):
         if self.targetStatus.defaultAction() == self.targetStatusActionDis:
-            self.cwAPI.connectTarget()
-            self.updateStatusBar("Target Connected")
+            if self.cwAPI.connectTarget():
+                self.updateStatusBar("Target Connected")
         else:
             self.cwAPI.disconnectTarget()
             self.updateStatusBar("Target Disconnected")
@@ -305,11 +305,11 @@ class CWCaptureGUI(CWMainGUI):
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:
-            self.cwAPI.connect()
-            self.updateStatusBar("Target and Scope Connected")
+            if self.cwAPI.connect():
+                self.updateStatusBar("Target and Scope Connected")
         else:
-            self.cwAPI.disconnect()
-            self.updateStatusBar("Target and Scope Disconnected")
+            if self.cwAPI.disconnect():
+                self.updateStatusBar("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-capture
@@ -356,7 +356,8 @@ class CWCaptureGUI(CWMainGUI):
         try:
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
-            self.updateStatusBar(callback())
+            if callback():
+                self.updateStatusBar("Capture completed")
         finally:
             self.capture1Act.setEnabled(True)
             self.captureMAct.setEnabled(True)
@@ -364,12 +365,10 @@ class CWCaptureGUI(CWMainGUI):
             self.captureMAct.setChecked(False)
 
     def capture1(self):
-        self.cwAPI.capture1()
-        return "Capture-One Completed"
+        return self.cwAPI.capture1()
 
     def captureM(self):
-        self.cwAPI.captureM(ProgressBar("Capture in Progress"))
-        return "Capture-M Completed"
+        return self.cwAPI.captureM(ProgressBar("Capture in Progress"))
 
 
 def makeApplication():

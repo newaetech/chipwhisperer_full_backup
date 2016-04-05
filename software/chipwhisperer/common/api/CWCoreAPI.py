@@ -119,6 +119,8 @@ class CWCoreAPI(object):
                 self.getTarget().setOpenADC(self.getScope().qtadc.ser)
         except Warning:
             sys.excepthook(*sys.exc_info())
+            return False
+        return True
 
     def connectTarget(self):
         try:
@@ -127,15 +129,16 @@ class CWCoreAPI(object):
             self.getTarget().con()
         except Warning:
             sys.excepthook(*sys.exc_info())
+            return False
+        return True
 
     def doConDis(self):
         """DEPRECATED: Is here just for compatibility reasons"""
         print "Method doConDis() is deprecated... use connect() or disconnect() instead"
-        self.connect()
+        return self.connect()
 
     def connect(self):
-        self.connectScope()
-        self.connectTarget()            
+        return self.connectScope() and self.connectTarget()
 
     def disconnectScope(self):
         self.getScope().dis()
@@ -169,7 +172,8 @@ class CWCoreAPI(object):
             ac.doSingleReading()
         except Warning:
             sys.excepthook(*sys.exc_info())
-
+            return False
+        return True
 
     def captureM(self, progressBar = None):
         if not progressBar:
@@ -177,15 +181,9 @@ class CWCoreAPI(object):
         progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
         progressBar.setMaximum(self._numTraces - 1)
 
+        waveBuffer = None
         writerlist = []
         tcnt = 0
-
-        # This system re-uses one wave buffer a bunch of times. This is required since the memory will become
-        # fragmented, even though you are just freeing & reallocated the same size buffer. It's slightly less
-        # clear but it ensures you don't suddently have a capture interrupted with a memory error. This can
-        # happen even if you have loads of memory free (e.g. are only using ~200MB for the buffer), well before
-        # the 1GB limit that a 32-bit process would expect to give you trouble at.
-        waveBuffer = None
         setSize = self.tracesPerSet()
         try:
             for i in range(0, self._numTraceSets):
@@ -225,7 +223,7 @@ class CWCoreAPI(object):
                 self.signals.campaignDone.emit()
                 tcnt += setSize
 
-                waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments
+                waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments to avoid memory realocation
                 writerlist.append(currentTrace)
 
                 if progressBar.wasAborted():

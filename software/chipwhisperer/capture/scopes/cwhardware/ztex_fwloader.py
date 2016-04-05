@@ -303,8 +303,8 @@ class Ztex1v1(object):
                                'interfaceCapabilities':list(buf[12:18]),
                                'moduleReserved': list(buf[18:30])}
 
-        if self.dev is None:
-            raise IOError("Failed to find USB Device")
+        if not self.dev:
+            raise Warning("Failed to find USB Device")
 
     def resetFpga(self):
         """ generated source for method resetFpga """

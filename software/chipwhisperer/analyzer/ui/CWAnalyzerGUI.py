@@ -340,7 +340,7 @@ class CWAnalyzerGUI(CWMainGUI):
         """
 
         if filename and filename != self.defaultEditor['filename']:
-            raise Exception("Script Error: Cannot run script from non-default function")
+            raise Warning("Script Error: Cannot run script from non-default function")
 
         mod = self.defaultEditor['widget'].loadModule()
 

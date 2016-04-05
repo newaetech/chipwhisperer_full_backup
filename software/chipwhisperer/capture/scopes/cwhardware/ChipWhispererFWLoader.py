@@ -60,7 +60,6 @@ class CW_Loader(object):
         
         self._release_mode = release_mode
 
-    
 
 class CWCRev2_Loader(CW_Loader):
     def __init__(self):
@@ -134,7 +133,7 @@ class FWLoaderConfig(object):
         self.loader.loadRequired(self.loadFPGA, forceFirmware)
 
     def loadFirmware(self):
-        if self.loader.driver is None: raise Exception("Driver not loaded. Connect hardware before loading.")
+        if self.loader.driver is None: raise Warning("Driver not loaded. Connect hardware before loading.")
 
         if hasattr(self.loader, 'loadFirmware'):
             self.loader.loadFirmware()
@@ -145,7 +144,7 @@ class FWLoaderConfig(object):
 
     def loadFPGA(self):
         """Load the FPGA bitstream"""
-        if self.loader.driver is None: raise Exception("Driver not loaded. Connect hardware before loading.")
+        if self.loader.driver is None: raise Warning("Driver not loaded. Connect hardware before loading.")
 
         #Print if in debug mode
         if self.loader.fpga_bitstream_date():
