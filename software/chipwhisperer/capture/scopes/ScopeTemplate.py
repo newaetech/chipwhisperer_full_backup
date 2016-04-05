@@ -53,7 +53,7 @@ class ScopeTemplate(object):
 
     def con(self):
         self.connectStatus.setValue(True)
-        raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
         self.connectStatus.setValue(False)

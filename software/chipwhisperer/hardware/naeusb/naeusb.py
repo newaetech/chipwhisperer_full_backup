@@ -58,6 +58,8 @@ class NAEUSB(object):
 
     # TODO: make this better
     fwversion_latest = [0, 11]
+    def __init__(self):
+        self._usbdev = None
 
     def con(self, idProduct=0xACE2):
         """
@@ -66,8 +68,8 @@ class NAEUSB(object):
 
         dev = usb.core.find(idVendor=0x2B3E, idProduct=idProduct)
 
-        if dev is None:
-            raise IOError("Failed to find USB Device")
+        if not dev:
+            raise Warning("Failed to find USB Device")
 
         dev.set_configuration()
 
@@ -101,18 +103,18 @@ class NAEUSB(object):
             print "**Suggested to update firmware, as you may experience errors"
 
     def usbdev(self):
+        if not self._usbdev: raise Warning("USB Device not found. Did you connect it first?")
         return self._usbdev
 
     def close(self):
         """
         Close USB connection
         """
-        # self._usbdev.close()
-        if self._usbdev:
-            try:
-                usb.util.dispose_resources(self._usbdev)
-            except usb.USBError, e:
-                print "INFO: USB Failure calling dispose_resources: %s"%str(e)
+        # self.usbdev().close()
+        try:
+            usb.util.dispose_resources(self.usbdev())
+        except usb.USBError, e:
+            print "INFO: USB Failure calling dispose_resources: %s" % str(e)
 
     def readFwVersion(self):
         try:
@@ -126,14 +128,14 @@ class NAEUSB(object):
         Send data over control endpoint
         """
         # Vendor-specific, OUT, interface control transfer
-        return self._usbdev.ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
+        return self.usbdev().ctrl_transfer(0x41, cmd, value, 0, data, timeout=self._timeout)
 
     def readCtrl(self, cmd, value=0, dlen=0):
         """
         Read data from control endpoint
         """
         # Vendor-specific, IN, interface control transfer
-        return self._usbdev.ctrl_transfer(0xC1, cmd, value, 0, dlen, timeout=self._timeout)
+        return self.usbdev().ctrl_transfer(0xC1, cmd, value, 0, dlen, timeout=self._timeout)
 
     def cmdReadMem(self, addr, dlen):
         """
@@ -153,7 +155,7 @@ class NAEUSB(object):
 
         # Get data
         if cmd == self.CMD_READMEM_BULK:
-            data = self._usbdev.read(self.rep, dlen, timeout=self._timeout)
+            data = self.usbdev().read(self.rep, dlen, timeout=self._timeout)
         else:
             data = self.readCtrl(cmd, dlen=dlen)
 
@@ -183,7 +185,7 @@ class NAEUSB(object):
 
         # Get data
         if cmd == self.CMD_WRITEMEM_BULK:
-            data = self._usbdev.write(self.wep, data, timeout=self._timeout)
+            data = self.usbdev().write(self.wep, data, timeout=self._timeout)
         else:
             pass
 
@@ -199,7 +201,7 @@ class NAEUSB(object):
         """Dump all the crap left over"""
         try:
             # TODO: This probably isn't needed, and causes slow-downs on Mac OS X.
-            self._usbdev.read(self.rep, 1000, timeout=0.010)
+            self.usbdev().read(self.rep, 1000, timeout=0.010)
         except:
             pass
 

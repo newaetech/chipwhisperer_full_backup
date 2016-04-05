@@ -73,7 +73,7 @@ class TargetTemplate(object):
     def con(self):
         """Connect to target"""
         self.connectStatus.setValue(True)
-        raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        raise Warning("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def flush(self):
         """Flush input/output buffers"""

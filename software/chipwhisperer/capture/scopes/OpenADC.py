@@ -576,7 +576,7 @@ class OpenADCInterface(ScopeTemplate):
 
     def arm(self):
         if self.connectStatus.value() is False:
-            raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
+            raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
         # self.advancedSettings.glitch.resetDCMs()
         if self.advancedSettings:
             self.advancedSettings.armPreScope()

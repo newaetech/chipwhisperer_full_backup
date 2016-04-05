@@ -24,6 +24,7 @@
 
 import traceback
 import importlib
+import sys
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import Util
 from chipwhisperer.common.ui.ProgressBar import *
@@ -77,7 +78,7 @@ class CWCoreAPI(object):
         return self._scope is not None
 
     def getScope(self):
-        if not self.hasScope(): raise Exception("Scope Module not loaded")
+        if not self.hasScope(): raise Warning("Scope Module not loaded")
         return self._scope
 
     def setScope(self, driver):
@@ -89,7 +90,7 @@ class CWCoreAPI(object):
         return self._target is not None
 
     def getTarget(self):
-        if not self.hasTarget(): raise Exception("Target Module not loaded")
+        if not self.hasTarget(): raise Warning("Target Module not loaded")
         return self._target
 
     def setTarget(self, driver):
@@ -112,14 +113,20 @@ class CWCoreAPI(object):
         self.signals.acqPatternChanged.emit()
 
     def connectScope(self):
-        self.getScope().con()
-        if hasattr(self.getScope(), "qtadc"):
-            self.getTarget().setOpenADC(self.getScope().qtadc.ser)
+        try:
+            self.getScope().con()
+            if hasattr(self.getScope(), "qtadc"):
+                self.getTarget().setOpenADC(self.getScope().qtadc.ser)
+        except Warning:
+            sys.excepthook(*sys.exc_info())
 
     def connectTarget(self):
-        # if hasattr(self.getScope(), "qtadc"):
-        #     self.getTarget().setOpenADC(self.getScope().qtadc.ser)
-        self.getTarget().con()
+        try:
+            # if hasattr(self.getScope(), "qtadc"):
+            #     self.getTarget().setOpenADC(self.getScope().qtadc.ser)
+            self.getTarget().con()
+        except Warning:
+            sys.excepthook(*sys.exc_info())
 
     def doConDis(self):
         """DEPRECATED: Is here just for compatibility reasons"""
@@ -156,9 +163,13 @@ class CWCoreAPI(object):
         return int(self._numTraces / self._numTraceSets)
 
     def capture1(self):
-        ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
-        ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-        ac.doSingleReading()
+        try:
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
+            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+            ac.doSingleReading()
+        except Warning:
+            sys.excepthook(*sys.exc_info())
+
 
     def captureM(self, progressBar = None):
         if not progressBar:
@@ -176,50 +187,54 @@ class CWCoreAPI(object):
         # the 1GB limit that a 32-bit process would expect to give you trouble at.
         waveBuffer = None
         setSize = self.tracesPerSet()
-        for i in range(0, self._numTraceSets):
-            if progressBar.wasAborted(): break
-            currentTrace = self.getTraceClassInstance()
+        try:
+            for i in range(0, self._numTraceSets):
+                if progressBar.wasAborted(): break
+                currentTrace = self.getTraceClassInstance()
 
-            # Load trace writer information
-            starttime = datetime.now()
-            baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
-            prefix = baseprefix + "_"
-            currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
-            currentTrace.config.setAttr("prefix", prefix)
-            currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
-            currentTrace.config.setAttr("targetHW", self.getTarget().getName())
-            currentTrace.config.setAttr("targetSW", "unknown")
-            currentTrace.config.setAttr("scopeName", self.getScope().getName())
-            currentTrace.config.setAttr("scopeSampleRate", 0)
-            currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self.auxList))
-            currentTrace.setTraceHint(setSize)
+                # Load trace writer information
+                starttime = datetime.now()
+                baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
+                prefix = baseprefix + "_"
+                currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
+                currentTrace.config.setAttr("prefix", prefix)
+                currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+                currentTrace.config.setAttr("targetHW", self.getTarget().getName())
+                currentTrace.config.setAttr("targetSW", "unknown")
+                currentTrace.config.setAttr("scopeName", self.getScope().getName())
+                currentTrace.config.setAttr("scopeSampleRate", 0)
+                currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self.auxList))
+                currentTrace.setTraceHint(setSize)
 
-            if waveBuffer is not None:
-                currentTrace.setTraceBuffer(waveBuffer)
+                if waveBuffer is not None:
+                    currentTrace.setTraceBuffer(waveBuffer)
 
-            if self.auxList is not None:
-                for aux in self.auxList:
-                    aux.setPrefix(baseprefix)
+                if self.auxList is not None:
+                    for aux in self.auxList:
+                        aux.setPrefix(baseprefix)
 
-            ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
-            ac.setMaxtraces(setSize)
-            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-            ac.signals.traceDone.connect(self.signals.traceDone.emit)
-            ac.signals.traceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
-            ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
+                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
+                ac.setMaxtraces(setSize)
+                ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+                ac.signals.traceDone.connect(self.signals.traceDone.emit)
+                ac.signals.traceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
+                ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
 
-            self.signals.campaignStart.emit(baseprefix)
-            ac.doReadings(tracesDestination=self.project().traceManager())
-            self.signals.campaignDone.emit()
-            tcnt += setSize
+                self.signals.campaignStart.emit(baseprefix)
+                ac.doReadings(tracesDestination=self.project().traceManager())
+                self.signals.campaignDone.emit()
+                tcnt += setSize
 
-            waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments
-            writerlist.append(currentTrace)
+                waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments
+                writerlist.append(currentTrace)
 
-            if progressBar.wasAborted():
-                break
+                if progressBar.wasAborted():
+                    break
+        except Warning as e:
+            progressBar.abort(e.message)
+        finally:
+            progressBar.close()
 
-        progressBar.close()
         return writerlist
 
     def project(self):
@@ -249,7 +264,7 @@ class CWCoreAPI(object):
         return self._traceClass is not None
 
     def getTraceClassInstance(self):
-        if not self.hasTraceClass(): raise Exception("Trace format not defined")
+        if not self.hasTraceClass(): raise Warning("Trace format not defined")
         return self._traceClass(self._traceClass.getParams)
 
     def getTraceClass(self):
@@ -274,14 +289,18 @@ class CWCoreAPI(object):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
         if not progressBar: progressBar = ProgressBar()
 
-        mod.initProject()
-        mod.initPreprocessing()
-        mod.initAnalysis()
-        mod.initReporting(self.results)
-        mod.doAnalysis(progressBar)
-        mod.doneAnalysis()
-        mod.doneReporting()
-        progressBar.close()
+        try:
+            mod.initProject()
+            mod.initPreprocessing()
+            mod.initAnalysis()
+            mod.initReporting(self.results)
+            mod.doAnalysis(progressBar)
+            mod.doneAnalysis()
+            mod.doneReporting()
+        except Warning as e:
+            progressBar.abort(e.message)
+        finally:
+            progressBar.close()
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
