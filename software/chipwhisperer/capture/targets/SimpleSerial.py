@@ -77,7 +77,7 @@ try:
                 self.ser.close()
                 self.ser = None
     
-        def con(self):
+        def con(self, scope = None):
             if self.ser == None:
     
                 # Open serial port if not already
@@ -96,7 +96,6 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
 
         self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self.cwlite_usart = None
-        self.oa = None
 
     def setBaud(self, baud):
         if self.cwlite_usart:
@@ -131,14 +130,14 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def close(self):
         pass
 
-    def con(self):
+    def con(self, scope = None):
+        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
+
+        scope.connectStatus.connect(self.dis)
         self.params.getAllParameters()
-        self.cwlite_usart = CWL_USART(self.oa)
+        self.cwlite_usart = CWL_USART(scope.qtadc.ser)
         self.cwlite_usart.init(baud=self.findParam('baud').value())
         self.connectStatus.setValue(True)
-
-    def setOpenADC(self, oa):
-        self.oa = oa
         
     def selectionChanged(self):
         pass
@@ -160,6 +159,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                     ]
         self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self._regVer = 0
+        self.oa = None
 
     def systemClk(self):
         return 30E6
@@ -257,9 +257,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def paramList(self):
         return [self.params]
 
-    def setOpenADC(self, oa):
-        self.oa = oa
-
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         #if self.debugLog is not None:
         #    self.debugLog(lastTx, lastRx)
@@ -318,7 +315,11 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def flushInput(self):
         self.flush()
 
-    def con(self):
+    def con(self, scope = None):
+        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
+
+        scope.connectStatus.connect(self.dis())
+        self.oa = scope.qtadc.ser
         # Check first!
         self.checkVersion()
         self.params.getAllParameters()
@@ -327,8 +328,8 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def selectionChanged(self):
         pass
     
-    def setOpenADC(self, oa):
-        self.oa = oa.scope.sc
+    # def setOpenADC(self, oa):
+    #     self.oa = oa.scope.sc
 
 class SimpleSerial(TargetTemplate):
     def setupParameters(self):
@@ -365,11 +366,6 @@ class SimpleSerial(TargetTemplate):
         self.oa = None
         self.setConnection(self.findParam('con').value())
 
-    def setOpenADC(self, oadc):
-        self.oa = oadc
-        if hasattr(self.ser, "setOpenADC"):
-            self.ser.setOpenADC(oadc)
-
     def setKeyLen(self, klen):
         """ Set key length in BITS """
         self.keylength = klen / 8
@@ -380,11 +376,9 @@ class SimpleSerial(TargetTemplate):
 
     def setConnection(self, con):
         self.ser = con
+        self.connectStatus = self.ser.connectStatus
         self.paramListUpdated.emit()
-        if self.oa and hasattr(self.ser, "setOpenADC"):
-            self.ser.setOpenADC(self.oa)
         self.ser.selectionChanged()
-
 
     def paramList(self):
         p = [self.params]
@@ -392,8 +386,14 @@ class SimpleSerial(TargetTemplate):
             for a in self.ser.paramList(): p.append(a)
         return p
 
-    def con(self):
-        self.ser.con()
+    def con(self, scope = None):
+        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
+
+        self.oa = scope.qtadc.ser
+        if hasattr(self.ser, "setOpenADC"):
+            self.ser.setOpenADC(self.oa)
+
+        self.ser.con(scope)
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
@@ -425,7 +425,7 @@ class SimpleSerial(TargetTemplate):
 
     def runCommand(self, cmdstr, flushInputBefore=True):
         if self.connectStatus.value()==False:
-            raise Exception("Can't write to the target while disconected. Connect to it first.")
+            raise Warning("Can't write to the target while disconected. Connect to it first.")
 
         if cmdstr is None or len(cmdstr) == 0:
             return
@@ -443,15 +443,14 @@ class SimpleSerial(TargetTemplate):
         newstr = newstr.replace("\\n", "\n")
         newstr = newstr.replace("\\r", "\r")
 
-
         #print newstr
         try:
             if flushInputBefore:
                 self.ser.flushInput()
             self.ser.write(newstr)
-        except Exception, e:
+        except Exception:
             self.dis()
-            raise e
+            raise
 
     def loadEncryptionKey(self, key):
         self.key = key

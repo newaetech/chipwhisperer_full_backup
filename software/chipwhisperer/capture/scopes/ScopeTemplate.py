@@ -52,8 +52,8 @@ class ScopeTemplate(object):
         return self.connectStatus.value()
 
     def con(self):
+        # raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
         self.connectStatus.setValue(True)
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
         self.connectStatus.setValue(False)

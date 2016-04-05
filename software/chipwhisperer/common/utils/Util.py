@@ -147,27 +147,6 @@ def getPyFiles(dir):
     return scriptList
 
 
-class FakeQTimer(object):
-    """ Replicates basic QTimer() API but does nothing """
-    def __init__(self):
-        self.timeout = self
-
-    def connect(self, callback):
-        pass
-
-    def setInterval(self, ms_timeout):
-        pass
-
-    def start(self):
-        pass
-
-    def stop(self):
-        pass
-
-    def setSingleShot(self, _):
-        pass
-
-
 class Signal(object):
     def __init__(self):
         self.observers = []

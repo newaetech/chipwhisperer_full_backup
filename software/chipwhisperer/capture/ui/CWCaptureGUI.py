@@ -63,12 +63,13 @@ class CWCaptureGUI(CWMainGUI):
         self.cwAPI.signals.traceDone.connect(self.glitchMonitor.traceDone)
         self.cwAPI.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.cwAPI.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
-        self.cwAPI.signals.connectStatus.connect(self.targetStatusChanged)
         self.cwAPI.signals.scopeChanged.connect(self.scopeChanged)
         self.cwAPI.signals.targetChanged.connect(self.targetChanged)
         self.cwAPI.signals.traceChanged.connect(self.traceChanged)
         self.cwAPI.signals.auxChanged.connect(self.auxChanged)
         self.cwAPI.signals.acqPatternChanged.connect(self.reloadParamList)
+        self.scopeChanged()
+        self.traceChanged()
 
     def setupParameters(self):
         valid_scopes = CWCoreAPI.getScopeModules(self.cwAPI.getRootDir() + "/scopes")
@@ -89,8 +90,8 @@ class CWCaptureGUI(CWMainGUI):
         self.cwAPI.setAcqPattern(valid_acqPatterns['Basic'])
 
         self.cwParams = [
-                {'name':'Scope Module', 'type':'list', 'values':valid_scopes, 'value':self.cwAPI.getScope(), 'set':self.cwAPI.setScope},
-                {'name':'Target Module', 'type':'list', 'values':valid_targets, 'value':self.cwAPI.getTarget(), 'set':self.cwAPI.setTarget},
+                {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':self.cwAPI.getScope(), 'set':self.cwAPI.setScope, 'get':self.cwAPI.getScope},
+                {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':self.cwAPI.getTarget(), 'set':self.cwAPI.setTarget, 'get':self.cwAPI.getTarget},
                 {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.cwAPI.getTraceClass(), 'set':self.cwAPI.setTraceClass},
                 {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.cwAPI.auxList[0], 'set':self.cwAPI.setAux},
 
@@ -142,7 +143,7 @@ class CWCaptureGUI(CWMainGUI):
             self.scopeStatus.setDefaultAction(self.scopeStatusActionCon)
         else:
             self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
-
+        # self.findParam('scopeMod').setReadonly(self.cwAPI.getScope().getStatus())
         self.masterStatusChanged()
 
     def targetStatusChanged(self):
@@ -151,6 +152,7 @@ class CWCaptureGUI(CWMainGUI):
             self.targetStatus.setDefaultAction(self.targetStatusActionCon)
         else:
             self.targetStatus.setDefaultAction(self.targetStatusActionDis)
+        # self.findParam('targetMod').setReadonly(self.cwAPI.getScope().getStatus())
 
         self.masterStatusChanged()
 
@@ -193,8 +195,9 @@ class CWCaptureGUI(CWMainGUI):
 
     def reloadScopeParamList(self):
         # Remove all old scope actions that don't apply for new selection
-        for act in self._scopeToolMenuItems:
-            self.toolMenu.removeAction(act)
+        if hasattr(self,"_scopeToolMenuItems"):
+            for act in self._scopeToolMenuItems:
+                self.toolMenu.removeAction(act)
 
         self._scopeToolMenuItems = []
 
@@ -365,10 +368,10 @@ class CWCaptureGUI(CWMainGUI):
             self.captureMAct.setChecked(False)
 
     def capture1(self):
-        return self.cwAPI.capture1()
+        self.cwAPI.capture1()
 
     def captureM(self):
-        return self.cwAPI.captureM(ProgressBar("Capture in Progress"))
+        self.cwAPI.captureM(ProgressBar("Capture in Progress", "Capturing:"))
 
 
 def makeApplication():

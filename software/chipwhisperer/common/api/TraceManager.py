@@ -158,11 +158,13 @@ class TraceManager(object):
 
     def updateRanges(self):
         startTrace = 0
+        self._numPoints = 0
         for t in self.traceSets:
             if t.enabled:
                 tlen = t.numTraces()
                 t.mappedRange = [startTrace, startTrace+tlen-1]
                 startTrace = startTrace + tlen
+                self._numPoints = max(self._numPoints, int(t.config.attr("numPoints")))
                 if t.traces is None:
                     if t.config.configFilename() is not None:
                         path = os.path.split(t.config.configFilename())[0]
@@ -174,20 +176,7 @@ class TraceManager(object):
                     t.prefix = pref
             else:
                 t.mappedRange = None
-        self.updateTraces()
-
-    def updateTraces(self):
-        #Find total (last mapped range)
-        num = [0]
-        pts = [0]
-
-        for t in self.traceSets:
-            if t.mappedRange is not None:
-                num.append(t.mappedRange[1])
-                pts.append(int(t.config.attr("numPoints")))
-
-        self._numTraces = max(num)
-        self._numPoints = max(pts)
+        self._numTraces = startTrace
 
     def numPoints(self):
         return self._numPoints

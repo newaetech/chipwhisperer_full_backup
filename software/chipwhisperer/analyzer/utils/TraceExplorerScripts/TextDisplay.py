@@ -34,8 +34,8 @@ from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 class TextDisplay(AutoScript, QObject):
 
     def __init__(self, parent):
-        AutoScript.__init__(self)
         QObject.__init__(self, parent)
+        AutoScript.__init__(self)
         self.parent = parent
         self.defineName()
         self.addDock()

@@ -40,10 +40,20 @@ class ProgressBarText(object):
         ProgressBarText.setText(self, text)
         print self.title + ": " + self.getStatusText()
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type == Warning:
+            self.abort(str(exc_val))
+
+        self.close()
+        return exc_type == Warning
+
     def setText(self, text):
         if text:
             self.text = text
-            print self.text
+            print self.title + ": " + self.text
         else:
             self.text = ""
 
@@ -131,6 +141,8 @@ try:
         def setText(self, text):
             ProgressBarText.setText(self, text)
             self.textLabel.setText(self.getText())
+            # if self.getText() == "":
+            #     self.textLabel.hide()
 
         def abort(self, message = None):
             ProgressBarText.abort(self, message)

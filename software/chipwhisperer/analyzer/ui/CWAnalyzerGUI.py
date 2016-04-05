@@ -189,7 +189,7 @@ class CWAnalyzerGUI(CWMainGUI):
                 self.traceManagerDialog.show()
             return
 
-        self.cwAPI.doAttack(self.setupScriptModule(), ProgressBar("Analysis in Progress"))
+        self.cwAPI.doAttack(self.setupScriptModule(), ProgressBar("Analysis in Progress", "Analyzing:"))
 
     def reloadAttackParamList(self, list=None):
         """Reloads parameter tree in GUI when attack changes"""

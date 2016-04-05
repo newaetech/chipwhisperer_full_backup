@@ -390,7 +390,7 @@ class Ztex1v1(object):
                 if tries > 1:
                     print("Warning: " + str(e) + ": Retrying it ...")
                 else:
-                    raise e
+                    raise
             tries -= 1
         time.sleep(0.1)
         return t0

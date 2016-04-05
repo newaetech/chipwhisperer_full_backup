@@ -76,6 +76,10 @@ class ReaderTemplate(object):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         pass
     
+    def close(self):
+        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+        pass
+
     def flush(self):
         """Discard all input buffers"""
         pass
@@ -1037,9 +1041,11 @@ class SmartCard(TargetTemplate):
         return
         
     def init(self):
+        if not self.protocol: raise Warning("No protocol selected.")
         self.protocol.init()
 
     def reinit(self):
+        if not self.protocol: raise Warning("No protocol selected.")
         self.protocol.reinit()
       
     def loadEncryptionKey(self, key):

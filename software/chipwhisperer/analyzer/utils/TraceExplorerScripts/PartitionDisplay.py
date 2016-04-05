@@ -239,8 +239,8 @@ class POI(QWidget):
 class PartitionDisplay(AutoScript, QObject):
 
     def __init__(self, parent):
-        AutoScript.__init__(self)
         QObject.__init__(self, parent)
+        AutoScript.__init__(self)
         self.parent = parent
         self.defineName()
 

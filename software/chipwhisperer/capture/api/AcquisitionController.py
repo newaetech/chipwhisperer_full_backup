@@ -57,7 +57,7 @@ class AcquisitionController():
         if pat:
             self._keyTextPattern.initPair()
 
-    def TargetDoTrace(self, plaintext, key=None):
+    def targetDoTrace(self, plaintext, key=None):
         if self.target is None or self.target.getName()=="None":
             return []
 
@@ -116,7 +116,7 @@ class AcquisitionController():
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
             # Load input, start encryption, get output. Key was set already, don't resend
-            self.textout = self.TargetDoTrace(self.textin, key=None)
+            self.textout = self.targetDoTrace(self.textin, key=None)
         else:
             self.textout = [0]
 

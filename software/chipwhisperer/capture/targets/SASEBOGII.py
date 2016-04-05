@@ -241,9 +241,9 @@ class SaseboGII(TargetTemplate):
 
         try:
             self.sasebo.write(strmsg)
-        except Exception, e:
+        except Exception:
             self.dis()
-            raise e
+            raise
 
     def read(self, address):
         self.flush()

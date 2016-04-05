@@ -68,7 +68,6 @@ class CWCoreAPI(object):
         self._numTraceSets = 1
         self.results = None
         self.signals = self.Signals()
-        self._timerClass = Util.FakeQTimer
         CWCoreAPI.instance = self
 
     def getRootDir(self):
@@ -82,6 +81,7 @@ class CWCoreAPI(object):
         return self._scope
 
     def setScope(self, driver):
+        if self.hasScope(): self.getScope().dis()
         self._scope = driver
         Util.active_scope = self._scope
         self.signals.scopeChanged.emit()
@@ -94,6 +94,7 @@ class CWCoreAPI(object):
         return self._target
 
     def setTarget(self, driver):
+        if self.hasTarget(): self.getTarget().dis()
         self._target = driver
         self._target.paramListUpdated.connect(self.signals.paramListUpdated.emit)
         self._target.newInputData.connect(self.signals.newInputData.emit)
@@ -115,8 +116,6 @@ class CWCoreAPI(object):
     def connectScope(self):
         try:
             self.getScope().con()
-            if hasattr(self.getScope(), "qtadc"):
-                self.getTarget().setOpenADC(self.getScope().qtadc.ser)
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
@@ -124,9 +123,7 @@ class CWCoreAPI(object):
 
     def connectTarget(self):
         try:
-            # if hasattr(self.getScope(), "qtadc"):
-            #     self.getTarget().setOpenADC(self.getScope().qtadc.ser)
-            self.getTarget().con()
+            self.getTarget().con(scope = self.getScope())
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
@@ -166,6 +163,8 @@ class CWCoreAPI(object):
         return int(self._numTraces / self._numTraceSets)
 
     def capture1(self):
+        """Captures only one trace"""
+
         try:
             ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
@@ -176,16 +175,18 @@ class CWCoreAPI(object):
         return True
 
     def captureM(self, progressBar = None):
-        if not progressBar:
-            progressBar = ProgressBarText()
-        progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
-        progressBar.setMaximum(self._numTraces - 1)
+        """Captures multiple traces and saves it in the Trace Manager"""
 
-        waveBuffer = None
+        if not progressBar: progressBar = ProgressBarText()
+
         writerlist = []
-        tcnt = 0
-        setSize = self.tracesPerSet()
-        try:
+        with progressBar:
+            progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
+            progressBar.setMaximum(self._numTraces - 1)
+
+            waveBuffer = None
+            tcnt = 0
+            setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
                 currentTrace = self.getTraceClassInstance()
@@ -228,10 +229,6 @@ class CWCoreAPI(object):
 
                 if progressBar.wasAborted():
                     break
-        except Warning as e:
-            progressBar.abort(e.message)
-        finally:
-            progressBar.close()
 
         return writerlist
 
@@ -287,7 +284,7 @@ class CWCoreAPI(object):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
         if not progressBar: progressBar = ProgressBar()
 
-        try:
+        with progressBar:
             mod.initProject()
             mod.initPreprocessing()
             mod.initAnalysis()
@@ -295,10 +292,6 @@ class CWCoreAPI(object):
             mod.doAnalysis(progressBar)
             mod.doneAnalysis()
             mod.doneReporting()
-        except Warning as e:
-            progressBar.abort(e.message)
-        finally:
-            progressBar.close()
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
@@ -344,15 +337,6 @@ class CWCoreAPI(object):
             raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))
 
         self.signals.parametersChanged.emit()
-
-    def runTask(self, task, timeout_in_s, single_shot = False, start_timer = False):
-        timer = self._timerClass()
-        timer.timeout.connect(task)
-        timer.setInterval(int(timeout_in_s * 1000))
-        timer.setSingleShot(single_shot)
-        if start_timer:
-            timer.start()
-        return timer
 
     @staticmethod
     def getPreprocessingModules(dir, waveformWidget):

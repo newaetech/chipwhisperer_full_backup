@@ -59,9 +59,6 @@ class TargetTemplate(object):
         """Close system if needed"""
         self.close()
 
-    def setOpenADC(self, oadc):
-        self.oa = oadc
-
     def getStatus(self):
         return self.connectStatus.value()
 
@@ -70,10 +67,10 @@ class TargetTemplate(object):
         self.close()
         self.connectStatus.setValue(False)
 
-    def con(self):
+    def con(self, scope = None):
         """Connect to target"""
         self.connectStatus.setValue(True)
-        raise Warning("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        # raise Warning("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def flush(self):
         """Flush input/output buffers"""

@@ -39,7 +39,7 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWL
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import Util, timer
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 try:
@@ -504,7 +504,7 @@ class OpenADCInterface(ScopeTemplate):
 
         self.params = ConfigParameter.create_extended(self, name='OpenADC Interface', type='group', children=scopeParams)
         self.setCurrentScope(defscope)
-        self.refreshTimer = CWCoreAPI.getInstance().runTask(self.dcmTimeout, 1)
+        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
     
     def dcmTimeout(self):
         try:
@@ -513,9 +513,9 @@ class OpenADCInterface(ScopeTemplate):
             # For this reason we do the call to .getStatus() to verify USB connection first
             CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
             CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
-        except Exception, e:
+        except Exception:
             self.dis()
-            raise e
+            raise
 
     def setAutorefreshDCM(self, enabled):
         if enabled:

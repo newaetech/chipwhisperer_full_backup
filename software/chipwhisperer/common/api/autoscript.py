@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import Util, timer
 
 class SmartStatements(object):
     """
@@ -129,12 +129,16 @@ class AutoScript(object):
     """Base functions for getting/setting stuff to make main script file"""
 
     def __init__(self):
-        self.autoScriptInit()
         self.scriptsUpdated = Util.Signal()
         self.runScriptFunction = Util.Signal()
+        self.autoScriptInit()
 
     def autoScriptInit(self):
         self.clearStatements()
+        self.updateDelayTimer = timer.Timer()
+        self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
+        self.updateDelayTimer.setSingleShot(True)
+        self.updateDelayTimer.setInterval(1000)
 
     def clearStatements(self):
         self.importStatements = []
@@ -145,8 +149,7 @@ class AutoScript(object):
     def importsAppend(self, statement):
         if statement not in self.importStatements:
             self.importStatements.append(statement)
-        # self.updateDelayTimer.start()
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
 
     def getImportStatements(self):
         return self.importStatements
@@ -157,8 +160,7 @@ class AutoScript(object):
 
     def addFunction(self, key, funcstr, argstr, varassignment=None, obj='self', loc=None):
         self._smartstatements[key].addFunctionCall(funcstr, argstr, varassignment=varassignment, obj=obj, loc=loc)
-        # self.updateDelayTimer.start()
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
 
     def mergeGroups(self, key, otherscript, prefix=""):
         for k in otherscript._smartstatements[key]._statements:
@@ -175,13 +177,11 @@ class AutoScript(object):
                 self.addVariable(key, k["objname"], k["values"])
             else:
                 raise ValueError("Invalid type: %s" % k["type"])
-        self.scriptsUpdated.emit()
-        # self.updateDelayTimer.start()
+        self.updateDelayTimer.start()
 
     def delFunction(self, key, funcstr):
         self._smartstatements[key].delFunctionCall(funcstr)
-        # self.updateDelayTimer.start()
-        self.scriptsUpdated.emit()
+        self.updateDelayTimer.start()
 
     def addVariable(self, key, varname, values, loc=None):
         self._smartstatements[key].addVariableAssignment(varname, values, loc=None)
