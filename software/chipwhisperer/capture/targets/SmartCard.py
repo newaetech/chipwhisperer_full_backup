@@ -25,26 +25,18 @@
 
 import time
 import serial
-#Used by PC/SC Only
-from PySide.QtCore import QTimer
 from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
 import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import Util, timer
 from chipwhisperer.common.utils import Scan
-
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
 
 
 def getInstance(*args):
     return SmartCard(*args)
+
 
 class ReaderTemplate(object):
     paramListUpdated = Util.Signal()
@@ -713,8 +705,7 @@ class ReaderPCSC(ReaderTemplate):
                     ]        
         self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         
-        
-        self.timeoutTimer = QTimer()  
+        self.timeoutTimer = timer.Timer()
         self.timeoutTimer.timeout.connect(self.timeoutFired)
         self.timeoutTimer.setInterval(2000)
 
@@ -964,7 +955,9 @@ class ProtocolJCardTest(ProtocolTemplate):
     def readOutput(self):
         return self.resp
 
+
 class SmartCard(TargetTemplate):
+    name = "Smart Card"
     paramListUpdated = Util.Signal()
      
     def setupParameters(self):
@@ -972,7 +965,7 @@ class SmartCard(TargetTemplate):
         self.driver = None
         self.scgui = SCGUI.SmartCardGUICard(None)
         
-        supported_readers = dicttype()
+        supported_readers = Util.DictType()
         supported_readers["Select Reader"] = None
         supported_readers["CWCR2-SER"] = ReaderChipWhispererSER()
         supported_readers["CW1173/1180-SCARD"] = ReaderChipWhispererLiteSCard()               
@@ -1073,6 +1066,3 @@ class SmartCard(TargetTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "Smart Card"

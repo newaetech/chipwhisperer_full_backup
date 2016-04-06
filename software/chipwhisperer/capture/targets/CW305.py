@@ -23,10 +23,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+
 import time
 from functools import partial
 import os.path
-
 from TargetTemplate import TargetTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
@@ -49,8 +49,10 @@ except ImportError:
 
     print "CW305: GUI functions disabled"
 
+
 def getInstance(*args):
     return CW305(*args)
+
 
 class CW305_USB(object):
     REQ_SYSCFG = 0x22
@@ -60,10 +62,11 @@ class CW305_USB(object):
     SYSCFG_TOGGLE = 0x06
     VCCINT_XORKEY = 0xAE
 
-class CW305(TargetTemplate):
-     
-    def setupParameters(self):
 
+class CW305(TargetTemplate):
+    name = "ChipWhisperer CW305 (Artix-7)"
+
+    def setupParameters(self):
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, parent=self)
         self.fpga = FPGA(self._naeusb)
@@ -270,5 +273,3 @@ class CW305(TargetTemplate):
     def validateSettings(self):
         return []
 
-    def getName(self):
-        return "ChipWhisperer CW305 (Artix-7)"

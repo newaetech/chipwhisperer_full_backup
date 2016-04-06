@@ -91,6 +91,8 @@ class HIDSPI(object):
 
 
 class ChipWhispererSPI(TargetTemplate):
+    name = "ChipWhisperer SPI"
+
     def setupParameters(self):
         self.hdev = HIDSPI()
         ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
@@ -159,6 +161,3 @@ class ChipWhispererSPI(TargetTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "ChipWhisperer SPI"

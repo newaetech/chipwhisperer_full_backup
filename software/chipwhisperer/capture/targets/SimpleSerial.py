@@ -22,9 +22,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import time
 
+import time
 from TargetTemplate import TargetTemplate
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.utils.Scan import scan
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
@@ -36,6 +37,8 @@ try:
     import serial
 
     class SimpleSerial_serial(TargetTemplate):
+        name = "System Serial Port"
+
         def setupParameters(self):
             ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
                         {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
@@ -52,8 +55,7 @@ try:
             self.findParam('port').setLimits(serialnames)
             if len(serialnames) > 0:
                 self.findParam('port').setValue(serialnames[0])
-                
-                
+
         def selectionChanged(self):
             self.updateSerial()
     
@@ -90,7 +92,10 @@ try:
 except ImportError:
     SimpleSerial_serial = None
 
+
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
+    name = "ChipWhisperer-Lite"
+
     def setupParameters(self):
         ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
 
@@ -144,6 +149,7 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
 
 
 class SimpleSerial_ChipWhisperer(TargetTemplate):
+    name = "ChipWhisperer"
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
     ADDR_DATA       = 33
@@ -328,19 +334,14 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 
 
 class SimpleSerial(TargetTemplate):
+    name = "Simple Serial"
+
     def setupParameters(self):
         
-        ser_cons = {}
-        
-        if SimpleSerial_serial:
-            ser_cons["System Serial Port"] = SimpleSerial_serial()
-        
-        ser_cons["ChipWhisperer"] = SimpleSerial_ChipWhisperer()
-        ser_cons["ChipWhisperer-Lite"] = SimpleSerial_ChipWhispererLite()
-        
-        defser = ser_cons["ChipWhisperer-Lite"]
+        ser_cons = Util.instantiateInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite])
+        defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
 
-        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defser, 'set':self.setConnection},
+        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defSer, 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
                     {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
@@ -530,9 +531,6 @@ class SimpleSerial(TargetTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "Simple Serial"
 
 
 class SimpleSerialWidget(SimpleSerial):

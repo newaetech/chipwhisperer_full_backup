@@ -27,21 +27,25 @@ class FakeQTimer(object):
     """ Replicates basic QTimer() API but does nothing """
     def __init__(self):
         self.timeout = self
+        self._single_shot = False
 
     def connect(self, callback):
-        pass
+        self._callback = callback
 
     def setInterval(self, ms_timeout):
         pass
 
     def start(self):
-        pass
+        if self._single_shot:
+            print("Timer: Not using Qt, calling callback immediatly")
+            self._callback()
+        print("Timer: Not using Qt, timer disabled")
 
     def stop(self):
         pass
 
-    def setSingleShot(self, _):
-        pass
+    def setSingleShot(self, single_shot):
+        self._single_shot = single_shot
 
 try:
     from PySide.QtCore import QTimer

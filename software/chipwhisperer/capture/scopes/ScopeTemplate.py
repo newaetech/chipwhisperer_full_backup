@@ -25,14 +25,16 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
 from chipwhisperer.common.utils import Util
+
 
 def getInstance(*args):
     return ScopeTemplate(*args)
 
+
 class ScopeTemplate(object):
+    name = "None"
+
     def __init__(self):
         self.connectStatus = Util.Observable(False)
         self.dataUpdated = Util.Signal()
@@ -81,5 +83,6 @@ class ScopeTemplate(object):
         return [("warn", "Scope Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
 
     def getName(self):
-        return "None"
+        return self.name
+
 

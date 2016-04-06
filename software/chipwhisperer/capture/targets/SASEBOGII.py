@@ -31,8 +31,10 @@ try:
 except OSError:  # also catches WindowsError
     raise ImportError
 
+
 def getInstance(*args):
     return SaseboGII(*args)
+
 
 class SaseboGIIDPAContest(object):
     def init(self):
@@ -186,6 +188,8 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
+    name = "SASEBO GII"
+
     def setupParameters(self):
         """Parameter Definition."""
         ssParams = []
@@ -308,7 +312,6 @@ class SaseboGII(TargetTemplate):
             tm += 1
             if tm > timeout:
                 raise IOError("Timeout")
-        
 
     def loadEncryptionKey(self, key):
         """Encryption key is bytearray"""
@@ -362,6 +365,3 @@ class SaseboGII(TargetTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "SASEBO GII"

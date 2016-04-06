@@ -37,6 +37,15 @@ except ImportError:
     DictType = dict
 
 
+def instantiateInDict(classes, *args):
+    resp = DictType()
+    for c in classes:
+        try:
+            resp[c.name] = c(*args)
+        except Exception as e:
+            print "INFO: Could not instantiate module " + c.name + ": " + str(e)
+    return resp
+
 def module_reorder(resp):
     #None is first, then alphabetical
     newresp = DictType()

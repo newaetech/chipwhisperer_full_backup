@@ -26,11 +26,13 @@ import os
 import numpy as np
 import TraceContainer
 
+
 def getClass():
     return TraceContainerNative
 
 
 class TraceContainerNative(TraceContainer.TraceContainer):
+    name = "ChipWhisperer/Native"
 
     def copyTo(self, srcTraces=None):
         self.numTrace = srcTraces.numTraces()
@@ -137,7 +139,3 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         if clearKeys:
             self.keylist = None
             self.knownkey = None
-
-    @staticmethod
-    def getName():
-        return "ChipWhisperer/Native"

@@ -31,10 +31,13 @@ try:
 except ImportError:
     AES = None
 
+
 def getInstance(*args):
     return TargetTemplate(*args)
 
+
 class TargetTemplate(object):
+    name = "None"
     params = None
 
     def __init__(self):
@@ -138,6 +141,5 @@ class TargetTemplate(object):
     def validateSettings(self):
         return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
 
-
     def getName(self):
-        return "None"
+        return self.name

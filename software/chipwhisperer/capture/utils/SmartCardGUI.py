@@ -29,13 +29,6 @@ from PySide.QtGui import *
 from chipwhisperer.common.utils.Util import hexstr2list
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-
 
 class APDUFilter(QObject):
         
@@ -111,6 +104,7 @@ class APDUFilter(QObject):
         else:
             # we don't care about other events
             return False
+
 
 class SmartCardGUICard(QtFixes.QDialog):
     def __init__(self, parent):
@@ -198,7 +192,6 @@ class SmartCardGUICard(QtFixes.QDialog):
             textdata += self.table.cellWidget(row,2).toPlainText()
             
             textdata += "\n"
-            
         
         clipboard = QApplication.clipboard()
         clipboard.setText(textdata)
@@ -278,6 +271,7 @@ class SmartCardGUICard(QtFixes.QDialog):
                     payload = payload.rstrip()                    
                     self.table.cellWidget(rownum, 2).setText("%04x: %s"%(resp[0], payload))        
 
+
 def main():
     # Create the Qt Application
     app = QApplication(sys.argv)
@@ -289,18 +283,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

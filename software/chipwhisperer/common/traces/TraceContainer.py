@@ -56,6 +56,7 @@ class TraceContainer(object):
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
     
+    name = "None"
     getParams = Parameters()
     getParamsClass = Parameters
     
@@ -287,9 +288,8 @@ class TraceContainer(object):
         """Returns true if you can use getTrace, getTextin, etc methods"""
         return self._isloaded
 
-    @staticmethod
-    def getName():
-        return "None"
+    def getName(self):
+        return self.name
         
         
 if __name__ == "__main__":

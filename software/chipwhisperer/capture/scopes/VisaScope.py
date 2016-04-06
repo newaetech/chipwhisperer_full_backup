@@ -232,7 +232,6 @@ class VisaScopeInterface_MSO54831D(VisaScope):
                 ]
 
     def currentSettings(self):
-
         self.visaInst.write(":TRIG:SWE AUTO")
         self.visaInst.write(":RUN")
         time.sleep(0.5)
@@ -317,8 +316,8 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         self.dataUpdated.emit(self.datapoints, 0)
 
 
-
 class VisaScopeInterface(ScopeTemplate):
+    name =  "VISA Scope"
     dataUpdated = Util.Signal()
 
     def __init__(self):
@@ -417,6 +416,3 @@ class VisaScopeInterface(ScopeTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "VISA Scope"

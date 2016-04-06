@@ -162,6 +162,7 @@ class PicoScope(object):
         return False
 
 class PicoScopeInterface(ScopeTemplate):
+    name =  "PicoScope"
     dataUpdated = Util.Signal()
 
     def __init__(self):
@@ -238,6 +239,3 @@ class PicoScopeInterface(ScopeTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "PicoScope"

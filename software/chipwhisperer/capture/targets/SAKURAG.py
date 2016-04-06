@@ -24,17 +24,11 @@
 #=================================================
 
 import time
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
 import chipwhisperer.capture.ui.qt as openadc_qt
+from chipwhisperer.common.utils import Util
 
 try:
     import ftd2xx as ft
@@ -243,11 +237,12 @@ class FTDIComm(object):
 
 
 class SakuraG(TargetTemplate):
-     
+    name = "SAKURA G"
+
     def setupParameters(self): 
         self.hw = None
 
-        conntypes = dicttype()
+        conntypes = Util.DictType()
         conntypes['Select Interface type...'] = None
         conntypes['CW Bitstream, with OpenADC'] = ChipWhispererComm(standalone=False)
         conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)
@@ -400,6 +395,3 @@ class SakuraG(TargetTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "SAKURA G"

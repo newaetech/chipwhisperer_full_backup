@@ -75,7 +75,9 @@ class parameters(object):
     def paramList(self):
         return [self.params]
 
+
 class TraceContainerMySQL(TraceContainer.TraceContainer):
+    name = "MySQL"
     getParamsClass = parameters
     getParams = parameters()
 
@@ -234,7 +236,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
 
         self.db.query("INSERT INTO %s(Textin, Textout, EncKey, Wave) VALUES('%s', '%s', '%s', "%(self.tableName, strTextin, strTextout,
                                                                                                 strKey) + "%s)", (self.formatWave(trace),))
-
     def saveAll(self):
         #Save attributes from config settings
         for t in self.getParams.traceParams[0]['children']:
@@ -286,8 +287,3 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             n = 0
         asc = self.db.query("SELECT EncKey FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.asc2list(asc)
-
-    @staticmethod
-    def getName():
-        return "MySQL"
-

@@ -127,7 +127,7 @@ class AcquisitionController():
 #                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
                     print "Timeout"
                     return False
-            except IOError, e:
+            except IOError as e:
                 print "IOError: %s" % str(e)
                 return False
 

@@ -26,12 +26,7 @@
 
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
+from chipwhisperer.common.utils import Util
 
 LEAK_HW_SBOXOUT_FIRSTROUND = 1
 LEAK_HD_LASTROUND_STATE = 2
@@ -40,7 +35,7 @@ LEAK_HD_SBOX_IN_SUCCESSIVE = 4
 LEAK_HD_SBOX_OUT_SUCCESSIVE = 5
 LEAK_HW_INVSBOXOUT_FIRSTROUND = 6
 
-leakagemodels = dicttype()
+leakagemodels = Util.DictType()
 leakagemodels['HW: AES SBox Output, First Round (Enc)'] = 'LEAK_HW_SBOXOUT_FIRSTROUND'
 leakagemodels['HW: AES Inv SBox Output, First Round (Dec)'] = 'LEAK_HW_INVSBOXOUT_FIRSTROUND'
 leakagemodels['HD: AES Last-Round State'] = 'LEAK_HD_LASTROUND_STATE'

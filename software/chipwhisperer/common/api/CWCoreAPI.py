@@ -359,7 +359,7 @@ class CWCoreAPI(object):
                 if not hasattr(i, 'getClass'):
                     continue
                 mod = i.getClass()
-                resp[mod.getName()] = mod
+                resp[mod.name] = mod
             except Exception as e:
                 print "INFO: Could not import trace format module " + f + ": " + str(e)
         # print "Loaded target modules: " + resp.__str__()

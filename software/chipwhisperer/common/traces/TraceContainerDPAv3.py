@@ -40,6 +40,8 @@ def getClass():
 
 
 class TraceContainerDPAv3(TraceContainer):
+    name = "DPAContestv3"
+
     def __init__(self):
         super(TraceContainerDPAv3, self).__init__()
         self.dir = "."
@@ -141,10 +143,6 @@ class TraceContainerDPAv3(TraceContainer):
         self.outf.close()
         self.wavef.close()
         self.keyf.close()
-
-    @staticmethod
-    def getName():
-        return "DPAContestv3"
 
 
 class ImportDPAv3Dialog(QtFixes.QDialog):

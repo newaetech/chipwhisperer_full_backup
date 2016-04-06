@@ -43,12 +43,6 @@ from chipwhisperer.common.utils import Util, timer
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-try:
     import ftd2xx as ft
 except:
     ft = None
@@ -77,6 +71,7 @@ def getInstance(*args):
 
 
 class OpenADCInterface_NAEUSBChip():
+    name = "ChipWhisperer Lite"
     paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
@@ -158,7 +153,9 @@ class OpenADCInterface_NAEUSBChip():
                 ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
                 ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
 
+
 class OpenADCInterface_FTDI():
+    name = "FTDI (SASEBO-W/SAKURA-G)"
     paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
@@ -246,7 +243,9 @@ class OpenADCInterface_FTDI():
         #    for a in self.cwAdvancedSettings.paramList(): p.append(a)
         return p
 
+
 class OpenADCInterface_Serial():
+    name = "Serial Port (LX9)"
     paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
@@ -326,6 +325,7 @@ class OpenADCInterface_Serial():
 
 
 class OpenADCInterface_ZTEX():
+    name = "ChipWhisperer Rev2"
     paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
@@ -434,6 +434,7 @@ class OpenADCInterface_ZTEX():
 
 
 class OpenADCInterface(ScopeTemplate):
+    name = "ChipWhisperer/OpenADC"
     dataUpdated = Util.Signal()
 
     def __init__(self):
@@ -443,67 +444,30 @@ class OpenADCInterface(ScopeTemplate):
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
 
-        try:
-            cwrev2 = OpenADCInterface_ZTEX(self.qtadc)
-        except ImportError, e:
-            print "Failed to enable CWRev2, Error: %s" % str(e)
-            cwrev2 = None
+        scopes = Util.instantiateInDict([OpenADCInterface_ZTEX, OpenADCInterface_FTDI,
+                                OpenADCInterface_Serial,OpenADCInterface_NAEUSBChip], self.qtadc)
 
-        try:
-            ftdi = OpenADCInterface_FTDI(self.qtadc)
-        except ImportError:
-            ftdi = None
+        for scope in scopes.itervalues():
+            scope.paramListUpdated.connect(self.paramListUpdated.emit)
 
-        try:
-            cwser = OpenADCInterface_Serial(self.qtadc)
-        except ImportError:
-            cwser = None
+        defScope = scopes[OpenADCInterface_NAEUSBChip.name]
+        self.setCurrentScope(defScope, False)
 
-        try:
-            cwlite = OpenADCInterface_NAEUSBChip(self.qtadc)
-        except ImportError, e:
-            print "Failed to enable CW-Lite, Error: %s" % str(e)
-            cwlite = None
-
-        self.setCurrentScope(cwlite, False)
-        defscope = cwlite
-
-        cw_cons = dicttype()
-
-        if cwrev2:
-            cwrev2.paramListUpdated.connect(self.paramListUpdated.emit)
-            cw_cons["ChipWhisperer Rev2"] = cwrev2
-
-        if cwlite:
-            cwlite.paramListUpdated.connect(self.paramListUpdated.emit)
-            cw_cons["ChipWhisperer Lite"] = cwlite
-
-        if ftdi:
-            ftdi.paramListUpdated.connect(self.paramListUpdated.emit)
-            cw_cons["FTDI (SASEBO-W/SAKURA-G)"] = ftdi
-
-        if cwser:
-            cwser.paramListUpdated.connect(self.paramListUpdated.emit)
-            cw_cons["Serial Port (LX9)"] = cwser
-
-        if cw_cons == {}:
-            # If no scopes could be found, add a dummy entry so the
-            # app can at least start up
-            cw_cons["None"] = None
+        if scopes == {}: # If no scopes could be found, add a dummy entry so the app can at least start up
+            scopes["None"] = None
             print("OpenADC: No supported scope found!")
-
 
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
 
-        scopeParams = [{'name':'Connection', 'type':'list', 'values':cw_cons, 'value':defscope, 'set':self.setCurrentScope},
+        scopeParams = [{'name':'Connection', 'type':'list', 'values':scopes, 'value':defScope, 'set':self.setCurrentScope},
                        {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
 
         self.params = ConfigParameter.create_extended(self, name='OpenADC Interface', type='group', children=scopeParams)
-        self.setCurrentScope(defscope)
+        self.setCurrentScope(defScope)
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
     
     def dcmTimeout(self):
@@ -623,7 +587,3 @@ class OpenADCInterface(ScopeTemplate):
 
     def validateSettings(self):
         return []
-
-    def getName(self):
-        return "ChipWhisperer/OpenADC"
-
