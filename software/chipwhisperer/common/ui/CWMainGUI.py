@@ -422,7 +422,7 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.addExampleScripts(CWCoreAPI.getExampleScripts(self.cwAPI.getRootDir() + "/scripts"))
+        self.addExampleScripts(Util.getModulesInDictFromPackage("chipwhisperer.capture.scripts", instantiate = False))
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
@@ -438,8 +438,8 @@ class CWMainGUI(QMainWindow):
         self.projectMenu.addAction(self.exampleScriptAct)
         subMenu = QMenu("Submenu", self)
 
-        for script in scripts:
-            subMenu.addAction(QAction(script.name(), self, statusTip=script.tip(), triggered=partial(self.runScript, script)))
+        for name, script in scripts.iteritems():
+            subMenu.addAction(QAction(name, self, statusTip=script.description, triggered=partial(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 
@@ -567,12 +567,10 @@ class CWMainGUI(QMainWindow):
         self.statusBar().showMessage(msg)
 
     def runScript(self, mod):
-        if mod is None:
-            return
-        self.updateStatusBar("Running Script: %s" % mod.name())
-        m = mod.userScript(self.cwAPI)
+        self.updateStatusBar("Running Script: %s" % mod.name)
+        m = mod(self.cwAPI)
         m.run()
-        self.updateStatusBar("Finished Script: %s" % mod.name())
+        self.updateStatusBar("Finished Script: %s" % mod.name)
 
     def exceptionHandlerDialog(self, etype, value, trace):
         """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""

@@ -24,21 +24,18 @@
 #=================================================
 
 import time
-
-#For QTimer
-from PySide.QtCore import *
 from PySide.QtGui import *
-
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import Util, timer
 
 
-def getInstance(*args):
-    return ResetCW1173Read(*args)
+def getClass():
+    return ResetCW1173Read
 
 class ResetCW1173Read(AuxiliaryTemplate):
+    name = "Reset AVR/XMEGA via CW-Lite"
     paramListUpdated = Util.Signal()
 
     def setupParameters(self):
@@ -71,17 +68,13 @@ class ResetCW1173Read(AuxiliaryTemplate):
     def testReset(self):
         self.traceArmPost()
 
-
     def nonblockingSleep_done(self):
         self._sleeping = False
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        QTimer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
             QApplication.processEvents()
-
-    def getName(self):
-        return "Reset AVR/XMEGA via CW-Lite"

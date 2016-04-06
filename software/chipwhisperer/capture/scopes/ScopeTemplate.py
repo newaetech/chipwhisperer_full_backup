@@ -28,8 +28,8 @@
 from chipwhisperer.common.utils import Util
 
 
-def getInstance(*args):
-    return ScopeTemplate(*args)
+def getClass():
+    return ScopeTemplate
 
 
 class ScopeTemplate(object):

@@ -31,10 +31,11 @@ from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
 
-def getInstance(*args):
-    return ResetAVR(*args)
+def getClass():
+    return ResetAVR
 
 class ResetAVR(AuxiliaryTemplate):
+    name = "Reset AVR via ISP-MKII"
     paramListUpdated = Util.Signal()
 
     def setupParameters(self):
@@ -68,6 +69,3 @@ class ResetAVR(AuxiliaryTemplate):
 
     def testReset(self):
         self.traceArm()
-
-    def getName(self):
-        return "Reset AVR via ISP-MKII"

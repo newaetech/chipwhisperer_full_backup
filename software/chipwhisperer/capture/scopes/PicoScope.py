@@ -43,8 +43,9 @@ from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
 
-def getInstance(*args):
-    return PicoScopeInterface(*args)
+def getClass():
+    return PicoScopeInterface
+
 
 class PicoScope(object):
     paramListUpdated = Util.Signal()

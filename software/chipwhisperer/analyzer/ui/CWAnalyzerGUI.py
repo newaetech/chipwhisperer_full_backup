@@ -34,6 +34,7 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util
 from chipwhisperer.analyzer.ResultsPlotting import ResultsPlotting
 import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 # from chipwhisperer.analyzer.utils.Partition import Partition, PartitionDialog
@@ -71,7 +72,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.utilList = [self.traceExplorerDialog]
         self.valid_atacks = {CPA.name:CPA(), Profiling.name:Profiling(self.traceExplorerDialog)}
         self.setAttack(self.valid_atacks["CPA"])
-        self.valid_preprocessingModules = self.cwAPI.getPreprocessingModules(self.cwAPI.getRootDir() + "/preprocessing", self.waveformDock.widget())
+        self.valid_preprocessingModules = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, self.waveformDock.widget())
         self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
                                      self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
 

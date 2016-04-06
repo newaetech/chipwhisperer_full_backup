@@ -34,8 +34,8 @@ from chipwhisperer.common.utils import Util, timer
 from chipwhisperer.common.utils import Scan
 
 
-def getInstance(*args):
-    return SmartCard(*args)
+def getClass():
+    return SmartCard
 
 
 class ReaderTemplate(object):

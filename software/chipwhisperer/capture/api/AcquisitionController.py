@@ -25,16 +25,16 @@
 
 import random
 import time
-
-import chipwhisperer.common.utils.Util as util
+from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
+
 
 class AcquisitionController():
     class Signals:
         def __init__(self):
-            self.traceDone = util.Signal()
-            self.captureDone = util.Signal()
-            self.newTextResponse = util.Signal()
+            self.traceDone = Util.Signal()
+            self.captureDone = Util.Signal()
+            self.newTextResponse = Util.Signal()
 
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
         self.target = target
@@ -181,6 +181,7 @@ class AcquisitionController():
         self.signals.captureDone.emit(self.running)
         self.running = False
 
+
 class AcqKeyTextPattern_Base(object):
     def __init__(self, target=None):
         self.params = ConfigParameter.create_extended(self, name='Key/Text Pattern', type='group', children=self.setupParams())
@@ -228,6 +229,7 @@ class AcqKeyTextPattern_Base(object):
         """Called when a new encryption pair is requested"""
         raise AttributeError("This needs to be reimplemented")
 
+
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def setupParams(self):
         self._fixedPlain = False
@@ -270,7 +272,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._key = bytearray(initialKey)
             else:
                 keyStr = initialKey
-                self._key = util.hexStrToByteArray(initialKey)
+                self._key = Util.hexStrToByteArray(initialKey)
 
             self.initkey = keyStr
 
@@ -283,7 +285,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin = bytearray(initialText)
             else:
                 textStr = initialText
-                self._textin = util.hexStrToByteArray(initialText)
+                self._textin = Util.hexStrToByteArray(initialText)
 
             self.inittext = textStr
 
@@ -306,6 +308,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
 
         return (self._key, self._textin)
 
+
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     def setupParams(self):
         self._fixedPlain = False
@@ -320,22 +323,22 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
 
     def initPair(self):
         if self.keyLen() == 16:
-            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
+            self._key = Util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
         elif self.keyLen() == 24:
-            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
+            self._key = Util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
         elif self.keyLen() == 32:
-            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
+            self._key = Util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
 
-        self._textin1 = util.hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        self._textin1 = Util.hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
 
         if self.keyLen() == 16:
-            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
+            self._textin2 = Util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
         elif self.keyLen() == 24:
-            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
+            self._textin2 = Util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
         elif self.keyLen() == 32:
-            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
+            self._textin2 = Util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
 
@@ -364,3 +367,10 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
         self.validateKey()
 
         return (self._key, self._textin)
+
+def getAcqPatternModules():
+    resp = Util.DictType()
+    resp["Basic"] = AcqKeyTextPattern_Basic()
+    resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
+    # print "Loaded Patterns: " + resp.__str__()
+    return Util.module_reorder(resp)

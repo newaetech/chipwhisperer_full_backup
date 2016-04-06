@@ -35,8 +35,9 @@ try:
 except OSError:  # Also catches WindowsError
     raise ImportError
 
-def getInstance(*args):
-    return SakuraG(*args)
+
+def getClass():
+    return SakuraG
 
 class ChipWhispererComm(object):
     CODE_READ = 0x80

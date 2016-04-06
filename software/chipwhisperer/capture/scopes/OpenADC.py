@@ -66,8 +66,8 @@ except ImportError:
     CWL = None
 
 
-def getInstance(*args):
-    return OpenADCInterface(*args)
+def getClass():
+    return OpenADCInterface
 
 
 class OpenADCInterface_NAEUSBChip():
@@ -444,8 +444,8 @@ class OpenADCInterface(ScopeTemplate):
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
 
-        scopes = Util.instantiateInDict([OpenADCInterface_ZTEX, OpenADCInterface_FTDI,
-                                OpenADCInterface_Serial,OpenADCInterface_NAEUSBChip], self.qtadc)
+        scopes = Util.putInDict([OpenADCInterface_ZTEX, OpenADCInterface_FTDI,
+                                OpenADCInterface_Serial,OpenADCInterface_NAEUSBChip], True, self.qtadc)
 
         for scope in scopes.itervalues():
             scope.paramListUpdated.connect(self.paramListUpdated.emit)

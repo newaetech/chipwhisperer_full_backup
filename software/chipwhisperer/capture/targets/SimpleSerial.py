@@ -30,8 +30,10 @@ from chipwhisperer.common.utils.Scan import scan
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 
-def getInstance(*args):
-    return SimpleSerial(*args)
+
+def getClass():
+    return SimpleSerial
+
 
 try:
     import serial
@@ -338,7 +340,7 @@ class SimpleSerial(TargetTemplate):
 
     def setupParameters(self):
         
-        ser_cons = Util.instantiateInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite])
+        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
         defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
 
         ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defSer, 'set':self.setConnection},

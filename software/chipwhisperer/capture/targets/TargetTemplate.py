@@ -32,8 +32,8 @@ except ImportError:
     AES = None
 
 
-def getInstance(*args):
-    return TargetTemplate(*args)
+def getClass():
+    return TargetTemplate
 
 
 class TargetTemplate(object):

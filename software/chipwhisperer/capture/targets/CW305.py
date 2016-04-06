@@ -50,8 +50,8 @@ except ImportError:
     print "CW305: GUI functions disabled"
 
 
-def getInstance(*args):
-    return CW305(*args)
+def getClass():
+    return CW305
 
 
 class CW305_USB(object):

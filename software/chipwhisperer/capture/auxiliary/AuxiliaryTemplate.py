@@ -28,10 +28,13 @@
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
-def getInstance(*args):
-    return AuxiliaryTemplate(*args)
+
+def getClass():
+    return AuxiliaryTemplate
+
 
 class AuxiliaryTemplate():
+    name = "None"
     paramListUpdated = Util.Signal()
 
     def __init__(self):
@@ -83,4 +86,4 @@ class AuxiliaryTemplate():
         self.prefix = prefix
 
     def getName(self):
-        return "None"
+        return self.name

@@ -33,41 +33,21 @@
 # Data is saved into both a project file and a MATLAB array
 #
 
-#Setup path
 import sys
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc #Import the ChipWhispererCapture module
 
-#Import the ChipWhispererCapture module
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc
 
-#Check for PySide
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+def getClass():
+    return UserScript
 
-import thread
 
-import scipy.io as sio
-
-exitWhenDone=False
-
-def name():
-    return "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
-
-def tip():
-    return "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
-
-def pe():
-    QCoreApplication.processEvents()
-
-class userScript(QObject):
+class UserScript(object):
+    name = "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
+    description = "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
 
     def __init__(self, capture):
-        super(userScript, self).__init__()
+        super(UserScript, self).__init__()
         self.capture = capture
-                
 
     def run(self):
         cap = self.capture
@@ -86,15 +66,9 @@ class userScript(QObject):
                 
         #NOTE: You MUST add this call to pe() to process events. This is done automatically
         #for setParameter() calls, but everything else REQUIRES this
-        pe()
 
         cap.connect()
-        
-        pe()
-        pe()
-        pe()
-        pe()
-        
+
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
                       ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial RXD'],
@@ -118,23 +92,15 @@ class userScript(QObject):
                       
         #Throw away first few
         cap.capture1()
-        pe()
         cap.capture1()
-        pe()
-        
+
         #Start capture process
         #writer = cap.captureM()
         #
-        #pe()
-        #
         #cap.proj.setFilename("../capturev2/test_live.cwp")
-        #
-        #pe()
         #
         #cap.saveProject()
         
-        pe()
-
         print "***** Ending User Script *****"
         
 
@@ -147,20 +113,14 @@ if __name__ == '__main__':
     #app.setApplicationName("Capture V2 Scripted")
     
     #Get main module
-    capture = cwc.ChipWhispererCapture()
+    capture = cwc.CWCaptureGUI()
     
     #Show window - even if not used
     capture.show()
     
-    #NB: Must call processEvents since we aren't using proper event loop
-    pe()
-    #Call user-specific commands 
-    usercommands = userScript(capture)
-    
+    #Call user-specific commands
+    usercommands = UserScript(capture.cwAPI)
     usercommands.run()
     
     app.exec_()
-    
     sys.exit()
-
-    

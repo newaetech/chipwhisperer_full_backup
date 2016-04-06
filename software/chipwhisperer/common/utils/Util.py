@@ -28,6 +28,7 @@ import os.path
 import collections
 import shutil
 import sys
+import importlib
 
 try:
     # OrderedDict is new in 2.7
@@ -36,15 +37,50 @@ try:
 except ImportError:
     DictType = dict
 
+def getModulesInDictFromPackage(path, instantiate, *args, **kwargs):
+    modules = importModulesInPackage(path)
+    classes = getMainClassesFromModules(modules)
+    dictInstances = putInDict(classes, instantiate, *args, **kwargs)
+    return module_reorder(dictInstances)
 
-def instantiateInDict(classes, *args):
-    resp = DictType()
-    for c in classes:
+def getRootDir():
+    return os.path.join(os.path.dirname(__file__), "../../../")
+
+def importModulesInPackage(path):
+    resp = []
+    for package_name in getPyFiles(os.path.join(getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
+        full_package_name = '%s.%s' % (path, package_name)
         try:
-            resp[c.name] = c(*args)
+            resp.append(importlib.import_module(full_package_name))
         except Exception as e:
-            print "INFO: Could not instantiate module " + c.name + ": " + str(e)
+            print "INFO: Could not import module: " + full_package_name + ": " + str(e)
     return resp
+
+
+def getMainClassesFromModules(modules):
+    resp = []
+    for module in modules:
+        if hasattr(module, "getClass"):
+            resp.append(module.getClass())
+        else:
+            pass
+            # print "INFO: Module " + module.__name__ + " has no top level method called getClass(). Ignoring it..."
+    return resp
+
+
+def putInDict(items, instantiate, *args, **kwargs):
+    resp = DictType()
+    for c in items:
+        try:
+            if instantiate:
+                item = c(*args, **kwargs)
+            else:
+                item = c
+            resp[item.name] = item
+        except Exception as e:
+            print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
+    return resp
+
 
 def module_reorder(resp):
     #None is first, then alphabetical

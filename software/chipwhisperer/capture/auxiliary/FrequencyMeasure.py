@@ -37,8 +37,10 @@ try:
 except ImportError:
     ps5000a = None
 
-def getInstance(*args):
-    return FrequencyMeasure(*args)
+
+def getClass():
+    return FrequencyMeasure
+
 
 class freqMeasure():
     
@@ -99,6 +101,7 @@ class freqMeasure():
         return freq
 
 class FrequencyMeasure(AuxiliaryTemplate):
+    name = "Frequency Counter"
     paramListUpdated = Util.Signal()
 
     def setupParameters(self):
@@ -129,6 +132,3 @@ class FrequencyMeasure(AuxiliaryTemplate):
 
     def captureComplete(self):
         np.save("frequency-%s.npy" % self.prefix, self.data)
-
-    def getName(self):
-        return "Frequency Counter"

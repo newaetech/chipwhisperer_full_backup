@@ -23,19 +23,19 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import os.path
 import sys
-from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.ui.ProgressBar import *
-from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
-from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
-from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
+from chipwhisperer.common.ui.ProgressBar import *
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import Util
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.capture.api.AcquisitionController import getAcqPatternModules
+from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
+from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -72,11 +72,11 @@ class CWCaptureGUI(CWMainGUI):
         self.traceChanged()
 
     def setupParameters(self):
-        valid_scopes = CWCoreAPI.getScopeModules(self.cwAPI.getRootDir() + "/scopes")
-        valid_targets =  CWCoreAPI.getTargetModules(self.cwAPI.getRootDir() + "/targets")
-        valid_traces = CWCoreAPI.getTraceFormats(self.cwAPI.getRootDir() + "/../common/traces")
-        valid_aux = CWCoreAPI.getAuxiliaryModules(self.cwAPI.getRootDir() + "/auxiliary")
-        valid_acqPatterns = CWCoreAPI.getAcqPatternModules()
+        valid_scopes = Util.getModulesInDictFromPackage("chipwhisperer.capture.scopes", instantiate = True)
+        valid_targets =  Util.getModulesInDictFromPackage("chipwhisperer.capture.targets", instantiate = True)
+        valid_traces = Util.getModulesInDictFromPackage("chipwhisperer.common.traces", instantiate = False)
+        valid_aux = Util.getModulesInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True)
+        valid_acqPatterns = getAcqPatternModules()
         
         if len(valid_scopes) == 0:
             raise IOError("Failed to load scope modules, either modules missing, import error, " +

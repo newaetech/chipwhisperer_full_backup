@@ -32,8 +32,8 @@ except OSError:  # also catches WindowsError
     raise ImportError
 
 
-def getInstance(*args):
-    return SaseboGII(*args)
+def getClass():
+    return SaseboGII
 
 
 class SaseboGIIDPAContest(object):

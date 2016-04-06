@@ -23,8 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-import importlib
-import sys
+import sys, os
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import Util
 from chipwhisperer.common.ui.ProgressBar import *
@@ -71,7 +70,7 @@ class CWCoreAPI(object):
         CWCoreAPI.instance = self
 
     def getRootDir(self):
-        return self.rootDir
+        return Util.getRootDir()
 
     def hasScope(self):
         return self._scope is not None
@@ -336,94 +335,6 @@ class CWCoreAPI(object):
             raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))
 
         self.signals.parametersChanged.emit()
-
-    @staticmethod
-    def getPreprocessingModules(dir, waveformWidget):
-        resp = Util.DictType()
-        for f in Util.getPyFiles(dir):
-            try:
-                i = importlib.import_module('chipwhisperer.analyzer.preprocessing.' + f)
-                mod = i.getClass()(graphWidget = waveformWidget)
-                resp[mod.getName()] = mod
-            except Exception as e:
-                print "INFO: Could not import preprocessing module " + f + ": " + str(e)
-        # print "Loaded preprocessing modules: " + resp.__str__()
-        return Util.module_reorder(resp)
-
-    @staticmethod
-    def getTraceFormats(dir):
-        resp = Util.DictType()
-        for f in Util.getPyFiles(dir):
-            try:
-                i = importlib.import_module('chipwhisperer.common.traces.' + f)
-                if not hasattr(i, 'getClass'):
-                    continue
-                mod = i.getClass()
-                resp[mod.name] = mod
-            except Exception as e:
-                print "INFO: Could not import trace format module " + f + ": " + str(e)
-        # print "Loaded target modules: " + resp.__str__()
-        return Util.module_reorder(resp)
-
-    @staticmethod
-    def getScopeModules(dir):
-        resp = Util.DictType()
-        for f in Util.getPyFiles(dir):
-            try:
-                i = importlib.import_module('chipwhisperer.capture.scopes.' + f)
-                mod = i.getInstance()
-                resp[mod.getName()] = mod
-            except Exception as e:
-                print "INFO: Could not import scope module " + f + ": " + str(e)
-        # print "Loaded scope modules: " + resp.__str__()
-        return Util.module_reorder(resp)
-
-    @staticmethod
-    def getTargetModules(dir):
-        resp = Util.DictType()
-        for t in Util.getPyFiles(dir):
-            try:
-                i = importlib.import_module('chipwhisperer.capture.targets.' + t)
-                mod = i.getInstance()
-                resp[mod.getName()] = mod
-            except Exception as e:
-                print "INFO: Could not import target module " + t + ": " + str(e)
-        # print "Loaded target modules: " + resp.__str__()
-        return Util.module_reorder(resp)
-
-    @staticmethod
-    def getAuxiliaryModules(dir):
-        resp = Util.DictType()
-        for f in Util.getPyFiles(dir):
-            try:
-                i = importlib.import_module('chipwhisperer.capture.auxiliary.' + f)
-                mod = i.getInstance()
-                resp[mod.getName()] = mod
-            except Exception as e:
-                print "INFO: Could not import auxiliary module " + f + ": " + str(e)
-        # print "Loaded scope modules: " + resp.__str__()
-        return Util.module_reorder(resp)
-
-    @staticmethod
-    def getExampleScripts(dir):
-        resp = []
-        for f in Util.getPyFiles(dir):
-            try:
-                m = importlib.import_module('chipwhisperer.capture.scripts.' + f)
-                resp.append(m)
-            except Exception as e:
-                print "INFO: Could not import example script " + f + ": " + str(e)
-        # print "Loaded scripts: " + resp.__str__()
-        return resp
-
-    @staticmethod
-    def getAcqPatternModules():
-        resp = Util.DictType()
-        resp["Basic"] = AcqKeyTextPattern_Basic()
-        if AcqKeyTextPattern_CRITTest:
-            resp['CRI T-Test'] = AcqKeyTextPattern_CRITTest()
-        # print "Loaded Patterns: " + resp.__str__()
-        return Util.module_reorder(resp)
 
     @staticmethod
     def getInstance():

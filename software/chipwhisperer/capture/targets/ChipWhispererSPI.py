@@ -28,8 +28,8 @@ from chipwhisperer.common.api.config_parameter import ConfigParameter
 from TargetTemplate import TargetTemplate
 
 
-def getInstance(*args):
-    return ChipWhispererSPI(*args)
+def getClass():
+    return ChipWhispererSPI
 
 
 class HIDSPI(object):

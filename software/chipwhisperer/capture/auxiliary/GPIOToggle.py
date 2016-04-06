@@ -36,10 +36,12 @@ from chipwhisperer.common.utils import Util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
-def getInstance(*args):
-    return GPIOToggle(*args)
+def getClass():
+    return GPIOToggle
+
 
 class GPIOToggle(AuxiliaryTemplate):
+    name = "Toggle FPGA-GPIO Pins"
     paramListUpdated = Util.Signal()
 
     def setupParameters(self):
@@ -122,6 +124,3 @@ class GPIOToggle(AuxiliaryTemplate):
 
     def testToggle(self):
         pass
-
-    def getName(self):
-        return "Toggle FPGA-GPIO Pins"

@@ -35,8 +35,9 @@ from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
 
-def getInstance(*args):
-    return VisaScopeInterface(*args)
+def getClass():
+    return VisaScopeInterface
+
 
 class VisaScope(object):
     paramListUpdated = Util.Signal()
