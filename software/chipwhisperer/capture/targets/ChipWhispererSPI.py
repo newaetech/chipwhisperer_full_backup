@@ -22,14 +22,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+
 import hid
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-
 from TargetTemplate import TargetTemplate
 
 
 def getInstance(*args):
     return ChipWhispererSPI(*args)
+
 
 class HIDSPI(object):
     CMDSPI = 0x01
@@ -88,6 +89,7 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
+
 class ChipWhispererSPI(TargetTemplate):
     def setupParameters(self):
         self.hdev = HIDSPI()
@@ -108,7 +110,7 @@ class ChipWhispererSPI(TargetTemplate):
         p = [self.params]
         return p
 
-    def con(self):  
+    def con(self, scope = None):
         self.hdev.findCWSPI()
         self.connectStatus.setValue(True)
 

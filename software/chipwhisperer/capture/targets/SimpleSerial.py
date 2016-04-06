@@ -142,6 +142,7 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def selectionChanged(self):
         pass
 
+
 class SimpleSerial_ChipWhisperer(TargetTemplate):
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
@@ -159,7 +160,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                     ]
         self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self._regVer = 0
-        self.oa = None
 
     def systemClk(self):
         return 30E6
@@ -198,7 +198,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             self._regVer = 1
             self.findParam('stopbits').setReadonly(False)
             self.findParam('parity').setReadonly(False)
-
 
     def setTxBaudReg(self, breg):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
@@ -319,7 +318,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         scope.connectStatus.connect(self.dis())
-        self.oa = scope.qtadc.ser
         # Check first!
         self.checkVersion()
         self.params.getAllParameters()
@@ -327,9 +325,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
         
     def selectionChanged(self):
         pass
-    
-    # def setOpenADC(self, oa):
-    #     self.oa = oa.scope.sc
+
 
 class SimpleSerial(TargetTemplate):
     def setupParameters(self):
@@ -343,8 +339,7 @@ class SimpleSerial(TargetTemplate):
         ser_cons["ChipWhisperer-Lite"] = SimpleSerial_ChipWhispererLite()
         
         defser = ser_cons["ChipWhisperer-Lite"]
-        
-        
+
         ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defser, 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
@@ -362,8 +357,6 @@ class SimpleSerial(TargetTemplate):
         self.ser = None
         self.keylength = 16
         self.input = ""
-
-        self.oa = None
         self.setConnection(self.findParam('con').value())
 
     def setKeyLen(self, klen):
@@ -389,10 +382,6 @@ class SimpleSerial(TargetTemplate):
     def con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
-        self.oa = scope.qtadc.ser
-        if hasattr(self.ser, "setOpenADC"):
-            self.ser.setOpenADC(self.oa)
-
         self.ser.con(scope)
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
@@ -403,19 +392,17 @@ class SimpleSerial(TargetTemplate):
         if self.ser != None:
             self.ser.close()
             # self.ser = None
-        return
 
     def init(self):
         self.runCommand(self.findParam('cmdinit').value())
 
     def setModeEncrypt(self):
-        return
+        pass
 
     def setModeDecrypt(self):
-        return
+        pass
 
     def convertVarToString(self, var):
-
         if isinstance(var, str):
             return var
 
@@ -465,7 +452,6 @@ class SimpleSerial(TargetTemplate):
         return True
 
     def readOutput(self):
-
         dataLen= 32
 
         fmt = self.findParam('cmdout').value()

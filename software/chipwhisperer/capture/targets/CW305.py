@@ -193,7 +193,7 @@ class CW305(TargetTemplate):
         stoptime = datetime.now()
         print "FPGA Config time: %s" % str(stoptime - starttime)
 
-    def con(self, bsfile=None):
+    def con(self, scope = None, bsfile=None):
         """Connect to CW305 board, download bitstream"""
 
         self._naeusb.con(idProduct=0xC305)

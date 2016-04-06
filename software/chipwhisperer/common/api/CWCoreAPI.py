@@ -83,7 +83,6 @@ class CWCoreAPI(object):
     def setScope(self, driver):
         if self.hasScope(): self.getScope().dis()
         self._scope = driver
-        Util.active_scope = self._scope
         self.signals.scopeChanged.emit()
 
     def hasTarget(self):

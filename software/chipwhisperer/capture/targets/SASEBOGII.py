@@ -190,15 +190,12 @@ class SaseboGII(TargetTemplate):
         """Parameter Definition."""
         ssParams = []
         self.params = ConfigParameter.create_extended(self, name='SASEBO-GII Parameters', type='group', children=ssParams)
-            
-    def setOpenADC(self, oadc):
-        pass
         
     def paramList(self):
         p = [self.params]
         return p
 
-    def con(self):   
+    def con(self, scope = None):
         try:
             self.sasebo = ft.openEx("FTSZ1IONB")
 #            self.sasebo = ft.openEx("FTWQ8BMIA")

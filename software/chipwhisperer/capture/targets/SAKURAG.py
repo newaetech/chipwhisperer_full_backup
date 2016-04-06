@@ -65,17 +65,14 @@ class ChipWhispererComm(object):
     def _setSerial(self, serialnum):
         self.serialnum = serialnum
 
-    def setOpenADC(self, oadc):
-        self.oa = oadc
-        
-
     def reset(self):
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
         time.sleep(0.05)
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
 
-    def con(self):
-        if self.oa is None:            
+    def con(self, scope = None):
+        self.oa = scope.qtadc.ser
+        if self.oa is None:
             if self.serialnum is not None:
                 self.qtadc = openadc_qt.OpenADCQt(includePreview=False, setupLayout=False)
                 self.qtadc.setupParameterTree()
@@ -90,7 +87,6 @@ class ChipWhispererComm(object):
         # Reset AES Core
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
-
         return True
 
     def disconnect(self):
@@ -169,6 +165,7 @@ class ChipWhispererComm(object):
     def close(self):
         pass
 
+
 class FTDIComm(object):
 
     def __init__(self):
@@ -226,13 +223,10 @@ class FTDIComm(object):
     def close(self):
         self.sasebo.close()
 
-    def setOpenADC(self, oadc):
-        pass
-
     def setSerial(self, ser):
         self.serNo = ser
 
-    def con(self):
+    def con(self, scope = None):
         try:
             self.sasebo = ft.openEx(self.serNo)
         except ft.ftd2xx.DeviceError, e:
@@ -246,7 +240,8 @@ class FTDIComm(object):
 
     def disconnect(self):
         return
-               
+
+
 class SakuraG(TargetTemplate):
      
     def setupParameters(self): 
@@ -268,9 +263,6 @@ class SakuraG(TargetTemplate):
         self.oa = None
         self.fixedStart = True
         self.hw = self.findParam('conn').value()
-                    
-    def setOpenADC(self, oadc):
-        self.oa = oadc
         
     def setConn(self, con):
         self.hw = con
@@ -290,9 +282,9 @@ class SakuraG(TargetTemplate):
         self.findParam('serno').setValue(serialnames[0])
 #        self.paramListUpdated.emit(self.paramList())
 
-    def con(self):   
+    def con(self, scope = None):
+        self.oa = scope.qtadc.ser
         self.hw = self.findParam('conn').value()
-        self.hw.setOpenADC(self.oa)
 
         if hasattr(self.hw, 'setSerial'):
             # For SAKURA-G normally we use 'A' channel
@@ -301,7 +293,7 @@ class SakuraG(TargetTemplate):
                 print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
             self.hw.setSerial(ser)
 
-        hwok = self.hw.con()
+        hwok = self.hw.con(scope)
 
         if hasattr(self.hw, 'reset'):
             self.findParam('reset').show()

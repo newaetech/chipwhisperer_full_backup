@@ -72,12 +72,12 @@ class ReaderTemplate(object):
         """Send APDU to SmartCard, get Response"""
         pass
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+    def con(self, scope = None):
+        """Connect to reader."""
         pass
     
     def close(self):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+        """Close connection."""
         pass
 
     def flush(self):
@@ -196,9 +196,9 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
             
             return status
     
-    def con(self, oa):
+    def con(self, scope):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
-        self.usbcon = oa     
+        self.usbcon = scope.qtadc.ser
         self.reset()
     
     def flush(self):
@@ -221,6 +221,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     def getATR(self):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         return self.atr
+
 
 class ReaderSystemSER(ReaderTemplate):
     
@@ -326,16 +327,16 @@ class ReaderSystemSER(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
+    def con(self, scope = None):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""        
         if self.ser == None:
             # Open serial port if not already
             self.ser = serial.Serial()
-            self.ser.port     = self.findParam('port').value()
+            self.ser.port = self.findParam('port').value()
             self.ser.baudrate = 9600
             self.ser.stopbits = serial.STOPBITS_TWO
             self.ser.parity = serial.PARITY_EVEN
-            self.ser.timeout  = 2     # 2 second timeout
+            self.ser.timeout = 2     # 2 second timeout
             self.ser.dtr = False
             self.ser.rts = True
             self.ser.open()        
@@ -473,10 +474,9 @@ class ReaderChipWhispererSER(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
-        self.ser.setOpenADC(oa)
-        self.ser.con()
+    def con(self, scope = None):
+        self.ser.setOpenADC(scope.qtadc.ser)
+        self.ser.con(scope)
         
         #Set defaults
         self.ser.findParam('parity').setValue('e')
@@ -489,8 +489,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.ser.findParam('txbaud').setValue(9600)
         
         #Setup GPIO Pins
-        if hasattr(Util.active_scope, 'advancedSettings') and Util.active_scope.advancedSettings:
-            self.cwe = Util.active_scope.advancedSettings
+        if hasattr(scope, 'advancedSettings') and scope.advancedSettings:
+            self.cwe = scope.advancedSettings
             self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
             self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
             self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
@@ -626,9 +626,9 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
-        self.usi.con(oa)
+    def con(self, scope = None):
+        """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+        self.usi.con(scope.qtadc.ser)
         self.usi.setIdle(1)
         self.setBaud(9600)
         self.usi.setParity("even")        
@@ -670,8 +670,8 @@ class ReaderChipWhispererSCard(ReaderTemplate):
     def statusUpdate(self):
         self.findParam('statusStr').setValue(self.scard.isPresent())
         
-    def con(self, oa):
-        self.scard.con(oa)
+    def con(self, scope):
+        self.scard.con(scope.qtadc.ser)
         self.reset()
 
     def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
@@ -754,8 +754,8 @@ class ReaderPCSC(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+    def con(self, scope = None):
+        """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         try:
             self.sccard = AnyCardType()
             self.screq = CardRequest(timeout=1, cardType=self.sccard)
@@ -1028,8 +1028,8 @@ class SmartCard(TargetTemplate):
             for a in self.driver.paramList(): p.append(a)
         return p
 
-    def con(self):
-        self.driver.con(self.oa)
+    def con(self, scope = None):
+        self.driver.con(scope)
         self.driver.flush()
         self.protocol.setReaderHardware(self.driver)
         self.connectStatus.setValue(True)
