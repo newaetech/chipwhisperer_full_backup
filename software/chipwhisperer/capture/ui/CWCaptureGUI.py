@@ -39,8 +39,8 @@ from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialo
 
 
 class CWCaptureGUI(CWMainGUI):
-    def __init__(self, rootdir):
-        super(CWCaptureGUI, self).__init__(CWCoreAPI(rootdir), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
+    def __init__(self):
+        super(CWCaptureGUI, self).__init__(CWCoreAPI(), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
         self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
@@ -381,18 +381,15 @@ def makeApplication():
     app.setApplicationName(CWCoreAPI.__name__ + " - Capture ")
     return app
 
-def main(cwdir):
+def main():
     app = makeApplication()
 
-    #print os.getcwd()   
-    #TODO - should we prompt user for cwdir if not found?
-
     # Create and show the form
-    window = CWCaptureGUI(cwdir)
+    window = CWCaptureGUI()
     window.show()
 
     # Run the main Qt loop
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    main(cwdir = "../")
+    main()

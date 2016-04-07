@@ -28,13 +28,10 @@ import math
 import pickle
 import sys
 from datetime import datetime
-from PySide.QtCore import *
-from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
 
 class TuningParameter(QObject):
 
@@ -152,7 +149,11 @@ class GlitchExplorerDialog(QtFixes.QDialog):
 
 
         self.params = ConfigParameter.create_extended(self, name='Glitch Explorer', type='group', children=self.glitchParams)
-        self.paramTree = ParameterTree()
+        self.fw = QWidget()
+        self.paramTree = ParameterTree(self.fw)
+
+        print issubclass(ParameterTree, QWidget)
+        print isinstance(self.paramTree, QWidget)
 
         self.reloadParameters()
 
