@@ -26,6 +26,7 @@
 
 from datetime import *
 import sys
+#DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog

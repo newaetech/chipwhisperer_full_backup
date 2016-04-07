@@ -24,6 +24,8 @@
 #=================================================
 
 import sys
+#DO NOT REMOVE PYSIDE IMPORT - Required for pyqtgraph to select correct QT Interface on some platforms, even though "unused"
+from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
