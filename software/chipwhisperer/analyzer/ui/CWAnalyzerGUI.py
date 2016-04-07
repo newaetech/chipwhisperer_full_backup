@@ -53,8 +53,8 @@ class CWAnalyzerGUI(CWMainGUI):
     This is a front-end to the CWCoreAPI.
     """
 
-    def __init__(self, rootdir):
-        super(CWAnalyzerGUI, self).__init__(CWCoreAPI(rootdir), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+    def __init__(self):
+        super(CWAnalyzerGUI, self).__init__(CWCoreAPI(), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addTraceDock("Waveform Display")
 
         self.scriptList = []
@@ -481,15 +481,15 @@ def makeApplication():
     app.setApplicationName("Analyzer V2")
     return app
 
-def main(cwdir):
+def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = CWAnalyzerGUI(cwdir)
+    window = CWAnalyzerGUI()
     window.show()
 
     # Run the main Qt loop
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
-    main(cwdir = "../")
+    main()

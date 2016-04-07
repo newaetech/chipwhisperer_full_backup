@@ -55,8 +55,7 @@ class CWCoreAPI(object):
             self.campaignStart = Util.Signal()
             self.campaignDone = Util.Signal()
 
-    def __init__(self, rootDir):
-        self.rootDir = rootDir
+    def __init__(self):
         self.paramTrees = []
         self._project = None
         self._scope = None
