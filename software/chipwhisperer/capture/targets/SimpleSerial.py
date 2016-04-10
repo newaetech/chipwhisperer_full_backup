@@ -22,89 +22,87 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from TargetTemplate import TargetTemplate
 
 import time
+from TargetTemplate import TargetTemplate
+from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils.Scan import scan
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
+
+
+def getClass():
+    return SimpleSerial
+
 
 try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
+    import serial
 
-from openadc.ExtendedParameter import ExtendedParameter
-import openadc.scan as scan
+    class SimpleSerial_serial(TargetTemplate):
+        name = "System Serial Port"
 
-from chipwhisperer.capture.scopes.ChipWhispererLite import USART as CWLite_USART
-
-class SimpleSerial_serial(TargetTemplate):
-    def setupParameters(self):
-        ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
-                    {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-                    {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
-                    ]
-        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-
-        ExtendedParameter.setupExtended(self.params, self)
-        self.ser = None
-
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
-
-    def paramList(self):
-        return [self.params]
-
-    def updateSerial(self):
-        serialnames = scan.scan()
-        self.findParam('port').setLimits(serialnames)
-        if len(serialnames) > 0:
-            self.findParam('port').setValue(serialnames[0])
-
-    def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
-        pass
-
-    def write(self, string):
-        return self.ser.write(string)
-
-    def read(self, num=0, timeout=100):
-        return self.ser.read(num)
-
-    def flush(self):
-        self.ser.flushInput()
-
-    def flushInput(self):
-        self.ser.flushInput()
-
-    def close(self):
-        if self.ser is not None:
-            self.ser.close()
+        def setupParameters(self):
+            ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
+                        {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
+                        {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
+                        ]
+            self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
             self.ser = None
+    
+        def paramList(self):
+            return [self.params]
+    
+        def updateSerial(self):
+            serialnames = scan.scan()
+            self.findParam('port').setLimits(serialnames)
+            if len(serialnames) > 0:
+                self.findParam('port').setValue(serialnames[0])
 
-    def con(self):
-        if self.ser == None:
+        def selectionChanged(self):
+            self.updateSerial()
+    
+        def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
+            pass
+    
+        def write(self, string):
+            return self.ser.write(string)
+    
+        def read(self, num=0, timeout=100):
+            return self.ser.read(num)
+    
+        def flush(self):
+            self.ser.flushInput()
+    
+        def flushInput(self):
+            self.ser.flushInput()
+    
+        def close(self):
+            if self.ser is not None:
+                self.ser.close()
+                self.ser = None
+    
+        def con(self, scope = None):
+            if self.ser == None:
+    
+                # Open serial port if not already
+                self.ser = serial.Serial()
+                self.ser.port     = self.findParam('port').value()
+                self.ser.baudrate = self.findParam('baud').value()
+                self.ser.timeout  = 2     # 2 second timeout
+                self.ser.open()
+                
+except ImportError:
+    SimpleSerial_serial = None
 
-            # Open serial port if not already
-            self.ser = serial.Serial()
-            self.ser.port     = self.findParam('port').value()
-            self.ser.baudrate = self.findParam('baud').value()
-            self.ser.timeout  = 2     # 2 second timeout
-            self.ser.open()
 
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
+    name = "ChipWhisperer-Lite"
+
     def setupParameters(self):
         ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
 
-        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self.cwlite_usart = None
-        self.oa = None
 
     def setBaud(self, baud):
         if self.cwlite_usart:
@@ -139,22 +137,26 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def close(self):
         pass
 
-    def con(self):
-        self.params.getAllParameters()
-        self.cwlite_usart = CWLite_USART(self.usbdev)
-        self.cwlite_usart.init(baud=self.findParam('baud').value())
+    def con(self, scope = None):
+        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
-    def setOpenADC(self, oa):
-        self.usbdev = oa._usbdev
+        scope.connectStatus.connect(self.dis)
+        self.params.getAllParameters()
+        self.cwlite_usart = CWL_USART(scope.qtadc.ser)
+        self.cwlite_usart.init(baud=self.findParam('baud').value())
+        self.connectStatus.setValue(True)
+        
+    def selectionChanged(self):
+        pass
+
 
 class SimpleSerial_ChipWhisperer(TargetTemplate):
+    name = "ChipWhisperer"
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
-
     ADDR_DATA       = 33
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
-
 
     def setupParameters(self):
         ssParams = [{'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
@@ -164,15 +166,8 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                     {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
                                     'set':self.setParity, 'readonly':True},
                     ]
-        self.params = Parameter.create(name='Serial Port Settings', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self._regVer = 0
-
-
-    def paramTreeChanged(self, param, changes):
-        if self.showScriptParameter is not None:
-            self.showScriptParameter(param, changes, self.params)
-
 
     def systemClk(self):
         return 30E6
@@ -211,7 +206,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             self._regVer = 1
             self.findParam('stopbits').setReadonly(False)
             self.findParam('parity').setReadonly(False)
-
 
     def setTxBaudReg(self, breg):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
@@ -270,9 +264,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def paramList(self):
         return [self.params]
 
-    def setOpenADC(self, oa):
-        self.oa = oa
-
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         #if self.debugLog is not None:
         #    self.debugLog(lastTx, lastRx)
@@ -313,7 +304,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             waiting = self.inWaiting()
 
         if timeout <= 0:
-            self.log("CW Serial timed out")
+            print("CW Serial timed out")
 
         #TODO: fix removing garbage at front
         # result = data[1:(len(data)+1)]
@@ -331,22 +322,28 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def flushInput(self):
         self.flush()
 
-    def close(self):
-        pass
+    def con(self, scope = None):
+        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
-    def con(self):
+        scope.connectStatus.connect(self.dis())
         # Check first!
         self.checkVersion()
         self.params.getAllParameters()
+        self.connectStatus.setValue(True)
+        
+    def selectionChanged(self):
+        pass
+
 
 class SimpleSerial(TargetTemplate):
-    paramListUpdated = Signal(list)
+    name = "Simple Serial"
 
     def setupParameters(self):
-        ssParams = [{'name':'connection', 'type':'list', 'key':'con', 'values':{"System Serial Port":SimpleSerial_serial(showScriptParameter=self.showScriptParameter),
-                                                                                "ChipWhisperer":SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter),
-                                                                                "ChipWhisperer-Lite":SimpleSerial_ChipWhispererLite(showScriptParameter=self.showScriptParameter)},
-                                                                                'value':"System Serial Port", 'set':self.setConnection},
+        
+        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
+        defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
+
+        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defSer, 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
                     {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
@@ -359,21 +356,11 @@ class SimpleSerial(TargetTemplate):
                     #                                                                 'DE:AD:BE:EF':':',
                     #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
                     ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.ser = None
         self.keylength = 16
         self.input = ""
-
-        self.oa = None
         self.setConnection(self.findParam('con').value())
-
-
-    def setOpenADC(self, oadc):
-        self.oa = oadc
-        if hasattr(self.ser, "setOpenADC"):
-            self.ser.setOpenADC(oadc)
-
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -385,9 +372,9 @@ class SimpleSerial(TargetTemplate):
 
     def setConnection(self, con):
         self.ser = con
-        self.paramListUpdated.emit(self.paramList)
-        if self.oa and hasattr(self.ser, "setOpenADC"):
-            self.ser.setOpenADC(self.oa)
+        self.connectStatus = self.ser.connectStatus
+        self.paramListUpdated.emit()
+        self.ser.selectionChanged()
 
     def paramList(self):
         p = [self.params]
@@ -395,32 +382,30 @@ class SimpleSerial(TargetTemplate):
             for a in self.ser.paramList(): p.append(a)
         return p
 
-    def con(self):
-        self.ser.con()
+    def con(self, scope = None):
+        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
+
+        self.ser.con(scope)
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
-
-    def dis(self):
-        self.close()
+        self.connectStatus.setValue(True)
 
     def close(self):
         if self.ser != None:
             self.ser.close()
-            self.ser = None
-        return
+            # self.ser = None
 
     def init(self):
         self.runCommand(self.findParam('cmdinit').value())
 
     def setModeEncrypt(self):
-        return
+        pass
 
     def setModeDecrypt(self):
-        return
+        pass
 
     def convertVarToString(self, var):
-
         if isinstance(var, str):
             return var
 
@@ -429,6 +414,8 @@ class SimpleSerial(TargetTemplate):
         return s
 
     def runCommand(self, cmdstr, flushInputBefore=True):
+        if self.connectStatus.value()==False:
+            raise Warning("Can't write to the target while disconected. Connect to it first.")
 
         if cmdstr is None or len(cmdstr) == 0:
             return
@@ -446,12 +433,14 @@ class SimpleSerial(TargetTemplate):
         newstr = newstr.replace("\\n", "\n")
         newstr = newstr.replace("\\r", "\r")
 
-        if flushInputBefore:
-            self.ser.flushInput()
-
         #print newstr
-
-        self.ser.write(newstr)
+        try:
+            if flushInputBefore:
+                self.ser.flushInput()
+            self.ser.write(newstr)
+        except Exception:
+            self.dis()
+            raise
 
     def loadEncryptionKey(self, key):
         self.key = key
@@ -466,7 +455,6 @@ class SimpleSerial(TargetTemplate):
         return True
 
     def readOutput(self):
-
         dataLen= 32
 
         fmt = self.findParam('cmdout').value()
@@ -495,7 +483,7 @@ class SimpleSerial(TargetTemplate):
         response = self.ser.read(dataLen)
 
         if len(response) < dataLen:
-            self.log("WARNING: Response too short (len=%d): %s"%(len(response), response))
+            print("WARNING: Response too short (len=%d): %s"%(len(response), response))
             return None
 
         #Go through...skipping expected if applicable
@@ -504,8 +492,8 @@ class SimpleSerial(TargetTemplate):
         #Is a beginning part
         if len(expected[0]) > 0:
             if response[0:len(expected[0])] != expected[0]:
-                self.log("Sync Error: %s"%response)
-                self.log("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
+                print("Sync Error: %s"%response)
+                print("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
                 return None
 
         startindx = len(expected[0])
@@ -521,7 +509,7 @@ class SimpleSerial(TargetTemplate):
         #Is end part?
         if len(expected[1]) > 0:
             if response[startindx:startindx+len(expected[1])] != expected[1]:
-                self.log("Sync Error: %s"%response)
+                print("Sync Error: %s"%response)
                 return None
 
         return data
@@ -543,9 +531,11 @@ class SimpleSerial(TargetTemplate):
 
         return kin
 
+    def validateSettings(self):
+        return []
 
 
-class SimpleSerialWidget(SimpleSerial, QWidget):
+class SimpleSerialWidget(SimpleSerial):
     def __init__(self):
         super(SimpleSerialWidget, self).__init__()
 

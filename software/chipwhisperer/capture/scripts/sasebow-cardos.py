@@ -33,41 +33,21 @@
 # Data is saved into both a project file and a MATLAB array
 #
 
-#Setup path
 import sys
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc #Import the ChipWhispererCapture module
 
-#Import the ChipWhispererCapture module
-import chipwhisperer.capture.ChipWhispererCapture as cwc
 
-#Check for PySide
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+def getClass():
+    return UserScript
 
-import thread
 
-import scipy.io as sio
-
-exitWhenDone=False
-
-def name():
-    return "SASEBO-W: AES-128 SASEBO-W Smart Card OS"
-
-def tip():
-    return "SASEBO-W Loaded with ChipWhisperer using Provided AVR Smart Card"
-
-def pe():
-    QCoreApplication.processEvents()
-
-class userScript(QObject):
+class UserScript(object):
+    name = "SASEBO-W: AES-128 SASEBO-W Smart Card OS"
+    description = "SASEBO-W Loaded with ChipWhisperer using Provided AVR Smart Card"
 
     def __init__(self, capture):
-        super(userScript, self).__init__()
+        super(UserScript, self).__init__()
         self.capture = capture
-                
 
     def run(self):
         cap = self.capture
@@ -76,21 +56,15 @@ class userScript(QObject):
         print "***** Starting User Script *****"
        
         cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        cap.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
         cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
         cap.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
         cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-SCARD'])
         cap.setParameter(['Target Connection', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
         cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
 
-        #NOTE: You MUST add this call to pe() to process events. This is done automatically
-        #for setParameter() calls, but everything else REQUIRES this
-        pe()
-
         cap.doConDis()
-        
-        pe()
-        
+
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
@@ -110,22 +84,12 @@ class userScript(QObject):
                       
         #Throw away first few
         cap.capture1()
-        pe()
         cap.capture1()
-        pe()
-        
+
         #Start capture process
         #writer = cap.captureM()
-        #
-        #pe()
-        #
         #cap.proj.setFilename("../capturev2/test_live.cwp")
-        #
-        #pe()
-        #
         #cap.saveProject()
-        
-        pe()
 
         print "***** Ending User Script *****"
         
@@ -139,20 +103,14 @@ if __name__ == '__main__':
     #app.setApplicationName("Capture V2 Scripted")
     
     #Get main module
-    capture = cwc.ChipWhispererCapture()
+    capture = cwc.CWCaptureGUI()
     
     #Show window - even if not used
     capture.show()
     
-    #NB: Must call processEvents since we aren't using proper event loop
-    pe()
-    #Call user-specific commands 
-    usercommands = userScript(capture)
-    
+    #Call user-specific commands
+    usercommands = UserScript(capture)
     usercommands.run()
     
     app.exec_()
-    
     sys.exit()
-
-    

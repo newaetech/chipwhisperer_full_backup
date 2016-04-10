@@ -25,25 +25,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncPeakDetect
+
 
 class ResyncPeakDetect(PreprocessingBase):
     """
     Resyncronize based on peak value.
     """
-
+    name = "Resync: Peak Detect"
     descrString = "Line up traces so peak (either max positive or max negative) within" \
     " some given range of points all aligns. For each trace the following must hold or the trace is rejected:\n" \
     "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
@@ -52,16 +47,15 @@ class ResyncPeakDetect(PreprocessingBase):
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
                          {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
                          {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
 
-        self.params = Parameter.create(name='Peak Detect', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.ccStart = 0
         self.ccEnd = 0
         self.limit = 0
@@ -90,11 +84,10 @@ class ResyncPeakDetect(PreprocessingBase):
         self.ccEnd = refrange[1]
         self.init()
 
-
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             if str.lower(self.type) == 'max':
@@ -116,7 +109,7 @@ class ResyncPeakDetect(PreprocessingBase):
             return trace
 
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
 
     def init(self):
         try:
@@ -125,7 +118,7 @@ class ResyncPeakDetect(PreprocessingBase):
             self.findParam('enabled').setValue(False)
 
     def calcRefTrace(self, tnum):
-        reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
+        reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         if self.type == 'Max':
             self.refmaxloc = np.argmax(reftrace)
             self.refmaxsize = max(reftrace)

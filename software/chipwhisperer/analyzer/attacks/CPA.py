@@ -25,50 +25,23 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
-from datetime import datetime
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-#from joblib import Parallel, delayed
-
-try:
-    from pyqtgraph.parametertree import Parameter
-    #print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
-from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
-
 from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
 from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
 from chipwhisperer.analyzer.attacks.CPAProgressive_CAccel import CPAProgressive_CAccel
-
-#TEMPORARY - NOT FOR REAL USE
-from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo
-
 from AttackGenericParameters import AttackGenericParameters
-
+from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo #TEMPORARY - NOT FOR REAL USE
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        self.console=console
-        self.showScriptParameter=showScriptParameter
-        super(CPA, self).__init__(parent)
+    name = "CPA"
+
+    def __init__(self):
+        AttackBaseClass.__init__(self)
+        AttackGenericParameters.__init__(self)
 
     def setupParameters(self):
         cpaalgos = {'Progressive':CPAProgressive,
@@ -80,7 +53,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if CPAProgressive_CAccel is not None:
             cpaalgos['Progressive-C Accel'] = CPAProgressive_CAccel
 
-        attackParams = [{'name':'CPA Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
+        attackParams = [{'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
                         {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
@@ -92,8 +65,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                         },
                       ]
 
-        self.params = Parameter.create(name='Attack', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
 
         self.setAnalysisAlgorithm(CPAProgressive, None, None)
         self.updateBytesVisible()
@@ -119,7 +91,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         return self._targetbytes
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
-        self.attack = analysisAlgorithm(hardwareModel, leakageModel, showScriptParameter=self.showScriptParameter, parent=self)
+        self.attack = analysisAlgorithm(hardwareModel, leakageModel)
 
         try:
             self.attackParams = self.attack.paramList()[0]
@@ -132,7 +104,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
     def updateScript(self, ignored=None):
-
         self.importsAppend("from chipwhisperer.analyzer.attacks.CPA import CPA")
 
         analysAlgoStr = self.findParam('CPA_algo').value().__name__
@@ -147,7 +118,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceManager", "userScript.traceManager()")
+        self.addFunction("init", "setTraceSource", "userScript.ppOutput")
         self.addFunction("init", "setProject", "userScript.project()")
 
     def processKnownKey(self, inpkey):
@@ -159,11 +130,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         else:
             return inpkey
 
-
-    def doAttack(self):
-
-        start = datetime.now()
-
+    def doAttack(self, progressBar):
         self.attack.setTargetBytes(self.targetBytes())
         self.attack.setReportingInterval(self.getReportingInterval())
 
@@ -172,29 +139,17 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         for itNum in range(1, self.getIterations()+1):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-            endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
-
-            print "Traces %d-%d" % (startingTrace, endingTrace)
-
-            progress = AttackProgressDialog()
-            progress.setWindowModality(Qt.WindowModal)
-            progress.setMinimumDuration(1000)
-            progress.offset = startingTrace
-
+            endingTrace = startingTrace + self.getTraceNum() - 1
             #TODO:  pointRange=self.TraceRangeList[1:17]
-            try:
-                self.attack.addTraces(self.trace, (startingTrace, endingTrace), progress, pointRange=self.getPointRange())
-            except KeyboardInterrupt:
-                self.log("Attack ABORTED... stopping")
+            self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
+            if progressBar and progressBar.wasAborted():
+                return
 
-        end = datetime.now()
-        self.log("Attack Time: %s" % str(end - start))
         self.attackDone.emit()
-
 
     def statsReady(self):
         self.statsUpdated.emit()
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

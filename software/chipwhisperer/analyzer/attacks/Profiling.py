@@ -27,40 +27,22 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #===========================================================
 
-import sys
-from datetime import datetime
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-    # print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
-from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
 from chipwhisperer.analyzer.attacks.ProfilingTemplate import ProfilingTemplate
-
 from AttackGenericParameters import AttackGenericParameters
+
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        self.console=console
-        self.showScriptParameter=showScriptParameter
-        super(Profiling, self).__init__(parent)
+    name = "Profiling"
+    def __init__(self, traceExplorerDialog):
+        self.traceExplorerDialog = traceExplorerDialog
+        AttackBaseClass.__init__(self)
+        AttackGenericParameters.__init__(self)
 
         # Do not use absolute
         self.useAbs = False
@@ -71,12 +53,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
 
                        #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()
-                        },
+                       {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
                       ]
-        self.params = Parameter.create(name='Attack', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
 
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
@@ -109,11 +88,11 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        self.addFunction("init", "setTraceManager", "userScript.traceManager()")
+        self.addFunction("init", "setSourceManager", "userScript.ppOutput")
         self.addFunction("init", "setProject", "userScript.project()")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
-        self.attack = analysisAlgorithm(showScriptParameter=self.showScriptParameter, parent=self, console=self.console)
+        self.attack = analysisAlgorithm(self)
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
         self.traceManagerChanged.connect(self.attack.setTraceManager)
@@ -129,9 +108,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
 #    def setAlgo(self, algo):
-#        self.attack = algo(self, showScriptParameter=self.showScriptParameter)
-#        if self.traceManager() is not None:
-#            self.attack.setTraceManager(self.traceManager())
+#        self.attack = algo(self)
+#        if self.setTraceSource() is not None:
+#            self.attack.setTraceSource(self.setTraceSource())
 #
 #        if self.project() is not None:
 #            self.attack.setProject(self.project())
@@ -166,9 +145,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         # else:
         #    return inpkey
 
-    def doAttack(self):
-
-        start = datetime.now()
+    def doAttack(self, progressBar):
         self.attack.setReportingInterval(self.getReportingInterval())
 
         #TODO: support start/end point different per byte
@@ -180,15 +157,12 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
             endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
 
-            # print "%d-%d"%(startingPoint, endingPoint)
             data = []
             textins = []
             textouts = []
 
-            print "%d-%d"%(startingTrace, endingTrace)
-
             for i in range(startingTrace, endingTrace):
-                d = self.trace.getTrace(i)
+                d = self.traceSource().getTrace(i)
 
                 if d is None:
                     continue
@@ -196,32 +170,21 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                 d = d[startingPoint:endingPoint]
 
                 data.append(d)
-                textins.append(self.trace.getTextin(i))
-                textouts.append(self.trace.getTextout(i))
+                textins.append(self.traceSource().getTextin(i))
+                textouts.append(self.traceSource().getTextout(i))
 
             #self.attack.clearStats()
             self.attack.setByteList(self.bytesEnabled())
             self.attack.setStatsReadyCallback(self.statsReady)
 
-            progress = AttackProgressDialog()
-            progress.setWindowModality(Qt.WindowModal)
-            progress.setMinimumDuration(1000)
-            progress.offset = startingTrace
-
             #TODO:  pointRange=self.TraceRangeList[1:17]
-            try:
-                self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progress)
-            except KeyboardInterrupt:
-                self.log("Attack ABORTED... stopping")
+            self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
 
-        end = datetime.now()
-        self.log("Attack Time: %s" % str(end - start))
         self.attackDone.emit()
-
 
     def statsReady(self):
         self.statsUpdated.emit()
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

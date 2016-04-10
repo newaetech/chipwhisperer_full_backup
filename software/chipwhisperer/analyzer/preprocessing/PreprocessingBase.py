@@ -25,46 +25,44 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import Util
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return PreprocessingBase
 
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-from chipwhisperer.common.autoscript import AutoScript
 
-class PreprocessingBase(AutoScript, QObject):
+class PreprocessingBase(AutoScript):
     """
     Base Class for all preprocessing modules
+    Derivate Classes work like this:
+        - setupParameters and updateScript are used by the GUI to create the parameters list and generate the API scripts
+          You need to pass the graphWidget reference in the constructor in order to allow access to it
+        - the other methods are used by the API to apply the preprocessing filtering
+          You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
-    paramListUpdated = Signal(list)
+    name = "None"
+    descrString = ""
 
-    descrString = "The person who made this module failed to supply a descrString. They made a bad module" \
-                  " and should feel bad."
-
-    def __init__(self, parent, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
+    def __init__(self, traceSource = None, graphWidget=None):
         super(PreprocessingBase, self).__init__()
-        self.console = console
-        self.showScriptParameter = showScriptParameter
-        self.parent = parent
-        self.NumTrace = 1
+        self.graphWidget = graphWidget
         self.enabled = True
-        self.setTraceSource(parent.manageTraces.iface)
+        self.traceSource = traceSource
         self.setupParameters()
+        self.paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
+        ssParams = [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
                     # PUT YOUR PARAMETERS HERE
-                    {'name':'Desc', 'type':'text', 'value':self.descrString}]
-        self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+                    {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}]
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
+
+    def updateScript(self, ignored=None):
+        pass
 
     def paramList(self):
         """Returns the parameter list"""
@@ -77,47 +75,41 @@ class PreprocessingBase(AutoScript, QObject):
     def getTrace(self, n):
         """Get trace number n"""
         if self.enabled:
-            trace = self.trace.getTrace(n)
-
+            trace = self.traceSource.getTrace(n)
             # Do your preprocessing here
-
             return trace
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)
 
     def getTextin(self, n):
         """Get text-in number n"""
-        return self.trace.getTextin(n)
+        return self.traceSource.getTextin(n)
 
     def getTextout(self, n):
         """Get text-out number n"""
-        return self.trace.getTextout(n)
+        return self.traceSource.getTextout(n)
 
     def getKnownKey(self, n=None):
         """Get known-key number n"""
-        return self.trace.getKnownKey(n)
+        return self.traceSource.getKnownKey(n)
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
-        pass
-
-    def setTraceSource(self, tmanager):
-        """Set the input trace source"""
-        self.trace = tmanager
 
     def numPoint(self):
-        return self.trace.numPoint()
+        return self.traceSource.numPoints()
 
     def numTrace(self):
-        return self.trace.numTrace()
+        return self.traceSource.numTraces()
 
     def getSegmentList(self):
-        return self.trace.getSegmentList()
+        return self.traceSource.getSegmentList()
 
     def getAuxData(self, n, auxDic):
-        return self.trace.getAuxData(n, auxDic)
+        return self.traceSource.getAuxData(n, auxDic)
 
     def findMappedTrace(self, n):
-        return self.trace.findMappedTrace(n)
+        return self.traceSource.findMappedTrace(n)
 
-
+    def getName(self):
+        return self.name

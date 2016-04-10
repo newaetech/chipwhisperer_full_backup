@@ -22,29 +22,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
+import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+from chipwhisperer.common.utils.Util import hexstr2list
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
-import time
-
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.utils import hexstr2list
 
 class APDUFilter(QObject):
         
@@ -121,8 +105,9 @@ class APDUFilter(QObject):
             # we don't care about other events
             return False
 
-class SmartCardGUICard(QDialog):
-    def __init__(self, parent, showScriptParameter=None):
+
+class SmartCardGUICard(QtFixes.QDialog):
+    def __init__(self, parent):
         super(SmartCardGUICard, self).__init__(parent)
         self.setWindowTitle("Smartcard Explorer")
         
@@ -207,7 +192,6 @@ class SmartCardGUICard(QDialog):
             textdata += self.table.cellWidget(row,2).toPlainText()
             
             textdata += "\n"
-            
         
         clipboard = QApplication.clipboard()
         clipboard.setText(textdata)
@@ -287,6 +271,7 @@ class SmartCardGUICard(QDialog):
                     payload = payload.rstrip()                    
                     self.table.cellWidget(rownum, 2).setText("%04x: %s"%(resp[0], payload))        
 
+
 def main():
     # Create the Qt Application
     app = QApplication(sys.argv)
@@ -298,18 +283,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

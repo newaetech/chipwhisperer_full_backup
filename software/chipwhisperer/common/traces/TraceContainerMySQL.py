@@ -22,15 +22,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import pickle
 
-import sys
-
 import numpy as np
-import TraceContainer
-from pyqtgraph.parametertree import Parameter
 
+import TraceContainer
+from TraceContainerConfig import makeAttrDict
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 try:
     import umysql as sql
 except ImportError, e:
@@ -38,8 +36,8 @@ except ImportError, e:
     # print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)
 
-from openadc.ExtendedParameter import ExtendedParameter
-from TraceContainerConfig import makeAttrDict
+def getClass():
+    return TraceContainerMySQL
 
 class parameters(object):
     def __init__(self, openMode=False):
@@ -63,8 +61,7 @@ class parameters(object):
 
         self.traceParams = traceParams
 
-        self.params = Parameter.create(name='MySQL Settings', type='group', children=traceParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='MySQL Settings', type='group', children=traceParams)
 
     def setFormat(self, fmt):
         self.fmt = fmt
@@ -78,7 +75,9 @@ class parameters(object):
     def paramList(self):
         return [self.params]
 
+
 class TraceContainerMySQL(TraceContainer.TraceContainer):
+    name = "MySQL"
     getParamsClass = parameters
     getParams = parameters()
 
@@ -237,7 +236,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
 
         self.db.query("INSERT INTO %s(Textin, Textout, EncKey, Wave) VALUES('%s', '%s', '%s', "%(self.tableName, strTextin, strTextout,
                                                                                                 strKey) + "%s)", (self.formatWave(trace),))
-
     def saveAll(self):
         #Save attributes from config settings
         for t in self.getParams.traceParams[0]['children']:
@@ -266,7 +264,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             self.db.close()
         self.db = None
 
-
     def getTrace(self, n):
         wv = self.db.query("SELECT Wave FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.formatWave(wv, read=True)
@@ -290,6 +287,3 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             n = 0
         asc = self.db.query("SELECT EncKey FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.asc2list(asc)
-
-
-

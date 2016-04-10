@@ -25,46 +25,39 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from scipy import signal
 
-# from functools import partial
-import scipy as sp
-# import numpy as np
-        
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return Filter
+
+
 class Filter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
-     
+    name = "Digital Filter"
+    descrString = "Frequency specific filter"
+
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateScript},
                          {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
                          {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
                          {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
                          {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name='Filter', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
 
         self.updateScript()
         
         # Setup imports required
         self.importsAppend("import scipy as sp")
 
-    def setFilterForm(self, filtform=sp.signal.butter):
+    def setFilterForm(self, filtform=signal.butter):
         """Set the filter type in object"""
         self.filterForm = filtform
 
@@ -94,14 +87,13 @@ class Filter(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
-            filttrace = sp.signal.lfilter(self.b, self.a, trace)
+            filttrace = signal.lfilter(self.b, self.a, trace)
             
             return filttrace
             
         else:
-            return self.trace.getTrace(n)       
-
+            return self.traceSource.getTrace(n)

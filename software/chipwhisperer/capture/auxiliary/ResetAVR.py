@@ -22,34 +22,28 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
-
 from subprocess import call
 
+from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util
+
+
+def getClass():
+    return ResetAVR
+
 class ResetAVR(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    name = "Reset AVR via ISP-MKII"
+    paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         ssParams = [{'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
                     {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
                     {'name':'Test Reset', 'type':'action', 'action':self.testReset}
                     ]
-        self.params = Parameter.create(name='Reset AVR via STK500', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Reset AVR via STK500', type='group', children=ssParams)
 
     def captureInit(self):
         pass
@@ -58,7 +52,6 @@ class ResetAVR(AuxiliaryTemplate):
         pass
 
     def traceArm(self):
-
         # If using STK500
         stk500 = self.findParam('stk500path').value()
         ret = call([stk500, "-d%s" % self.findParam('part').value(), "-s", "-cUSB"])
@@ -68,16 +61,11 @@ class ResetAVR(AuxiliaryTemplate):
 
         time.sleep(1)
 
-
         # If using AVRDude
         # call(["avrdude"])
 
     def traceDone(self):
         pass
 
-
     def testReset(self):
         self.traceArm()
-
-
-

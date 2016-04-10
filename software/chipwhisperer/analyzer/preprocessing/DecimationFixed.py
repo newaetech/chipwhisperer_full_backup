@@ -25,41 +25,28 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-
-# from functools import partial
-import scipy as sp
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import numpy as np
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return DecimationFixed
 
         
 class DecimationFixed(PreprocessingBase):
-    """
-    Decimate by fixed amount
-    """
-
+    name = "Decimation: Fixed"
     descrString = "Decimate by a fixed factor"
-     
-    def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':1, 'limit':(1, 1000), 'set':self.updateScript},
+    def setupParameters(self):
+        self.setDecimationFactor(2)
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
+                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript},
                          # {'name':'Decimation Type', 'values':''}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name='Fixed Decimation', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
-        self.setDecimationFactor(1)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -71,10 +58,10 @@ class DecimationFixed(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
-            
+
             decfactor = self._decfactor
 
             # outtrace = np.zeros(len(trace))
@@ -86,8 +73,6 @@ class DecimationFixed(PreprocessingBase):
                 outtrace[idx] = trace[val]
 
             return outtrace
-            
+
         else:
-            return self.trace.getTrace(n)       
-    
-   
+            return self.traceSource.getTrace(n)

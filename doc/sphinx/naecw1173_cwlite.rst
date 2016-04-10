@@ -175,7 +175,7 @@ Basic Usage Instructions
 CW-Lite: Programming AVR/XMEGA Device
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The CW1173/1180 has built-in support for programming either Atmel AVR or Atmel XMEGA device. This
+The CW1173 has built-in support for programming either Atmel AVR or Atmel XMEGA device. This
 is designed to allow you to program our target boards (either the built-in XMEGA target, or 
 the Multi-Target board).
 
@@ -276,7 +276,7 @@ figure shows:
 
     .. image:: /images/cw1173/glitch_lp_hp.png
 
-The CW1173/1180 glitch output can be commanded to turn on either of those MOSFETs via the "Glitch Out Enable"
+The CW1173 glitch output can be commanded to turn on either of those MOSFETs via the "Glitch Out Enable"
 checkboxes:
 
     .. image:: /images/cw1173/glitch_gui.png
@@ -327,7 +327,7 @@ Number          Name           Dir     Description
    All IO lines of the CW1173 (ChipWhisperer-Lite bare board) are 3.3V maximum. There is NO IO protection present
    on these pins, so connect them to external devices with *extreme care*.
    
-   The CW1180 contains IO protection to avoid damage, but is also designed for 3.3V IO lines. No voltage
+   The CW1200 contains IO protection to avoid damage, but is also designed for 3.3V IO lines. No voltage
    translation is present on either product to ensure maximum flexability of IO drive characteristics
    from the internal FPGA.
 
@@ -350,8 +350,8 @@ currently no firmware support for these devices, but the hardware is designed fo
    smart-cards are designed to run at 5.0V, or if interfacing to an external reader it will attempt to use
    5.0V at some stage.
    
-   The CW1180 contains voltage translation that allows voltages of up to 5.5V to be safely input to the 8-pin
-   connector. See the CW1180 product page for more details.
+   The CW1200 contains voltage translation that allows voltages of up to 5.5V to be safely input to the 8-pin
+   connector. See the CW1200 product page for more details.
 
 Header J7 (Connects to SAM3U):
 

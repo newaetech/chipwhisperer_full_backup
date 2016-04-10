@@ -25,37 +25,25 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
-import random
 import numpy as np
-
-from pyqtgraph.parametertree import Parameter
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return AddNoiseRandom
 
 
 class AddNoiseRandom(PreprocessingBase):
-    """
-    Does some crap
-    """
-
+    name = "Add Noise: Amplitude"
     descrString = "Add random noise"
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'value':0.000001, 'limits':(0, 1.0), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
+                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'set':self.updateScript},
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name='Add Random Noise', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
         self._maxNoise = 0
         self.updateScript()
 
@@ -68,7 +56,7 @@ class AddNoiseRandom(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -76,6 +64,5 @@ class AddNoiseRandom(PreprocessingBase):
                 return trace
             else:
                 return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
-            
         else:
-            return self.trace.getTrace(n)
+            return self.traceSource.getTrace(n)

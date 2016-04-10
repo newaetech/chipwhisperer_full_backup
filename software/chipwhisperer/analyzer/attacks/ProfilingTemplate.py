@@ -26,44 +26,29 @@
 #
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #============================================================================
-import sys
 
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-import os
 import numpy as np
-from openadc.ExtendedParameter import ExtendedParameter
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
 import scipy
+
 try:
     from scipy.stats import multivariate_normal
 except ImportError:
     multivariate_normal = None
 
-from chipwhisperer.common.autoscript import AutoScript
-from chipwhisperer.common.traces.utils import strListToList
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import leakage
-from chipwhisperer.analyzer.attacks.AttackProgressDialog import AttackProgressDialog
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.utils.Partition import Partition
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
+from chipwhisperer.common.utils import Util
 
-class TemplateBasic(AutoScript, QObject):
+class TemplateBasic(AutoScript):
     """
     Template using Multivariate Stats (mean + covariance matrix)
     """
-    scriptsUpdated = Signal()
+    scriptsUpdated = Util.Signal()
 
     def __init__(self, tmanager=None):
         super(TemplateBasic, self).__init__()
@@ -81,16 +66,8 @@ class TemplateBasic(AutoScript, QObject):
     def project(self):
         return self._project
 
-    def generate(self, trange, poiList, partMethod, showProgressBar=True):
+    def generate(self, trange, poiList, partMethod, progressBar=None):
         """Generate templates for all partitions over entire trace range"""
-
-        if showProgressBar:
-            progressBar = QProgressDialog()
-            # progressBar.setWindowModality(Qt.WindowModal)
-            # progressBar.setMinimumDuration(1000)
-            # progressBar.offset = trange[0]
-        else:
-            progressBar = None
 
         # Number of subkeys
         subkeys = len(poiList)
@@ -109,9 +86,7 @@ class TemplateBasic(AutoScript, QObject):
         # partData = partObj.loadPartitions(trange)
 
         if progressBar:
-            progressBar.setWindowTitle('Generating Templates')
-            progressBar.setLabelText('Generating Trace Matrix')
-            progressBar.setMinimum(0)
+            progressBar.setText('Generating Trace Matrix:')
             progressBar.setMaximum(tend - tstart + subkeys)
 
         for tnum in range(tstart, tend):
@@ -122,13 +97,12 @@ class TemplateBasic(AutoScript, QObject):
                 templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
 
             if progressBar:
-                progressBar.setValue(tnum - tstart)
-                if progressBar.wasCanceled():
-                    progressBar.setValue(progressBar.maximum())
+                progressBar.updateStatus(tnum - tstart)
+                if progressBar.wasAborted():
                     return None
 
         if progressBar:
-            progressBar.setLabelText('Generating Trace Covariance and Mean Matrices')
+            progressBar.setText('Generating Trace Covariance and Mean Matrices:')
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
@@ -143,11 +117,9 @@ class TemplateBasic(AutoScript, QObject):
                     templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
 
             if progressBar:
-                progressBar.setValue(tend + bnum)
-                if progressBar.wasCanceled():
-                    progressBar.setValue(progressBar.maximum())
+                progressBar.updateStatus(tend + bnum)
+                if progressBar.wasAborted():
                     return None
-
 
                 # except ValueError:
                 #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
@@ -166,21 +138,22 @@ class TemplateBasic(AutoScript, QObject):
          "partitiontype":partMethod.__class__.__name__
         }
 
+        if progressBar:
+            progressBar.close()
+
         return self.template
 
 
-class ProfilingTemplate(AutoScript, QObject):
+class ProfilingTemplate(AutoScript):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = Signal(list)
-    notifyUser = Signal(str, str)
+    paramListUpdated = Util.Signal()
+    notifyUser = Util.Signal()
 
-    def __init__(self, parent, showScriptParameter=None, tmanager=None, console=None):
-        super(ProfilingTemplate, self).__init__()
-        if console:
-            self.console = console
-        self.setParent(parent)
+    def __init__(self, parent):
+        AutoScript.__init__(self)
+        self.parent = parent
         self._tmanager = None
         self._project = None
 
@@ -188,17 +161,13 @@ class ProfilingTemplate(AutoScript, QObject):
                             ]},
                          {'name':'Generate New Template', 'type':'group', 'children':[
                             {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                            {'name':'Trace End', 'key':'tgenstop', 'value':self.parent().traceMax, 'type':'int', 'set':self.updateScript},
+                            {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'set':self.updateScript},
                             {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
                             {'name':'Read POI', 'type':'action', 'action':self.updateScript},
                             {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
                             ]},
                          ]
-        self.params = Parameter.create(name='Template Attack', type='group', children=resultsParams)
-        if showScriptParameter is not None:
-            self.showScriptParameter = showScriptParameter
-            # print self.showScriptParameter
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Template Attack', type='group', children=resultsParams)
 
         self.addGroup("generateTemplates")
 
@@ -210,10 +179,6 @@ class ProfilingTemplate(AutoScript, QObject):
         # Not needed as setProfileAlgorithm calls this
         # self.updateScript()
 
-    def log(self, s):
-        if hasattr(self, 'console') and self.console:
-            self.console.append(s)
-
     def setProfileAlgorithm(self, algo):
         self.profiling = algo()
         self.profiling.setTraceManager(self._tmanager)
@@ -222,29 +187,30 @@ class ProfilingTemplate(AutoScript, QObject):
         self.updateScript()
 
     def updateScript(self, ignored=None):
+        pass
        # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
-
-        ted = self.parent().parent().utilList[0].exampleScripts[0]
-
-        self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
-        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
-
-        if self.findParam('poimode').value() == 0:
-            self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
-            self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
-            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
-        else:
-            poidata = self.loadPOIs()[-1]
-            self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
-            self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
-            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
-
-        self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
-
-        #Save template data to project
-        self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
-
-        self.scriptsUpdated.emit()
+       #
+       #  ted = self.parent.traceExplorerDialog.exampleScripts[0]
+       #
+       #  self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
+       #  self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+       #
+       #  if self.findParam('poimode').value() == 0:
+       #      self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
+       #      self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
+       #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
+       #  else:
+       #      poidata = self.loadPOIs()[-1]
+       #      self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
+       #      self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
+       #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
+       #
+       #  self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
+       #
+       #  #Save template data to project
+       #  self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
+       #
+       #  self.scriptsUpdated.emit()
 
     def paramList(self):
         return [self.params]
@@ -255,7 +221,6 @@ class ProfilingTemplate(AutoScript, QObject):
         tstart.setLimits((0, traces))
         tend.setValue(traces)
         tend.setLimits((1, traces))
-
 
     def setByteList(self, brange):
         self.brange = brange
@@ -315,7 +280,7 @@ class ProfilingTemplate(AutoScript, QObject):
             if f["partitiontype"] != t["partitiontype"]:
                 print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
 
-            if (strListToList(str(f["poi"])) != t["poi"]).any():
+            if (Util.strListToList(str(f["poi"])) != t["poi"]).any():
                 print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
 
         return templates
@@ -327,7 +292,7 @@ class ProfilingTemplate(AutoScript, QObject):
 
         for s in section:
             poistr = str(s["poi"])
-            poieval = strListToList(poistr)
+            poieval = Util.strListToList(poistr)
             poiList.append(s.copy())
             poiList[-1]["poi"] = poieval
 
@@ -349,9 +314,9 @@ class ProfilingTemplate(AutoScript, QObject):
         tdiff = self._reportinginterval
 
         if progressBar:
-            progressBar.setMinimum(0)
+            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d")
             progressBar.setMaximum(16 * len(traces))
-            pcnt = 0
+        pcnt = 0
 
         for tnum in range(0, len(traces)):
             for bnum in range(0, 16):
@@ -400,13 +365,10 @@ class ProfilingTemplate(AutoScript, QObject):
                 self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
 
                 if progressBar:
-                    progressBar.setValue(pcnt)
-                    progressBar.updateStatus((tnum, len(traces)), bnum)
-                    pcnt += 1
-
-                    if progressBar.wasCanceled():
-                        raise KeyboardInterrupt
-
+                    progressBar.updateStatus(pcnt, (tnum, len(traces)-1, bnum))
+                    if progressBar.wasAborted():
+                        return
+                pcnt += 1
 
             # Do plotting if required
             if (tnum % tdiff) == 0 and self.sr:

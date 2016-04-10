@@ -26,19 +26,9 @@
 #=================================================
 
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import Util
 
 def enforceLimits(value, limits):
     if value < limits[0]:
@@ -47,21 +37,13 @@ def enforceLimits(value, limits):
         value = limits[1]
     return value
 
-from functools import partial
 
-class AttackGenericParameters(AutoScript, QObject):
-    paramListUpdated = Signal(list)
-    traceManagerChanged = Signal(object)
-    projectChanged = Signal(QObject)
-    settingsChanged = Signal(QObject)
-    traceLimitsChanged = Signal(int, int)
-
-    def __init__(self, MainWindow=None, console=None, showScriptParameter=None):
-        super(AttackGenericParameters, self).__init__(MainWindow)
-        self._tmanager = None
+class AttackGenericParameters(AutoScript):
+    def __init__(self):
+        super(AttackGenericParameters, self).__init__()
+        self._traceSource = None
         self._project = None
 
-        self.MainWindow = MainWindow
         self.maxSubKeys = 32
         self.useAbs = True
 
@@ -73,14 +55,15 @@ class AttackGenericParameters(AutoScript, QObject):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.console = console
-        #if showScriptParameter is not None:
-        #    self.showScriptParameter = showScriptParameter
+        self.paramListUpdated = Util.Signal()
+        self.traceManagerChanged = Util.Signal()
+        self.projectChanged = Util.Signal()
+        self.settingsChanged = Util.Signal()
+        self.traceLimitsChanged = Util.Signal()
 
         self.setupTraceParam()
         self.setupPointsParam()
         self.setupParameters()
-
 
     def setupParameters(self):
         attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
@@ -95,8 +78,7 @@ class AttackGenericParameters(AutoScript, QObject):
                         },
                       ]
 
-        self.params = Parameter.create(name='Attack Settings', type='group', children=attackParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Attack Settings', type='group', children=attackParams)
         self.updateBytesVisible()
 
     def setAbsoluteMode(self, mode):
@@ -144,16 +126,13 @@ class AttackGenericParameters(AutoScript, QObject):
                 blist.append(p)
         return blist
 
-    def traceManager(self):
-        return self._tmanager
+    def setTraceSource(self, traceSource):
+        """Set the input trace source"""
+        self._traceSource = traceSource
+        self.traceManagerChanged.emit(traceSource)
 
-    def setTraceManager(self, tmanager):
-        self._tmanager = tmanager
-
-        # Temp - should replace these calls with .trace()
-        self.trace = tmanager
-
-        self.traceManagerChanged.emit(tmanager)
+    def traceSource(self):
+        return self._traceSource
 
     def setProject(self, proj):
         self._project = proj
@@ -164,27 +143,25 @@ class AttackGenericParameters(AutoScript, QObject):
 
 ############ Trace-Specific
     def setupTraceParam(self):
-        self.traceParams = Parameter.create(name='Trace Setup', type='group', children=[
+        self.traceParams = ConfigParameter.create_extended(self, name='Trace Setup', type='group', children=[
             {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.updateGenericScript},
             {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
             {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'set':self.updateGenericScript},
             ])
-        ExtendedParameter.setupExtended(self.traceParams, self)
 
         self.addFunction("init", "setTraceStart", "0")
         self.addFunction("init", "setTracesPerAttack", "1")
         self.addFunction("init", "setIterations", "1")
         self.addFunction("init", "setReportingInterval", "10")
 
-
         self.singleEmit = True
 
     def updateGenericScript(self, ignored=None):
-        runs = ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams)
-        atraces = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
-        strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
-        ri = ExtendedParameter.findParam(ExtendedParameter, 'reportinterval', self.traceParams)
+        runs = self.findParam('runs', self.traceParams)
+        atraces = self.findParam('atraces', self.traceParams)
+        strace = self.findParam('strace', self.traceParams)
+        ri = self.findParam('reportinterval', self.traceParams)
 
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
 
@@ -211,22 +188,12 @@ class AttackGenericParameters(AutoScript, QObject):
 
 ############# Points-Specific
     def setupPointsParam(self):
-        self.pointsParams = Parameter.create(name='Point Setup', type='group', children=self.getPointList())
-        ExtendedParameter.setupExtended(self.pointsParams, self)
+        self.pointsParams = ConfigParameter.create_extended(self, name='Point Setup', type='group', children=self.getPointList())
 
     def getPointList(self):
-    #    if self.allPointsSame == False:
-    #        init = [{'name':'Byte %d'%bnum, 'type':'group', 'children': [
-    #                    {'name':'Starting Point', 'type':'int', 'value':self.startPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
-    #                    {'name':'Ending Point', 'type':'int', 'value':self.endPoint[bnum], 'limits':(self.startPoint[bnum],self.endPoint[bnum])},
-    #                    {'name':'Copy from Output Graph', 'type':'action', 'action':partial(self.copyPointsFromOutput, bnum)},
-    #                    {'name':'Copy from Trace Graph', 'type':'action', 'action':partial(self.copyPointsFromTrace, bnum)},
-    #                    ]} for bnum in range(0, 16)]
-    #    else:
+    #   init = [{'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'value':(0,0), 'limits':(self.startPoint[0], self.endPoint[0]), 'default':(0, 0), 'set':self.updateGenericScript, 'graphwidget':self.waveformDock.widget()},
         init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
                     {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
-    #                {'name':'Copy from Output Graph', 'type':'action', 'action':self.copyPointsFromOutput},
-    #                {'name':'Copy from Trace Graph', 'type':'action', 'action':self.copyPointsFromTrace},
                     ]
     #
     #    #NOT ACTUALLY SUPPORTED
@@ -263,9 +230,9 @@ class AttackGenericParameters(AutoScript, QObject):
         # self.addFunction("init", "setTracesPerAttack", "%d" % traces)
         # self.addFunction("init", "setIterations", "%d" % 1)
 
-        strace = ExtendedParameter.findParam(ExtendedParameter, 'strace', self.traceParams)
-        ExtendedParameter.findParam(ExtendedParameter, 'runs', self.traceParams).setValue(1)
-        atrace = ExtendedParameter.findParam(ExtendedParameter, 'atraces', self.traceParams)
+        strace = self.findParam('strace', self.traceParams)
+        self.findParam('runs', self.traceParams).setValue(1)
+        atrace = self.findParam('atraces', self.traceParams)
 
         strace.setValue(0)
         strace.setLimits((0,traces))
@@ -306,8 +273,6 @@ class AttackGenericParameters(AutoScript, QObject):
             self.startPoint[bnum] = start
             self.endPoint[bnum] = end
         self.paramListUpdated.emit(None)
-
-
 
     # def setAllPointsSame(self, val):
     #    self.allPointsSame = val

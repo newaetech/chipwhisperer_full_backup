@@ -22,32 +22,28 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from PySide.QtGui import *
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import Util, timer
+
+
+def getClass():
+    return ResetCW1173Read
 
 class ResetCW1173Read(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    name = "Reset AVR/XMEGA via CW-Lite"
+    paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         ssParams = [{'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
                     {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
                     {'name':'Test Reset', 'type':'action', 'action':self.testReset}
                     ]
-        self.params = Parameter.create(name='Reset AVR/XMEGA via CW-Lite', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Reset AVR/XMEGA via CW-Lite', type='group', children=ssParams)
 
     def captureInit(self):
         pass
@@ -58,9 +54,9 @@ class ResetCW1173Read(AuxiliaryTemplate):
     def traceArmPost(self):
         target = self.findParam('target').value()
         if target == 'xmega (PDI)':
-            self.parent().scope.scopetype.cwliteXMEGA.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.cwliteXMEGA.readSignature()
         else:
-            self.parent().scope.scopetype.cwliteAVR.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.cwliteAVR.readSignature()
 
         dly = self.findParam('toggledelay').value()
         if dly > 0:
@@ -72,13 +68,12 @@ class ResetCW1173Read(AuxiliaryTemplate):
     def testReset(self):
         self.traceArmPost()
 
-
     def nonblockingSleep_done(self):
         self._sleeping = False
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        QTimer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)

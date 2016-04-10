@@ -25,17 +25,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
-from PySide.QtGui import *
 import numpy as np
 import os
 import platform
 from ctypes import *
-from pyqtgraph.parametertree import Parameter
-
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
 
 
 class aesmodel_setup_t(Structure):
@@ -162,33 +158,26 @@ class CPAProgressiveOneSubkey(object):
                 c_aesmodel_setup_t_ptr(mstate),
                  guessdata.ctypes.data_as(POINTER(c_double)))
       
-
         if progressBar:
-            progressBar.setValue(pbcnt)
-            progressBar.updateStatus((self.anstate.totalTraces - numtraces, self.anstate.totalTraces), bnum)
-            pbcnt = pbcnt + 256
-            if progressBar.wasCanceled():
-                raise KeyboardInterrupt
+            progressBar.updateStatus(pbcnt, (self.anstate.totalTraces - numtraces, self.anstate.totalTraces-1, bnum))
+
+        pbcnt = pbcnt + 256
 
         return (guessdata, pbcnt)
 
-class CPAProgressive_CAccel(AutoScript, QObject):
+class CPAProgressive_CAccel(AutoScript):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = Signal(list)
+    # paramListUpdated = util.Signal(list)
 
-    def __init__(self, targetModel, leakageFunction, showScriptParameter=None, parent=None):
+    def __init__(self, targetModel, leakageFunction):
         super(CPAProgressive_CAccel, self).__init__()
 
         resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
-        self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
-        if showScriptParameter is not None:
-            self.showScriptParameter = showScriptParameter
-            # print self.showScriptParameter
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
 
         self.model = targetModel
         self.leakage = leakageFunction
@@ -219,10 +208,7 @@ class CPAProgressive_CAccel(AutoScript, QObject):
         numtraces = tracerange[1] - tracerange[0]
 
         if progressBar:
-            pbcnt = 0
-            progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
-
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
         #self.all_diffs, pb = zip(*r)
@@ -306,8 +292,7 @@ class CPAProgressive_CAccel(AutoScript, QObject):
                     else:
                         skip = True
 
-                    if progressBar.wasSkipped() or skip:
-                        progressBar.clearSkipped()
+                    if skip:
                         pbcnt = brangeMap[bnum] * 256 * (numtraces / self._reportingInterval + 1)
 
                         if bf is False:

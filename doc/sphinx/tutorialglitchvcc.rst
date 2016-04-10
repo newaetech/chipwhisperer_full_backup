@@ -121,6 +121,7 @@ to the AVR Clock, instead you use the 7.37 MHz oscillator bridged to both the AV
 The following figure shows the clock jumper configuration, which are the same as the settings from :ref:`tutorialaes`.
 
     .. image:: /images/tutorials/basic/aes/hw-2.jpg
+       :width: 600 px
 
 In addition the VCC glitcher board must be mounted, which means removing the jumpers on the 6-pin header around the
 AVR. Also the 'IN' pin on the VCC glitcher board connected to the FPGAOUT pin. This is done via a jumper wire. Both

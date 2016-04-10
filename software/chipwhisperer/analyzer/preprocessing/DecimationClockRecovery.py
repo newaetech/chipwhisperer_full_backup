@@ -25,26 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-
-# from functools import partial
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import scipy as sp
 import scipy.fftpack
 import numpy as np
 
 from matplotlib.mlab import find
-        
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return DecimationClockRecovery
+
 def fft(signal, freq=None):
     FFT = abs(scipy.fft(signal))
     # FFTdb = 20*scipy.log10(FFT)
@@ -56,17 +48,19 @@ def fft(signal, freq=None):
 
     print FFT
 
+
 class DecimationClockRecovery(PreprocessingBase):
     """
     Attempts Clock recovery & then decimates based on that
     """
 
+    name = "Decimation: Clock Recovery"
     descrString = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
                   "decimate to only points of interest.\n****CURRENTLY NOT SUPPORTED****"
      
     def setupParameters(self):
 
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Filter Design', 'type':'group', 'children':[
                                 # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
                                 {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateScript},
@@ -75,10 +69,10 @@ class DecimationClockRecovery(PreprocessingBase):
                                 {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript}, ]},
                          {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
                          {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript},
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
         
-        self.params = Parameter.create(name='Clock Decimation', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
         self.updateScript()
         self.setFilterOptions()
@@ -114,7 +108,7 @@ class DecimationClockRecovery(PreprocessingBase):
             self._order = order
 
         try:
-            fftdata = scipy.fft(self.trace.getTrace(tnum))
+            fftdata = scipy.fft(self.traceSource.getTrace(tnum))
             fftdata = abs(fftdata[2:(len(fftdata) / 2)])
             maxindx = fftdata.argmax() + 2
             centerfreq = float(maxindx) / float(len(fftdata) + 2)
@@ -136,7 +130,7 @@ class DecimationClockRecovery(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -180,9 +174,6 @@ class DecimationClockRecovery(PreprocessingBase):
             #print len(filttrace)
             
             return filttrace
-           
-            
+
         else:
-            return self.trace.getTrace(n)       
-    
-   
+            return self.traceSource.getTrace(n)

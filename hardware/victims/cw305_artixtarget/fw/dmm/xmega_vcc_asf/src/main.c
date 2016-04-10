@@ -91,16 +91,18 @@ int main(void)
 			}			
 			adccnt++;
 		} else {
-			uint32_t adctemp = 0;
+			int32_t adctemp = 0;
 			for (adccnt = 0; adccnt < AVG_READINGS; adccnt++){
-				adctemp += adc_readings[adccnt] + adc_offset;
+				adctemp += (int32_t)(adc_readings[adccnt] + adc_offset);
 			}
 			i = adctemp / AVG_READINGS;
+			//Limit negative values to 0
+			i = i - 2048;
+			if (i < 0) i = 0;
+			i = i / 2;
+			
 			adccnt = 0;
 		}
-		
-		//Limit negative values to 0
-		if (i < 0) i = 0;
 		
 		//Switch between mV and V ranges
 		if (i > 999){
@@ -229,7 +231,7 @@ int adc_init(void)
 	struct adc_channel_config adcch_conf;
 	adc_read_configuration(&MY_ADC, &adc_conf);
 	adcch_read_configuration(&MY_ADC, MY_ADC_CH, &adcch_conf);
-	adc_set_conversion_parameters(&adc_conf, ADC_SIGN_ON, ADC_RES_12, ADC_REF_AREFA);
+	adc_set_conversion_parameters(&adc_conf, ADC_SIGN_OFF, ADC_RES_12, ADC_REF_AREFA);
 	adc_set_conversion_trigger(&adc_conf, ADC_TRIG_MANUAL, 1, 0);
 	adc_set_clock_rate(&adc_conf, 62500UL);
 	adcch_set_input(&adcch_conf, ADCCH_POS_PIN4, ADCCH_NEG_PAD_GND, 1);

@@ -24,48 +24,29 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
+
 from collections import OrderedDict
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
-from chipwhisperer.common.GraphWidget import GraphWidget
-from chipwhisperer.common.utils import hexstr2list
-
 from datetime import datetime
 from functools import partial
 import copy
-
 import numpy as np
 
-try:
-    import pyqtgraph as pg
-    import pyqtgraph.multiprocess as mp
-    import pyqtgraph.parametertree.parameterTypes as pTypes
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-    # print pg.systemInfo()
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.qrc_resources
+from PySide.QtCore import *
+from PySide.QtGui import *
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
+from chipwhisperer.common.utils.Util import hexstr2list
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
 class ResultsPlotting(QObject):
+    """Interface to main program, various routines for plotting output data"""
+
     paramListUpdated = Signal(list)
 
-    """Interface to main program, various routines for plotting output data"""
     def __init__(self):
         super(ResultsPlotting, self).__init__()
 
         self.override = None
 
-        #ResultsTable manages class
         self.table = ResultsTable()
         self.table.setKeyOverride(self.processKnownKey)
 
@@ -101,8 +82,7 @@ class ResultsPlotting(QObject):
                          {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKeyStr, 'readonly':True},
                          {'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.saveresults.setEnabled}
                       ]
-        self.params = Parameter.create(name="General Parameters", type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name="General Parameters", type='group', children=resultsParams)
 
     def paramList(self):
         """Returns list of parameters for parameter tree GUI display"""
@@ -113,7 +93,7 @@ class ResultsPlotting(QObject):
     def dockList(self):
         """Return list of docks"""
 
-        return [self.table.ResultsTable, self.GraphOutputDock, self.PGEGraphDock, self.CorrelationOutputDock]
+        return [self.table.resultsTable, self.GraphOutputDock, self.PGEGraphDock, self.CorrelationOutputDock]
 
     def setAttack(self, attack):
         """Pass the attack to all plotting devices. They pull stats from the attack directly, and listen to attackDone/statusUpdated signals."""
@@ -128,7 +108,6 @@ class ResultsPlotting(QObject):
         self.corrgraph.setAttack(attack)
         self.saveresults.setAttack(attack)
         self.attackSettingsChanged()
-
 
     def attackSettingsChanged(self):
         """Attack settings have changed, so pass required changes to other modules such as plotting"""
@@ -145,12 +124,12 @@ class ResultsPlotting(QObject):
         """Re-Read the Known Key from saved traces"""
 
         try:
-            nk = self.trace.getKnownKey(self.startTrace)
+            nk = self.trace.getKnownKey(self.attack.getTraceStart())
             nk = self.attack.processKnownKey(nk)
             self.graphoutput.setKnownKey(nk)
             self.corrgraph.setKnownKey(nk)
         except AttributeError, e:
-            print str(e)
+            print "WARNING: Failed to find KnownKey, error = %s"%str(e)
 
     def attackDone(self):
         """Attack is done, update everything"""
@@ -162,9 +141,7 @@ class ResultsPlotting(QObject):
     def attackStatsUpdated(self):
         """New attack statistics available, replot/redraw graphs"""
 
-        self.startTrace = self.attack.getTraceStart()
         self.table.setBytesEnabled(self.attack.bytesEnabled())
-        self.table.setStartTrace(self.startTrace)
         self.table.updateTable()
         self.corrgraph.updateData()
         self.updateKnownKey()
@@ -237,17 +214,14 @@ class ResultsPlotData(GraphWidget):
         self.highlightTop = True
 
         resultsParams = self.genericParameters()
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def genericParameters(self):
         return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.showDockSignal.emit},
                 {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
                 {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True},
                 # {'name':''}
-
             ]
-
 
     def paramList(self):
         """Returns parameter list"""
@@ -455,6 +429,7 @@ class ResultsPlotData(GraphWidget):
 
         self.pw.setVisible(True)
 
+
 class OutputVsTime(ResultsPlotData):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
@@ -476,8 +451,7 @@ class OutputVsTime(ResultsPlotData):
         #                 {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
         #              ]
         resultsParams = self.genericParameters()
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def getPrange(self, bnum, diffs):
         """Get a list of all points for a given byte number statistic"""
@@ -519,6 +493,7 @@ class OutputVsTime(ResultsPlotData):
 
         self.drawData(xrangelist, data, enabledlist)
 
+
 class PGEVsTrace(ResultsPlotData):
     """
     Plots Partial Guessing Entropy (PGE) vs Traces in Attack
@@ -538,8 +513,7 @@ class PGEVsTrace(ResultsPlotData):
                          {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
                          {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},
                       ]
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def copyPGE(self, dontCopy=False, addPlotMatlab=True):
         """Copy the Partial Guessing Entropy (PGE) to clipboard for use in other programs"""
@@ -654,6 +628,7 @@ class PGEVsTrace(ResultsPlotData):
         except StopIteration:
             pass
 
+
 class CorrelationVsTrace(ResultsPlotData):
     """
     Plots maximum correlation vs number of traces in attack.
@@ -670,13 +645,10 @@ class CorrelationVsTrace(ResultsPlotData):
         self.numPerms = permPerSubkey
 
         resultsParams = self.genericParameters()
-        self.params = Parameter.create(name=self.name, type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
-
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
 
     def updateData(self):
         pass
-
 
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
@@ -716,38 +688,31 @@ class ResultsTable(QObject):
         super(ResultsTable, self).__init__()
 
         self.orfunction = None
-
         self.table = QTableWidget(permPerSubkey+1, subkeys)
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.table.horizontalHeader().setMinimumSectionSize(51)
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
 
-        self.pgeBrush = QBrush(QColor(253,255,205))
-        pgehdr = QTableWidgetItem("PGE")
-        self.table.setVerticalHeaderItem(0,pgehdr)
-        for i in range(1,permPerSubkey+1):
-            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d"%(i-1)))
+        for i in range(0, subkeys):
+            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d" % i))
 
-        for i in range(0,subkeys):
-            fi = QTableWidgetItem("")
-            fi.setBackground(self.pgeBrush)
-            self.table.setItem(0,i,fi)
+        for i in range(0, subkeys):
+            cell = QTableWidgetItem("-")
+            cell.setBackground(QBrush(QColor(253, 255, 205)))
+            cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
+            cell.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(0, i, cell)
 
-        for i in range(0,subkeys):
-            self.table.setHorizontalHeaderItem(i, QTableWidgetItem("%d"%i))
+        self.table.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
+        for i in range(1, permPerSubkey+1):
+            self.table.setVerticalHeaderItem(i, QTableWidgetItem("%d" % (i-1)))
 
-        self.table.resizeColumnsToContents()
-
-        fullTable = QWidget()
-        fullLayout = QVBoxLayout()
-        fullTable.setLayout(fullLayout)
-
-        fullLayout.addWidget(self.table)
-
-        self.ResultsTable = QDockWidget("Results Table")
-        self.ResultsTable.setObjectName("Results Table")
-        self.ResultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea| Qt.LeftDockWidgetArea)
-        self.ResultsTable.setWidget(fullTable)
-        self.ResultsTable.setVisible(False)
-        self.ResultsTable.visibilityChanged.connect(self.visibleChanged)
+        self.resultsTable = QDockWidget("Results Table")
+        self.resultsTable.setObjectName("Results Table")
+        self.resultsTable.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.RightDockWidgetArea | Qt.LeftDockWidgetArea)
+        self.resultsTable.setWidget(self.table)
+        self.resultsTable.setVisible(False)
+        self.resultsTable.visibilityChanged.connect(self.visibleChanged)
 
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -757,15 +722,13 @@ class ResultsTable(QObject):
         self.useSingle = False
 
         resultsParams = [
-                         {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.ResultsTable.setVisible},
+                         {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.resultsTable.setVisible},
                          {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
                          {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
                          {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
                       ]
 
-        self.params = Parameter.create(name='Ranked Table', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
-
+        self.params = ConfigParameter.create_extended(self, name='Ranked Table', type='group', children=resultsParams)
         self.updateMode = self.findParam('updateMode').value()
 
         #Update parameter tree
@@ -779,7 +742,7 @@ class ResultsTable(QObject):
     def visibleChanged(self):
         """Called when visibility changed, ensures GUI matches real setting"""
 
-        visible = self.ResultsTable.isVisible()
+        visible = self.resultsTable.isVisible()
         self.findParam('show').setValue(visible)
 
     def setUpdateMode(self, mode):
@@ -792,11 +755,6 @@ class ResultsTable(QObject):
 
         self.enabledBytes = enabledbytes
 
-    def setStartTrace(self, starttrace):
-        """Set starting trace number"""
-
-        self.startTrace = starttrace
-
     def setAttack(self, attack):
         """Set source of statistics (i.e. attack)"""
 
@@ -806,7 +764,6 @@ class ResultsTable(QObject):
         """Set the known encryption key, required for PGE calculation"""
 
         self._knownkey = knownkey
-
 
     def knownkey(self):
         """Get the known key"""
@@ -819,7 +776,6 @@ class ResultsTable(QObject):
         """Set key override function in case we don't want to use one from attack"""
 
         self.orfunction = orfunc
-
 
     def setAbsoluteMode(self, enabled):
         """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
@@ -836,7 +792,7 @@ class ResultsTable(QObject):
         when 'attackDone' is True."""
 
         # Process known key via attack
-        nk = self.attack.trace.getKnownKey(self.startTrace)
+        nk = self.attack.traceSource().getKnownKey(self.attack.getTraceStart())
         nk = self.attack.processKnownKey(nk)
 
         # If GUI has override, process it too
@@ -852,13 +808,14 @@ class ResultsTable(QObject):
                 self.table.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
 
-                pgitm = QTableWidgetItem("%3d"%attackStats.pge[bnum])
-                pgitm.setBackground(self.pgeBrush)
-                self.table.setItem(0,bnum,pgitm)
+                self.table.item(0, bnum).setText("%d" % attackStats.pge[bnum])
 
                 if (self.updateMode == 'all') or attackDone:
-                    for j in range(0,self.numPerms):
-                        self.table.setItem(j+1,bnum,QTableWidgetItem("%02X\n%.4f"%(maxes[j]['hyp'],maxes[j]['value'])))
+                    for j in range(0, self.numPerms):
+                        cell = QTableWidgetItem("%02X\n%.4f" % (maxes[j]['hyp'],maxes[j]['value']))
+                        cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
+                        cell.setTextAlignment(Qt.AlignCenter)
+                        self.table.setItem(j+1, bnum, cell)
 
                         highlights = self.knownkey()
 
@@ -871,10 +828,7 @@ class ResultsTable(QObject):
                                 pass
             else:
                 self.table.setColumnHidden(bnum, True)
-
-        self.table.resizeRowsToContents()
-        self.table.resizeColumnsToContents()
-        self.ResultsTable.setVisible(True)
+        self.resultsTable.setVisible(True)
 
 
 class ResultsSave(QObject):
@@ -887,7 +841,6 @@ class ResultsSave(QObject):
         self._enabled = False
         self.dataarray = None
 
-
     def paramList(self):
         """Returns list for parameter tree in settings dock"""
 
@@ -897,11 +850,6 @@ class ResultsSave(QObject):
         """Set what bytes to include in table"""
 
         self.enabledBytes = enabledbytes
-
-    def setStartTrace(self, starttrace):
-        """Set starting trace number"""
-
-        self.startTrace = starttrace
 
     def setAttack(self, attack):
         """Set source of statistics (i.e. attack)"""
@@ -962,6 +910,3 @@ class ResultsSave(QObject):
 
     def setEnabled(self, enabled):
         self._enabled = enabled
-
-
-

@@ -1,4 +1,4 @@
-.. _naecw303_cwlitexmega:
+.. _naecw304_cwlitexmega:
 
 CW304 Target: Notduino (ATMega328P Board)
 =========================================

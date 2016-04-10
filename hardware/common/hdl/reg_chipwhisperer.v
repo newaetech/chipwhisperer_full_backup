@@ -80,6 +80,8 @@ module reg_chipwhisperer(
 	input				usi_out_i,
 	output			usi_in_o,
 	
+	output			targetpower_off,
+	
 	/* Main trigger connections */
 	output			trigger_o /* Trigger signal to capture system */
     ); 
@@ -175,11 +177,15 @@ module reg_chipwhisperer(
 				  1  : Glitch Module
 		
 		EXTRA:
-		  [ X X   X     X    X    X  X   A ]
+		  [ X X   X     X    X    X  P   A ]
 		  
 		  A = (Bit 0) AVR Programming Enable
 				  0  : Disabled (High-Z)
 				  1  : Enabled (Connected to SAM3U)
+				  
+		  P = (Bit 1) Target Power Disable
+		        0  : Power On
+				  1  : Power Off
 		  
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
@@ -298,6 +304,7 @@ module reg_chipwhisperer(
 	
 	
 	 assign enable_avrprog = registers_iorouting[40];
+	 assign targetpower_off = registers_iorouting[41];
 	
 	 //TODO: Should use a mux?
 	 /*

@@ -22,34 +22,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
+
 import time
-
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from TargetTemplate import TargetTemplate
 from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
-import openadc.qt as openadc_qt
+import chipwhisperer.capture.ui.qt as openadc_qt
+from chipwhisperer.common.utils import Util
 
 try:
     import ftd2xx as ft
 except OSError:  # Also catches WindowsError
     raise ImportError
+
+
+def getClass():
+    return SakuraG
 
 class ChipWhispererComm(object):
     CODE_READ = 0x80
@@ -72,17 +60,14 @@ class ChipWhispererComm(object):
     def _setSerial(self, serialnum):
         self.serialnum = serialnum
 
-    def setOpenADC(self, oadc):
-        self.oa = oadc
-        
-
     def reset(self):
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
         time.sleep(0.05)
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
 
-    def con(self):
-        if self.oa is None:            
+    def con(self, scope = None):
+        self.oa = scope.qtadc.ser
+        if self.oa is None:
             if self.serialnum is not None:
                 self.qtadc = openadc_qt.OpenADCQt(includePreview=False, setupLayout=False)
                 self.qtadc.setupParameterTree()
@@ -97,7 +82,6 @@ class ChipWhispererComm(object):
         # Reset AES Core
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
-
         return True
 
     def disconnect(self):
@@ -176,6 +160,7 @@ class ChipWhispererComm(object):
     def close(self):
         pass
 
+
 class FTDIComm(object):
 
     def __init__(self):
@@ -233,13 +218,10 @@ class FTDIComm(object):
     def close(self):
         self.sasebo.close()
 
-    def setOpenADC(self, oadc):
-        pass
-
     def setSerial(self, ser):
         self.serNo = ser
 
-    def con(self):
+    def con(self, scope = None):
         try:
             self.sasebo = ft.openEx(self.serNo)
         except ft.ftd2xx.DeviceError, e:
@@ -253,13 +235,15 @@ class FTDIComm(object):
 
     def disconnect(self):
         return
-               
+
+
 class SakuraG(TargetTemplate):
-     
+    name = "SAKURA G"
+
     def setupParameters(self): 
         self.hw = None
 
-        conntypes = dicttype()
+        conntypes = Util.DictType()
         conntypes['Select Interface type...'] = None
         conntypes['CW Bitstream, with OpenADC'] = ChipWhispererComm(standalone=False)
         conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)
@@ -271,14 +255,10 @@ class SakuraG(TargetTemplate):
                     {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
                     {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
                    ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
         self.oa = None
         self.fixedStart = True
         self.hw = self.findParam('conn').value()
-                    
-    def setOpenADC(self, oadc):
-        self.oa = oadc
         
     def setConn(self, con):
         self.hw = con
@@ -298,9 +278,9 @@ class SakuraG(TargetTemplate):
         self.findParam('serno').setValue(serialnames[0])
 #        self.paramListUpdated.emit(self.paramList())
 
-    def con(self):   
+    def con(self, scope = None):
+        self.oa = scope.qtadc.ser
         self.hw = self.findParam('conn').value()
-        self.hw.setOpenADC(self.oa)
 
         if hasattr(self.hw, 'setSerial'):
             # For SAKURA-G normally we use 'A' channel
@@ -309,7 +289,7 @@ class SakuraG(TargetTemplate):
                 print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
             self.hw.setSerial(ser)
 
-        hwok = self.hw.con()
+        hwok = self.hw.con(scope)
 
         if hasattr(self.hw, 'reset'):
             self.findParam('reset').show()
@@ -319,7 +299,8 @@ class SakuraG(TargetTemplate):
         if hwok:
             # Init
             self.init()
-        
+        self.connectStatus.setValue(True)
+
         return hwok
 
     def reset(self):
@@ -412,3 +393,6 @@ class SakuraG(TargetTemplate):
 
     def go(self):
         self.hw.write(0x0002, 0x00, 0x01)
+
+    def validateSettings(self):
+        return []

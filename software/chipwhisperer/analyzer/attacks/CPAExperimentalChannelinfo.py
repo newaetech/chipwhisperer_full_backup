@@ -24,35 +24,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
 
 import numpy as np
-import scipy as sp
-from openadc.ExtendedParameter import ExtendedParameter
-
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
+from scipy.stats import norm
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-
-from functools import partial
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.analyzer.utils.Partition import Partition
 
 try:
-    import pyximport; pyximport.install()
+    import pyximport
+    pyximport.install()
     import attacks.CPACython as CPACython
 except ImportError:
     CPACython = None
+
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -164,16 +150,11 @@ class CPAProgressiveOneSubkey(object):
             #if sumden.any() < 1E-12:
             #    print "WARNING: sumden small"
 
-
             if progressBar:
-                progressBar.setValue(pbcnt)
-                progressBar.updateStatus((self.totalTraces-numtraces, self.totalTraces), bnum)
-                pbcnt = pbcnt + 1
-                if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
-
-                if progressBar.wasSkipped():
-                    return (diffs, pbcnt)
+                progressBar.updateStatus(pbcnt, (self.totalTraces-numtraces, self.totalTraces-1, bnum))
+                if progressBar.wasAborted():
+                    break
+            pbcnt = pbcnt + 1
 
             diffs[key] = sumnum / np.sqrt(sumden)
 
@@ -184,6 +165,7 @@ class CPAProgressiveOneSubkey(object):
             #    diffs[key] = np.concatenate([np.zeros(padbefore), diffs[key]])
 
         return (diffs, pbcnt)
+
 
 class MinDistOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -234,19 +216,13 @@ class MinDistOneSubkey(object):
                 self.diff[key] += -abs(traces[tnum] - self.template[bnum][hypint])
 
             if progressBar:
-                progressBar.setValue(pbcnt)
-                progressBar.updateStatus((self.totalTraces - numtraces, self.totalTraces), bnum)
-                pbcnt = pbcnt + 1
-                if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
-
-                if progressBar.wasSkipped():
-                    return (self.diff, pbcnt)
+                progressBar.updateStatus(pbcnt, (self.totalTraces - numtraces, self.totalTraces-1, bnum))
+                if progressBar.wasAborted():
+                    break
+            pbcnt = pbcnt + 1
 
         return (self.diff, pbcnt)
 
-import scipy
-from scipy.stats import norm
 
 class TemplateOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
@@ -303,35 +279,28 @@ class TemplateOneSubkey(object):
             if progressBar:
                 progressBar.setValue(pbcnt)
                 progressBar.updateStatus((self.totalTraces - numtraces, self.totalTraces), bnum)
-                pbcnt = pbcnt + 1
                 if progressBar.wasCanceled():
-                    raise KeyboardInterrupt
-
-                if progressBar.wasSkipped():
-                    return (self.diff, pbcnt)
+                    break
+            pbcnt = pbcnt + 1
 
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(QObject):
+class CPAExperimentalChannelinfo(object):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = Signal(list)
+    # paramListUpdated = util.Signal()
 
-    def __init__(self, model, showScriptParameter=None, parent=None):
-        super(CPAExperimentalChannelinfo, self).__init__()
-
+    def __init__(self, model):
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
                          {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
                          {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
                          ]
-        self.params = Parameter.create(name='Progressive CPA', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
 
         self.model = model
         self.sr = None
-        self._parent = parent
 
         # print self._parent.parent
 
@@ -352,20 +321,16 @@ class CPAExperimentalChannelinfo(QObject):
 
         self.all_diffs = range(0,16)
 
-
         tdiff = self.findParam('reportinterval').value()
 
         numtraces = tracerange[1] - tracerange[0]
 
         if progressBar:
-            pbcnt = 0
             progressBar.setMinimum(0)
             progressBar.setMaximum(len(brange) * 256 * (numtraces/tdiff + 1))
 
-        pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
         #self.all_diffs, pb = zip(*r)
-        #pbcnt = 0
         cpa = [None]*(max(brange)+1)
         for bnum in brange:
             cpa[bnum] = CPAProgressiveOneSubkey()
@@ -399,7 +364,7 @@ class CPAExperimentalChannelinfo(QObject):
         #H = mio['equaltotal']
         # H = np.load('equalization.npy')
         # self.project() ?
-        project = self._parent.parent().proj
+        project = CWCoreAPI.getInstance().project()
         section = project.getDataConfig("Template Data", "Equalization Matrix")
        # section = project.getDataConfig("Template Data", "AOF Matrix")
         fname = project.convertDataFilepathAbs(section[0]["filename"])
@@ -425,8 +390,8 @@ class CPAExperimentalChannelinfo(QObject):
             tstart = 0
             tend = tdiff
 
-
             while tstart < numtraces:
+                pbcnt = 0
                 if tend > numtraces:
                     tend = numtraces
 
@@ -456,7 +421,6 @@ class CPAExperimentalChannelinfo(QObject):
                 textins = np.array(textins)
                 textouts = np.array(textouts)
 
-
                 for bnum_bf in brange_bf:
 
                     if bf:
@@ -472,10 +436,8 @@ class CPAExperimentalChannelinfo(QObject):
                     else:
                         skip = True
 
-                    if progressBar.wasSkipped() or skip:
-                        progressBar.clearSkipped()
+                    if skip:
                         pbcnt = brangeMap[bnum] * 256 * (numtraces/tdiff + 1)
-
                         if bf is False:
                             tstart = numtraces
 
@@ -485,16 +447,12 @@ class CPAExperimentalChannelinfo(QObject):
                 if self.sr is not None:
                     self.sr()
 
-            if progressBar is not None:
-                pbcnt = 0
-
     def getStatistics(self):
         return self.stats
 
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
-from chipwhisperer.analyzer.utils.Partition import Partition
 
 # This is actually used by ProfilingTemplate via a hack, which requires more work...
 class TemplateCSI(object):

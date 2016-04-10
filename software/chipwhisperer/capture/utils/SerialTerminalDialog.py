@@ -26,20 +26,22 @@
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
-class SerialTerminalDialog(QDialog):
-    def __init__(self, parent):
+
+class SerialTerminalDialog(QtFixes.QDialog):
+    def __init__(self, parent, cwAPI):
         super(SerialTerminalDialog, self).__init__(parent)
 
         self.parent = parent
-
+        self.cwAPI = cwAPI
         self.mainLayout = QVBoxLayout()
 
         ### Layout for text boxes
         self.textLayouts = QGridLayout()
 
         self.textOut = QTextEdit()
-        self.textIn = QLineEdit()
+        self.textIn = QtFixes.QLineEdit()
         self.textIn.returnPressed.connect(self.returnPressedIn)
 
         self.textInSend = QPushButton("Send")
@@ -151,8 +153,7 @@ class SerialTerminalDialog(QDialog):
             bavail = self.driver.inWaiting()
         
     def tryCon(self):
-        self.driver = None
-        self.driver = self.parent.target.driver.ser
+        self.driver = self.cwAPI.getTarget().ser
         self.driver.con()
 
         self.textIn.setEnabled(True)

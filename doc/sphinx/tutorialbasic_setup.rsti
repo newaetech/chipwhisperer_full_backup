@@ -21,6 +21,7 @@ wired to the *LNA* input on the ChipWhisperer-Capture Rev2 front panel. The gene
 Jumpers on the Multi-Target Victim board are as follows:
 
    .. image:: /images/tutorials/basic/aes/hw-2.jpg
+      :width: 600 px
    
    1. NO jumpers mounted in XMEGA Portion or SmartCard Portion (JP10-JP15, JP19, JP7-JP8, JP17)
    2. 3.3V IO Level (JP20 set to INT.)
@@ -28,6 +29,7 @@ Jumpers on the Multi-Target Victim board are as follows:
    4. The CLKOSC is connected to the AVR CLock Network, along with connected to the FPGAIN pin (JP4)
    5. The TXD & RXD jumpers are set (JP5, JP6)
    6. Power measurement taken from VCC shunt (JP1)
+   7. The TRIG jumper is set (JP28) (NOTE: Early revisions of the multi-target board do not have the TRIG jumper and you can ingore this).
    
    For more information on these jumper settings see :ref:`hwmultitarget` .
 

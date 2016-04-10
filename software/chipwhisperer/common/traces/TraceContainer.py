@@ -22,35 +22,30 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Colin O'Flynn"
-
-import sys
-
-import numpy as np
-import TraceContainerConfig
-
 import copy
 import re
+import numpy as np
+import TraceContainerConfig
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 
-#For profiling support (not 100% needed)
-import pstats, cProfile
 
-from pyqtgraph.parametertree import Parameter
-from openadc.ExtendedParameter import ExtendedParameter
+def getClass():
+    return TraceContainer
 
-class parameters(object):
+
+class Parameters(object):
     def __init__(self, openMode=False):
         self.fmt = None
         traceParams = [{'name':'Trace Configuration', 'type':'group', 'children':[
                         {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
                         {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
                       ]}]
-        self.params = Parameter.create(name='Trace Configuration', type='group', children=traceParams)
+        self.params = ConfigParameter.create_extended(self, name='Trace Configuration', type='group', children=traceParams)
         self.traceParams = traceParams
-        ExtendedParameter.setupExtended(self.params, self)
         
     def paramList(self):
         return [self.params]
+
 
 class TraceContainer(object):
     """
@@ -61,10 +56,12 @@ class TraceContainer(object):
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
     
-    getParams = parameters()
-    getParamsClass = parameters
+    name = "None"
+    getParams = Parameters()
+    getParamsClass = Parameters
     
     def __init__(self, params=None, configfile=None):
+        self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
         self.textins = []
         self.textouts = []
         self.keylist = []
@@ -81,8 +78,6 @@ class TraceContainer(object):
         
         if params is not None:
             self.getParams = params
-        
-        self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
 
     def setDirty(self, dirty):
         self.dirty = dirty
@@ -117,13 +112,12 @@ class TraceContainer(object):
         self.addTextin(textin)
         self.addTextout(textout)
         self.addKey(key)
-        
+
     def writeDataToConfig(self):
         self.config.setAttr("numTraces", self.numTraces())
         self.config.setAttr("numPoints", self.numPoints())      
 
-    def addWave(self, trace, dtype=None):                
-
+    def addWave(self, trace, dtype=None):
         try:
             if self.traces is None:
                 if dtype is None:
@@ -216,9 +210,7 @@ class TraceContainer(object):
                             pass
 
                     return self.config.config[sname]
-
         return None
-
 
     def addAuxDataConfig(self, newmodule):
         """Add a new module to the config file, place in aux data"""
@@ -252,7 +244,6 @@ class TraceContainer(object):
 
         return newdict
 
-
     def prepareDisk(self):
         """Placeholder called after creating a new file setup, but before actually writing traces to it"""
         
@@ -284,18 +275,21 @@ class TraceContainer(object):
         """Placeholder for copy/import command. Different from load as copies data INTO this classes format, possibly from another format"""
         raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
     
-    def closeAll(self):
+    def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
         """Writer is done, can close/save any files."""               
-        raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
-
-    def validateSettings(self, vw):
-        """Check settings, log any messages to special setup window"""
+        #raise AttributeError("%s doesn't have this method implemented"%self.__class__.__name__)
         pass
+
+    def validateSettings(self):
+        """Check settings, log any messages to special setup window"""
+        return []
 
     def isLoaded(self):
         """Returns true if you can use getTrace, getTextin, etc methods"""
         return self._isloaded
 
+    def getName(self):
+        return self.name
         
         
 if __name__ == "__main__":
@@ -306,5 +300,3 @@ if __name__ == "__main__":
     test.addTrace(wave, None, None, None)
     print test.numTraces()
     print test.numPoints()
-
-        

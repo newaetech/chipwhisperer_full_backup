@@ -24,32 +24,30 @@
 
 __author__ = "Colin O'Flynn"
 
-import sys
-from PySide.QtCore import *
-from PySide.QtGui import *
 import os.path
-sys.path.append('../.')
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-import tracereader_dpacontestv3
-import tracereader_native
-import re
+import sys
+from PySide.QtGui import *
+from PySide.QtCore import *
+from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_native
 import numpy as np
-from scipy import signal
 from time import gmtime, strftime
-
-#For profiling support (not 100% needed)
-import pstats, cProfile
-
 from TraceContainer import TraceContainer
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
+
+
+def getClass():
+    return TraceContainerDPAv3
+
 
 class TraceContainerDPAv3(TraceContainer):
+    name = "DPAContestv3"
+
     def __init__(self):
         super(TraceContainerDPAv3, self).__init__()
         self.dir = "."
 
     def setDirectory(self, directory):
-        self.dir = directory;
+        self.dir = directory
 
         os.mkdir(directory)
 
@@ -139,14 +137,15 @@ class TraceContainerDPAv3(TraceContainer):
     def saveAllTraces(self):
         self.writeInfo()
         
-    def closeAll(self):
+    def closeAll(self, clearTrace=True, clearText=True, clearKeys=True):
         self.saveAllTraces()
         self.inf.close()
         self.outf.close()
         self.wavef.close()
         self.keyf.close()
 
-class ImportDPAv3Dialog(QDialog):   
+
+class ImportDPAv3Dialog(QtFixes.QDialog):
     def __init__(self, parent=None):
         super(ImportDPAv3Dialog, self).__init__(parent)
         self.parent = parent
@@ -159,7 +158,7 @@ class ImportDPAv3Dialog(QDialog):
 
         fileL = QHBoxLayout()
         fileL.addWidget(QLabel("info.xml file:"))
-        self.fileLE = QLineEdit()
+        self.fileLE = QtFixes.QLineEdit()
         #self.fileLE.setEnabled(False)
         fileL.addWidget(self.fileLE)
         filePB = QPushButton("Select info.xml")
@@ -172,18 +171,18 @@ class ImportDPAv3Dialog(QDialog):
 
         ### Settings found in info.xml, can be changed by user
 
-        self.LETraces = QLineEdit()
+        self.LETraces = QtFixes.QLineEdit()
         self.LETraces.setEnabled(False)
 
-        self.LEPoints = QLineEdit()
+        self.LEPoints = QtFixes.QLineEdit()
         self.LEPoints.setEnabled(False)
 
-        self.LEScope = QLineEdit()
-        self.LETargetHW = QLineEdit()
-        self.LETargetSW = QLineEdit()
-        self.LEDate = QLineEdit()
+        self.LEScope = QtFixes.QLineEdit()
+        self.LETargetHW = QtFixes.QLineEdit()
+        self.LETargetSW = QtFixes.QLineEdit()
+        self.LEDate = QtFixes.QLineEdit()
 
-        self.LENotes = QLineEdit()
+        self.LENotes = QtFixes.QLineEdit()
 
         settingsL = QGridLayout()
         settingsL.addWidget(QLabel("Traces:"), 0, 0)
@@ -216,12 +215,12 @@ class ImportDPAv3Dialog(QDialog):
         importL = QGridLayout()
 
         importL.addWidget(QLabel("Target Dir:"), 0, 0)
-        targetDirLE = QLineEdit()
+        targetDirLE = QtFixes.QLineEdit()
         targetDirLE.setText("./traces/")
         targetDirLE.setEnabled(False)
         importL.addWidget(targetDirLE, 0, 1)
 
-        self.prefixDirLE = QLineEdit()
+        self.prefixDirLE = QtFixes.QLineEdit()
         self.prefixDirLE.setText("001")
         importL.addWidget(QLabel("Prefix:"), 0, 2)
         importL.addWidget(self.prefixDirLE, 0, 3)
@@ -238,7 +237,7 @@ class ImportDPAv3Dialog(QDialog):
         return self.parent.parent.cwp.traceslocation + "/" + "config_" + self.prefixDirLE.text() + ".cfg"
        
     def selectInfo(self):
-        fname, _ = QFileDialog.getOpenFileName(self, 'Open file',QSettings().value("dpav3_last_file"),'info.xml')
+        fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("dpav3_last_file"), 'info.xml')
         if fname:
             QSettings().setValue("dpav3_last_file", fname)
             trimport = tracereader_dpacontestv3.tracereader_dpacontestv3()
@@ -247,8 +246,8 @@ class ImportDPAv3Dialog(QDialog):
 
             self.fileLE.setText(fname)
 
-            self.LEPoints.setText("%d"%trimport.NumPoint)
-            self.LETraces.setText("%d"%trimport.NumTrace)
+            self.LEPoints.setText("%d"%trimport.numPoint)
+            self.LETraces.setText("%d"%trimport.numTrace)
 
             self.LEScope.setText(trimport.xmlroot.findall('Instrument')[0].text)
             self.LEDate.setText(trimport.xmlroot.findall('Date')[0].text)

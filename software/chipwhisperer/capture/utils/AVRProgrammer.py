@@ -24,20 +24,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from datetime import datetime
 import os.path
 import time
-
+from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
-
-from chipwhisperer.capture.scopes.ChipWhispererLite import AVRISP
-from chipwhisperer.capture.scopes.ChipWhispererLite import CWLiteUSB
-from chipwhisperer.capture.scopes.ChipWhispererLite_progdevice import supported_avr
+from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.capture.utils.IntelHex import IntelHex
-# import chipwhisperer.capture.global_mod as global_mod
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
-class AVRProgrammerDialog(QDialog):
+
+class AVRProgrammerDialog(QtFixes.QDialog):
     def __init__(self, parent=None):
         super(AVRProgrammerDialog, self).__init__(parent)
         # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
@@ -48,7 +45,7 @@ class AVRProgrammerDialog(QDialog):
         layout = QVBoxLayout()
 
         layoutFW = QHBoxLayout()
-        self.flashLocation = QLineEdit()
+        self.flashLocation = QtFixes.QLineEdit()
         flashFileButton = QPushButton("Find")
         flashFileButton.clicked.connect(self.findFlash)
         layoutFW.addWidget(QLabel("FLASH File"))
@@ -80,13 +77,13 @@ class AVRProgrammerDialog(QDialog):
         writeFuseBut = QPushButton("Write Fuses")
         writeFuseBut.clicked.connect(self.writeFuses)
 
-        self.lowfuseLine = QLineEdit("?")
+        self.lowfuseLine = QtFixes.QLineEdit("?")
         self.lowfuseLine.setMaxLength(2)
         self.lowfuseLine.setFixedWidth(25)
-        self.highfuseLine = QLineEdit("?")
+        self.highfuseLine = QtFixes.QLineEdit("?")
         self.highfuseLine.setMaxLength(2)
         self.highfuseLine.setFixedWidth(25)
-        self.extfuseLine = QLineEdit("?")
+        self.extfuseLine = QtFixes.QLineEdit("?")
         self.extfuseLine.setMaxLength(2)
         self.extfuseLine.setFixedWidth(25)
 
@@ -133,9 +130,13 @@ class AVRProgrammerDialog(QDialog):
             self.clockMode.setText("Enable Slow Clock Mode")
 
     def reject(self):
+        #Ensure we disable slow-clock mode
         if self.clockMode.isChecked():
             self.clockMode.setChecked(False)
             self.toggleSlowClock()
+            
+        #Release AVR
+        self.avr.close()
 
         QDialog.reject(self)
 
@@ -232,23 +233,19 @@ class AVRProgrammerDialog(QDialog):
         self.statusLine.append("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
 
     def setUSBInterface(self, iface):
-        self.avr.setUSBInterface(iface._usbdev)
+        self.avr.setUSBInterface(iface)
 
 
 class AVRProgrammer(object):
     
     def __init__(self):
         super(AVRProgrammer, self).__init__()
-        self._usbiface = None
         self.supported_chips = []
-        self.avr = AVRISP()
         self._logging = None
         self._foundchip = False
 
     def setUSBInterface(self, iface):
-        self._usbiface = iface
-        self._foundchip = False
-        self.avr.setUSB(iface)
+        self.avr = iface
         # self.avr.setChip(self.supported_chips[0])
 
     def find(self):
@@ -314,26 +311,3 @@ class AVRProgrammer(object):
             print text
         else:
             self._logging(text)
-
-
-if __name__ == '__main__':
-    cwtestusb = CWLiteUSB()
-    cwtestusb.con()
-
-    fname = r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\victims\firmware\xmega-glitch\simpleserial.hex"
-
-    xmega = AVRProgrammer()
-    xmega.setUSBInterface(cwtestusb._usbdev)
-    xmega.find()
-    try:
-        print "Erasing"
-        xmega.erase("chip")
-    except IOError:
-        print "**chip-erase timeout, workaround enabled**"
-        time.sleep(0.1)
-        xmega.xmega.enablePDI(False)
-        xmega.xmega.enablePDI(True)
-    # xmega.program(fname, "flash")
-    print "%02x" % xmega.xmega.readMemory(0x8f0025, 1)[0]
-    xmega.close()
-

@@ -22,19 +22,19 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from TargetTemplate import TargetTemplate
 import hid
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from TargetTemplate import TargetTemplate
+
+
+def getClass():
+    return ChipWhispererSPI
+
 
 class HIDSPI(object):
     CMDSPI = 0x01
     CMDBOOT = 0xFE
-
 
     def findCWSPI(self, VID=0x03EB, PID=0xBAED):
         print "Detecting HID device..."
@@ -89,25 +89,16 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
-    paramListUpdated = Signal(list)
+    name = "ChipWhisperer SPI"
 
     def setupParameters(self):
         self.hdev = HIDSPI()
         ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
                     ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.keylength = 16
-
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -121,14 +112,9 @@ class ChipWhispererSPI(TargetTemplate):
         p = [self.params]
         return p
 
-    def con(self):  
+    def con(self, scope = None):
         self.hdev.findCWSPI()
-
-    def dis(self):
-        self.close()
-
-    def close(self):
-        return
+        self.connectStatus.setValue(True)
 
     def init(self):
         return
@@ -172,3 +158,6 @@ class ChipWhispererSPI(TargetTemplate):
             return kin[0:blen]
 
         return kin
+
+    def validateSettings(self):
+        return []

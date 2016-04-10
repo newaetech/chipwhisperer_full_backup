@@ -25,12 +25,8 @@
 __author__ = "Colin O'Flynn"
 
 import sys
-from PySide.QtCore import *
-from PySide.QtGui import *
 import os
-
-#For profiling support (not 100% needed)
-#import pstats, cProfile
+#import pstats, cProfile #For profiling support (not 100% needed)
 
 try:
     from configobj import ConfigObj  # import the module
@@ -91,7 +87,6 @@ class TraceContainerConfig(object):
     # changed = has value changed since being written to disk?
     # headerLabel = short description/name used for header label in trace management dialog
     #
-           
 
     def __init__(self, configfile=None):
         """If a config file is given, will attempt to load that file"""
@@ -100,14 +95,14 @@ class TraceContainerConfig(object):
                 "moduleName":"native",
                 "module":None,
                 "values":{
-                    "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format"},
-                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"Num Traces"},
-                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"Num Points"},
-                    "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Cap. Date", "editable":True},
+                    "format":{"order":0, "value":"native", "desc":"Native Format Type", "changed":False, "headerLabel":"Format", "editable":False},
+                    "numTraces":{"order":1, "value":0, "desc":"Number of Traces in File", "changed":False, "headerLabel":"# Traces", "editable":False},
+                    "numPoints":{"order":2, "value":0, "desc":"Number of Points per trace, assuming uniform", "changed":False, "headerLabel":"# Points", "editable":False},
+                    "date":{"order":3, "value":"1997-01-28 17:05:00", "desc":"Date of Capture YYYY-MM-DD HH:MM:SS Format", "changed":False, "headerLabel":"Date and Time of Capture", "editable":False},
                     "prefix":{"order":4, "value":None, "desc":"Prefix of all files if applicable", "changed":False},
-                    "targetHW":{"order":5, "value":"unknown", "desc":"Description of Target (DUT) Hardware", "changed":False, "headerLabel":"Target HW", "editable":True},
-                    "targetSW":{"order":6, "value":"unknown", "desc":"Description of Target (DUT) Software", "changed":False, "headerLabel":"Target SW", "editable":True},
-                    "scopeName":{"order":7, "value":"unknown", "desc":"Scope Model/Description", "changed":False, "headerLabel":"Scope Name", "editable":True},
+                    "targetHW":{"order":5, "value":"unknown", "desc":"Description of Target (DUT) Hardware", "changed":False, "headerLabel":"Target Hardware", "editable":True},
+                    "targetSW":{"order":6, "value":"unknown", "desc":"Description of Target (DUT) Software", "changed":False, "headerLabel":"Target Software", "editable":True},
+                    "scopeName":{"order":7, "value":"unknown", "desc":"Scope Model/Description", "changed":False, "headerLabel":"Scope Module Name", "editable":True},
                     "scopeSampleRate":{"order":8, "value":0, "desc":"Sample Rate (s/sec)", "changed":False, "headerLabel":"Sample Rate", "editable":True},
                     "scopeYUnits":{"order":9, "value":0, "desc":"Units of Y Points", "changed":False, "editable":True},
                     "scopeXUnits":{"order":10, "value":0, "desc":"Units of X Points", "changed":False, "editable":True},
@@ -183,7 +178,7 @@ class TraceContainerConfig(object):
         
     def setAttr(self, attr, value, moduleName=None):
         """Set value of attribute in internal DB"""
-        mod = self.module(attr,moduleName)   
+        mod = self.module(attr,moduleName)
         mod["values"][attr]["value"] = value
         mod["values"][attr]["changed"] = True 
                
@@ -242,11 +237,12 @@ class TraceContainerConfig(object):
         
     def loadTrace(self, configfile=None):
         """Load config file. Syncs internal DB to File"""
-        if configfile:           
+        if configfile:
             self._configfile = os.path.normpath(configfile)
-        
+            if not os.path.isfile(configfile):
+                raise Exception("Error: Trace set config file doesn't exists: " + configfile)
+
         self.config = ConfigObj(self._configfile)
-            
         self.syncFile()
         
     def saveTrace(self, configfile = None):

@@ -24,22 +24,16 @@
 #=================================================
 
 # Python standard imports
+import math
+import pickle
 import sys
 from datetime import datetime
-import pickle
-import math
-
-# External libraries
 from PySide.QtCore import *
 from PySide.QtGui import *
-import pyqtgraph as pg
-import pyqtgraph.multiprocess as mp
-import pyqtgraph.parametertree.parameterTypes as pTypes
-from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-
-# CW/OpenADC
-from openadc.ExtendedParameter import ExtendedParameter
-import chipwhisperer.common.ParameterTypesCustom
+from pyqtgraph.parametertree import Parameter, ParameterTree
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 
 class TuningParameter(QObject):
@@ -49,25 +43,22 @@ class TuningParameter(QObject):
     nameChanged = Signal(int, str)
     tracesreqChanged = Signal(int, int)
 
-    def __init__(self, num, showScriptParameter=None):
+    def __init__(self, num):
         super(TuningParameter, self).__init__()
-        self.showScriptParameter = showScriptParameter
-
         self.paramNum = num
 
         paramTemplate = [
             {'name':'Name', 'type':'str', 'key':'humanname', 'value':'Param #%d' % num, 'set':self.nameChange},
             {'name':'Script Command', 'type':'str', 'key':'script', 'value':'[]', 'set':self.updateParams},
             {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int},
-            {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'set':self.updateParams},
+            {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'default':(0, 10), 'set':self.updateParams},
             {'name':'Value', 'type':'float', 'key':'curval', 'value':1.0},
             {'name':'Step', 'type':'float', 'key':'step', 'value':1.0, 'set':self.updateParams},
             {'name':'Repeat', 'type':'int', 'key':'repeat', 'value':1, 'set':self.updateParams},
             {'name':'Mode', 'type':'list', 'key':'mode', 'values':["Linear"], 'set':self.updateParams},
             ]
 
-        self.params = Parameter.create(name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
         self.cnt = 0
         self.updateParams()
 
@@ -128,12 +119,9 @@ class TuningParameter(QObject):
             raise ValueError("Unknown Increment Type %s" % mode)
 
 
-class GlitchExplorerDialog(QDialog):
-    def __init__(self, parent, showScriptParameter=None):
+class GlitchExplorerDialog(QtFixes.QDialog):
+    def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
-
-        self.showScriptParameter = showScriptParameter
-
         self.setWindowTitle("Glitch Explorer")
 
         self.mainLayout = QVBoxLayout()
@@ -149,7 +137,7 @@ class GlitchExplorerDialog(QDialog):
         self.mainSplitter.addWidget(self.table)
 
         self.glitchParams =[{'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
-                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters},
+                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters, 'readonly':False},
                             {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True},
                             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
                             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
@@ -163,8 +151,7 @@ class GlitchExplorerDialog(QDialog):
                             ]
 
 
-        self.params = Parameter.create(name='Glitch Explorer', type='group', children=self.glitchParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Glitch Explorer', type='group', children=self.glitchParams)
         self.paramTree = ParameterTree()
 
         self.reloadParameters()
@@ -230,7 +217,7 @@ class GlitchExplorerDialog(QDialog):
 
     def executeScriptCommand(self, paramNum, script):
         #print script
-        self.parent().setParameter(script)
+        self.parent().cwAPI.setParameter(script)
 
     def updateParameters(self, ignored=None):
         numparams = self.findParam('numtune').value()
@@ -243,7 +230,7 @@ class GlitchExplorerDialog(QDialog):
         while numparams > len(self.tuneParamList):
             #Add parameters
             #p = Parameter.create(name='Tuning Parameter %d' % len(self.tuneParamList), type='group', children=self.glitchTuneParamTemplate)
-            p = TuningParameter(len(self.tuneParamList), showScriptParameter=self.showScriptParameter)
+            p = TuningParameter(len(self.tuneParamList))
             self.tuneParamList.append(p)
 
             # Do stuff

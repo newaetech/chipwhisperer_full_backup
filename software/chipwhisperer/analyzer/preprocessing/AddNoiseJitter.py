@@ -25,21 +25,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-    
 import random
 import numpy as np
-
-from pyqtgraph.parametertree import Parameter
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return AddNoiseJitter
 
 
 class AddNoiseJitter(PreprocessingBase):
@@ -47,17 +40,17 @@ class AddNoiseJitter(PreprocessingBase):
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
 
+    name = "Add Noise: Time Jitter"
     descrString = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
                   "in actual analysis."
      
     def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':True, 'set':self.updateScript},
-                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':0, 'limits':(0, 1000), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
-                      ]
-        self.params = Parameter.create(name='Add Random Jitter', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
         self.maxJitter = 0
+        ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':self.enabled, 'set':self.updateScript},
+                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'set':self.updateScript},
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
+                      ]
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -70,16 +63,15 @@ class AddNoiseJitter(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             
             jit = random.randint(-self.maxJitter, self.maxJitter)
 
             return roll_zeropad(trace, jit)
-            
         else:
-            return self.trace.getTrace(n)       
+            return self.traceSource.getTrace(n)
 
         
 # This function stolen from: http://stackoverflow.com/questions/2777907/python-numpy-roll-with-padding

@@ -24,24 +24,25 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
+
+import time
 
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-import time
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
 from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+
+
+def getClass():
+    return GPIOToggle
+
 
 class GPIOToggle(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    name = "Toggle FPGA-GPIO Pins"
+    paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         ssParams = [
@@ -52,8 +53,7 @@ class GPIOToggle(AuxiliaryTemplate):
                     {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
                     {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
                     ]
-        self.params = Parameter.create(name='GPIO Toggle', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='GPIO Toggle', type='group', children=ssParams)
 
         self.pin = None
         self.lastPin = None
@@ -69,7 +69,7 @@ class GPIOToggle(AuxiliaryTemplate):
 
 
     def checkMode(self):
-        cwa = self.parent().scope.advancedSettings.cwEXTRA
+        cwa = CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA
 
         if self.pin != self.lastPin:
             # Turn off last used pin
@@ -97,15 +97,15 @@ class GPIOToggle(AuxiliaryTemplate):
     def trigger(self):
         print "AUXIO: Trigger pin %d" % self.pin
         self.checkMode()
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
         self.nonblockingSleep(self.triglength)
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
         self.nonblockingSleep(self.postdelay)
 
 
     def captureInit(self):
         self.checkMode()
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
 
         if self.triglocation == 0:
             self.trigger()
@@ -124,6 +124,3 @@ class GPIOToggle(AuxiliaryTemplate):
 
     def testToggle(self):
         pass
-
-
-

@@ -25,47 +25,38 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
 import numpy as np
 import scipy as sp
         
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return ResyncCrossCorrelation
+
+
 class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-
+    name = "Resync: Cross Correlation"
     descrString = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
     def setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
+        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
                          {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
                          # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
+                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
                       ]
-        self.params = Parameter.create(name='Cross Correlation', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
-
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.ccStart = 0
         self.ccEnd = 0
         
         self.updateScript()
-
         
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
@@ -89,7 +80,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.trace.getTrace(n)
+            trace = self.traceSource.getTrace(n)
             if trace is None:
                 return None
             cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
@@ -108,7 +99,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
             return trace
             
         else:
-            return self.trace.getTrace(n)       
+            return self.traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -121,9 +112,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         if self.enabled == False:
             return
 
-        self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
+        self.reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         self.reftrace = self.reftrace[::-1]
         #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self.trace.getTrace(tnum), self.reftrace, mode='valid')
+        cross = sp.signal.fftconvolve(self.traceSource.getTrace(tnum), self.reftrace, mode='valid')
         self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
         self.refmaxsize = max(cross[self.ccStart:self.ccEnd])

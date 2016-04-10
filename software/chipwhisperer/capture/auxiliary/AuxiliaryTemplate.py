@@ -24,35 +24,27 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
-from PySide.QtCore import *
-from PySide.QtGui import *
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
+def getClass():
+    return AuxiliaryTemplate
 
-class AuxiliaryTemplate(QObject):
-    paramListUpdated = Signal(list)
 
-    def __init__(self, parent=None, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(AuxiliaryTemplate, self).__init__(parent)
-        self.console = console
-        self.showScriptParameter = showScriptParameter
+class AuxiliaryTemplate():
+    name = "None"
+    paramListUpdated = Util.Signal()
+
+    def __init__(self):
         self.setupParameters()
         self.prefix = ""
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
 
     def paramList(self):
         p = [self.params]
@@ -64,12 +56,6 @@ class AuxiliaryTemplate(QObject):
         """Close system if needed"""
         print "Aux: Closing"
         self.close()
-
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
 
     def close(self):
         """Close target, disconnect if required"""
@@ -98,3 +84,6 @@ class AuxiliaryTemplate(QObject):
 
     def setPrefix(self, prefix):
         self.prefix = prefix
+
+    def getName(self):
+        return self.name

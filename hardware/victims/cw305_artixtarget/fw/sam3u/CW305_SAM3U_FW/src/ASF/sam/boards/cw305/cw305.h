@@ -312,12 +312,16 @@
 #define PIN_USART2_SCK_FLAGS      (PIO_PERIPH_B | PIO_DEFAULT)
 
 //! USB VBus monitoring pin definition.
+//The following are NOT used, as you may want to power board without USB attached.
+//If you enable the VBUS Monitor it will turn off everything when USB is not connected.
+#ifdef USE_VBUS_MONITOR
 #define PIN_USB_VBUS    {1 << 30, PIOA, ID_PIOA, PIO_INPUT, PIO_DEFAULT}
 #define USB_VBUS_FLAGS    (PIO_INPUT | PIO_DEBOUNCE | PIO_IT_EDGE)
 #define USB_VBUS_PIN_IRQn (PIOA_IRQn)
 #define USB_VBUS_PIN      (PIO_PA30_IDX)
 #define USB_VBUS_PIO_ID   (ID_PIOA)
 #define USB_VBUS_PIO_MASK (PIO_PA30)
+#endif
 /* This pin can not be used as fast wakeup source such as
  * USB_VBUS_WKUP PMC_FSMR_FSTT7 */
 

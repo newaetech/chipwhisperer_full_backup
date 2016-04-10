@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<GenRun Id="impl_35t" LaunchPart="xc7a35tftg256-2" LaunchTime="1458516800">
+  <File Type="OPT-DCP" Name="cw305_top_opt.dcp"/>
+  <File Type="RUN-CONSTRS" Name="$PDATADIR/runs/impl_35t/constrs_in.xml"/>
+  <File Type="RUN-SRCS" Name="$PDATADIR/runs/impl_35t/sources.xml"/>
+  <File Type="ROUTE-DCP" Name="cw305_top_routed.dcp"/>
+  <File Type="PA-TCL" Name="cw305_top.tcl"/>
+  <File Type="RUN-STRAT" Name="$PDATADIR/runs/impl_35t/impl_35t.psg"/>
+  <File Type="OPT-DRC" Name="cw305_top_drc_opted.rpt"/>
+  <File Type="INIT-TIMING" Name="cw305_top_timing_summary_init.rpt"/>
+  <File Type="OPT-TIMING" Name="cw305_top_timing_summary_opted.rpt"/>
+  <File Type="OPT-HWDEF" Name="cw305_top.hwdef"/>
+  <File Type="PWROPT-DCP" Name="cw305_top_pwropt.dcp"/>
+  <File Type="PWROPT-DRC" Name="cw305_top_drc_pwropted.rpt"/>
+  <File Type="PWROPT-TIMING" Name="cw305_top_timing_summary_pwropted.rpt"/>
+  <File Type="PLACE-DCP" Name="cw305_top_placed.dcp"/>
+  <File Type="PLACE-IO" Name="cw305_top_io_placed.rpt"/>
+  <File Type="PLACE-CLK" Name="cw305_top_clock_utilization_placed.rpt"/>
+  <File Type="PLACE-UTIL" Name="cw305_top_utilization_placed.rpt"/>
+  <File Type="PLACE-UTIL-PB" Name="cw305_top_utilization_placed.pb"/>
+  <File Type="PLACE-CTRL" Name="cw305_top_control_sets_placed.rpt"/>
+  <File Type="PLACE-SIMILARITY" Name="cw305_top_incremental_reuse_placed.rpt"/>
+  <File Type="PLACE-PRE-SIMILARITY" Name="cw305_top_incremental_reuse_pre_placed.rpt"/>
+  <File Type="PLACE-TIMING" Name="cw305_top_timing_summary_placed.rpt"/>
+  <File Type="POSTPLACE-PWROPT-DCP" Name="cw305_top_postplace_pwropt.dcp"/>
+  <File Type="POSTPLACE-PWROPT-TIMING" Name="cw305_top_timing_summary_postplace_pwropted.rpt"/>
+  <File Type="PHYSOPT-DCP" Name="cw305_top_physopt.dcp"/>
+  <File Type="RDI-RDI" Name="cw305_top.vdi"/>
+  <File Type="PHYSOPT-DRC" Name="cw305_top_drc_physopted.rpt"/>
+  <File Type="PHYSOPT-TIMING" Name="cw305_top_timing_summary_physopted.rpt"/>
+  <File Type="ROUTE-DRC" Name="cw305_top_drc_routed.rpt"/>
+  <File Type="ROUTE-DRC-PB" Name="cw305_top_drc_routed.pb"/>
+  <File Type="ROUTE-PWR" Name="cw305_top_power_routed.rpt"/>
+  <File Type="ROUTE-PWR-SUM" Name="cw305_top_power_summary_routed.pb"/>
+  <File Type="ROUTE-STATUS" Name="cw305_top_route_status.rpt"/>
+  <File Type="ROUTE-STATUS-PB" Name="cw305_top_route_status.pb"/>
+  <File Type="ROUTE-TIMINGSUMMARY" Name="cw305_top_timing_summary_routed.rpt"/>
+  <File Type="ROUTE-TIMING-PB" Name="cw305_top_timing_summary_routed.pb"/>
+  <File Type="ROUTE-TIMING-RPX" Name="cw305_top_timing_summary_routed.rpx"/>
+  <File Type="ROUTE-SIMILARITY" Name="cw305_top_incremental_reuse_routed.rpt"/>
+  <File Type="ROUTE-CLK" Name="cw305_top_clock_utilization_routed.rpt"/>
+  <File Type="POSTROUTE-PHYSOPT-DCP" Name="cw305_top_postroute_physopt.dcp"/>
+  <File Type="POSTROUTE-PHYSOPT-TIMING" Name="cw305_top_timing_summary_postroute_physopted.rpt"/>
+  <File Type="POSTROUTE-PHYSOPT-TIMING-PB" Name="cw305_top_timing_summary_postroute_physopted.pb"/>
+  <File Type="POSTROUTE-PHYSOPT-TIMING-RPX" Name="cw305_top_timing_summary_postroute_physopted.rpx"/>
+  <File Type="BG-BIT" Name="cw305_top.bit"/>
+  <File Type="BG-BIN" Name="cw305_top.bin"/>
+  <File Type="BITSTR-MSK" Name="cw305_top.msk"/>
+  <File Type="BITSTR-RBT" Name="cw305_top.rbt"/>
+  <File Type="BITSTR-NKY" Name="cw305_top.nky"/>
+  <File Type="BITSTR-BMM" Name="cw305_top_bd.bmm"/>
+  <File Type="BITSTR-MMI" Name="cw305_top.mmi"/>
+  <File Type="BITSTR-SYSDEF" Name="cw305_top.sysdef"/>
+  <File Type="BG-BGN" Name="cw305_top.bgn"/>
+  <File Type="BG-DRC" Name="cw305_top.drc"/>
+  <File Type="WBT-USG" Name="usage_statistics_webtalk.html"/>
+  <FileSet Name="sources" Type="DesignSrcs" RelSrcDir="$PSRCDIR/sources_1">
+    <Filter Type="Srcs"/>
+    <File Path="$PPRDIR/../../cryptosrc/aes_googlevault/aes_sbox.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PPRDIR/../../cryptosrc/aes_googlevault/aes_ks.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PPRDIR/../../common/registers/registers.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PPRDIR/../../cryptosrc/aes_googlevault/aes_core.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PSRCDIR/sources_1/new/board.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PPRDIR/../../common/cw305_top.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="DesignMode" Val="RTL"/>
+      <Option Name="TopModule" Val="cw305_top"/>
+      <Option Name="TopAutoSet" Val="TRUE"/>
+    </Config>
+  </FileSet>
+  <FileSet Name="constrs_in" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1">
+    <Filter Type="Constrs"/>
+    <File Path="$PPRDIR/../../common/cw305_main.xdc">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="TargetConstrsFile" Val="$PPRDIR/../../common/cw305_main.xdc"/>
+      <Option Name="ConstrsType" Val="XDC"/>
+    </Config>
+  </FileSet>
+  <Strategy Version="1" Minor="2">
+    <StratHandle Name="Vivado Implementation Defaults" Flow="Vivado Implementation 2015"/>
+    <Step Id="init_design"/>
+    <Step Id="opt_design"/>
+    <Step Id="power_opt_design"/>
+    <Step Id="place_design"/>
+    <Step Id="post_place_power_opt_design"/>
+    <Step Id="phys_opt_design"/>
+    <Step Id="route_design"/>
+    <Step Id="post_route_phys_opt_design"/>
+    <Step Id="write_bitstream"/>
+  </Strategy>
+</GenRun>

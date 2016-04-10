@@ -22,57 +22,33 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
-
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
-
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
-import openadc.scan as scan
-import chipwhisperer.capture.targets.ChipWhispererTargets as ChipWhispererTargets
+import serial
+from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
+import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
-import chipwhisperer.capture.global_mod as global_mod
-from TargetTemplate import TargetTemplate
-
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util, timer
+from chipwhisperer.common.utils import Scan
 
-class ReaderTemplate(QObject):
-    paramListUpdated = Signal(list)
+
+def getClass():
+    return SmartCard
+
+
+class ReaderTemplate(object):
+    paramListUpdated = Util.Signal()
     
-    def __init__(self, console, showScriptParameter):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(ReaderTemplate, self).__init__()        
-        self.console = console
-        self.showScriptParameter = showScriptParameter                
+    def __init__(self):
+        super(ReaderTemplate, self).__init__()
         self.setupParameters()
-        
-    def log(self, message):
-        if self.console:
-            self.console.append(message)
-        else:
-            print message
-                
+
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)    
             
     def paramList(self):
         p = [self.params]
@@ -84,14 +60,18 @@ class ReaderTemplate(QObject):
         """Here you would send value to the reader hardware"""
         pass 
 
-    def sendAPDU(self):
+    def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
         """Send APDU to SmartCard, get Response"""
         pass
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+    def con(self, scope = None):
+        """Connect to reader."""
         pass
     
+    def close(self):
+        """Close connection."""
+        pass
+
     def flush(self):
         """Discard all input buffers"""
         pass
@@ -113,15 +93,14 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     REQ_CFG_PROTOCOL = 0x02
     REQ_CFG_TXRX = 0x05
     
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderChipWhispererLiteSCard, self).__init__(console, showScriptParameter)        
+    def __init__(self):
+        super(ReaderChipWhispererLiteSCard, self).__init__()
         
     def setupParameters(self):         
         ssParams = [  {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
                       {'name':'ATR', 'key':'atr', 'type':'str'},                              
                       ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         
         self.protocol = 0            
         
@@ -209,9 +188,9 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
             
             return status
     
-    def con(self, oa):
+    def con(self, scope):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
-        self.usbcon = oa     
+        self.usbcon = scope.qtadc.ser
         self.reset()
     
     def flush(self):
@@ -235,10 +214,11 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         return self.atr
 
+
 class ReaderSystemSER(ReaderTemplate):
     
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderSystemSER, self).__init__(console, showScriptParameter)        
+    def __init__(self):
+        super(ReaderSystemSER, self).__init__()
         
     def setupParameters(self):
         self.ser = None     
@@ -247,11 +227,10 @@ class ReaderSystemSER(ReaderTemplate):
                                 {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
                                 {'name':'ATR', 'key':'atr', 'type':'str'}                                
                                 ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
 
     def updateSerial(self):
-        serialnames = scan.scan()
+        serialnames = Scan.scan()
         self.findParam('port').setLimits(serialnames)
         if len(serialnames) > 0:
             self.findParam('port').setValue(serialnames[0]) 
@@ -340,24 +319,20 @@ class ReaderSystemSER(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
+    def con(self, scope = None):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""        
         if self.ser == None:
             # Open serial port if not already
             self.ser = serial.Serial()
-            self.ser.port     = self.findParam('port').value()
+            self.ser.port = self.findParam('port').value()
             self.ser.baudrate = 9600
             self.ser.stopbits = serial.STOPBITS_TWO
             self.ser.parity = serial.PARITY_EVEN
-            self.ser.timeout  = 2     # 2 second timeout
+            self.ser.timeout = 2     # 2 second timeout
             self.ser.dtr = False
             self.ser.rts = True
             self.ser.open()        
         self.reset()
-    
-    def flush(self):
-        """Discard all input buffers"""
-        self.ser.flush()
     
     def reset(self):
         """Reset card & save the ATR"""
@@ -395,11 +370,11 @@ class ReaderSystemSER(ReaderTemplate):
 
 class ReaderChipWhispererSER(ReaderTemplate):
     
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderChipWhispererSER, self).__init__(console, showScriptParameter)        
+    def __init__(self):
+        super(ReaderChipWhispererSER, self).__init__()
         
     def setupParameters(self):
-        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer(showScriptParameter=self.showScriptParameter)
+        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer()
         self.ser.setupParameters()              
         self.params = self.ser.params
         self.params.addChildren([{'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
@@ -491,10 +466,9 @@ class ReaderChipWhispererSER(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
-        self.ser.setOpenADC(oa)
-        self.ser.con()
+    def con(self, scope = None):
+        self.ser.setOpenADC(scope.qtadc.ser)
+        self.ser.con(scope)
         
         #Set defaults
         self.ser.findParam('parity').setValue('e')
@@ -507,8 +481,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.ser.findParam('txbaud').setValue(9600)
         
         #Setup GPIO Pins
-        if hasattr(global_mod.active_scope, 'advancedSettings') and global_mod.active_scope.advancedSettings:
-            self.cwe = global_mod.active_scope.advancedSettings
+        if hasattr(scope, 'advancedSettings') and scope.advancedSettings:
+            self.cwe = scope.advancedSettings
             self.cwe.findParam('gpio1mode').setValue(self.cwe.cwEXTRA.IOROUTE_GPIOE)
             self.cwe.findParam('gpio2mode').setValue(self.cwe.cwEXTRA.IOROUTE_HIGHZ)
             self.cwe.findParam('gpio3mode').setValue(self.cwe.cwEXTRA.IOROUTE_STXRX)
@@ -558,24 +532,21 @@ class ReaderChipWhispererSER(ReaderTemplate):
 
 class ReaderChipWhispererUSI(ReaderTemplate):
     
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderChipWhispererUSI, self).__init__(console, showScriptParameter)
+    def __init__(self):
+        super(ReaderChipWhispererUSI, self).__init__()
         self.usi = ChipWhispererTargets.CWUniversalSerial()
-        
 
     def setupParameters(self):
         ssParams = [{'name':'Baud', 'type':'int', 'value':9600, 'set':self.setBaud}                                                            
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)       
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)   
 
     def setBaud(self, brate):
         """Set baud rate of reader"""
         
         #For SmartCard we assume Stop-bits = 1, guard-bits=1, start-bits=1, parity=even
         self.usi.setBaud(brate)
-        
-    
+
     def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
         """Send APDU to SmartCard, get Response"""        
     
@@ -631,7 +602,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         p = temprx
         
         if p[0] != ins:
-            self.log("ACK Error: %x != %x"%(ins, p[0]))
+            print("ACK Error: %x != %x"%(ins, p[0]))
             
         #for t in p:
         #    print "%x "%t,
@@ -647,9 +618,9 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
-        self.usi.con(oa)
+    def con(self, scope = None):
+        """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+        self.usi.con(scope.qtadc.ser)
         self.usi.setIdle(1)
         self.setBaud(9600)
         self.usi.setParity("even")        
@@ -668,8 +639,8 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         pass
     
 class ReaderChipWhispererSCard(ReaderTemplate):
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderChipWhispererSCard, self).__init__(console, showScriptParameter)
+    def __init__(self):
+        super(ReaderChipWhispererSCard, self).__init__()
         self.scard = ChipWhispererTargets.CWSCardIntegrated()
         
 
@@ -679,8 +650,7 @@ class ReaderChipWhispererSCard(ReaderTemplate):
                     {'name':'Answer To Reset (ATR)', 'key':'atr', 'type':'str', 'value':'', 'readonly':True},
                     {'name':'Reset Card', 'type':'action', 'action':self.reset},                                                        
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)       
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
 
     def reset(self):
         atr = self.scard.reset()
@@ -692,8 +662,8 @@ class ReaderChipWhispererSCard(ReaderTemplate):
     def statusUpdate(self):
         self.findParam('statusStr').setValue(self.scard.isPresent())
         
-    def con(self, oa):
-        self.scard.con(oa)
+    def con(self, scope):
+        self.scard.con(scope.qtadc.ser)
         self.reset()
 
     def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
@@ -721,10 +691,11 @@ try:
 except ImportError:
     AnyCardType = None
     
+   
 class ReaderPCSC(ReaderTemplate):    
 
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ReaderPCSC, self).__init__(console, showScriptParameter)
+    def __init__(self):
+        super(ReaderPCSC, self).__init__()
         
         if AnyCardType is None:
             raise ImportError("smartcard libraries missing")           
@@ -732,11 +703,9 @@ class ReaderPCSC(ReaderTemplate):
     def setupParameters(self):
         ssParams = [{'name':'Keep-Alive Interval (off=0)', 'type':'int', 'value':2, 'set':self.setKeepalive}                                                            
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)    
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         
-        
-        self.timeoutTimer = QTimer()  
+        self.timeoutTimer = timer.Timer()
         self.timeoutTimer.timeout.connect(self.timeoutFired)
         self.timeoutTimer.setInterval(2000)
 
@@ -776,28 +745,20 @@ class ReaderPCSC(ReaderTemplate):
         
         return status
     
-    def con(self, oa=None):
-        """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
+    def con(self, scope = None):
+        """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         try:
             self.sccard = AnyCardType()
             self.screq = CardRequest(timeout=1, cardType=self.sccard)
             self.scserv = self.screq.waitforcard()
             
-
-            #observer = ConsoleCardConnectionObserver()
-            #self.scserv.connection.addObserver( observer )           
-            
             if not self.timeoutTimer.isActive():
                 self.timeoutTimer.start()
 
             print "SCARD: Connected..."
+        except Exception:
+            raise Exception("SCARD: Failed to connect...")
 
-        except CardRequestTimeoutException:
-            print "SCARD: Failed to connect..."
-            return False
-
-        return True        
-    
     def flush(self):
         """Discard all input buffers"""
         pass
@@ -814,31 +775,26 @@ class ReaderPCSC(ReaderTemplate):
         self.scserv.connection.disconnect()
         self.timeoutTimer.stop()
     
-class ProtocolTemplate(QObject):
-    paramListUpdated = Signal(list)
+class ProtocolTemplate(object):
+    paramListUpdated = Util.Signal()
     
-    def __init__(self, console=None, showScriptParameter=None):
-        super(ProtocolTemplate, self).__init__()
-        
-        self.console = console
-        self.showScriptParameter = showScriptParameter
+    def __init__(self):
         self.hw = None
         self.setupParameters()
-        
-    def log(self, message):
-        self.console.append(message)
-                
+
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
             
+    def setSomething(self):
+        pass
+
     def paramList(self):
         p = [self.params]
         #if self.ser is not None:
         #    for a in self.ser.paramList(): p.append(a)
-        return p    
+        return p
 
     def setReaderHardware(self, hw):
         self.hw = hw
@@ -869,8 +825,7 @@ class ProtocolSASEBOWCardOS(ProtocolTemplate):
     def setupParameters(self):
         """No parameters"""
         #ssParams = []        
-        #self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        #ExtendedParameter.setupExtended(self.params, self)
+        #self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
         self.params = None
         
     def loadEncryptionKey(self, key):
@@ -900,8 +855,7 @@ class ProtocolDPAv42(ProtocolTemplate):
     def setupParameters(self):
         """No parameters"""
         #ssParams = []        
-        #self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        #ExtendedParameter.setupExtended(self.params, self)
+        #self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
         self.params = None
         
     def loadEncryptionKey(self, key):
@@ -996,23 +950,22 @@ class ProtocolJCardTest(ProtocolTemplate):
         counter3 = (pay[9] << 8) | pay[10]
 
         self.resp = (counter1, counter2, counter3)
-
-
-
-        print self.resp
+        print (counter1, counter2, counter3)
 
     def readOutput(self):
         return self.resp
 
+
 class SmartCard(TargetTemplate):
-    paramListUpdated = Signal(list) 
+    name = "Smart Card"
+    paramListUpdated = Util.Signal()
      
     def setupParameters(self):
         self.oa=None
         self.driver = None
-        self.scgui = SCGUI.SmartCardGUICard(self.parent())
+        self.scgui = SCGUI.SmartCardGUICard(None)
         
-        supported_readers = dicttype()
+        supported_readers = Util.DictType()
         supported_readers["Select Reader"] = None
         supported_readers["CWCR2-SER"] = ReaderChipWhispererSER()
         supported_readers["CW1173/1180-SCARD"] = ReaderChipWhispererLiteSCard()               
@@ -1036,8 +989,7 @@ class SmartCard(TargetTemplate):
                     {'name':'SmartCard Explorer', 'type':'action', 'action':self.scgui.show}
                                                                            
                     ]        
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
 
     def __del__(self):
         self.close()
@@ -1055,12 +1007,12 @@ class SmartCard(TargetTemplate):
 
     def setConnection(self, con):
         self.driver = con        
-        self.paramListUpdated.emit(self.paramList)
+        self.paramListUpdated.emit()
         self.scgui.setConnection(con)
         
     def setProtocol(self, con):
         self.protocol = con
-        self.paramListUpdated.emit(self.paramList)
+        self.paramListUpdated.emit()
         self.protocol.setReaderHardware(self.driver)
         
     def paramList(self):
@@ -1068,25 +1020,25 @@ class SmartCard(TargetTemplate):
         if self.driver is not None:
             for a in self.driver.paramList(): p.append(a)
         return p
-    
-    def con(self):       
-        self.driver.con(self.oa)
+
+    def con(self, scope = None):
+        self.driver.con(scope)
         self.driver.flush()
         self.protocol.setReaderHardware(self.driver)
+        self.connectStatus.setValue(True)
 
-    def dis(self):
-        self.close()
-    
     def close(self):
         if self.driver != None:
             self.driver.close()
-            self.driver = None
+            # self.driver = None
         return
         
     def init(self):
+        if not self.protocol: raise Warning("No protocol selected.")
         self.protocol.init()
 
     def reinit(self):
+        if not self.protocol: raise Warning("No protocol selected.")
         self.protocol.reinit()
       
     def loadEncryptionKey(self, key):
@@ -1111,3 +1063,6 @@ class SmartCard(TargetTemplate):
     
     def checkEncryptionKey(self, key):
         return key
+
+    def validateSettings(self):
+        return []

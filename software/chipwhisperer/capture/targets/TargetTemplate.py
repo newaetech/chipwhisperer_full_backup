@@ -22,68 +22,58 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
 
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util
 
 try:
     from Crypto.Cipher import AES
 except ImportError:
     AES = None
 
-class TargetTemplate(QObject):
-    paramListUpdated = Signal(list)
-    newInputData = Signal(list)
-    
-    def __init__(self, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(TargetTemplate, self).__init__()        
-        self.console = console
-        self.showScriptParameter = showScriptParameter                
+
+def getClass():
+    return TargetTemplate
+
+
+class TargetTemplate(object):
+    name = "None"
+    params = None
+
+    def __init__(self):
+        self.paramListUpdated = Util.Signal()
+        self.newInputData = Util.Signal()
+        self.connectStatus = Util.Observable(False)
         self.setupParameters()
-                
+
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
         ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = Parameter.create(name='Smartcard Reader', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)      
+        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)   
                         
+    def setSomething(self):
+        """Here you would send value to the reader hardware"""
+        pass
+
     def paramList(self):
-        p = [self.params]
-        #if self.ser is not None:
-        #    for a in self.ser.paramList(): p.append(a)
-        return p        
+        return [self.params]
         
     def __del__(self):
         """Close system if needed"""
         self.close()
-        
-    def log(self, msg):
-        if self.console is not None:
-            self.console.append(msg)
-        else:
-            print msg
-            
-    def setOpenADC(self, oadc):
-        self.oa = oadc
-        
-    
+
+    def getStatus(self):
+        return self.connectStatus.value()
+
     def dis(self):
         """Disconnect from target"""
         self.close()
+        self.connectStatus.setValue(False)
 
-    def con(self):   
+    def con(self, scope = None):
         """Connect to target"""
-        pass
+        self.connectStatus.setValue(True)
+        # raise Warning("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def flush(self):
         """Flush input/output buffers"""
@@ -126,9 +116,11 @@ class TargetTemplate(QObject):
 
     def readOutput(self):        
         """Read result"""
+        raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".readOutput()")
 
     def go(self):
         """Do Encryption"""
+        raise NotImplementedError("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".go()")
 
     def keyLen(self):
         """Length of key system is using"""
@@ -145,3 +137,9 @@ class TargetTemplate(QObject):
             return ct
         else:
             return None
+
+    def validateSettings(self):
+        return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
+
+    def getName(self):
+        return self.name
