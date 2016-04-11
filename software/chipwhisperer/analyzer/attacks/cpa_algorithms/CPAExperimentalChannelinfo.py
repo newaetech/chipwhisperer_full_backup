@@ -28,7 +28,7 @@
 import numpy as np
 from scipy.stats import norm
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
 
@@ -38,6 +38,11 @@ try:
     import attacks.CPACython as CPACython
 except ImportError:
     CPACython = None
+
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return CPAExperimentalChannelinfo
 
 
 class CPAProgressiveOneSubkey(object):
@@ -279,7 +284,7 @@ class TemplateOneSubkey(object):
             if progressBar:
                 progressBar.setValue(pbcnt)
                 progressBar.updateStatus((self.totalTraces - numtraces, self.totalTraces), bnum)
-                if progressBar.wasCanceled():
+                if progressBar.wasAborted():
                     break
             pbcnt = pbcnt + 1
 
@@ -291,6 +296,7 @@ class CPAExperimentalChannelinfo(object):
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     # paramListUpdated = util.Signal()
+    name = "CPA Experimental Channel Info"
 
     def __init__(self, model):
         resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},

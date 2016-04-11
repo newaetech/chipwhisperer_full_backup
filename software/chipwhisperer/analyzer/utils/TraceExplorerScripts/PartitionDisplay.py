@@ -422,7 +422,7 @@ class PartitionDisplay(AutoScript, QObject):
             # Q[k] = Q[k-1] + (x[k] - A[k-1])(x[k] - A[k])
             for bnum in range(0, self.numKeys):
                 progressBar.setValue(tsegn * self.numKeys + bnum)
-                if progressBar.wasCanceled():
+                if progressBar.wasAborted():
                     break
                 for i in range(0, self.partObject.partMethod.getNumPartitions()):
                     QApplication.processEvents()
@@ -436,7 +436,7 @@ class PartitionDisplay(AutoScript, QObject):
                                 Q_k[bnum][i] = Q_k[bnum][i] + ((t - A_j[bnum][i]) * (t - A_k[bnum][i]))
                                 A_j[bnum][i] = A_k[bnum][i]
 
-            if progressBar.wasCanceled():
+            if progressBar.wasAborted():
                 progressBar.hide()
                 return
 
@@ -519,7 +519,7 @@ class PartitionDisplay(AutoScript, QObject):
         progressBar.setValue(progressBar.maximum())
         progressBar.setWindowTitle('Debug Fail')
         progressBar.setLabelText('You should never see this text')
-        if progressBar.wasCanceled():
+        if progressBar.wasAborted():
             return
 
         self.SADList = SADList

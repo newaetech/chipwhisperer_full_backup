@@ -28,10 +28,16 @@
 import numpy as np
 
 
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return AttackCPA_Bayesian
+
+
 class AttackCPA_Bayesian(object):
     """
     Bayesian CPA, as described in .
     """
+    name = "Bayesian CPA"
 
     def __init__(self, model):
         self.model = model
@@ -149,7 +155,7 @@ class AttackCPA_Bayesian(object):
 
                 if progressBar:
                     progressBar.updateStatus(pbcnt, (bnum, key))
-                    if progressBar and progressBar.wasCanceled():
+                    if progressBar and progressBar.wasAborted():
                         return
                 pbcnt = pbcnt + 1
 

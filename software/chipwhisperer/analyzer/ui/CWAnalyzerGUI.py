@@ -42,8 +42,6 @@ import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.analyzer.attacks.Profiling import Profiling
-from chipwhisperer.analyzer.attacks.CPA import CPA
 from functools import partial
 
 
@@ -53,8 +51,8 @@ class CWAnalyzerGUI(CWMainGUI):
     This is a front-end to the CWCoreAPI.
     """
 
-    def __init__(self):
-        super(CWAnalyzerGUI, self).__init__(CWCoreAPI(), name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+    def __init__(self, cwapi):
+        super(CWAnalyzerGUI, self).__init__(cwapi, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addTraceDock("Waveform Display")
 
         self.scriptList = []
@@ -71,7 +69,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.traceExplorerDialog.runScriptFunction.connect(self.runScriptFunction)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
-        self.valid_atacks = {CPA.name:CPA(), Profiling.name:Profiling(self.traceExplorerDialog)}
+        self.valid_atacks = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.attacks", True)
         self.setAttack(self.valid_atacks["CPA"])
         self.valid_preprocessingModules = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, self.waveformDock.widget())
         self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
@@ -485,7 +483,7 @@ def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = CWAnalyzerGUI()
+    window = CWAnalyzerGUI(CWCoreAPI())
     window.show()
 
     # Run the main Qt loop

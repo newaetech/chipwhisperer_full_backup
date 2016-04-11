@@ -25,10 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
-from subprocess import Popen, PIPE
 import numpy as np
+
 
 class DataTypeDiffs(object):
     """
@@ -111,7 +109,6 @@ class DataTypeDiffs(object):
                     self.maxes[i][hyp]['point'] = mindex
                     self.maxes[i][hyp]['value'] = mvalue
 
-
                 #TODO: why does this fail?
                 #self.maxes[i][np.isnan(self.maxes[i]['value'])]['value'] = 0
                 #TODO: workaround for PGE, as NaN's get ranked first
@@ -143,7 +140,3 @@ class DataTypeDiffs(object):
                 self.maxes_list[i].append({'trace':tnum, 'maxes':np.array(self.maxes[i])})
 
         return self.maxes
-
-
-
-

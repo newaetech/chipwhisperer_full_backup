@@ -26,7 +26,12 @@
 #=================================================
 
 import numpy as np
-from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return CPASimpleLoop
 
 
 class CPASimpleLoop(object):
@@ -35,6 +40,8 @@ class CPASimpleLoop(object):
     This attack does not provide trace-by-trace statistics however, you can only gather results once
     all the traces have been run through the attack.
     """
+
+    name = "Simple"
 
     def __init__(self, targetModel, leakageFunction):
         self.model = targetModel
@@ -111,8 +118,7 @@ class CPASimpleLoop(object):
             diffs[key] = sumnum / np.sqrt( sumden1 * sumden2 )
 
             if progressBar:
-                progressBar.updateStatus(pbcnt, (bnum, key))
-                if progressBar.wasCanceled():
+                if progressBar.wasAborted():
                     break
             pbcnt = pbcnt + 1
 
@@ -133,19 +139,20 @@ class CPASimpleLoop(object):
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
         brange=self.brange
+        self.all_diffs = range(0,16)
+        numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:
+            progressBar.setText("Attacking traces: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
+            progressBar.setStatusMask("Current Subkey: %d", 0)
             progressBar.setMaximum(len(brange) * 256)
-
-        self.all_diffs = range(0,16)
-        numtraces = tracerange[1] - tracerange[0]
 
         # Load all traces
         data = []
         textins = []
         textouts = []
         knownkeys = []
-        for i in range(tracerange[0], tracerange[1]):
+        for i in range(tracerange[0], tracerange[1]+1):
 
             # Handle Offset
             tnum = i + tracerange[0]
@@ -168,6 +175,8 @@ class CPASimpleLoop(object):
         for bnum in brange:
             (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.leakage, self.modelstate, pbcnt)
             self.stats.updateSubkey(bnum, data)
+            if progressBar:
+                progressBar.updateStatus(pbcnt, bnum)
 
     def getStatistics(self):
         return self.stats

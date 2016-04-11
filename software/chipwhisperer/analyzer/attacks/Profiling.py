@@ -30,17 +30,20 @@
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
-from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
-from chipwhisperer.analyzer.attacks.ProfilingTemplate import ProfilingTemplate
-from AttackGenericParameters import AttackGenericParameters
+from chipwhisperer.analyzer.attacks._base_class import AttackBaseClass
+from chipwhisperer.analyzer.attacks._profiling_template import ProfilingTemplate
+from _generic_parameters import AttackGenericParameters
 
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return Profiling
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
 
     name = "Profiling"
-    def __init__(self, traceExplorerDialog):
-        self.traceExplorerDialog = traceExplorerDialog
+    def __init__(self):
         AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
 
@@ -71,7 +74,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-
         self.importsAppend("from chipwhisperer.analyzer.attacks.Profiling import Profiling")
 
         analysAlgoStr = self.findParam('Prof_algo').value().__name__

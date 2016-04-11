@@ -107,22 +107,3 @@ class DataAnalysis(object):
 # print "Done"
 
 # print data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

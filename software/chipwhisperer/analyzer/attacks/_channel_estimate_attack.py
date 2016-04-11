@@ -28,6 +28,7 @@ import os
 import sys
 from operator import itemgetter
 
+
 class ChannelEstimateAttackOneSubkey(object):
     """ Redos entire attack """
     def __init__(self):        
@@ -105,6 +106,7 @@ class ChannelEstimateAttackOneSubkey(object):
             print "answer @ rank %d"%map(itemgetter('guess'), sortedresult).index(key[bnum])
 
         return (diffs, pbcnt)
+
 
 #Hacks for main()
 sys.path.append('../../common')

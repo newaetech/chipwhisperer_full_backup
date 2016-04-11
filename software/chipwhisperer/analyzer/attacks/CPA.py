@@ -25,14 +25,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-from chipwhisperer.analyzer.attacks.AttackBaseClass import AttackBaseClass
-from chipwhisperer.analyzer.attacks.CPAProgressive import CPAProgressive
-from chipwhisperer.analyzer.attacks.CPASimpleLoop import CPASimpleLoop
-from chipwhisperer.analyzer.attacks.CPAProgressive_CAccel import CPAProgressive_CAccel
-from AttackGenericParameters import AttackGenericParameters
-from chipwhisperer.analyzer.attacks.CPAExperimentalChannelinfo import CPAExperimentalChannelinfo #TEMPORARY - NOT FOR REAL USE
+from chipwhisperer.analyzer.attacks._base_class import AttackBaseClass
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from _generic_parameters import AttackGenericParameters
+from chipwhisperer.common.utils import Util
+
+
+def getClass():
+    """"Returns the Main Class in this Module"""
+    return CPA
+
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
@@ -44,16 +47,9 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         AttackGenericParameters.__init__(self)
 
     def setupParameters(self):
-        cpaalgos = {'Progressive':CPAProgressive,
-                    'Simple':CPASimpleLoop}
-
-        #if CPACython is not None:
-        #    cpaalgos['Progressive-Cython'] = CPACython.AttackCPA_Progressive
-
-        if CPAProgressive_CAccel is not None:
-            cpaalgos['Progressive-C Accel'] = CPAProgressive_CAccel
-
-        attackParams = [{'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':cpaalgos, 'value':CPAProgressive, 'set':self.updateAlgorithm},
+        algos = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False)
+        default_algo = algos["Progressive"]
+        attackParams = [{'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':default_algo, 'set':self.updateAlgorithm},
                         {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
                         {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
@@ -67,7 +63,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
 
-        self.setAnalysisAlgorithm(CPAProgressive, None, None)
+        self.setAnalysisAlgorithm(default_algo, None, None)
         self.updateBytesVisible()
         self.updateScript()
 
@@ -104,13 +100,13 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
     def updateScript(self, ignored=None):
-        self.importsAppend("from chipwhisperer.analyzer.attacks.CPA import CPA")
+        self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
         analysAlgoStr = self.findParam('CPA_algo').value().__name__
         hardwareStr = self.findParam('hw_algo').value().__name__
         leakModelStr = hardwareStr + "." + self.findParam('hw_leak').value()
 
-        self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
+        self.importsAppend("from chipwhisperer.analyzer.attacks.cpa_algorithms.%s import %s" % (analysAlgoStr, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
