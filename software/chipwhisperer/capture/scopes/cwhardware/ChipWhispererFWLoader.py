@@ -145,6 +145,7 @@ class FWLoaderConfig(object):
             print "Firmware loaded"
 
     def setFPGAMode(self, useFPGAZip):
+        self.useFPGAZip = useFPGAZip
         self.loader.setFPGAMode(useFPGAZip)
 
     def setFPGABitstream(self, bsLoc):
