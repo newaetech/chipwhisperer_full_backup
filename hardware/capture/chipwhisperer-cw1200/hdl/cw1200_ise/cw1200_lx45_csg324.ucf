@@ -2,6 +2,14 @@
 CONFIG VCCAUX=3.3;
 
  NET target_npower  LOC=B4 | IOSTANDARD=LVCMOS33;
+
+ NET LED_TRIGGERED  	LOC=E13 | IOSTANDARD=LVCMOS33;
+ NET LED_ADCR      	LOC=B12 | IOSTANDARD=LVCMOS33;
+ NET LED_ADCG      	LOC=D9  | IOSTANDARD=LVCMOS33;
+ NET LED_GLITCHR    	LOC=F9  | IOSTANDARD=LVCMOS33;
+ NET LED_GLITCHG    	LOC=C10 | IOSTANDARD=LVCMOS33;
+ NET LED_CLKGENR    	LOC=G9  | IOSTANDARD=LVCMOS33;
+ NET LED_CLKGENG    	LOC=D8  | IOSTANDARD=LVCMOS33;
  
  #NET sc_rst      LOC=B14 | IOSTANDARD=LVCMOS33;
  #NET sc_clk      LOC=C13 | IOSTANDARD=LVCMOS33;
@@ -52,7 +60,7 @@ CONFIG VCCAUX=3.3;
 #Put both input pin and net after IBUF into ADC_clk_fb timing net
 NET ADC_clk_fb TNM_NET = ADC_clk_fb;
 NET ADC_clk_fb TNM = ADC_clk_fb;
-TIMESPEC TS_ADCClock_fb = PERIOD ADC_clk_fb 105000 kHz;
+TIMESPEC TS_ADCClock_fb = PERIOD ADC_clk_fb 150000 kHz;
 
 #Based on AD9215 datasheet values, where ADC_clk_fb is feedback about
 #when rising edge hit the AD9215 clock pin
@@ -79,14 +87,14 @@ TIMEGRP "tg_ADC_Data" OFFSET = IN 2.5 ns VALID 5.0 ns BEFORE "ADC_clk_fb";
  NET USB_D[6]  LOC=V15 | IOSTANDARD=LVCMOS33 | SLEW=FAST  | TNM = tg_USB_Data;
  NET USB_D[7]  LOC=V14 | IOSTANDARD=LVCMOS33 | SLEW=FAST  | TNM = tg_USB_Data;
   
- NET USB_Addr[0]   LOC=U13 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[1]   LOC=V13 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[2]   LOC=P12 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[3]   LOC=T12 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[4]   LOC=V12 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[5]   LOC=R11 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[6]   LOC=V9 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_Addr[7]   LOC=V8 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
+ NET USB_Addr[0]   LOC=U13 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[1]   LOC=V13 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[2]   LOC=P12 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[3]   LOC=T12 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[4]   LOC=V12 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[5]   LOC=R11 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[6]   LOC=V9 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
+ NET USB_Addr[7]   LOC=V8 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Addr;
  #NET USB_Addr[8]   LOC=T7 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
  #NET USB_Addr[9]   LOC=R7 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
  #NET USB_Addr[10]  LOC=V11 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
@@ -99,22 +107,28 @@ TIMEGRP "tg_ADC_Data" OFFSET = IN 2.5 ns VALID 5.0 ns BEFORE "ADC_clk_fb";
  #NET USB_Addr[17]  LOC=U7 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
  #NET USB_Addr[18]  LOC=U8 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
 
- NET USB_ALEn  LOC=T4 | IOSTANDARD=LVCMOS33   | TNM = tg_USB_Data;
- NET USB_WRn  LOC=R3 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_RDn  LOC=V4 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
- NET USB_CEn  LOC=N5 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Data;
+ NET USB_ALEn  LOC=T4 | IOSTANDARD=LVCMOS33   | TNM = tg_USB_Ctrl;
+ NET USB_WRn  LOC=R3 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Ctrl;
+ NET USB_RDn  LOC=V4 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Ctrl;
+ NET USB_CEn  LOC=N5 | IOSTANDARD=LVCMOS33  | TNM = tg_USB_Ctrl;
  
 #TODO - Check these
 #TIMEGRP "tg_USB_Data" OFFSET = IN 5.2 ns VALID 10.4 ns BEFORE "clk_usb";
-TIMEGRP "tg_USB_Data" OFFSET = OUT 5.2 nS AFTER clk_usb;
+
+#TODO - this is a bit of a BS constraint. the SAM3U actually uses the _RD line
+# going high, and internally in the SAM3U is sampling at some point before that.
+#
+# The SAM3U firmware is set to basically allow an entire extra clock cycle after
+# data 'should' be there to account for poor performance here...
+TIMEGRP "tg_USB_Data" OFFSET = OUT 7 nS AFTER clk_usb;
 
  NET USB_spare0  LOC=U5 | IOSTANDARD=LVCMOS33;
  NET USB_spare1  LOC=R5 | IOSTANDARD=LVCMOS33;
  NET USB_spare2  LOC=T3 | IOSTANDARD=LVCMOS33;
 
 
- #NET TXD0  LOC=R13 | IOSTANDARD=LVCMOS33;
- #NET SCK0  LOC=R15 | IOSTANDARD=LVCMOS33;
+ NET USB_TXD0  LOC=R13 | IOSTANDARD=LVCMOS33;
+ NET USB_SCK0  LOC=R15 | IOSTANDARD=LVCMOS33;
  #NET RXD0  LOC=U15 | IOSTANDARD=LVCMOS33;
  #NET CTS0  LOC=N11 | IOSTANDARD=LVCMOS33;
  #NET RTS0  LOC=P11 | IOSTANDARD=LVCMOS33;
@@ -138,12 +152,15 @@ TIMEGRP "tg_USB_Data" OFFSET = OUT 5.2 nS AFTER clk_usb;
 
 #This route ends up having S&H problems. However we don't care as it gets toggled very infrequently
 #Target is -> target_hs2_OBUF:OCE
-#NET "reg_chipwhisperer/registers_cwextclk<7>" TIG;
+NET "reg_chipwhisperer/registers_cwextclk<7>" TIG;
 
-#This route also has S&H problems, again we don't care
-#NET "reg_clockglitch/clockglitch_settings_reg*" TIG;
-#NET "reg_clockglitch/clockglitch_offset_reg*" TIG;
-#NET "reg_chipwhisperer/registers_*" TIG;
+#This route also has S&H problems, again we don't care as if the wrong data is in for a clock cyle
+#it doesn't matter, and will get cleared up afterwards (I think, should check all this)
+NET "reg_clockglitch/clockglitch_settings_reg*" TIG;
+NET "reg_clockglitch/clockglitch_offset_reg*" TIG;
+NET "reg_chipwhisperer/registers_*" TIG;
+NET "oadc/timer_heartbeat*" TIG;
+NET "reg_clockglitch/manual" TIG;
 
 #INST "oadc/genclocks/DCM_extclock_gen" LOC="DCM_X0Y1";
 #INST "oadc/genclocks/DCM_CLKGEN_inst" LOC="DCM_X0Y3";
@@ -173,8 +190,10 @@ INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y6";
 INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y7";
 
 #Place these two into a site which allows this pair to work together
-INST "clkout1_buf" LOC="BUFGMUX_X2Y1";
-INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X2Y2";
+INST "clkout1_buf" LOC="BUFGMUX_X2Y3";
+INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X2Y4";
+
+INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X2Y1";
 
 
 
@@ -191,7 +210,7 @@ PIN "reg_clockglitch/gc/dcm1_clk_out_BUFG.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #user knows they can't use the 4x clock then so we don't need such a high constraint...
 NET "oadc/genclocks/dcm_clk_in" TNM_NET = "TN_DCMInput";
 NET "oadc/genclocks/clkgenfx_in" TNM_NET = "TN_DCMInput";
-TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 40 ns HIGH 50% PRIORITY 0;
+TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 10 ns HIGH 50% PRIORITY 0;
 
 NET "oadc/genclocks/out_from_dcmmux" TNM_NET = "TN_ADCSampleClock";
 #NET "oadc/ADC_clk_sample" TNM_NET = "TN_ADCSampleClock";

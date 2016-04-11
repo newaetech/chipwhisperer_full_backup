@@ -51,7 +51,9 @@ module reg_clockglitch(
 	input wire     sourceclk1,
 	
 	output wire    glitchclk,
-	input wire     exttrigger
+	input wire     exttrigger,
+	
+	output wire		dcm_unlocked
    );
 	 
 	 wire	  reset;
@@ -129,6 +131,7 @@ module reg_clockglitch(
 	 
 	 wire dcm_rst;
 	 
+	 assign dcm_unlocked = ~(dcm1_locked & dcm2_locked);	 
 
 /*
 	 Clock-glitch settings main registers (address 51)
