@@ -144,7 +144,7 @@ class SAM3LoaderConfig(QtFixes.QDialog):
             if reply != QMessageBox.Yes:
                 return
 
-        self.cwLiteUSB.enter_bootloader(True)
+        self.cwLiteUSB.enterBootloader(True)
 
     def runSamba(self):
         sam = Samba()

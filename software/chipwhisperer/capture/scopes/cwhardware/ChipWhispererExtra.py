@@ -324,6 +324,15 @@ class CWExtraSettings(object):
 
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
+    def setTargetPowerSlew(self, fastmode):
+        data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+        if fastmode:
+            data[5] |= (0x04)
+        else:
+            data[5] &= ~(0x04)
+
+        self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
     def getTargetPowerState(self):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         if data[5] & 0x02:
