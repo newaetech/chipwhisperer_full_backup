@@ -29,20 +29,18 @@
 
 import numpy as np
 import scipy
-
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
+from chipwhisperer.analyzer.utils.Partition import Partition
+import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
+from chipwhisperer.common.utils import Util
 try:
     from scipy.stats import multivariate_normal
 except ImportError:
     multivariate_normal = None
 
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.analyzer.attacks.AttackStats import DataTypeDiffs
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.analyzer.utils.Partition import Partition
-import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
-from chipwhisperer.common.utils import Util
 
 class TemplateBasic(AutoScript):
     """

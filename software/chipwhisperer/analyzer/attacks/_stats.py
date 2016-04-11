@@ -25,9 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import sys
-from subprocess import Popen, PIPE
 import numpy as np
 
 class DataTypeDiffs(object):
