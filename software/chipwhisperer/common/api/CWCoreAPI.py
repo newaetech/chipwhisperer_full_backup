@@ -27,7 +27,7 @@ import sys, os
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import Util
 from chipwhisperer.common.ui.ProgressBar import *
-from chipwhisperer.capture.api.AcquisitionController import AcquisitionController, AcqKeyTextPattern_Basic, AcqKeyTextPattern_CRITTest
+from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 
 
 class CWCoreAPI(object):

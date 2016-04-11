@@ -35,7 +35,6 @@ from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import Util
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
-from chipwhisperer.capture.api.AcquisitionController import getAcqPatternModules
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 
@@ -78,12 +77,7 @@ class CWCaptureGUI(CWMainGUI):
         valid_targets =  Util.getModulesInDictFromPackage("chipwhisperer.capture.targets", instantiate = True)
         valid_traces = Util.getModulesInDictFromPackage("chipwhisperer.common.traces", instantiate = False)
         valid_aux = Util.getModulesInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True)
-        valid_acqPatterns = getAcqPatternModules()
-        
-        if len(valid_scopes) == 0:
-            raise IOError("Failed to load scope modules, either modules missing, import error, " +
-                          "or running main file from unusual directory without passing location " +
-                          "of install.")
+        valid_acqPatterns =  Util.getModulesInDictFromPackage("chipwhisperer.capture.acq_patterns", instantiate = True)
 
         self.cwAPI.setScope(valid_scopes["None"])
         self.cwAPI.setTarget(valid_targets["None"])
@@ -383,10 +377,11 @@ def makeApplication():
     app.setApplicationName(CWCoreAPI.__name__ + " - Capture ")
     return app
 
-def main():
-    app = makeApplication()
 
-    # Create and show the form
+def main():
+    # Create the Qt Application
+    app = makeApplication()
+    # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
     window.show()
 

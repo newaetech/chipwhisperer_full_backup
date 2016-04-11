@@ -482,7 +482,7 @@ def makeApplication():
 def main():
     # Create the Qt Application
     app = makeApplication()
-    # Create and show the form
+    # Create and show the GUI
     window = CWAnalyzerGUI(CWCoreAPI())
     window.show()
 

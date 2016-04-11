@@ -118,13 +118,13 @@ class CPAProgressiveOneSubkey(object):
                 libname = 'libcpa_x64.so'
             else:
                 libname = 'libcpa.so'
-        
+
         libname = os.path.join(dir, 'c_accel/%s' % libname)
         try:
             dll = CDLL(libname)
         except Exception:
-            raise Exception("Could not import library file: " + libname)
-            
+            raise Exception("Could not import library file. Compile it for your platform first (there is a makefile for that): " + libname)
+
         self.osk = dll.oneSubkey
         self.modelstate = {'knownkey':None}
 
