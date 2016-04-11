@@ -58,9 +58,15 @@ classmapping = {
 }
 
 
+class fakeParamScriptOutput(object):
+    @staticmethod
+    def append(s):
+        pass
+        #print s
+
 class ExtendedParameter():
 
-    paramScriptingOutput = None
+    paramScriptingOutput = fakeParamScriptOutput
 
     @staticmethod
     def getAllParameters(self, parent=None):
