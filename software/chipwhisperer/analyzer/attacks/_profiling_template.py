@@ -377,4 +377,3 @@ class ProfilingTemplate(AutoScript):
 
     def setStatsReadyCallback(self, sr):
         self.sr = sr
-
