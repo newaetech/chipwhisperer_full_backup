@@ -138,7 +138,7 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
         pass
 
     def con(self, scope = None):
-        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
+        if scope is None or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         scope.connectStatus.connect(self.dis)
         self.params.getAllParameters()

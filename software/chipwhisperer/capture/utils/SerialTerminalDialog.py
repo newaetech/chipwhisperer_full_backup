@@ -154,7 +154,7 @@ class SerialTerminalDialog(QtFixes.QDialog):
         
     def tryCon(self):
         self.driver = self.cwAPI.getTarget().ser
-        self.driver.con()
+        #self.driver.con()
 
         self.textIn.setEnabled(True)
         self.textOut.setEnabled(True)
