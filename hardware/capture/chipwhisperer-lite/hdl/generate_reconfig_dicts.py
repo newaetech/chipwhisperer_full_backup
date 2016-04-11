@@ -1,39 +1,132 @@
-# Copyright 2015 Colin O'Flynn. NewAE Technology Inc.
+# Copyright Colin O'Flynn 2013
+# www.NewAE.com
 #
-# This file generates the partial reconfiguration data required for
-# the LX9 platform. This brute-forces a generation of every possible
-# width/offset combination. The previous system was no longer working
-# for some reason with the LX9.
+#
+#
+#
 
+
+from subprocess import call
 import os
-import subprocess
-import shutil
+import pickle
 
-#To generate partial reconfiguration data, the steps are:
-#
-# 1. Run parallel_generate.py 4 times. Each time set the blockrng to
-#    a new option. This will take 3-4 days in total. You can use 'top'
-#    to monitor completion of each block, then start the next block.
-#
-# 2. Run combine_dicts.py to generate a final output file.
-#
-# 3. Delete the directory autogen_dir, it's not needed now.
-#
 
-#Run each in a block of 32 items. Each block takes about 12 hours.
+#Windows Path
+#XILINX_DIR = "C:\\Xilinx\\14.4\\ISE_DS\\ISE\\bin\\nt64\\"
+#DESIGN_BASE = "cwlite_ise\\cwlite_interface"
 
-blockrng = (0, 32)
-#blockrng = (32, 64)
-#blockrng = (64, 96)
-#blockrng = (96, 128)
+#Linux Path
+XILINX_DIR = "/opt/Xilinx/14.6/ISE_DS/ISE/bin/lin64/"
+DESIGN_BASE = "cwlite_ise/cwlite_interface"
 
-for width in range(blockrng[0], blockrng[1]):
-    print "Starting %d"%width
-    curdir = r'autogen_dir/width%d'%width
-    os.makedirs(curdir)
-    shutil.copyfile("cwlite_ise/cwlite_interface.ncd", "%s/cwlite_interface.ncd"%curdir)
-    shutil.copyfile("cwlite_ise/cwlite_interface.bit", "%s/cwlite_interface.bit"%curdir)
-    shutil.copyfile("cwlite_ise/cwlite_interface.pcf", "%s/cwlite_interface.pcf"%curdir)    
-    proc = subprocess.Popen(['python','../../long_reconfig_dicts.py','cwlite_interface','%d'%width]
-                   , cwd=curdir)
+def cleanup():
+    dellist = ["diffbits.rbt", "diffscr.scr", "diff.pcf", "diff.ncd",
+               "diffbits.bgn", "diffbits.bit", "diffbits.drc", "diffbits.ll", "diffbits_bitgen.xwbt",
+               "usage_statistics_webtalk.html", "webtalk.log", "xilinx_device_details.xml",
+               "diffscr.scr", "reversebits.bit", "reversebits.drc", "reversebits.bgn",
+               "reversebits.rbt", "reversebits_bitgen.xwbt",
+               ]
     
+
+    for f in dellist:
+        try:
+            os.remove(f)
+        except OSError, e:
+            pass
+
+    
+def makeDiffBits_phase(ATTR_PHASE, comp = "oadc/genclocks/DCM_extclock_gen", cfgString = "CLKDV_DIVIDE:2.0 CLKIN_DIVIDE_BY_2:FALSE CLKOUT_PHASE_SHIFT:VARIABLE CLK_FEEDBACK:2X DESKEW_ADJUST:5 DFS_FREQUENCY_MODE:LOW DLL_FREQUENCY_MODE:LOW DSS_MODE:NONE DUTY_CYCLE_CORRECTION:TRUE PSCLKINV:PSCLK PSENINV:PSEN PSINCDECINV:PSINCDEC RSTINV:RST STARTUP_WAIT:FALSE VERY_HIGH_FREQUENCY:FALSE", reverse=False):
+    script = "post attr main\n"
+    script += "setattr main edit-mode Read-Write\n"
+    script += "setattr main case_sensitive off\n"
+    script += "unselect -all\n"
+    script += "select comp '%s'\n"%comp
+    script += "post block\n"
+    script += 'setattr comp %s PHASE_SHIFT "%d"\n'%(comp, ATTR_PHASE)
+    script += 'setattr comp %s Config "%s"\n'%(comp, cfgString)
+    script += "block apply\n"
+    script += "end block\n"
+    script += 'save -w design "diff.ncd" "diff.pcf"\n'
+    script += "exit\n"
+    script += "end\n"
+
+    f = open("diffscr.scr", "w")
+    f.write(script)
+    f.close()
+    
+    call([XILINX_DIR + "fpga_edline", DESIGN_BASE+".ncd", DESIGN_BASE+".pcf", "-p", "diffscr"])
+
+    if reverse:
+        call([XILINX_DIR + "bitgen", "-g", "ActiveReconfig:Yes", "diff.ncd", "diffbits.bit", "-w"])
+        call([XILINX_DIR + "bitgen", "-g", "ActiveReconfig:Yes", "-r", "diffbits.bit", "-w", DESIGN_BASE+".ncd", "reversebits.bit", "-b"])
+    else:
+        call([XILINX_DIR + "bitgen", "-g", "ActiveReconfig:Yes", "-r", DESIGN_BASE+".bit", "-w", "diff.ncd", "diffbits.bit", "-b", "-l"])
+
+def parseRbt(bgtname="diffbits.rbt"):
+    f = open(bgtname, "r")
+
+    bitsnow = False
+
+    data = []
+
+    for line in f:
+        if bitsnow:
+            data.append(int(line, 2))
+        elif "Part" in line:
+            part = line.split()[1]
+        elif "1111111111111111" in line:
+            data.append(int(line, 2))
+            bitsnow = True
+
+    return (part, data)
+
+def updateDict(d, parsed, param, descstr="", locationstr=""):
+    try:
+        d["part"]
+    except KeyError:
+        d["part"] = parsed[0]
+        d["crc32"] = 0
+        d["desc"] = descstr
+        d["location"] = locationstr
+        d["base"] = parsed[1]
+        d["values"] = {}
+
+    if d["part"] != parsed[0]:
+        raise ValueError("INVALID PART!?")
+
+    if param is not None:
+        d["values"][param] = []
+        for idx, val in enumerate(parsed[1]):
+            try:
+                if val != d["base"][idx]:
+                    d["values"][param].append( (idx, val) )
+            except IndexError, e:
+                print "Number of changes differs from 'base'! Make sure phase range starts at non-default"
+                print "And reference bitfile was generated by same version of tools as being called here"
+                print "otherwise regenerate reference bitfile from .ncd file"
+                raise IndexError(e)
+    
+def generateAllDiffs(comp, desc, filename, values):  
+    saveDict = {}
+    cleanup()
+
+    #This inits the "base" reference bitfile, which is the partial reconfig bitstream required
+    #to bring system BACK to normal state. This MUST be the base state, otherwise the system
+    #will never record the required changes to bring the FPGA back to initial state
+    makeDiffBits_phase(-1, comp, reverse=True)
+    p = parseRbt("reversebits.rbt")
+    updateDict(saveDict, p, None, desc, comp)   
+
+    for i in values:
+        cleanup()
+        print "Offset = %d"%i
+        makeDiffBits_phase(i, comp)
+        p = parseRbt()
+        updateDict(saveDict, p, i, desc, comp)
+        pickle.dump(saveDict, open(filename, 'wb'))
+    #cleanup()
+    pickle.dump(saveDict, open(filename, 'wb'))
+
+#generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen2", "Glitch Width", "s6lx25-glitchwidth.p", [-100, 100])
+generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen2", "Glitch Width", "cwlite-glitchwidth.p", range(-127, 128))
+generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen", "Glitch Offset", "cwlite-glitchoffset.p", range(-127, 128))
