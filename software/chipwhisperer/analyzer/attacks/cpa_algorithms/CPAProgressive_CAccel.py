@@ -216,6 +216,8 @@ class CPAProgressive_CAccel(AutoScript):
         numtraces = tracerange[1] - tracerange[0]
 
         if progressBar:
+            progressBar.setText("Attacking traces: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
+            progressBar.setStatusMask("Trace Interval: %d-%d. Current Subkey: %d", (0,0,0))
             progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
