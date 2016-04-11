@@ -78,10 +78,9 @@ class PartialReconfigDataMulti(object):
 
             #Update base
             for d in diff:
-
-                # Check if multiple updates to same location (debug info)
-                if data[d[0]] != baseref[d[0]]:
-                    print "COLLISION & %d, %x/%x --> %x --> %x" % (d[0], baseref[d[0]], list(self.dataList[1]['base'])[d[0]], data[d[0]], d[1])
+                ## Check if multiple updates to same location (debug info)
+                #if data[d[0]] != baseref[d[0]]:
+                #    print "COLLISION & %d, %x/%x --> %x --> %x" % (d[0], baseref[d[0]], list(self.dataList[1]['base'])[d[0]], data[d[0]], d[1])
                 data[d[0]] = d[1]
 
         return data
