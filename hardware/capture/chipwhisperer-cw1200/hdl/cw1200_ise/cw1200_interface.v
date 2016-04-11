@@ -4,10 +4,13 @@
 module cw1200_interface(  
     input wire         clk_usb,
       
-    output wire        GPIO_LED2,
-    output wire        GPIO_LED3,
-    output wire        GPIO_LED4,
-	 output wire        GPIO_LED5,
+    output wire        LED_TRIGGERED,
+    output wire        LED_ADCR,
+	 output wire        LED_ADCG,
+	 output wire        LED_CLKGENR,
+	 output wire        LED_CLKGENG,
+	 output wire        LED_GLITCHR,
+	 output wire        LED_GLITCHG,
 	 
 	 /* FPGA - USB Interface */
 	 inout wire [7:0]	USB_D,
@@ -60,6 +63,9 @@ module cw1200_interface(
 	 output wire		USB_RXD2,
 	 inout wire			USB_SCK2,
 	 
+	 input wire       USB_TXD0,
+	 input wire       USB_SCK0,
+	 
 	 input wire       USB_spare0,
 	 input wire       USB_spare1,
 	 input wire			USB_spare2
@@ -101,7 +107,7 @@ module cw1200_interface(
    wire		   pll_clkin1, pll_clkout0;
   
   	IBUFG clkin1_buf
-   (.O (pll_clkin1),
+   (.O (pll_clkin1), // clk_usb_buf0
     .I (clk_usb));
 
 	PLL_BASE
@@ -150,7 +156,7 @@ module cw1200_interface(
 		.I1(pll_clkout0), // 1-bit input: Clock buffer input (S=1)
 		.S(1'b1) // 1-bit input: Clock buffer select
 	); 
-		
+
 	//Pass raw output as this goes to a BUFGMUX
 	assign clk_usb_buf1 = pll_clkout0;
 	
@@ -180,6 +186,15 @@ module cw1200_interface(
 	wire extclk_mux;
 	wire clkgen, glitchclk, adc_sample_clk;
 	wire enable_avrprog;
+	
+	wire ADC_DCM_Unlock, CLKGEN_DCM_Unlock, Glitch_DCM_Unlock;
+	
+	assign LED_ADCR = ADC_DCM_Unlock;
+	assign LED_ADCG = ~ADC_DCM_Unlock;
+	assign LED_CLKGENR = CLKGEN_DCM_Unlock;
+	assign LED_CLKGENG = ~CLKGEN_DCM_Unlock;
+	assign LED_GLITCHR = Glitch_DCM_Unlock;
+	assign LED_GLITCHG = ~Glitch_DCM_Unlock;
 
 	openadc_interface oadc(
 		.reset_i(reset_i),
@@ -194,10 +209,10 @@ module cw1200_interface(
 		.USB_CEn(USB_CEn),
 		.USB_ALEn(USB_ALEn),
 	
-		.LED_hbeat(GPIO_LED5),
-		.LED_armed(GPIO_LED3),
-		.LED_ADCDCMUnlock(GPIO_LED2),
-		.LED_CLKGENDCMUnlock(GPIO_LED4),
+		//.LED_hbeat(LED_HBEAT),
+		.LED_armed(LED_TRIGGERED),
+		.LED_ADCDCMUnlock(ADC_DCM_Unlock),
+		.LED_CLKGENDCMUnlock(CLKGEN_DCM_Unlock),
 		.ADC_Data(ADC_Data),
 		.ADC_OR(ADC_OR),
 		.ADC_clk(ADC_clk),
@@ -297,7 +312,8 @@ module cw1200_interface(
 		.sourceclk0(target_hs1),
 		.sourceclk1(clkgen),
 		.glitchclk(glitchclk),
-		.exttrigger(ext_trigger)	
+		.exttrigger(ext_trigger),
+		.dcm_unlocked(Glitch_DCM_Unlock)
 		);
 	
 	reg_reconfig reg_reconfig(

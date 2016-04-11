@@ -101,14 +101,14 @@ module reg_main_cwlite(
 	 always @(posedge usb_clk) rdflag_rs_dly <= rdflag_rs;
 	 
 	 always @(posedge usb_clk) begin
-		if (rdflag_rs_dly)
+		//if (rdflag_rs_dly)
 			reg_datai_buf <= reg_datai;
 	 end
 	 
 	 //TODO: this should be synchronous to device clock, but is phase OK? Might need to
 	 //use resyncronized version...
 	 assign		reg_read = rdflag_rs;
-	 assign 		cwusb_dout = reg_datai;	 
+	 assign 		cwusb_dout = reg_datai;	 //reg_datai_buf 
 	 
 	 reg isoutreg, isoutregdly;
 	 
@@ -180,20 +180,33 @@ module reg_main_cwlite(
 			end
 		end
 	 end
-
-
+/*
+ `define CHIPSCOPE
 `ifdef CHIPSCOPE	
 	 wire [35:0] cs_ctrl;
 	
-	 coregen_icon icon (
-    .CONTROL0(cs_ctrl) // INOUT BUS [35:0]
-);
-	 coregen_ila ila (
-    .CONTROL(cs_ctrl), // INOUT BUS [35:0]
-    .CLK(usb_clk), // IN
-    .TRIG0(cs_data) // IN BUS [63:0]
+	wire [63:0] ila_trigbus;
+	wire [35:0] cs_control0;
+	assign ila_trigbus[7:0] = cwusb_dout;
+	assign ila_trigbus[15:8] = cwusb_addr;
+	assign ila_trigbus[16] = cwusb_rdn;
+	assign ila_trigbus[17] = cwusb_wrn;
+	assign ila_trigbus[18] = cwusb_isout;
+	assign ila_trigbus[19] = cwusb_alen;
+	
+	assign ila_trigbus[31:24] = reg_datai;
+
+	coregen_icon csicon (
+    .CONTROL0(cs_control0) // INOUT BUS [35:0]
 	);
+	
+	coregen_ila csila (
+    .CONTROL(cs_control0), // INOUT BUS [35:0]
+    .CLK(usb_clk), // IN
+    .TRIG0(ila_trigbus) // IN BUS [63:0]
+	 );
 `endif
+*/
  
 endmodule
 
