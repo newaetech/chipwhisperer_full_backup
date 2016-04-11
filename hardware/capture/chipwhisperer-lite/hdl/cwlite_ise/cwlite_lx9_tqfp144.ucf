@@ -151,8 +151,8 @@ PIN "reg_chipwhisperer/clkgenfx_mux.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X2Y3";
 #INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y16";
 #INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y14";
-#INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
-#INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
+INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
+INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
 #INST "oadc/genclocks/DCM_extclock_gen" LOC="DCM_X0Y2";
 #INST "oadc/genclocks/DCM_CLKGEN_inst" LOC="DCM_X0Y3";
 
