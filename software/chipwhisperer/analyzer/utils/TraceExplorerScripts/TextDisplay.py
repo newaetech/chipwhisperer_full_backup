@@ -50,12 +50,13 @@ class TextDisplay(AutoScript, QObject):
 
     def updateTable(self):
         self.dock.show()
-        tend = CWCoreAPI.getInstance().getTraceManager().numTraces()
+        tm = CWCoreAPI.getInstance().project().traceManager()
+        tend = tm.numTraces()
         self.tablewid.setRowCount(tend)
         for tnum in range(0,tend):
-            tin = CWCoreAPI.getInstance().getTraceManager().getTextin(tnum)
-            tout = CWCoreAPI.getInstance().getTraceManager().getTextout(tnum)
-            k = CWCoreAPI.getInstance().getTraceManager().getKnownKey(tnum)
+            tin = tm.getTextin(tnum)
+            tout = tm.getTextout(tnum)
+            k = tm.getKnownKey(tnum)
 
             self.tablewid.setItem(tnum, 0, QTableWidgetItem(Util.list2hexstr(tin)))
             self.tablewid.setItem(tnum, 1, QTableWidgetItem(Util.list2hexstr(tout)))

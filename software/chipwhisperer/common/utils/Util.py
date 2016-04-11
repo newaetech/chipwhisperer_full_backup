@@ -40,8 +40,8 @@ except ImportError:
 def getModulesInDictFromPackage(path, instantiate, *args, **kwargs):
     modules = importModulesInPackage(path)
     classes = getMainClassesFromModules(modules)
-    dictInstances = putInDict(classes, instantiate, *args, **kwargs)
-    return module_reorder(dictInstances)
+    dictModules = putInDict(classes, instantiate, *args, **kwargs)
+    return module_reorder(dictModules)
 
 
 def getRootDir():
@@ -81,6 +81,9 @@ def putInDict(items, instantiate, *args, **kwargs):
             resp[item.name] = item
         except Exception as e:
             print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
+
+    if len(resp) == 0:
+        print "Warning: Dictionary contains zero modules"
     return resp
 
 
