@@ -86,7 +86,7 @@ class ChipWhispererGlitch():
             elif cwtype == "cwlite":
                 settingprefix = "cwlite"
                 partialbasename = "cwlite"
-                self.glitchPR = pr.PartialReconfigDataOffsetWidth()
+                self.glitchPR = pr.PartialReconfigDataMulti()
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
@@ -98,11 +98,8 @@ class ChipWhispererGlitch():
                     #    fileloc = os.path.join(CWCoreAPI.getInstance().getRootDir(), fileloc)
                     zfile = zipfile.ZipFile(fileloc, "r")
 
-                    if cwtype == "cwlite":
-                        self.glitchPR.load(zfile.open(("%s-glitchoffsetwidth.p" % partialbasename)))
-                    else:
-                        self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
-                        self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))
+                    self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
+                    self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))
                     self.prEnabled = True
                 else:
                     print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
