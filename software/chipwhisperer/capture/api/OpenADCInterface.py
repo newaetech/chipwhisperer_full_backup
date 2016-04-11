@@ -798,7 +798,7 @@ class ClockSettings():
         return long(measured)
 
 
-class OpenADCInterface():
+class OpenADCInterface(object):
     def __init__(self, serial_instance, debug=None):
         self.serial = serial_instance
         self.offset = 0.5

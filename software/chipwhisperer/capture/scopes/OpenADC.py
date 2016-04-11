@@ -116,8 +116,11 @@ class OpenADCInterface_NAEUSBChip():
             self.cwFirmwareConfig.setInterface(dev.fpga)
             self.cwFirmwareConfig.loadRequired()
 
-            self.cwliteXMEGA.setUSBInterface(dev.xmega)
-            self.cwliteAVR.setUSBInterface(dev.avr)
+            if hasattr(self, 'cwliteXMEGA'):
+                self.cwliteXMEGA.setUSBInterface(dev.xmega)
+
+            if hasattr(self, 'cwliteAVR'):
+                self.cwliteAVR.setUSBInterface(dev.avr)
 
             self.ser = dev.usbdev()
 

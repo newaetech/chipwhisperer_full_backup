@@ -32,6 +32,9 @@ import os.path
 
 class CW_Loader(object):
     """ Base class for ChipWhisperer targets that help loading of FPGA data """
+
+    def __init__(self):
+        self._release_mode = True
     
     def fpga_bitstream_date(self):
         """ In 'debug' mode returns date bitstream was modified, returns 'None' in release mode """
@@ -63,6 +66,7 @@ class CW_Loader(object):
 
 class CWCRev2_Loader(CW_Loader):
     def __init__(self):
+        super(CWCRev2_Loader, self).__init__()
         self.name = "cwcrev2"
         self.driver = Ztex1v1()
         self._fwFLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))
@@ -106,6 +110,7 @@ class CWCRev2_Loader(CW_Loader):
 
 class CWLite_Loader(CW_Loader):
     def __init__(self):
+        super(CWLite_Loader, self).__init__()
         self.name = "cwlite"
         self.driver = None
         self._bsZipLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"))
@@ -142,8 +147,13 @@ class FWLoaderConfig(object):
     def setFPGAMode(self, useFPGAZip):
         self.loader.setFPGAMode(useFPGAZip)
 
+    def setFPGABitstream(self, bsLoc):
+        """Set a manual bitstream file to load"""
+        self.loader.setFPGAMode(False)
+        self.loader._bsLoc = bsLoc
+
     def loadFPGA(self):
-        """Load the FPGA bitstream"""
+        """Load the FPGA bitstream specified previously"""
         if self.loader.driver is None: raise Warning("Driver not loaded. Connect hardware before loading.")
 
         #Print if in debug mode

@@ -192,9 +192,10 @@ class OpenADCQt(QObject):
         if NumberPoints == None:
             NumberPoints = self.adc_settings.parm_trigger.maxSamples()
 
-        progress = QProgressDialog("Reading", "Abort", 0, 100)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(1000)
+        progress = None
+        #progress = QProgressDialog("Reading", "Abort", 0, 100)
+        #progress.setWindowModality(Qt.WindowModal)
+        #progress.setMinimumDuration(1000)
 
         try:
             self.datapoints = self.sc.readData(NumberPoints, progress)
