@@ -7,7 +7,7 @@
 
 
 from subprocess import call
-import os
+import os, sys
 import pickle
 
 
@@ -126,6 +126,14 @@ def generateAllDiffs(comp, desc, filename, values):
         pickle.dump(saveDict, open(filename, 'wb'))
     #cleanup()
     pickle.dump(saveDict, open(filename, 'wb'))
+
+
+#Validate system is OK
+
+status = os.system('python validate_dcm_locations.py')
+
+if (status != 0):
+    sys.exit()
 
 #generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen2", "Glitch Width", "s6lx25-glitchwidth.p", [-100, 100])
 generateAllDiffs("reg_clockglitch/gc/DCM_extclock_gen2", "Glitch Width", "cwlite-glitchwidth.p", range(-127, 128))
