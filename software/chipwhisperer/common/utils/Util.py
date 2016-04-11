@@ -43,8 +43,10 @@ def getModulesInDictFromPackage(path, instantiate, *args, **kwargs):
     dictInstances = putInDict(classes, instantiate, *args, **kwargs)
     return module_reorder(dictInstances)
 
+
 def getRootDir():
     return os.path.join(os.path.dirname(__file__), "../../../")
+
 
 def importModulesInPackage(path):
     resp = []
@@ -187,7 +189,7 @@ def getPyFiles(dir):
     if os.path.isdir(dir):
         for fn in os.listdir(dir):
             fnfull = dir + '/' + fn
-            if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')):
+            if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')) and (not fn.startswith('_')):
                 scriptList.append(os.path.splitext(fn)[0])
     return scriptList
 

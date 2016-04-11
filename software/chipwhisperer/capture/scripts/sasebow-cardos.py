@@ -34,7 +34,8 @@
 #
 
 import sys
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc #Import the ChipWhispererCapture module
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
 
 
 def getClass():
@@ -95,22 +96,13 @@ class UserScript(object):
         
 
 if __name__ == '__main__':
-    #Make the application
-    app = cwc.makeApplication()
-    
-    #If you DO NOT want to overwrite/use settings from the GUI version including
-    #the recent files list, uncomment the following:
-    #app.setApplicationName("Capture V2 Scripted")
-    
-    #Get main module
-    capture = cwc.CWCaptureGUI()
-    
-    #Show window - even if not used
-    capture.show()
-    
-    #Call user-specific commands
-    usercommands = UserScript(capture)
-    usercommands.run()
-    
+    api = CWCoreAPI()                               # Instantiate the API
+    app = cwc.makeApplication()                     # Make the GUI application (optional)
+    #app.setApplicationName("Capture V2 Scripted")  # If you DO NOT want to overwrite settings from the GUI
+    gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
+    gui.show()
+    usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
+    usercommands.run()                              # Run the User Script
+
     app.exec_()
     sys.exit()

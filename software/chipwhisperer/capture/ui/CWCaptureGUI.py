@@ -41,8 +41,8 @@ from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialo
 
 
 class CWCaptureGUI(CWMainGUI):
-    def __init__(self):
-        super(CWCaptureGUI, self).__init__(CWCoreAPI(), name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
+    def __init__(self, cwapi):
+        super(CWCaptureGUI, self).__init__(cwapi, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
         self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
