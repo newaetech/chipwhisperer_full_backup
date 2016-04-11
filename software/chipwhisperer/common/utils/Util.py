@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, NewAE Technology Inc
+# Copyright (c) 2016, NewAE Technology Inc
 # All rights reserved.
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
@@ -45,7 +45,8 @@ def getModulesInDictFromPackage(path, instantiate, *args, **kwargs):
 
 
 def getRootDir():
-    return os.path.join(os.path.dirname(__file__), "../../../")
+    path = os.path.join(os.path.dirname(__file__), "../../../")
+    return os.path.normpath(path)
 
 
 def importModulesInPackage(path):
