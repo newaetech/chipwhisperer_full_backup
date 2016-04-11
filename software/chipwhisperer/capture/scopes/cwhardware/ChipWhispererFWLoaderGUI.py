@@ -50,8 +50,6 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         layout.addWidget(gbFPGAMode)
         radioRelease.clicked.connect(lambda: self.setFPGAModeRelease(True))
         radioDebug.clicked.connect(lambda: self.setFPGAModeRelease(False))
-        radioRelease.setChecked(self.fwLoaderConfig.useFPGAZip)
-        radioDebug.setChecked(not self.fwLoaderConfig.useFPGAZip)
 
         layoutFW = QHBoxLayout()
         self.firmwareLocation = QtFixes.QLineEdit()
@@ -110,6 +108,10 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         self.bitDebugLocation.setText(self.fwLoaderConfig.loader._bsLoc)
         self.fwLoaderConfig.loader._fwFLoc = QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._fwFLoc)
         self.firmwareLocation.setText(self.fwLoaderConfig.loader._fwFLoc)
+
+        radioRelease.setChecked(self.fwLoaderConfig.useFPGAZip)
+        radioDebug.setChecked(not self.fwLoaderConfig.useFPGAZip)
+
         self.setLayout(layout)
 
     def readFirmwareVersion(self):
