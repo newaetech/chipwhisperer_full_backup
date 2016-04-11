@@ -387,7 +387,7 @@ def main():
     app = makeApplication()
 
     # Create and show the form
-    window = CWCaptureGUI()
+    window = CWCaptureGUI(CWCoreAPI())
     window.show()
 
     # Run the main Qt loop

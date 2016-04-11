@@ -483,7 +483,7 @@ def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the form
-    window = CWAnalyzerGUI()
+    window = CWAnalyzerGUI(CWCoreAPI())
     window.show()
 
     # Run the main Qt loop

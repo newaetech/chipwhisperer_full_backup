@@ -30,6 +30,7 @@ from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import Util
 
+
 def enforceLimits(value, limits):
     if value < limits[0]:
         value = limits[0]
