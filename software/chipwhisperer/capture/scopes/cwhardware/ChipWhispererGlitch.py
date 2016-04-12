@@ -59,9 +59,9 @@ class ChipWhispererGlitch():
     def __init__(self, cwtype, scope):
         paramSS = [
                 {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
-                {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
+                {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
-                {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':0, 'set':self.updatePartialReconfig},
+                {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
                 {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
                 {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
                 {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
@@ -163,11 +163,17 @@ class ChipWhispererGlitch():
         is enabled with self.prEnabled.
         """
 
-        width = self.findParam('width').value()
-        offset = self.findParam('offset').value()
+        width = float(self.findParam('width').value())
+        offset = float(self.findParam('offset').value())
 
         widthint = round((width / 100) * 256)
         offsetint = round((offset / 100) * 256)
+
+        if (widthint == 0):
+            print "WARNING: Partial reconfiguration for width = 0 may not work"
+
+        if (offsetint == 0):
+            print "WARNING: Partial reconfiguration for width = 0 may not work"
 
         bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
 
