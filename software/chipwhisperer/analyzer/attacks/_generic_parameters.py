@@ -42,9 +42,6 @@ def enforceLimits(value, limits):
 class AttackGenericParameters(AutoScript):
     def __init__(self):
         super(AttackGenericParameters, self).__init__()
-        self._traceSource = None
-        self._project = None
-
         self.maxSubKeys = 32
         self.useAbs = True
 
@@ -57,8 +54,6 @@ class AttackGenericParameters(AutoScript):
         self.traceMax = 1
 
         self.paramListUpdated = Util.Signal()
-        self.traceManagerChanged = Util.Signal()
-        self.projectChanged = Util.Signal()
         self.settingsChanged = Util.Signal()
         self.traceLimitsChanged = Util.Signal()
 
@@ -126,21 +121,6 @@ class AttackGenericParameters(AutoScript):
             if p:
                 blist.append(p)
         return blist
-
-    def setTraceSource(self, traceSource):
-        """Set the input trace source"""
-        self._traceSource = traceSource
-        self.traceManagerChanged.emit(traceSource)
-
-    def traceSource(self):
-        return self._traceSource
-
-    def setProject(self, proj):
-        self._project = proj
-        self.projectChanged.emit(proj)
-
-    def project(self):
-        return self._project
 
 ############ Trace-Specific
     def setupTraceParam(self):

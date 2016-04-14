@@ -25,32 +25,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils.plugin import PluginTemplate
 
 
 def getClass():
     return AuxiliaryTemplate
 
 
-class AuxiliaryTemplate():
+class AuxiliaryTemplate(PluginTemplate):
+    group = "None"
     name = "None"
-    paramListUpdated = Util.Signal()
 
     def __init__(self):
-        self.setupParameters()
+        PluginTemplate.__init__(self)
         self.prefix = ""
-
-    def setupParameters(self):
-        """You should overload this. Copy/Paste into your class."""
-        ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
-        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
-
-    def paramList(self):
-        p = [self.params]
-        # if self.ser is not None:
-        #    for a in self.ser.paramList(): p.append(a)
-        return p
 
     def __del__(self):
         """Close system if needed"""
@@ -64,7 +52,6 @@ class AuxiliaryTemplate():
     def captureInit(self):
         """Called once before each capture grouping, do connect etc"""
         pass
-
 
     def captureComplete(self):
         """Called once complete capture is complete"""
@@ -84,6 +71,3 @@ class AuxiliaryTemplate():
 
     def setPrefix(self, prefix):
         self.prefix = prefix
-
-    def getName(self):
-        return self.name

@@ -27,6 +27,7 @@
 
 from chipwhisperer.common.utils import Util, timer
 
+
 class SmartStatements(object):
     """
     SmartStatements is a simple class which holds a list of python commands

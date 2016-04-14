@@ -251,6 +251,9 @@ class CWMainGUI(QMainWindow):
         dock.setAllowedAreas(allowedAreas)
         dock.setObjectName(name)
         self.addDockWidget(area, dock)
+        if(hasattr(dockWidget,"visibilityChanged")):
+            dockWidget.visibilityChanged.connect(dock.setVisible)
+            dock.visibilityChanged.connect(lambda: dockWidget.updateVisibility(dock.isVisible()))
 
         if visible == False:
             dock.toggleViewAction()

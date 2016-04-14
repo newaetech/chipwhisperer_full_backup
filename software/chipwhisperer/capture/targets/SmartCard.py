@@ -84,7 +84,9 @@ class ReaderTemplate(object):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         pass
 
-class ReaderChipWhispererLiteSCard(ReaderTemplate):    
+
+class ReaderChipWhispererLiteSCard(ReaderTemplate):
+    name = "CW1173/1180-SCARD"
     REQ_DATA = 0x1C
     REQ_CFG = 0x1D
     REQ_AUX = 0x1E
@@ -216,7 +218,8 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
 
 
 class ReaderSystemSER(ReaderTemplate):
-    
+    name = "System Serial (SASEBO-W)"
+
     def __init__(self):
         super(ReaderSystemSER, self).__init__()
         
@@ -369,7 +372,8 @@ class ReaderSystemSER(ReaderTemplate):
 
 
 class ReaderChipWhispererSER(ReaderTemplate):
-    
+    name = "CWCR2-SER"
+
     def __init__(self):
         super(ReaderChipWhispererSER, self).__init__()
         
@@ -531,7 +535,8 @@ class ReaderChipWhispererSER(ReaderTemplate):
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):
-    
+    name = "CWCR2-USI (obsolete)"
+
     def __init__(self):
         super(ReaderChipWhispererUSI, self).__init__()
         self.usi = ChipWhispererTargets.CWUniversalSerial()
@@ -639,6 +644,8 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         pass
     
 class ReaderChipWhispererSCard(ReaderTemplate):
+    name = "CWCR2-SCARD (obsolete)"
+
     def __init__(self):
         super(ReaderChipWhispererSCard, self).__init__()
         self.scard = ChipWhispererTargets.CWSCardIntegrated()
@@ -692,7 +699,8 @@ except ImportError:
     AnyCardType = None
     
    
-class ReaderPCSC(ReaderTemplate):    
+class ReaderPCSC(ReaderTemplate):
+    name = "PC/SC Reader"
 
     def __init__(self):
         super(ReaderPCSC, self).__init__()
@@ -774,7 +782,8 @@ class ReaderPCSC(ReaderTemplate):
     def dis(self):
         self.scserv.connection.disconnect()
         self.timeoutTimer.stop()
-    
+
+
 class ProtocolTemplate(object):
     paramListUpdated = Util.Signal()
     
@@ -819,12 +828,13 @@ class ProtocolTemplate(object):
 
     def go(self):
         pass
-    
+
+
 class ProtocolSASEBOWCardOS(ProtocolTemplate):
 
     def setupParameters(self):
         """No parameters"""
-        #ssParams = []        
+        #ssParams = []
         #self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)
         self.params = None
         
@@ -920,6 +930,7 @@ class ProtocolDPAv42(ProtocolTemplate):
     def readOutput(self):
         return self.textout   
 
+
 class ProtocolJCardTest(ProtocolTemplate):
 
     def setupParameters(self):
@@ -958,26 +969,17 @@ class ProtocolJCardTest(ProtocolTemplate):
 
 class SmartCard(TargetTemplate):
     name = "Smart Card"
-    paramListUpdated = Util.Signal()
-     
+
     def setupParameters(self):
-        self.oa=None
         self.driver = None
         self.scgui = SCGUI.SmartCardGUICard(None)
         
-        supported_readers = Util.DictType()
-        supported_readers["Select Reader"] = None
-        supported_readers["CWCR2-SER"] = ReaderChipWhispererSER()
-        supported_readers["CW1173/1180-SCARD"] = ReaderChipWhispererLiteSCard()               
-        try:
-            supported_readers["PC/SC Reader"] = ReaderPCSC()
-        except ImportError:
-            pass
-        supported_readers["System Serial (SASEBO-W)"] = ReaderSystemSER() 
-        supported_readers["CWCR2-USI (obsolete)"] = ReaderChipWhispererUSI()
-        supported_readers["CWCR2-SCARD (obsolete)"] = ReaderChipWhispererSCard()
-        
-        ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':supported_readers, 'value':None, 'set':self.setConnection},
+    def setupParameters(self):
+        readers = Util.putInDict([ReaderChipWhispererSER, ReaderChipWhispererLiteSCard,
+                                  ReaderPCSC, ReaderSystemSER, ReaderChipWhispererUSI,
+                                  ReaderChipWhispererSCard], True)
+
+        ssParams = [{'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER.name], 'set':self.setConnection},
                     #"BasicCard v7.5 (INCOMPLETE"):None, 
                     #"Custom (INCOMPLETE)":None, "DPAContestv4 (INCOMPLETE)":None
                     {'name':'SmartCard Protocol', 'type':'list', 'values':{"SASEBO-W SmartCard OS":ProtocolSASEBOWCardOS(),
@@ -987,19 +989,11 @@ class SmartCard(TargetTemplate):
                                                                            }, 'value':None, 'set':self.setProtocol},
                                                                            
                     {'name':'SmartCard Explorer', 'type':'action', 'action':self.scgui.show}
-                                                                           
-                    ]        
-        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
+                    ]
+        return ssParams
 
     def __del__(self):
         self.close()
-
-    def setOpenADC(self, oadc):
-        try:
-            self.oa=oadc
-            self.driver.setOpenADC(oadc)
-        except:
-            pass
 
     def keyLen(self):
         """ Return key length in BYTES """

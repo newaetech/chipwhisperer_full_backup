@@ -38,7 +38,7 @@ from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
 
-from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.capture.scopes.template import ScopeTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
@@ -163,26 +163,25 @@ class PicoScope(object):
         return False
 
 class PicoScopeInterface(ScopeTemplate):
+    group = 'PicoScope Interface'
     name =  "PicoScope"
     dataUpdated = Util.Signal()
 
     def __init__(self):
         super(PicoScopeInterface, self).__init__()
         self.scopetype = None
+        self.advancedSettings = None
 
+    def setupParameters(self):
         scope_cons = {}
         scope_cons["PS6000"] = ps6000.PS6000(connect=False)
         scope_cons["PS5000a"] = ps5000a.PS5000a(connect=False)
         scope_cons["PS2000"] = ps2000.PS2000(connect=False)
         defscope = scope_cons["PS5000a"]
-
-        self.advancedSettings = None
-        
-        scopeParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
+        ssParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
                       ]
-        
-        self.params = ConfigParameter.create_extended(self, name='PicoScope Interface', type='group', children=scopeParams)
         self.setCurrentScope(defscope)
+        return ssParams
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst

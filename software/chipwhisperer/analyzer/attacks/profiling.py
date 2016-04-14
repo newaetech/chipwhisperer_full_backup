@@ -30,7 +30,7 @@
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
-from chipwhisperer.analyzer.attacks._base_class import AttackBaseClass
+from chipwhisperer.analyzer.attacks._base import AttackBaseClass
 from chipwhisperer.analyzer.attacks._profiling_template import ProfilingTemplate
 from _generic_parameters import AttackGenericParameters
 
@@ -63,9 +63,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
 
-        self.traceManagerChanged.connect(self.attack.setTraceManager)
-        self.projectChanged.connect(self.attack.setProject)
-
         self.setAbsoluteMode(False)
 
     def updateAlgorithm(self, algo):
@@ -95,9 +92,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
+        self.attack.setTraceManager(self.traceSource())
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
-        self.traceManagerChanged.connect(self.attack.setTraceManager)
 
         try:
             self.attackParams = self.attack.paramList()[0]

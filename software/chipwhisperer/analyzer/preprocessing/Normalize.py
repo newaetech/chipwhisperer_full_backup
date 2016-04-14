@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtGui import *
 from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import numpy as np
@@ -35,7 +34,7 @@ def getClass():
     return Normalize
 
 
-class NormBase(QWidget):
+class NormBase(object):
     """Base Class for Normalization"""
     UseF1Coeff = False
     UseF2Coeff = False
@@ -53,63 +52,68 @@ class NormBase(QWidget):
     def loadZFile(self, f):
         pass
 
-class normmean(NormBase):
+class NormMean(NormBase):
     """Normalize by mean (e.g. make traces zero-mean)"""
     def processTrace(self, t, tindex):
         return t - np.mean(t)
 
-class normmeanstd(NormBase):
+class NormMeanStd(NormBase):
     """Normalize by mean & std-dev """
     def processTrace(self, t, tindex):
         return (t - np.mean(t)) / np.std(t)
         
-class normlinfunc(NormBase):
-    """Normalize by two polynomial functions based on additional information"""
-    UseF1Coeff = True
-    UseF2Coeff = True
-    UseZSource = True
+try:
+    from PySide.QtGui import *
 
-    def loadF1File(self, f):
-        if f is 0:
-            self.f1coeff = 0
-        elif f is None:
-            f, _ = QFileDialog.getOpenFileName(self, 'F1 Coefficients', '.', '*.npy')
-            if f:
+    class NormLinFunc(NormBase):
+        """Normalize by two polynomial functions based on additional information"""
+        UseF1Coeff = True
+        UseF2Coeff = True
+        UseZSource = True
+
+        def loadF1File(self, f):
+            if f is 0:
+                self.f1coeff = 0
+            elif f is None:
+                f, _ = QFileDialog.getOpenFileName(None, 'F1 Coefficients', '.', '*.npy')
+                if f:
+                    self.f1coeff = np.load(f)
+            else:
                 self.f1coeff = np.load(f)
-        else:
-            self.f1coeff = np.load(f)
 
-    def loadF2File(self, f):
-        if f is 1:
-            self.f2coeff = 1
-        elif f is None:
-            f, _ = QFileDialog.getOpenFileName(self, 'F2 Coefficients', '.', '*.npy')
-            if f:
+        def loadF2File(self, f):
+            if f is 1:
+                self.f2coeff = 1
+            elif f is None:
+                f, _ = QFileDialog.getOpenFileName(None, 'F2 Coefficients', '.', '*.npy')
+                if f:
+                    self.f2coeff = np.load(f)
+            else:
                 self.f2coeff = np.load(f)
-        else:
-            self.f2coeff = np.load(f)
 
-    def loadZFile(self, f):
-        if f is None:
-            f, _ = QFileDialog.getOpenFileName(self, 'Z Data File', '.', '*.npy')
-            if f:
+        def loadZFile(self, f):
+            if f is None:
+                f, _ = QFileDialog.getOpenFileName(None, 'Z Data File', '.', '*.npy')
+                if f:
+                    self.zdata = np.load(f)
+            else:
                 self.zdata = np.load(f)
-        else:
-            self.zdata = np.load(f)
 
-    def processTrace(self, t, tindex):
-        if isinstance(self.f1coeff, (int, long)) and self.f1coeff == 0:             
-            f1 = 0
-        else:
-            f1 = np.polyval(self.f1coeff, self.zdata[tindex])
+        def processTrace(self, t, tindex):
+            if isinstance(self.f1coeff, (int, long)) and self.f1coeff == 0:
+                f1 = 0
+            else:
+                f1 = np.polyval(self.f1coeff, self.zdata[tindex])
 
-        if isinstance(self.f2coeff, (int, long)) and self.f2coeff == 1:
-            f2 = 1
-        else:
-            f2 = np.polyval(self.f2coeff, self.zdata[tindex])
+            if isinstance(self.f2coeff, (int, long)) and self.f2coeff == 1:
+                f2 = 1
+            else:
+                f2 = np.polyval(self.f2coeff, self.zdata[tindex])
 
-        return (t - f1) / f2
-
+            return (t - f1) / f2
+except:
+    class NormLinFunc(NormBase):
+        pass
 
 class Normalize(PreprocessingBase):
     """
@@ -121,7 +125,7 @@ class Normalize(PreprocessingBase):
     def setupParameters(self):
 
         resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":normmean, "y=(x-mean(x))/stddev(x)":normmeanstd, "y=(x-f1(z))/f2(z)":normlinfunc}, 'set':self.updateNormClass},
+                         {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'set':self.updateNormClass},
                          {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
                          {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
                          {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
@@ -130,11 +134,11 @@ class Normalize(PreprocessingBase):
                       ]
         
         self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
-        self.updateNormClass(normmean)
+        self.updateNormClass(NormMean)
         self.ptStart = 0
         self.ptEnd = 0
         
-        self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import normmean,normmeanstd,normlinfunc")
+        self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
         self.updateScript()
         
     def updateScript(self, ignored=None):

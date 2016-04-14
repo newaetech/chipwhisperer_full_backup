@@ -88,5 +88,26 @@ class AttackBaseClass(object):
         else:
             return self._pointRange
 
+    def setTraceSource(self, traceSource):
+        """Set the input trace source"""
+        self._traceSource = traceSource
+
+    def traceSource(self):
+        return self._traceSource
+
+    # def setProject(self, proj):
+    #     self._project = proj
+    #     self.projectChanged.emit(proj)
+    #
+    # def project(self):
+    #     return self._project
+
+    def knownKey(self):
+        """Get the known key via attack"""
+        try:
+            return self.processKnownKey(self.traceSource().getKnownKey(self.getTraceStart()))
+        except AttributeError as e:
+            print "WARNING: Failed to find KnownKey, error = %s" % str(e)
+
     def getName(self):
         return self.name

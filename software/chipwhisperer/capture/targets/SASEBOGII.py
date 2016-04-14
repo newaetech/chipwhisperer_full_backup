@@ -188,16 +188,11 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
+    group = 'SASEBO-GII Parameters'
     name = "SASEBO GII"
 
     def setupParameters(self):
-        """Parameter Definition."""
-        ssParams = []
-        self.params = ConfigParameter.create_extended(self, name='SASEBO-GII Parameters', type='group', children=ssParams)
-        
-    def paramList(self):
-        p = [self.params]
-        return p
+        return []
 
     def con(self, scope = None):
         try:

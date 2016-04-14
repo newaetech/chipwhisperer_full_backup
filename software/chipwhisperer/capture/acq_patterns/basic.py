@@ -40,13 +40,13 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._fixedPlain = False
         self._fixedKey = True
 
-        basicParams = [
+        ssParams = [
                       {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
                       {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
                       {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
                       {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
                   ]
-        return basicParams
+        return ssParams
 
     def setKeyType(self, t):
         if t == 'Fixed':

@@ -28,7 +28,7 @@ import time
 import numpy as np
 from matplotlib.mlab import find
 
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
+from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
@@ -100,18 +100,17 @@ class freqMeasure():
 
         return freq
 
+
 class FrequencyMeasure(AuxiliaryTemplate):
+    group = 'Frequency Measurement'
     name = "Frequency Counter"
-    paramListUpdated = Util.Signal()
 
     def setupParameters(self):
         scopes = {"None":None}
         if ps5000a is not None:
             scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
 
-
-        ssParams = [{'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}]
-        self.params = ConfigParameter.create_extended(self, name='Frequency Measurement', type='group', children=ssParams)
+        return [{'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}]
 
     def setConnection(self, con):
         self.fm = freqMeasure(con)

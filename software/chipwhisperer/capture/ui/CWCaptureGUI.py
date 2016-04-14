@@ -124,6 +124,7 @@ class CWCaptureGUI(CWMainGUI):
         self.reloadTraceParamList()
 
     def auxChanged(self):
+        self.cwAPI.getAux().updateUI.connect(QCoreApplication.processEvents)
         self.reloadAuxParamList()
 
     def masterStatusChanged(self):
