@@ -34,19 +34,18 @@ class AttackBaseClass(object):
     name = "None"
 
     def __init__(self):
-        #statsUpdated called new data is available
+        self.attackStarted = Util.Signal()
         self.statsUpdated = Util.Signal()
-
-        #attack done called once entire attack is complete, stats are available. Note that the
-        #statsUpdated() signal is not called even though new data is available, which avoids
-        #double-processing data
         self.attackDone = Util.Signal()
+        self._traceSource = None
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
         return inpkey
 
     def doAttack(self):
+        self.attackStarted.emit()
+        # Do the attack
         self.attackDone.emit()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):

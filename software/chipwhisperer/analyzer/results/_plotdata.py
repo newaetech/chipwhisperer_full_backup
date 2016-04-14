@@ -50,25 +50,29 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase):
         self.enabledbytes = [False]*subkeys
         self.doRedraw = True
 
+        self.bselection = QToolBar()
+
         self.byteNumAct = []
         for i in range(0,self.numKeys):
             self.byteNumAct.append(QAction('%d'%i, self))
             self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
             self.byteNumAct[i].setCheckable(True)
+            self.bselection.addAction(self.byteNumAct[i])
 
         byteNumAllOn = QAction('All On', self)
-        byteNumAllOff = QAction('All Off', self)
         byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
-        byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
-
-        self.bselection = QToolBar()
-
-        for i in range(0, self.numKeys):
-            self.bselection.addAction(self.byteNumAct[i])
         self.bselection.addAction(byteNumAllOn)
-        self.bselection.addAction(byteNumAllOff)
-        self.layout().addWidget(self.bselection)
 
+        byteNumAllOff = QAction('All Off', self)
+        byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
+        self.bselection.addAction(byteNumAllOff)
+
+        showGrid = QAction('Show Grid', self)
+        showGrid.setCheckable(True)
+        showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
+        self.bselection.addAction(showGrid)
+
+        self.layout().addWidget(self.bselection)
         self.highlightTop = True
 
     def setupParameters(self):
@@ -155,6 +159,9 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase):
 
         try:
             for bnum in enabledBytes:
+                if not xdatalst[bnum] or len(xdatalst[bnum])==0:
+                    raise StopIteration
+
                 progress.setValue(pvalue)
 
                 if bnum != -1:

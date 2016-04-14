@@ -87,8 +87,8 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        self.addFunction("init", "setSourceManager", "userScript.ppOutput")
-        self.addFunction("init", "setProject", "userScript.project()")
+        self.addFunction("init", "setSourceManager", "UserScript.ppOutput")
+        self.addFunction("init", "setProject", "UserScript.project()")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
@@ -145,6 +145,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         #    return inpkey
 
     def doAttack(self, progressBar):
+        self.attackStarted.emit()
         self.attack.setReportingInterval(self.getReportingInterval())
 
         #TODO: support start/end point different per byte

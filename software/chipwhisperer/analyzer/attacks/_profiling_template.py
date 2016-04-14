@@ -190,7 +190,7 @@ class ProfilingTemplate(AutoScript):
        #
        #  ted = self.parent.traceExplorerDialog.exampleScripts[0]
        #
-       #  self.addFunction('generateTemplates', 'initAnalysis', '', obj='userScript')
+       #  self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
        #  self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
        #
        #  if self.findParam('poimode').value() == 0:

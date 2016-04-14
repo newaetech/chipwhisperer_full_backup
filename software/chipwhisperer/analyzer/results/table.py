@@ -45,21 +45,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase):
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)
         self.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-
-        for i in range(0, subkeys):
-            self.setHorizontalHeaderItem(i, QTableWidgetItem("%d" % i))
-
-        for i in range(0, subkeys):
-            cell = QTableWidgetItem("-")
-            cell.setBackground(QBrush(QColor(253, 255, 205)))
-            cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
-            cell.setTextAlignment(Qt.AlignCenter)
-            self.setItem(0, i, cell)
-
-        self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
-        for i in range(1, permPerSubkey+1):
-            self.setVerticalHeaderItem(i, QTableWidgetItem("%d" % (i-1)))
-
+        self.setRowCount(permPerSubkey+1)
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
         self.setBytesEnabled([])
@@ -67,12 +53,35 @@ class ResultsTable(QTableWidget, ResultsWidgetBase):
         self.useSingle = False
         self.updateMode = self.findParam('updateMode').value()
 
+        stdCell = QTableWidgetItem("")
+        stdCell.setFlags(stdCell.flags() ^ Qt.ItemIsEditable)
+        stdCell.setTextAlignment(Qt.AlignCenter)
+
+        for x in range(0, self.numKeys):
+            self.setHorizontalHeaderItem(x, QTableWidgetItem("%d" % x))
+            cell = stdCell.clone()
+            cell.setText("-")
+            cell.setBackground(QBrush(QColor(253, 255, 205)))
+            self.setItem(0, x, cell)
+            for y in range(1, self.numPerms+1):
+                self.setItem(y, x, stdCell.clone())
+
+        self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
+        for y in range(1, self.numPerms+1):
+            self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
+
     def setupParameters(self):
         return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit},
                 {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
                 {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
                 {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
                 ]
+
+    def clearTableContents(self):
+        for x in range(0, self.numKeys):
+            self.item(0, x).setText("-")
+            for y in range(1, self.numPerms+1):
+                self.item(y, x).setText("")
 
     def setUpdateMode(self, mode):
         """Set if we update entire table or just PGE on every statistics update"""
@@ -90,7 +99,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase):
         """Single mode uses the same point across all traces, not useful normally"""
         self.useSingle = enabled
 
-    def updateTable(self, attackDone=False):
+    def updateTable(self, everything=False):
         """Resort data and redraw the table. If update-mode is 'pge' we only redraw entire table
         when 'attackDone' is True."""
 
@@ -106,29 +115,30 @@ class ResultsTable(QTableWidget, ResultsWidgetBase):
                 maxes = attackStats.maxes[bnum]
 
                 self.item(0, bnum).setText("%d" % attackStats.pge[bnum])
-
-                if (self.updateMode == 'all') or attackDone:
+                if everything:
                     for j in range(0, self.numPerms):
-                        cell = QTableWidgetItem("%02X\n%.4f" % (maxes[j]['hyp'],maxes[j]['value']))
-                        cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
-                        cell.setTextAlignment(Qt.AlignCenter)
-                        self.setItem(j+1, bnum, cell)
-
+                        cell = self.item(j+1, bnum)
+                        cell.setText("%02X\n%.4f" % (maxes[j]['hyp'], maxes[j]['value']))
                         if maxes[j]['hyp'] == highlightValue:
-                            itm = self.item(j+1, bnum)
-                            itm.setForeground(QBrush(Qt.red))
+                            cell.setForeground(QBrush(Qt.red))
+                        else:
+                            cell.setForeground(QBrush(Qt.black))
             else:
                 self.setColumnHidden(bnum, True)
         self.setVisible(True)
 
+
+    def attackStarted(self):
+        self.clearTableContents()
+
     def attackStatsUpdated(self):
         """New attack statistics available, replot/redraw graphs"""
         self.setBytesEnabled(self.attack.bytesEnabled())
-        self.updateTable()
+        self.updateTable(everything=(self.updateMode == 'all'))
 
     def attackDone(self):
         self.setBytesEnabled(self.attack.bytesEnabled())
-        self.updateTable(attackDone=True)
+        self.updateTable(everything=True)
 
     def attackSettingsChanged(self):
         """Attack settings have changed"""

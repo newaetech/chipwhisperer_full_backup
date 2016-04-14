@@ -176,12 +176,12 @@ class CWAnalyzerGUI(CWMainGUI):
             if p and p.getName()!="None":
                 for item in p.paramList():
                     plist.append(item)
-        ExtendedParameter.reloadParams(plist, self.preprocessingParamTree)
+        ExtendedParameter.reloadParams(plist, self.preprocessingParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadAttackParamList(self, list=None):
         """Reloads parameter tree in GUI when attack changes"""
 
-        ExtendedParameter.reloadParams(self.cwAPI.getAttack().paramList(), self.attackParamTree)
+        ExtendedParameter.reloadParams(self.cwAPI.getAttack().paramList(), self.attackParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadParamListResults(self):
         """Reload parameter tree for results settings, ensuring GUI matches loaded modules."""
@@ -191,12 +191,12 @@ class CWAnalyzerGUI(CWMainGUI):
             if v:
                 plist.extend(v.paramList())
 
-        ExtendedParameter.reloadParams(plist, self.resultsParamTree)
+        ExtendedParameter.reloadParams(plist, self.resultsParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadParamList(self, lst=None):
         """Reload parameter trees in a given list, ensuring GUI matches loaded modules."""
 
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
+        ExtendedParameter.reloadParams(self.paramList(), self.paramTree, help_window=self.helpbrowser.helpwnd)
 
     def paramList(self):
         return [self.params]
@@ -350,7 +350,7 @@ class CWAnalyzerGUI(CWMainGUI):
         if mod is None:
             return None
 
-        script = mod.userScript(self.cwAPI.project())
+        script = mod.UserScript(self.cwAPI.project())
         script.initPreprocessing()
         return script
 
@@ -405,7 +405,7 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.append("", 0)
 
         # Add main class
-        mse.append("class userScript(AutoScriptBase):", 0)
+        mse.append("class UserScript(AutoScriptBase):", 0)
 
         mse.append("def initProject(self):", 1)
         mse.append("pass")
@@ -420,7 +420,7 @@ class CWAnalyzerGUI(CWMainGUI):
                 instname = "ppMod%d" % i
                 mse.append("%s = preprocessing.%s.%s(%s)" % (instname, classname, classname, lastOutput))
                 for s in p.getStatements('init'):
-                    mse.append(s.replace("self.", instname + ".").replace("userScript.", "self."))
+                    mse.append(s.replace("self.", instname + ".").replace("UserScript.", "self."))
                 mse.append("%s.init()" % (instname))
                 lastOutput = instname
         mse.append("self.ppOutput = %s" % lastOutput)
@@ -429,12 +429,12 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.append("def initAnalysis(self):", 1)
         mse.append('self.attack = %s()' % type(self.cwAPI.getAttack()).__name__)
         for s in self.cwAPI.getAttack().getStatements('init'):
-            mse.append(s.replace("self.", "self.attack.").replace("userScript.", "self."))
+            mse.append(s.replace("self.", "self.attack.").replace("UserScript.", "self."))
 
         # Get init from reporting
         mse.append("def initReporting(self, results):", 1)
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
-        [mse.append("results[\"%s\"].setAttack(self.attack)" % k) for k, _ in self.cwAPI.results.iteritems()]
+        [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.cwAPI.results.iteritems()]
         mse.append("return")
 
         # Do the attack
@@ -448,7 +448,7 @@ class CWAnalyzerGUI(CWMainGUI):
             else:
                 mse.append("def %s(self):" % k, 1)
                 for s in self.cwAPI.getAttack().getStatements(k):
-                    mse.append(s.replace("self.", "self.cwAPI.getAttack().").replace("userScript.", "self."))
+                    mse.append(s.replace("self.", "self.cwAPI.getAttack().").replace("UserScript.", "self."))
 
         # Get other commands from other utilities
         for index, util in enumerate(self.utilList):
@@ -461,7 +461,7 @@ class CWAnalyzerGUI(CWMainGUI):
                     if len(statements) > 0:
                         mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
                         for s in statements:
-                            mse.append(s.replace("userScript.", "self."))
+                            mse.append(s.replace("UserScript.", "self."))
 
         mse.restoreSliderPosition()
 

@@ -34,6 +34,7 @@ def getClass():
 
 class PluginTemplate(object):
     name = "None"
+    description = "Some description"
 
     def __init__(self):
         self.paramListUpdated = Util.Signal()

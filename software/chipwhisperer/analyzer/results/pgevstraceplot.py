@@ -110,6 +110,9 @@ class PGEVsTrace(ResultsPlotData):
 
     def calculatePGE(self):
         """Calculate the Partial Guessing Entropy (PGE)"""
+        if not self.attack:
+            raise Warning("Attack not set/executed yet")
+
         stats = self.attack.getStatistics()
         pge = stats.pge_total
         allpge = Util.OrderedDict()

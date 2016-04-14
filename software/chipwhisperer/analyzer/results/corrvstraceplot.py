@@ -45,11 +45,10 @@ class CorrelationVsTrace(ResultsPlotData):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
-    def updateData(self):
-        pass
-
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
+        if not self.attack:
+            return
 
         data = self.attack.getStatistics().maxes_list
 
@@ -62,7 +61,6 @@ class CorrelationVsTrace(ResultsPlotData):
         newdata = [0] * self.numKeys
         for bnum in enabledlist:
             maxdata = data[bnum]
-
             tlist = []
             for m in maxdata:
                 tlist.append(m['trace'])
@@ -77,9 +75,5 @@ class CorrelationVsTrace(ResultsPlotData):
 
         self.drawData(xrangelist, newdata, enabledlist)
 
-    def attackStatsUpdated(self):
-        """New attack statistics available, replot/redraw graphs"""
-        self.updateData()
-
     def attackDone(self):
-        self.updateData()
+        self.redrawPlot()

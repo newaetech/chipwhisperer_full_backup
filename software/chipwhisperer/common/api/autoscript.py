@@ -168,7 +168,7 @@ class AutoScript(object):
             if key not in self._smartstatements:
                 self.addGroup(key)
             if k["type"] == "function":
-                if len(prefix) > 0 and k["obj"] != "userScript.":
+                if len(prefix) > 0 and k["obj"] != "UserScript.":
                     obj = k["obj"] + prefix
                 else:
                     obj = k["obj"].rstrip('.')

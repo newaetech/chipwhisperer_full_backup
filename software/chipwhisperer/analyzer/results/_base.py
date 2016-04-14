@@ -30,21 +30,24 @@ from chipwhisperer.common.utils import Util
 class ResultsBase(PluginTemplate):
     name = "Results"
 
-    _highlightedKey = None
-
     def __init__(self):
         PluginTemplate.__init__(self)
+        self.attack = None
 
-    def setAttack(self, attack):
+    def setObservedAttack(self, attack):
+        attack.attackStarted.connect(self.attackStarted)
         attack.attackDone.connect(self.attackDone)
         attack.statsUpdated.connect(self.attackStatsUpdated)
         attack.settingsChanged.connect(self.attackSettingsChanged)
         self.attack = attack
 
-    def attackDone(self):
+    def attackStarted(self):
         pass
 
     def attackStatsUpdated(self):
+        pass
+
+    def attackDone(self):
         pass
 
     def attackSettingsChanged(self):
