@@ -158,11 +158,6 @@ try:
             ProgressBarText.close(self)
             QDialog.close(self)
 
-        def reject(self):
-            if not self.aborted:
-                self.abort()
-                QDialog.close()
-
     ProgressBar = ProgressBarGUI
 
 except ImportError:
