@@ -435,7 +435,7 @@ class OpenADCInterface_ZTEX():
         return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
                ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
-
+#TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
     group = 'OpenADC Interface'
     name = "ChipWhisperer/OpenADC"
