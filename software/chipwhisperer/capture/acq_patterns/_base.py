@@ -27,8 +27,7 @@ from chipwhisperer.common.utils.plugin import PluginTemplate
 
 
 class AcqKeyTextPattern_Base(PluginTemplate):
-    group = "Key/Text Pattern"
-    name = "None"
+    name = "Key/Text Pattern"
 
     def __init__(self, target=None):
         PluginTemplate.__init__(self)

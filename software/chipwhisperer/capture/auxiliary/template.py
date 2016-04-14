@@ -33,7 +33,6 @@ def getClass():
 
 
 class AuxiliaryTemplate(PluginTemplate):
-    group = "None"
     name = "None"
 
     def __init__(self):

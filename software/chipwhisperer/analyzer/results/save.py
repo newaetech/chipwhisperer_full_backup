@@ -36,7 +36,7 @@ def getClass():
 
 class ResultsSave(ResultsBase):
     """Save Correlation Output to Files"""
-    group = name = "Save to Files"
+    name = "Save to Files"
 
     def __init__(self):
         super(ResultsSave, self).__init__()

@@ -321,7 +321,6 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
 
 class VisaScopeInterface(ScopeTemplate):
-    group = 'VISA Scope Interface'
     name =  "VISA Scope"
     dataUpdated = Util.Signal()
 

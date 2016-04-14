@@ -163,7 +163,6 @@ class PicoScope(object):
         return False
 
 class PicoScopeInterface(ScopeTemplate):
-    group = 'PicoScope Interface'
     name =  "PicoScope"
     dataUpdated = Util.Signal()
 

@@ -36,7 +36,6 @@ def getClass():
 
 class ResultsTable(QTableWidget, ResultsWidgetBase):
     """Table of results, showing all guesses based on sorting output of attack"""
-    group = 'Ranked Table'
     name = 'Results Table'
 
     def __init__(self, subkeys=16, permPerSubkey=256, useAbs=True):

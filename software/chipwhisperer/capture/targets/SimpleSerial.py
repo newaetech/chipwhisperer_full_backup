@@ -151,7 +151,6 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
 
 
 class SimpleSerial_ChipWhisperer(TargetTemplate):
-    group = 'Serial Port Settings'
     name = "ChipWhisperer"
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
@@ -323,6 +322,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
+        self.oa = scope.qtadc.ser
         scope.connectStatus.connect(self.dis())
         # Check first!
         self.checkVersion()
@@ -337,7 +337,6 @@ class SimpleSerial(TargetTemplate):
     name = "Simple Serial"
 
     def setupParameters(self):
-        
         ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
         defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
 
@@ -524,7 +523,7 @@ class SimpleSerial(TargetTemplate):
             newkey += bytearray([0]*(blen - len(kin)))
             return newkey
         elif len(kin) > blen:
-            print "note: Trunacating key..."
+            print "note: Truncating key..."
             return kin[0:blen]
 
         return kin

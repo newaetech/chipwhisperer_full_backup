@@ -28,8 +28,7 @@ from chipwhisperer.common.utils.plugin import PluginTemplate
 from chipwhisperer.common.utils import Util
 
 class ResultsBase(PluginTemplate):
-    group = "Results"
-    name = "None"
+    name = "Results"
 
     _highlightedKey = None
 

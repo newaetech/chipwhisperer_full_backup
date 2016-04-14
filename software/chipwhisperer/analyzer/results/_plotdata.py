@@ -38,7 +38,6 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase):
     correlation over all data points, or the most likely correlation over number of traces
     """
 
-    group = 'Some Descriptive Group Name'
     name = "Some Descriptive Name"
 
     def __init__(self, subkeys=16, permPerSubkey=256):

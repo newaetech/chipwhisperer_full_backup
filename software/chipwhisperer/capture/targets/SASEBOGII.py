@@ -188,7 +188,6 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
-    group = 'SASEBO-GII Parameters'
     name = "SASEBO GII"
 
     def setupParameters(self):

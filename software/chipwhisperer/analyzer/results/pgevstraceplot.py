@@ -39,7 +39,7 @@ class PGEVsTrace(ResultsPlotData):
     Plots Partial Guessing Entropy (PGE) vs Traces in Attack
     """
 
-    group = name = "PGE vs Trace Plot"
+    name = "PGE vs Trace Plot"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(PGEVsTrace, self).__init__()

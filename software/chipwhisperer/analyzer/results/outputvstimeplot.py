@@ -38,7 +38,7 @@ class OutputVsTime(ResultsPlotData):
     correlation over all data points, or the most likely correlation over number of traces
     """
 
-    group = name = "Output vs Point Plot"
+    name = "Output vs Point Plot"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         super(OutputVsTime, self).__init__()

@@ -102,7 +102,6 @@ class freqMeasure():
 
 
 class FrequencyMeasure(AuxiliaryTemplate):
-    group = 'Frequency Measurement'
     name = "Frequency Counter"
 
     def setupParameters(self):

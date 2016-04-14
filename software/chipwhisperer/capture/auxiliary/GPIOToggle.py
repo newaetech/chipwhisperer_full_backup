@@ -37,8 +37,7 @@ def getClass():
 
 
 class GPIOToggle(AuxiliaryTemplate):
-    group = 'GPIO Toggle'
-    name = "Toggle FPGA-GPIO Pins"
+    name = 'GPIO Toggle'
 
     def setupParameters(self):
         ssParams = [

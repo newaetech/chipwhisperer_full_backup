@@ -37,8 +37,7 @@ class CorrelationVsTrace(ResultsPlotData):
     """
     Plots maximum correlation vs number of traces in attack.
     """
-    group = 'Correlation vs Traces in Attack'
-    name = "Max Correlation Output for Subkey"
+    name = 'Correlation vs Traces in Attack'
 
     def __init__(self, subkeys=16, permPerSubkey=256):
         ResultsPlotData.__init__(self)

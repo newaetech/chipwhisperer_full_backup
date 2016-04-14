@@ -35,7 +35,6 @@ def getClass():
 
 
 class ResetCW1173Read(AuxiliaryTemplate):
-    group = 'Reset AVR/XMEGA via CW-Lite'
     name = "Reset AVR/XMEGA via CW-Lite"
 
     def setupParameters(self):

@@ -35,7 +35,7 @@ def getClass():
 
 class KnowKeySource(ResultsBase):
     """Interface to main program, various routines for plotting output data"""
-    group = name = "Knownkey Source"
+    name = "Knownkey Source"
 
     def __init__(self):
         super(KnowKeySource, self).__init__()

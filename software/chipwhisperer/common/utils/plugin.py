@@ -33,13 +33,12 @@ def getClass():
 
 
 class PluginTemplate(object):
-    group = "Example Group"
     name = "None"
 
     def __init__(self):
         self.paramListUpdated = Util.Signal()
         self.updateUI = Util.Signal()
-        self.params = ConfigParameter.create_extended(self, name=self.group, type='group', children=self.setupParameters())
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=self.setupParameters())
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
