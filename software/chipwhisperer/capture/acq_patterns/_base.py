@@ -23,14 +23,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.plugin import PluginTemplate
+from chipwhisperer.common.utils import plugin
 
 
-class AcqKeyTextPattern_Base(PluginTemplate):
+class AcqKeyTextPattern_Base(plugin.PluginTemplate):
     name = "Key/Text Pattern"
 
     def __init__(self, target=None):
-        PluginTemplate.__init__(self)
+        super(AcqKeyTextPattern_Base, self).__init__()
         self._target = target
         self._initPattern()
 

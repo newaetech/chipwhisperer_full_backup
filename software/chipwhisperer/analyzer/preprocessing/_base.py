@@ -25,16 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import Util
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return PreprocessingBase
+from chipwhisperer.common.utils import plugin
 
 
-class PreprocessingBase(AutoScript):
+class PreprocessingBase(AutoScript, plugin.PluginTemplate):
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:
@@ -44,29 +39,26 @@ class PreprocessingBase(AutoScript):
           You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
     name = "None"
-    descrString = ""
+    description = ""
 
     def __init__(self, traceSource = None, graphWidget=None):
         super(PreprocessingBase, self).__init__()
         self.graphWidget = graphWidget
         self.enabled = True
         self.traceSource = traceSource
-        self.setupParameters()
-        self.paramListUpdated = Util.Signal()
+        self.updateScript()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
-        ssParams = [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
-                    # PUT YOUR PARAMETERS HERE
-                    {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
+        return [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
+                {'name':'Description', 'type':'text', 'value':self.description, 'readonly':True}].extend(self._setupParameters())
+
+    def _setupParameters(self):
+        # PUT YOUR CUSTOMIZED PARAMETERS HERE
+        return []
 
     def updateScript(self, ignored=None):
         pass
-
-    def paramList(self):
-        """Returns the parameter list"""
-        return [self.params]
 
     def setEnabled(self, enabled):
         """Turn on/off this preprocessing"""
@@ -95,6 +87,7 @@ class PreprocessingBase(AutoScript):
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
+        pass
 
     def numPoint(self):
         return self.traceSource.numPoints()
@@ -110,6 +103,3 @@ class PreprocessingBase(AutoScript):
 
     def findMappedTrace(self, n):
         return self.traceSource.findMappedTrace(n)
-
-    def getName(self):
-        return self.name

@@ -24,13 +24,10 @@
 #=================================================
 
 import time
-
 import numpy as np
 from matplotlib.mlab import find
+from _base import AuxiliaryTemplate
 
-from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
 
 try:
     from picoscope import ps5000a
@@ -38,11 +35,7 @@ except ImportError:
     ps5000a = None
 
 
-def getClass():
-    return FrequencyMeasure
-
-
-class freqMeasure():
+class FreqMeasure():
     
     def __init__(self, ps):
         self.ps = ps
@@ -92,7 +85,6 @@ class freqMeasure():
         # print "Sampling Done"
 
         data = self.ps.getDataV("A", 50000)
-
         data = data - np.mean(data)
         freq = self.freq_from_crossings(data)
 
@@ -112,7 +104,7 @@ class FrequencyMeasure(AuxiliaryTemplate):
         return [{'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}]
 
     def setConnection(self, con):
-        self.fm = freqMeasure(con)
+        self.fm = FreqMeasure(con)
 
     def captureInit(self):
         self.fm.openScope()

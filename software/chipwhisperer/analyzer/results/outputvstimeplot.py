@@ -27,11 +27,6 @@
 from _plotdata import ResultsPlotData
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return OutputVsTime
-
-
 class OutputVsTime(ResultsPlotData):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
@@ -44,14 +39,8 @@ class OutputVsTime(ResultsPlotData):
         super(OutputVsTime, self).__init__()
 
         self.setLabels("Attack Output vs. Sample for Subkey Guesses", "Sample Number", "Attack Output")
-
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
-
-        # resultsParams = [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.setParentVisibility},
-        #                 {'name':'Fast Draw', 'type':'bool', 'key':'fast', 'value':True},
-        #                 {'name':'Hide during Redraw', 'type':'bool', 'key':'hide', 'value':True}
-        #              ]
 
     def getPrange(self, bnum, diffs):
         """Get a list of all points for a given byte number statistic"""

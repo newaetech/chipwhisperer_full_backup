@@ -29,10 +29,6 @@ import copy
 from datetime import datetime
 from _base import ResultsBase
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return ResultsSave
-
 
 class ResultsSave(ResultsBase):
     """Save Correlation Output to Files"""

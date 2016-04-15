@@ -28,11 +28,6 @@ from _plotdata import ResultsPlotData
 import numpy as np
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return CorrelationVsTrace
-
-
 class CorrelationVsTrace(ResultsPlotData):
     """
     Plots maximum correlation vs number of traces in attack.

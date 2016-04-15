@@ -25,22 +25,18 @@
 
 import time
 from subprocess import call
+from _base import AuxiliaryTemplate
 
-from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
-
-
-def getClass():
-    return ResetAVR
 
 class ResetAVR(AuxiliaryTemplate):
     name = 'Reset AVR via STK500'
 
     def setupParameters(self):
-        ssParams = [{'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
-                    {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
-                    {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-                    ]
-        return ssParams
+        return [
+                 {'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
+                 {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
+                 {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+                ]
 
     def captureInit(self):
         pass

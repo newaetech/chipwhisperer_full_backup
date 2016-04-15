@@ -25,13 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from _base import PreprocessingBase
 import numpy as np
-     
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return Normalize
 
 
 class NormBase(object):
@@ -52,16 +47,19 @@ class NormBase(object):
     def loadZFile(self, f):
         pass
 
+
 class NormMean(NormBase):
     """Normalize by mean (e.g. make traces zero-mean)"""
     def processTrace(self, t, tindex):
         return t - np.mean(t)
 
+
 class NormMeanStd(NormBase):
     """Normalize by mean & std-dev """
     def processTrace(self, t, tindex):
         return (t - np.mean(t)) / np.std(t)
-        
+
+
 try:
     from PySide.QtGui import *
 
@@ -115,32 +113,28 @@ except:
     class NormLinFunc(NormBase):
         pass
 
+
 class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
     name = "Normalize"
-    descrString = "Normalizes by standard deviation"
+    description = "Normalizes by standard deviation"
 
-    def setupParameters(self):
-
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'set':self.updateNormClass},
-                         {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
-                         {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
-                         {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
-     #                    {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
+    def _setupParameters(self):
         self.updateNormClass(NormMean)
         self.ptStart = 0
         self.ptEnd = 0
-        
+
         self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
-        self.updateScript()
-        
+
+        return [ {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'set':self.updateNormClass},
+                 {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
+                 {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
+                 {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
+                 # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
+                ]
+
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
         self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').value().__name__)

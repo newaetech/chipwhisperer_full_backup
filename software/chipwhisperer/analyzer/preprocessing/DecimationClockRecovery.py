@@ -25,17 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from _base import PreprocessingBase
 import scipy as sp
 import scipy.fftpack
 import numpy as np
-
 from matplotlib.mlab import find
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return DecimationClockRecovery
 
 def fft(signal, freq=None):
     FFT = abs(scipy.fft(signal))
@@ -53,30 +47,23 @@ class DecimationClockRecovery(PreprocessingBase):
     """
     Attempts Clock recovery & then decimates based on that
     """
-
     name = "Decimation: Clock Recovery"
-    descrString = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
+    description = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
                   "decimate to only points of interest.\n****CURRENTLY NOT SUPPORTED****"
      
-    def setupParameters(self):
-
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Filter Design', 'type':'group', 'children':[
-                                # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
-                                {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateScript},
-                                {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'value':20, 'set':self.updateScript},
-                                {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'value':False, 'set':self.updateScript},
-                                {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript}, ]},
-                         {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
-
-        self.updateScript()
+    def _setupParameters(self):
         self.setFilterOptions()
-        
+        return [ {'name':'Filter Design', 'type':'group', 'children':[
+                    # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
+                    {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateScript},
+                    {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'value':20, 'set':self.updateScript},
+                    {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'value':False, 'set':self.updateScript},
+                    {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript},
+                                                                     ]},
+                 {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
+                 {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript},
+                ]
+
     def updateScript(self, param1=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
         self.addFunction("init", "setFilterParams", "form='%s', freqbw=%.2f / 100.0, order=%d" % (
@@ -97,7 +84,6 @@ class DecimationClockRecovery(PreprocessingBase):
         self._enableDecimation = enableDecimation
    
     def setFilterParams(self, form='low', freqbw=0.15, order=5, tnum=0, useCached=False):
-        
         if useCached:
             freqbw = self._freqbw
             form = self._form
@@ -167,13 +153,9 @@ class DecimationClockRecovery(PreprocessingBase):
                         filttrace[i] = 1
             else:
                 filttrace = inputtrace
-                    
-
 
             #print len(trace)
             #print len(filttrace)
-            
             return filttrace
-
         else:
             return self.traceSource.getTrace(n)

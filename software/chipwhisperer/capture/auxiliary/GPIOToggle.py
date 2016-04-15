@@ -26,32 +26,26 @@
 #=================================================
 
 import time
-from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util, timer
+from _base import AuxiliaryTemplate
+from chipwhisperer.common.utils import timer
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-
-
-def getClass():
-    return GPIOToggle
 
 
 class GPIOToggle(AuxiliaryTemplate):
     name = 'GPIO Toggle'
 
     def setupParameters(self):
-        ssParams = [
-                    {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
-                    {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},
-                    {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
-                    {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
-                    {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
-                    {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
-                    ]
         self.pin = None
         self.lastPin = None
         self.settingsChanged()
-        return ssParams
+        return [
+                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
+                 {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},
+                 {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
+                 {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
+                 {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
+                 {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
+                ]
 
     def settingsChanged(self, ignored=None):
         self.pin = self.findParam('gpiopin').value()

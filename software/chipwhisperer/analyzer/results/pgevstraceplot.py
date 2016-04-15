@@ -29,16 +29,10 @@ from PySide.QtGui import *
 from chipwhisperer.common.utils import Util
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return PGEVsTrace
-
-
 class PGEVsTrace(ResultsPlotData):
     """
     Plots Partial Guessing Entropy (PGE) vs Traces in Attack
     """
-
     name = "PGE vs Trace Plot"
 
     def __init__(self, subkeys=16, permPerSubkey=256):
@@ -47,11 +41,10 @@ class PGEVsTrace(ResultsPlotData):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
-    def setupParameters(self):
-        return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit},
-                         {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
-                         {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},
-                      ]
+    def _setupParameters(self):
+        return [ {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
+                 {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},
+                ]
 
     def copyPGE(self, dontCopy=False, addPlotMatlab=True):
         """Copy the Partial Guessing Entropy (PGE) to clipboard for use in other programs"""

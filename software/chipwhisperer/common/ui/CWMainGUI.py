@@ -21,6 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+import chipwhisperer.common.utils.plugin
 
 __author__ = "Colin O'Flynn"
 
@@ -425,7 +426,8 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.addExampleScripts(Util.getModulesInDictFromPackage("chipwhisperer.capture.scripts", instantiate = False))
+        self.addExampleScripts(
+            chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", instantiate = False))
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)

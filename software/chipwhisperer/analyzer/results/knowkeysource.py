@@ -28,11 +28,6 @@ from chipwhisperer.common.utils import Util
 from _base import ResultsBase
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return KnowKeySource
-
-
 class KnowKeySource(ResultsBase):
     """Interface to main program, various routines for plotting output data"""
     name = "Knownkey Source"
@@ -44,8 +39,7 @@ class KnowKeySource(ResultsBase):
     def setupParameters(self):
         return [{'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
                                                 'value':'attack', 'set':self.setKnownKeySrc},
-
-                     {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True},
+                {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True},
                 ]
 
     def setKnownKeySrc(self, keysrc):

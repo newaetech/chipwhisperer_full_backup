@@ -36,13 +36,9 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
+from chipwhisperer.common.utils.plugin import PluginTemplate
 
-
-def getClass():
-    return UserScript
-
-
-class UserScript(object):
+class UserScript(PluginTemplate):
     name = "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
     description = "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
 

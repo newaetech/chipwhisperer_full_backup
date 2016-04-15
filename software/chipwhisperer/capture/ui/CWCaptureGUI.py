@@ -27,6 +27,8 @@ import sys
 #DO NOT REMOVE PYSIDE IMPORT - Required for pyqtgraph to select correct QT Interface on some platforms, even though "unused"
 from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
+
+import chipwhisperer.common.utils.plugin
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.ui.ProgressBar import *
@@ -73,11 +75,11 @@ class CWCaptureGUI(CWMainGUI):
         self.traceChanged()
 
     def setupParameters(self):
-        valid_scopes = Util.getModulesInDictFromPackage("chipwhisperer.capture.scopes", instantiate = True)
-        valid_targets =  Util.getModulesInDictFromPackage("chipwhisperer.capture.targets", instantiate = True)
-        valid_traces = Util.getModulesInDictFromPackage("chipwhisperer.common.traces", instantiate = False)
-        valid_aux = Util.getModulesInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True)
-        valid_acqPatterns =  Util.getModulesInDictFromPackage("chipwhisperer.capture.acq_patterns", instantiate = True)
+        valid_scopes = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", instantiate = True)
+        valid_targets =  chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.targets", instantiate = True)
+        valid_traces = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.common.traces", instantiate = False)
+        valid_aux = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True)
+        valid_acqPatterns =  chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", instantiate = True)
 
         self.cwAPI.setScope(valid_scopes["None"])
         self.cwAPI.setTarget(valid_targets["None"])

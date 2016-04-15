@@ -29,6 +29,8 @@ import sys
 #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
 from PySide.QtCore import *
 from PySide.QtGui import *
+
+import chipwhisperer.common.utils.plugin
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
@@ -65,11 +67,11 @@ class CWAnalyzerGUI(CWMainGUI):
         self.traceExplorerDialog.runScriptFunction.connect(self.runScriptFunction)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
-        self.valid_atacks = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.attacks", True)
-        self.resultWidgets = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.results", True)
+        self.valid_atacks = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True)
+        self.resultWidgets = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True)
         self.cwAPI.results = self.resultWidgets # Displays attack status/results
         self.setAttack(self.valid_atacks["CPA"])
-        self.valid_preprocessingModules = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, self.waveformDock.widget())
+        self.valid_preprocessingModules = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, self.waveformDock.widget())
         self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
                                      self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
 

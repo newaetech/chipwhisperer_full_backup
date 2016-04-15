@@ -25,13 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from _base import PreprocessingBase
 from scipy import signal
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return Filter
 
 
 class Filter(PreprocessingBase):
@@ -39,23 +34,17 @@ class Filter(PreprocessingBase):
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
     name = "Digital Filter"
-    descrString = "Frequency specific filter"
+    description = "Frequency specific filter"
 
-    def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateScript},
-                         {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
-                         {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
-                         {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
-                         {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
-
-        self.updateScript()
-        
-        # Setup imports required
+    def _setupParameters(self):
         self.importsAppend("import scipy as sp")
+
+        return [ {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'set':self.updateScript},
+                 {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'value':'low', 'set':self.updateScript},
+                 {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.1, 'set':self.updateScript},
+                 {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'value':0.8, 'set':self.updateScript},
+                 {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':5, 'set':self.updateScript}
+                ]
 
     def setFilterForm(self, filtform=signal.butter):
         """Set the filter type in object"""

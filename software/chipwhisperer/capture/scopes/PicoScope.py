@@ -33,22 +33,16 @@ must install
 
 import collections
 import time
-
+from chipwhisperer.capture.scopes._base import ScopeTemplate
+from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import Util, plugin
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
 
-from chipwhisperer.capture.scopes.template import ScopeTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
 
-
-def getClass():
-    return PicoScopeInterface
-
-
-class PicoScope(object):
-    paramListUpdated = Util.Signal()
+class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
+    name = 'Scope Settings'
     dataUpdated = Util.Signal()
 
     def __init__(self, psClass):
@@ -64,7 +58,8 @@ class PicoScope(object):
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 
-        scopeParams = [
+    def setupParameters(self):
+        return [
                       {'name':'Trace Measurement', 'type':'group', 'children':[
                          {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
                          {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
@@ -82,15 +77,6 @@ class PicoScope(object):
                       {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.UpdateSampleRateFreq},
                       {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.UpdateSampleRateFreq},
                   ]
-        
-        for t in self.getAdditionalParams():
-            scopeParams.append(t)
-
-        self.params = ConfigParameter.create_extended(self, name='Scope Settings', type='group', children=scopeParams)
-            
-    def getAdditionalParams(self):
-        """Override this to define additional parameters"""
-        return []
             
     def UpdateSampleRateFreq(self, ignored=None):
         if self.ps.handle is not None:
@@ -110,9 +96,6 @@ class PicoScope(object):
     def con(self):
         self.ps.open()
         self.updateCurrentSettings()
-            
-    def paramList(self):
-        return [self.params]
     
     def updateCurrentSettings(self, ignored=False):
         if self.ps.handle is None: return
@@ -146,7 +129,6 @@ class PicoScope(object):
         except IOError, e:
             raise IOError("Caught Error: %s" % str(e))
 
-
     def arm(self):       
         self.ps.runBlock()
         
@@ -162,25 +144,22 @@ class PicoScope(object):
         # No timeout?
         return False
 
+
 class PicoScopeInterface(ScopeTemplate):
     name =  "PicoScope"
-    dataUpdated = Util.Signal()
 
     def __init__(self):
         super(PicoScopeInterface, self).__init__()
         self.scopetype = None
         self.advancedSettings = None
+        self.setCurrentScope(self.findParam('type').value(type))
 
     def setupParameters(self):
-        scope_cons = {}
-        scope_cons["PS6000"] = ps6000.PS6000(connect=False)
-        scope_cons["PS5000a"] = ps5000a.PS5000a(connect=False)
-        scope_cons["PS2000"] = ps2000.PS2000(connect=False)
-        defscope = scope_cons["PS5000a"]
-        ssParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
-                      ]
-        self.setCurrentScope(defscope)
-        return ssParams
+        self.setupChildParamsOrder([lambda: self.scopetype])
+
+        scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
+                        "PS2000": ps2000.PS2000(connect=False)}
+        return [{'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}]
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst
@@ -207,7 +186,7 @@ class PicoScopeInterface(ScopeTemplate):
             self.scopetype.dis()  
             self.connectStatus.setValue(False)
 
-    def doDataUpdated(self,  l, offset=0):
+    def doDataUpdated(self, l, offset=0):
         self.datapoints = l
         self.offset = offset
         if len(l) > 0:
@@ -223,18 +202,3 @@ class PicoScopeInterface(ScopeTemplate):
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
         return self.scopetype.capture(update, NumberPoints, waitingCallback)
-        
-    def paramList(self):
-        p = []       
-        p.append(self.params)  
-         
-        if self.scopetype is not None:
-            for a in self.scopetype.paramList(): p.append(a)
-            
-        #if self.advancedSettings is not None:
-        #    for a in self.advancedSettings.paramList(): p.append(a)    
-            
-        return p
-
-    def validateSettings(self):
-        return []

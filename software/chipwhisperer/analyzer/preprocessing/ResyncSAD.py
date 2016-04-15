@@ -26,12 +26,7 @@
 #=================================================
 
 import numpy as np
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-        
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return ResyncSAD
+from _base import PreprocessingBase
 
 
 class ResyncSAD(PreprocessingBase):
@@ -39,30 +34,24 @@ class ResyncSAD(PreprocessingBase):
     Resync by minimizing the SAD.
     """
     name = "Resync: Sum-of-Difference"
-    descrString = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
+    description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."
 
-    def setupParameters(self):
+    def _setupParameters(self):
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
-                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
-                         # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
-                         # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.ccStart = 0
         self.ccEnd = 1
         self.wdStart = 0
         self.wdEnd = 1
-
-        self.updateScript()
+        return [ {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+                 {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
+                 {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
+                 # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
+                 # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
+               ]
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
@@ -117,7 +106,6 @@ class ResyncSAD(PreprocessingBase):
             elif diff > 0:
                 trace = np.append(trace[diff:], np.zeros(diff))
             return trace
-            
         else:
             return self.traceSource.getTrace(n)
    

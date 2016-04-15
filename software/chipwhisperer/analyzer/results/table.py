@@ -29,11 +29,6 @@ from PySide.QtGui import *
 from _base import ResultsWidgetBase
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return ResultsTable
-
-
 class ResultsTable(QTableWidget, ResultsWidgetBase):
     """Table of results, showing all guesses based on sorting output of attack"""
     name = 'Results Table'
@@ -70,9 +65,8 @@ class ResultsTable(QTableWidget, ResultsWidgetBase):
         for y in range(1, self.numPerms+1):
             self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
 
-    def setupParameters(self):
-        return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit},
-                {'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
+    def _setupParameters(self):
+        return [{'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
                 {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
                 {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
                 ]

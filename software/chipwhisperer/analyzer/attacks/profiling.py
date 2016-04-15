@@ -35,10 +35,6 @@ from chipwhisperer.analyzer.attacks._profiling_template import ProfilingTemplate
 from _generic_parameters import AttackGenericParameters
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return Profiling
-
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
 

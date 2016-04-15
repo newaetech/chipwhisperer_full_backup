@@ -24,14 +24,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.plugin import PluginTemplate
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import Util, plugin
 
-class ResultsBase(PluginTemplate):
+
+class ResultsBase(plugin.PluginTemplate):
     name = "Results"
 
     def __init__(self):
-        PluginTemplate.__init__(self)
+        super(ResultsBase, self).__init__()
         self.attack = None
 
     def setObservedAttack(self, attack):
@@ -66,7 +66,11 @@ class ResultsWidgetBase(ResultsBase):
         ResultsBase.__init__(self)
 
     def setupParameters(self):
-        return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit}]
+        return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit}].extend(self._setupParameters())
+
+    def _setupParameters(self):
+        # PUT YOUR CUSTOMIZED PARAMETERS HERE
+        return []
 
     def updateVisibility(self, visible):
         """Dock visability changed"""

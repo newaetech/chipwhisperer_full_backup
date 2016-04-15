@@ -26,26 +26,17 @@
 #=================================================
 
 import numpy as np
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return AddNoiseRandom
+from _base import PreprocessingBase
 
 
 class AddNoiseRandom(PreprocessingBase):
     name = "Add Noise: Amplitude"
-    descrString = "Add random noise"
+    description = "Add random noise"
      
-    def setupParameters(self):
-        ssParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
+    def _setupParameters(self):
         self._maxNoise = 0
-        self.updateScript()
+        return [ {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'set':self.updateScript},
+                ]
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())

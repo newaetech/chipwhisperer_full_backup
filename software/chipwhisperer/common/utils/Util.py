@@ -24,11 +24,10 @@
 #=================================================
 
 import ast
-import os.path
 import collections
+import os.path
 import shutil
 import sys
-import importlib
 
 try:
     # OrderedDict is new in 2.7
@@ -37,38 +36,10 @@ try:
 except ImportError:
     DictType = dict
 
-def getModulesInDictFromPackage(path, instantiate, *args, **kwargs):
-    modules = importModulesInPackage(path)
-    classes = getMainClassesFromModules(modules)
-    dictModules = putInDict(classes, instantiate, *args, **kwargs)
-    return module_reorder(dictModules)
-
 
 def getRootDir():
     path = os.path.join(os.path.dirname(__file__), "../../../")
     return os.path.normpath(path)
-
-
-def importModulesInPackage(path):
-    resp = []
-    for package_name in getPyFiles(os.path.join(getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
-        full_package_name = '%s.%s' % (path, package_name)
-        try:
-            resp.append(importlib.import_module(full_package_name))
-        except Exception as e:
-            print "INFO: Could not import module: " + full_package_name + ": " + str(e)
-    return resp
-
-
-def getMainClassesFromModules(modules):
-    resp = []
-    for module in modules:
-        if hasattr(module, "getClass"):
-            resp.append(module.getClass())
-        else:
-            pass
-            # print "INFO: Module " + module.__name__ + " has no top level method called getClass(). Ignoring it..."
-    return resp
 
 
 def putInDict(items, instantiate, *args, **kwargs):
@@ -86,16 +57,6 @@ def putInDict(items, instantiate, *args, **kwargs):
     if len(resp) == 0:
         print "Warning: Dictionary contains zero modules"
     return resp
-
-
-def module_reorder(resp):
-    #None is first, then alphabetical
-    newresp = DictType()
-    if 'None' in resp:
-        newresp['None'] = resp['None']
-        del resp['None']
-    newresp.update(sorted(resp.items(), key=lambda t: t[0]))
-    return newresp
 
 
 def copyFile(source, destination, keepOriginals = True):

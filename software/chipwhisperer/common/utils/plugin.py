@@ -22,32 +22,93 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-from chipwhisperer.common.utils import Util
+import inspect
+import importlib
+import Util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
+import os.path
 
 
-# ALWAYS USE THE getClass() METHOD IN ORDER TO INDICATE THE MAIN CLASS WITHIN THE MODULE
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return PluginTemplate
-
-
-class PluginTemplate(object):
+class Parameterized(object):
     name = "None"
-    description = "Some description"
 
     def __init__(self):
         self.paramListUpdated = Util.Signal()
-        self.updateUI = Util.Signal()
         self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=self.setupParameters())
+        self.__childParams = []
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
-        ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
+        # return [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
         return []
 
     def paramList(self):
-        return [self.params]
+        ret = [self.params]
+        for e in self.__childParams:
+            if e:
+                ret.extend(e.paramList())
+        return ret
 
     def getName(self):
         return self.name
+
+    def setupChildParamsOrder(self, childParams):
+        # Use this method to setup the order of the parameterized objects to be shown
+        self.__childParams = childParams
+        for childParam in self.__childParams.itervalues():
+            childParam.paramListUpdated.connect(self.paramListUpdated.emit)
+
+    def connectChildParamsSignals(self, childParams):
+        # Use this method for the child parameters that will be show selectively
+        for childParam in childParams.itervalues():
+            childParam.paramListUpdated.connect(self.paramListUpdated.emit)
+
+
+class PluginTemplate(Parameterized):
+    description = "Some description"
+
+    def guiActions(self, mainWindow):
+        # self.window = Window(mainWindow, parameters)
+        # return [['Name of the menu item','Description', self.window.show],...]
+        return []
+
+
+def getPluginsInDictFromPackage(path, instantiate, *args, **kwargs):
+    modules = importModulesInPackage(path)
+    classes = getPluginClassesFromModules(modules)
+    dictModules = Util.putInDict(classes, instantiate, *args, **kwargs)
+    return module_reorder(dictModules)
+
+
+def importModulesInPackage(path):
+    resp = []
+    for package_name in Util.getPyFiles(os.path.join(Util.getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
+        full_package_name = '%s.%s' % (path, package_name)
+        try:
+            resp.append(importlib.import_module(full_package_name))
+        except Exception as e:
+            print "INFO: Could not import module: " + full_package_name + ": " + str(e)
+    return resp
+
+
+def getPluginClassesFromModules(modules):
+    resp = []
+    for module in modules:
+        clsmembers = inspect.getmembers(module, lambda member: inspect.isclass(member) and member.__module__ == module.__name__)
+        for clsName, clsMember in clsmembers:
+            if issubclass(clsMember, PluginTemplate) and (not clsName.startswith('_')):
+                resp.append(clsMember)
+            else:
+                pass
+                # print "INFO: Module " + module.__name__ + " has no top level method called getClass(). Ignoring it..."
+    return resp
+
+
+def module_reorder(resp):
+    #None is first, then alphabetical
+    newresp = Util.DictType()
+    if 'None' in resp:
+        newresp['None'] = resp['None']
+        del resp['None']
+    newresp.update(sorted(resp.items(), key=lambda t: t[0]))
+    return newresp

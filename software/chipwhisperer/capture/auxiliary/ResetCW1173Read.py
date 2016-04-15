@@ -24,25 +24,20 @@
 #=================================================
 
 import time
-from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.capture.auxiliary._base import AuxiliaryTemplate
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import timer
-
-
-def getClass():
-    return ResetCW1173Read
 
 
 class ResetCW1173Read(AuxiliaryTemplate):
     name = "Reset AVR/XMEGA via CW-Lite"
 
     def setupParameters(self):
-        ssParams = [{'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
-                    {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
-                    {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-                    ]
-        return ssParams
+        return [
+                 {'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
+                 {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
+                 {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+                ]
 
     def captureInit(self):
         pass

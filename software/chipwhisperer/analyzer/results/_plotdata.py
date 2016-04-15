@@ -27,7 +27,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from _base import ResultsWidgetBase, ResultsBase
+from _base import ResultsWidgetBase
 from functools import partial
 import numpy as np
 
@@ -75,9 +75,8 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase):
         self.layout().addWidget(self.bselection)
         self.highlightTop = True
 
-    def setupParameters(self):
-        return [{'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit},
-                {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
+    def _setupParameters(self):
+        return [{'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
                 {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True},
                 # {'name':''}
                 ]

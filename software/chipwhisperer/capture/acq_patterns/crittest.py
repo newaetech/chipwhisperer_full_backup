@@ -25,14 +25,7 @@
 
 import random
 from chipwhisperer.common.utils import Util
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.capture.acq_patterns._base import AcqKeyTextPattern_Base
-
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return AcqKeyTextPattern_CRITTest
-
+from _base import AcqKeyTextPattern_Base
 
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     name = "CRI T-Test"
@@ -40,10 +33,8 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     def setupParams(self):
         self._fixedPlain = False
         self._fixedKey = True
-        basicParams = [
-                      # {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-                  ]
-        return basicParams
+        return [  # {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
+                ]
 
     def _initPattern(self):
         pass
@@ -85,7 +76,6 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
                 self._textin1 = bytearray(16)
                 for i in range(0, 16):
                     self._textin1[i] = random.randint(0, 255)
-
         else:
             self.group1 = True
             self._textin = self._textin2

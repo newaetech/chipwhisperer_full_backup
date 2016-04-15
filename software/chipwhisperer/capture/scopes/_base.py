@@ -25,19 +25,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util
-from chipwhisperer.common.utils.plugin import PluginTemplate
+from chipwhisperer.common.utils import Util, plugin
 
 
-def getClass():
-    return ScopeTemplate
-
-
-class ScopeTemplate(PluginTemplate):
+class ScopeTemplate(plugin.PluginTemplate):
     name = "None"
 
     def __init__(self):
-        PluginTemplate.__init__(self)
+        super(ScopeTemplate, self).__init__()
         self.connectStatus = Util.Observable(False)
         self.dataUpdated = Util.Signal()
         self.datapoints = []
@@ -62,7 +57,7 @@ class ScopeTemplate(PluginTemplate):
         self.connectStatus.setValue(False)
 
     def doDataUpdated(self,  l, offset=0):
-        pass
+        self.dataUpdated.emit(l, offset)
 
     def arm(self):
         pass
@@ -78,4 +73,5 @@ class ScopeTemplate(PluginTemplate):
         return []
 
     def validateSettings(self):
-        return [("warn", "Scope Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
+        # return [("warn", "Scope Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
+        return []

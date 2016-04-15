@@ -25,421 +25,19 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.ui.qt as openadc_qt
-import chipwhisperer.capture.ui.CWCaptureGUI
-from chipwhisperer.capture.scopes.template import ScopeTemplate
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
-from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util, timer
+from _base import ScopeTemplate
+from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
+from chipwhisperer.common.utils import Util, timer, plugin
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-
-try:
-    import ftd2xx as ft
-except:
-    ft = None
-    ft_str = sys.exc_info()
-
-try:
-    import usb
-except ImportError:
-    usb = None
-    usb_str = sys.exc_info()
-
-try:
-    import serial
-    import chipwhisperer.common.utils.Scan as scan
-except ImportError:
-    serial = None
-
-try:
-    import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
-except ImportError:
-    CWL = None
-
-
-def getClass():
-    return OpenADCInterface
-
-
-class OpenADCInterface_NAEUSBChip():
-    name = "ChipWhisperer Lite"
-    paramListUpdated = Util.Signal()
-
-    def __init__(self, oadcInstance):
-        ztexParams = [
-                      # No Parameters for NAEUSBChip
-                  ]
-
-        self.ser = None
-        self._toolActs = []
-
-        if (openadc_qt is None) or (usb is None):
-            missingInfo = ""
-            if openadc_qt is None:
-                missingInfo += "openadc.qt "
-            if usb is None:
-                missingInfo += " usb"
-            raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
-        else:
-            self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
-            self.scope = oadcInstance
-            self.params = ConfigParameter.create_extended(self, name='OpenADC-NAEUSBChip', type='group', children=ztexParams)
-
-        # if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        # else:
-        #    self.cwAdvancedSettings = None
-
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
-    def con(self):
-        if self.ser == None:
-            dev = CWL.CWLiteUSB()
-
-            try:
-                dev.con()
-            except IOError, e:
-                exctype, value = sys.exc_info()[:2]
-                raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
-            
-            self.cwFirmwareConfig.setInterface(dev.fpga)
-            self.cwFirmwareConfig.loadRequired()
-
-            if hasattr(self, 'cwliteXMEGA'):
-                self.cwliteXMEGA.setUSBInterface(dev.xmega)
-
-            if hasattr(self, 'cwliteAVR'):
-                self.cwliteAVR.setUSBInterface(dev.avr)
-
-            self.ser = dev.usbdev()
-
-        try:
-            self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
-        except IOError, e:
-            exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC: " + (str(exctype) + str(value)))
-
-    def dis(self):
-        if self.ser != None:
-            self.ser.close()
-            self.ser = None
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
-
-    def paramList(self):
-        return [self.params]
-
-    def guiActions(self, mainWindow):
-        if not hasattr(self, 'cwliteXMEGA'):
-            self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
-        if not hasattr(self, 'cwliteAVR'):
-            self.cwliteAVR = AVRProgrammerDialog(mainWindow)
-        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show], # Can' use Config... name with MacOS
-                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired],
-                ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
-                ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
-
-
-class OpenADCInterface_FTDI():
-    name = "FTDI (SASEBO-W/SAKURA-G)"
-    paramListUpdated = Util.Signal()
-
-    def __init__(self, oadcInstance):
-        ftdiParams = [
-                      {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-                      {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
-                  ]
-
-        self.serialNumber = None
-
-        if (openadc_qt is None) or (ft is None):
-            self.ser = None
-            raise ImportError("Needed imports for FTDI missing")
-        else:
-            self.ser = None
-            self.scope = oadcInstance
-            self.params = ConfigParameter.create_extended(self, name='OpenADC-FTDI', type='group', children=ftdiParams)
-
-        #if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        #else:
-        #    self.cwAdvancedSettings = None
-
-    def setSerialNumber(self, snum):
-        self.serialNumber = snum
-
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
-    def con(self):
-        if self.ser == None:
-            try:
-                self.dev = ft.openEx(str(self.serialNumber), ft.ftd2xx.OPEN_BY_SERIAL_NUMBER)
-                self.dev.setBitMode(0x00, 0x40)
-                self.dev.setTimeouts(500, 500)
-                self.dev.setLatencyTimer(2)
-                self.ser = self
-            except ft.ftd2xx.DeviceError, e:
-                self.ser = None
-                raise IOError("Could not open %s: %s"%(self.serialNumber,e))
-
-        try:
-            self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
-        except IOError,e:
-            exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC Error: %s"%(str(exctype) + str(value)) + " - " + e.message)
-
-        #if self.cwAdvancedSettings:
-        #    self.cwAdvancedSettings.setOpenADC(self.scope)
-
-    def dis(self):
-        if self.ser != None:
-            self.ser.close()
-            self.ser = None
-
-    def serialRefresh(self):
-        serialnames = ft.listDevices()
-        if serialnames == None:
-            serialnames = [" "]
-
-        for p in self.params.children():
-            if p.name() == 'Serial Number':
-                p.setLimits(serialnames)
-                p.setValue(serialnames[0])
-
-        self.paramListUpdated.emit()
-
-    def read(self, N=0, debug=False):
-        return bytearray(self.dev.read(N))
-
-    def write(self, data, debug=False):
-        return self.dev.write(data)
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
-
-    def paramList(self):
-        p = [self.params]
-        #if self.cwAdvancedSettings is not None:
-        #    for a in self.cwAdvancedSettings.paramList(): p.append(a)
-        return p
-
-
-class OpenADCInterface_Serial():
-    name = "Serial Port (LX9)"
-    paramListUpdated = Util.Signal()
-
-    def __init__(self, oadcInstance):
-        ftdiParams = [
-                      {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
-                      {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
-                  ]
-
-        self.ser = None
-
-        if (openadc_qt is None) or (serial is None):
-            self.ser = None
-            raise ImportError("Needed imports for serial missing")
-        else:
-            self.ser = None
-            self.scope = oadcInstance
-            self.params = ConfigParameter.create_extended(self, name='OpenADC-Serial', type='group', children=ftdiParams)
-
-    def setPortName(self, snum):
-        self.portName = snum
-
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
-    def con(self):
-        if self.ser == None:
-            self.ser = serial.Serial()
-            self.ser.port     = self.portName
-            self.ser.baudrate = 512000
-            self.ser.timeout  = 2     # 2 second timeout
-
-            attempts = 4
-            while attempts > 0:
-                try:
-                    self.ser.open()
-                    attempts = 0
-                except serial.SerialException, e:
-                    attempts = attempts - 1
-                    self.ser = None
-                    if attempts == 0:
-                        raise IOError("Could not open %s"%self.ser.name)
-
-        try:
-            self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
-        except IOError,e:
-            exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC Error (Serial Port): %s"%(str(exctype) + str(value)))
-
-    def dis(self):
-        if self.ser != None:
-            self.ser.close()
-            self.ser = None
-
-    def serialRefresh(self):
-        serialnames = scan.scan()
-        if serialnames == None:
-            serialnames = [" "]
-
-        for p in self.params.children():
-            if p.name() == 'Port':
-                p.setLimits(serialnames)
-                p.setValue(serialnames[0])
-
-        self.paramListUpdated.emit()
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
-
-    def paramList(self):
-        p = [self.params]
-        return p
-
-
-class OpenADCInterface_ZTEX():
-    name = "ChipWhisperer Rev2"
-    paramListUpdated = Util.Signal()
-
-    def __init__(self, oadcInstance):
-        ztexParams = [
-                      #No Parameters for ZTEX
-                  ]
-
-        self.ser = None
-        self._toolActs = []
-
-        if (openadc_qt is None) or (usb is None):
-            missingInfo = ""
-            if openadc_qt is None:
-                missingInfo += "openadc.qt "
-            if usb is None:
-                missingInfo += " usb"
-            raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
-        else:
-            self.scope = oadcInstance
-            self.params = ConfigParameter.create_extended(self, name='OpenADC-ZTEX', type='group', children=ztexParams)
-            self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
-
-        #if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        #else:
-        #    self.cwAdvancedSettings = None
-
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
-    def con(self):
-        if self.ser == None:
-
-            # Download firmware if required
-            self.cwFirmwareConfig.loadRequired()
-
-            try:
-                dev = usb.core.find(idVendor=0x221A, idProduct=0x0100)
-            except IOError, e:
-                exctype, value = sys.exc_info()[:2]
-                raise IOError("FX2 Port " +  str(exctype) + str(value))
-
-            if dev is None:
-                raise IOError("FX2 Port. Could not open USB Device")
-
-            dev.set_configuration()
-
-            self.dev = dev
-            self.writeEP = 0x06
-            self.readEP = 0x82
-            self.interface = 0
-            self.ser = self
-
-        try:
-            self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
-        except IOError,e:
-            exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
-
-    def dis(self):
-        if self.ser != None:
-            self.ser.close()
-            self.ser = None
-
-    def read(self, N=0, debug=False):
-        try:
-            # self.interface removed from call for latest API compatability
-            data = self.dev.read(self.readEP, N, timeout=100)
-        except IOError:
-            return []
-
-        data = bytearray(data)
-        if debug:
-            print "RX: ",
-            for b in data:
-                print "%02x "%b,
-            print ""
-        return data
-
-    def write(self, data, debug=False):
-        data = bytearray(data)
-        if debug:
-            print "TX: ",
-            for b in data:
-                print "%02x "%b,
-            print ""
-        # self.interface removed from call for latest API compatability
-        self.dev.write(self.writeEP, data, timeout=500)
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
-
-    def paramList(self):
-        p = [self.params]
-        return p
-
-    def guiActions(self, mainWindow):
-        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
-               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
     name = "ChipWhisperer/OpenADC"
-    dataUpdated = Util.Signal()
 
     def __init__(self):
         super(OpenADCInterface, self).__init__()
@@ -453,21 +51,19 @@ class OpenADCInterface(ScopeTemplate):
         self.advancedSAD = None
         self.digitalPattern = None
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
+        self.setCurrentScope(self.findParam('con').value())
 
     def setupParameters(self):
-        scopes = Util.putInDict([OpenADCInterface_ZTEX, OpenADCInterface_FTDI,
-                                OpenADCInterface_Serial,OpenADCInterface_NAEUSBChip], True, self.qtadc)
+        self.setupChildParamsOrder([lambda: self.scopetype, lambda: self.qtadc, lambda: self.advancedSettings,
+                                    lambda: self.advancedSAD, lambda: self.digitalPattern])
 
-        for scope in scopes.itervalues():
-            scope.paramListUpdated.connect(self.paramListUpdated.emit)
+        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, self.qtadc)
+        self.connectChildParamsSignals(scopes)
 
-        defScope = scopes[OpenADCInterface_NAEUSBChip.name]
-
-        ssParams = [{'name':'Connection', 'type':'list', 'values':scopes, 'value':defScope, 'set':self.setCurrentScope},
-                       {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
-                      ]
-        self.setCurrentScope(defScope)
-        return ssParams
+        return [
+                  {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip.name], 'set':self.setCurrentScope},
+                  {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
+                ]
 
     def dcmTimeout(self):
         try:
@@ -515,7 +111,7 @@ class OpenADCInterface(ScopeTemplate):
                 Util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(chipwhisperer.capture.ui.CWCaptureGUI.CWCaptureGUI.getInstance())
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
                     self.advancedSAD.setOpenADC(self.qtadc)
 
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()
@@ -531,7 +127,7 @@ class OpenADCInterface(ScopeTemplate):
             self.connectStatus.setValue(False)
             self.scopetype.dis()
 
-    def doDataUpdated(self,  l, offset=0):
+    def doDataUpdated(self, l, offset=0):
         self.datapoints = l
         self.offset = offset
         if len(l) > 0:
@@ -546,7 +142,7 @@ class OpenADCInterface(ScopeTemplate):
 
         try:
             self.qtadc.arm()
-        except Exception, e:
+        except Exception as e:
             self.dis()
             raise e
 
@@ -557,32 +153,9 @@ class OpenADCInterface(ScopeTemplate):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
         return self.qtadc.capture(update, NumberPoints, waitingCallback)
 
-    def paramList(self):
-        p = []
-        p.append(self.params)
-
-        if self.scopetype is not None:
-            for a in self.scopetype.paramList(): p.append(a)
-
-        p.append(self.qtadc.params)
-
-        # TODO: make this one list with modules that can be added elsewhere
-        if self.advancedSettings is not None:
-            for a in self.advancedSettings.paramList(): p.append(a)
-
-        if self.advancedSAD is not None:
-            for a in self.advancedSAD.paramList(): p.append(a)
-
-        if self.digitalPattern is not None:
-            for a in self.digitalPattern.paramList(): p.append(a)
-
-        return p
-
     def guiActions(self, mainWindow):
         if self.scopetype and hasattr(self.scopetype, "guiActions"):
             return self.scopetype.guiActions(mainWindow)
         else:
             return []
 
-    def validateSettings(self):
-        return []

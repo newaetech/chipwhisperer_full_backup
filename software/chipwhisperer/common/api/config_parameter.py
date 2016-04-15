@@ -23,26 +23,26 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-try:
-    from pyqtgraph.parametertree import Parameter
-    from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-    
-    #Do not remove - this import is unused, but it affects other imports
-    import chipwhisperer.common.ui.ParameterTypesCustom
-    
-    #Default parameter - uses pyqtgraph to store
-    class ConfigParameter(Parameter):
-        @staticmethod
-        def create_extended(parent, *args, **kwargs):
-            params = Parameter.create(*args, **kwargs)
-            if parent:
-                ExtendedParameter.setupExtended(params, parent)
-            return params
-        
-except ImportError:
-    
-    #Fallback - uses dictionary
-    class ConfigParameter(Parameter):
-        @staticmethod
-        def create_extended(parent, *args, **kwargs):
-            return kwargs['children']
+# try:
+from pyqtgraph.parametertree import Parameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
+#Do not remove - this import is unused, but it affects other imports
+import chipwhisperer.common.ui.ParameterTypesCustom
+
+#Default parameter - uses pyqtgraph to store
+class ConfigParameter(Parameter):
+    @staticmethod
+    def create_extended(parent, *args, **kwargs):
+        params = Parameter.create(*args, **kwargs)
+        if parent:
+            ExtendedParameter.setupExtended(params, parent)
+        return params
+#
+# except ImportError:
+#
+#     #Fallback - uses dictionary
+#     class ConfigParameter(Parameter):
+#         @staticmethod
+#         def create_extended(parent, *args, **kwargs):
+#             return kwargs['children']

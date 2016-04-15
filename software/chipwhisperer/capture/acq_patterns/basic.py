@@ -25,12 +25,7 @@
 
 import random
 from chipwhisperer.common.utils import Util
-from chipwhisperer.capture.acq_patterns._base import AcqKeyTextPattern_Base
-
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return AcqKeyTextPattern_Basic
+from _base import AcqKeyTextPattern_Base
 
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
@@ -40,13 +35,11 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._fixedPlain = False
         self._fixedKey = True
 
-        ssParams = [
-                      {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-                      {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
-                      {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
-                      {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
-                  ]
-        return ssParams
+        return [ {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
+                 {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
+                 {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
+                 {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
+                ]
 
     def setKeyType(self, t):
         if t == 'Fixed':

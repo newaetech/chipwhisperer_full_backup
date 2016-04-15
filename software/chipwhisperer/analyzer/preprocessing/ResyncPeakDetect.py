@@ -26,12 +26,7 @@
 #=================================================
 
 import numpy as np
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return ResyncPeakDetect
+from _base import PreprocessingBase
 
 
 class ResyncPeakDetect(PreprocessingBase):
@@ -39,32 +34,26 @@ class ResyncPeakDetect(PreprocessingBase):
     Resyncronize based on peak value.
     """
     name = "Resync: Peak Detect"
-    descrString = "Line up traces so peak (either max positive or max negative) within" \
+    description = "Line up traces so peak (either max positive or max negative) within" \
     " some given range of points all aligns. For each trace the following must hold or the trace is rejected:\n" \
     "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
     "If 'valid limit' is 0 then this is ignored, and all traces are kept."
 
-    def setupParameters(self):
+    def _setupParameters(self):
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-                         {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
-                         {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.ccStart = 0
         self.ccEnd = 0
         self.limit = 0
         self.type = max
-        self.updateScript()
+        return [ {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+                 {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
+                 {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
+                 {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
+                ]
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-
 
         pt = self.findParam('ptrange').value()
         if pt is None: pt = (0, 0)

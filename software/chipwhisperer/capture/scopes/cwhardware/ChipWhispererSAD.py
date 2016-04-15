@@ -38,7 +38,7 @@ CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
 
-class ChipWhispererSAD(QObject):
+class ChipWhispererSAD(object):
     """
     Communicates and drives with the Sum of Absolute Differences (SAD) Module inside the ChipWhisperer System. You
     need to configure the trigger module as active & set the trigger polarity to "high" for this to work.    
@@ -50,10 +50,11 @@ class ChipWhispererSAD(QObject):
     STATUS_RESET_MASK = 1<<0
     STATUS_START_MASK = 1 << 1
              
-    def __init__(self, CWMainWindow=None):
+    def __init__(self):
 
-        self.waveformDock = CWMainWindow.waveformDock
-        self.waveformDock.widget().dataChanged.connect(self.dataChanged)
+        #TODO: connect the waveform widget signal with the dataChanged function
+        # self.waveformDock = CWMainWindow.waveformDock
+        # self.waveformDock.widget().dataChanged.connect(self.dataChanged)
 
         paramSS = [
                 # {'name':'Open SAD Viewer', 'type':'action'},

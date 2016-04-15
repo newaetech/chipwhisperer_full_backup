@@ -26,14 +26,9 @@
 #=================================================
 
 import numpy as np
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from _base import PreprocessingBase
 from matplotlib.mlab import find
 import scipy.signal as sig
-        
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return ResyncResampleZC
 
 
 class ResyncResampleZC(PreprocessingBase):
@@ -41,22 +36,15 @@ class ResyncResampleZC(PreprocessingBase):
     Resync using Resampling based on Zero-Crossing Bins.
     """
     name = "Resync: Resample based on Zero-Crossing"
-    descrString = "Deals with resampling 'bins' based on zero-crossing detection"
+    description = "Deals with resampling 'bins' based on zero-crossing detection"
 
-    def setupParameters(self):
-
+    def _setupParameters(self):
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
-                         {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
-
-        self.updateScript()
+        return [ {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+                 {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
+                 {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript},
+                ]
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
@@ -86,10 +74,7 @@ class ResyncResampleZC(PreprocessingBase):
             trace = trace - self.zcoffset
     
             ind = self.findZerocrossing(trace)
-            newtrace = self.resampleResize(trace, ind, self.binlen)
-            
-            return newtrace
-            
+            return self.resampleResize(trace, ind, self.binlen)
         else:
             return self.traceSource.getTrace(n)
    
@@ -123,9 +108,7 @@ class ResyncResampleZC(PreprocessingBase):
             diff += indices[i] - indices[i - 1]
             num += 1
 
-        avglen = diff / num
-
-        return avglen
+        return diff / num
 
     def resampleResize(self, data, indices, targlen):
         targdata = np.zeros(targlen * len(indices))

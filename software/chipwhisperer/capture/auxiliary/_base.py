@@ -25,18 +25,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils.plugin import PluginTemplate
+from chipwhisperer.common.utils import plugin
 
 
-def getClass():
-    return AuxiliaryTemplate
-
-
-class AuxiliaryTemplate(PluginTemplate):
+class AuxiliaryTemplate(plugin.PluginTemplate):
     name = "None"
 
     def __init__(self):
-        PluginTemplate.__init__(self)
+        super(AuxiliaryTemplate, self).__init__()
         self.prefix = ""
 
     def __del__(self):
