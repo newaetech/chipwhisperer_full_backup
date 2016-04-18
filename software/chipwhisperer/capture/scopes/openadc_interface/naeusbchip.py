@@ -38,10 +38,11 @@ except ImportError:
     usb = None
 
 
-class OpenADCInterface_NAEUSBChip(plugin.PluginTemplate):
+class OpenADCInterface_NAEUSBChip(plugin.Plugin):
     name = "ChipWhisperer Lite"
 
     def __init__(self, oadcInstance):
+        super(OpenADCInterface_NAEUSBChip, self).__init__()
         self.ser = None
         self._toolActs = []
 

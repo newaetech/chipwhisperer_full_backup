@@ -41,10 +41,6 @@ class OpenADCInterface(ScopeTemplate):
 
     def __init__(self):
         super(OpenADCInterface, self).__init__()
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
-        self.qtadc.setupParameterTree(False)
-        self.qtadc.dataUpdated.connect(self.doDataUpdated)
-        self.scopetype = None
 
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
@@ -54,10 +50,16 @@ class OpenADCInterface(ScopeTemplate):
         self.setCurrentScope(self.findParam('con').value())
 
     def setupParameters(self):
-        self.setupChildParamsOrder([lambda: self.scopetype, lambda: self.qtadc, lambda: self.advancedSettings,
-                                    lambda: self.advancedSAD, lambda: self.digitalPattern])
+        self.scopetype = None
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
+        self.qtadc.setupParameterTree(False)
+        self.qtadc.dataUpdated.connect(self.doDataUpdated)
 
-        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, self.qtadc)
+        self.setupChildParamsOrder([lambda: Util.lazy(self.scopetype), lambda: Util.lazy(self.qtadc),
+                                    lambda: Util.lazy(self.advancedSettings), lambda: Util.lazy(self.advancedSAD),
+                                    lambda: Util.lazy(self.digitalPattern)])
+
+        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
         self.connectChildParamsSignals(scopes)
 
         return [

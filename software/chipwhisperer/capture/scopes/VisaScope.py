@@ -40,8 +40,7 @@ class VisaScopeInterface(ScopeTemplate):
 
     def setupParameters(self):
         self.setupChildParamsOrder([lambda: self.scopetype])
-
-        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True)
+        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False)
         self.connectChildParamsSignals(scopes)
         for scope in scopes.itervalues():
             scope.dataUpdated.connect(self.passUpdated)

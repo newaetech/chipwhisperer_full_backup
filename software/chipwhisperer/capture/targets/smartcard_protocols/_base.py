@@ -1,10 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2016, NewAE Technology Inc
 # All rights reserved.
-#
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -28,41 +26,39 @@
 from chipwhisperer.common.utils import plugin
 
 
-class AuxiliaryTemplate(plugin.Plugin):
-    name = "None"
+class ProtocolTemplate(plugin.Parameterized):
+    name='Smartcard Protocol'
 
     def __init__(self):
-        super(AuxiliaryTemplate, self).__init__()
-        self.prefix = ""
+        self.hw = None
 
-    def __del__(self):
-        """Close system if needed"""
-        print "Aux: Closing"
-        self.close()
+    # def setupParameters(self):
+    #     """You should overload this. Copy/Paste into your class."""
+    #     return [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]
 
-    def close(self):
-        """Close target, disconnect if required"""
+    def setSomething(self):
         pass
 
-    def captureInit(self):
-        """Called once before each api grouping, do connect etc"""
+    def setReaderHardware(self, hw):
+        self.hw = hw
+
+    def init(self):
         pass
 
-    def captureComplete(self):
-        """Called once complete api is complete"""
+    def reinit(self):
         pass
 
-    def traceArm(self):
-        """Called before arming scope, use to arm aux system"""
+    def loadEncryptionKey(self, key):
         pass
 
-    def traceArmPost(self):
-        """Called after arming scope, before sending trigger to target"""
-        pass
+    def loadInput(self, inputtext):
+        self.input = inputtext
 
-    def traceDone(self):
-        """Called once api is complete for a single trace"""
-        pass
+    def isDone(self):
+        return True
 
-    def setPrefix(self, prefix):
-        self.prefix = prefix
+    def readOutput(self):
+        return ""
+
+    def go(self):
+        pass

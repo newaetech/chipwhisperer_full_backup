@@ -37,8 +37,7 @@ from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
-from chipwhisperer.common.utils import qt_tweaks
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import plugin, Util
 import chipwhisperer.common.ui.qrc_resources
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -215,6 +214,7 @@ class CWMainGUI(QMainWindow):
     def __init__(self, cwCoreAPI, name="Demo", icon="cwicon"):
         super(CWMainGUI, self).__init__()
         self.cwAPI = cwCoreAPI
+        Util.setUIupdateFunction(QCoreApplication.processEvents)
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
         self.traceManagerDialog = TraceManagerDialog(self)
@@ -227,7 +227,6 @@ class CWMainGUI(QMainWindow):
         self.helpbrowser = HelpBrowser(self)
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        self.cwAPI.signals.parametersChanged.connect(QCoreApplication.processEvents)
         self.cwAPI.signals.newProject.connect(self.projectChanged)
         self.cwAPI.newProject()
         CWMainGUI.instance = self
@@ -267,7 +266,6 @@ class CWMainGUI(QMainWindow):
     
     def addSettings(self, tree, name):
         """Adds a dockwidget designed to store a ParameterTree, also adds to 'Windows' menu"""
-        self.cwAPI.paramTrees.append(tree)
         dock = self.addDock(tree, name=name, area=Qt.TopDockWidgetArea)
         dock.setMaximumWidth(560)
         return dock
@@ -426,8 +424,7 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.addExampleScripts(
-            chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", instantiate = False))
+        self.addExampleScripts(plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False))
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)

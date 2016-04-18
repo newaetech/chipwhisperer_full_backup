@@ -106,10 +106,10 @@ class SAM3LoaderConfig(QtFixes.QDialog):
 
         sam3uFWLoc = QSettings().value("cwlite-sam3u-firmware-location")
 
-        rootprefix = CWCoreAPI.getInstance().getRootDir() + "/"
+        rootprefix = Util.getRootDir() + "/"
 
         if not sam3uFWLoc:
-            defLocfwF = rootprefix + "../../../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"
+            defLocfwF = rootprefix + "../../../hardware/api/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"
             if os.path.isfile(defLocfwF):
                 sam3uFWLoc = str(defLocfwF)
                 QSettings().setValue("cwlite-sam3u-firmware-location", sam3uFWLoc)

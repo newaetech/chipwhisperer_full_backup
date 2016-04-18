@@ -27,7 +27,7 @@
 #
 #
 #
-# This example captures data using the ChipWhisperer Rev2 capture hardware. The target is a SimpleSerial board attached
+# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
 # to the ChipWhisperer.
 #
 # Data is saved into both a project file and a MATLAB array
@@ -110,7 +110,7 @@ class userScript(QObject):
         cap.capture1()
         pe()
         
-        #Start capture process
+        #Start api process
         #writer = cap.captureM()
         #
         #pe()

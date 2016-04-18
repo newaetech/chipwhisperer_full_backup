@@ -67,13 +67,12 @@ class CWAnalyzerGUI(CWMainGUI):
         self.traceExplorerDialog.runScriptFunction.connect(self.runScriptFunction)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
-        self.valid_atacks = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True)
-        self.resultWidgets = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True)
+        self.valid_atacks = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
+        self.resultWidgets = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False)
         self.cwAPI.results = self.resultWidgets # Displays attack status/results
         self.setAttack(self.valid_atacks["CPA"])
-        self.valid_preprocessingModules = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, self.waveformDock.widget())
-        self.preprocessingListGUI = [self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"],
-                                     self.valid_preprocessingModules["None"], self.valid_preprocessingModules["None"]]
+        self.valid_preprocessingModules = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self.waveformDock.widget())
+        self.preprocessingListGUI = [None, None, None, None]
 
         self.addToolbars()
         self.addSettingsDocks()
@@ -393,7 +392,7 @@ class CWAnalyzerGUI(CWMainGUI):
                 imports = p.getImportStatements()
                 for i in imports: mse.append(i, 0)
 
-        # Get imports from capture
+        # Get imports from api
         mse.append("# Imports from Capture", 0)
         for i in self.cwAPI.getAttack().getImportStatements():
             mse.append(i, 0)

@@ -24,14 +24,10 @@
 
 import os
 import numpy as np
-import TraceContainer
+from _base import TraceContainer
 
 
-def getClass():
-    return TraceContainerNative
-
-
-class TraceContainerNative(TraceContainer.TraceContainer):
+class TraceContainerNative(TraceContainer):
     name = "ChipWhisperer/Native"
 
     def copyTo(self, srcTraces=None):

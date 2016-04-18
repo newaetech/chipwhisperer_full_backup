@@ -28,10 +28,12 @@ try:
 except ImportError:
     serial = None
 
-class OpenADCInterface_Serial(plugin.PluginTemplate):
+
+class OpenADCInterface_Serial(plugin.Plugin):
     name = "Serial Port (LX9)"
 
     def __init__(self, oadcInstance):
+        super(OpenADCInterface_Serial, self).__init__()
         self.ser = None
 
         if (openadc_qt is None) or (serial is None):

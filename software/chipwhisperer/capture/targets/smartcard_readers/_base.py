@@ -1,10 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2016, NewAE Technology Inc
 # All rights reserved.
-#
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -28,41 +26,40 @@
 from chipwhisperer.common.utils import plugin
 
 
-class AuxiliaryTemplate(plugin.Plugin):
-    name = "None"
+class ReaderTemplate(plugin.Parameterized):
+    name='Smartcard Reader'
 
     def __init__(self):
-        super(AuxiliaryTemplate, self).__init__()
-        self.prefix = ""
+        super(ReaderTemplate, self).__init__()
 
-    def __del__(self):
-        """Close system if needed"""
-        print "Aux: Closing"
-        self.close()
+    def setupParameters(self):
+        """You should overload this. Copy/Paste into your class."""
+        return [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]
+
+    def setSomething(self):
+        """Here you would send value to the reader hardware"""
+        pass
+
+    def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
+        """Send APDU to SmartCard, get Response"""
+        pass
+
+    def con(self, scope = None):
+        """Connect to reader."""
+        pass
 
     def close(self):
-        """Close target, disconnect if required"""
+        """Close connection."""
         pass
 
-    def captureInit(self):
-        """Called once before each api grouping, do connect etc"""
+    def flush(self):
+        """Discard all input buffers"""
         pass
 
-    def captureComplete(self):
-        """Called once complete api is complete"""
+    def reset(self):
+        """Reset card & save the ATR"""
         pass
 
-    def traceArm(self):
-        """Called before arming scope, use to arm aux system"""
+    def getATR(self):
+        """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""
         pass
-
-    def traceArmPost(self):
-        """Called after arming scope, before sending trigger to target"""
-        pass
-
-    def traceDone(self):
-        """Called once api is complete for a single trace"""
-        pass
-
-    def setPrefix(self, prefix):
-        self.prefix = prefix

@@ -24,12 +24,7 @@
 #=================================================
 
 import hid
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from TargetTemplate import TargetTemplate
-
-
-def getClass():
-    return ChipWhispererSPI
+from _base import TargetTemplate
 
 
 class HIDSPI(object):
@@ -95,10 +90,8 @@ class ChipWhispererSPI(TargetTemplate):
 
     def setupParameters(self):
         self.hdev = HIDSPI()
-        ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
-                    ]
         self.keylength = 16
-        return ssParams
+        return [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}]
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -154,6 +147,3 @@ class ChipWhispererSPI(TargetTemplate):
             return kin[0:blen]
 
         return kin
-
-    def validateSettings(self):
-        return []

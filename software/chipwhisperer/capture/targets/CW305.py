@@ -25,9 +25,10 @@
 #=================================================
 
 import time
+from datetime import datetime
 from functools import partial
 import os.path
-from TargetTemplate import TargetTemplate
+from _base import TargetTemplate
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
@@ -37,8 +38,11 @@ try:
     from PySide.QtGui import QFileDialog
 except ImportError:
     class QSettings(object):
-        def value(self, name):
-            return None
+        def value(self, name, default=None):
+            if default:
+                return default
+            else:
+                return None
         def setValue(self, name, val):
             pass
 
@@ -47,10 +51,6 @@ except ImportError:
             pass
 
     print "CW305: GUI functions disabled"
-
-
-def getClass():
-    return CW305
 
 
 class CW305_USB(object):
@@ -71,10 +71,9 @@ class CW305(TargetTemplate):
         self.fpga = FPGA(self._naeusb)
 
         self.hw = None
-        self._fpgabs = QSettings().value("cw305-bitstream")
-        if self._fpgabs is None:
-            self._fpgabs = ''
-        ssParams = [
+        self._fpgabs = QSettings().value("cw305-bitstream", '')
+        self.oa = None
+        return [
                     {'name':'PLL Settings', 'type':'group', 'children':[
                         {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'value':False, 'set':self.pll.pll_enable_set, 'get':self.pll.pll_enable_get},
                         {'name':'CLK-SMA (X6)', 'type':'group', 'children':[
@@ -102,7 +101,7 @@ class CW305(TargetTemplate):
                         ]},
                     {'name':'Disable CLKUSB For Capture', 'key':'clkusbautooff', 'type':'bool', 'value':True},
                     {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
-                    {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.usb_clk_setenabled},
+                    {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.usb_clk_setenabled},
                     {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
                     {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'value':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
                     {'name':'FPGA Bitstream', 'type':'group', 'children':[
@@ -110,9 +109,7 @@ class CW305(TargetTemplate):
                             {'name':'Select Bitstream File', 'type':'action', 'action':self.gui_selectfpga},
                             {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
                             ]},
-                    ]
-        self.oa = None
-        return ssParams
+                ]
 
     def fpga_write(self, addr, data):
         """ Write to specified address """
@@ -189,7 +186,6 @@ class CW305(TargetTemplate):
 
     def gui_programfpga(self):
         bsfile = self.gui_getfpgabs()
-        from datetime import datetime
         starttime = datetime.now()
         self.fpga.FPGAProgram(open(bsfile, "rb"))
         stoptime = datetime.now()
@@ -268,6 +264,3 @@ class CW305(TargetTemplate):
         if self.findParam('clkusbautooff').value():
             time.sleep(self.findParam('clksleeptime').value() / 1000.0)
             self.usb_clk_setenabled(True)
-
-    def validateSettings(self):
-        return []

@@ -24,11 +24,11 @@ sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer'))
 sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer/attacks'))
 sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer/attacks/models'))
 sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/analyzer/preprocessing'))
-sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture'))
-sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/auxiliary'))
-sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/scopes'))
-sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/targets'))
-sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/capture/utils'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/api'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/api/auxiliary'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/api/scopes'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/api/targets'))
+sys.path.insert(0, os.path.abspath('../../software/chipwhisperer/api/utils'))
 
 # -- General configuration -----------------------------------------------------
 

@@ -24,33 +24,25 @@
 #=================================================
 
 import time
-from TargetTemplate import TargetTemplate
+from _base import TargetTemplate
 from chipwhisperer.common.utils import Util
 from chipwhisperer.common.utils.Scan import scan
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
-
-
-def getClass():
-    return SimpleSerial
 
 
 try:
     import serial
 
     class SimpleSerial_serial(TargetTemplate):
-        name = "System Serial Port"
+        name = "Serial Port Settings"
 
         def setupParameters(self):
-            ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
+            self.ser = None
+            return  [
+                        {'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
                         {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
                         {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
-                        ]
-            self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
-            self.ser = None
-    
-        def paramList(self):
-            return [self.params]
+                     ]
     
         def updateSerial(self):
             serialnames = scan.scan()
@@ -96,13 +88,11 @@ except ImportError:
 
 
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
-    name = "ChipWhisperer-Lite"
+    name = 'Serial Port Settings'
 
     def setupParameters(self):
-        ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
-
-        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self.cwlite_usart = None
+        return [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
 
     def setBaud(self, baud):
         if self.cwlite_usart:
@@ -159,15 +149,15 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     ADDR_BAUD       = 35
 
     def setupParameters(self):
-        ssParams = [{'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
+        self._regVer = 0
+        return [
+                    {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
                     {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
                     {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
                                     'set':self.setStopBits, 'readonly':True},
                     {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
                                     'set':self.setParity, 'readonly':True},
-                    ]
-        self._regVer = 0
-        return ssParams
+                ]
 
     def systemClk(self):
         return 30E6
@@ -336,11 +326,20 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 class SimpleSerial(TargetTemplate):
     name = "Simple Serial"
 
-    def setupParameters(self):
-        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
-        defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
+    def __init__(self):
+        super(SimpleSerial, self).__init__()
+        self.setConnection(self.findParam('con').value())
 
-        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defSer, 'set':self.setConnection},
+    def setupParameters(self):
+        self.ser = None
+        self.setupChildParamsOrder([lambda: self.ser])
+        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
+        self.connectChildParamsSignals(ser_cons)
+
+        self.keylength = 16
+        self.input = ""
+        return [
+                    {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite.name], 'set':self.setConnection},
                     {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
                  #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
                     {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
@@ -352,12 +351,7 @@ class SimpleSerial(TargetTemplate):
                     #                                                                 'DE AD BE EF':' ',
                     #                                                                 'DE:AD:BE:EF':':',
                     #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
-                    ]
-        self.ser = None
-        self.keylength = 16
-        self.input = ""
-        self.setConnection(self.findParam('con').value())
-        return ssParams
+                ]
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -369,7 +363,7 @@ class SimpleSerial(TargetTemplate):
 
     def setConnection(self, con):
         self.ser = con
-        self.connectStatus = self.ser.connectStatus
+        self.ser.connectStatus.connect(self.connectStatus.emit)
         self.paramListUpdated.emit()
         self.ser.selectionChanged()
 
@@ -528,62 +522,61 @@ class SimpleSerial(TargetTemplate):
 
         return kin
 
-    def validateSettings(self):
-        return []
 
+# GUIACTIONS????
 
-class SimpleSerialWidget(SimpleSerial):
-    def __init__(self):
-        super(SimpleSerialWidget, self).__init__()
-
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        #Serial Settings (not changable right now)
-        gbSerial = QGroupBox("Serial Settings")
-        gbSerialLayout = QVBoxLayout()
-        gbSerial.setLayout(gbSerialLayout)
-
-        #Protocol Setup
-        cbProtocol = QGroupBox("Protocol Information")
-        cbProtocolLayout = QVBoxLayout()
-        cbProtocol.setLayout(cbProtocolLayout)
-
-        cbProtocolLayout.addWidget(QLabel("Set Key:       kXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-        cbProtocolLayout.addWidget(QLabel( "Do Encryption: pXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-        cbProtocolLayout.addWidget(QLabel( "Response:      rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-
-        layout.addWidget(cbProtocol)
-
-        #Debug Stuff
-        cbDebug = QGroupBox("Debug Information")
-        cbDebugLayout = QGridLayout()
-        cbDebug.setLayout(cbDebugLayout)
-
-        self.txDebugASCII = QLabel()
-        self.txDebugHEX = QLabel()
-        self.rxDebugASCII = QLabel()
-        self.rxDebugHEX = QLabel()
-
-        cbDebugLayout.addWidget(QLabel("Last TX(ASCII)"), 1, 1)
-        cbDebugLayout.addWidget(self.txDebugASCII, 1,  2)
-        cbDebugLayout.addWidget(self.txDebugHEX, 2,  2)
-        cbDebugLayout.addWidget(QLabel("Last RX"), 3, 1)
-        cbDebugLayout.addWidget(self.rxDebugASCII, 3,  2)
-        cbDebugLayout.addWidget(self.rxDebugHEX, 4,  2)
-
-        layout.addWidget(cbDebug)
-
-    def setDebugInfo(self,  lastSent=None,  lastResponse=None):
-        if lastSent:
-            self.txDebugASCII.setText(lastSent)
-            string = ""
-            for s in lastSent:
-                string = string + "%02x "%ord(s)
-            self.txDebugHEX.setText(string)
-        if lastResponse:
-            self.rxDebugASCII.setText(lastResponse)
-            string = ""
-            for s in lastResponse:
-                string = string + "%02x "%ord(s)
-            self.rxDebugHEX.setText(string)
+# class SimpleSerialWidget(SimpleSerial):
+#     def __init__(self):
+#         super(SimpleSerialWidget, self).__init__()
+#
+#         layout = QVBoxLayout()
+#         self.setLayout(layout)
+#
+#         #Serial Settings (not changable right now)
+#         gbSerial = QGroupBox("Serial Settings")
+#         gbSerialLayout = QVBoxLayout()
+#         gbSerial.setLayout(gbSerialLayout)
+#
+#         #Protocol Setup
+#         cbProtocol = QGroupBox("Protocol Information")
+#         cbProtocolLayout = QVBoxLayout()
+#         cbProtocol.setLayout(cbProtocolLayout)
+#
+#         cbProtocolLayout.addWidget(QLabel("Set Key:       kXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
+#         cbProtocolLayout.addWidget(QLabel( "Do Encryption: pXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
+#         cbProtocolLayout.addWidget(QLabel( "Response:      rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
+#
+#         layout.addWidget(cbProtocol)
+#
+#         #Debug Stuff
+#         cbDebug = QGroupBox("Debug Information")
+#         cbDebugLayout = QGridLayout()
+#         cbDebug.setLayout(cbDebugLayout)
+#
+#         self.txDebugASCII = QLabel()
+#         self.txDebugHEX = QLabel()
+#         self.rxDebugASCII = QLabel()
+#         self.rxDebugHEX = QLabel()
+#
+#         cbDebugLayout.addWidget(QLabel("Last TX(ASCII)"), 1, 1)
+#         cbDebugLayout.addWidget(self.txDebugASCII, 1,  2)
+#         cbDebugLayout.addWidget(self.txDebugHEX, 2,  2)
+#         cbDebugLayout.addWidget(QLabel("Last RX"), 3, 1)
+#         cbDebugLayout.addWidget(self.rxDebugASCII, 3,  2)
+#         cbDebugLayout.addWidget(self.rxDebugHEX, 4,  2)
+#
+#         layout.addWidget(cbDebug)
+#
+#     def setDebugInfo(self,  lastSent=None,  lastResponse=None):
+#         if lastSent:
+#             self.txDebugASCII.setText(lastSent)
+#             string = ""
+#             for s in lastSent:
+#                 string = string + "%02x "%ord(s)
+#             self.txDebugHEX.setText(string)
+#         if lastResponse:
+#             self.rxDebugASCII.setText(lastResponse)
+#             string = ""
+#             for s in lastResponse:
+#                 string = string + "%02x "%ord(s)
+#             self.rxDebugHEX.setText(string)

@@ -283,8 +283,8 @@ class TriggerSettings():
                             'recording samples BEFORE the trigger event.'},
             {'name': 'Total Samples', 'type':'int', 'value':0, 'limits':(0, 1000000), 'set':self.setMaxSamples, 'get':self.maxSamples,
                      'help':'%namehdr%'+
-                            'Total number of samples to record. Note the capture system has an upper limit, and may have a practical lower limit (i.e.,' +
-                            ' if this value is set too low the system may not capture samples. Suggest to always set > 256 samples.'},
+                            'Total number of samples to record. Note the api system has an upper limit, and may have a practical lower limit (i.e.,' +
+                            ' if this value is set too low the system may not api samples. Suggest to always set > 256 samples.'},
         ]}
         self.maxsamples = 0
         self.presamples_desired = 0
@@ -1110,7 +1110,7 @@ class OpenADCInterface(object):
             diff = datetime.datetime.now() - starttime
 
             if (diff.total_seconds() > self._timeout):
-                print("Timeout in OpenADC capture(), trigger FORCED")
+                print("Timeout in OpenADC api(), trigger FORCED")
                 timeout = True
                 self.triggerNow()
 
@@ -1119,7 +1119,7 @@ class OpenADCInterface(object):
 
         self.setSettings(self.settings() & ~SETTINGS_ARM);
         
-        # If using large offsets, system doesn't know we are delaying capture        
+        # If using large offsets, system doesn't know we are delaying api
         nosampletimeout = 100
         while (self.getBytesInFifo() == 0) and nosampletimeout:
             time.sleep(0.05)

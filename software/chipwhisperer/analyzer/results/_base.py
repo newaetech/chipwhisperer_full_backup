@@ -27,7 +27,7 @@
 from chipwhisperer.common.utils import Util, plugin
 
 
-class ResultsBase(plugin.PluginTemplate):
+class ResultsBase(plugin.Plugin):
     name = "Results"
 
     def __init__(self):

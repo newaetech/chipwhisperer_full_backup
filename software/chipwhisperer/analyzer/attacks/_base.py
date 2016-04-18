@@ -28,7 +28,7 @@
 from chipwhisperer.common.utils import Util, plugin
 
 
-class AttackBaseClass(plugin.PluginTemplate):
+class AttackBaseClass(plugin.Plugin):
     """Generic Attack Interface"""
 
     name = "None"

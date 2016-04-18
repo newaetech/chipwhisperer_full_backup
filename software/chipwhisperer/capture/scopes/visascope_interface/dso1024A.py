@@ -52,7 +52,6 @@ class VisaScopeInterface_DSO1024A(VisaScope):
                 ]
 
     def currentSettings(self):
-
         # TODO: Delete these?
         self.XScale = self.visaInst.ask_for_values(":TIMebase:SCALe?")
         self.XScale = self.XScale[0]

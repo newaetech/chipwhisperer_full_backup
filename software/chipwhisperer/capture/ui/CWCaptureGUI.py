@@ -36,7 +36,6 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import Util
-from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 
@@ -45,24 +44,21 @@ class CWCaptureGUI(CWMainGUI):
     def __init__(self, cwapi):
         super(CWCaptureGUI, self).__init__(cwapi, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
-        self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
         self.serialTerminal = SerialTerminalDialog(self, self.cwAPI)
         self.glitchMonitor = GlitchExplorerDialog(self)
-        self.cwAPI.paramTrees.append(self.glitchMonitor.paramTree)
-        self.setupParameters()
 
         self.addToolbar()
         self.addToolMenu()
         self.addSettingsDocks()
         self.addTraceDock("Capture Waveform (Channel 1)")
-        self.reloadParamList()
+        self.reloadGeneralParamList()
         self.restoreSettings()
 
+        self.cwAPI.guiActions(self)
         # Observers (callback methods)
-        self.cwAPI.signals.paramListUpdated.connect(self.reloadTargetParamList)
+        self.cwAPI.signals.reloadTargetParamList.connect(self.reloadTargetParamList)
         self.cwAPI.signals.newInputData.connect(self.newTargetData)
         self.cwAPI.signals.connectStatus.connect(self.targetStatusChanged)
-        self.cwAPI.signals.newTextResponse.connect(self.encryptionStatusMonitor.newData)
         self.cwAPI.signals.traceDone.connect(self.glitchMonitor.traceDone)
         self.cwAPI.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.cwAPI.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
@@ -70,63 +66,26 @@ class CWCaptureGUI(CWMainGUI):
         self.cwAPI.signals.targetChanged.connect(self.targetChanged)
         self.cwAPI.signals.traceChanged.connect(self.traceChanged)
         self.cwAPI.signals.auxChanged.connect(self.auxChanged)
-        self.cwAPI.signals.acqPatternChanged.connect(self.reloadParamList)
+        self.cwAPI.paramListUpdated.connect(self.reloadGeneralParamList)
         self.scopeChanged()
         self.traceChanged()
 
-    def setupParameters(self):
-        valid_scopes = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", instantiate = True)
-        valid_targets =  chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.targets", instantiate = True)
-        valid_traces = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.common.traces", instantiate = False)
-        valid_aux = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True)
-        valid_acqPatterns =  chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", instantiate = True)
-
-        self.cwAPI.setScope(valid_scopes["None"])
-        self.cwAPI.setTarget(valid_targets["None"])
-        self.cwAPI.setTraceClass(valid_traces["None"])
-        self.cwAPI.setAux(valid_aux["None"])
-        self.cwAPI.setAcqPattern(valid_acqPatterns['Basic'])
-
-        self.cwParams = [
-                {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':self.cwAPI.getScope(), 'set':self.cwAPI.setScope, 'get':self.cwAPI.getScope},
-                {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':self.cwAPI.getTarget(), 'set':self.cwAPI.setTarget, 'get':self.cwAPI.getTarget},
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.cwAPI.getTraceClass(), 'set':self.cwAPI.setTraceClass},
-                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.cwAPI.auxList[0], 'set':self.cwAPI.setAux},
-
-                # {'name':'Key Settings', 'type':'group', 'children':[
-                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
-                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
-                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
-                #    ]},
-
-                {'name':'Acquisition Settings', 'type':'group', 'children':[
-                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.cwAPI.numTraces(), 'set':self.cwAPI.setNumTraces, 'get':self.cwAPI.numTraces, 'linked':['Traces per Set']},
-                        {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.cwAPI.numTraceSets(), 'set':self.cwAPI.setNumTraceSets, 'get':self.cwAPI.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break capture into N set, '
-                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
-                         'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
-                        {'name':'Traces per Set', 'type':'int', 'value':self.cwAPI.tracesPerSet(), 'readonly':True, 'get':self.cwAPI.tracesPerSet},
-                        {'name':'Open Monitor', 'type':'action', 'action':self.encryptionStatusMonitor.show},
-                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.cwAPI.acqPattern, 'set':self.cwAPI.setAcqPattern},
-                    ]},
-                ]
-
     def scopeChanged(self):
-        if self.cwAPI.hasScope():
+        if self.cwAPI.getScope():
             self.cwAPI.getScope().paramListUpdated.connect(self.reloadScopeParamList)
             self.cwAPI.getScope().dataUpdated.connect(self.newScopeData)
             self.cwAPI.getScope().connectStatus.connect(self.scopeStatusChanged)
-            self.reloadScopeParamList()
+        self.reloadScopeParamList()
 
     def targetChanged(self):
-        if self.cwAPI.hasTarget():
+        if self.cwAPI.getTarget():
             self.cwAPI.getTarget().connectStatus.connect(self.targetStatusChanged)
-            self.reloadTargetParamList()
+        self.reloadTargetParamList()
 
     def traceChanged(self):
         self.reloadTraceParamList()
 
     def auxChanged(self):
-        self.cwAPI.getAux().updateUI.connect(QCoreApplication.processEvents)
         self.reloadAuxParamList()
 
     def masterStatusChanged(self):
@@ -173,24 +132,27 @@ class CWCaptureGUI(CWMainGUI):
         self._scopeToolMenuItems = []
 
     def addSettingsDocks(self):
-        self.setupParametersTree()
-        self.settingsGeneralDock = self.addSettings(self.generalParamTree, "General Settings")
+        self.scopeParamTree = ParameterTree()
         self.settingsScopeDock = self.addSettings(self.scopeParamTree, "Scope Settings")
+
+        self.targetParamTree = ParameterTree()
         self.settingsTargetDock = self.addSettings(self.targetParamTree, "Target Settings")
+
+        self.traceParamTree = ParameterTree()
         self.settingsTraceDock = self.addSettings(self.traceParamTree, "Trace Settings")
+
+        self.auxParamTree = ParameterTree()
         self.settingsAuxDock = self.addSettings(self.auxParamTree, "Aux Settings")
+
+        self.generalParamTree = ParameterTree()
+        self.generalParamTree.setParameters(self.cwAPI.params, showTop=False)
+        self.settingsGeneralDock = self.addSettings(self.generalParamTree, "General Settings")
+
         self.tabifyDocks([self.settingsGeneralDock, self.settingsScopeDock, self.settingsTargetDock,
                           self.settingsTraceDock, self.settingsAuxDock])
 
-    def setupParametersTree(self):
-        self.generalParamTree = ParameterTree()
-        self.scopeParamTree = ParameterTree()
-        self.targetParamTree = ParameterTree()
-        self.traceParamTree = ParameterTree()
-        self.auxParamTree = ParameterTree()
-
-        self.params = ConfigParameter.create_extended(self, name='Generic Settings', type='group', children=self.cwParams)
-        self.generalParamTree.setParameters(self.params, showTop=False)
+    def getParamList(self, parametrized):
+        return parametrized.paramList() if parametrized else []
 
     def reloadScopeParamList(self):
         # Remove all old scope actions that don't apply for new selection
@@ -200,8 +162,9 @@ class CWCaptureGUI(CWMainGUI):
 
         self._scopeToolMenuItems = []
 
-        if self.cwAPI.hasScope():
-            ExtendedParameter.reloadParams(self.cwAPI.getScope().paramList(), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.getParamList(self.cwAPI.getScope()), self.scopeParamTree, help_window=self.helpbrowser.helpwnd)
+
+        if self.cwAPI.getScope():
 
             # Check for any tools to add too
             if hasattr(self.cwAPI.getScope(), "guiActions"):
@@ -213,25 +176,16 @@ class CWCaptureGUI(CWMainGUI):
             self.toolMenu.addAction(act)
 
     def reloadTargetParamList(self):
-        ExtendedParameter.reloadParams(self.cwAPI.getTarget().paramList(), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.getParamList(self.cwAPI.getTarget()), self.targetParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadTraceParamList(self):
-        ExtendedParameter.reloadParams(self.cwAPI.getTraceClass().getParams.paramList(), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.getParamList(self.cwAPI.getTraceFormat()), self.traceParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadAuxParamList(self):
-        ExtendedParameter.reloadParams(self.cwAPI.getAux()[0].paramList(), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.getParamList(self.cwAPI.getAuxList()[0]), self.auxParamTree, help_window=self.helpbrowser.helpwnd)
 
-    def reloadParamList(self):
-        ExtendedParameter.reloadParams(self.paramList(), self.generalParamTree, help_window=self.helpbrowser.helpwnd)
-
-    def paramList(self):
-        p = []
-        p.append(self.params)
-
-        if self.cwAPI.acqPattern is not None:
-            for par in self.cwAPI.acqPattern.paramList():
-                p.append(par)
-        return p
+    def reloadGeneralParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self.cwAPI), self.generalParamTree, help_window=self.helpbrowser.helpwnd)
 
     def newScopeData(self, data=None, offset=0):
         self.waveformDock.widget().passTrace(data, offset)
@@ -314,7 +268,7 @@ class CWCaptureGUI(CWMainGUI):
                 self.updateStatusBar("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
-        # Validate settings from all modules before starting multi-capture
+        # Validate settings from all modules before starting multi-api
         vw = ValidationDialog(onlyOkButton=not warnOnly)
 
         ret = []
@@ -347,7 +301,7 @@ class CWCaptureGUI(CWMainGUI):
             vw.addMessage(*i)
 
         if self.cwAPI.project().isUntitled():
-             vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
+             vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before api", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
         if vw.numWarnings() > 0 or warnOnly == False:
             return vw.exec_()

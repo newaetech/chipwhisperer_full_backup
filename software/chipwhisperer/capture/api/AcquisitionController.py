@@ -122,7 +122,7 @@ class AcquisitionController():
         if self.scope is not None:
             try:
                 if self.scope.capture(update, N) == True:
-#                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
+#                if self.scope.api(update, N, waitingCallback=QApplication.processEvents) == True:
                     print "Timeout"
                     return False
             except IOError as e:

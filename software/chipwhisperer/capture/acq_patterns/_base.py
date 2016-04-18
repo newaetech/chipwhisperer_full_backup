@@ -26,15 +26,11 @@
 from chipwhisperer.common.utils import plugin
 
 
-class AcqKeyTextPattern_Base(plugin.PluginTemplate):
+class AcqKeyTextPattern_Base(plugin.Plugin):
     name = "Key/Text Pattern"
 
     def __init__(self, target=None):
         super(AcqKeyTextPattern_Base, self).__init__()
-        self._target = target
-        self._initPattern()
-
-    def setTarget(self, target):
         self._target = target
         self._initPattern()
 
@@ -62,7 +58,7 @@ class AcqKeyTextPattern_Base(plugin.PluginTemplate):
         pass
 
     def initPair(self):
-        """Called before a capture run, does not return anything"""
+        """Called before a api run, does not return anything"""
         raise AttributeError("This needs to be reimplemented")
 
     def newPair(self):

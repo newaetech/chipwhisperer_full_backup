@@ -179,7 +179,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
         self.findParam('numtune').setReadonly(not status)
 
     def campaignStart(self, prefixname):
-        """Called when acqusition campaign (multi-capture) starts, generates filename"""
+        """Called when acqusition campaign (multi-api) starts, generates filename"""
         suffix = "_glitchresults.p"
         try:
             fname = self.parent().project().getDataFilepath(prefixname + suffix, subdirectory="glitchresults")
@@ -282,7 +282,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
             self.tuneParamList[pnum + 1].findNewValue()
 
     def traceDone(self):
-        """ Single capture done """
+        """ Single api done """
 
         # TODO: Improve how looping is done
         if len(self.tuneParamList) > 0:

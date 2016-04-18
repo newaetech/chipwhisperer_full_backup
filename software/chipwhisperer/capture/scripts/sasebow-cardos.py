@@ -27,7 +27,7 @@
 #
 #
 #
-# This example captures data using the ChipWhisperer Rev2 capture hardware. The target is a SimpleSerial board attached
+# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
 # to the ChipWhisperer.
 #
 # Data is saved into both a project file and a MATLAB array
@@ -36,35 +36,30 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
+from chipwhisperer.common.utils.plugin import Plugin
 
 
-def getClass():
-    return UserScript
-
-
-class UserScript(object):
+class UserScript(Plugin):
     name = "SASEBO-W: AES-128 SASEBO-W Smart Card OS"
     description = "SASEBO-W Loaded with ChipWhisperer using Provided AVR Smart Card"
 
-    def __init__(self, capture):
+    def __init__(self, api):
         super(UserScript, self).__init__()
-        self.capture = capture
+        self.api = api
 
     def run(self):
-        cap = self.capture
-        
         #User commands here
         print "***** Starting User Script *****"
        
-        cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
-        cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
-        cap.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
-        cap.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-SCARD'])
-        cap.setParameter(['Target Connection', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
-        cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
+        self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
+        self.api.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        self.api.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
+        self.api.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
+        self.api.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-SCARD'])
+        self.api.setParameter(['Target Connection', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
+        self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
 
-        cap.doConDis()
+        self.api.connect()
 
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM'],
@@ -78,19 +73,19 @@ class UserScript(object):
                       ]
         
         #Download all hardware setup parameters
-        for cmd in lstexample: cap.setParameter(cmd)
+        for cmd in lstexample: self.api.setParameter(cmd)
         
         #Let's only do a few traces
-        cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1000])
+        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1000])
                       
         #Throw away first few
-        cap.capture1()
-        cap.capture1()
+        self.api.capture1()
+        self.api.capture1()
 
-        #Start capture process
-        #writer = cap.captureM()
-        #cap.proj.setFilename("../capturev2/test_live.cwp")
-        #cap.saveProject()
+        #Start api process
+        #writer = self.api.captureM()
+        #self.api.proj.setFilename("../capturev2/test_live.cwp")
+        #self.api.saveProject()
 
         print "***** Ending User Script *****"
         

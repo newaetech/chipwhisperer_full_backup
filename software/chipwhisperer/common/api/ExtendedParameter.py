@@ -64,6 +64,7 @@ class fakeParamScriptOutput(object):
         pass
         #print s
 
+
 class ExtendedParameter():
 
     paramScriptingOutput = fakeParamScriptOutput
@@ -300,6 +301,7 @@ class ExtendedParameter():
                 name.append(data)
 
             ExtendedParameter.paramScriptingOutput.append(str(name))
+
 
 if __name__ == '__main__':
     from pyqtgraph.Qt import QtCore, QtGui

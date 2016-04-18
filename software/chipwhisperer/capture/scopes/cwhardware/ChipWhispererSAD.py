@@ -88,7 +88,7 @@ class ChipWhispererSAD(object):
         self.updateSADTraceRef()
 
     def getCaptueTraceRef(self):
-        """ Get the reference data for SAD algorithm from the capture trace window """
+        """ Get the reference data for SAD algorithm from the api trace window """
 
         pstart = self.findParam('pointrng').value()[0] - self.waveformDock.widget().lastStartOffset
         pend = self.findParam('pointrng').value()[1] - self.waveformDock.widget().lastStartOffset

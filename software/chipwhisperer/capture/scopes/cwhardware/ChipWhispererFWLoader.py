@@ -24,11 +24,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFile
 import time
 import zipfile
 import os.path
+from chipwhisperer.common.utils import Util
 
 class CW_Loader(object):
     """ Base class for ChipWhisperer targets that help loading of FPGA data """
@@ -69,10 +69,10 @@ class CWCRev2_Loader(CW_Loader):
         super(CWCRev2_Loader, self).__init__()
         self.name = "cwcrev2"
         self.driver = Ztex1v1()
-        self._fwFLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))
-        self._bsZipLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"))
+        self._fwFLoc = os.path.join(Util.getRootDir(), os.path.normpath("../hardware/api/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))
+        self._bsZipLoc = os.path.join(Util.getRootDir(), os.path.normpath("../hardware/api/chipwhisperer-rev2/cwrev2_firmware.zip"))
         self._bsZipLoc_filename = "interface.bit"
-        self._bsLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"))
+        self._bsLoc = os.path.join(Util.getRootDir(), os.path.normpath("../hardware/api/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"))
     
     def loadRequired(self, callback, forceFirmware=False):
         self.driver.probe(True)
@@ -113,9 +113,9 @@ class CWLite_Loader(CW_Loader):
         super(CWLite_Loader, self).__init__()
         self.name = "cwlite"
         self.driver = None
-        self._bsZipLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"))
+        self._bsZipLoc = os.path.join(Util.getRootDir(), os.path.normpath("../hardware/api/chipwhisperer-lite/cwlite_firmware.zip"))
         self._bsZipLoc_filename = "cwlite_interface.bit"
-        self._bsLoc = os.path.join(CWCoreAPI.getInstance().getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"))
+        self._bsLoc = os.path.join(Util.getRootDir(), os.path.normpath("../hardware/api/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"))
         self._fwFLoc = ""
 
     def loadRequired(self, callback, forceFirmware=False):

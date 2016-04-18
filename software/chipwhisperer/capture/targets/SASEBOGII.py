@@ -23,17 +23,12 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from TargetTemplate import TargetTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from _base import TargetTemplate
 
 try:
     import ftd2xx as ft
 except OSError:  # also catches WindowsError
     raise ImportError
-
-
-def getClass():
-    return SaseboGII
 
 
 class SaseboGIIDPAContest(object):
@@ -356,6 +351,3 @@ class SaseboGII(TargetTemplate):
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
-
-    def validateSettings(self):
-        return []

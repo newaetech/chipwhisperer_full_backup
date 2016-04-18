@@ -23,9 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
-from chipwhisperer.common.utils.plugin import PluginTemplate
+from chipwhisperer.common.utils import Util, plugin
 
 
 try:
@@ -34,15 +32,11 @@ except ImportError:
     AES = None
 
 
-def getClass():
-    return TargetTemplate
-
-
-class TargetTemplate(PluginTemplate):
+class TargetTemplate(plugin.Plugin):
     name = 'Target Connection'
 
     def __init__(self):
-        PluginTemplate.__init__(self)
+        super(TargetTemplate, self).__init__()
         self.newInputData = Util.Signal()
         self.connectStatus = Util.Observable(False)
 
@@ -131,4 +125,5 @@ class TargetTemplate(PluginTemplate):
             return None
 
     def validateSettings(self):
-        return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
+        # return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
+        return []

@@ -28,7 +28,7 @@
 from chipwhisperer.common.utils import Util, plugin
 
 
-class ScopeTemplate(plugin.PluginTemplate):
+class ScopeTemplate(plugin.Plugin):
     name = "None"
 
     def __init__(self):

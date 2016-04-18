@@ -28,10 +28,12 @@ try:
 except:
     ft = None
 
-class OpenADCInterface_FTDI(plugin.PluginTemplate):
+
+class OpenADCInterface_FTDI(plugin.Plugin):
     name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, oadcInstance):
+        super(OpenADCInterface_FTDI, self).__init__()
         self.serialNumber = None
         self.ser = None
 

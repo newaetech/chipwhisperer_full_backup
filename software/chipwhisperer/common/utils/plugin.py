@@ -55,29 +55,32 @@ class Parameterized(object):
     def setupChildParamsOrder(self, childParams):
         # Use this method to setup the order of the parameterized objects to be shown
         self.__childParams = childParams
-        for childParam in self.__childParams.itervalues():
-            childParam.paramListUpdated.connect(self.paramListUpdated.emit)
 
     def connectChildParamsSignals(self, childParams):
         # Use this method for the child parameters that will be show selectively
         for childParam in childParams.itervalues():
-            childParam.paramListUpdated.connect(self.paramListUpdated.emit)
-
-
-class PluginTemplate(Parameterized):
-    description = "Some description"
+            if childParam:
+                childParam.paramListUpdated.connect(self.paramListUpdated.emit)
 
     def guiActions(self, mainWindow):
         # self.window = Window(mainWindow, parameters)
         # return [['Name of the menu item','Description', self.window.show],...]
         return []
 
+class Plugin(Parameterized):
+    description = "Some description"
 
-def getPluginsInDictFromPackage(path, instantiate, *args, **kwargs):
+    def getDescription(self):
+        return self.description
+
+
+def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
     modules = importModulesInPackage(path)
     classes = getPluginClassesFromModules(modules)
-    dictModules = Util.putInDict(classes, instantiate, *args, **kwargs)
-    return module_reorder(dictModules)
+    items = Util.putInDict(classes, instantiate, *args, **kwargs)
+    if addNone:
+        items["None"] = None
+    return module_reorder(items)
 
 
 def importModulesInPackage(path):
@@ -96,7 +99,7 @@ def getPluginClassesFromModules(modules):
     for module in modules:
         clsmembers = inspect.getmembers(module, lambda member: inspect.isclass(member) and member.__module__ == module.__name__)
         for clsName, clsMember in clsmembers:
-            if issubclass(clsMember, PluginTemplate) and (not clsName.startswith('_')):
+            if issubclass(clsMember, Plugin) and (not clsName.startswith('_')):
                 resp.append(clsMember)
             else:
                 pass

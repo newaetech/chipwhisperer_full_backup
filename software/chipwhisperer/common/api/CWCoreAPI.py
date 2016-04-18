@@ -23,31 +23,34 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-import sys, os
+import sys
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import Util, plugin
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
+from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 
 
-class CWCoreAPI(object):
+class CWCoreAPI(plugin.Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
+    name = 'API Settings'
     instance = None
 
     class Signals(object):
         def __init__(self):
-            self.parametersChanged = Util.Signal()
             self.traceChanged = Util.Signal()
             self.newProject = Util.Signal()
             self.reloadAttackParamList = Util.Signal()
+            self.reloadTargetParamList = Util.Signal()
             self.attackChanged = Util.Signal()
-            self.paramListUpdated = Util.Signal()
             self.scopeChanged = Util.Signal()
             self.targetChanged = Util.Signal()
             self.auxChanged = Util.Signal()
-            self.acqPatternChanged = Util.Signal()
+            self._acqPatternChanged = Util.Signal()
             self.connectStatus = Util.Signal()
             self.newInputData = Util.Signal()
             self.newTextResponse = Util.Signal()
@@ -56,59 +59,87 @@ class CWCoreAPI(object):
             self.campaignDone = Util.Signal()
 
     def __init__(self):
-        self.paramTrees = []
-        self._project = None
-        self._scope = None
-        self._target = None
-        self._traceClass = None
-        self._attack = None
-        self._numTraces = 100
-        self._numTraceSets = 1
-        self.results = None
+        super(CWCoreAPI, self).__init__()
         self.signals = self.Signals()
         CWCoreAPI.instance = self
 
-    def getRootDir(self):
-        return Util.getRootDir()
+    def setupParameters(self):
+        self._project = None
+        self._scope = None
+        self._target = None
+        self._attack = None
+        self._traceFormat = TraceContainerNative()
+        self._acqPattern = AcqKeyTextPattern_Basic()
+        self._auxList = [None]
+        self._numTraces = 100
+        self._numTraceSets = 1
+        self.results = []
+        self.setupChildParamsOrder([lambda: self._acqPattern])
+        self.encryptionStatusMonitor = None
 
-    def hasScope(self):
-        return self._scope is not None
+        valid_scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", instantiate = True, addNone = True)
+        valid_targets =  plugin.getPluginsInDictFromPackage("chipwhisperer.capture.targets", instantiate = True, addNone = True)
+        valid_traces = plugin.getPluginsInDictFromPackage("chipwhisperer.common.traces", instantiate = True, addNone = True)
+        valid_aux = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True, addNone = True)
+        valid_acqPatterns =  plugin.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", instantiate = True, addNone = False)
+
+        return [
+                {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':None, 'set':self.setScope, 'get':self.getScope},
+                {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':"None", 'set':self.setTarget, 'get':self.getTarget},
+                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.getTraceFormat(), 'set':self.setTraceFormat},
+                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
+
+                # {'name':'Key Settings', 'type':'group', 'children':[
+                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
+                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
+                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
+                #    ]},
+
+                {'name':'Acquisition Settings', 'type':'group', 'children':[
+                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
+                        {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
+                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
+                         'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
+                        {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
+                        {'name':'Open Monitor', 'type':'action', 'action':lambda: self.encryptionStatusMonitor.show()},
+                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.getAcqPattern, 'set':self.setAcqPattern},
+                    ]},
+                ]
 
     def getScope(self):
-        if not self.hasScope(): raise Warning("Scope Module not loaded")
         return self._scope
 
     def setScope(self, driver):
-        if self.hasScope(): self.getScope().dis()
+        if self.getScope(): self.getScope().dis()
         self._scope = driver
         self.signals.scopeChanged.emit()
 
-    def hasTarget(self):
-        return self._target is not None
-
     def getTarget(self):
-        if not self.hasTarget(): raise Warning("Target Module not loaded")
         return self._target
 
     def setTarget(self, driver):
-        if self.hasTarget(): self.getTarget().dis()
+        if self.getTarget(): self.getTarget().dis()
         self._target = driver
-        self._target.paramListUpdated.connect(self.signals.paramListUpdated.emit)
-        self._target.newInputData.connect(self.signals.newInputData.emit)
-        self.signals.paramListUpdated.emit()
+        if self._target:
+            self._target.paramListUpdated.connect(self.signals.reloadTargetParamList.emit)
+            self._target.newInputData.connect(self.signals.newInputData.emit)
+
+        self.signals.reloadTargetParamList.emit()
         self.signals.targetChanged.emit()
 
     def setAux(self, aux):
-        self.auxList = [aux]
+        self._auxList = [aux]
         self.signals.auxChanged.emit()
 
-    def getAux(self):
-        return self.auxList
+    def getAuxList(self):
+        return self._auxList
 
     def setAcqPattern(self, pat):
-        self.acqPattern = pat
-        self.acqPattern.setTarget(self.getTarget())
-        self.signals.acqPatternChanged.emit()
+        self._acqPattern = pat
+        self.signals._acqPatternChanged.emit()
+
+    def getAcqPattern(self):
+        return self._acqPattern
 
     def connectScope(self):
         try:
@@ -163,7 +194,7 @@ class CWCoreAPI(object):
         """Captures only one trace"""
 
         try:
-            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.get_acqPattern())
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.doSingleReading()
         except Warning:
@@ -186,7 +217,7 @@ class CWCoreAPI(object):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                currentTrace = self.getTraceClassInstance()
+                currentTrace = self._traceFormat.clone()
 
                 # Load trace writer information
                 starttime = datetime.now()
@@ -199,17 +230,17 @@ class CWCoreAPI(object):
                 currentTrace.config.setAttr("targetSW", "unknown")
                 currentTrace.config.setAttr("scopeName", self.getScope().getName())
                 currentTrace.config.setAttr("scopeSampleRate", 0)
-                currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self.auxList))
+                currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self._auxList))
                 currentTrace.setTraceHint(setSize)
 
                 if waveBuffer is not None:
                     currentTrace.setTraceBuffer(waveBuffer)
 
-                if self.auxList is not None:
-                    for aux in self.auxList:
+                if self._auxList is not None:
+                    for aux in self._auxList:
                         aux.setPrefix(baseprefix)
 
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
+                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.get_acqPattern())
                 ac.setMaxtraces(setSize)
                 ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
                 ac.signals.traceDone.connect(self.signals.traceDone.emit)
@@ -252,19 +283,12 @@ class CWCoreAPI(object):
         self.project().setFilename(fname)
         self.project().save()
 
-    def hasTraceClass(self):
-        return self._traceClass is not None
+    def getTraceFormat(self):
+        return self._traceFormat
 
-    def getTraceClassInstance(self):
-        if not self.hasTraceClass(): raise Warning("Trace format not defined")
-        return self._traceClass(self._traceClass.getParams)
-
-    def getTraceClass(self):
-        return self._traceClass
-
-    def setTraceClass(self, driver):
+    def setTraceFormat(self, format):
         self.signals.traceChanged.emit()
-        self._traceClass = driver
+        self._traceFormat = format
 
     def getAttack(self):
         return self._attack
@@ -333,7 +357,13 @@ class CWCoreAPI(object):
         except IndexError:
             raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))
 
-        self.signals.parametersChanged.emit()
+        self.parametersChanged.emit()
+
+    def guiActions(self, mainWindow):
+        self.encryptionStatusMonitor = EncryptionStatusMonitor(mainWindow)
+        self.signals.newTextResponse.connect(self.encryptionStatusMonitor.newData)
+        return [['Encryption Status Monitor','', self.encryptionStatusMonitor.show]]
+
 
     @staticmethod
     def getInstance():

@@ -24,9 +24,8 @@
 #=================================================
 
 import time
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from TargetTemplate import TargetTemplate
-from chipwhisperer.capture.scopes.OpenADC import OpenADCInterface_FTDI as OpenADCInterface_FTDI
+from _base import TargetTemplate
+from chipwhisperer.capture.scopes.openadc_interface import ftdi
 import chipwhisperer.capture.ui.qt as openadc_qt
 from chipwhisperer.common.utils import Util
 
@@ -35,9 +34,6 @@ try:
 except OSError:  # Also catches WindowsError
     raise ImportError
 
-
-def getClass():
-    return SakuraG
 
 class ChipWhispererComm(object):
     CODE_READ = 0x80
@@ -71,7 +67,7 @@ class ChipWhispererComm(object):
             if self.serialnum is not None:
                 self.qtadc = openadc_qt.OpenADCQt(includePreview=False, setupLayout=False)
                 self.qtadc.setupParameterTree()
-                self.oaiface = OpenADCInterface_FTDI(self.qtadc)
+                self.oaiface = ftdi.OpenADCInterface_FTDI(self.qtadc)
                 self.oaiface.setSerialNumber(self.serialnum)
                 self.oaiface.con()
                 self.oa = self.qtadc.sc
@@ -104,7 +100,6 @@ class ChipWhispererComm(object):
             self.oa.sendMessage(self.CODE_WRITE, self.ADDR_FIFO, [b], Validate=False)
 
     def readMsg(self, nbytes):
-
         msg = bytearray()
 
         for i in range(0, nbytes):
@@ -249,16 +244,14 @@ class SakuraG(TargetTemplate):
         conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)
         conntypes['Original Bitstream'] = FTDIComm()
 
-        ssParams = [{'name':'Connection via:', 'key':'conn', 'type':'list',
-                            'values':conntypes, 'set':self.setConn, 'value':None},
+        self.oa = None
+        self.fixedStart = True
+        self.hw = None
+        return [{'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'value':self.hw},
                     {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':self.reset, 'visible':False},
                     {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
                     {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
                    ]
-        self.oa = None
-        self.fixedStart = True
-        self.hw = self.findParam('conn').value()
-        return ssParams
         
     def setConn(self, con):
         self.hw = con
@@ -393,6 +386,3 @@ class SakuraG(TargetTemplate):
 
     def go(self):
         self.hw.write(0x0002, 0x00, 0x01)
-
-    def validateSettings(self):
-        return []

@@ -41,27 +41,23 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def __init__(self):
         AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
+        self.setAnalysisAlgorithm(self.findParam('CPA_algo').value(), None, None)
+        self.updateBytesVisible()
+        self.updateScript()
 
     def setupParameters(self):
-        algos = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False)
-        default_algo = algos["Progressive"]
-        attackParams = [{'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':default_algo, 'set':self.updateAlgorithm},
-                        {'name':'Hardware Model', 'type':'group', 'children':[
+        algos = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
+        return [    {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},
+                    {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
                         {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
                         ]},
 
-                       #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()
-                        },
-                      ]
-
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
-
-        self.setAnalysisAlgorithm(default_algo, None, None)
-        self.updateBytesVisible()
-        self.updateScript()
+                   #TODO: Should be called from the AES module to figure out # of bytes
+                   {'name':'Attacked Bytes', 'type':'group', 'children':
+                     self.getByteList()
+                    },
+                ]
 
     def updateAlgorithm(self, algo):
         # TODO: this hack required in case don't have setReportingInterval

@@ -31,10 +31,11 @@ except ImportError:
     usb = None
 
 
-class OpenADCInterface_ZTEX(plugin.PluginTemplate):
+class OpenADCInterface_ZTEX(plugin.Plugin):
     name = "OpenADC-ZTEX"
 
     def __init__(self, oadcInstance):
+        super(OpenADCInterface_ZTEX, self).__init__()
         self.ser = None
         self._toolActs = []
 

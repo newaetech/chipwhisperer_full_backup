@@ -26,28 +26,10 @@ import copy
 import re
 import numpy as np
 import TraceContainerConfig
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils import plugin
 
 
-def getClass():
-    return TraceContainer
-
-
-class Parameters(object):
-    def __init__(self, openMode=False):
-        self.fmt = None
-        traceParams = [{'name':'Trace Configuration', 'type':'group', 'children':[
-                        {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
-                        {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
-                      ]}]
-        self.params = ConfigParameter.create_extended(self, name='Trace Configuration', type='group', children=traceParams)
-        self.traceParams = traceParams
-        
-    def paramList(self):
-        return [self.params]
-
-
-class TraceContainer(object):
+class TraceContainer(plugin.Parameterized):
     """
     TraceContainer holds traces for the system to operate on. This can include both reading in traces for analysis, and
     writing traces to disk.
@@ -56,11 +38,10 @@ class TraceContainer(object):
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
     
-    name = "None"
-    getParams = Parameters()
-    getParamsClass = Parameters
+    name = "Trace Configuration"
     
     def __init__(self, params=None, configfile=None):
+        super(TraceContainer, self).__init__()
         self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
         self.textins = []
         self.textouts = []
@@ -75,9 +56,15 @@ class TraceContainer(object):
         self.pointhint = 0
         self._numTraces = 0
         self._isloaded = False
-        
-        if params is not None:
-            self.getParams = params
+
+    def setupParams(self):
+        self.fmt = None
+        return [
+                    {'name':'Trace Configuration', 'type':'group', 'children':[
+                        {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
+                        {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},]
+                     }
+                ]
 
     def setDirty(self, dirty):
         self.dirty = dirty

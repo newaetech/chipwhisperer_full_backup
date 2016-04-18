@@ -34,7 +34,6 @@ must install
 import collections
 import time
 from chipwhisperer.capture.scopes._base import ScopeTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util, plugin
 from picoscope import ps2000
 from picoscope import ps5000a
@@ -47,7 +46,9 @@ class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
 
     def __init__(self, psClass):
         self.ps = psClass
-        
+
+
+    def setupParameters(self):
         chlist = {}
         for t in self.ps.CHANNELS:
             if self.ps.CHANNELS[t] < self.ps.CHANNELS['MaxChannels']:
@@ -58,7 +59,6 @@ class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 
-    def setupParameters(self):
         return [
                       {'name':'Trace Measurement', 'type':'group', 'children':[
                          {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
@@ -73,12 +73,12 @@ class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
                          {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
                          {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
                          ]},
-                      {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.UpdateSampleRateFreq, 'siPrefix':True, 'suffix':'S/s'},
-                      {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.UpdateSampleRateFreq},
-                      {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.UpdateSampleRateFreq},
+                      {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.updateSampleRateFreq, 'siPrefix':True, 'suffix': 'S/s'},
+                      {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.updateSampleRateFreq},
+                      {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.updateSampleRateFreq},
                   ]
             
-    def UpdateSampleRateFreq(self, ignored=None):
+    def updateSampleRateFreq(self, ignored=None):
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
@@ -125,7 +125,7 @@ class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
             # Trigger
             self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').value(), direction=self.findParam('trigtype').value(), timeout_ms=1000)
 
-            self.UpdateSampleRateFreq()
+            self.updateSampleRateFreq()
         except IOError, e:
             raise IOError("Caught Error: %s" % str(e))
 
@@ -146,7 +146,7 @@ class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
 
 
 class PicoScopeInterface(ScopeTemplate):
-    name =  "PicoScope"
+    name = "PicoScope"
 
     def __init__(self):
         super(PicoScopeInterface, self).__init__()
@@ -156,9 +156,10 @@ class PicoScopeInterface(ScopeTemplate):
 
     def setupParameters(self):
         self.setupChildParamsOrder([lambda: self.scopetype])
-
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
                         "PS2000": ps2000.PS2000(connect=False)}
+        self.connectChildParamsSignals(scopes)
+
         return [{'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}]
 
     def passUpdated(self, lst, offset):

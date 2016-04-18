@@ -29,7 +29,7 @@ from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import plugin
 
 
-class PreprocessingBase(AutoScript, plugin.PluginTemplate):
+class PreprocessingBase(AutoScript, plugin.Plugin):
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:

@@ -132,8 +132,8 @@ class DecimationClockRecovery(PreprocessingBase):
             if self._enableZeroCrossing:
 
                 # Problem: the filter has some start-up time, so we can't use data right away. But
-                #         if you only capture a waveform AFTER the trigger, this means you need to
-                #         throw away data from the capture until the filter is running. If the system
+                #         if you only api a waveform AFTER the trigger, this means you need to
+                #         throw away data from the api until the filter is running. If the system
                 #         clock frequency changes, you've now thrown away a differing amount of clock
                 #         cycles and syncronization is lost.
                 #

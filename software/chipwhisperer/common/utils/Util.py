@@ -36,6 +36,8 @@ try:
 except ImportError:
     DictType = dict
 
+def lazy(var):
+    return var
 
 def getRootDir():
     path = os.path.join(os.path.dirname(__file__), "../../../")
@@ -217,3 +219,13 @@ class Observable(Signal):
 #             #todel.append(key)
 #             #print key
 #             d[key] = value.__class__.__name__
+
+
+_uiupdateFunction = None
+
+def setUIupdateFunction(func):
+    _uiupdateFunction = func
+
+def updateUI():
+    if _uiupdateFunction:
+        _uiupdateFunction()
