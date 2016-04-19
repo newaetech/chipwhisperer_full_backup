@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
 try:
@@ -32,11 +32,11 @@ except ImportError:
     AES = None
 
 
-class TargetTemplate(plugin.Plugin):
+class TargetTemplate(pluginmanager.Plugin):
     name = 'Target Connection'
 
-    def __init__(self):
-        super(TargetTemplate, self).__init__()
+    def __init__(self, parentParam=None):
+        super(TargetTemplate, self).__init__(parentParam)
         self.newInputData = Util.Signal()
         self.connectStatus = Util.Observable(False)
 

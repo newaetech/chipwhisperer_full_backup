@@ -26,10 +26,10 @@
 #=================================================
 
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
-class PreprocessingBase(AutoScript, plugin.Plugin):
+class PreprocessingBase(AutoScript, pluginmanager.Plugin):
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:
@@ -41,8 +41,9 @@ class PreprocessingBase(AutoScript, plugin.Plugin):
     name = "None"
     description = ""
 
-    def __init__(self, traceSource = None, graphWidget=None):
-        super(PreprocessingBase, self).__init__()
+    def __init__(self, parentParam, traceSource = None, graphWidget=None):
+        AutoScript.__init__(self)
+        pluginmanager.Plugin.__init__(self, parentParam=parentParam)
         self.graphWidget = graphWidget
         self.enabled = True
         self.traceSource = traceSource

@@ -58,6 +58,7 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
+
 class OpenADCSettings(object):
     def __init__(self, oaiface=None):
         self.parm_hwinfo = HWInformation()
@@ -114,6 +115,7 @@ class OpenADCSettings(object):
         """Set all parameters/settings from a dict. Can pass only part of the dictionary too for changes."""
         return
 
+
 class HWInformation():
     def __init__(self):
         self.name = "Hardware Information"
@@ -164,13 +166,13 @@ class HWInformation():
             return self.sysFreq
 
         '''Return the system clock frequency in specific firmware version'''
-        freq = 0x00000000;
+        freq = 0x00000000
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_SYSFREQ, maxResp=4)
-        freq = freq | (temp[0] << 0);
-        freq = freq | (temp[1] << 8);
-        freq = freq | (temp[2] << 16);
-        freq = freq | (temp[3] << 24);
+        freq = freq | (temp[0] << 0)
+        freq = freq | (temp[1] << 8)
+        freq = freq | (temp[2] << 16)
+        freq = freq | (temp[3] << 24)
 
         self.sysFreq = long(freq)
 
@@ -424,6 +426,7 @@ class TriggerSettings():
             return True
         else:
             return False
+
 
 class ClockSettings():
 

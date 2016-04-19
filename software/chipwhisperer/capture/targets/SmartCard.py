@@ -25,7 +25,7 @@
 
 from _smartcard_gui import SmartCardGUICard
 from _base import TargetTemplate
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
 class SmartCard(TargetTemplate):
@@ -37,12 +37,10 @@ class SmartCard(TargetTemplate):
 
     def setupParameters(self):
         self.setupChildParamsOrder([lambda: self.driver])
-        readers = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False)
-        self.connectChildParamsSignals(readers)
+        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False, self)
 
         self.setupChildParamsOrder([lambda: self.protocol])
-        protocols = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False)
-        self.connectChildParamsSignals(protocols)
+        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False, self)
 
         from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER
         return [    {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER.name], 'set':self.setConnection},

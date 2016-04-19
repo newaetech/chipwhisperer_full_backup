@@ -36,7 +36,7 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
-from chipwhisperer.common.utils.plugin import Plugin
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class UserScript(Plugin):
@@ -49,8 +49,6 @@ class UserScript(Plugin):
 
     def run(self):
         #User commands here
-        print "***** Starting User Script *****"
-       
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
         self.api.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
@@ -87,8 +85,6 @@ class UserScript(Plugin):
         #self.api.proj.setFilename("../capturev2/test_live.cwp")
         #self.api.saveProject()
 
-        print "***** Ending User Script *****"
-        
 
 if __name__ == '__main__':
     api = CWCoreAPI()                               # Instantiate the API

@@ -26,7 +26,7 @@
 #=================================================
 
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-import chipwhisperer.common.utils.plugin
+import chipwhisperer.common.utils.pluginmanager
 from _base import AttackBaseClass
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from _generic_parameters import AttackGenericParameters
@@ -46,7 +46,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def setupParameters(self):
-        algos = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
+        algos = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False, self)
         return [    {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},
                     {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},

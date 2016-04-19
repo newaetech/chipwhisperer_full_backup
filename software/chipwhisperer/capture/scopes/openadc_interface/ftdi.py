@@ -20,8 +20,9 @@
 #=================================================
 
 import sys
-from chipwhisperer.common.utils import plugin
-import chipwhisperer.capture.ui.qt as openadc_qt
+
+import chipwhisperer.capture.scopes._qt as openadc_qt
+from chipwhisperer.common.utils import pluginmanager
 
 try:
     import ftd2xx as ft
@@ -29,11 +30,11 @@ except:
     ft = None
 
 
-class OpenADCInterface_FTDI(plugin.Plugin):
+class OpenADCInterface_FTDI(pluginmanager.Plugin):
     name = "FTDI (SASEBO-W/SAKURA-G)"
 
-    def __init__(self, oadcInstance):
-        super(OpenADCInterface_FTDI, self).__init__()
+    def __init__(self, parentParam, oadcInstance):
+        super(OpenADCInterface_FTDI, self).__init__(parentParam)
         self.serialNumber = None
         self.ser = None
 

@@ -24,9 +24,10 @@
 #=================================================
 
 import time
+
+import chipwhisperer.capture.scopes._qt as openadc_qt
 from _base import TargetTemplate
 from chipwhisperer.capture.scopes.openadc_interface import ftdi
-import chipwhisperer.capture.ui.qt as openadc_qt
 from chipwhisperer.common.utils import Util
 
 try:

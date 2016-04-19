@@ -21,10 +21,10 @@
 
 import time
 from visa import *
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
-class VisaScope(plugin.Parameterized):
+class VisaScope(pluginmanager.Parameterized):
     name='Scope Settings'
     dataUpdated = Util.Signal()
 
@@ -37,8 +37,8 @@ class VisaScope(plugin.Parameterized):
 
     header = ":SYSTem:HEADer OFF\n"
 
-    def __init__(self):
-        super(VisaScope, self).__init__()
+    def __init__(self, parentParam):
+        super(VisaScope, self).__init__(parentParam)
         self.visaInst = None
 
     def setupParameters(self):

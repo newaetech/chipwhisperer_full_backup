@@ -25,10 +25,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
-class AttackBaseClass(plugin.Plugin):
+class AttackBaseClass(pluginmanager.Plugin):
     """Generic Attack Interface"""
 
     name = "None"

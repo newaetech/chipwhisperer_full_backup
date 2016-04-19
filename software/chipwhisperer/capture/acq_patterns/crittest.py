@@ -30,7 +30,7 @@ from _base import AcqKeyTextPattern_Base
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     name = "CRI T-Test"
 
-    def setupParams(self):
+    def setupParameters(self):
         self._fixedPlain = False
         self._fixedKey = True
         return [  # {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},

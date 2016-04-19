@@ -34,19 +34,18 @@ must install
 import collections
 import time
 from chipwhisperer.capture.scopes._base import ScopeTemplate
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
 
 
-class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
+class PicoScope(pluginmanager.Parameterized): #TODO: ScopeBase instead?
     name = 'Scope Settings'
     dataUpdated = Util.Signal()
 
     def __init__(self, psClass):
         self.ps = psClass
-
 
     def setupParameters(self):
         chlist = {}
@@ -148,8 +147,8 @@ class PicoScope(plugin.Parameterized): #TODO: ScopeBase instead?
 class PicoScopeInterface(ScopeTemplate):
     name = "PicoScope"
 
-    def __init__(self):
-        super(PicoScopeInterface, self).__init__()
+    def __init__(self, parentParam):
+        super(PicoScopeInterface, self).__init__(parentParam)
         self.scopetype = None
         self.advancedSettings = None
         self.setCurrentScope(self.findParam('type').value(type))
@@ -158,7 +157,7 @@ class PicoScopeInterface(ScopeTemplate):
         self.setupChildParamsOrder([lambda: self.scopetype])
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
                         "PS2000": ps2000.PS2000(connect=False)}
-        self.connectChildParamsSignals(scopes)
+        # self.connectChildParamsSignals(scopes) #TODO: Fix
 
         return [{'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}]
 

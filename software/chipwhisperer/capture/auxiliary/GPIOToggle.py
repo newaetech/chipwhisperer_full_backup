@@ -35,10 +35,13 @@ from chipwhisperer.common.utils import Util
 class GPIOToggle(AuxiliaryTemplate):
     name = 'GPIO Toggle'
 
+    def __init__(self, parentParam=None):
+        super(GPIOToggle, self).__init__(parentParam)
+        self.settingsChanged()
+
     def setupParameters(self):
         self.pin = None
         self.lastPin = None
-        self.settingsChanged()
         return [
                  {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
                  {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},

@@ -61,7 +61,7 @@ class TraceContainerMySQL(TraceContainer):
         #Format name must agree with names from TraceContainerFormatList
         self.config.setAttr("format", "mysql")
 
-    def setupParams(self):
+    def setupParameters(self):
         traceParams = [{'name':'MySQL Configuration', 'type':'group', 'children':[
                         {'name':'Server Address', 'key':'addr', 'type':'str', 'value':'127.0.0.1'},
                         {'name':'Server Port', 'key':'port', 'type':'int', 'value':'3306'},

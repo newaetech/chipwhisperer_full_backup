@@ -20,8 +20,10 @@
 #=================================================
 
 import sys
-from chipwhisperer.common.utils import plugin
-import chipwhisperer.capture.ui.qt as openadc_qt
+
+import chipwhisperer.capture.scopes._qt as openadc_qt
+from chipwhisperer.common.utils import pluginmanager
+
 try:
     import serial
     import chipwhisperer.common.utils.Scan as scan
@@ -29,11 +31,11 @@ except ImportError:
     serial = None
 
 
-class OpenADCInterface_Serial(plugin.Plugin):
+class OpenADCInterface_Serial(pluginmanager.Plugin):
     name = "Serial Port (LX9)"
 
-    def __init__(self, oadcInstance):
-        super(OpenADCInterface_Serial, self).__init__()
+    def __init__(self, parentParam, oadcInstance):
+        super(OpenADCInterface_Serial, self).__init__(parentParam)
         self.ser = None
 
         if (openadc_qt is None) or (serial is None):

@@ -30,7 +30,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 
-import chipwhisperer.common.utils.plugin
+import chipwhisperer.common.utils.pluginmanager
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
@@ -67,11 +67,11 @@ class CWAnalyzerGUI(CWMainGUI):
         self.traceExplorerDialog.runScriptFunction.connect(self.runScriptFunction)
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.utilList = [self.traceExplorerDialog]
-        self.valid_atacks = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.resultWidgets = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False)
-        self.cwAPI.results = self.resultWidgets # Displays attack status/results
+        self.valid_atacks = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False, self)
+        self.resultWidgets = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False, self)
+        self.api.results = self.resultWidgets # Displays attack status/results
         self.setAttack(self.valid_atacks["CPA"])
-        self.valid_preprocessingModules = chipwhisperer.common.utils.plugin.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self.waveformDock.widget())
+        self.valid_preprocessingModules = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self, self.waveformDock.widget())
         self.preprocessingListGUI = [None, None, None, None]
 
         self.addToolbars()
@@ -80,18 +80,18 @@ class CWAnalyzerGUI(CWMainGUI):
         self.editorDocks()
         self.restoreSettings()
 
-        self.cwAPI.signals.attackChanged.connect(self.attackChanged)
-        self.cwAPI.signals.reloadAttackParamList.connect(self.reloadAttackParamList)
+        self.api.signals.attackChanged.connect(self.attackChanged)
+        self.api.signals.reloadAttackParamList.connect(self.reloadAttackParamList)
         self.reloadScripts()
 
     def projectChanged(self):
         super(CWAnalyzerGUI, self).projectChanged()
-        self.cwAPI.project().traceManager().tracesChanged.connect(self.tracesChanged)
+        self.api.project().traceManager().tracesChanged.connect(self.tracesChanged)
 
     def attackChanged(self):
         self.reloadScripts()
-        self.cwAPI.getAttack().scriptsUpdated.connect(self.reloadScripts)
-        self.cwAPI.getAttack().runScriptFunction.connect(self.runScriptFunction)
+        self.api.getAttack().scriptsUpdated.connect(self.reloadScripts)
+        self.api.getAttack().runScriptFunction.connect(self.runScriptFunction)
 
     def editorDocks(self):
         """Ensure we have a script editor window for each referenced analyzer script file"""
@@ -182,13 +182,13 @@ class CWAnalyzerGUI(CWMainGUI):
     def reloadAttackParamList(self, list=None):
         """Reloads parameter tree in GUI when attack changes"""
 
-        ExtendedParameter.reloadParams(self.cwAPI.getAttack().paramList(), self.attackParamTree, help_window=self.helpbrowser.helpwnd)
+        ExtendedParameter.reloadParams(self.api.getAttack().paramList(), self.attackParamTree, help_window=self.helpbrowser.helpwnd)
 
     def reloadParamListResults(self):
         """Reload parameter tree for results settings, ensuring GUI matches loaded modules."""
 
         plist = []
-        for k, v in self.cwAPI.results.iteritems():
+        for k, v in self.api.results.iteritems():
             if v:
                 plist.extend(v.paramList())
 
@@ -205,19 +205,19 @@ class CWAnalyzerGUI(CWMainGUI):
     def doAttack(self):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
 
-        if self.cwAPI.project().traceManager().numTraces() == 0:
+        if self.api.project().traceManager().numTraces() == 0:
             ret = QMessageBox.question(self, "Attack Error", "No traces enabled in project.\nOpen Trace Manager?", QMessageBox.Yes | QMessageBox.No)
             if ret == QMessageBox.Yes:
                 self.traceManagerDialog.show()
             return
 
-        self.cwAPI.doAttack(self.setupScriptModule(), ProgressBar("Analysis in Progress", "Analyzing:"))
+        self.api.doAttack(self.setupScriptModule(), ProgressBar("Analysis in Progress", "Analyzing:"))
 
     def tracesChanged(self):
         """Traces changed due to loading new project or adjustment in trace manager,
         so adjust limits displayed and re-plot the new input trace"""
 
-        self.setTraceLimits(self.cwAPI.project().traceManager().numTraces(), self.cwAPI.project().traceManager().numPoints())
+        self.setTraceLimits(self.api.project().traceManager().numTraces(), self.api.project().traceManager().numPoints())
         self.plotInputTrace()
         self.reloadScripts()
 
@@ -266,7 +266,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.windowMenu.addSeparator()
         self.docks = [self.waveformDock]
 
-        for k, v in self.cwAPI.results.iteritems():
+        for k, v in self.api.results.iteritems():
             if v.getWidget():
                 self.docks.append(self.addDock(v.getWidget(), name=v.name, area=Qt.TopDockWidgetArea))
 
@@ -286,7 +286,7 @@ class CWAnalyzerGUI(CWMainGUI):
                     [{'name':'Module #%d' % step, 'type':'list', 'value':0, 'values':self.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
 
                 {'name':'Attack', 'type':'group', 'children':[
-                    {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':self.cwAPI.getAttack(), 'set':self.setAttack},
+                    {'name':'Module', 'type':'list', 'values':self.valid_atacks, 'value':self.api.getAttack(), 'set':self.setAttack},
                     ]},
 
                 {'name':'Post-Processing', 'type':'group'},
@@ -309,7 +309,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.postprocessingParamTree = ParameterTree()
         self.resultsParamTree = ParameterTree()
 
-        for k, v in self.cwAPI.results.iteritems():
+        for k, v in self.api.results.iteritems():
             v.paramListUpdated.connect(self.reloadParamListResults)
 
         self.reloadParamListResults()
@@ -330,8 +330,8 @@ class CWAnalyzerGUI(CWMainGUI):
         self.reloadScripts()
 
     def setAttack(self, module):
-        self.cwAPI.setAttack(module)
-        self.cwAPI.getAttack().scriptsUpdated.connect(self.reloadScripts)
+        self.api.setAttack(module)
+        self.api.getAttack().scriptsUpdated.connect(self.reloadScripts)
 
     def setupScriptModule(self, filename=None):
         """Loads a given script as a module for dynamic run-time insertion.
@@ -351,7 +351,7 @@ class CWAnalyzerGUI(CWMainGUI):
         if mod is None:
             return None
 
-        script = mod.UserScript(self.cwAPI.project())
+        script = mod.UserScript(self.api.project())
         script.initPreprocessing()
         return script
 
@@ -394,7 +394,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
         # Get imports from api
         mse.append("# Imports from Capture", 0)
-        for i in self.cwAPI.getAttack().getImportStatements():
+        for i in self.api.getAttack().getImportStatements():
             mse.append(i, 0)
 
         # Some other imports
@@ -428,14 +428,14 @@ class CWAnalyzerGUI(CWMainGUI):
 
         # Get init from analysis
         mse.append("def initAnalysis(self):", 1)
-        mse.append('self.attack = %s()' % type(self.cwAPI.getAttack()).__name__)
-        for s in self.cwAPI.getAttack().getStatements('init'):
+        mse.append('self.attack = %s()' % type(self.api.getAttack()).__name__)
+        for s in self.api.getAttack().getStatements('init'):
             mse.append(s.replace("self.", "self.attack.").replace("UserScript.", "self."))
 
         # Get init from reporting
         mse.append("def initReporting(self, results):", 1)
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
-        [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.cwAPI.results.iteritems()]
+        [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.api.results.iteritems()]
         mse.append("return")
 
         # Do the attack
@@ -443,13 +443,13 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.append("self.attack.doAttack(progressBar)")
 
         # Get other commands from attack module
-        for k in self.cwAPI.getAttack()._smartstatements:
+        for k in self.api.getAttack()._smartstatements:
             if k == 'init' or k == 'go' or k == 'done':
                 pass
             else:
                 mse.append("def %s(self):" % k, 1)
-                for s in self.cwAPI.getAttack().getStatements(k):
-                    mse.append(s.replace("self.", "self.cwAPI.getAttack().").replace("UserScript.", "self."))
+                for s in self.api.getAttack().getStatements(k):
+                    mse.append(s.replace("self.", "self.api.getAttack().").replace("UserScript.", "self."))
 
         # Get other commands from other utilities
         for index, util in enumerate(self.utilList):
@@ -467,7 +467,7 @@ class CWAnalyzerGUI(CWMainGUI):
         mse.restoreSliderPosition()
 
     def setTraceLimits(self, traces, points):
-        self.cwAPI.getAttack().setTraceLimits(traces, points)
+        self.api.getAttack().setTraceLimits(traces, points)
         # Set local parameters for trace viewer
         self.findParam('tracerng').setLimits((0, traces))
         self.findParam('tracerng').setValue((0, min(traces, 1)))

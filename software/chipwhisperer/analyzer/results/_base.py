@@ -24,14 +24,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
-class ResultsBase(plugin.Plugin):
+class ResultsBase(pluginmanager.Plugin):
     name = "Results"
 
-    def __init__(self):
-        super(ResultsBase, self).__init__()
+    def __init__(self, parentParam):
+        super(ResultsBase, self).__init__(parentParam)
         self.attack = None
 
     def setObservedAttack(self, attack):

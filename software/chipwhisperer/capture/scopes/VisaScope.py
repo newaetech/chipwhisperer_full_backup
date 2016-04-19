@@ -27,21 +27,20 @@
 
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.visascope_interface.mso54831D import VisaScopeInterface_MSO54831D
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
 class VisaScopeInterface(ScopeTemplate):
     name =  "VISA Scope"
 
-    def __init__(self):
-        super(VisaScopeInterface, self).__init__()
+    def __init__(self, parentParam):
+        super(VisaScopeInterface, self).__init__(parentParam)
         self.scopetype = None
         self.setCurrentScope(self.findParam('type').value(type))
 
     def setupParameters(self):
         self.setupChildParamsOrder([lambda: self.scopetype])
-        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False)
-        self.connectChildParamsSignals(scopes)
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
         for scope in scopes.itervalues():
             scope.dataUpdated.connect(self.passUpdated)
 

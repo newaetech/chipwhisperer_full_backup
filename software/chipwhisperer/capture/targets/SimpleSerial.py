@@ -34,7 +34,7 @@ try:
     import serial
 
     class SimpleSerial_serial(TargetTemplate):
-        name = "Serial Port Settings"
+        name = "System Serial Port"
 
         def setupParameters(self):
             self.ser = None
@@ -88,7 +88,7 @@ except ImportError:
 
 
 class SimpleSerial_ChipWhispererLite(TargetTemplate):
-    name = 'Serial Port Settings'
+    name = 'ChipWhisperer-Lite'
 
     def setupParameters(self):
         self.cwlite_usart = None
@@ -326,15 +326,14 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 class SimpleSerial(TargetTemplate):
     name = "Simple Serial"
 
-    def __init__(self):
-        super(SimpleSerial, self).__init__()
+    def __init__(self, parentParam=None):
+        super(SimpleSerial, self).__init__(parentParam)
         self.setConnection(self.findParam('con').value())
 
     def setupParameters(self):
         self.ser = None
         self.setupChildParamsOrder([lambda: self.ser])
-        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
-        self.connectChildParamsSignals(ser_cons)
+        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True, self)
 
         self.keylength = 16
         self.input = ""

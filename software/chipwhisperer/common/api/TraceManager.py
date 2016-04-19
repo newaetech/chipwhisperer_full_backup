@@ -26,7 +26,7 @@ import os.path
 import re
 from chipwhisperer.common.utils import Util
 import chipwhisperer.common.traces.TraceContainerConfig
-import chipwhisperer.common.traces.TraceContainerNative
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import ConfigParser
 
 
@@ -73,7 +73,7 @@ class TraceManager(object):
                 fname = fdir + t[1]
                 fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
-                ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
+                ti = TraceContainerNative()
                 try:
                     ti.config.loadTrace(fname)
                 except Exception, e:

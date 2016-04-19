@@ -28,19 +28,19 @@
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
-import chipwhisperer.capture.ui.qt as openadc_qt
+import _qt as openadc_qt
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.utils import Util, timer, plugin
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import Util, timer, pluginmanager
 
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
     name = "ChipWhisperer/OpenADC"
 
-    def __init__(self):
-        super(OpenADCInterface, self).__init__()
+    def __init__(self, parentParam=None):
+        super(OpenADCInterface, self).__init__(parentParam)
 
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
@@ -51,16 +51,14 @@ class OpenADCInterface(ScopeTemplate):
 
     def setupParameters(self):
         self.scopetype = None
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
-        self.qtadc.setupParameterTree(False)
+        self.qtadc = openadc_qt.OpenADCQt()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
 
         self.setupChildParamsOrder([lambda: Util.lazy(self.scopetype), lambda: Util.lazy(self.qtadc),
                                     lambda: Util.lazy(self.advancedSettings), lambda: Util.lazy(self.advancedSAD),
                                     lambda: Util.lazy(self.digitalPattern)])
 
-        scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
-        self.connectChildParamsSignals(scopes)
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
 
         return [
                   {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip.name], 'set':self.setCurrentScope},

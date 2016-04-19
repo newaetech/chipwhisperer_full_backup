@@ -23,10 +23,10 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
-class ProtocolTemplate(plugin.Parameterized):
+class ProtocolTemplate(pluginmanager.Parameterized):
     name='Smartcard Protocol'
 
     def __init__(self):

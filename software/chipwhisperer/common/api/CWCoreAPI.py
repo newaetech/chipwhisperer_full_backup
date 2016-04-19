@@ -25,33 +25,30 @@
 import traceback
 import sys
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from PySide.QtGui import *
+from pyqtgraph.parametertree import ParameterTree
 
 
-class CWCoreAPI(plugin.Parameterized):
+class CWCoreAPI(pluginmanager.Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
-    name = 'API Settings'
+    name = 'Generic Settings'
     instance = None
 
     class Signals(object):
         def __init__(self):
-            self.traceChanged = Util.Signal()
             self.newProject = Util.Signal()
-            self.reloadAttackParamList = Util.Signal()
-            self.reloadTargetParamList = Util.Signal()
-            self.attackChanged = Util.Signal()
-            self.scopeChanged = Util.Signal()
-            self.targetChanged = Util.Signal()
-            self.auxChanged = Util.Signal()
-            self._acqPatternChanged = Util.Signal()
+            self.newScopeData = Util.Signal()
             self.connectStatus = Util.Signal()
+            self.acqPatternChanged = Util.Signal()
             self.newInputData = Util.Signal()
             self.newTextResponse = Util.Signal()
             self.traceDone = Util.Signal()
@@ -62,6 +59,47 @@ class CWCoreAPI(plugin.Parameterized):
         super(CWCoreAPI, self).__init__()
         self.signals = self.Signals()
         CWCoreAPI.instance = self
+        self._helpWidget = None
+        self.generalParamTree = ParameterTree()
+        self.generalParamTree.setParameters(self.params, showTop=False)
+        self.scopeParamTree = ParameterTree()
+        self.targetParamTree = ParameterTree()
+        self.traceParamTree = ParameterTree()
+        self.auxParamTree = ParameterTree()
+        self.attackParamTree = ParameterTree()
+        self.paramTrees = [self.generalParamTree, self.scopeParamTree, self.targetParamTree,
+                           self.traceParamTree, self.auxParamTree, self.attackParamTree]
+        self.reloadGeneralParamList()
+        self.reloadScopeParamList()
+        self.reloadTargetParamList()
+        self.reloadTraceFormatParamList()
+        self.reloadAuxParamList()
+        self.reloadAttackParamList()
+        self.paramListUpdated.connect(self.reloadGeneralParamList)
+
+    def setHelpWidget(self, widget):
+        self._helpWidget = widget
+
+    def getParamList(self, parametrized):
+        return parametrized.paramList() if parametrized else []
+
+    def reloadGeneralParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self), self.generalParamTree, help_window=self._helpWidget)
+
+    def reloadScopeParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self.getScope()), self.scopeParamTree, help_window=self._helpWidget)
+
+    def reloadTargetParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self.getTarget()), self.targetParamTree, help_window=self._helpWidget)
+
+    def reloadTraceFormatParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self.getTraceFormat()), self.traceParamTree, help_window=self._helpWidget)
+
+    def reloadAuxParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self.getAuxList()[0]), self.auxParamTree, help_window=self._helpWidget)
+
+    def reloadAttackParamList(self):
+        ExtendedParameter.reloadParams(self.getParamList(self.getAttack()), self.attackParamTree, help_window=self._helpWidget)
 
     def setupParameters(self):
         self._project = None
@@ -69,7 +107,7 @@ class CWCoreAPI(plugin.Parameterized):
         self._target = None
         self._attack = None
         self._traceFormat = TraceContainerNative()
-        self._acqPattern = AcqKeyTextPattern_Basic()
+        self._acqPattern = AcqKeyTextPattern_Basic(self)
         self._auxList = [None]
         self._numTraces = 100
         self._numTraceSets = 1
@@ -77,11 +115,11 @@ class CWCoreAPI(plugin.Parameterized):
         self.setupChildParamsOrder([lambda: self._acqPattern])
         self.encryptionStatusMonitor = None
 
-        valid_scopes = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", instantiate = True, addNone = True)
-        valid_targets =  plugin.getPluginsInDictFromPackage("chipwhisperer.capture.targets", instantiate = True, addNone = True)
-        valid_traces = plugin.getPluginsInDictFromPackage("chipwhisperer.common.traces", instantiate = True, addNone = True)
-        valid_aux = plugin.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", instantiate = True, addNone = True)
-        valid_acqPatterns =  plugin.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", instantiate = True, addNone = False)
+        valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
+        valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
+        valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
+        valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
+        valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
 
         return [
                 {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':None, 'set':self.setScope, 'get':self.getScope},
@@ -112,7 +150,11 @@ class CWCoreAPI(plugin.Parameterized):
     def setScope(self, driver):
         if self.getScope(): self.getScope().dis()
         self._scope = driver
-        self.signals.scopeChanged.emit()
+        if self.getScope():
+            self.getScope().paramListUpdated.connect(self.reloadScopeParamList)
+            self.getScope().dataUpdated.connect(self.signals.newScopeData.emit)
+            self.getScope().connectStatus.connect(self.signals.connectStatus)
+        self.reloadScopeParamList()
 
     def getTarget(self):
         return self._target
@@ -120,23 +162,24 @@ class CWCoreAPI(plugin.Parameterized):
     def setTarget(self, driver):
         if self.getTarget(): self.getTarget().dis()
         self._target = driver
-        if self._target:
-            self._target.paramListUpdated.connect(self.signals.reloadTargetParamList.emit)
-            self._target.newInputData.connect(self.signals.newInputData.emit)
-
-        self.signals.reloadTargetParamList.emit()
-        self.signals.targetChanged.emit()
+        if self.getTarget():
+            self.getTarget().paramListUpdated.connect(self.reloadTargetParamList)
+            self.getTarget().newInputData.connect(self.signals.newInputData.emit)
+            self.getTarget().connectStatus.connect(self.signals.connectStatus)
+        self.reloadTargetParamList()
 
     def setAux(self, aux):
         self._auxList = [aux]
-        self.signals.auxChanged.emit()
+        if self.getAuxList():
+            self.getAuxList()[0].paramListUpdated.connect(self.reloadAuxParamList)
+        self.reloadAuxParamList()
 
     def getAuxList(self):
         return self._auxList
 
     def setAcqPattern(self, pat):
         self._acqPattern = pat
-        self.signals._acqPatternChanged.emit()
+        self.paramListUpdated.emit()
 
     def getAcqPattern(self):
         return self._acqPattern
@@ -192,9 +235,8 @@ class CWCoreAPI(plugin.Parameterized):
 
     def capture1(self):
         """Captures only one trace"""
-
         try:
-            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.get_acqPattern())
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
             ac.doSingleReading()
         except Warning:
@@ -204,7 +246,6 @@ class CWCoreAPI(plugin.Parameterized):
 
     def captureM(self, progressBar = None):
         """Captures multiple traces and saves it in the Trace Manager"""
-
         if not progressBar: progressBar = ProgressBarText()
 
         writerlist = []
@@ -240,7 +281,7 @@ class CWCoreAPI(plugin.Parameterized):
                     for aux in self._auxList:
                         aux.setPrefix(baseprefix)
 
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.get_acqPattern())
+                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
                 ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
                 ac.signals.traceDone.connect(self.signals.traceDone.emit)
@@ -287,19 +328,21 @@ class CWCoreAPI(plugin.Parameterized):
         return self._traceFormat
 
     def setTraceFormat(self, format):
-        self.signals.traceChanged.emit()
         self._traceFormat = format
+        if self.getTraceFormat():
+            self.getTraceFormat().paramListUpdated.connect(self.reloadTraceFormatParamList)
+        self.reloadTraceFormatParamList()
 
     def getAttack(self):
         return self._attack
 
-    def setAttack(self, attack): # Move to GUI??
+    def setAttack(self, attack):
         """Set the attack module, reloading GUI and connecting appropriate signals"""
         self._attack = attack
-        self.signals.reloadAttackParamList.emit()
-        self.getAttack().paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
-        self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.signals.attackChanged.emit()
+        if self.getAttack():
+            self.getAttack().paramListUpdated.connect(self.reloadAttackParamList)
+            self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
+        self.reloadAttackParamList()
 
     def doAttack(self, mod, progressBar = None):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
@@ -316,7 +359,6 @@ class CWCoreAPI(plugin.Parameterized):
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
-        #print top.name()
         if top.name() == path[0]:
             if len(path) > 1:
                 for c in top.children():
@@ -329,6 +371,8 @@ class CWCoreAPI(plugin.Parameterized):
                             value = top.opts["values"][value]
                     except TypeError:
                         pass
+                    except KeyError:
+                        print "Parameter value %s is invalid. Check if it is spelled correctly or if the module was loaded properly" % value
 
                 if echo == False:
                     top.opts["echooff"] = True
@@ -350,14 +394,14 @@ class CWCoreAPI(plugin.Parameterized):
                 for i in range(0, t.invisibleRootItem().childCount()):
                     self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
 
-            print "Parameter not found: %s"%str(parameter)
+            print "Parameter not found: %s" % str(parameter)
         except ValueError:
             #A little klunky: we use exceptions to tell us the system DID work as intended
             pass
         except IndexError:
-            raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))
+            raise IndexError("IndexError Setting Parameter %s\n%s" % (str(parameter), traceback.format_exc()))
 
-        self.parametersChanged.emit()
+        self.paramListUpdated.emit()
 
     def guiActions(self, mainWindow):
         self.encryptionStatusMonitor = EncryptionStatusMonitor(mainWindow)

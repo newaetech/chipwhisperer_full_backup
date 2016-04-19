@@ -25,14 +25,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, plugin
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
-class ScopeTemplate(plugin.Plugin):
+class ScopeTemplate(pluginmanager.Plugin):
     name = "None"
 
-    def __init__(self):
-        super(ScopeTemplate, self).__init__()
+    def __init__(self, parentParam):
+        super(ScopeTemplate, self).__init__(parentParam)
         self.connectStatus = Util.Observable(False)
         self.dataUpdated = Util.Signal()
         self.datapoints = []

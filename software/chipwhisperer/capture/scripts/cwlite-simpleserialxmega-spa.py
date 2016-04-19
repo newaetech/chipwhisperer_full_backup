@@ -36,10 +36,10 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
-class UserScript(plugin.Plugin):
+class UserScript(pluginmanager.Plugin):
     name = "ChipWhisperer-Lite: SPA SimpleSerial on XMEGA"
     description = "SimpleSerial with Standard Target for SPA (XMEGA)"
 
@@ -49,8 +49,6 @@ class UserScript(plugin.Plugin):
 
     def run(self):
         #User commands here
-        print "***** Starting User Script *****"
-       
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
@@ -90,9 +88,7 @@ class UserScript(plugin.Plugin):
         #writer = self.api.captureM()
         #self.api.proj.setFilename("../capturev2/test_live.cwp")
         #self.api.saveProject()
-        
-        print "***** Ending User Script *****"
-        
+
 
 if __name__ == '__main__':
     api = CWCoreAPI()                               # Instantiate the API

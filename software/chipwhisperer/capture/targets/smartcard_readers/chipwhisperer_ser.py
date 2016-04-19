@@ -31,13 +31,12 @@ import time
 class ReaderChipWhispererSER(ReaderTemplate):
     name = "CWCR2-SER"
 
-    def __init__(self):
-        super(ReaderChipWhispererSER, self).__init__()
+    def __init__(self, parentParam):
+        super(ReaderChipWhispererSER, self).__init__(parentParam)
 
     def setupParameters(self):
-        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer()
+        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer(self)
         self.setupChildParamsOrder([lambda: self.ser])
-        self.connectChildParamsSignals([self.ser])
 
         return [
                     {'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},

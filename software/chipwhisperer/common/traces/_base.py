@@ -26,10 +26,10 @@ import copy
 import re
 import numpy as np
 import TraceContainerConfig
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
-class TraceContainer(plugin.Parameterized):
+class TraceContainer(pluginmanager.Plugin):
     """
     TraceContainer holds traces for the system to operate on. This can include both reading in traces for analysis, and
     writing traces to disk.
@@ -40,8 +40,8 @@ class TraceContainer(plugin.Parameterized):
     
     name = "Trace Configuration"
     
-    def __init__(self, params=None, configfile=None):
-        super(TraceContainer, self).__init__()
+    def __init__(self, parentParam=None, configfile=None):
+        super(TraceContainer, self).__init__(parentParam)
         self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
         self.textins = []
         self.textouts = []
@@ -57,7 +57,7 @@ class TraceContainer(plugin.Parameterized):
         self._numTraces = 0
         self._isloaded = False
 
-    def setupParams(self):
+    def setupParameters(self):
         self.fmt = None
         return [
                     {'name':'Trace Configuration', 'type':'group', 'children':[

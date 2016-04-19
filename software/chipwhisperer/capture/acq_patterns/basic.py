@@ -31,7 +31,7 @@ from _base import AcqKeyTextPattern_Base
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     name = "Basic"
 
-    def setupParams(self):
+    def setupParameters(self):
         self._fixedPlain = False
         self._fixedKey = True
 

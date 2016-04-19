@@ -20,22 +20,24 @@
 #=================================================
 
 import sys
-from chipwhisperer.common.utils import plugin
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
+
+import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
-import chipwhisperer.capture.ui.qt as openadc_qt
+from chipwhisperer.common.utils import pluginmanager
+
 try:
     import usb
 except ImportError:
     usb = None
 
 
-class OpenADCInterface_ZTEX(plugin.Plugin):
+class OpenADCInterface_ZTEX(pluginmanager.Plugin):
     name = "OpenADC-ZTEX"
 
-    def __init__(self, oadcInstance):
-        super(OpenADCInterface_ZTEX, self).__init__()
+    def __init__(self, parentParam, oadcInstance):
+        super(OpenADCInterface_ZTEX, self).__init__(parentParam)
         self.ser = None
         self._toolActs = []
 

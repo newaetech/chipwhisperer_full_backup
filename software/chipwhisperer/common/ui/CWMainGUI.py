@@ -21,7 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-import chipwhisperer.common.utils.plugin
+import chipwhisperer.common.utils.pluginmanager
 
 __author__ = "Colin O'Flynn"
 
@@ -37,7 +37,7 @@ from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
-from chipwhisperer.common.utils import plugin, Util
+from chipwhisperer.common.utils import pluginmanager, Util
 import chipwhisperer.common.ui.qrc_resources
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -211,10 +211,11 @@ class CWMainGUI(QMainWindow):
     """
     MaxRecentFiles = 4
 
-    def __init__(self, cwCoreAPI, name="Demo", icon="cwicon"):
+    def __init__(self, api, name="Demo", icon="cwicon"):
         super(CWMainGUI, self).__init__()
-        self.cwAPI = cwCoreAPI
+        self.api = api
         Util.setUIupdateFunction(QCoreApplication.processEvents)
+        self.api.setHelpWidget(HelpBrowser(self))
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
         self.traceManagerDialog = TraceManagerDialog(self)
@@ -224,18 +225,17 @@ class CWMainGUI(QMainWindow):
         self.initUI(icon)
         self.setCentralWidget(None)
         self.setDockNestingEnabled(True)
-        self.helpbrowser = HelpBrowser(self)
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
-        self.cwAPI.signals.newProject.connect(self.projectChanged)
-        self.cwAPI.newProject()
+        self.api.signals.newProject.connect(self.projectChanged)
+        self.api.newProject()
         CWMainGUI.instance = self
 
     def projectChanged(self):
-        self.traceManagerDialog.setTraceManager(self.cwAPI.project().traceManager())
-        self.projEditWidget.setProject(self.cwAPI.project())
-        self.cwAPI.project().signals.statusChanged.connect(self.statusChanged)
-        self.statusChanged()
+        self.traceManagerDialog.setTraceManager(self.api.project().traceManager())
+        self.projEditWidget.setProject(self.api.project())
+        self.api.project().signals.statusChanged.connect(self.projectStatusChanged)
+        self.projectStatusChanged()
 
     def restoreSettings(self):
         self.restoreGeometry(QSettings().value("geometry"))
@@ -424,7 +424,7 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.addExampleScripts(plugin.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False))
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
@@ -447,7 +447,7 @@ class CWMainGUI(QMainWindow):
 
     def updateTitleBar(self):
         """Update filename shown in title bar"""
-        fname = os.path.basename(self.cwAPI.project().getFilename())
+        fname = os.path.basename(self.api.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(True)
         
@@ -460,22 +460,22 @@ class CWMainGUI(QMainWindow):
     #     """Should return a list of all possible imports, used to test which modules are missing"""
     #     return [["MainChip", True, ""]]
 
-    def statusChanged(self):
+    def projectStatusChanged(self):
         """Add File to recent file list"""
         self.updateTitleBar()
         
-        if self.cwAPI.project().isUntitled(): return
+        if self.api.project().isUntitled(): return
         
         files = QSettings().value('recentFileList')
         if files is None:
             files = []
 
         try:
-            files.remove(self.cwAPI.project().getFilename())
+            files.remove(self.api.project().getFilename())
         except Exception:
             pass
 
-        files.insert(0, self.cwAPI.project().getFilename())
+        files.insert(0, self.api.project().getFilename())
         numRecentFiles = min(len(files), CWMainGUI.MaxRecentFiles)
         files = files[:numRecentFiles]
 
@@ -509,12 +509,12 @@ class CWMainGUI(QMainWindow):
             fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
-        self.cwAPI.openProject(fname)
+        self.api.openProject(fname)
         self.updateStatusBar("Opening Project: " + fname)
 
     def saveProject(self):
-        fname = self.cwAPI.project().getFilename()
-        if self.cwAPI.project().isUntitled():
+        fname = self.api.project().getFilename()
+        if self.api.project().isUntitled():
             fd = QFileDialog(self, 'Save New File', './projects/', 'ChipWhisperer Project (*.cwp)')
             fd.setOption(QFileDialog.DontUseNativeDialog)
             fd.setDefaultSuffix('cwp') # Will not append the file extension if using the static file dialog
@@ -525,21 +525,21 @@ class CWMainGUI(QMainWindow):
 
             fname = fd.selectedFiles()[0]
 
-        self.cwAPI.saveProject(fname)
+        self.api.saveProject(fname)
         self.updateStatusBar("Project Saved")
 
     def newProject(self):
         self.okToContinue()
-        self.cwAPI.newProject()
+        self.api.newProject()
         self.updateStatusBar("New Project Created")
 
     def setProject(self, proj):
-        self.cwAPI.setProject(proj)
+        self.api.setProject(proj)
 
     def okToContinue(self):
-        if self.cwAPI.project() is None: return False
+        if self.api.project() is None: return False
 
-        reply = SaveProjectDialog.getSaveProjectDialog(self, self.cwAPI.project())
+        reply = SaveProjectDialog.getSaveProjectDialog(self, self.api.project())
         if reply == QDialogButtonBox.RejectRole:
             return False
         elif reply == QDialogButtonBox.YesRole:
@@ -559,9 +559,9 @@ class CWMainGUI(QMainWindow):
         ret = msgBox.exec_()
 
         if ret == QMessageBox.Yes:
-            self.cwAPI.project().consolidate(keepOriginals = True)
+            self.api.project().consolidate(keepOriginals = True)
         elif ret == QMessageBox.No:
-            self.cwAPI.project().consolidate(keepOriginals = False)
+            self.api.project().consolidate(keepOriginals = False)
 
     def updateStatusBar(self, message):
         msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
@@ -570,7 +570,7 @@ class CWMainGUI(QMainWindow):
 
     def runScript(self, mod):
         self.updateStatusBar("Running Script: %s" % mod.name)
-        m = mod(self.cwAPI)
+        m = mod(self.api)
         m.run()
         self.updateStatusBar("Finished Script: %s" % mod.name)
 

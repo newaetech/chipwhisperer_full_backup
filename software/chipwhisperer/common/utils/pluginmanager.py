@@ -32,10 +32,12 @@ import os.path
 class Parameterized(object):
     name = "None"
 
-    def __init__(self):
+    def __init__(self, parentParam = None):
         self.paramListUpdated = Util.Signal()
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=self.setupParameters())
+        if parentParam:
+            self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
         self.__childParams = []
+        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=self.setupParameters())
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
@@ -45,8 +47,8 @@ class Parameterized(object):
     def paramList(self):
         ret = [self.params]
         for e in self.__childParams:
-            if e:
-                ret.extend(e.paramList())
+            if e():
+                ret.extend(e().paramList())
         return ret
 
     def getName(self):
@@ -55,12 +57,6 @@ class Parameterized(object):
     def setupChildParamsOrder(self, childParams):
         # Use this method to setup the order of the parameterized objects to be shown
         self.__childParams = childParams
-
-    def connectChildParamsSignals(self, childParams):
-        # Use this method for the child parameters that will be show selectively
-        for childParam in childParams.itervalues():
-            if childParam:
-                childParam.paramListUpdated.connect(self.paramListUpdated.emit)
 
     def guiActions(self, mainWindow):
         # self.window = Window(mainWindow, parameters)

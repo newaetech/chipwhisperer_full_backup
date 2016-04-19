@@ -23,14 +23,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import plugin
+from chipwhisperer.common.utils import pluginmanager
 
 
-class ReaderTemplate(plugin.Parameterized):
+class ReaderTemplate(pluginmanager.Parameterized):
     name='Smartcard Reader'
 
-    def __init__(self):
-        super(ReaderTemplate, self).__init__()
+    def __init__(self, parentParam):
+        super(ReaderTemplate, self).__init__(parentParam)
 
     def setupParameters(self):
         """You should overload this. Copy/Paste into your class."""
