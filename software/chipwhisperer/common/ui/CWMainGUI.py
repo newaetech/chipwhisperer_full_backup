@@ -110,7 +110,7 @@ class SaveProjectDialog(QDialog):
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
         layout.addWidget(self.buttonBox)
 
-        detailedWidget = ProjectDiffWidget(self, project=self.parent().cwAPI.project())
+        detailedWidget = ProjectDiffWidget(self, project=self.parent().api.project())
         detailedWidget.checkDiff(updateGUI=True)
         detailedLayout = QVBoxLayout()
         detailedLayout.addWidget(detailedWidget)
