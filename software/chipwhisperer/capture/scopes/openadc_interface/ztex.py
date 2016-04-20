@@ -127,7 +127,8 @@ class OpenADCInterface_ZTEX(pluginmanager.Plugin):
         except:
             return "None?"
 
-    def guiActions(self, mainWindow):
-        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
+    def setupGuiActions(self, mainWindow):
+        if not hasattr(self, 'fwLoaderConfigGUI'):
+            self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
         return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
                ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]

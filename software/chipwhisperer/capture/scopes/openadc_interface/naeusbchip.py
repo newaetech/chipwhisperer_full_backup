@@ -64,11 +64,8 @@ class OpenADCInterface_NAEUSBChip(pluginmanager.Plugin):
         # else:
         #    self.cwAdvancedSettings = None
 
-    def setupParameters(self):
-        return []
-
     def __del__(self):
-        if self.ser != None:
+        if self.ser:
             self.ser.close()
 
     def con(self):
@@ -77,7 +74,7 @@ class OpenADCInterface_NAEUSBChip(pluginmanager.Plugin):
 
             try:
                 dev.con()
-            except IOError, e:
+            except IOError as e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
 
@@ -110,7 +107,7 @@ class OpenADCInterface_NAEUSBChip(pluginmanager.Plugin):
         except:
             return "None?"
 
-    def guiActions(self, mainWindow):
+    def setupGuiActions(self, mainWindow):
         if not hasattr(self, 'cwliteXMEGA'):
             self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
         if not hasattr(self, 'cwliteAVR'):

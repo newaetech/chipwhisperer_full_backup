@@ -215,7 +215,7 @@ class CWMainGUI(QMainWindow):
         super(CWMainGUI, self).__init__()
         self.api = api
         Util.setUIupdateFunction(QCoreApplication.processEvents)
-        self.api.setHelpWidget(HelpBrowser(self))
+        self.api.setHelpWidget(HelpBrowser(self).showHelp)
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
         self.traceManagerDialog = TraceManagerDialog(self)
@@ -228,6 +228,7 @@ class CWMainGUI(QMainWindow):
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         self.api.signals.newProject.connect(self.projectChanged)
+        self.api.signals.guiActionsUpdated.connect(self.reloadGuiActions)
         self.api.newProject()
         CWMainGUI.instance = self
 
@@ -236,10 +237,6 @@ class CWMainGUI(QMainWindow):
         self.projEditWidget.setProject(self.api.project())
         self.api.project().signals.statusChanged.connect(self.projectStatusChanged)
         self.projectStatusChanged()
-
-    def restoreSettings(self):
-        self.restoreGeometry(QSettings().value("geometry"))
-        self.restoreState(QSettings().value("windowState"))
 
     def addDock(self, dockWidget, name="Settings", area=Qt.TopDockWidgetArea,
                 allowedAreas=Qt.AllDockWidgetAreas,
@@ -299,6 +296,20 @@ class CWMainGUI(QMainWindow):
         wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
+    def reloadGuiActions(self):
+        # Remove all old actions that don't apply for new selection
+        if hasattr(self,"_ToolMenuItems"):
+            for act in self._ToolMenuItems:
+                self.toolMenu.removeAction(act)
+
+        self._ToolMenuItems = []
+        self._ToolMenuItems.append(self.toolMenu.addSeparator())
+        for act in self.api.guiActions(self):
+            self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
+
+        for act in self._ToolMenuItems:
+            self.toolMenu.addAction(act)
+
     def clearAllSettings(self):
         """Clear all saved QSettings(), such as window location etc"""
         QSettings().clear()
@@ -306,6 +317,10 @@ class CWMainGUI(QMainWindow):
     def reset(self):
         self.clearAllSettings()
         sys.exit()
+
+    def restoreSettings(self):
+        self.restoreGeometry(QSettings().value("geometry"))
+        self.restoreState(QSettings().value("windowState"))
 
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""

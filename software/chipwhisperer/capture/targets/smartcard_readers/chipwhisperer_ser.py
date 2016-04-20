@@ -36,7 +36,7 @@ class ReaderChipWhispererSER(ReaderTemplate):
 
     def setupParameters(self):
         self.ser = SimpleSerial.SimpleSerial_ChipWhisperer(self)
-        self.setupChildParamsOrder([lambda: self.ser])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
 
         return [
                     {'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},

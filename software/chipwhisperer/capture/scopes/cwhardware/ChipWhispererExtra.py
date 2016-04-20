@@ -27,10 +27,9 @@
 
 import time
 from functools import partial
-
 import ChipWhispererGlitch
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
+import chipwhisperer.common.utils.pluginmanager
+from chipwhisperer.common.utils import Util, pluginmanager
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -44,25 +43,27 @@ ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 
-class ChipWhispererExtra(object):
-    paramListUpdated = Util.Signal()
 
-    def __init__(self, cwtype, scope):
+class ChipWhispererExtra(pluginmanager.Parameterized):
+    name = 'CW Extra'
+
+    def __init__(self, parentParam, cwtype, scope):
+        super(ChipWhispererExtra, self).__init__(parentParam)
         #self.cwADV = CWAdvTrigger()
 
         if cwtype == "cwrev2":
-            self.cwEXTRA = CWExtraSettings()
+            self.cwEXTRA = CWExtraSettings(self)
         elif cwtype == "cwlite":
-            self.cwEXTRA = CWExtraSettings(hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
+            self.cwEXTRA = CWExtraSettings(self, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
-
-        self.params = ConfigParameter.create_extended(self, name='CW Extra', type='group', children=self.cwEXTRA.param)
 
         self.enableGlitch = True
 
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope)
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope)
+
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.cwEXTRA), lambda: self.lazy(self.glitch)])
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)
@@ -70,13 +71,6 @@ class ChipWhispererExtra(object):
             self.glitch.setOpenADC(oa.sc)
         self.cwEXTRA.con(oa.sc)
         self.params.getAllParameters()
-
-    def paramList(self):
-        p = []
-        p.append(self.params)
-        if self.enableGlitch:
-            p.append(self.glitch.params)
-        return p
 
     def armPreScope(self):
         if self.enableGlitch:
@@ -93,7 +87,7 @@ class ChipWhispererExtra(object):
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
 
 
-class CWExtraSettings(object):
+class CWExtraSettings(pluginmanager.Parameterized):
     PIN_FPA = 0x01
     PIN_FPB = 0x02
     PIN_RTIO1 = 0x04
@@ -123,15 +117,28 @@ class CWExtraSettings(object):
     IOROUTE_GPIO = 0b01000000
     IOROUTE_GPIOE = 0b10000000
 
-    def __init__(self, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
-        super(CWExtraSettings, self).__init__()
-        self.oa = None
+    name = "CW Extra Settings"
 
-        self.name = "CW Extra Settings"
-        self.param = [{'name': 'CW Extra Settings', 'type': 'group', 'children': []}]
+    def __init__(self, parentParam, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
+        self.oa = None
+        self.hasFPAFPB = hasFPAFPB
+        self.hasGlitchOut = hasGlitchOut
+        self.hasPLL = hasPLL
+        super(CWExtraSettings, self).__init__(parentParam)
+
+        #Added July 6/2015, Release 0.11RC1
+        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
+        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
+        if self.hasFPAFPB==False and self.hasPLL==False:
+            self.forceclkin = True
+        else:
+            self.forceclkin = False
+
+    def setupParameters(self):
+        ret = []
         
         # Generate list of input pins present on the hardware
-        if hasFPAFPB:
+        if self.hasFPAFPB:
             tpins = [
                     {'name': 'Front Panel A', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
                     {'name': 'Front Panel B', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)}
@@ -147,46 +154,38 @@ class CWExtraSettings(object):
                     ])
 
         # Add trigger pins & modules
-        self.param[0]["children"].extend([
+        ret.extend([
                 {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
                 {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
                  'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule}])
 
-        
+
         # Generate list of clock sources present in the hardware
-        if hasFPAFPB:
-            self.param[0]["children"].append(
+        if self.hasFPAFPB:
+            ret.append(
                 {'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut})
             clksrc = {'Front Panel A':self.CLOCK_FPA, 'Front Panel B':self.CLOCK_FPB}
         else:
             clksrc = {}
 
-        if hasPLL:
+        if self.hasPLL:
             clksrc["PLL Input"] = self.CLOCK_PLL
 
         clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
         # clksrc["Fake"] = 0
-        
-        #Added July 6/2015, Release 0.11RC1
-        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
-        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
-        if hasFPAFPB==False and hasPLL==False:
-            self.forceclkin = True
-        else:
-            self.forceclkin = False
 
 
-        self.param[0]["children"].extend([
+        ret.extend([
                 {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
                 {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
                 ])
 
-        if hasGlitchOut:
-            self.param[0]["children"].extend([
+        if self.hasGlitchOut:
+            ret.extend([
                 {'name':'HS-Glitch Out Enable (High Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'A'), 'get':partial(self.targetGlitchOut, 'A')},
                 {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}])
 
-        self.param[0]["children"].extend([
+        ret.extend([
                 {'name':'Target IOn Pins', 'type':'group', 'children':[
                     {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
                                                                     'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
@@ -214,13 +213,13 @@ class CWExtraSettings(object):
                                            'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
                 ]},
         ])
-        
+
         #Catch for CW-Lite Specific Stuff
-        if hasFPAFPB==False and hasPLL==False:
-            self.param[0]["children"].extend([
-                {'name':'Target Power State', 'type':'bool', 'value':'True', 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
+        if self.hasFPAFPB==False and self.hasPLL==False:
+            ret.extend([
+                {'name':'Target Power State', 'type':'bool', 'value':True, 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
             ])
-        
+        return ret
 
     def con(self, oa):
         self.oa = oa
@@ -349,7 +348,6 @@ class CWExtraSettings(object):
 
         self.setPins(pincur, current[1])
 
-
     def getPin(self, pin):
         current = self.getPins()
         current = current[0] & pin
@@ -393,6 +391,7 @@ class CWExtraSettings(object):
         if enabled:
             resp[0] = resp[0] | 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
 
 class CWPLLDriver(object):
     def __init__(self):

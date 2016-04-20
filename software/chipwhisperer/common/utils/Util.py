@@ -36,8 +36,6 @@ try:
 except ImportError:
     DictType = dict
 
-def lazy(var):
-    return var
 
 def getRootDir():
     path = os.path.join(os.path.dirname(__file__), "../../../")
@@ -176,7 +174,7 @@ class Signal(object):
         for observer in self.observers:
             try:
                 observer(*arg)
-            except Exception, e:
+            except Exception as e:
                 etype, value, trace = sys.exc_info()
                 value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s." % \
                         (type(e).__name__, e, observer)

@@ -39,7 +39,7 @@ class VisaScopeInterface(ScopeTemplate):
         self.setCurrentScope(self.findParam('type').value(type))
 
     def setupParameters(self):
-        self.setupChildParamsOrder([lambda: self.scopetype])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
         for scope in scopes.itervalues():
             scope.dataUpdated.connect(self.passUpdated)

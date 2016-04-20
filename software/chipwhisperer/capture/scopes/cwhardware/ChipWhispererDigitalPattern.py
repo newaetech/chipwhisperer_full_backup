@@ -172,6 +172,7 @@ class CWAdvTrigger(object):
     def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
         return self.bitsToPattern(totalpat)
 
+
 class ChipWhispererDigitalPattern(object):
     """
     Communicates and drives with the Digital Pattern Match module inside the FPGA. 

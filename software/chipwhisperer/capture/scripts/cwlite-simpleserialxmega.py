@@ -61,11 +61,11 @@ class UserScript(pluginmanager.Plugin):
         self.api.connect()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
-                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
+        lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
                       ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
-                      ['CW Extra', 'CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
+                      ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
                       ['OpenADC', 'Trigger Setup', 'Offset', 1500],

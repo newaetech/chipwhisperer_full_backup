@@ -44,7 +44,7 @@ class CWCaptureGUI(CWMainGUI):
         self.addTraceDock("Capture Waveform (Channel 1)")
         self.restoreSettings()
 
-        self.api.guiActions(self)
+        self.api.setupGuiActions(self)
         # Observers (callback methods)
         self.api.signals.newInputData.connect(self.newTargetData)
         self.api.signals.connectStatus.connect(self.connectStatusChanged)
@@ -98,24 +98,6 @@ class CWCaptureGUI(CWMainGUI):
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsScopeDock, self.settingsTargetDock,
                           self.settingsTraceDock, self.settingsAuxDock])
-
-    def reloadScopeParamList(self):
-        # Remove all old scope actions that don't apply for new selection
-        if hasattr(self,"_scopeToolMenuItems"):
-            for act in self._scopeToolMenuItems:
-                self.toolMenu.removeAction(act)
-
-        self._scopeToolMenuItems = []
-        if self.api.getScope():
-
-            # Check for any tools to add too
-            if hasattr(self.api.getScope(), "guiActions"):
-                self._scopeToolMenuItems.append(self.toolMenu.addSeparator())
-                for act in self.api.getScope().guiActions(self):
-                    self._scopeToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
-
-        for act in self._scopeToolMenuItems:
-            self.toolMenu.addAction(act)
 
     def newScopeData(self, data=None, offset=0):
         self.waveformDock.widget().passTrace(data, offset)

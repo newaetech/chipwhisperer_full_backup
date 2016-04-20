@@ -26,11 +26,9 @@
 #=================================================
 
 import zipfile
-import os
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import Util, pluginmanager
 
 glitchaddr = 51
 glitchoffsetaddr = 25
@@ -45,7 +43,7 @@ def SIGNEXT(x, b):
     return (x ^ m) - m
 
 
-class ChipWhispererGlitch():
+class ChipWhispererGlitch(pluginmanager.Parameterized):
     """
     Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA module inserted into other systems.
     """
@@ -54,25 +52,10 @@ class ChipWhispererGlitch():
     CLKSOURCE1_BIT = 0b00000001
     CLKSOURCE_MASK = 0b00000011
 
-    paramListUpdated = Util.Signal()
+    name='Glitch Module'
 
-    def __init__(self, cwtype, scope):
-        paramSS = [
-                {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
-                {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
-                {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
-                {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
-                {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
-                {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
-                {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
-                {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'value':0, 'set':self.setTriggerOffset, 'get':self.triggerOffset},
-                {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
-                {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action':self.glitchManual},
-                {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
-                {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
-                {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
-                ]
-
+    def __init__(self, parentParam, cwtype, scope):
+        super(ChipWhispererGlitch, self).__init__(parentParam)
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
@@ -120,8 +103,6 @@ class ChipWhispererGlitch():
 
         # self.prEnabled = False
 
-        self.params = ConfigParameter.create_extended(self, name='Glitch Module', type='group', children=paramSS)
-
         if self.prEnabled:
             # Enable glitch width, check what we've got access to
             self.findParam('width').setReadonly(False)
@@ -132,6 +113,22 @@ class ChipWhispererGlitch():
             lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55)
             self.findParam('offset').setLimits(lim)
 
+    def setupParameters(self):
+        return [
+                {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
+                {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
+                {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
+                {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
+                {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
+                {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
+                {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
+                {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'value':0, 'set':self.setTriggerOffset, 'get':self.triggerOffset},
+                {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
+                {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action':self.glitchManual},
+                {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
+                {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
+                {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
+                ]
 
     def setOpenADC(self, oa):
         if self.prEnabled:
@@ -151,11 +148,6 @@ class ChipWhispererGlitch():
             self.params.getAllParameters()
         except TypeError:
             return
-
-    def paramList(self):
-        p = []
-        p.append(self.params)
-        return p
 
     def updatePartialReconfig(self, anything=None):
         """
@@ -367,4 +359,3 @@ class ChipWhispererGlitch():
         """Called after scope trigger is armed"""
         if self.findParam('ssarm').value() == 2:
             self.glitchArm()
-

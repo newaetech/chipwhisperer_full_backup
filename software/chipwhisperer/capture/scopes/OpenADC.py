@@ -29,6 +29,7 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as Ch
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
 import _qt as openadc_qt
+import chipwhisperer.common.utils.pluginmanager
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
@@ -54,9 +55,9 @@ class OpenADCInterface(ScopeTemplate):
         self.qtadc = openadc_qt.OpenADCQt()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
 
-        self.setupChildParamsOrder([lambda: Util.lazy(self.scopetype), lambda: Util.lazy(self.qtadc),
-                                    lambda: Util.lazy(self.advancedSettings), lambda: Util.lazy(self.advancedSAD),
-                                    lambda: Util.lazy(self.digitalPattern)])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
+                                lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
+                                lambda: self.lazy(self.digitalPattern)])
 
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
 
@@ -105,7 +106,7 @@ class OpenADCInterface(ScopeTemplate):
                     cwtype = "cwrev2"
 
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype)
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
                 Util.chipwhisperer_extra = self.advancedSettings
@@ -152,10 +153,3 @@ class OpenADCInterface(ScopeTemplate):
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
         return self.qtadc.capture(update, NumberPoints, waitingCallback)
-
-    def guiActions(self, mainWindow):
-        if self.scopetype and hasattr(self.scopetype, "guiActions"):
-            return self.scopetype.guiActions(mainWindow)
-        else:
-            return []
-

@@ -68,10 +68,3 @@ class ScopeTemplate(pluginmanager.Plugin):
 
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         pass
-
-    def guiActions(self, mainWindow):
-        return []
-
-    def validateSettings(self):
-        # return [("warn", "Scope Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
-        return []

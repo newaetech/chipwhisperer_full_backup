@@ -24,6 +24,8 @@
 #=================================================
 
 import time
+
+import chipwhisperer.common.utils.pluginmanager
 from _base import TargetTemplate
 from chipwhisperer.common.utils import Util
 from chipwhisperer.common.utils.Scan import scan
@@ -332,7 +334,7 @@ class SimpleSerial(TargetTemplate):
 
     def setupParameters(self):
         self.ser = None
-        self.setupChildParamsOrder([lambda: self.ser])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
         ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True, self)
 
         self.keylength = 16
@@ -365,12 +367,6 @@ class SimpleSerial(TargetTemplate):
         self.ser.connectStatus.connect(self.connectStatus.emit)
         self.paramListUpdated.emit()
         self.ser.selectionChanged()
-
-    def paramList(self):
-        p = [self.params]
-        if self.ser is not None:
-            for a in self.ser.paramList(): p.append(a)
-        return p
 
     def con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")

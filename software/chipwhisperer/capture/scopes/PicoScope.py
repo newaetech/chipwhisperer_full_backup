@@ -33,6 +33,8 @@ must install
 
 import collections
 import time
+
+import chipwhisperer.common.utils.pluginmanager
 from chipwhisperer.capture.scopes._base import ScopeTemplate
 from chipwhisperer.common.utils import Util, pluginmanager
 from picoscope import ps2000
@@ -154,7 +156,7 @@ class PicoScopeInterface(ScopeTemplate):
         self.setCurrentScope(self.findParam('type').value(type))
 
     def setupParameters(self):
-        self.setupChildParamsOrder([lambda: self.scopetype])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
                         "PS2000": ps2000.PS2000(connect=False)}
         # self.connectChildParamsSignals(scopes) #TODO: Fix

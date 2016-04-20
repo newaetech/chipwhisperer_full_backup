@@ -33,10 +33,10 @@ class Parameterized(object):
     name = "None"
 
     def __init__(self, parentParam = None):
-        self.paramListUpdated = Util.Signal()
+        self.paramListUpdated = Util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
+        self.__activeParams = [lambda: self.lazy(self)]
         if parentParam:
             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
-        self.__childParams = []
         self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=self.setupParameters())
 
     def setupParameters(self):
@@ -45,23 +45,48 @@ class Parameterized(object):
         return []
 
     def paramList(self):
-        ret = [self.params]
-        for e in self.__childParams:
-            if e():
-                ret.extend(e().paramList())
+        # Returns the current active parameters (including the child ones)
+        ret = []
+        for e in self.__activeParams:
+            currentParams = e()
+            if currentParams:
+                if currentParams == self:
+                    ret.append(currentParams.params)
+                else:
+                    ret.extend(currentParams.paramList())
         return ret
 
     def getName(self):
         return self.name
 
-    def setupChildParamsOrder(self, childParams):
+    def setupActiveParams(self, params):
         # Use this method to setup the order of the parameterized objects to be shown
-        self.__childParams = childParams
+        self.__activeParams = params
 
     def guiActions(self, mainWindow):
+        # Returns a list with all the gui actions in the active parameter tree.
+        ret = []
+        for e in self.__activeParams:
+            currentParams = e()
+            if currentParams:
+                if currentParams == self:
+                    ret.extend(currentParams.setupGuiActions(mainWindow))
+                else:
+                    ret.extend(currentParams.guiActions(mainWindow))
+        return ret
+
+    def setupGuiActions(self, mainWindow):
+        """You should overload this. Copy/Paste into your class."""
         # self.window = Window(mainWindow, parameters)
         # return [['Name of the menu item','Description', self.window.show],...]
         return []
+
+    @staticmethod
+    def lazy(var):
+        # Dummye method to cause late evaluation of the attributes when parameters are passed as argument
+        # Ex.: self.setupActiveParams([lambda: lazy(self)])
+        return var
+
 
 class Plugin(Parameterized):
     description = "Some description"

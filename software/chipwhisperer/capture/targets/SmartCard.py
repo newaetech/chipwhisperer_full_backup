@@ -22,10 +22,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import chipwhisperer.common.utils.pluginmanager
 from _smartcard_gui import SmartCardGUICard
 from _base import TargetTemplate
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
 class SmartCard(TargetTemplate):
@@ -36,16 +36,16 @@ class SmartCard(TargetTemplate):
         self.window = None
 
     def setupParameters(self):
-        self.setupChildParamsOrder([lambda: self.driver])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.driver)])
         readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False, self)
 
-        self.setupChildParamsOrder([lambda: self.protocol])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.protocol)])
         protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False, self)
 
         from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER
         return [    {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER.name], 'set':self.setConnection},
                     {'name':'SmartCard Protocol', 'type':'list', 'values':protocols , 'value':None, 'set':self.setProtocol},
-                    {'name':'SmartCard Explorer', 'type':'action', 'action':self.window.show}
+                    {'name':'SmartCard Explorer', 'type':'action', 'action':self.scgui.show}
                 ]
 
     def __del__(self):
@@ -108,6 +108,7 @@ class SmartCard(TargetTemplate):
     def checkEncryptionKey(self, key):
         return key
 
-    def guiActions(self, mainWindow):
-        self.window = SmartCardGUICard(mainWindow)
+    def setupGuiActions(self, mainWindow):
+        if not hasattr(self, 'scgui'):
+            self.scgui = SmartCardGUICard(mainWindow)
         return [['SmartCard Explorer','', self.scgui.show],]

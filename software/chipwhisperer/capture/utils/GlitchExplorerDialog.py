@@ -199,7 +199,6 @@ class GlitchExplorerDialog(QtFixes.QDialog):
             self._autosavef.close()
             self._autosavef = None
 
-
     def updateStatus(self):
         okcnt = 0
         for t in self.tableList:
