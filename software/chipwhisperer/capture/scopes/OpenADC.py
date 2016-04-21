@@ -31,7 +31,7 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhisper
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
 import chipwhisperer.capture.ui.qt as openadc_qt
 import chipwhisperer.capture.ui.CWCaptureGUI
-from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.capture.scopes.template import ScopeTemplate
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader
@@ -435,6 +435,7 @@ class OpenADCInterface_ZTEX():
         return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
                ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
 
+
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
     name = "ChipWhisperer/OpenADC"
@@ -447,6 +448,13 @@ class OpenADCInterface(ScopeTemplate):
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
 
+        # Bonus Modules for ChipWhisperer
+        self.advancedSettings = None
+        self.advancedSAD = None
+        self.digitalPattern = None
+        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
+
+    def setupParameters(self):
         scopes = Util.putInDict([OpenADCInterface_ZTEX, OpenADCInterface_FTDI,
                                 OpenADCInterface_Serial,OpenADCInterface_NAEUSBChip], True, self.qtadc)
 
@@ -454,25 +462,13 @@ class OpenADCInterface(ScopeTemplate):
             scope.paramListUpdated.connect(self.paramListUpdated.emit)
 
         defScope = scopes[OpenADCInterface_NAEUSBChip.name]
-        self.setCurrentScope(defScope, False)
 
-        if scopes == {}: # If no scopes could be found, add a dummy entry so the app can at least start up
-            scopes["None"] = None
-            print("OpenADC: No supported scope found!")
-
-        # Bonus Modules for ChipWhisperer
-        self.advancedSettings = None
-        self.advancedSAD = None
-        self.digitalPattern = None
-
-        scopeParams = [{'name':'Connection', 'type':'list', 'values':scopes, 'value':defScope, 'set':self.setCurrentScope},
+        ssParams = [{'name':'Connection', 'type':'list', 'values':scopes, 'value':defScope, 'set':self.setCurrentScope},
                        {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
                       ]
-
-        self.params = ConfigParameter.create_extended(self, name='OpenADC Interface', type='group', children=scopeParams)
         self.setCurrentScope(defScope)
-        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
-    
+        return ssParams
+
     def dcmTimeout(self):
         try:
             self.qtadc.sc.getStatus()

@@ -23,12 +23,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.utils.plugin import PluginTemplate
 
 
-class AcqKeyTextPattern_Base(object):
+class AcqKeyTextPattern_Base(PluginTemplate):
+    name = "Key/Text Pattern"
+
     def __init__(self, target=None):
-        self.params = ConfigParameter.create_extended(self, name='Key/Text Pattern', type='group', children=self.setupParams())
+        PluginTemplate.__init__(self)
         self._target = target
         self._initPattern()
 
@@ -48,12 +50,6 @@ class AcqKeyTextPattern_Base(object):
                 raise IOError("Key Length Wrong for Given Target, %d != %d" % (self._target.keyLen(), len(self.key)))
 
             self._key = self._target.checkEncryptionKey(self._key)
-
-    def setupParams(self):
-        return [{'name':'Do Something', 'type':'bool'},]
-
-    def paramList(self):
-        return [self.params]
 
     def _initPattern(self):
         """Perform any extra init stuff required. Called at the end of main init() & when target changed."""

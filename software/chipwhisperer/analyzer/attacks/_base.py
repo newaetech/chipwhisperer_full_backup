@@ -34,19 +34,18 @@ class AttackBaseClass(object):
     name = "None"
 
     def __init__(self):
-        #statsUpdated called new data is available
+        self.attackStarted = Util.Signal()
         self.statsUpdated = Util.Signal()
-
-        #attack done called once entire attack is complete, stats are available. Note that the
-        #statsUpdated() signal is not called even though new data is available, which avoids
-        #double-processing data
         self.attackDone = Util.Signal()
+        self._traceSource = None
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
         return inpkey
 
     def doAttack(self):
+        self.attackStarted.emit()
+        # Do the attack
         self.attackDone.emit()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
@@ -87,6 +86,27 @@ class AttackBaseClass(object):
             return self._pointRange[bnum]
         else:
             return self._pointRange
+
+    def setTraceSource(self, traceSource):
+        """Set the input trace source"""
+        self._traceSource = traceSource
+
+    def traceSource(self):
+        return self._traceSource
+
+    # def setProject(self, proj):
+    #     self._project = proj
+    #     self.projectChanged.emit(proj)
+    #
+    # def project(self):
+    #     return self._project
+
+    def knownKey(self):
+        """Get the known key via attack"""
+        try:
+            return self.processKnownKey(self.traceSource().getKnownKey(self.getTraceStart()))
+        except AttributeError as e:
+            print "WARNING: Failed to find KnownKey, error = %s" % str(e)
 
     def getName(self):
         return self.name

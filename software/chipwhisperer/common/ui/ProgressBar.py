@@ -113,8 +113,7 @@ try:
             QDialog.__init__(self, None)
 
             self.setModal(False)
-            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
-            # self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & (not Qt.WindowContextHelpButtonHint))
+            self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)
             self.resize(200,100)
 

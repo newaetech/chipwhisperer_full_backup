@@ -30,7 +30,6 @@ try:
     #Do not remove - this import is unused, but it affects other imports
     import chipwhisperer.common.ui.ParameterTypesCustom
     
-    
     #Default parameter - uses pyqtgraph to store
     class ConfigParameter(Parameter):
         @staticmethod

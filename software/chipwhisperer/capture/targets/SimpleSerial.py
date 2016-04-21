@@ -166,8 +166,8 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
                     {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
                                     'set':self.setParity, 'readonly':True},
                     ]
-        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self._regVer = 0
+        return ssParams
 
     def systemClk(self):
         return 30E6
@@ -261,9 +261,6 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
             data[1] = data[1] & ~(1 << 7)
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
 
-    def paramList(self):
-        return [self.params]
-
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         #if self.debugLog is not None:
         #    self.debugLog(lastTx, lastRx)
@@ -325,6 +322,7 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
     def con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
+        self.oa = scope.qtadc.ser
         scope.connectStatus.connect(self.dis())
         # Check first!
         self.checkVersion()
@@ -339,7 +337,6 @@ class SimpleSerial(TargetTemplate):
     name = "Simple Serial"
 
     def setupParameters(self):
-        
         ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
         defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
 
@@ -356,11 +353,11 @@ class SimpleSerial(TargetTemplate):
                     #                                                                 'DE:AD:BE:EF':':',
                     #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
                     ]
-        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.ser = None
         self.keylength = 16
         self.input = ""
         self.setConnection(self.findParam('con').value())
+        return ssParams
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -526,7 +523,7 @@ class SimpleSerial(TargetTemplate):
             newkey += bytearray([0]*(blen - len(kin)))
             return newkey
         elif len(kin) > blen:
-            print "note: Trunacating key..."
+            print "note: Truncating key..."
             return kin[0:blen]
 
         return kin

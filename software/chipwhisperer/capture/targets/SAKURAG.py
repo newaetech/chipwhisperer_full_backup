@@ -255,10 +255,10 @@ class SakuraG(TargetTemplate):
                     {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
                     {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
                    ]
-        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)    
         self.oa = None
         self.fixedStart = True
         self.hw = self.findParam('conn').value()
+        return ssParams
         
     def setConn(self, con):
         self.hw = con

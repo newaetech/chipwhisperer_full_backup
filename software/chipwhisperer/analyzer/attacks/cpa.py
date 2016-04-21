@@ -26,7 +26,7 @@
 #=================================================
 
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-from chipwhisperer.analyzer.attacks._base_class import AttackBaseClass
+from _base import AttackBaseClass
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from _generic_parameters import AttackGenericParameters
 from chipwhisperer.common.utils import Util
@@ -114,8 +114,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceSource", "userScript.ppOutput")
-        self.addFunction("init", "setProject", "userScript.project()")
+        self.addFunction("init", "setTraceSource", "UserScript.ppOutput")
+        # self.addFunction("init", "setProject", "UserScript.project()")
 
     def processKnownKey(self, inpkey):
         if inpkey is None:
@@ -127,9 +127,9 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             return inpkey
 
     def doAttack(self, progressBar):
+        self.attackStarted.emit()
         self.attack.setTargetBytes(self.targetBytes())
         self.attack.setReportingInterval(self.getReportingInterval())
-
         self.attack.getStatistics().clear()
         self.attack.setStatsReadyCallback(self.statsReady)
 
@@ -145,7 +145,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
     def statsReady(self):
         self.statsUpdated.emit()
-        # QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

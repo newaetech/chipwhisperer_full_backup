@@ -28,7 +28,6 @@ import time
 from functools import partial
 import os.path
 from TargetTemplate import TargetTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
@@ -112,8 +111,8 @@ class CW305(TargetTemplate):
                             {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
                             ]},
                     ]
-        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)  
         self.oa = None
+        return ssParams
 
     def fpga_write(self, addr, data):
         """ Write to specified address """
@@ -272,4 +271,3 @@ class CW305(TargetTemplate):
 
     def validateSettings(self):
         return []
-

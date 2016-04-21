@@ -842,7 +842,6 @@ class OpenADCInterface(object):
 
                print("%d errors in %d"%(totalerror, totalbytes))
 
-
     def sendMessage(self, mode, address, payload=None, Validate=True, maxResp=None, readMask=None):
         """Send a message out the serial port"""
 

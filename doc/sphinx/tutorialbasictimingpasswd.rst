@@ -222,6 +222,24 @@ via the API. This isn't normally exposed, but we can explore that using the Pyth
 2. Now we need to understand how to force this to be called. This can be done via the *Auxiliary Modules*, which we used
    in the previous part to toggle an IO line. Instead we will define one through the command prompt, before finally using
    it in a custom script.
+
+   At the console, type the following to import some require modules (ignore the >>> which just indicate the console prompt)::
+
+    >>> from time import sleep
+    >>> from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
+
+3. We will now define a simple
+   in the previous part to toggle an IO line. Instead we will define one through the command prompt, before finally using
+   it in a custom script.
+
+   At the console, type the following to import some require modules (ignore the >>> which just indicate the console prompt)::
+
+    >>> from time import sleep
+    >>> from chipwhisperer.capture.auxiliary.template import AuxiliaryTemplate
+
+3. We will now define a simple
+   in the previous part to toggle an IO line. Instead we will define one through the command prompt, before finally using
+   it in a custom script.
    
    At the console, type the following to import some require modules (ignore the >>> which just indicate the console prompt)::
    

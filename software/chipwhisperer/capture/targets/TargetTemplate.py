@@ -25,6 +25,8 @@
 
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils.plugin import PluginTemplate
+
 
 try:
     from Crypto.Cipher import AES
@@ -36,28 +38,18 @@ def getClass():
     return TargetTemplate
 
 
-class TargetTemplate(object):
-    name = "None"
-    params = None
+class TargetTemplate(PluginTemplate):
+    name = 'Target Connection'
 
     def __init__(self):
-        self.paramListUpdated = Util.Signal()
+        PluginTemplate.__init__(self)
         self.newInputData = Util.Signal()
         self.connectStatus = Util.Observable(False)
-        self.setupParameters()
 
-    def setupParameters(self):
-        """You should overload this. Copy/Paste into your class."""
-        ssParams = [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]        
-        self.params = ConfigParameter.create_extended(self, name='Smartcard Reader', type='group', children=ssParams)   
-                        
     def setSomething(self):
         """Here you would send value to the reader hardware"""
         pass
 
-    def paramList(self):
-        return [self.params]
-        
     def __del__(self):
         """Close system if needed"""
         self.close()
@@ -140,6 +132,3 @@ class TargetTemplate(object):
 
     def validateSettings(self):
         return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
-
-    def getName(self):
-        return self.name

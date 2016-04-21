@@ -80,6 +80,7 @@ class ColorDialog(QtFixes.QDialog):
     def getValues(self):
         return (self.colorInt, self.cbAuto.isChecked())
 
+
 class GraphWidget(QWidget):
     """
     This GraphWidget holds a pyqtgraph PlotWidget, and adds a toolbar for the user to control it.
@@ -87,8 +88,7 @@ class GraphWidget(QWidget):
     
     xRangeChanged = Signal(int, int)
     dataChanged = Signal(list, int)
-    
-    
+
     def __init__(self):
         QWidget.__init__(self)
         pg.setConfigOption('background', 'w')
@@ -319,4 +319,3 @@ class GraphWidget(QWidget):
 
         if yaxis:
             self.pw.setLabel('left', yaxis)
-

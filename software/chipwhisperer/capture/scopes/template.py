@@ -26,19 +26,20 @@
 #=================================================
 
 from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils.plugin import PluginTemplate
 
 
 def getClass():
     return ScopeTemplate
 
 
-class ScopeTemplate(object):
+class ScopeTemplate(PluginTemplate):
     name = "None"
 
     def __init__(self):
+        PluginTemplate.__init__(self)
         self.connectStatus = Util.Observable(False)
         self.dataUpdated = Util.Signal()
-        self.paramListUpdated = Util.Signal()
         self.datapoints = []
 
     def dcmTimeout(self):
@@ -73,16 +74,8 @@ class ScopeTemplate(object):
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         pass
 
-    def paramList(self):
-        return []
-
     def guiActions(self, mainWindow):
         return []
 
     def validateSettings(self):
         return [("warn", "Scope Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
-
-    def getName(self):
-        return self.name
-
-

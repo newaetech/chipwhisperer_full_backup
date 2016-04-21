@@ -26,7 +26,7 @@
 #=================================================
 
 import numpy as np
-from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from .._stats import DataTypeDiffs
 
 
 def getClass():
@@ -174,7 +174,7 @@ class CPASimpleLoop(object):
         pbcnt = 0
         for bnum in brange:
             (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.leakage, self.modelstate, pbcnt)
-            self.stats.updateSubkey(bnum, data)
+            self.stats.updateSubkey(bnum, data, tnum=tracerange[1])
             if progressBar:
                 progressBar.updateStatus(pbcnt, bnum)
 

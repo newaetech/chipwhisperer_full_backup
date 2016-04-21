@@ -97,8 +97,8 @@ class ChipWhispererSPI(TargetTemplate):
         self.hdev = HIDSPI()
         ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
                     ]
-        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.keylength = 16
+        return ssParams
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -107,10 +107,6 @@ class ChipWhispererSPI(TargetTemplate):
     def keyLen(self):
         """ Return key length in BYTES """
         return self.keylength
-
-    def paramList(self):
-        p = [self.params]
-        return p
 
     def con(self, scope = None):
         self.hdev.findCWSPI()

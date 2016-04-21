@@ -30,7 +30,7 @@ import time
 
 from visa import *
 
-from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
+from chipwhisperer.capture.scopes.template import ScopeTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.utils import Util
 
@@ -109,7 +109,9 @@ class VisaScope(object):
         self.dataUpdated.emit(self.datapoints, 0)
         pass
 
+
 class VisaScopeInterface_DSO1024A(VisaScope):
+    name = "Agilent DSO 1024A"
 
     # TODO: What scales & ranges are allowed on the DSO1024A?
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
@@ -206,6 +208,7 @@ class VisaScopeInterface_DSO1024A(VisaScope):
 
 
 class VisaScopeInterface_MSO54831D(VisaScope):
+    name = "Agilent MSO 54831D"
 
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,
@@ -325,42 +328,21 @@ class VisaScopeInterface(ScopeTemplate):
         super(VisaScopeInterface, self).__init__()
         self.scopetype = None
 
-        try:
-            mso54831d = VisaScopeInterface_MSO54831D()
-        except ImportError:
-            mso54831d = None
+    def setupParameters(self):
+        scopes = Util.putInDict([VisaScopeInterface_MSO54831D, VisaScopeInterface_DSO1024A], True)
 
-        try:
-            dso1024A = VisaScopeInterface_DSO1024A()
-        except ImportError:
-            dso1024A = None
+        for scope in scopes.itervalues():
+            scope.paramListUpdated.connect(self.paramListUpdated.emit)
+            scope.dataUpdated.connect(self.passUpdated)
 
-        self.setCurrentScope(mso54831d, False)
-        defscope = mso54831d
+        defScope = scopes[VisaScopeInterface_MSO54831D.name]
 
-        scope_cons = {}
-
-        if mso54831d:
-            mso54831d.paramListUpdated.connect(self.paramListUpdated)
-            mso54831d.dataUpdated.connect(self.passUpdated)
-            scope_cons["Agilent MSO 54831D"] = mso54831d
-
-        if dso1024A:
-            dso1024A.paramListUpdated.connect(self.paramListUpdated)
-            dso1024A.dataUpdated.connect(self.passUpdated)
-            scope_cons["Agilent DSO 1024A"] = dso1024A
-
-
-
-        self.advancedSettings = None
-
-        scopeParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
+        ssParams = [{'name':'Scope Type', 'type':'list', 'values':scopes, 'value':defScope, 'set':self.setCurrentScope},
                        {'name':'Connect String', 'key':'connStr', 'type':'str', 'value':''},
                        {'name':'Example Strings', 'type':'list', 'values':['', 'TCPIP0::192.168.2.100::inst0::INSTR'], 'value':'', 'set':self.exampleString},
                       ]
-
-        self.params = ConfigParameter.create_extended(self, name='VISA Scope Interface', type='group', children=scopeParams)
-        self.setCurrentScope(defscope)
+        self.setCurrentScope(defScope)
+        return ssParams
 
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
@@ -379,7 +361,6 @@ class VisaScopeInterface(ScopeTemplate):
         if self.scopetype is not None:
             self.scopetype.con(self.findParam('connStr').value())
             self.connectStatus.setValue(True)
-
 
     def dis(self):
         if self.scopetype is not None:
@@ -409,9 +390,6 @@ class VisaScopeInterface(ScopeTemplate):
 
         if self.scopetype is not None:
             for a in self.scopetype.paramList(): p.append(a)
-
-        #if self.advancedSettings is not None:
-        #    for a in self.advancedSettings.paramList(): p.append(a)
 
         return p
 

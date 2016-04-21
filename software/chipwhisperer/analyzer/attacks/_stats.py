@@ -114,8 +114,7 @@ class DataTypeDiffs(object):
                 #TODO: workaround for PGE, as NaN's get ranked first
                 numnans = np.isnan(self.maxes[i]['value']).sum()
 
-                self.maxes[i].sort(order='value')
-                self.maxes[i] = self.maxes[i][::-1]
+                self.maxes[i][::-1].sort(order='value') # sorts nunpy array in place and in reverse order
                 self.maxValid[i] = True
 
                 if useSingle:
