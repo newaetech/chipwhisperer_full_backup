@@ -29,6 +29,7 @@ import collections
 import shutil
 import sys
 import importlib
+import traceback
 
 try:
     # OrderedDict is new in 2.7
@@ -57,6 +58,8 @@ def importModulesInPackage(path):
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
             print "INFO: Could not import module: " + full_package_name + ": " + str(e)
+            # The following can be used with a breakpoint for debugging
+            tb = traceback.format_exc()
     return resp
 
 
@@ -82,6 +85,8 @@ def putInDict(items, instantiate, *args, **kwargs):
             resp[item.name] = item
         except Exception as e:
             print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
+            #The following can be used with a breakpoint for debugging
+            tb = traceback.format_exc()
 
     if len(resp) == 0:
         print "Warning: Dictionary contains zero modules"
