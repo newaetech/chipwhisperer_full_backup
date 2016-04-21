@@ -24,14 +24,16 @@
 #=================================================
 
 import time
+
 import serial
-from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
-import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
+
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
 import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
 import chipwhisperer.capture.utils.SmartCardGUI as SCGUI
+from chipwhisperer.capture.targets.TargetTemplate import TargetTemplate
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util, timer
 from chipwhisperer.common.utils import Scan
+from chipwhisperer.common.utils import Util, timer
 
 
 def getClass():
