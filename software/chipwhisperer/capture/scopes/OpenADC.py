@@ -71,7 +71,7 @@ def getClass():
 
 
 class OpenADCInterface_NAEUSBChip():
-    name = "ChipWhisperer Lite"
+    name = "ChipWhisperer-Lite"
     paramListUpdated = Util.Signal()
 
     def __init__(self, oadcInstance):
@@ -443,7 +443,6 @@ class OpenADCInterface(ScopeTemplate):
 
     def __init__(self):
         super(OpenADCInterface, self).__init__()
-        self.scopetype = None
 
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None

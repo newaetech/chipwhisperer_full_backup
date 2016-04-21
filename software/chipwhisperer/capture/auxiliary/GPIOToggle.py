@@ -39,6 +39,10 @@ def getClass():
 class GPIOToggle(AuxiliaryTemplate):
     name = 'GPIO Toggle'
 
+    def __init__(self):
+        super(GPIOToggle, self).__init__()
+        self.settingsChanged()
+
     def setupParameters(self):
         ssParams = [
                     {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
@@ -50,7 +54,6 @@ class GPIOToggle(AuxiliaryTemplate):
                     ]
         self.pin = None
         self.lastPin = None
-        self.settingsChanged()
         return ssParams
 
     def settingsChanged(self, ignored=None):

@@ -37,7 +37,7 @@ def getClass():
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     name = "CRI T-Test"
 
-    def setupParams(self):
+    def setupParameters(self):
         self._fixedPlain = False
         self._fixedKey = True
         basicParams = [

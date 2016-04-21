@@ -39,7 +39,7 @@ def getClass():
 
 
 class TargetTemplate(PluginTemplate):
-    name = 'Target Connection'
+    name = 'None'
 
     def __init__(self):
         PluginTemplate.__init__(self)

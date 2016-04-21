@@ -46,8 +46,8 @@ try:
                         {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
                         {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
                         ]
-            self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
             self.ser = None
+            return ssParams
     
         def paramList(self):
             return [self.params]
@@ -101,8 +101,8 @@ class SimpleSerial_ChipWhispererLite(TargetTemplate):
     def setupParameters(self):
         ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
 
-        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
         self.cwlite_usart = None
+        return ssParams
 
     def setBaud(self, baud):
         if self.cwlite_usart:
@@ -336,6 +336,10 @@ class SimpleSerial_ChipWhisperer(TargetTemplate):
 class SimpleSerial(TargetTemplate):
     name = "Simple Serial"
 
+    def __init__(self):
+        super(SimpleSerial, self).__init__()
+        self.setConnection(self.findParam('con').value())
+
     def setupParameters(self):
         ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
         defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
@@ -356,7 +360,6 @@ class SimpleSerial(TargetTemplate):
         self.ser = None
         self.keylength = 16
         self.input = ""
-        self.setConnection(self.findParam('con').value())
         return ssParams
 
     def setKeyLen(self, klen):
