@@ -443,9 +443,6 @@ class OpenADCInterface(ScopeTemplate):
 
     def __init__(self):
         super(OpenADCInterface, self).__init__()
-        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
-        self.qtadc.setupParameterTree(False)
-        self.qtadc.dataUpdated.connect(self.doDataUpdated)
         self.scopetype = None
 
         # Bonus Modules for ChipWhisperer
@@ -455,6 +452,10 @@ class OpenADCInterface(ScopeTemplate):
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
 
     def setupParameters(self):
+        self.qtadc = openadc_qt.OpenADCQt(includePreview=False,  setupLayout=False)
+        self.qtadc.setupParameterTree(False)
+        self.qtadc.dataUpdated.connect(self.doDataUpdated)
+
         scopes = Util.putInDict([OpenADCInterface_ZTEX, OpenADCInterface_FTDI,
                                 OpenADCInterface_Serial,OpenADCInterface_NAEUSBChip], True, self.qtadc)
 
