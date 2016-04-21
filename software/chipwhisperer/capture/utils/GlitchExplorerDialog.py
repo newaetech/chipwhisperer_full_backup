@@ -35,7 +35,6 @@ import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
-
 class TuningParameter(QObject):
 
     rangeComplete = Signal(int)
