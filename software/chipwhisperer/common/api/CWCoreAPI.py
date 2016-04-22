@@ -82,6 +82,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.reloadParams([self.getAuxList()[0]], self.auxParamTree)
         self.reloadParams([self.getAttack()], self.attackParamTree)
         self.paramListUpdated.connect(lambda: self.reloadParams([self], self.generalParamTree))
+        self.newProject()
 
     def setHelpWidget(self, widget):
         self.helpWidget = widget
@@ -172,7 +173,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
     def setAux(self, aux):
         self._auxList = [aux]
-        if self.getAuxList():
+        if self.getAuxList()[0]:
             self.getAuxList()[0].paramListUpdated.connect(lambda: self.reloadParams([self.getAuxList()[0]], self.auxParamTree))
         self.reloadParams([self.getAuxList()[0]], self.auxParamTree)
 

@@ -165,15 +165,6 @@ class TraceManager(object):
                 t.mappedRange = [startTrace, startTrace+tlen-1]
                 startTrace = startTrace + tlen
                 self._numPoints = max(self._numPoints, int(t.config.attr("numPoints")))
-                if t.traces is None:
-                    if t.config.configFilename() is not None:
-                        path = os.path.split(t.config.configFilename())[0]
-                        pref = t.config.attr("prefix")
-                    else:
-                        path = None
-                        pref = None
-                    t.directory = path
-                    t.prefix = pref
             else:
                 t.mappedRange = None
         self._numTraces = startTrace

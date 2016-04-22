@@ -58,11 +58,11 @@ class TraceContainerNative(TraceContainer):
     def loadAllTraces(self, directory=None, prefix=""):
         """Load all traces into memory"""
 
-        if directory is None:
-            directory = self.directory
-
-        if prefix is None:
-            prefix = self.prefix
+        if self.config.configFilename():
+            if directory is None:
+                directory = os.path.split(self.config.configFilename())[0]
+            if prefix is None:
+                prefix = self.config.attr("prefix")
 
         self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
         self.textins = np.load(directory + "/%stextin.npy" % prefix)

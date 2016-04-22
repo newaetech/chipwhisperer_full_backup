@@ -47,8 +47,6 @@ class TraceContainer(pluginmanager.Plugin):
         self.textouts = []
         self.keylist = []
         self.knownkey = None
-        self.directory = None
-        self.prefix = None
         self.dirty = False
         self.tracedtype = np.double  
         self.traces = None
