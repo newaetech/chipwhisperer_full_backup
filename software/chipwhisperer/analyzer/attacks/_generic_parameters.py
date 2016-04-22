@@ -41,8 +41,8 @@ def enforceLimits(value, limits):
 
 class AttackGenericParameters(AutoScript):
     def __init__(self):
-        super(AttackGenericParameters, self).__init__()
         self.maxSubKeys = 32
+        super(AttackGenericParameters, self).__init__()
         self.useAbs = True
 
         #TODO: Where to get this from?

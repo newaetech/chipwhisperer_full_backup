@@ -39,8 +39,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     name = "CPA"
 
     def __init__(self):
-        AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
+        AttackBaseClass.__init__(self)
         self.setAnalysisAlgorithm(self.findParam('CPA_algo').value(), None, None)
         self.updateBytesVisible()
         self.updateScript()
@@ -54,8 +54,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                         ]},
 
                    #TODO: Should be called from the AES module to figure out # of bytes
-                   {'name':'Attacked Bytes', 'type':'group', 'children':
-                     self.getByteList()
+                   {'name':'Attacked Bytes', 'type':'group', 'children': self.getByteList()
                     },
                 ]
 

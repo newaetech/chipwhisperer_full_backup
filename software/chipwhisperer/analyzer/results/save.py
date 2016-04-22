@@ -27,15 +27,15 @@
 import numpy as np
 import copy
 from datetime import datetime
-from _base import ResultsBase
+from chipwhisperer.common.outputwidgets._base import ResultsBase
 
 
 class ResultsSave(ResultsBase):
     """Save Correlation Output to Files"""
     name = "Save to Files"
 
-    def __init__(self):
-        super(ResultsSave, self).__init__()
+    def __init__(self, parentParam=None):
+        super(ResultsSave, self).__init__(parentParam)
         self._filename = None
         self._enabled = False
         self.dataarray = None

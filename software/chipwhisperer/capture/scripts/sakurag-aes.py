@@ -50,8 +50,8 @@ class UserScript(pluginmanager.Plugin):
     def run(self):
         #User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        self.api.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
-        self.api.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        self.api.setParameter(['FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
         self.api.setParameter(['Generic Settings', 'Target Module', 'SAKURA G'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
 

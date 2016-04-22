@@ -27,23 +27,19 @@
 
 import numpy as np
 from .._stats import DataTypeDiffs
+from chipwhisperer.common.utils import pluginmanager
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return CPASimpleLoop
-
-
-class CPASimpleLoop(object):
+class CPASimpleLoop(pluginmanager.Plugin):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
     This attack does not provide trace-by-trace statistics however, you can only gather results once
     all the traces have been run through the attack.
     """
-
     name = "Simple"
 
     def __init__(self, targetModel, leakageFunction):
+        pluginmanager.Plugin.__init__(self)
         self.model = targetModel
         self.leakage = leakageFunction
         self.stats = DataTypeDiffs()

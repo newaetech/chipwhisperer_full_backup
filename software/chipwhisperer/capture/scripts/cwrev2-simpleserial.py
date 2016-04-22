@@ -52,8 +52,8 @@ class UserScript(pluginmanager.Plugin):
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        self.api.setParameter(['OpenADC Interface', 'Connection', 'ChipWhisperer Rev2'])
-        self.api.setParameter(['Target Connection', 'Connection', 'ChipWhisperer'])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer Rev2'])
+        self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer'])
 
         #Load FW (must be configured in GUI first)
         # self.api.FWLoaderGo()
@@ -61,9 +61,9 @@ class UserScript(pluginmanager.Plugin):
         self.api.connect()
 
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
-                      ['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra', 'CW Extra Settings', 'Clock Source', 'Target IO-IN'],
+        lstexample = [['CW Extra Settings', 'Trigger Pins', 'Front Panel A', False],
+                      ['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra Settings', 'Clock Source', 'Target IO-IN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
                       ['OpenADC', 'Trigger Setup', 'Offset', 1500],

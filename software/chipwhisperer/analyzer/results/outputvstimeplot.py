@@ -32,11 +32,10 @@ class OutputVsTime(ResultsPlotData):
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
-
     name = "Output vs Point Plot"
 
-    def __init__(self, subkeys=16, permPerSubkey=256):
-        super(OutputVsTime, self).__init__()
+    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
+        super(OutputVsTime, self).__init__(parentParam)
 
         self.setLabels("Attack Output vs. Sample for Subkey Guesses", "Sample Number", "Attack Output")
         self.numKeys = subkeys

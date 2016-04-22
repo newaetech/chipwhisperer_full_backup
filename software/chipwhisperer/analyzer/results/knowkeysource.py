@@ -25,15 +25,15 @@
 #=================================================
 
 from chipwhisperer.common.utils import Util
-from _base import ResultsBase
+from chipwhisperer.common.outputwidgets._base import ResultsBase
 
 
 class KnowKeySource(ResultsBase):
     """Interface to main program, various routines for plotting output data"""
     name = "Knownkey Source"
 
-    def __init__(self):
-        super(KnowKeySource, self).__init__()
+    def __init__(self, parentParam=None):
+        super(KnowKeySource, self).__init__(parentParam)
         self._knowKey = []
 
     def setupParameters(self):

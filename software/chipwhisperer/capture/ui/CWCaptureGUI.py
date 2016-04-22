@@ -31,6 +31,7 @@ from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 
+
 class CWCaptureGUI(CWMainGUI):
     def __init__(self, cwapi):
         super(CWCaptureGUI, self).__init__(cwapi, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
@@ -41,10 +42,8 @@ class CWCaptureGUI(CWMainGUI):
         self.addToolbar()
         self.addToolMenu()
         self.addSettingsDocks()
-        self.addTraceDock("Capture Waveform (Channel 1)")
         self.restoreSettings()
 
-        self.api.setupGuiActions(self)
         # Observers (callback methods)
         self.api.signals.newInputData.connect(self.newTargetData)
         self.api.signals.connectStatus.connect(self.connectStatusChanged)
@@ -52,6 +51,17 @@ class CWCaptureGUI(CWMainGUI):
         self.api.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.api.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
         self.api.signals.newScopeData.connect(self.newScopeData)
+
+    def addSettingsDocks(self):
+        self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
+        self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
+        self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
+        self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
+        self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")
+        self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
+
+        self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
+                          self.settingsTraceDock, self.settingsAuxDock])
 
     def connectStatusChanged(self):
         """Callback when scope/target status change"""
@@ -89,18 +99,8 @@ class CWCaptureGUI(CWMainGUI):
         # Keep track of add-ins
         self._scopeToolMenuItems = []
 
-    def addSettingsDocks(self):
-        self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
-        self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
-        self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
-        self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")
-        self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
-
-        self.tabifyDocks([self.settingsGeneralDock, self.settingsScopeDock, self.settingsTargetDock,
-                          self.settingsTraceDock, self.settingsAuxDock])
-
     def newScopeData(self, data=None, offset=0):
-        self.waveformDock.widget().passTrace(data, offset)
+        self.api.getGraphWidget().passTrace(data, offset)
 
     def addToolbar(self):
         # Capture
@@ -202,7 +202,7 @@ class CWCaptureGUI(CWMainGUI):
         except Exception as e:
             ret.append(("warn", "General Settings", e.message, "Specify Trace Writer Module", "57a3924d-3794-4ca6-9693-46a7b5243727"))
 
-        tracesPerRun = int(self.api.numTraces / self.api.numSegments)
+        tracesPerRun = self.api.tracesPerSet()
         if tracesPerRun > 10E3:
             ret.append(("warn", "General Settings", "Very Long Capture (%d traces)" % tracesPerRun, "Set 'Capture Segments' to '%d'" % (self.numTraces / 10E3), "1432bf95-9026-4d8c-b15d-9e49147840eb"))
 

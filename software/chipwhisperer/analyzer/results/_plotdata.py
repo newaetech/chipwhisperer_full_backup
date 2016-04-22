@@ -27,7 +27,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from _base import ResultsWidgetBase
+from chipwhisperer.common.outputwidgets._base import ResultsWidgetBase
 from functools import partial
 import numpy as np
 
@@ -37,12 +37,11 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase):
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
-
     name = "Some Descriptive Name"
 
-    def __init__(self, subkeys=16, permPerSubkey=256):
+    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
         GraphWidget.__init__(self)
-        ResultsWidgetBase.__init__(self)
+        ResultsWidgetBase.__init__(self, parentParam)
 
         self.setObjectName(self.name)
         self.numKeys = subkeys

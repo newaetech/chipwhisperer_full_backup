@@ -34,8 +34,8 @@ class CorrelationVsTrace(ResultsPlotData):
     """
     name = 'Correlation vs Traces in Attack'
 
-    def __init__(self, subkeys=16, permPerSubkey=256):
-        ResultsPlotData.__init__(self)
+    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
+        ResultsPlotData.__init__(self, parentParam)
         self.setLabels(self.name, "Traces", self.name)
         self.numKeys = subkeys
         self.numPerms = permPerSubkey

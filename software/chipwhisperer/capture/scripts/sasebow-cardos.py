@@ -50,11 +50,11 @@ class UserScript(Plugin):
     def run(self):
         #User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        self.api.setParameter(['OpenADC Interface', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
-        self.api.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        self.api.setParameter(['FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Smart Card'])
-        self.api.setParameter(['Target Connection', 'Reader Hardware', 'ChipWhisperer-SCARD'])
-        self.api.setParameter(['Target Connection', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
+        self.api.setParameter(['Smart Card', 'Reader Hardware', 'ChipWhisperer-SCARD'])
+        self.api.setParameter(['Smart Card', 'SmartCard Protocol', 'SASEBO-W SmartCard OS'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
 
         self.api.connect()

@@ -26,15 +26,15 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from _base import ResultsWidgetBase
+from chipwhisperer.common.outputwidgets._base import ResultsWidgetBase
 
 
 class ResultsTable(QTableWidget, ResultsWidgetBase):
     """Table of results, showing all guesses based on sorting output of attack"""
     name = 'Results Table'
 
-    def __init__(self, subkeys=16, permPerSubkey=256, useAbs=True):
-        ResultsWidgetBase.__init__(self)
+    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256, useAbs=True):
+        ResultsWidgetBase.__init__(self, parentParam)
         QTableWidget.__init__(self, permPerSubkey+1, subkeys)
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)

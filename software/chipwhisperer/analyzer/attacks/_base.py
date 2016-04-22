@@ -34,10 +34,11 @@ class AttackBaseClass(pluginmanager.Plugin):
     name = "None"
 
     def __init__(self):
+        self._traceSource = None
+        super(AttackBaseClass, self).__init__()
         self.attackStarted = Util.Signal()
         self.statsUpdated = Util.Signal()
         self.attackDone = Util.Signal()
-        self._traceSource = None
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
@@ -93,13 +94,6 @@ class AttackBaseClass(pluginmanager.Plugin):
 
     def traceSource(self):
         return self._traceSource
-
-    # def setProject(self, proj):
-    #     self._project = proj
-    #     self.projectChanged.emit(proj)
-    #
-    # def project(self):
-    #     return self._project
 
     def knownKey(self):
         """Get the known key via attack"""

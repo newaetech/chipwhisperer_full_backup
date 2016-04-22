@@ -30,12 +30,7 @@ import math
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import Util
-
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return CPAProgressive
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
 class CPAProgressiveOneSubkey(object):
@@ -156,34 +151,30 @@ class CPAProgressiveOneSubkey(object):
         return (diffs, pbcnt)
 
 
-class CPAProgressive(AutoScript):
+class CPAProgressive(AutoScript, pluginmanager.Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     name = "Progressive"
-    paramListUpdated = Util.Signal()
 
     def __init__(self, targetModel, leakageFunction):
         super(CPAProgressive, self).__init__()
-
-        resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                         ]
-        self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
-
+        pluginmanager.Plugin.__init__(self)
         self.model = targetModel
         self.leakage = leakageFunction
         self.sr = None
-
         self.stats = DataTypeDiffs()
         self.updateScript()
+
+    def setupParameters(self):
+        return [
+                    {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+                    {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                ]
 
     def updateScript(self, ignored=None):
         # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
         pass
-
-    def paramList(self):
-        return [self.params]
 
     def setTargetBytes(self, brange):
         self.brange = brange

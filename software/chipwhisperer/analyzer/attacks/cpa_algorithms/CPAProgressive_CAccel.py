@@ -30,13 +30,9 @@ import os
 import platform
 from ctypes import *
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
-
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return CPAProgressive_CAccel
+from chipwhisperer.common.utils import pluginmanager
 
 
 class aesmodel_setup_t(Structure):
@@ -172,33 +168,29 @@ class CPAProgressiveOneSubkey(object):
         return (guessdata, pbcnt)
 
 
-class CPAProgressive_CAccel(AutoScript):
+class CPAProgressive_CAccel(AutoScript, pluginmanager.Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     name = "Progressive-C Accel"
-    # paramListUpdated = util.Signal(list)
 
     def __init__(self, targetModel, leakageFunction):
         super(CPAProgressive_CAccel, self).__init__()
-
-        resultsParams = [{'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                         ]
-        self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
-
+        pluginmanager.Plugin.__init__(self)
         self.model = targetModel
         self.leakage = leakageFunction
         self.sr = None
-
         self.stats = DataTypeDiffs()
         self.updateScript()
 
+    def setupParameters(self):
+        return [
+                    {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+                    {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                ]
+
     def updateScript(self, ignored=None):
         pass
-
-    def paramList(self):
-        return [self.params]
 
     def setTargetBytes(self, brange):
         self.brange = brange

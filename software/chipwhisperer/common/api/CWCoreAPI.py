@@ -63,29 +63,38 @@ class CWCoreAPI(pluginmanager.Parameterized):
         super(CWCoreAPI, self).__init__()
         self.signals = self.Signals()
         CWCoreAPI.instance = self
-        self._helpWidget = None
+        self.helpWidget = None
         self.generalParamTree = ParameterTree()
+        self.resultsParamTree = ParameterTree()
         self.scopeParamTree = ParameterTree()
         self.targetParamTree = ParameterTree()
         self.traceParamTree = ParameterTree()
         self.auxParamTree = ParameterTree()
         self.attackParamTree = ParameterTree()
-        self.paramTrees = [self.generalParamTree, self.scopeParamTree, self.targetParamTree,
+        self.paramTrees = [self.generalParamTree, self.resultsParamTree, self.scopeParamTree, self.targetParamTree,
                            self.traceParamTree, self.auxParamTree, self.attackParamTree]
         self.generalParamTree.setParameters(self.params, showTop=False)
-        self.reloadParams(self.getScope(), self.scopeParamTree)
-        self.reloadParams(self.getTarget(), self.targetParamTree)
-        self.reloadParams(self.getTraceFormat(), self.traceParamTree)
-        self.reloadParams(self.getAuxList()[0], self.auxParamTree)
-        self.reloadParams(self.getAttack(), self.attackParamTree)
-        self.paramListUpdated.connect(lambda: self.reloadParams(self, self.generalParamTree))
+        self.reloadParams([self, self._acqPattern], self.generalParamTree)
+        self.reloadParams([self.getScope()], self.scopeParamTree)
+        self.reloadParams([v for v in self.resultWidgets.itervalues()], self.resultsParamTree)
+        self.reloadParams([self.getTarget()], self.targetParamTree)
+        self.reloadParams([self.getTraceFormat()], self.traceParamTree)
+        self.reloadParams([self.getAuxList()[0]], self.auxParamTree)
+        self.reloadParams([self.getAttack()], self.attackParamTree)
+        self.paramListUpdated.connect(lambda: self.reloadParams([self], self.generalParamTree))
 
     def setHelpWidget(self, widget):
-        self._helpWidget = widget
+        self.helpWidget = widget
 
-    def reloadParams(self, parametrizedObj, paramTree):
-        activeParameters = parametrizedObj.paramList() if parametrizedObj else []
-        ExtendedParameter.reloadParams(activeParameters, paramTree, help_window=self._helpWidget)
+    def getGraphWidget(self):
+        return self.graphWidget
+
+    def reloadParams(self, parametrizedObjs, paramTree):
+        activeParameters = []
+        for obj in parametrizedObjs:
+            if obj:
+                activeParameters.extend(obj.paramList())
+        ExtendedParameter.reloadParams(activeParameters, paramTree, help_window=self.helpWidget)
         self.signals.guiActionsUpdated.emit()
 
     def allGuiActions(self, mainWindow):
@@ -107,36 +116,31 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self._auxList = [None]
         self._numTraces = 100
         self._numTraceSets = 1
-        self.results = []
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self._acqPattern)])
 
         valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
         valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
         valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
         valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
+        self.valid_attacks = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
+        self.resultWidgets = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
+        self.valid_preprocessingModules = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self)
+        self.graphWidget = self.resultWidgets['Trace Output Plot']
 
         return [
-                {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':None, 'set':self.setScope, 'get':self.getScope},
-                {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':"None", 'set':self.setTarget, 'get':self.getTarget},
-                {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.getTraceFormat(), 'set':self.setTraceFormat},
-                {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
-
-                # {'name':'Key Settings', 'type':'group', 'children':[
-                #        {'name':'Encryption Key', 'type':'str', 'value':self.textkey, 'set':self.setKey},
-                #        {'name':'Send Key to Target', 'type':'bool', 'value':True},
-                #        {'name':'New Encryption Key/Trace', 'key':'newKeyAlways', 'type':'bool', 'value':False},
-                #    ]},
-
-                {'name':'Acquisition Settings', 'type':'group', 'children':[
-                        {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
-                        {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
-                         'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
-                         'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
-                        {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
-                        {'name':'Open Monitor', 'type':'action', 'action':lambda: self.encryptionStatusMonitor.show()},
-                        {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.getAcqPattern, 'set':self.setAcqPattern},
-                    ]},
+                    {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':None, 'set':self.setScope, 'get':self.getScope},
+                    {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':"None", 'set':self.setTarget, 'get':self.getTarget},
+                    {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.getTraceFormat(), 'set':self.setTraceFormat},
+                    {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
+                    {'name':'Acquisition Settings', 'type':'group', 'children':[
+                            {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
+                            {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
+                             'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
+                             'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
+                            {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
+                            {'name':'Open Monitor', 'type':'action', 'action':lambda: self.encryptionStatusMonitor.show()},
+                            {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.getAcqPattern, 'set':self.setAcqPattern},
+                        ]},
                 ]
 
     def getScope(self):
@@ -146,10 +150,10 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getScope(): self.getScope().dis()
         self._scope = driver
         if self.getScope():
-            self.getScope().paramListUpdated.connect(lambda: self.reloadParams(self.getScope(), self.scopeParamTree))
+            self.getScope().paramListUpdated.connect(lambda: self.reloadParams([self.getScope()], self.scopeParamTree))
             self.getScope().dataUpdated.connect(self.signals.newScopeData.emit)
             self.getScope().connectStatus.connect(self.signals.connectStatus.emit)
-        self.reloadParams(self.getScope(), self.scopeParamTree)
+        self.reloadParams([self.getScope()], self.scopeParamTree)
 
     def getTarget(self):
         return self._target
@@ -158,20 +162,19 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getTarget(): self.getTarget().dis()
         self._target = driver
         if self.getTarget():
-            self.getTarget().paramListUpdated.connect(lambda: self.reloadParams(self.getTarget(), self.targetParamTree))
+            self.getTarget().paramListUpdated.connect(lambda: self.reloadParams([self.getTarget()], self.targetParamTree))
             self.getTarget().newInputData.connect(self.signals.newInputData.emit)
             self.getTarget().connectStatus.connect(self.signals.connectStatus.emit)
-        self.reloadParams(self.getTarget(), self.targetParamTree)
+        self.reloadParams([self.getTarget()], self.targetParamTree)
 
     def getAuxList(self):
         return self._auxList
 
     def setAux(self, aux):
-        if aux:
-            self._auxList = [aux]
-            if self.getAuxList():
-                self.getAuxList()[0].paramListUpdated.connect(lambda: self.reloadParams(self.getAuxList()[0], self.auxParamTree))
-            self.reloadParams(self.getAuxList()[0], self.auxParamTree)
+        self._auxList = [aux]
+        if self.getAuxList():
+            self.getAuxList()[0].paramListUpdated.connect(lambda: self.reloadParams([self.getAuxList()[0]], self.auxParamTree))
+        self.reloadParams([self.getAuxList()[0]], self.auxParamTree)
 
     def getAcqPattern(self):
         return self._acqPattern
@@ -186,8 +189,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
     def setTraceFormat(self, format):
         self._traceFormat = format
         if self.getTraceFormat():
-            self.getTraceFormat().paramListUpdated.connect(lambda: self.reloadParams(self.getTraceFormat(), self.traceParamTree))
-        self.reloadParams(self.getTraceFormat(), self.traceParamTree)
+            self.getTraceFormat().paramListUpdated.connect(lambda: self.reloadParams([self.getTraceFormat()], self.traceParamTree))
+        self.reloadParams([self.getTraceFormat()], self.traceParamTree)
 
     def getAttack(self):
         return self._attack
@@ -196,9 +199,9 @@ class CWCoreAPI(pluginmanager.Parameterized):
         """Set the attack module, reloading GUI and connecting appropriate signals"""
         self._attack = attack
         if self.getAttack():
-            self.getAttack().paramListUpdated.connect(lambda: self.reloadParams(self.getAttack(), self.attackParamTree))
+            self.getAttack().paramListUpdated.connect(lambda: self.reloadParams([self.getAttack()], self.attackParamTree))
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.reloadParams(self.getAttack(), self.attackParamTree)
+        self.reloadParams([self.getAttack()], self.attackParamTree)
 
     def project(self):
         return self._project
@@ -214,6 +217,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.project().addParamTree(self)
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
+        [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues()]
 
     def openProject(self, fname):
         self.newProject()
@@ -225,7 +229,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
     def connectScope(self):
         try:
-            self.getScope().con()
+            if self.getScope():
+                self.getScope().con()
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
@@ -233,7 +238,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
     def connectTarget(self):
         try:
-            self.getTarget().con(scope = self.getScope())
+            if self.getTarget():
+                self.getTarget().con(scope = self.getScope())
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
@@ -287,7 +293,6 @@ class CWCoreAPI(pluginmanager.Parameterized):
         """Captures multiple traces and saves it in the Trace Manager"""
         if not progressBar: progressBar = ProgressBarText()
 
-        writerlist = []
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
             progressBar.setMaximum(self._numTraces - 1)
@@ -334,12 +339,9 @@ class CWCoreAPI(pluginmanager.Parameterized):
                 tcnt += setSize
 
                 waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments to avoid memory realocation
-                writerlist.append(currentTrace)
 
                 if progressBar.wasAborted():
                     break
-
-        return writerlist
 
     def doAttack(self, mod, progressBar = None):
         """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
@@ -349,7 +351,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
             mod.initProject()
             mod.initPreprocessing()
             mod.initAnalysis()
-            mod.initReporting(self.results)
+            mod.initReporting(self.resultWidgets)
             mod.doAnalysis(progressBar)
             mod.doneAnalysis()
             mod.doneReporting()

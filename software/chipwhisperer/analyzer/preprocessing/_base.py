@@ -34,25 +34,25 @@ class PreprocessingBase(AutoScript, pluginmanager.Plugin):
     Base Class for all preprocessing modules
     Derivate Classes work like this:
         - setupParameters and updateScript are used by the GUI to create the parameters list and generate the API scripts
-          You need to pass the graphWidget reference in the constructor in order to allow access to it
         - the other methods are used by the API to apply the preprocessing filtering
           You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
     name = "None"
     description = ""
 
-    def __init__(self, parentParam, traceSource = None, graphWidget=None):
+    def __init__(self, parentParam=None, traceSource = None):
         AutoScript.__init__(self)
-        pluginmanager.Plugin.__init__(self, parentParam=parentParam)
-        self.graphWidget = graphWidget
         self.enabled = True
+        pluginmanager.Plugin.__init__(self, parentParam=parentParam)
         self.traceSource = traceSource
         self.updateScript()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
-        return [{'name':'Enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
-                {'name':'Description', 'type':'text', 'value':self.description, 'readonly':True}].extend(self._setupParameters())
+        ret = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled},
+                {'name':'Description', 'type':'text', 'value':self.description, 'readonly':True}]
+        ret.extend(self._setupParameters())
+        return ret
 
     def _setupParameters(self):
         # PUT YOUR CUSTOMIZED PARAMETERS HERE

@@ -73,6 +73,7 @@ class CodeEditor(QTextEdit):
     def assFuncAct(self):
         self.assignFunction.emit(self.textCursor().selectedText())
 
+
 class MainScriptEditor(QWidget):
     def __init__(self, parent, filename=None):
         super(MainScriptEditor, self).__init__(parent)

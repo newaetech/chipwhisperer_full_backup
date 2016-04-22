@@ -35,8 +35,8 @@ class PGEVsTrace(ResultsPlotData):
     """
     name = "PGE vs Trace Plot"
 
-    def __init__(self, subkeys=16, permPerSubkey=256):
-        super(PGEVsTrace, self).__init__()
+    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
+        super(PGEVsTrace, self).__init__(parentParam)
         self.setLabels("Partial Guessing Entropy vs. Traces", "Traces", "Partial Guessing Entropy")
         self.numKeys = subkeys
         self.numPerms = permPerSubkey

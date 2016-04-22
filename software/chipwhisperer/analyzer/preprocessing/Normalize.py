@@ -121,8 +121,11 @@ class Normalize(PreprocessingBase):
     name = "Normalize"
     description = "Normalizes by standard deviation"
 
-    def _setupParameters(self):
+    def init(self, parentParam=None, traceSource = None):
+        super(Normalize, self).init(parentParam, traceSource)
         self.updateNormClass(NormMean)
+
+    def _setupParameters(self):
         self.ptStart = 0
         self.ptEnd = 0
 

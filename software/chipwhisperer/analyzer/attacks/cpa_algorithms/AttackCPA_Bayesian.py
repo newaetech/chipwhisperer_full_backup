@@ -26,20 +26,17 @@
 #=================================================
 
 import numpy as np
+from chipwhisperer.common.utils import pluginmanager
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return AttackCPA_Bayesian
-
-
-class AttackCPA_Bayesian(object):
+class AttackCPA_Bayesian(pluginmanager.Plugin):
     """
     Bayesian CPA, as described in .
     """
     name = "Bayesian CPA"
 
     def __init__(self, model):
+        pluginmanager.Plugin.__init__(self)
         self.model = model
 
     def setByteList(self, brange):

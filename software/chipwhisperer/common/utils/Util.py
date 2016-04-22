@@ -42,23 +42,6 @@ def getRootDir():
     return os.path.normpath(path)
 
 
-def putInDict(items, instantiate, *args, **kwargs):
-    resp = DictType()
-    for c in items:
-        try:
-            if instantiate:
-                item = c(*args, **kwargs)
-            else:
-                item = c
-            resp[item.name] = item
-        except Exception as e:
-            print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
-
-    if len(resp) == 0:
-        print "Warning: Dictionary contains zero modules"
-    return resp
-
-
 def copyFile(source, destination, keepOriginals = True):
     if keepOriginals:
         shutil.copy2(source, destination)
@@ -222,7 +205,8 @@ class Observable(Signal):
 _uiupdateFunction = None
 
 def setUIupdateFunction(func):
-    _uiupdateFunction = func
+    global _uiupdateFunction
+    _uiupdateFunction= func
 
 def updateUI():
     if _uiupdateFunction:

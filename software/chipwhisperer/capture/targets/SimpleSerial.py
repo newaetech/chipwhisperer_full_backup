@@ -335,7 +335,7 @@ class SimpleSerial(TargetTemplate):
     def setupParameters(self):
         self.ser = None
         self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
-        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True, self)
+        ser_cons = chipwhisperer.common.utils.pluginmanager.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True, self)
 
         self.keylength = 16
         self.input = ""

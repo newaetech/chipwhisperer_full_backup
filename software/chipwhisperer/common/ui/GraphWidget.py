@@ -161,7 +161,7 @@ class GraphWidget(QWidget):
     def setDefaults(self):
         self.setPersistance(False)
         self.color = 0
-        self.acolor = 0
+        self.acolor = self.seedColor = 0
         self.autocolor = True
         self.defaultYRange = None
 
@@ -181,7 +181,7 @@ class GraphWidget(QWidget):
         if self.colorDialog.exec_():
             data = self.colorDialog.getValues()
             self.setColorInt(data[0], 9)
-            self.acolor = data[0]
+            self.acolor = self.seedColor = data[0]
             self.autocolor = data[1]
         
     def VBStateChanged(self, obj):
@@ -289,6 +289,7 @@ class GraphWidget(QWidget):
         """Clear display"""
         self.pw.clear()
         self.checkPersistantItems()
+        self.acolor = self.seedColor
 
     def addPersistantItem(self, item):
         self.persistantItems.append(item)

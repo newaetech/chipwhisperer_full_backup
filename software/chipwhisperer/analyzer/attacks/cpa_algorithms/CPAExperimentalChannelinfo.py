@@ -28,9 +28,10 @@
 import numpy as np
 from scipy.stats import norm
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
+from chipwhisperer.common.utils import pluginmanager
 
 try:
     import pyximport
@@ -38,11 +39,6 @@ try:
     import attacks.CPACython as CPACython
 except ImportError:
     CPACython = None
-
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return CPAExperimentalChannelinfo
 
 
 class CPAProgressiveOneSubkey(object):
@@ -291,29 +287,20 @@ class TemplateOneSubkey(object):
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(object):
-    """
-    CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
-    """
-    # paramListUpdated = util.Signal()
+class CPAExperimentalChannelinfo(pluginmanager.Plugin):
     name = "CPA Experimental Channel Info"
 
     def __init__(self, model):
-        resultsParams = [{'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
-                         {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                         {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                         ]
-        self.params = ConfigParameter.create_extended(self, name='Progressive CPA', type='group', children=resultsParams)
-
+        pluginmanager.Plugin.__init__(self)
         self.model = model
         self.sr = None
-
-        # print self._parent.parent
-
         self.stats = DataTypeDiffs()
 
-    def paramList(self):
-        return [self.params]
+    def setupParameters(self):
+        return [    {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
+                    {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+                    {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                ]
 
     def setByteList(self, brange):
         self.brange = brange

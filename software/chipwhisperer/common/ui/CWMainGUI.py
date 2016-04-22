@@ -21,24 +21,8 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-import chipwhisperer.common.utils.pluginmanager
 
 __author__ = "Colin O'Flynn"
-
-import os
-import sys, traceback
-from functools import partial
-from datetime import datetime
-from pyqtgraph.parametertree import Parameter, ParameterTree
-import chipwhisperer.common.ui.PythonConsole
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.ui.HelpWindow import HelpBrowser
-from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
-from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
-from chipwhisperer.common.utils import pluginmanager, Util
-import chipwhisperer.common.ui.qrc_resources
 
 #We always import PySide first, to force usage of PySide over PyQt
 try:
@@ -49,54 +33,26 @@ except ImportError:
     sys.exit()
 
 try:
-    import pyqtgraph as pg
+    import pyqtgraph
+    pyqtgraph.setConfigOption('background', 'w')
+    pyqtgraph.setConfigOption('foreground', 'k')
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
-
-class ProjectDiffWidget(QWidget):
-    """Widget that displays differences between versions of the project file"""
-
-    def __init__(self, parent=None, project=None):
-        super(ProjectDiffWidget, self).__init__(parent)
-        self._project = project
-
-        hlayout = QHBoxLayout()
-
-        self.changedTree = ParameterTree()
-        self.addedTree = ParameterTree()
-        self.deletedTree = ParameterTree()
-
-        self.updateParamTree(self.changedTree, [], "Changed Sections")
-        self.updateParamTree(self.addedTree, [], "Added Sections")
-        self.updateParamTree(self.deletedTree, [], "Removed Sections")
-
-        hlayout.addWidget(self.changedTree)
-        hlayout.addWidget(self.addedTree)
-        hlayout.addWidget(self.deletedTree)
-
-        self.setLayout(hlayout)
-        self.checkDiff()
-
-    def updateParamTree(self, paramTree, changelist, name):
-        paramlist = []
-        for k in changelist:
-            paramlist.append({'name':k})
-        params = Parameter.create(name=name, type='group', children=paramlist)
-        ExtendedParameter.reloadParams([params], paramTree)
-
-    def checkDiff(self, ignored=None, updateGUI=False):
-        """
-        Check if there is a difference - returns True if so, and False
-        if no changes present. Also updates widget with overview of the
-        differences if requested with updateGUI
-        """
-        added, removed, changed = self._project.checkDiff()
-        if updateGUI:
-            self.updateParamTree(self.changedTree, changed, "Changed Sections")
-            self.updateParamTree(self.addedTree, added, "Added Sections (not on disk)")
-            self.updateParamTree(self.deletedTree, removed, "Removed Sections (on disk)")
+import os
+import sys, traceback
+from functools import partial
+from datetime import datetime
+from PythonConsole import QPythonConsole
+from projectdiffwidget import ProjectDiffWidget
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.ui.HelpWindow import HelpBrowser
+from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
+from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
+from chipwhisperer.common.utils import pluginmanager, Util
+import chipwhisperer.common.ui.qrc_resources
 
 
 class SaveProjectDialog(QDialog):
@@ -148,26 +104,6 @@ class SaveProjectDialog(QDialog):
         dialog.exec_()
         return dialog.value()
 
-
-# class ModuleListDialog(QDialog):
-#     def __init__(self, lmFunc):
-#         super(ModuleListDialog, self).__init__()
-#         self.setWindowTitle("Enabled Modules")
-#
-#         modules = lmFunc()
-#
-#         table = QTableWidget(len(modules), 3, self)
-#         table.setHorizontalHeaderLabels(["Module", "Enabled", "Details"])
-#
-#         for indx,itm in enumerate(modules):
-#             table.setItem(indx, 0, QTableWidgetItem(itm[0]))
-#             table.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
-#             table.setItem(indx, 2, QTableWidgetItem(itm[2]))
-#
-#         layout = QVBoxLayout()
-#         layout.addWidget(table)
-#         self.setLayout(layout)
-
 class OutLog:
     def __init__(self, edit, out=None, color=None, origStdout=None):
         """(edit, out=None, color=None) -> can write stdout, stderr to a
@@ -200,36 +136,32 @@ class OutLog:
         if self.origStdout:
             self.origStdout.write(m)
 
-class CWMainGUI(QMainWindow):
+
+class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
     """
     This is the base GUI class, used for both the Analyzer and Capture software. It defines a number of
-    useful features such as the ability to add docks, setting windows, consoles for logging errors, etc. 
-    You can run a demo which shows the basic features, which would look like this:
-    
-    .. image:: /images/mainchip-demo.png
-       
+    useful features such as the ability to add docks, setting windows, consoles for logging errors, etc.
     """
     MaxRecentFiles = 4
 
     def __init__(self, api, name="Demo", icon="cwicon"):
-        super(CWMainGUI, self).__init__()
-        self.api = api
-        Util.setUIupdateFunction(QCoreApplication.processEvents)
-        self.api.setHelpWidget(HelpBrowser(self).showHelp)
+        QMainWindow.__init__(self)
+        pluginmanager.Parameterized.__init__(self)
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
+        Util.setUIupdateFunction(QCoreApplication.processEvents)
+        self.api = api
+        self.api.setHelpWidget(HelpBrowser(self).showHelp)
+
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
-        self.lastMenuActionSection = None
-        self.originalStdout = None
         self.initUI(icon)
         self.setCentralWidget(None)
         self.setDockNestingEnabled(True)
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
         self.api.signals.newProject.connect(self.projectChanged)
         self.api.signals.guiActionsUpdated.connect(self.reloadGuiActions)
         self.api.newProject()
+        self.addResultDocks()
         CWMainGUI.instance = self
 
     def projectChanged(self):
@@ -273,19 +205,22 @@ class CWMainGUI(QMainWindow):
             self.tabifyDockWidget(docks[index-1], docks[index])
         docks[0].raise_()
 
-    def addTraceDock(self, name):
-        """Add a new GraphWidget in a dock, you can get the GW with .widget()"""
-        self.waveformDock = self.addDock(GraphWidget(), name=name, area=Qt.TopDockWidgetArea)
-        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()
-        return self.waveformDock
-        
+    def getTraceSource(self):
+        raise self.api.project().traceManager()
+
+    def addResultDocks(self):
+        self.windowMenu.addSeparator()
+        self.resultDocks = []
+        for v in self.api.resultWidgets.itervalues():
+            if v.getWidget():
+                self.resultDocks.append(self.addDock(v.getWidget(), name=v.name, area=Qt.TopDockWidgetArea))
+        self.tabifyDocks(self.resultDocks)
+
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
         if redirectStdOut:
-            if self.originalStdout is None:
-                self.originalStdout = sys.stdout
+            self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
             sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0), origStdout=self.originalStdout)
 
@@ -399,6 +334,10 @@ class CWMainGUI(QMainWindow):
                                          ''
                                          )
 
+    def pluginDialog(self):
+        self.dialog = pluginmanager.PluginStatusDialog(self)
+        self.dialog.show()
+
     def createMenus(self):
         """Create all menus (File, Window, etc)"""
         self.fileMenu= self.menuBar().addMenu("&File")
@@ -428,6 +367,7 @@ class CWMainGUI(QMainWindow):
         # self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
         self.helpMenu.addAction(QAction('&Clear All Settings', self, statusTip='Restore All Settings to Default Values', triggered=self.clearAllSettings))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
+        self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog))
 
     def initUI(self, icon="cwicon"):
@@ -609,6 +549,15 @@ class CWMainGUI(QMainWindow):
         dialog.setTextFormat(Qt.RichText) # this is what makes the links clickable
         dialog.setDetailedText(details)
         dialog.exec_()
+
+    def tracesChanged(self):
+        """Traces changed due to loading new project or adjustment in trace manager,
+        so adjust limits displayed and re-plot the new input trace"""
+
+        self.api.getAttack().setTraceLimits(traces, points)
+        self.setTraceLimits(self.api.project().traceManager().numTraces(), self.api.project().traceManager().numPoints())
+        self.plotInputTrace()
+        self.reloadScripts()
 
     @staticmethod
     def getInstance():

@@ -24,6 +24,7 @@
 
 import inspect
 import importlib
+import traceback
 import Util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import os.path
@@ -63,6 +64,11 @@ class Parameterized(object):
         # Use this method to setup the order of the parameterized objects to be shown
         self.__activeParams = params
 
+    def addActiveParams(self, param):
+        # Use this method to setup the order of the parameterized objects to be shown
+
+        self.__activeParams.append(param)
+
     def guiActions(self, mainWindow):
         # Returns a list with all the gui actions in the active parameter tree.
         ret = []
@@ -88,17 +94,49 @@ class Parameterized(object):
         return var
 
 
+loadedItems = []
+
+
 class Plugin(Parameterized):
     description = "Some description"
 
     def getDescription(self):
         return self.description
 
+try:
+    from PySide.QtCore import *
+    from PySide.QtGui import *
+
+    class PluginStatusDialog(QTableWidget):
+        def __init__(self, parent=None):
+            super(PluginStatusDialog, self).__init__(len(loadedItems), 4, parent=parent)
+            self.setWindowFlags(Qt.Window)
+            self.setWindowTitle("Plugin Status")
+            self.setHorizontalHeaderLabels(["Module", "Enabled", "Error Message", "Details (full stack)"])
+
+            for indx, itm in enumerate(loadedItems):
+                self.setItem(indx, 0, QTableWidgetItem(itm[0]))
+                self.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
+                self.setItem(indx, 2, QTableWidgetItem(itm[2]))
+                self.setItem(indx, 3, QTableWidgetItem(itm[3]))
+            for y in range(0, len(loadedItems)):
+                for x in (0,1,2,3):
+                    self.item(y, x).setFlags(self.item(y, x).flags() ^ Qt.ItemIsEditable)
+
+            self.resize(950, 400)
+            self.horizontalHeader().setStretchLastSection(True)
+            self.resizeColumnsToContents()
+            self.resizeRowsToContents()
+            self.show()
+            self.raise_()
+
+except ImportError:
+    pass
 
 def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
     modules = importModulesInPackage(path)
     classes = getPluginClassesFromModules(modules)
-    items = Util.putInDict(classes, instantiate, *args, **kwargs)
+    items = putInDict(classes, instantiate, *args, **kwargs)
     if addNone:
         items["None"] = None
     return module_reorder(items)
@@ -112,6 +150,7 @@ def importModulesInPackage(path):
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
             print "INFO: Could not import module: " + full_package_name + ": " + str(e)
+            loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
     return resp
 
 
@@ -122,11 +161,26 @@ def getPluginClassesFromModules(modules):
         for clsName, clsMember in clsmembers:
             if issubclass(clsMember, Plugin) and (not clsName.startswith('_')):
                 resp.append(clsMember)
-            else:
-                pass
-                # print "INFO: Module " + module.__name__ + " has no top level method called getClass(). Ignoring it..."
     return resp
 
+
+def putInDict(items, instantiate, *args, **kwargs):
+    resp = Util.DictType()
+    for c in items:
+        try:
+            if instantiate:
+                item = c(*args, **kwargs)
+            else:
+                item = c
+            resp[item.name] = item
+            loadedItems.append([str(c), True, "", ""])
+        except Exception as e:
+            print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
+            loadedItems.append([str(c), False, str(e), traceback.format_exc()])
+
+    if len(resp) == 0:
+        print "Warning: Dictionary contains zero modules"
+    return resp
 
 def module_reorder(resp):
     #None is first, then alphabetical
