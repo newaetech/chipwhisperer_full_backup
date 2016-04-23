@@ -52,6 +52,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
             self.newScopeData = Util.Signal()
             self.connectStatus = Util.Signal()
             self.acqPatternChanged = Util.Signal()
+            self.attackChanged = Util.Signal()
             self.newInputData = Util.Signal()
             self.newTextResponse = Util.Signal()
             self.traceDone = Util.Signal()
@@ -203,6 +204,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
             self.getAttack().paramListUpdated.connect(lambda: self.reloadParams([self.getAttack()], self.attackParamTree))
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
         self.reloadParams([self.getAttack()], self.attackParamTree)
+        self.signals.attackChanged.emit()
 
     def project(self):
         return self._project

@@ -55,7 +55,7 @@ from chipwhisperer.common.utils import pluginmanager, Util
 import chipwhisperer.common.ui.qrc_resources
 
 
-class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
+class CWMainGUI(QMainWindow):
     """
     This is the base GUI class, used for both the Analyzer and Capture software. It defines a number of
     useful features such as the ability to add docks, setting windows, consoles for logging errors, etc.
@@ -64,7 +64,6 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
 
     def __init__(self, api, name="Demo", icon="cwicon"):
         QMainWindow.__init__(self)
-        pluginmanager.Parameterized.__init__(self)
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
         Util.setUIupdateFunction(QCoreApplication.processEvents)
@@ -74,13 +73,18 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
         self.setDockNestingEnabled(True)
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
+        self.loadExtraModules()
         self.initUI(icon)
         self.addResultDocks()
+        self.restoreSettings()
 
         self.projectChanged()
         self.api.signals.newProject.connect(self.projectChanged)
         self.api.signals.guiActionsUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
+
+    def loadExtraModules(self):
+        pass
 
     def projectChanged(self):
         self.traceManagerDialog.setTraceManager(self.api.project().traceManager())
@@ -263,6 +267,8 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
         self.projectMenu.addAction(self.showProjFileAct)
             
         self.toolMenu = self.menuBar().addMenu("&Tools")
+        self.addToolMenuItems()
+        self.toolMenu.addSeparator()
 
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
@@ -272,6 +278,9 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog))
 
+    def addToolMenuItems(self):
+        pass
+
     def initUI(self, icon="cwicon"):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
@@ -280,6 +289,12 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
         self.createMenus()
         self.updateRecentFileActions()
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
+        self.addSettingsDocks()
+
+        self.toolbar = self.addToolBar('Tools')
+        self.toolbar.setObjectName('Tools')
+        self.addToolbarItems(self.toolbar)
+        self.toolbar.show()
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
@@ -288,7 +303,10 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
         self.setBaseSize(800,600)
-        
+
+    def addToolbarItems(self, toolbar):
+        pass
+
     def addExampleScripts(self, scripts):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
         self.projectMenu.addSeparator()
@@ -449,15 +467,6 @@ class CWMainGUI(QMainWindow, pluginmanager.Parameterized):
         dialog.setTextFormat(Qt.RichText) # this is what makes the links clickable
         dialog.setDetailedText(details)
         dialog.exec_()
-
-    def tracesChanged(self):
-        """Traces changed due to loading new project or adjustment in trace manager,
-        so adjust limits displayed and re-plot the new input trace"""
-
-        self.api.getAttack().setTraceLimits(traces, points)
-        self.setTraceLimits(self.api.project().traceManager().numTraces(), self.api.project().traceManager().numPoints())
-        self.plotInputTrace()
-        self.reloadScripts()
 
     @staticmethod
     def getInstance():

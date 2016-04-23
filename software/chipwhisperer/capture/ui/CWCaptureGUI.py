@@ -33,16 +33,8 @@ from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialo
 
 
 class CWCaptureGUI(CWMainGUI):
-    def __init__(self, cwapi):
-        super(CWCaptureGUI, self).__init__(cwapi, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
-
-        self.serialTerminal = SerialTerminalDialog(self, self.api)
-        self.glitchMonitor = GlitchExplorerDialog(self)
-
-        self.addToolbar()
-        self.addToolMenu()
-        self.addSettingsDocks()
-        self.restoreSettings()
+    def __init__(self, api):
+        super(CWCaptureGUI, self).__init__(api, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
         # Observers (callback methods)
         self.api.signals.newInputData.connect(self.newTargetData)
@@ -51,6 +43,10 @@ class CWCaptureGUI(CWMainGUI):
         self.api.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
         self.api.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
         self.api.signals.newScopeData.connect(self.newScopeData)
+
+    def loadExtraModules(self):
+        self.serialTerminal = SerialTerminalDialog(self, self.api)
+        self.glitchMonitor = GlitchExplorerDialog(self)
 
     def addSettingsDocks(self):
         self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
@@ -85,24 +81,19 @@ class CWCaptureGUI(CWMainGUI):
     def newTargetData(self, data):
         self.glitchMonitor.addResponse(data)
 
-    def addToolMenu(self):
-        self.TerminalAct = QAction('Open Terminal', self,
-                                   statusTip='Open Simple Serial Terminal',
+    def addToolMenuItems(self):
+        self.terminalAct = QAction('Open Terminal', self, statusTip='Open Simple Serial Terminal',
                                    triggered=self.serialTerminal.show)
 
-        self.toolMenu.addAction(self.TerminalAct)
-        self.GlitchMonitorAct = QAction('Open Glitch Monitor', self,
-                                     statusTip='Open Glitch Monitor Table',
-                                     triggered=self.glitchMonitor.show)
-        self.toolMenu.addAction(self.GlitchMonitorAct)
-
-        # Keep track of add-ins
-        self._scopeToolMenuItems = []
+        self.toolMenu.addAction(self.terminalAct)
+        self.glitchMonitorAct = QAction('Open Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
+                                        triggered=self.glitchMonitor.show)
+        self.toolMenu.addAction(self.glitchMonitorAct)
 
     def newScopeData(self, data=None, offset=0):
         self.api.getGraphWidget().passTrace(data, offset)
 
-    def addToolbar(self):
+    def addToolbarItems(self, toolbar):
         # Capture
         self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
         self.capture1Act.triggered.connect(lambda: self.doCapture(self.capture1))
@@ -136,20 +127,17 @@ class CWCaptureGUI(CWMainGUI):
         self.miscValidateAction = QAction(QIcon(':/images/validate.png'), 'Validate', self)
         self.miscValidateAction.triggered.connect(self.validateSettings)
 
-        self.toolBar = self.addToolBar('Tools')
-        self.toolBar.setObjectName('Tools')
-        self.toolBar.addAction(self.capture1Act)
-        self.toolBar.addAction(self.captureMAct)
-        self.toolBar.addSeparator()
-        self.toolBar.addWidget(QLabel('Master:'))
-        self.toolBar.addWidget(self.captureStatus)
-        self.toolBar.addWidget(QLabel('Scope:'))
-        self.toolBar.addWidget(self.scopeStatus)
-        self.toolBar.addWidget(QLabel('Target:'))
-        self.toolBar.addWidget(self.targetStatus)
-        self.toolBar.addSeparator()
-        self.toolBar.addAction(self.miscValidateAction)
-        self.toolBar.show()
+        toolbar.addAction(self.capture1Act)
+        toolbar.addAction(self.captureMAct)
+        toolbar.addSeparator()
+        toolbar.addWidget(QLabel('Master:'))
+        toolbar.addWidget(self.captureStatus)
+        toolbar.addWidget(QLabel('Scope:'))
+        toolbar.addWidget(self.scopeStatus)
+        toolbar.addWidget(QLabel('Target:'))
+        toolbar.addWidget(self.targetStatus)
+        toolbar.addSeparator()
+        toolbar.addAction(self.miscValidateAction)
 
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:

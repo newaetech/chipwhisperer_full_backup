@@ -1,4 +1,5 @@
-import datetime
+from datetime import *
+from PySide.QtCore import *
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from functools import partial
@@ -14,10 +15,10 @@ class AttackScriptGen(pluginmanager.Parameterized):
         super(AttackScriptGen, self).__init__(parentParam)
 
     def setupParameters(self):
+        self.scriptParamTree = ParameterTree()
         self.preprocessingParamTree = ParameterTree()
         self.attackParamTree = ParameterTree()
         self.postprocessingParamTree = ParameterTree()
-        self.resultsParamTree = ParameterTree()
 
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self.cwGUI)})
@@ -33,10 +34,10 @@ class AttackScriptGen(pluginmanager.Parameterized):
                         ]},
 
                     {'name':'Pre-Processing', 'type':'group', 'children':
-                        [{'name':'Module #%d' % step, 'type':'list', 'values':self.cwGUI.api.valid_preprocessingModules, 'value':self.cwGUI.api.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
+                        [{'name':'Module #%d' % step, 'type':'list', 'values':self.preprocessingListGUI, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
 
                     {'name':'Attack', 'type':'group', 'children':[
-                        {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_atacks, 'value':self.cwGUI.api.valid_atacks["CPA"]},
+                        {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_attacks, 'value':self.cwGUI.api.valid_attacks["CPA"]},
                         ]},
 
                     {'name':'Post-Processing', 'type':'group'}
@@ -169,12 +170,13 @@ class AttackScriptGen(pluginmanager.Parameterized):
 
         # Get imports from api
         mse.append("# Imports from Capture", 0)
-        for i in self.api.getAttack().getImportStatements():
-            mse.append(i, 0)
+        if self.cwGUI.api.getAttack():
+            for i in self.cwGUI.api.getAttack().getImportStatements():
+                mse.append(i, 0)
 
         # Some other imports
         mse.append("# Imports from utilList", 0)
-        for index, util in enumerate(self.utilList):
+        for index, util in enumerate(self.cwGUI.utilList):
             if hasattr(util, '_smartstatements') and util.isVisible():
                 for i in util.getImportStatements(): mse.append(i, 0)
 
@@ -203,14 +205,17 @@ class AttackScriptGen(pluginmanager.Parameterized):
 
         # Get init from analysis
         mse.append("def initAnalysis(self):", 1)
-        mse.append('self.attack = %s()' % type(self.api.getAttack()).__name__)
-        for s in self.api.getAttack().getStatements('init'):
-            mse.append(s.replace("self.", "self.attack.").replace("UserScript.", "self."))
+        if self.cwGUI.api.getAttack():
+            mse.append('self.attack = %s()' % type(self.cwGUI.api.getAttack()).__name__)
+            for s in self.cwGUI.api.getAttack().getStatements('init'):
+                mse.append(s.replace("self.", "self.attack.").replace("UserScript.", "self."))
+        else:
+            mse.append('pass')
 
         # Get init from reporting
         mse.append("def initReporting(self, results):", 1)
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
-        [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.api.results.iteritems()]
+        [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.cwGUI.api.resultWidgets.iteritems()]
         mse.append("return")
 
         # Do the attack
@@ -218,16 +223,17 @@ class AttackScriptGen(pluginmanager.Parameterized):
         mse.append("self.attack.doAttack(progressBar)")
 
         # Get other commands from attack module
-        for k in self.api.getAttack()._smartstatements:
-            if k == 'init' or k == 'go' or k == 'done':
-                pass
-            else:
-                mse.append("def %s(self):" % k, 1)
-                for s in self.api.getAttack().getStatements(k):
-                    mse.append(s.replace("self.", "self.api.getAttack().").replace("UserScript.", "self."))
+        if self.cwGUI.api.getAttack():
+            for k in self.cwGUI.api.getAttack()._smartstatements:
+                if k == 'init' or k == 'go' or k == 'done':
+                    pass
+                else:
+                    mse.append("def %s(self):" % k, 1)
+                    for s in self.cwGUI.api.getAttack().getStatements(k):
+                        mse.append(s.replace("self.", "self.api.getAttack().").replace("UserScript.", "self."))
 
         # Get other commands from other utilities
-        for index, util in enumerate(self.utilList):
+        for index, util in enumerate(self.cwGUI.utilList):
             if hasattr(util, '_smartstatements') and util.isVisible():
                 for k in util._smartstatements:
                     util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
