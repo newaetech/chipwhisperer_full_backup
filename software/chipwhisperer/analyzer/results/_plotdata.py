@@ -27,7 +27,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.outputwidgets._base import ResultsWidgetBase
+from chipwhisperer.common.results._base import ResultsWidgetBase
 from functools import partial
 import numpy as np
 

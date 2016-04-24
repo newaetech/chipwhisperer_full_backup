@@ -289,7 +289,6 @@ class FilelistItem(WidgetParameterItem):
         if hasattr(self, 'widget'):
             self.treeWidgetChanged()
 
-
     def copyFile(self):
         if self.table.currentRow() < 0:
             QtGui.QMessageBox.warning(None, "Copy Selection", "No item selected")
@@ -500,6 +499,3 @@ class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
 registerParameterType('int', SpinBoxWithSet, override=True)
-
-
-

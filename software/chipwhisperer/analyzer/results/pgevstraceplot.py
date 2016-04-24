@@ -108,7 +108,7 @@ class PGEVsTrace(ResultsPlotData):
 
         stats = self.attack.getStatistics()
         pge = stats.pge_total
-        allpge = Util.OrderedDict()
+        allpge = Util.DictType()
 
         for i in pge:
             tnum = i['trace']

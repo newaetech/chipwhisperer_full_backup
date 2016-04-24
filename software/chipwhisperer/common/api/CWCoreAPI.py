@@ -34,9 +34,6 @@ from chipwhisperer.capture.api.AcquisitionController import AcquisitionControlle
 from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from PySide.QtGui import *
-from pyqtgraph.parametertree import ParameterTree
 
 
 class CWCoreAPI(pluginmanager.Parameterized):
@@ -58,46 +55,22 @@ class CWCoreAPI(pluginmanager.Parameterized):
             self.traceDone = Util.Signal()
             self.campaignStart = Util.Signal()
             self.campaignDone = Util.Signal()
-            self.guiActionsUpdated = Util.Signal()
 
     def __init__(self):
         super(CWCoreAPI, self).__init__()
         self.signals = self.Signals()
         CWCoreAPI.instance = self
-        self.helpWidget = None
-        self.generalParamTree = ParameterTree()
-        self.resultsParamTree = ParameterTree()
-        self.scopeParamTree = ParameterTree()
-        self.targetParamTree = ParameterTree()
-        self.traceParamTree = ParameterTree()
-        self.auxParamTree = ParameterTree()
-        self.attackParamTree = ParameterTree()
-        self.paramTrees = [self.generalParamTree, self.resultsParamTree, self.scopeParamTree, self.targetParamTree,
-                           self.traceParamTree, self.auxParamTree, self.attackParamTree]
-        self.generalParamTree.setParameters(self.params, showTop=False)
-        self.reloadParams([self, self._acqPattern], self.generalParamTree)
-        self.reloadParams([self.getScope()], self.scopeParamTree)
-        self.reloadParams([v for v in self.resultWidgets.itervalues()], self.resultsParamTree)
-        self.reloadParams([self.getTarget()], self.targetParamTree)
-        self.reloadParams([self.getTraceFormat()], self.traceParamTree)
-        self.reloadParams([self.getAuxList()[0]], self.auxParamTree)
-        self.reloadParams([self.getAttack()], self.attackParamTree)
-        self.paramListUpdated.connect(lambda: self.reloadParams([self], self.generalParamTree))
+        self.generalParamTree = pluginmanager.CWParameterTree("General Settings", [self, self._acqPattern])
+        self.resultsParamTree = pluginmanager.CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
+        self.scopeParamTree = pluginmanager.CWParameterTree("Scope Settings", [self.getScope()])
+        self.targetParamTree = pluginmanager.CWParameterTree("Target Settings", [self.getTarget()])
+        self.traceParamTree = pluginmanager.CWParameterTree("Trace Settings", [self.getTraceFormat()])
+        self.auxParamTree = pluginmanager.CWParameterTree("Aux Settings", self.getAuxList())
+        self.attackParamTree = pluginmanager.CWParameterTree("Attack Settings", [self.getAttack()])
         self.newProject()
-
-    def setHelpWidget(self, widget):
-        self.helpWidget = widget
 
     def getGraphWidget(self):
         return self.graphWidget
-
-    def reloadParams(self, parametrizedObjs, paramTree):
-        activeParameters = []
-        for obj in parametrizedObjs:
-            if obj:
-                activeParameters.extend(obj.paramList())
-        ExtendedParameter.reloadParams(activeParameters, paramTree, help_window=self.helpWidget)
-        self.signals.guiActionsUpdated.emit()
 
     def allGuiActions(self, mainWindow):
         ret = self.guiActions(mainWindow)
@@ -152,10 +125,9 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getScope(): self.getScope().dis()
         self._scope = driver
         if self.getScope():
-            self.getScope().paramListUpdated.connect(lambda: self.reloadParams([self.getScope()], self.scopeParamTree))
             self.getScope().dataUpdated.connect(self.signals.newScopeData.emit)
             self.getScope().connectStatus.connect(self.signals.connectStatus.emit)
-        self.reloadParams([self.getScope()], self.scopeParamTree)
+        self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):
         return self._target
@@ -164,19 +136,16 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getTarget(): self.getTarget().dis()
         self._target = driver
         if self.getTarget():
-            self.getTarget().paramListUpdated.connect(lambda: self.reloadParams([self.getTarget()], self.targetParamTree))
             self.getTarget().newInputData.connect(self.signals.newInputData.emit)
             self.getTarget().connectStatus.connect(self.signals.connectStatus.emit)
-        self.reloadParams([self.getTarget()], self.targetParamTree)
+        self.targetParamTree.replace([self.getTarget()])
 
     def getAuxList(self):
         return self._auxList
 
     def setAux(self, aux):
         self._auxList = [aux]
-        if self.getAuxList()[0]:
-            self.getAuxList()[0].paramListUpdated.connect(lambda: self.reloadParams([self.getAuxList()[0]], self.auxParamTree))
-        self.reloadParams([self.getAuxList()[0]], self.auxParamTree)
+        self.auxParamTree.replace([self.getAuxList()])
 
     def getAcqPattern(self):
         return self._acqPattern
@@ -190,9 +159,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
     def setTraceFormat(self, format):
         self._traceFormat = format
-        if self.getTraceFormat():
-            self.getTraceFormat().paramListUpdated.connect(lambda: self.reloadParams([self.getTraceFormat()], self.traceParamTree))
-        self.reloadParams([self.getTraceFormat()], self.traceParamTree)
+        self.traceParamTree.replace([self.getTraceFormat()])
 
     def getAttack(self):
         return self._attack
@@ -201,10 +168,10 @@ class CWCoreAPI(pluginmanager.Parameterized):
         """Set the attack module, reloading GUI and connecting appropriate signals"""
         self._attack = attack
         if self.getAttack():
-            self.getAttack().paramListUpdated.connect(lambda: self.reloadParams([self.getAttack()], self.attackParamTree))
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.reloadParams([self.getAttack()], self.attackParamTree)
+        self.attackParamTree.replace([self.getAttack()])
         self.signals.attackChanged.emit()
+        self.setupResultWidgets()
 
     def project(self):
         return self._project
@@ -220,7 +187,11 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.project().addParamTree(self)
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
+        self.setupResultWidgets()
+
+    def setupResultWidgets(self):
         [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues()]
+        [v.setObservedAttack(self.getAttack()) for v in self.resultWidgets.itervalues()]
 
     def openProject(self, fname):
         self.newProject()
@@ -392,7 +363,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         value = parameter[-1]
 
         try:
-            for t in self.paramTrees:
+            for t in pluginmanager.CWParameterTree.getAllParameterTrees().itervalues():
                 for i in range(0, t.invisibleRootItem().childCount()):
                     self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
 

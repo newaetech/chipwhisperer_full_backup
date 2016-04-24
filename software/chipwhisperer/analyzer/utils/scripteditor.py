@@ -36,7 +36,6 @@ from PySide.QtGui import *
 from chipwhisperer.analyzer.utils.syntaxhighlighter import PythonHighlighter
 
 class CodeEditor(QTextEdit):
-
     runFunction = Signal(str)
     assignFunction = Signal(str)
 

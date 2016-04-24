@@ -32,10 +32,9 @@ from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
-from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
+from chipwhisperer.common.utils import pluginmanager
 from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.api.attackscriptgen import AttackScriptGen
 
@@ -97,6 +96,11 @@ class CWAnalyzerGUI(CWMainGUI):
         self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParamTree, "Preprocessing")
         self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.attackScriptGen.postprocessingParamTree, "Postprocessing")
+
+        newResultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False)
+        self.api.resultWidgets.update(newResultWidgets)
+        self.api.resultsParamTree.extend([v for v in newResultWidgets.itervalues()])
+        self.api.setupResultWidgets()
         self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
 
         self.tabifyDocks([self.settingsScriptDock, self.settingsGeneralDock, self.settingsPreprocessingDock, self.settingsAttackDock,

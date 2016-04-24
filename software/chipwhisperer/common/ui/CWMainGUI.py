@@ -68,19 +68,21 @@ class CWMainGUI(QMainWindow):
         sys.excepthook = self.exceptionHandlerDialog
         Util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
-        self.api.setHelpWidget(HelpBrowser(self).showHelp)
+        pluginmanager.CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
         self.setCentralWidget(None)
         self.setDockNestingEnabled(True)
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
-        self.loadExtraModules()
         self.initUI(icon)
+        self.loadExtraModules()
+        self.addToolMenuItems()
+        self.addSettingsDocks()
         self.addResultDocks()
         self.restoreSettings()
 
         self.projectChanged()
         self.api.signals.newProject.connect(self.projectChanged)
-        self.api.signals.guiActionsUpdated.connect(self.reloadGuiActions)
+        pluginmanager.CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
 
     def loadExtraModules(self):
@@ -267,7 +269,6 @@ class CWMainGUI(QMainWindow):
         self.projectMenu.addAction(self.showProjFileAct)
             
         self.toolMenu = self.menuBar().addMenu("&Tools")
-        self.addToolMenuItems()
         self.toolMenu.addSeparator()
 
         self.windowMenu = self.menuBar().addMenu("&Windows")        
@@ -289,7 +290,6 @@ class CWMainGUI(QMainWindow):
         self.createMenus()
         self.updateRecentFileActions()
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
-        self.addSettingsDocks()
 
         self.toolbar = self.addToolBar('Tools')
         self.toolbar.setObjectName('Tools')

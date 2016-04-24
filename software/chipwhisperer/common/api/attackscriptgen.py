@@ -13,13 +13,12 @@ class AttackScriptGen(pluginmanager.Parameterized):
     def __init__(self, parentParam, cwGUI):
         self.cwGUI = cwGUI
         super(AttackScriptGen, self).__init__(parentParam)
+        self.scriptParamTree = pluginmanager.CWParameterTree("Script", [self])
+        self.preprocessingParamTree = pluginmanager.CWParameterTree("Preprocessing")
+        self.attackParamTree = pluginmanager.CWParameterTree("Attack")
+        self.postprocessingParamTree = pluginmanager.CWParameterTree("Postprocessing")
 
     def setupParameters(self):
-        self.scriptParamTree = ParameterTree()
-        self.preprocessingParamTree = ParameterTree()
-        self.attackParamTree = ParameterTree()
-        self.postprocessingParamTree = ParameterTree()
-
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self.cwGUI)})
         self.scriptList[0]['filename'] = self.scriptList[0]['widget'].filename
@@ -215,8 +214,8 @@ class AttackScriptGen(pluginmanager.Parameterized):
         # Get init from reporting
         mse.append("def initReporting(self, results):", 1)
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
-        [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.cwGUI.api.resultWidgets.iteritems()]
-        mse.append("return")
+        # [mse.append("results[\"%s\"].setObservedAttack(self.attack)" % k) for k, _ in self.cwGUI.api.resultWidgets.iteritems()]
+        mse.append("pass")
 
         # Do the attack
         mse.append("def doAnalysis(self, progressBar):", 1)

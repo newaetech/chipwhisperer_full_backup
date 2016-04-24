@@ -28,6 +28,50 @@ import traceback
 import Util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import os.path
+from pyqtgraph.parametertree import ParameterTree
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
+class CWParameterTree(ParameterTree):
+    _helpWidget = None
+    _allParameterTrees = Util.DictType()
+    paramTreeUpdated = Util.Signal()
+
+    def __init__(self, groupName="Defaul", parameterizedObjs=None):
+        super(CWParameterTree, self).__init__()
+        self.parameterizedObjs = []
+        self.extend(parameterizedObjs)
+        self._allParameterTrees[groupName] = self
+
+    def replace(self, newParameterizedObjs):
+        for parameterizedObj in self.parameterizedObjs:
+            if parameterizedObj:
+                    parameterizedObj.paramListUpdated.disconnect(self.reloadParams)
+        self.parameterizedObjs = []
+        self.extend(newParameterizedObjs)
+
+    def extend(self, parameterizedObjs):
+        if parameterizedObjs:
+            for parameterizedObj in parameterizedObjs:
+                if parameterizedObj:
+                        parameterizedObj.paramListUpdated.connect(self.reloadParams)
+                        self.parameterizedObjs.append(parameterizedObj)
+        self.reloadParams()
+
+    def reloadParams(self):
+        activeParameters = []
+        for parameterizedObj in self.parameterizedObjs:
+            if parameterizedObj:
+                activeParameters.extend(parameterizedObj.paramList())
+        ExtendedParameter.reloadParams(activeParameters, self, help_window=self._helpWidget)
+        self.paramTreeUpdated.emit()
+
+    @classmethod
+    def setHelpWidget(cls, widget):
+        cls._helpWidget = widget
+
+    @classmethod
+    def getAllParameterTrees(cls):
+        return cls._allParameterTrees
 
 
 class Parameterized(object):

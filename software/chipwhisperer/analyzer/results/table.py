@@ -26,7 +26,7 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.outputwidgets._base import ResultsWidgetBase
+from chipwhisperer.common.results._base import ResultsWidgetBase
 
 
 class ResultsTable(QTableWidget, ResultsWidgetBase):

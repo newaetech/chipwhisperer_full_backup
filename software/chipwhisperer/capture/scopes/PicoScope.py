@@ -31,10 +31,7 @@ picoscope library at https://github.com/colinoflynn/pico-python which you
 must install
 """
 
-import collections
 import time
-
-import chipwhisperer.common.utils.pluginmanager
 from chipwhisperer.capture.scopes._base import ScopeTemplate
 from chipwhisperer.common.utils import Util, pluginmanager
 from picoscope import ps2000
@@ -56,7 +53,7 @@ class PicoScope(pluginmanager.Parameterized): #TODO: ScopeBase instead?
                 chlist[t] = self.ps.CHANNELS[t]
 
         # Rebuild channel range as string + api value
-        chRange = collections.OrderedDict()
+        chRange = Util.DictType()
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 
