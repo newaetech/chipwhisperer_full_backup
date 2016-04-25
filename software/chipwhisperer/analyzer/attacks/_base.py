@@ -30,7 +30,6 @@ from chipwhisperer.common.utils import Util, pluginmanager
 
 class AttackBaseClass(pluginmanager.Plugin):
     """Generic Attack Interface"""
-
     name = "None"
 
     def __init__(self):

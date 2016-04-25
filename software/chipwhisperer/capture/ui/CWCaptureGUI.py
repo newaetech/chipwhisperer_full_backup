@@ -30,6 +30,7 @@ from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.common.utils import pluginmanager
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -45,6 +46,8 @@ class CWCaptureGUI(CWMainGUI):
         self.api.signals.newScopeData.connect(self.newScopeData)
 
     def loadExtraModules(self):
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
+
         self.serialTerminal = SerialTerminalDialog(self, self.api)
         self.glitchMonitor = GlitchExplorerDialog(self)
 

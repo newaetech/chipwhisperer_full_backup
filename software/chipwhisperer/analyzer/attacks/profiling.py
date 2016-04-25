@@ -83,12 +83,12 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        self.addFunction("init", "setSourceManager", "UserScript.ppOutput")
+        self.addFunction("init", "setTraceSource", "UserScript.traces")
         self.addFunction("init", "setProject", "UserScript.project()")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
-        self.attack.setTraceManager(self.traceSource())
+        self.attack.setTraceSource(self.traceSource())
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
 

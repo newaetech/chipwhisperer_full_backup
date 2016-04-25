@@ -48,15 +48,15 @@ class TemplateBasic(AutoScript):
     """
     scriptsUpdated = Util.Signal()
 
-    def __init__(self, tmanager=None):
+    def __init__(self):
         super(TemplateBasic, self).__init__()
-        self._tmanager = None
+        self._traceSource = None
 
-    def traceManager(self):
-        return self._tmanager
+    def traceSource(self):
+        return self._traceSource
 
-    def setTraceManager(self, tmanager):
-        self._tmanager = tmanager
+    def setTraceSource(self, trace):
+        self._traceSource = trace
 
     def setProject(self, proj):
         self._project = proj
@@ -88,9 +88,9 @@ class TemplateBasic(AutoScript):
             progressBar.setMaximum(tend - tstart + subkeys)
 
         for tnum in range(tstart, tend):
-            # partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
-            pnum = partMethod.getPartitionNum(self.traceManager(), tnum)
-            t = self.traceManager().getTrace(tnum)
+            # partData = self.traceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+            pnum = partMethod.getPartitionNum(self.traceSource(), tnum)
+            t = self.traceSource().getTrace(tnum)
             for bnum in range(0, subkeys):
                 templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
 
@@ -152,7 +152,7 @@ class ProfilingTemplate(AutoScript):
     def __init__(self, parent):
         AutoScript.__init__(self)
         self.parent = parent
-        self._tmanager = None
+        self._traceSource = None
         self._project = None
 
         resultsParams = [{'name':'Load Template', 'type':'group', 'children':[
@@ -179,7 +179,7 @@ class ProfilingTemplate(AutoScript):
 
     def setProfileAlgorithm(self, algo):
         self.profiling = algo()
-        self.profiling.setTraceManager(self._tmanager)
+        self.profiling.setTraceSource(self._traceSource)
         self.profiling.setProject(self._project)
         self.profiling.scriptsUpdated.connect(self.updateScript)
         self.updateScript()
@@ -229,11 +229,11 @@ class ProfilingTemplate(AutoScript):
     def setReportingInterval(self, intv):
         self._reportinginterval = intv
 
-    def traceManager(self):
-        return self._tmanager
+    def traceSource(self):
+        return self._traceSource
 
     def setTraceManager(self, tmanager):
-        self._tmanager = tmanager
+        self._traceSource = tmanager
         # Set for children
         self.profiling.setTraceManager(tmanager)
 

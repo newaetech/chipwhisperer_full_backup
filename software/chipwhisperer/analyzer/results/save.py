@@ -27,7 +27,7 @@
 import numpy as np
 import copy
 from datetime import datetime
-from chipwhisperer.common.results._base import ResultsWidgetBase
+from chipwhisperer.common.results._base import ResultsBase
 
 
 class ResultsSave(ResultsBase):

@@ -55,6 +55,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
             self.traceDone = Util.Signal()
             self.campaignStart = Util.Signal()
             self.campaignDone = Util.Signal()
+            self.tracesChanged = Util.Signal()
 
     def __init__(self):
         super(CWCoreAPI, self).__init__()
@@ -117,6 +118,15 @@ class CWCoreAPI(pluginmanager.Parameterized):
                             {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.getAcqPattern, 'set':self.setAcqPattern},
                         ]},
                 ]
+
+    def addResultWidgets(self, widgets):
+        self.resultWidgets.update(widgets)
+        self.resultsParamTree.extend([v for v in widgets.itervalues()])
+        self.setupResultWidgets()
+
+    def setupResultWidgets(self):
+        [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues()]
+        [v.setObservedAttack(self.getAttack()) for v in self.resultWidgets.itervalues()]
 
     def getScope(self):
         return self._scope
@@ -187,11 +197,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.project().addParamTree(self)
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
+        self.project().traceManager().tracesChanged.connect(self.signals.tracesChanged.emit)
         self.setupResultWidgets()
-
-    def setupResultWidgets(self):
-        [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues()]
-        [v.setObservedAttack(self.getAttack()) for v in self.resultWidgets.itervalues()]
 
     def openProject(self, fname):
         self.newProject()
@@ -322,10 +329,6 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if not progressBar: progressBar = ProgressBar()
 
         with progressBar:
-            mod.initProject()
-            mod.initPreprocessing()
-            mod.initAnalysis()
-            mod.initReporting(self.resultWidgets)
             mod.doAnalysis(progressBar)
             mod.doneAnalysis()
             mod.doneReporting()

@@ -253,7 +253,7 @@ class AttackGenericParameters(AutoScript):
         else:
             self.startPoint[bnum] = start
             self.endPoint[bnum] = end
-        self.paramListUpdated.emit(None)
+        self.paramListUpdated.emit()
 
     # def setAllPointsSame(self, val):
     #    self.allPointsSame = val

@@ -53,6 +53,7 @@ from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import pluginmanager, Util
 import chipwhisperer.common.ui.qrc_resources
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CWMainGUI(QMainWindow):
@@ -82,10 +83,14 @@ class CWMainGUI(QMainWindow):
 
         self.projectChanged()
         self.api.signals.newProject.connect(self.projectChanged)
+        self.api.signals.tracesChanged.connect(self.tracesChanged)
         pluginmanager.CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
 
     def loadExtraModules(self):
+        pass
+
+    def tracesChanged(self):
         pass
 
     def projectChanged(self):
@@ -289,8 +294,6 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
-
         self.toolbar = self.addToolBar('Tools')
         self.toolbar.setObjectName('Tools')
         self.addToolbarItems(self.toolbar)
@@ -444,7 +447,7 @@ class CWMainGUI(QMainWindow):
     def runScript(self, mod):
         self.updateStatusBar("Running Script: %s" % mod.name)
         m = mod(self.api)
-        m.run()
+        m.run(ProgressBar("Script in Progress", "Running:"))
         self.updateStatusBar("Finished Script: %s" % mod.name)
 
     def exceptionHandlerDialog(self, etype, value, trace):

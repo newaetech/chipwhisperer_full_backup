@@ -453,14 +453,14 @@ class TemplateCSI(object):
     Template using Multivariate Stats (mean + covariance matrix)
     """
     def __init__(self, tmanager=None):
-        self._tmanager = None
+        self._traceSource = None
         self.partObject = Partition(self)
 
-    def traceManager(self):
-        return self._tmanager
+    def traceSource(self):
+        return self._traceSource
 
-    def setTraceManager(self, tmanager):
-        self._tmanager = tmanager
+    def setTraceSource(self, trace):
+        self._traceSource = trace
 
     def setProject(self, proj):
         self._project = proj
@@ -487,13 +487,13 @@ class TemplateCSI(object):
         templateCovs = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
 
         for tnum in range(tstart, tend):
-            partData = self.traceManager().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+            partData = self.traceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
 
             for bnum in range(0, subkeys):
                 for i in range(0, numPartitions):
 
                     if tnum in partData[bnum][i]:
-                        trace = self.traceManager().getTrace(tnum)
+                        trace = self.traceSource().getTrace(tnum)
                         trace_fixed = np.dot(trace - trace.mean(), H[bnum]) + 4
                         templateTraces[bnum][i].append(trace_fixed)
 

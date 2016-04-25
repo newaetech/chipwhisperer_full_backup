@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils import Util, pluginmanager
 
 
 class PreprocessingBase(AutoScript, pluginmanager.Plugin):
@@ -46,6 +46,7 @@ class PreprocessingBase(AutoScript, pluginmanager.Plugin):
         pluginmanager.Plugin.__init__(self, parentParam=parentParam)
         self.traceSource = traceSource
         self.updateScript()
+        self.tracesChanged = Util.Signal()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
@@ -64,6 +65,7 @@ class PreprocessingBase(AutoScript, pluginmanager.Plugin):
     def setEnabled(self, enabled):
         """Turn on/off this preprocessing"""
         self.enabled = enabled
+        self.updateScript()
 
     def getTrace(self, n):
         """Get trace number n"""
@@ -104,3 +106,9 @@ class PreprocessingBase(AutoScript, pluginmanager.Plugin):
 
     def findMappedTrace(self, n):
         return self.traceSource.findMappedTrace(n)
+
+    def numTraces(self):
+        return self.traceSource.numTraces()
+
+    def numPoints(self):
+        return self.traceSource.numPoints()

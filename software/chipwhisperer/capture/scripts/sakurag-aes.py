@@ -36,16 +36,15 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.scripts._base import UserScriptBase
 
 
-class UserScript(pluginmanager.Plugin):
+class UserScript(UserScriptBase):
     name = "SAKURA-G: AES-128 FPGA Target"
     description = "SAKURA-G Loaded with ChipWhisperer"
 
     def __init__(self, api):
-        super(UserScript, self).__init__()
-        self.api = api
+        super(UserScript, self).__init__(api)
 
     def run(self):
         #User commands here

@@ -25,7 +25,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import Util
-from chipwhisperer.common.outputwidgets._base import ResultsBase
+from chipwhisperer.common.results._base import ResultsBase
 
 
 class KnowKeySource(ResultsBase):

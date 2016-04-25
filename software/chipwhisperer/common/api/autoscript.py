@@ -189,33 +189,3 @@ class AutoScript(object):
 
     def getStatements(self, key):
         return self._smartstatements[key].statements()
-
-
-class AutoScriptBase(object):
-
-    def __init__(self, project):
-        self._project = project
-
-    def initProject(self):
-        pass
-
-    def initPreprocessing(self):
-        pass
-
-    def initAnalysis(self):
-        pass
-
-    def initReporting(self):
-        pass
-
-    def doAnalysis(self):
-        pass
-
-    def doneAnalysis(self):
-        pass
-
-    def doneReporting(self):
-        pass
-
-    def project(self):
-        return self._project

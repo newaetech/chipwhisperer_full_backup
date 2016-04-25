@@ -85,7 +85,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         except:
             self.attackParams = None
 
-        self.paramListUpdated.emit(self.paramList())
+        self.paramListUpdated.emit()
 
         if hasattr(self.attack, 'scriptsUpdated'):
             self.attack.scriptsUpdated.connect(self.updateScript)
@@ -105,8 +105,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceSource", "UserScript.ppOutput")
-        # self.addFunction("init", "setProject", "UserScript.project()")
+        self.addFunction("init", "setTraceSource", "UserScript.traces")
 
     def processKnownKey(self, inpkey):
         if inpkey is None:

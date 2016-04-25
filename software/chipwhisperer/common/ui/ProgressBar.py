@@ -135,6 +135,7 @@ try:
             layout.addLayout(clayout)
             self.setLayout(layout)
             self.show()
+            self.raise_()
             QCoreApplication.processEvents()
 
         def setText(self, text):

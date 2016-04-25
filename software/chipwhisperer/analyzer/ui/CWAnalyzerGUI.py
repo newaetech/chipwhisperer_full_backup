@@ -26,17 +26,13 @@
 
 import sys
 #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-import chipwhisperer.common.ui.ParameterTypesCustom  # DO NOT REMOVE!!
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.common.utils import pluginmanager
-from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.common.api.attackscriptgen import AttackScriptGen
+from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
 
 
 class CWAnalyzerGUI(CWMainGUI):
@@ -46,22 +42,18 @@ class CWAnalyzerGUI(CWMainGUI):
 
     def __init__(self, api):
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
-        self.api.signals.attackChanged.connect(self.attackChanged)
         self.attackScriptGen.reloadScripts()
 
     def loadExtraModules(self):
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
+
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.attackScriptGen = AttackScriptGen(None, self)
 
         self.traceExplorerDialog = TraceExplorerDialog(self)
         self.traceExplorerDialog.scriptsUpdated.connect(self.attackScriptGen.reloadScripts)
         self.traceExplorerDialog.runScriptFunction.connect(self.attackScriptGen.runScriptFunction)
-        self.utilList = [self.traceExplorerDialog]
-
-    def attackChanged(self):
-        self.attackScriptGen.reloadScripts()
-        self.api.getAttack().scriptsUpdated.connect(self.attackScriptGen.reloadScripts)
-        self.api.getAttack().runScriptFunction.connect(self.attackScriptGen.runScriptFunction)
+        self.attackScriptGen.utilList = [self.traceExplorerDialog]
 
     def addToolbarItems(self, toolbar):
         attack = QAction(QIcon(':/images/attack.png'), 'Start Attack', self)
@@ -76,9 +68,6 @@ class CWAnalyzerGUI(CWMainGUI):
                                       triggered=self.keyScheduleDialog.show)
         self.toolMenu.addAction(self.aesScheduleAct)
 
-    def getTraceSource(self):
-        raise self.setupScriptModule().ppOutput
-
     def doAttack(self):
         """Called when the 'Do Attack' button is pressed"""
         if self.api.project().traceManager().numTraces() == 0:
@@ -87,38 +76,26 @@ class CWAnalyzerGUI(CWMainGUI):
                 self.traceManagerDialog.show()
             return
 
-        self.api.doAttack(self.attackScriptGen.setupScriptModule(), ProgressBar("Analysis in Progress", "Analyzing:"))
+        for p in pluginmanager.getPluginClassesFromModules([self.attackScriptGen.setupScriptModule()]):
+            self.runScript(p)
 
     def addSettingsDocks(self):
-        self.api.addActiveParams(self.attackScriptGen)
-        self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
         self.settingsScriptDock = self.addSettings(self.attackScriptGen.scriptParamTree, "Script")
         self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParamTree, "Preprocessing")
         self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.attackScriptGen.postprocessingParamTree, "Postprocessing")
-
-        newResultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False)
-        self.api.resultWidgets.update(newResultWidgets)
-        self.api.resultsParamTree.extend([v for v in newResultWidgets.itervalues()])
-        self.api.setupResultWidgets()
+        self.api.addResultWidgets(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False))
         self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
 
-        self.tabifyDocks([self.settingsScriptDock, self.settingsGeneralDock, self.settingsPreprocessingDock, self.settingsAttackDock,
+        self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
                           self.settingsPostProcessingDock, self.settingsResultsDock])
         self.attackScriptGen.editorDocks()
-
-    def setAttack(self, module):
-        self.api.setAttack(module)
-        self.api.getAttack().scriptsUpdated.connect(self.reloadScripts)
 
     def tracesChanged(self):
         """Traces changed due to loading new project or adjustment in trace manager,
         so adjust limits displayed and re-plot the new input trace"""
 
-        self.api.getAttack().setTraceLimits(traces, points)
-        self.setTraceLimits(self.api.project().traceManager().numTraces(), self.api.project().traceManager().numPoints())
-        self.plotInputTrace()
-        self.reloadScripts()
+        self.attackScriptGen.reloadScripts()
 
 def makeApplication():
     # Create the Qt Application
