@@ -229,8 +229,10 @@ class AttackScriptGen(pluginmanager.Parameterized):
         mse.append("def initReporting(self):", 1)
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
         if len(self.cwGUI.api.resultWidgets)>0:
-            for k, _ in self.cwGUI.api.resultWidgets.iteritems():
+            for k, v in self.cwGUI.api.resultWidgets.iteritems():
+                if hasattr(v,"setObservedTraceSource"):
                     mse.append("self.api.resultWidgets[\"%s\"].setObservedTraceSource(self.traces)" % k)
+                if hasattr(v,"setObservedAttack"):
                     mse.append("self.api.resultWidgets[\"%s\"].setObservedAttack(self.attack)" % k)
         else:
             mse.append("pass")

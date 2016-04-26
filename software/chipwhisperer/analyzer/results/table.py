@@ -26,16 +26,17 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.results._base import ResultsWidgetBase
+from chipwhisperer.common.results._base import ResultsWidgetBase, AttackObserver
 
 
-class ResultsTable(QTableWidget, ResultsWidgetBase):
+class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
     """Table of results, showing all guesses based on sorting output of attack"""
     name = 'Results Table'
 
     def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256, useAbs=True):
         ResultsWidgetBase.__init__(self, parentParam)
         QTableWidget.__init__(self, permPerSubkey+1, subkeys)
+        AttackObserver.__init__(self)
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)

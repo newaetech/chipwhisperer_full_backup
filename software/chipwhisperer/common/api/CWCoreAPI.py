@@ -26,7 +26,6 @@ import traceback
 import sys
 import copy
 
-import chipwhisperer.common.utils.pluginmanager
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import Util, pluginmanager
 from chipwhisperer.common.ui.ProgressBar import *
@@ -98,9 +97,9 @@ class CWCoreAPI(pluginmanager.Parameterized):
         valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
         valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
         valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
-        self.valid_attacks = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.resultWidgets = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
-        self.valid_preprocessingModules = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self)
+        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
+        self.resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
+        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self)
         self.graphWidget = self.resultWidgets['Trace Output Plot']
 
         return [
@@ -125,8 +124,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.setupResultWidgets()
 
     def setupResultWidgets(self):
-        [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues()]
-        [v.setObservedAttack(self.getAttack()) for v in self.resultWidgets.itervalues()]
+        [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v,"setObservedTraceSource")]
+        [v.setObservedAttack(self.getAttack()) for v in self.resultWidgets.itervalues()  if hasattr(v,"setObservedAttack")]
 
     def getScope(self):
         return self._scope

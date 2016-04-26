@@ -27,15 +27,17 @@
 import numpy as np
 import copy
 from datetime import datetime
-from chipwhisperer.common.results._base import ResultsBase
+from chipwhisperer.common.results._base import ResultsBase, AttackObserver
 
 
-class ResultsSave(ResultsBase):
+
+class ResultsSave(ResultsBase, AttackObserver):
     """Save Correlation Output to Files"""
     name = "Save to Files"
 
     def __init__(self, parentParam=None):
-        super(ResultsSave, self).__init__(parentParam)
+        ResultsBase.__init__(self, parentParam)
+        AttackObserver.__init__(self)
         self._filename = None
         self._enabled = False
         self.dataarray = None

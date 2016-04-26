@@ -24,10 +24,8 @@
 #=================================================
 
 import time
-
-import chipwhisperer.common.utils.pluginmanager
 from _base import TargetTemplate
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.Scan import scan
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 
@@ -335,7 +333,7 @@ class SimpleSerial(TargetTemplate):
     def setupParameters(self):
         self.ser = None
         self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
-        ser_cons = chipwhisperer.common.utils.pluginmanager.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True, self)
+        ser_cons = pluginmanager.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True, self)
 
         self.keylength = 16
         self.input = ""
