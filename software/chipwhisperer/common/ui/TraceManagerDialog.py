@@ -33,7 +33,7 @@ from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import ConfigParser
 import pstats, cProfile #For profiling support (not 100% needed)
-import chipwhisperer.common.traces.TraceContainerConfig
+import chipwhisperer.common.traces._cfgfile
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
@@ -48,7 +48,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         layout = QVBoxLayout()
 
         #Get labels in use
-        self.attrs = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig().attrHeaderValues()
+        self.attrs = chipwhisperer.common.traces._cfgfile.TraceContainerConfig().attrHeaderValues()
         attrHeaders = [i["header"] for i in self.attrs]
         attrHeaders.insert(0, "Options")
         attrHeaders.insert(1, "Mapped Range")

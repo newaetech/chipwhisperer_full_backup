@@ -27,7 +27,7 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #===========================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks._base import AttackBaseClass
@@ -45,21 +45,18 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
         # Do not use absolute
         self.useAbs = False
+        self.updateAlgorithm(self.findParam('Prof_algo').value())
+        self.updateBytesVisible()
+        self.setAbsoluteMode(False)
 
     def setupParameters(self):
         profalgos = {'Basic':ProfilingTemplate}
 
-        attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
+        return [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
 
                        #TODO: Should be called from the AES module to figure out # of bytes
                        {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
                       ]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
-
-        self.updateAlgorithm(self.findParam('Prof_algo').value())
-        self.updateBytesVisible()
-
-        self.setAbsoluteMode(False)
 
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo)
@@ -140,41 +137,43 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         # else:
         #    return inpkey
 
-    def doAttack(self, progressBar):
-        self.attackStarted.emit()
-        self.attack.setReportingInterval(self.getReportingInterval())
+    def doAttack(self):
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        with progressBar:
+            self.attackStarted.emit()
+            self.attack.setReportingInterval(self.getReportingInterval())
 
-        #TODO: support start/end point different per byte
-        (startingPoint, endingPoint) = self.getPointRange(None)
+            #TODO: support start/end point different per byte
+            (startingPoint, endingPoint) = self.getPointRange(None)
 
-        self.attack.getStatistics().clear()
+            self.attack.getStatistics().clear()
 
-        for itNum in range(1, self.getIterations() + 1):
-            startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-            endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
+            for itNum in range(1, self.getIterations() + 1):
+                startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
+                endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
 
-            data = []
-            textins = []
-            textouts = []
+                data = []
+                textins = []
+                textouts = []
 
-            for i in range(startingTrace, endingTrace):
-                d = self.traceSource().getTrace(i)
+                for i in range(startingTrace, endingTrace):
+                    d = self.traceSource().getTrace(i)
 
-                if d is None:
-                    continue
+                    if d is None:
+                        continue
 
-                d = d[startingPoint:endingPoint]
+                    d = d[startingPoint:endingPoint]
 
-                data.append(d)
-                textins.append(self.traceSource().getTextin(i))
-                textouts.append(self.traceSource().getTextout(i))
+                    data.append(d)
+                    textins.append(self.traceSource().getTextin(i))
+                    textouts.append(self.traceSource().getTextout(i))
 
-            #self.attack.clearStats()
-            self.attack.setByteList(self.bytesEnabled())
-            self.attack.setStatsReadyCallback(self.statsReady)
+                #self.attack.clearStats()
+                self.attack.setByteList(self.bytesEnabled())
+                self.attack.setStatsReadyCallback(self.statsReady)
 
-            #TODO:  pointRange=self.TraceRangeList[1:17]
-            self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
+                #TODO:  pointRange=self.TraceRangeList[1:17]
+                self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
 
         self.attackDone.emit()
 

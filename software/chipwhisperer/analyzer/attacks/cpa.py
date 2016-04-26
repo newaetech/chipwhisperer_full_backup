@@ -26,11 +26,10 @@
 #=================================================
 
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-import chipwhisperer.common.utils.pluginmanager
+from chipwhisperer.common.utils import pluginmanager
 from _base import AttackBaseClass
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from _generic_parameters import AttackGenericParameters
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CPA(AttackBaseClass, AttackGenericParameters):
@@ -46,7 +45,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def setupParameters(self):
-        algos = chipwhisperer.common.utils.pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False, self)
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False, self)
         return [    {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},
                     {'name':'Hardware Model', 'type':'group', 'children':[
                         {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
@@ -116,20 +115,22 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         else:
             return inpkey
 
-    def doAttack(self, progressBar):
-        self.attackStarted.emit()
-        self.attack.setTargetBytes(self.targetBytes())
-        self.attack.setReportingInterval(self.getReportingInterval())
-        self.attack.getStatistics().clear()
-        self.attack.setStatsReadyCallback(self.statsReady)
+    def doAttack(self):
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        with progressBar:
+            self.attackStarted.emit()
+            self.attack.setTargetBytes(self.targetBytes())
+            self.attack.setReportingInterval(self.getReportingInterval())
+            self.attack.getStatistics().clear()
+            self.attack.setStatsReadyCallback(self.statsReady)
 
-        for itNum in range(1, self.getIterations()+1):
-            startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-            endingTrace = startingTrace + self.getTraceNum() - 1
-            #TODO:  pointRange=self.TraceRangeList[1:17]
-            self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
-            if progressBar and progressBar.wasAborted():
-                return
+            for itNum in range(1, self.getIterations()+1):
+                startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
+                endingTrace = startingTrace + self.getTraceNum() - 1
+                #TODO:  pointRange=self.TraceRangeList[1:17]
+                self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
+                if progressBar and progressBar.wasAborted():
+                    return
 
         self.attackDone.emit()
 

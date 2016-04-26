@@ -29,7 +29,7 @@ from PySide.QtCore import *
 from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.traces.TraceContainerTypes
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
+from chipwhisperer.common.traces._cfgfile import TraceContainerConfig
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 try:

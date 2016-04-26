@@ -283,6 +283,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
+                self._traceFormat.clear()
                 currentTrace = copy.copy(self._traceFormat)
 
                 # Load trace writer information
@@ -324,14 +325,23 @@ class CWCoreAPI(pluginmanager.Parameterized):
                 if progressBar.wasAborted():
                     break
 
-    def doAttack(self, mod, progressBar = None):
-        """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
-        if not progressBar: progressBar = ProgressBar()
+    def runScriptModule(self, mod, funcName="run"):
+        try:
+            classes = pluginmanager.getPluginClassesFromModules([mod])
+            if len(classes) == 0:
+                raise Warning("No UserScriptBase class found")
+            for c in classes:
+                self.runScriptClass(c, funcName)
+        except Exception as e:
+            sys.excepthook(Warning, "Could not execute Script Module %s: %s" % (str(mod), e.message), "")
 
-        with progressBar:
-            mod.doAnalysis(progressBar)
-            mod.doneAnalysis()
-            mod.doneReporting()
+    def runScriptClass(self, scriptClass, funcName="run"):
+        try:
+            m = scriptClass(self)
+            if funcName is not None:
+                eval('m.%s()' % funcName)
+        except Exception as e:
+            sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), "")
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""

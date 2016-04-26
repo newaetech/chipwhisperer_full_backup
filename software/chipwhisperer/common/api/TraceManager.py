@@ -25,7 +25,7 @@
 import os.path
 import re
 from chipwhisperer.common.utils import Util
-import chipwhisperer.common.traces.TraceContainerConfig
+import chipwhisperer.common.traces._cfgfile
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import ConfigParser
 

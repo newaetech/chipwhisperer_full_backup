@@ -75,9 +75,9 @@ class CWAnalyzerGUI(CWMainGUI):
             if ret == QMessageBox.Yes:
                 self.traceManagerDialog.show()
             return
-
-        for p in pluginmanager.getPluginClassesFromModules([self.attackScriptGen.setupScriptModule()]):
-            self.runScript(p)
+        self.updateStatusBar("Executing analyzis...")
+        self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
+        self.updateStatusBar("Analysis completed")
 
     def addSettingsDocks(self):
         self.settingsScriptDock = self.addSettings(self.attackScriptGen.scriptParamTree, "Script")

@@ -25,7 +25,7 @@
 import copy
 import re
 import numpy as np
-import TraceContainerConfig
+import _cfgfile
 from chipwhisperer.common.utils import pluginmanager
 
 
@@ -42,18 +42,8 @@ class TraceContainer(pluginmanager.Plugin):
     
     def __init__(self, parentParam=None, configfile=None):
         super(TraceContainer, self).__init__(parentParam)
-        self.config = TraceContainerConfig.TraceContainerConfig(configfile=configfile)
-        self.textins = []
-        self.textouts = []
-        self.keylist = []
-        self.knownkey = None
-        self.dirty = False
-        self.tracedtype = np.double  
-        self.traces = None
-        self.tracehint = 1
-        self.pointhint = 0
-        self._numTraces = 0
-        self._isloaded = False
+        self.configfile = configfile
+        self.clear()
 
     def setupParameters(self):
         self.fmt = None
@@ -63,6 +53,20 @@ class TraceContainer(pluginmanager.Plugin):
                         {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},]
                      }
                 ]
+
+    def clear(self):
+        self.config = _cfgfile.TraceContainerConfig(configfile=self.configfile)
+        self.textins = []
+        self.textouts = []
+        self.keylist = []
+        self.knownkey = None
+        self.dirty = False
+        self.tracedtype = np.double
+        self.traces = None
+        self.tracehint = 1
+        self.pointhint = 0
+        self._numTraces = 0
+        self._isloaded = False
 
     def setDirty(self, dirty):
         self.dirty = dirty
@@ -99,7 +103,7 @@ class TraceContainer(pluginmanager.Plugin):
         self.addKey(key)
 
     def writeDataToConfig(self):
-        self.config.setAttr("numTraces", self.numTraces())
+        self.config.setAttr("numTraces", self._numTraces)
         self.config.setAttr("numPoints", self.numPoints())      
 
     def addWave(self, trace, dtype=None):
@@ -272,9 +276,6 @@ class TraceContainer(pluginmanager.Plugin):
     def isLoaded(self):
         """Returns true if you can use getTrace, getTextin, etc methods"""
         return self._isloaded
-
-    def getName(self):
-        return self.name
         
         
 if __name__ == "__main__":

@@ -53,5 +53,5 @@ class UserScript(UserScriptBase):
         self.api.resultWidgets["Results Table"].setObservedTraceSource(self.traces)
         self.api.resultWidgets["Results Table"].setObservedAttack(self.attack)
 
-    def run(self, progressBar):
-        self.attack.doAttack(progressBar)
+    def run(self):
+        self.attack.doAttack()

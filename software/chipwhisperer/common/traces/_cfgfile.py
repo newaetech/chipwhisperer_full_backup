@@ -33,7 +33,8 @@ try:
 except ImportError:
     print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
     sys.exit()
-   
+
+
 def makeAttrDict(sectionname, modulename, paramSpecs):
     """
     Converts a parameter tree configuration setup into an attribute dictionary. Requires specific setup

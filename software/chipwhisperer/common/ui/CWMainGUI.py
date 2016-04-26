@@ -444,11 +444,10 @@ class CWMainGUI(QMainWindow):
         print "Status: " + msg
         self.statusBar().showMessage(msg)
 
-    def runScript(self, mod):
-        self.updateStatusBar("Running Script: %s" % mod.name)
-        m = mod(self.api)
-        m.run(ProgressBar("Script in Progress", "Running:"))
-        self.updateStatusBar("Finished Script: %s" % mod.name)
+    def runScript(self, scriptClass, funcName="run"):
+        self.updateStatusBar("Running Script: %s" % scriptClass.name)
+        self.api.runScriptClass(scriptClass, funcName="run")
+        self.updateStatusBar("Finished Script: %s" % scriptClass.name)
 
     def exceptionHandlerDialog(self, etype, value, trace):
         """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""
@@ -458,7 +457,7 @@ class CWMainGUI(QMainWindow):
             return
 
         if issubclass(etype, Warning):
-            print str(value)
+            print "WARNING: " + str(value)
             QMessageBox.warning(self, "Warning", str(value))
             return
 

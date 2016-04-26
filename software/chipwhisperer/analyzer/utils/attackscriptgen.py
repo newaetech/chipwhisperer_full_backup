@@ -84,7 +84,7 @@ class AttackScriptGen(pluginmanager.Parameterized):
                 break
 
         if thisEditor is None:
-            thisEditor = {'widget':MainScriptEditor(parent=self, filename=filename)}
+            thisEditor = {'widget':MainScriptEditor(parent=self.cwGUI, filename=filename)}
             thisEditor['filename'] = filename
             thisEditor['dockname'] = filedesc
             self.scriptList.append(thisEditor)
@@ -134,21 +134,10 @@ class AttackScriptGen(pluginmanager.Parameterized):
         self.attack.scriptsUpdated.connect(self.reloadScripts)
         self.attack.runScriptFunction.connect(self.runScriptFunction)
 
-    def runScriptFunction(self, funcname, filename=None):
+    def runScriptFunction(self, funcName, filename=None):
         """Loads a given script and runs a specific function within it."""
         mod = self.setupScriptModule(filename)
-        if mod:
-            try:
-                eval('mod.%s()' % funcname)
-            except AttributeError as e:
-                # TODO fix this hack - this function will not exist before the
-                # traceexplorer dialog has been opended, but will still be
-                # called once
-                if funcname == 'TraceExplorerDialog_PartitionDisplay_findPOI':
-                    pass
-                else:
-                    # Continue with exception
-                    raise
+        self.cwGUI.api.runScriptModule(mod, funcName)
 
     def setupScriptModule(self, filename=None):
         """Loads a given script as a module for dynamic run-time insertion.
@@ -161,13 +150,7 @@ class AttackScriptGen(pluginmanager.Parameterized):
         if filename and filename != self.defaultEditor['filename']:
             raise Warning("Script Error: Cannot run script from non-default function")
 
-        mod = self.defaultEditor['widget'].loadModule()
-
-        # Check if we aborted due to conflitcing edit
-        if mod is None:
-            return None
-
-        return mod
+        return self.defaultEditor['widget'].loadModule()
 
     def reloadScripts(self):
         """Rewrite the auto-generated analyzer script, using settings from the GUI"""
@@ -253,8 +236,8 @@ class AttackScriptGen(pluginmanager.Parameterized):
             mse.append("pass")
 
         # Do the attack
-        mse.append("def run(self, progressBar):", 1)
-        mse.append("self.attack.doAttack(progressBar)")
+        mse.append("def run(self):", 1)
+        mse.append("self.attack.doAttack()")
 
         # Get other commands from attack module
         if self.attack:
@@ -280,4 +263,4 @@ class AttackScriptGen(pluginmanager.Parameterized):
                             mse.append(s.replace("UserScript.", "self."))
 
         mse.restoreSliderPosition()
-        self.setupScriptModule()
+        self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)

@@ -180,27 +180,6 @@ class Observable(Signal):
     def value(self):
         return self.data
 
-# def delete_keys_from_dict(dict_del, lst_keys):
-#     for k in lst_keys:
-#         try:
-#             del dict_del[k]
-#         except KeyError:
-#             pass
-#     for v in dict_del.values():
-#         if isinstance(v, dict):
-#             delete_keys_from_dict(v, lst_keys)
-#
-# def delete_objects_from_dict(d):
-#     #todel = []
-#     for key, value in d.iteritems():
-#         if isinstance(value, (dict, list, tuple)):
-#             delete_objects_from_dict(value)
-#
-#         elif inspect.ismethod(value) or isinstance(value, QObject):
-#             #todel.append(key)
-#             #print key
-#             d[key] = value.__class__.__name__
-
 
 _uiupdateFunction = None
 

@@ -34,6 +34,7 @@ from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import P
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
 from chipwhisperer.common.api.autoscript import AutoScript
 
+
 class TraceExplorerDialog(QMainWindow, AutoScript):
     """Open dialog to explore trace properties, data graphs, etc"""
 
