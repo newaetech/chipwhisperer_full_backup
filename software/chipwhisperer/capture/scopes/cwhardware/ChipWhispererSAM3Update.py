@@ -24,12 +24,14 @@
 #=================================================
 
 
+import os.path
+
 from PySide.QtCore import *
 from PySide.QtGui import *
-import os.path
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+
 import chipwhisperer.common.utils.Scan as scan
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.utils import Util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
 
 

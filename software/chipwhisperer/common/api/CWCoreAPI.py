@@ -78,7 +78,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getScope(): ret.extend(self.getScope().guiActions(mainWindow))
         if self.getTarget(): ret.extend(self.getTarget().guiActions(mainWindow))
         if self.getTraceFormat(): ret.extend(self.getTraceFormat().guiActions(mainWindow))
-        if self.getAuxList(): ret.extend(self.getAuxList()[0].guiActions(mainWindow))
+        if self.getAuxList()[0]: ret.extend(self.getAuxList()[0].guiActions(mainWindow))
         if self.getAttack(): ret.extend(self.getAttack().guiActions(mainWindow))
         return ret
 
