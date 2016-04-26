@@ -87,7 +87,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self._scope = None
         self._target = None
         self._attack = None
-        self._traceFormat = TraceContainerNative()
+        self._traceManager = TraceContainerNative()
         self._acqPattern = AcqKeyTextPattern_Basic(self)
         self._auxList = [None]
         self._numTraces = 100
@@ -165,10 +165,10 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.paramListUpdated.emit()
 
     def getTraceFormat(self):
-        return self._traceFormat
+        return self._traceManager
 
     def setTraceFormat(self, format):
-        self._traceFormat = format
+        self._traceManager = format
         self.traceParamTree.replace([self.getTraceFormat()])
 
     def getAttack(self):
@@ -283,8 +283,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                self._traceFormat.clear()
-                currentTrace = copy.copy(self._traceFormat)
+                currentTrace = copy.copy(self._traceManager)
+                currentTrace.clear()
 
                 # Load trace writer information
                 starttime = datetime.now()
@@ -341,7 +341,9 @@ class CWCoreAPI(pluginmanager.Parameterized):
             if funcName is not None:
                 eval('m.%s()' % funcName)
         except Exception as e:
-            sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), "")
+                if funcName == 'TraceExplorerDialog_PartitionDisplay_findPOI':
+                    return
+                sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), "")
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
