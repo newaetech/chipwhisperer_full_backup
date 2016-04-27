@@ -25,7 +25,7 @@
 import inspect
 import importlib
 import traceback
-import Util
+import util
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 import os.path
 from pyqtgraph.parametertree import ParameterTree
@@ -33,8 +33,8 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
 class CWParameterTree(ParameterTree):
     _helpWidget = None
-    _allParameterTrees = Util.DictType()
-    paramTreeUpdated = Util.Signal()
+    _allParameterTrees = util.DictType()
+    paramTreeUpdated = util.Signal()
 
     def __init__(self, groupName="Defaul", parameterizedObjs=None):
         super(CWParameterTree, self).__init__()
@@ -73,12 +73,22 @@ class CWParameterTree(ParameterTree):
     def getAllParameterTrees(cls):
         return cls._allParameterTrees
 
+    @classmethod
+    def getAllGuiActions(cls, mainWindow):
+        ret = []
+        for parameterTrees in cls.getAllParameterTrees().itervalues():
+            if parameterTrees:
+                for parameterizedObj in parameterTrees.parameterizedObjs:
+                    if parameterizedObj:
+                        ret.extend(parameterizedObj.guiActions(mainWindow))
+        return ret
+
 
 class Parameterized(object):
     name = "None"
 
     def __init__(self, parentParam = None):
-        self.paramListUpdated = Util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
+        self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
         self.__activeParams = [lambda: self.lazy(self)]
         if parentParam:
             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
@@ -107,11 +117,13 @@ class Parameterized(object):
     def setupActiveParams(self, params):
         # Use this method to setup the order of the parameterized objects to be shown
         self.__activeParams = params
+        self.paramListUpdated.emit()
 
     def addActiveParams(self, param):
         # Use this method to setup the order of the parameterized objects to be shown
-
         self.__activeParams.append(param)
+        self.paramListUpdated.emit()
+
 
     def guiActions(self, mainWindow):
         # Returns a list with all the gui actions in the active parameter tree.
@@ -188,7 +200,7 @@ def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
 
 def importModulesInPackage(path):
     resp = []
-    for package_name in Util.getPyFiles(os.path.join(Util.getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
+    for package_name in util.getPyFiles(os.path.join(util.getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
         full_package_name = '%s.%s' % (path, package_name)
         try:
             resp.append(importlib.import_module(full_package_name))
@@ -209,7 +221,7 @@ def getPluginClassesFromModules(modules):
 
 
 def putInDict(items, instantiate, *args, **kwargs):
-    resp = Util.DictType()
+    resp = util.DictType()
     for c in items:
         try:
             if instantiate:
@@ -228,7 +240,7 @@ def putInDict(items, instantiate, *args, **kwargs):
 
 def module_reorder(resp):
     #None is first, then alphabetical
-    newresp = Util.DictType()
+    newresp = util.DictType()
     if 'None' in resp:
         newresp['None'] = resp['None']
         del resp['None']

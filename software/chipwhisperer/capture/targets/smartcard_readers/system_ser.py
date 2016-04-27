@@ -26,7 +26,7 @@
 from _base import ReaderTemplate
 import serial
 import time
-from chipwhisperer.common.utils import Scan
+from chipwhisperer.common.utils import serialport
 
 
 class ReaderSystemSER(ReaderTemplate):
@@ -45,7 +45,7 @@ class ReaderSystemSER(ReaderTemplate):
                 ]
 
     def updateSerial(self):
-        serialnames = Scan.scan()
+        serialnames = serialport.scan()
         self.findParam('port').setLimits(serialnames)
         if len(serialnames) > 0:
             self.findParam('port').setValue(serialnames[0])

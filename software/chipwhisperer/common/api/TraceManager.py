@@ -24,7 +24,7 @@
 
 import os.path
 import re
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 import chipwhisperer.common.traces._cfgfile
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 import ConfigParser
@@ -40,8 +40,8 @@ class TraceManager(object):
     secName = "Trace Management"
 
     def __init__(self):
-        self.dirty = Util.Observable(False)
-        self.tracesChanged = Util.Signal()
+        self.dirty = util.Observable(False)
+        self.tracesChanged = util.Signal()
         self._numTraces = 0
         self._numPoints = 0
         self.lastMapped = None

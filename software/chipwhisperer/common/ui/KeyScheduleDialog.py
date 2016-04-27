@@ -29,7 +29,7 @@ import sys
 from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.common.utils.Util import hexstr2list
+from chipwhisperer.common.utils.util import hexstr2list
 
 class KeyScheduleDialog(QtFixes.QDialog):
 

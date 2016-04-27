@@ -28,7 +28,7 @@
 import zipfile
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 
 glitchaddr = 51
 glitchoffsetaddr = 25

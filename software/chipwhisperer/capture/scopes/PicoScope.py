@@ -33,7 +33,7 @@ must install
 
 import time
 from chipwhisperer.capture.scopes._base import ScopeTemplate
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
@@ -41,7 +41,7 @@ from picoscope import ps6000
 
 class PicoScope(pluginmanager.Parameterized): #TODO: ScopeBase instead?
     name = 'Scope Settings'
-    dataUpdated = Util.Signal()
+    dataUpdated = util.Signal()
 
     def __init__(self, psClass):
         self.ps = psClass
@@ -53,7 +53,7 @@ class PicoScope(pluginmanager.Parameterized): #TODO: ScopeBase instead?
                 chlist[t] = self.ps.CHANNELS[t]
 
         # Rebuild channel range as string + api value
-        chRange = Util.DictType()
+        chRange = util.DictType()
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 

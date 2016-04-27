@@ -33,7 +33,7 @@ import chipwhisperer.common.utils.pluginmanager
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.utils import Util, timer, pluginmanager
+from chipwhisperer.common.utils import util, timer, pluginmanager
 
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
@@ -109,7 +109,7 @@ class OpenADCInterface(ScopeTemplate):
                 self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
-                Util.chipwhisperer_extra = self.advancedSettings
+                util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()

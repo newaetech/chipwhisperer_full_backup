@@ -28,7 +28,7 @@ import time
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from _base import TargetTemplate
 from chipwhisperer.capture.scopes.openadc_interface import ftdi
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 try:
     import ftd2xx as ft
@@ -239,7 +239,7 @@ class SakuraG(TargetTemplate):
     def setupParameters(self): 
         self.hw = None
 
-        conntypes = Util.DictType()
+        conntypes = util.DictType()
         conntypes['Select Interface type...'] = None
         conntypes['CW Bitstream, with OpenADC'] = ChipWhispererComm(standalone=False)
         conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)

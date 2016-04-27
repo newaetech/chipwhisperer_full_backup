@@ -46,8 +46,6 @@ class CWCaptureGUI(CWMainGUI):
         self.api.signals.newScopeData.connect(self.newScopeData)
 
     def loadExtraModules(self):
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
-
         self.serialTerminal = SerialTerminalDialog(self, self.api)
         self.glitchMonitor = GlitchExplorerDialog(self)
 

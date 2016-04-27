@@ -24,7 +24,7 @@
 #=================================================
 
 import random
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 from _base import AcqKeyTextPattern_Base
 
 
@@ -36,8 +36,8 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._fixedKey = True
 
         return [ {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-                 {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
                  {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
+                 {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
                  {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
                 ]
 
@@ -70,7 +70,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._key = bytearray(initialKey)
             else:
                 keyStr = initialKey
-                self._key = Util.hexStrToByteArray(initialKey)
+                self._key = util.hexStrToByteArray(initialKey)
 
             self.initkey = keyStr
 
@@ -83,7 +83,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._textin = bytearray(initialText)
             else:
                 textStr = initialText
-                self._textin = Util.hexStrToByteArray(initialText)
+                self._textin = util.hexStrToByteArray(initialText)
 
             self.inittext = textStr
 

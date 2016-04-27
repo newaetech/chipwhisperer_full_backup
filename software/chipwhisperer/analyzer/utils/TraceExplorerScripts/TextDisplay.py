@@ -28,7 +28,7 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 class TextDisplay(AutoScript, QObject):
@@ -58,9 +58,9 @@ class TextDisplay(AutoScript, QObject):
             tout = tm.getTextout(tnum)
             k = tm.getKnownKey(tnum)
 
-            self.tablewid.setItem(tnum, 0, QTableWidgetItem(Util.list2hexstr(tin)))
-            self.tablewid.setItem(tnum, 1, QTableWidgetItem(Util.list2hexstr(tout)))
-            self.tablewid.setItem(tnum, 2, QTableWidgetItem(Util.list2hexstr(k)))
+            self.tablewid.setItem(tnum, 0, QTableWidgetItem(util.list2hexstr(tin)))
+            self.tablewid.setItem(tnum, 1, QTableWidgetItem(util.list2hexstr(tout)))
+            self.tablewid.setItem(tnum, 2, QTableWidgetItem(util.list2hexstr(k)))
 
     def addDock(self):
         self.tablewid = QTableWidget()

@@ -22,10 +22,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import chipwhisperer.common.utils.pluginmanager
+
 from _smartcard_gui import SmartCardGUICard
 from _base import TargetTemplate
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import pluginmanager
 
 
 class SmartCard(TargetTemplate):

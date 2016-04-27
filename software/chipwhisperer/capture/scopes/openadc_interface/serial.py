@@ -26,7 +26,7 @@ from chipwhisperer.common.utils import pluginmanager
 
 try:
     import serial
-    import chipwhisperer.common.utils.Scan as scan
+    import chipwhisperer.common.utils.serialport as scan
 except ImportError:
     serial = None
 

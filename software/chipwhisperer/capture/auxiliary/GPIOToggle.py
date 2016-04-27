@@ -29,7 +29,7 @@ import time
 from _base import AuxiliaryTemplate
 from chipwhisperer.common.utils import timer
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 
 class GPIOToggle(AuxiliaryTemplate):
@@ -81,7 +81,7 @@ class GPIOToggle(AuxiliaryTemplate):
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
-            Util.updateUI()
+            util.updateUI()
 
     def trigger(self):
         print "AUXIO: Trigger pin %d" % self.pin

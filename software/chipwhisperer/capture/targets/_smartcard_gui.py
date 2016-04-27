@@ -26,7 +26,7 @@
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.utils.Util import hexstr2list
+from chipwhisperer.common.utils.util import hexstr2list
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 

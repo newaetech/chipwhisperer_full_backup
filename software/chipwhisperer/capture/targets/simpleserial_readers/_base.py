@@ -1,10 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2013-2014, NewAE Technology Inc
+# Copyright (c) 2013-2016, NewAE Technology Inc
 # All rights reserved.
-#
-# Authors: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -25,46 +23,39 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils import pluginmanager, util
 
 
-class ScopeTemplate(pluginmanager.Plugin):
-    name = "None"
+class SimpleSerialTemplate(pluginmanager.Plugin):
+    name='Simple Serial Reader'
 
     def __init__(self, parentParam):
-        super(ScopeTemplate, self).__init__(parentParam)
+        super(SimpleSerialTemplate, self).__init__(parentParam)
         self.connectStatus = util.Observable(False)
-        self.dataUpdated = util.Signal()
-        self.datapoints = []
 
-    def dcmTimeout(self):
+    def selectionChanged(self):
         pass
 
-    def setAutorefreshDCM(self, enabled):
+    def write(self, string):
         pass
 
-    def setCurrentScope(self, scope, update=True):
+    def flush(self):
         pass
 
-    def getStatus(self):
-        return self.connectStatus.value()
+    def close(self):
+        pass
 
-    def con(self):
-        # raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+    def con(self, scope = None):
+        """Connect to target"""
         self.connectStatus.setValue(True)
 
     def dis(self):
+        """Disconnect from target"""
+        self.close()
         self.connectStatus.setValue(False)
 
-    def doDataUpdated(self,  l, offset=0):
-        self.dataUpdated.emit(l, offset)
-
-    def arm(self):
+    def flushInput(self):
         pass
-        #NOTE - if reimplementing this, should always check for connection first
-        #if self.connectStatus.value() is False:
-        #    raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
-        #raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
 
-    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
-        pass
+    def read(self, num=0, timeout=250):
+        return None

@@ -25,12 +25,12 @@
 
 from PySide.QtCore import *
 import _OpenADCInterface as openadc
-from chipwhisperer.common.utils import Util, timer, pluginmanager
+from chipwhisperer.common.utils import util, timer, pluginmanager
 
 
 class OpenADCQt(pluginmanager.Parameterized):
     name='OpenADC'
-    dataUpdated = Util.Signal()
+    dataUpdated = util.Signal()
 
     def __init__(self):
         super(OpenADCQt,  self).__init__()

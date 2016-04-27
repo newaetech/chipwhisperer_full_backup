@@ -45,8 +45,6 @@ class CWAnalyzerGUI(CWMainGUI):
         self.attackScriptGen.reloadScripts()
 
     def loadExtraModules(self):
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
-
         self.keyScheduleDialog = KeyScheduleDialog(self)
         self.attackScriptGen = AttackScriptGen(None, self)
 

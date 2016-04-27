@@ -26,7 +26,7 @@
 
 from _plotdata import ResultsPlotData
 from PySide.QtGui import *
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 
 class PGEVsTrace(ResultsPlotData):
@@ -108,7 +108,7 @@ class PGEVsTrace(ResultsPlotData):
 
         stats = self.attack.getStatistics()
         pge = stats.pge_total
-        allpge = Util.DictType()
+        allpge = util.DictType()
 
         for i in pge:
             tnum = i['trace']

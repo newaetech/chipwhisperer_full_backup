@@ -51,7 +51,7 @@ from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
-from chipwhisperer.common.utils import pluginmanager, Util
+from chipwhisperer.common.utils import pluginmanager, util
 import chipwhisperer.common.ui.qrc_resources
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
@@ -67,7 +67,7 @@ class CWMainGUI(QMainWindow):
         QMainWindow.__init__(self)
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
-        Util.setUIupdateFunction(QCoreApplication.processEvents)
+        util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
         pluginmanager.CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
         self.setCentralWidget(None)
@@ -168,7 +168,7 @@ class CWMainGUI(QMainWindow):
 
         self._ToolMenuItems = []
         self._ToolMenuItems.append(self.toolMenu.addSeparator())
-        for act in self.api.allGuiActions(self):
+        for act in pluginmanager.CWParameterTree.getAllGuiActions(self):
             self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
 
         for act in self._ToolMenuItems:
@@ -272,7 +272,8 @@ class CWMainGUI(QMainWindow):
         self.projectMenu.addAction(self.consolidateAct)
         self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit Project File', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
-            
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.scripts", False, False, self))
+
         self.toolMenu = self.menuBar().addMenu("&Tools")
         self.toolMenu.addSeparator()
 
@@ -364,7 +365,7 @@ class CWMainGUI(QMainWindow):
         if files is not None:
             files_no = 0
             for f in files:
-                text = "&%d %s" % (files_no + 1, Util.strippedName(f))
+                text = "&%d %s" % (files_no + 1, util.strippedName(f))
                 self.recentFilesAction[files_no].setText(text)
                 self.recentFilesAction[files_no].setData(f)
                 self.recentFilesAction[files_no].setVisible(True)

@@ -24,7 +24,7 @@
 #=================================================
 
 import random
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 from _base import AcqKeyTextPattern_Base
 
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
@@ -41,22 +41,22 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
 
     def initPair(self):
         if self.keyLen() == 16:
-            self._key = Util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
+            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0")
         elif self.keyLen() == 24:
-            self._key = Util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
+            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01")
         elif self.keyLen() == 32:
-            self._key = Util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
+            self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
 
-        self._textin1 = Util.hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
+        self._textin1 = util.hexStrToByteArray("00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
 
         if self.keyLen() == 16:
-            self._textin2 = Util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
+            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")
         elif self.keyLen() == 24:
-            self._textin2 = Util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
+            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")
         elif self.keyLen() == 32:
-            self._textin2 = Util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
+            self._textin2 = util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")
         else:
             raise ValueError("Invalid key length: %d bytes" % self.keyLen())
 

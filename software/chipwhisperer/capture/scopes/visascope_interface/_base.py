@@ -21,12 +21,12 @@
 
 import time
 from visa import *
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 
 
 class VisaScope(pluginmanager.Parameterized):
     name='Scope Settings'
-    dataUpdated = Util.Signal()
+    dataUpdated = util.Signal()
 
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,
                "20 mS":20E-3, "10 mS":10E-3, "5 mS":5E-3, "2 mS":2E-3, "1 mS":1E-3,

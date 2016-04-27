@@ -24,7 +24,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.results._base import ResultsBase
 
 
@@ -59,6 +59,6 @@ class KnowKeySource(ResultsBase):
     def setKnownKey(self, strkey):
         """Override known key by user selection"""
         try:
-            self._knowKey = Util.hexstr2list(strkey)
+            self._knowKey = util.hexstr2list(strkey)
         except ValueError:
             raise Warning("Key Selection - Could not convert '%s' to hex, key unchanged!" % strkey)

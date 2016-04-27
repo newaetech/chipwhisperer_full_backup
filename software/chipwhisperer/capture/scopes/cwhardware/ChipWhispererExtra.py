@@ -29,7 +29,7 @@ import time
 from functools import partial
 import ChipWhispererGlitch
 import chipwhisperer.common.utils.pluginmanager
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0

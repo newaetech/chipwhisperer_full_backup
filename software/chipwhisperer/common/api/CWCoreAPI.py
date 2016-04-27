@@ -27,11 +27,9 @@ import sys
 import copy
 
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
-from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic
-from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 
 
@@ -44,23 +42,24 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
     class Signals(object):
         def __init__(self):
-            self.newProject = Util.Signal()
-            self.newScopeData = Util.Signal()
-            self.connectStatus = Util.Signal()
-            self.acqPatternChanged = Util.Signal()
-            self.attackChanged = Util.Signal()
-            self.newInputData = Util.Signal()
-            self.newTextResponse = Util.Signal()
-            self.traceDone = Util.Signal()
-            self.campaignStart = Util.Signal()
-            self.campaignDone = Util.Signal()
-            self.tracesChanged = Util.Signal()
+            self.newProject = util.Signal()
+            self.newScopeData = util.Signal()
+            self.connectStatus = util.Signal()
+            self.acqPatternChanged = util.Signal()
+            self.attackChanged = util.Signal()
+            self.newInputData = util.Signal()
+            self.newTextResponse = util.Signal()
+            self.traceDone = util.Signal()
+            self.campaignStart = util.Signal()
+            self.campaignDone = util.Signal()
+            self.tracesChanged = util.Signal()
 
     def __init__(self):
         super(CWCoreAPI, self).__init__()
         self.signals = self.Signals()
         CWCoreAPI.instance = self
-        self.generalParamTree = pluginmanager.CWParameterTree("General Settings", [self, self._acqPattern])
+        self.generalParamTree = pluginmanager.CWParameterTree("General Settings", [self])
+        self.addActiveParams(lambda: self.lazy(self._acqPattern))
         self.resultsParamTree = pluginmanager.CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
         self.scopeParamTree = pluginmanager.CWParameterTree("Scope Settings", [self.getScope()])
         self.targetParamTree = pluginmanager.CWParameterTree("Target Settings", [self.getTarget()])
@@ -82,16 +81,6 @@ class CWCoreAPI(pluginmanager.Parameterized):
         return ret
 
     def setupParameters(self):
-        self._project = None
-        self._scope = None
-        self._target = None
-        self._attack = None
-        self._traceManager = TraceContainerNative()
-        self._acqPattern = AcqKeyTextPattern_Basic(self)
-        self._auxList = [None]
-        self._numTraces = 100
-        self._numTraceSets = 1
-
         valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
         valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
@@ -100,11 +89,21 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
         self.resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self)
+
+        self._project = None
+        self._scope = valid_scopes.get("ChipWhisperer/OpenADC", None)
+        self._target = valid_targets.get("Simple Serial", None)
+        self._attack = valid_traces.get("CPA", None)
+        self._traceManager = valid_traces.get("ChipWhisperer/Native", None)
+        self._acqPattern = valid_acqPatterns.get("Basic", None)
+        self._auxList = [None]  # TODO: implement it as a list in the whole class
+        self._numTraces = 100
+        self._numTraceSets = 1
         self.graphWidget = self.resultWidgets['Trace Output Plot']
 
         return [
-                    {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':None, 'set':self.setScope, 'get':self.getScope},
-                    {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':"None", 'set':self.setTarget, 'get':self.getTarget},
+                    {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':self.getScope(), 'set':self.setScope, 'get':self.getScope},
+                    {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':self.getTarget(), 'set':self.setTarget, 'get':self.getTarget},
                     {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.getTraceFormat(), 'set':self.setTraceFormat},
                     {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
                     {'name':'Acquisition Settings', 'type':'group', 'children':[
@@ -113,7 +112,6 @@ class CWCoreAPI(pluginmanager.Parameterized):
                              'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
                              'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
                             {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
-                            {'name':'Open Monitor', 'type':'action', 'action':lambda: self.encryptionStatusMonitor.show()},
                             {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.getAcqPattern, 'set':self.setAcqPattern},
                         ]},
                 ]
@@ -174,7 +172,6 @@ class CWCoreAPI(pluginmanager.Parameterized):
         return self._attack
 
     def setAttack(self, attack):
-        """Set the attack module, reloading GUI and connecting appropriate signals"""
         self._attack = attack
         if self.getAttack():
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
@@ -216,28 +213,28 @@ class CWCoreAPI(pluginmanager.Parameterized):
             return False
         return True
 
+    def disconnectScope(self):
+        self.getScope().dis()
+
     def connectTarget(self):
         try:
             if self.getTarget():
-                self.getTarget().con(scope = self.getScope())
+                self.getTarget().con(scope=self.getScope())
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
         return True
 
+    def disconnectTarget(self):
+        self.getTarget().dis()
+
     def doConDis(self):
-        """DEPRECATED: Is here just for compatibility reasons"""
+        """DEPRECATED: It is here just for compatibility reasons"""
         print "Method doConDis() is deprecated... use connect() or disconnect() instead"
         return self.connect()
 
     def connect(self):
         return self.connectScope() and self.connectTarget()
-
-    def disconnectScope(self):
-        self.getScope().dis()
-
-    def disconnectTarget(self):
-        self.getTarget().dis()
 
     def disconnect(self):
         self.disconnectScope()
@@ -296,7 +293,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
                 currentTrace.config.setAttr("targetSW", "unknown")
                 currentTrace.config.setAttr("scopeName", self.getScope().getName())
                 currentTrace.config.setAttr("scopeSampleRate", 0)
-                currentTrace.config.setAttr("notes", "Aux: " + ', '.join(str(self._auxList)))
+                # currentTrace.config.setAttr("notes", "Aux: " + ', '.join(str(self._auxList)))
                 currentTrace.setTraceHint(setSize)
 
                 if waveBuffer:

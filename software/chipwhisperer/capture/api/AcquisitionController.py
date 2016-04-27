@@ -24,15 +24,15 @@
 #=================================================
 
 import time
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 
 class AcquisitionController():
     class Signals:
         def __init__(self):
-            self.traceDone = Util.Signal()
-            self.captureDone = Util.Signal()
-            self.newTextResponse = Util.Signal()
+            self.traceDone = util.Signal()
+            self.captureDone = util.Signal()
+            self.newTextResponse = util.Signal()
 
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
         self.target = target

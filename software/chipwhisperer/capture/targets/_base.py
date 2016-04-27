@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 
 
 try:
@@ -37,8 +37,8 @@ class TargetTemplate(pluginmanager.Plugin):
 
     def __init__(self, parentParam=None):
         super(TargetTemplate, self).__init__(parentParam)
-        self.newInputData = Util.Signal()
-        self.connectStatus = Util.Observable(False)
+        self.newInputData = util.Signal()
+        self.connectStatus = util.Observable(False)
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""

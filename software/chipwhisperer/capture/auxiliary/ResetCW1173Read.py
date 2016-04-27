@@ -26,7 +26,7 @@
 import time
 from chipwhisperer.capture.auxiliary._base import AuxiliaryTemplate
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.utils import Util, timer
+from chipwhisperer.common.utils import util, timer
 
 
 class ResetCW1173Read(AuxiliaryTemplate):
@@ -71,4 +71,4 @@ class ResetCW1173Read(AuxiliaryTemplate):
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
-            Util.updateUI()
+            util.updateUI()

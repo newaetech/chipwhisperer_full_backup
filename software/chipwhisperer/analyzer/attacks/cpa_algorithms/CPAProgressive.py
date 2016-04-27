@@ -30,7 +30,7 @@ import math
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 
 
 class CPAProgressiveOneSubkey(object):

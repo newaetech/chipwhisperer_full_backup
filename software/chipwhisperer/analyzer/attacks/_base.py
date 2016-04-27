@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, pluginmanager
+from chipwhisperer.common.utils import util, pluginmanager
 
 
 class AttackBaseClass(pluginmanager.Plugin):
@@ -35,9 +35,9 @@ class AttackBaseClass(pluginmanager.Plugin):
     def __init__(self):
         self._traceSource = None
         super(AttackBaseClass, self).__init__()
-        self.attackStarted = Util.Signal()
-        self.statsUpdated = Util.Signal()
-        self.attackDone = Util.Signal()
+        self.attackStarted = util.Signal()
+        self.statsUpdated = util.Signal()
+        self.attackDone = util.Signal()
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""

@@ -24,7 +24,7 @@
 #=================================================
 
 from _base import ReaderTemplate
-import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):

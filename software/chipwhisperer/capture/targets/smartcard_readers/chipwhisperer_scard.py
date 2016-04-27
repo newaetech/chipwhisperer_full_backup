@@ -24,14 +24,14 @@
 #=================================================
 
 from _base import ReaderTemplate
-import chipwhisperer.capture.ChipWhispererTargets as ChipWhispererTargets
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
 
 
 class ReaderChipWhispererSCard(ReaderTemplate):
     name = "CWCR2-SCARD (obsolete)"
 
-    def __init__(self):
-        super(ReaderChipWhispererSCard, self).__init__()
+    def __init__(self, parentParam=None):
+        super(ReaderChipWhispererSCard, self).__init__(parentParam)
         self.scard = ChipWhispererTargets.CWSCardIntegrated()
 
     def setupParameters(self):
