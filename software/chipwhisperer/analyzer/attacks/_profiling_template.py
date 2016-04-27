@@ -31,9 +31,8 @@ import numpy as np
 import scipy
 from chipwhisperer.common.api.config_parameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from ._stats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.analyzer.utils.Partition import Partition
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
 from chipwhisperer.common.utils import util
 try:

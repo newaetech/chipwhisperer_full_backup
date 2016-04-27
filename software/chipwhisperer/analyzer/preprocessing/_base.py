@@ -26,10 +26,11 @@
 #=================================================
 
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.api.tracesource import TraceSource, TraceObserver
+from chipwhisperer.common.utils import pluginmanager
 
 
-class PreprocessingBase(AutoScript, pluginmanager.Plugin):
+class PreprocessingBase(TraceSource, TraceObserver, AutoScript, pluginmanager.Plugin):
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:
@@ -38,15 +39,17 @@ class PreprocessingBase(AutoScript, pluginmanager.Plugin):
           You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
     name = "None"
-    description = ""
 
     def __init__(self, parentParam=None, traceSource = None):
-        AutoScript.__init__(self)
         self.enabled = True
+        TraceSource.__init__(self)
+        TraceObserver.__init__(self)
+        AutoScript.__init__(self)
         pluginmanager.Plugin.__init__(self, parentParam=parentParam)
-        self.traceSource = traceSource
+        self.setObservedTraceSource(traceSource)
+        if traceSource:
+            traceSource.tracesChanged.connect(self.tracesChanged.emit)
         self.updateScript()
-        self.tracesChanged = util.Signal()
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
