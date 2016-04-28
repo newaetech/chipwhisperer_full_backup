@@ -173,7 +173,7 @@ class AttackScriptGen(pluginmanager.Parameterized):
                 for i in imports: mse.append(i, 0)
 
         # Get imports from attack
-        mse.append("# Imports from Capture", 0)
+        mse.append("# Imports from Attack", 0)
         if self.attack:
             for i in self.attack.getImportStatements():
                 mse.append(i, 0)
@@ -230,16 +230,16 @@ class AttackScriptGen(pluginmanager.Parameterized):
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
         if len(self.cwGUI.api.resultWidgets)>0:
             for k, v in self.cwGUI.api.resultWidgets.iteritems():
-                if hasattr(v,"setObservedTraceSource"):
-                    mse.append("self.api.resultWidgets[\"%s\"].setObservedTraceSource(self.traces)" % k)
-                if hasattr(v,"setObservedAttack"):
-                    mse.append("self.api.resultWidgets[\"%s\"].setObservedAttack(self.attack)" % k)
+                if hasattr(v,"setTraceSource"):
+                    mse.append("self.api.resultWidgets[\"%s\"].setTraceSource(self.traces)" % k)
+                if hasattr(v,"setAnalysisSource"):
+                    mse.append("self.api.resultWidgets[\"%s\"].setAnalysisSource(self.attack)" % k)
         else:
             mse.append("pass")
 
         # Do the attack
         mse.append("def run(self):", 1)
-        mse.append("self.attack.doAttack()")
+        mse.append("self.attack.processTraces()")
 
         # Get other commands from attack module
         if self.attack:

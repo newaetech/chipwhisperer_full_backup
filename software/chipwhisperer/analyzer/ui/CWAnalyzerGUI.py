@@ -55,7 +55,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
     def addToolbarItems(self, toolbar):
         attack = QAction(QIcon(':/images/attack.png'), 'Start Attack', self)
-        attack.triggered.connect(self.doAttack)
+        attack.triggered.connect(self.doAnalysis)
         toolbar.addAction(attack)
 
     def addToolMenuItems(self):
@@ -66,8 +66,8 @@ class CWAnalyzerGUI(CWMainGUI):
                                       triggered=self.keyScheduleDialog.show)
         self.toolMenu.addAction(self.aesScheduleAct)
 
-    def doAttack(self):
-        """Called when the 'Do Attack' button is pressed"""
+    def doAnalysis(self):
+        """Called when the 'Do Analysis' button is pressed"""
         if self.api.project().traceManager().numTraces() == 0:
             ret = QMessageBox.question(self, "Attack Error", "No traces enabled in project.\nOpen Trace Manager?", QMessageBox.Yes | QMessageBox.No)
             if ret == QMessageBox.Yes:
@@ -82,7 +82,8 @@ class CWAnalyzerGUI(CWMainGUI):
         self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParamTree, "Preprocessing")
         self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.attackScriptGen.postprocessingParamTree, "Postprocessing")
-        self.api.addResultWidgets(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.results", True, False))
+        resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
+        self.api.addResultWidgets(resultWidgets)
         self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
 
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,

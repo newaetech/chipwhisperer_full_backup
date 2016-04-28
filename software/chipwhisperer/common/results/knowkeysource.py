@@ -24,19 +24,21 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from ._base import ResultsBase
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.results._base import ResultsBase
+from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
 
 
-class KnowKeySource(ResultsBase):
-    """Interface to main program, various routines for plotting output data"""
+class KnowKeySource(ResultsBase, ActiveAnalysisObserver):
     name = "Knownkey Source"
+    description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
 
     def __init__(self, parentParam=None):
-        super(KnowKeySource, self).__init__(parentParam)
+        ResultsBase.__init__(self, parentParam)
+        ActiveAnalysisObserver.__init__(self)
         self._knowKey = []
 
-    def setupParameters(self):
+    def _setupParameters(self):
         return [{'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
                                                 'value':'attack', 'set':self.setKnownKeySrc},
                 {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True},
@@ -46,7 +48,7 @@ class KnowKeySource(ResultsBase):
         """Set key as 'attack' or 'override'"""
         if keysrc == 'attack':
             self.findParam('knownkey').setReadonly(True)
-            ResultsBase.highlightedKey = self.attack.knownKey
+            ResultsBase.highlightedKey = self._analysisSource.knownKey
         elif keysrc == 'gui':
             self.findParam('knownkey').setReadonly(False)
             ResultsBase.highlightedKey = self.knowKey

@@ -26,17 +26,17 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.common.results._base import ResultsWidgetBase, AttackObserver
+from ._base import ResultsWidgetBase
+from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
 
 
-class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
-    """Table of results, showing all guesses based on sorting output of attack"""
+class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
     name = 'Results Table'
+    description = "Show all guesses based on sorting output of attack"
 
     def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256, useAbs=True):
         ResultsWidgetBase.__init__(self, parentParam)
         QTableWidget.__init__(self, permPerSubkey+1, subkeys)
-        AttackObserver.__init__(self)
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)
@@ -65,15 +65,18 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
         self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
         for y in range(1, self.numPerms+1):
             self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
+        ActiveAnalysisObserver.__init__(self)
 
     def _setupParameters(self):
-        return [{'name':'Use Absolute Value for Rank', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
+        return [{'name':'Use Absolute Value for Rank', 'type':'list',
+                'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":True, "False":False},
+                'value':"Default", 'set':self.setAbsoluteMode},
                 {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
                 {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
                 ]
 
     def clearTableContents(self):
-        for x in range(0, self.numKeys):
+        for x in range(0, self.columnCount()):
             self.item(0, x).setText("-")
             for y in range(1, self.numPerms+1):
                 self.item(y, x).setText("")
@@ -96,15 +99,17 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
 
     def updateTable(self, everything=False):
         """Resort data and redraw the table. If update-mode is 'pge' we only redraw entire table
-        when 'attackDone' is True."""
-
-        attackStats = self.attack.getStatistics()
-        attackStats.setKnownkey(self.attack.knownKey())
+        when  everything=True (analysis is completed)."""
+        if not self._analysisSource:
+            self.clearTableContents()
+            return
+        attackStats = self._analysisSource.getStatistics()
+        attackStats.setKnownkey(self._analysisSource.knownKey())
         attackStats.findMaximums(useAbsolute=self.useAbs)
         highlights = self.highlightedKey()
 
         for bnum in range(0, self.numKeys):
-            highlightValue = highlights[bnum] if bnum < len(highlights) else None
+            highlightValue = highlights[bnum] if highlights is not None and bnum < len(highlights) else None
             if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
@@ -122,19 +127,15 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
                 self.setColumnHidden(bnum, True)
         self.setVisible(True)
 
-
-    def attackStarted(self):
+    def analysisStarted(self):
         self.clearTableContents()
 
-    def attackStatsUpdated(self):
-        """New attack statistics available, replot/redraw graphs"""
-        self.setBytesEnabled(self.attack.bytesEnabled())
+    def analysisUpdated(self):
+        if self._analysisSource:
+            self.setBytesEnabled(self._analysisSource.bytesEnabled())
         self.updateTable(everything=(self.updateMode == 'all'))
 
-    def attackDone(self):
-        self.setBytesEnabled(self.attack.bytesEnabled())
+    def processAnalysis(self):
+        if self._analysisSource:
+            self.setBytesEnabled(self._analysisSource.bytesEnabled())
         self.updateTable(everything=True)
-
-    def attackSettingsChanged(self):
-        """Attack settings have changed"""
-        self.setAbsoluteMode(self.attack.useAbs)

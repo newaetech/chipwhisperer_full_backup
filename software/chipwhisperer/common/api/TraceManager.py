@@ -22,12 +22,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+import ConfigParser
 import os.path
 import re
-from chipwhisperer.common.api.tracesource import TraceSource
-from chipwhisperer.common.utils import util
+
 from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
-import ConfigParser
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.tracesource import TraceSource
 
 
 class TraceManager(TraceSource):
@@ -51,7 +52,7 @@ class TraceManager(TraceSource):
         """Creates a new empty set of traces"""
         self.traceSets = []
         self.dirty.setValue(False)
-        self.tracesChanged.emit()
+        self.sigTracesChanged.emit()
 
     def saveProject(self, config, configfilename):
         config[self.secName].clear()
@@ -153,8 +154,11 @@ class TraceManager(TraceSource):
         return t.getTextout(n - t.mappedRange[0])
 
     def getKnownKey(self, n):
-        t = self.findMappedTrace(n)
-        return t.getKnownKey(n - t.mappedRange[0])
+        try:
+            t = self.findMappedTrace(n)
+            return t.getKnownKey(n - t.mappedRange[0])
+        except ValueError:
+            return None
 
     def updateRanges(self):
         startTrace = 0
@@ -183,4 +187,4 @@ class TraceManager(TraceSource):
     def setModified(self):
         self.dirty.setValue(True)
         self.updateRanges()
-        self.tracesChanged.emit()
+        self.sigTracesChanged.emit()

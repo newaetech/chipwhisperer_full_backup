@@ -58,6 +58,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         super(CWCoreAPI, self).__init__()
         self.signals = self.Signals()
         CWCoreAPI.instance = self
+        self.graphWidget = None
+
         self.generalParamTree = pluginmanager.CWParameterTree("General Settings", [self])
         self.addActiveParams(lambda: self.lazy(self._acqPattern))
         self.resultsParamTree = pluginmanager.CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
@@ -66,6 +68,13 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.traceParamTree = pluginmanager.CWParameterTree("Trace Settings", [self.getTraceFormat()])
         self.auxParamTree = pluginmanager.CWParameterTree("Aux Settings", self.getAuxList())
         self.attackParamTree = pluginmanager.CWParameterTree("Attack Settings", [self.getAttack()])
+
+        # Initialize default values
+        self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
+        self.setTarget(self.valid_targets.get("Simple Serial", None))
+        self.setAttack(self.valid_traces.get("CPA", None))
+        self.setAcqPattern(self.valid_acqPatterns.get("Basic", None))
+
         self.newProject()
 
     def getGraphWidget(self):
@@ -81,38 +90,32 @@ class CWCoreAPI(pluginmanager.Parameterized):
         return ret
 
     def setupParameters(self):
-        valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
-        valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
-        valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
-        valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
-        valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
+        self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
+        self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
+        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
+        self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
+        self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
+        self.resultWidgets = util.DictType()
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self)
 
-        self._project = None
-        self._scope = valid_scopes.get("ChipWhisperer/OpenADC", None)
-        self._target = valid_targets.get("Simple Serial", None)
-        self._attack = valid_traces.get("CPA", None)
-        self._traceManager = valid_traces.get("ChipWhisperer/Native", None)
-        self._acqPattern = valid_acqPatterns.get("Basic", None)
+        self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
         self._auxList = [None]  # TODO: implement it as a list in the whole class
         self._numTraces = 100
         self._numTraceSets = 1
-        self.graphWidget = self.resultWidgets['Trace Output Plot']
 
         return [
-                    {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':valid_scopes, 'value':self.getScope(), 'set':self.setScope, 'get':self.getScope},
-                    {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':valid_targets, 'value':self.getTarget(), 'set':self.setTarget, 'get':self.getTarget},
-                    {'name':'Trace Format', 'type':'list', 'values':valid_traces, 'value':self.getTraceFormat(), 'set':self.setTraceFormat},
-                    {'name':'Auxiliary Module', 'type':'list', 'values':valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
+                    {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'value':self._scope, 'set':self.setScope, 'get':self.getScope},
+                    {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'value':self._target, 'set':self.setTarget, 'get':self.getTarget},
+                    {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'value':self._traceManager, 'set':self.setTraceFormat},
+                    {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
                     {'name':'Acquisition Settings', 'type':'group', 'children':[
                             {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
                             {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
                              'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
                              'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
                             {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
-                            {'name':'Key/Text Pattern', 'type':'list', 'values':valid_acqPatterns, 'value':self.getAcqPattern, 'set':self.setAcqPattern},
+                            {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'value':self._acqPattern, 'set':self.setAcqPattern},
                         ]},
                 ]
 
@@ -122,8 +125,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.setupResultWidgets()
 
     def setupResultWidgets(self):
-        [v.setObservedTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v,"setObservedTraceSource")]
-        [v.setObservedAttack(self.getAttack()) for v in self.resultWidgets.itervalues()  if hasattr(v,"setObservedAttack")]
+        [v.setTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v, "setTraceSource")]
+        [v.setAnalysisSource(self.getAttack()) for v in self.resultWidgets.itervalues() if hasattr(v, "setAnalysisSource")]
 
     def getScope(self):
         return self._scope
@@ -193,7 +196,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.project().addParamTree(self)
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
-        self.project().traceManager().tracesChanged.connect(self.signals.tracesChanged.emit)
+        self.project().traceManager().sigTracesChanged.connect(self.signals.tracesChanged.emit)
         self.setupResultWidgets()
 
     def openProject(self, fname):
@@ -260,11 +263,10 @@ class CWCoreAPI(pluginmanager.Parameterized):
         try:
             ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
             ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-            ac.doSingleReading()
+            return ac.doSingleReading()
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
-        return True
 
     def captureM(self, progressBar = None):
         """Captures multiple traces and saves it in the Trace Manager"""

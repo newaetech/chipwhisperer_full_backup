@@ -25,10 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import PreprocessingBase
+from ._base import PreprocessingBase
 import numpy as np
 import scipy as sp
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+
 
 class ResyncCrossCorrelation(PreprocessingBase):
     """
@@ -70,14 +71,14 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
             if self.debugReturnCorr:
                 return cross
             newmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-            maxval = max(cross[self.ccStart:self.ccEnd])
+            # maxval = max(cross[self.ccStart:self.ccEnd])
             # if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
             #    return None
             
@@ -89,7 +90,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
             return trace
             
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -102,9 +103,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         if self.enabled == False:
             return
 
-        self.reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
+        self.reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         self.reftrace = self.reftrace[::-1]
         #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self.traceSource.getTrace(tnum), self.reftrace, mode='valid')
+        cross = sp.signal.fftconvolve(self._traceSource.getTrace(tnum), self.reftrace, mode='valid')
         self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
         self.refmaxsize = max(cross[self.ccStart:self.ccEnd])

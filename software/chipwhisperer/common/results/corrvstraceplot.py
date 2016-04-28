@@ -24,28 +24,26 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _plotdata import ResultsPlotData
+from ._plotdata import AttackResultPlot
 import numpy as np
 
 
-class CorrelationVsTrace(ResultsPlotData):
-    """
-    Plots maximum correlation vs number of traces in attack.
-    """
+class CorrelationVsTrace(AttackResultPlot):
     name = 'Correlation vs Traces in Attack'
+    description = "Plots maximum correlation vs number of traces in attack."
 
     def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
-        ResultsPlotData.__init__(self, parentParam)
+        AttackResultPlot.__init__(self, parentParam)
         self.setLabels(self.name, "Traces", self.name)
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
-        if not self.attack:
+        if not self._analysisSource:
             return
 
-        data = self.attack.getStatistics().maxes_list
+        data = self._analysisSource.getStatistics().maxes_list
 
         enabledlist = []
         for i in range(0, self.numKeys):
@@ -70,5 +68,5 @@ class CorrelationVsTrace(ResultsPlotData):
 
         self.drawData(xrangelist, newdata, enabledlist)
 
-    def attackDone(self):
+    def processAnalysis(self):
         self.redrawPlot()

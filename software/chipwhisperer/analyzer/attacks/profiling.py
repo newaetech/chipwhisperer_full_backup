@@ -37,8 +37,8 @@ from _generic_parameters import AttackGenericParameters
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
-
     name = "Profiling"
+
     def __init__(self):
         AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
@@ -137,10 +137,10 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         # else:
         #    return inpkey
 
-    def doAttack(self):
+    def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
         with progressBar:
-            self.attackStarted.emit()
+            self.sigAnalysisStarted.emit()
             self.attack.setReportingInterval(self.getReportingInterval())
 
             #TODO: support start/end point different per byte
@@ -175,10 +175,10 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                 #TODO:  pointRange=self.TraceRangeList[1:17]
                 self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
 
-        self.attackDone.emit()
+        self.sigAnalysisDone.emit()
 
     def statsReady(self):
-        self.statsUpdated.emit()
+        self.sigAnalysisUpdated.emit()
         # QApplication.processEvents()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):

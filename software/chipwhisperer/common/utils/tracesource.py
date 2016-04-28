@@ -27,31 +27,44 @@
 
 from chipwhisperer.common.utils import util
 
+
 class TraceSource(object):
+    """ It has traces as output """
 
     def __init__(self):
-        self.tracesChanged = util.Signal()
+        self.sigTracesChanged = util.Signal()
 
     def getTrace(self, n):
         return None
 
-    def numPoint(self):
+    def numPoints(self):
         return 0
 
-    def numTrace(self):
+    def numTraces(self):
         return 0
 
 
-class TraceObserver(object):
+class PassiveTraceObserver(object):
+    """ It process data from a TraceSource when requested """
 
-    def __init__(self):
-        self.traceSource = None
+    def __init__(self, traceSource=None):
+        self.setTraceSource(traceSource)
 
-    def setObservedTraceSource(self, traceSource):
-        if traceSource:
-            traceSource.tracesChanged.connect(self.processTraces)
-        self.traceSource = traceSource
-        self.processTraces()
+    def setTraceSource(self, traceSource):
+        self._traceSource = traceSource
+
+    def traceSource(self):
+        return self._traceSource
 
     def processTraces(self):
         pass
+
+
+class ActiveTraceObserver(PassiveTraceObserver):
+    """ It observes a TraceSource for state changes and process the Traces actively """
+
+    def setTraceSource(self, traceSource):
+        if traceSource:
+            traceSource.sigTracesChanged.connect(self.processTraces)
+        self._traceSource = traceSource
+        self.processTraces()

@@ -27,30 +27,30 @@
 import numpy as np
 import copy
 from datetime import datetime
-from chipwhisperer.common.results._base import ResultsBase, AttackObserver
+from ._base import ResultsBase
+from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
 
 
-
-class ResultsSave(ResultsBase, AttackObserver):
-    """Save Correlation Output to Files"""
+class ResultsSave(ResultsBase, ActiveAnalysisObserver):
     name = "Save to Files"
+    description = "Save correlation output to files."
 
     def __init__(self, parentParam=None):
         ResultsBase.__init__(self, parentParam)
-        AttackObserver.__init__(self)
+        ActiveAnalysisObserver.__init__(self)
         self._filename = None
         self._enabled = False
         self.dataarray = None
 
-    def setupParameters(self):
+    def _setupParameters(self):
         return [{'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.setEnabled}]
 
-    def attackStatsUpdated(self):
+    def analysisUpdated(self):
         """Stats have been updated"""
         if self._enabled == False:
             return
 
-        attackStats = self.attack.getStatistics()
+        attackStats = self._analysisSource.getStatistics()
         # attackStats.setKnownkey(nk)
         # attackStats.findMaximums(useAbsolute=self.useAbs)
 
@@ -81,7 +81,7 @@ class ResultsSave(ResultsBase, AttackObserver):
         self.dataarray.append(newdata)
         np.save(self._filename, self.dataarray)
 
-    def attackDone(self):
+    def processAnalysis(self):
         """Attack is done"""
         self._filename = None
         self.dataarray = None

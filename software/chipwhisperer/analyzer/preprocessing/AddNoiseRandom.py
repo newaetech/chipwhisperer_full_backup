@@ -26,7 +26,7 @@
 #=================================================
 
 import numpy as np
-from _base import PreprocessingBase
+from ._base import PreprocessingBase
 
 
 class AddNoiseRandom(PreprocessingBase):
@@ -47,7 +47,7 @@ class AddNoiseRandom(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -56,4 +56,4 @@ class AddNoiseRandom(PreprocessingBase):
             else:
                 return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)

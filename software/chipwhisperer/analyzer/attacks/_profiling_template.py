@@ -35,27 +35,22 @@ from ._stats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 try:
     from scipy.stats import multivariate_normal
 except ImportError:
     multivariate_normal = None
 
 
-class TemplateBasic(AutoScript):
+class TemplateBasic(AutoScript, PassiveTraceObserver):
     """
     Template using Multivariate Stats (mean + covariance matrix)
     """
     scriptsUpdated = util.Signal()
 
     def __init__(self):
-        super(TemplateBasic, self).__init__()
-        self._traceSource = None
-
-    def traceSource(self):
-        return self._traceSource
-
-    def setTraceSource(self, trace):
-        self._traceSource = trace
+        AutoScript.__init__(self)
+        PassiveTraceObserver.__init__(self)
 
     def setProject(self, proj):
         self._project = proj
@@ -141,7 +136,7 @@ class TemplateBasic(AutoScript):
         return self.template
 
 
-class ProfilingTemplate(AutoScript):
+class ProfilingTemplate(AutoScript, PassiveTraceObserver):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
@@ -150,8 +145,8 @@ class ProfilingTemplate(AutoScript):
 
     def __init__(self, parent):
         AutoScript.__init__(self)
+        PassiveTraceObserver.__init__(self)
         self.parent = parent
-        self._traceSource = None
         self._project = None
 
         resultsParams = [{'name':'Load Template', 'type':'group', 'children':[
@@ -228,13 +223,10 @@ class ProfilingTemplate(AutoScript):
     def setReportingInterval(self, intv):
         self._reportinginterval = intv
 
-    def traceSource(self):
-        return self._traceSource
-
-    def setTraceManager(self, tmanager):
-        self._traceSource = tmanager
+    def setTraceSource(self, traceSource):
+        PassiveTraceObserver.setTraceSource(traceSource)
         # Set for children
-        self.profiling.setTraceManager(tmanager)
+        self.profiling.setTraceManager(traceSource)
 
     def setProject(self, proj):
         self._project = proj

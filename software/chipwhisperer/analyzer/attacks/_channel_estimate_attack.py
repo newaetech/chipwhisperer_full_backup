@@ -31,6 +31,7 @@ from operator import itemgetter
 
 class ChannelEstimateAttackOneSubkey(object):
     """ Redos entire attack """
+
     def __init__(self):        
         self.clearStats()
         
@@ -111,7 +112,7 @@ class ChannelEstimateAttackOneSubkey(object):
 #Hacks for main()
 sys.path.append('../../common')
 sys.path.append('../.')
-import attacks.models.AES128_8bit as AES128_8bit
+import models.AES128_8bit as AES128_8bit
 
 def main(tracedir, fitrange, tryrange):    
     preflist = []

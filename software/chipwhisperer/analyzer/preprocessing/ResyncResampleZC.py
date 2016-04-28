@@ -26,7 +26,7 @@
 #=================================================
 
 import numpy as np
-from _base import PreprocessingBase
+from ._base import PreprocessingBase
 from matplotlib.mlab import find
 import scipy.signal as sig
 
@@ -67,7 +67,7 @@ class ResyncResampleZC(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -76,7 +76,7 @@ class ResyncResampleZC(PreprocessingBase):
             ind = self.findZerocrossing(trace)
             return self.resampleResize(trace, ind, self.binlen)
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -92,7 +92,7 @@ class ResyncResampleZC(PreprocessingBase):
             return
         
         if self.binlen == 0:
-            self.reftrace = self.traceSource.getTrace(tnum) - self.zcoffset
+            self.reftrace = self._traceSource.getTrace(tnum) - self.zcoffset
             ind = self.findZerocrossing(self.reftrace)
             self.binlen = self.findAvgLength(ind)
 

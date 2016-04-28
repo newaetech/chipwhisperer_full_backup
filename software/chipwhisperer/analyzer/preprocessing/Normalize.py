@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import PreprocessingBase
+from ._base import PreprocessingBase
 import numpy as np
 
 
@@ -221,7 +221,7 @@ class Normalize(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
 
             if trace is None:
                 return None
@@ -229,7 +229,7 @@ class Normalize(PreprocessingBase):
 
             return proc
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
 
     # def init(self):
     #    if self.ptEnd == 0:

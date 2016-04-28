@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+import sys
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 from chipwhisperer.common.utils import pluginmanager
 from _base import AttackBaseClass
@@ -34,7 +35,6 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
-
     name = "CPA"
 
     def __init__(self):
@@ -92,11 +92,11 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def updateScript(self, ignored=None):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
-        analysAlgoStr = self.findParam('CPA_algo').value().__name__
+        analysAlgoStr = self.attack.__class__.__name__
         hardwareStr = self.findParam('hw_algo').value().__name__
         leakModelStr = hardwareStr + "." + self.findParam('hw_leak').value()
 
-        self.importsAppend("from chipwhisperer.analyzer.attacks.cpa_algorithms.%s import %s" % (analysAlgoStr, analysAlgoStr))
+        self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
@@ -115,10 +115,10 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         else:
             return inpkey
 
-    def doAttack(self):
+    def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
         with progressBar:
-            self.attackStarted.emit()
+            self.sigAnalysisStarted.emit()
             self.attack.setTargetBytes(self.targetBytes())
             self.attack.setReportingInterval(self.getReportingInterval())
             self.attack.getStatistics().clear()
@@ -132,10 +132,10 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 if progressBar and progressBar.wasAborted():
                     return
 
-        self.attackDone.emit()
+        self.sigAnalysisDone.emit()
 
     def statsReady(self):
-        self.statsUpdated.emit()
+        self.sigAnalysisUpdated.emit()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         pass

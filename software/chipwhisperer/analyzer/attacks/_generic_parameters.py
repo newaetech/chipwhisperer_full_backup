@@ -53,7 +53,6 @@ class AttackGenericParameters(AutoScript):
         self.traceMax = 1
 
         self.paramListUpdated = util.Signal()
-        self.settingsChanged = util.Signal()
         self.traceLimitsChanged = util.Signal()
 
         self.setupTraceParam()
@@ -76,9 +75,11 @@ class AttackGenericParameters(AutoScript):
         self.params = ConfigParameter.create_extended(self, name='Attack Settings', type='group', children=attackParams)
         self.updateBytesVisible()
 
+    def getAbsoluteMode(self):
+        return self.useAbs
+
     def setAbsoluteMode(self, mode):
         self.useAbs = mode
-        self.settingsChanged.emit(mode)
 
     def getByteList(self):
         init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, set=self.updateScriptBytesEnabled) for bnum in range(0, self.maxSubKeys)]

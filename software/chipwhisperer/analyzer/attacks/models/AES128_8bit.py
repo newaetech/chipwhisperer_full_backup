@@ -74,6 +74,7 @@ def processKnownKey(setting, inpkey):
 
     return inpkey
 
+
 def leakage(pt, ct, guess, bnum, setting, state):
 
     if setting == LEAK_HW_SBOXOUT_FIRSTROUND:
@@ -106,13 +107,16 @@ def leakage(pt, ct, guess, bnum, setting, state):
     else:
         raise ValueError("Invalid setting: %s" % str(setting))
 
+
 def getHW(var):
     """Given a variable, return the hamming weight (number of 1's)"""
     return HW8Bit[var]
 
+
 def VccToGnd(var):
     """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
     return 8 - var
+
 
 # TODO: Use this
 def xtime(a):

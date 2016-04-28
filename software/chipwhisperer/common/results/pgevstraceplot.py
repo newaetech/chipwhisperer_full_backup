@@ -24,16 +24,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _plotdata import ResultsPlotData
+from ._plotdata import AttackResultPlot
 from PySide.QtGui import *
 from chipwhisperer.common.utils import util
 
 
-class PGEVsTrace(ResultsPlotData):
-    """
-    Plots Partial Guessing Entropy (PGE) vs Traces in Attack
-    """
+class PGEVsTrace(AttackResultPlot):
     name = "PGE vs Trace Plot"
+    description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
 
     def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
         super(PGEVsTrace, self).__init__(parentParam)
@@ -103,10 +101,10 @@ class PGEVsTrace(ResultsPlotData):
 
     def calculatePGE(self):
         """Calculate the Partial Guessing Entropy (PGE)"""
-        if not self.attack:
+        if not self._analysisSource:
             raise Warning("Attack not set/executed yet")
 
-        stats = self.attack.getStatistics()
+        stats = self._analysisSource.getStatistics()
         pge = stats.pge_total
         allpge = util.DictType()
 

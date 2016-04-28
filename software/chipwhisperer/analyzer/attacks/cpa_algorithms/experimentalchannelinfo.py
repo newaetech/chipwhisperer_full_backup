@@ -27,7 +27,6 @@
 
 import numpy as np
 from scipy.stats import norm
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition

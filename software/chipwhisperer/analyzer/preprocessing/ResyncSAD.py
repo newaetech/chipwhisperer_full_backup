@@ -26,8 +26,9 @@
 #=================================================
 
 import numpy as np
-from _base import PreprocessingBase
+from ._base import PreprocessingBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+
 
 class ResyncSAD(PreprocessingBase):
     """
@@ -62,11 +63,8 @@ class ResyncSAD(PreprocessingBase):
         if refpt is None: refpt = (0, 0)
         if windowpt is None: windowpt = (0, 0)
 
-        self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" % (
-                            self.findParam('reftrace').value(),
-                            refpt[0], refpt[1],
-                            windowpt[0], windowpt[1]
-                            ))
+        self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" %
+                         (self.findParam('reftrace').value(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
 
     def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
         self.rtrace = rtraceno
@@ -81,7 +79,7 @@ class ResyncSAD(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             sad = self.findSAD(trace)
@@ -107,7 +105,7 @@ class ResyncSAD(PreprocessingBase):
                 trace = np.append(trace[diff:], np.zeros(diff))
             return trace
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -120,7 +118,6 @@ class ResyncSAD(PreprocessingBase):
     def findSAD(self, inputtrace):
         reflen = self.ccEnd-self.ccStart
         sadlen = self.wdEnd-self.wdStart
-        
         sadarray = np.empty(sadlen)
         
         for ptstart in range(self.wdStart, self.wdEnd):    
@@ -134,8 +131,8 @@ class ResyncSAD(PreprocessingBase):
         if self.enabled == False:
             return
         
-        self.reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
-        sad = self.findSAD(self.traceSource.getTrace(tnum))
+        self.reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
+        sad = self.findSAD(self._traceSource.getTrace(tnum))
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)

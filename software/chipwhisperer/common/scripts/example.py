@@ -4,9 +4,8 @@ from chipwhisperer.common.scripts._base import UserScriptBase
 import chipwhisperer.analyzer.preprocessing as preprocessing
 # Imports from Capture
 from chipwhisperer.analyzer.attacks.cpa import CPA
-from chipwhisperer.analyzer.attacks.cpa_algorithms.CPAProgressive import CPAProgressive
+from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive
 import chipwhisperer.analyzer.attacks.models.AES128_8bit
-from chipwhisperer.analyzer.attacks.cpa_algorithms.CPASimpleLoop import CPASimpleLoop
 # Imports from utilList
 
 class UserScript(UserScriptBase):
@@ -42,16 +41,16 @@ class UserScript(UserScriptBase):
 
     def initReporting(self):
         # Configures the attack observers (usually a set of GUI widgets)
-        self.api.resultWidgets["Trace Output Plot"].setObservedTraceSource(self.traces)
-        self.api.resultWidgets["Trace Output Plot"].setObservedAttack(self.attack)
-        self.api.resultWidgets["Correlation vs Traces in Attack"].setObservedTraceSource(self.traces)
-        self.api.resultWidgets["Correlation vs Traces in Attack"].setObservedAttack(self.attack)
-        self.api.resultWidgets["Output vs Point Plot"].setObservedTraceSource(self.traces)
-        self.api.resultWidgets["Output vs Point Plot"].setObservedAttack(self.attack)
-        self.api.resultWidgets["PGE vs Trace Plot"].setObservedTraceSource(self.traces)
-        self.api.resultWidgets["PGE vs Trace Plot"].setObservedAttack(self.attack)
-        self.api.resultWidgets["Results Table"].setObservedTraceSource(self.traces)
-        self.api.resultWidgets["Results Table"].setObservedAttack(self.attack)
+        self.api.resultWidgets["Trace Output Plot"].setTraceSource(self.traces)
+        self.api.resultWidgets["Trace Output Plot"].setAnalysisSource(self.attack)
+        self.api.resultWidgets["Correlation vs Traces in Attack"].setTraceSource(self.traces)
+        self.api.resultWidgets["Correlation vs Traces in Attack"].setAnalysisSource(self.attack)
+        self.api.resultWidgets["Output vs Point Plot"].setTraceSource(self.traces)
+        self.api.resultWidgets["Output vs Point Plot"].setAnalysisSource(self.attack)
+        self.api.resultWidgets["PGE vs Trace Plot"].setTraceSource(self.traces)
+        self.api.resultWidgets["PGE vs Trace Plot"].setAnalysisSource(self.attack)
+        self.api.resultWidgets["Results Table"].setTraceSource(self.traces)
+        self.api.resultWidgets["Results Table"].setAnalysisSource(self.attack)
 
     def run(self):
-        self.attack.doAttack()
+        self.attack.processTraces()

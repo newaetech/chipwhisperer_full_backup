@@ -24,27 +24,25 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from functools import partial
+import numpy as np
 from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.results._base import ResultsWidgetBase, AttackObserver
-
-from functools import partial
-import numpy as np
+from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
+from ._base import ResultsWidgetBase
 
 
-class ResultsPlotData(GraphWidget, ResultsWidgetBase, AttackObserver):
+class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
-    name = "Some Descriptive Name"
 
     def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
         GraphWidget.__init__(self)
         ResultsWidgetBase.__init__(self, parentParam)
-        AttackObserver.__init__(self)
-
+        ActiveAnalysisObserver.__init__(self)
 
         self.setObjectName(self.name)
         self.numKeys = subkeys
@@ -80,7 +78,6 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase, AttackObserver):
     def _setupParameters(self):
         return [{'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
                 {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True},
-                # {'name':''}
                 ]
 
     def setBytePlot(self, num, sel):
@@ -137,8 +134,10 @@ class ResultsPlotData(GraphWidget, ResultsWidgetBase, AttackObserver):
     #        self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
     #        self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
 
-    def drawData(self, xdatalst, ydatalst, enabledBytes=[-1]):
+    def drawData(self, xdatalst, ydatalst, enabledBytes=None):
         """Redraw the plot"""
+        if enabledBytes is None:
+            enabledBytes = [-1]
 
         # Do Redraw
         progress = QProgressDialog("Redrawing", "Abort", 0, 100)

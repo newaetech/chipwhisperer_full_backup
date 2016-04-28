@@ -78,6 +78,8 @@ class CWMainGUI(QMainWindow):
         self.loadExtraModules()
         self.addToolMenuItems()
         self.addSettingsDocks()
+        self.api.graphWidget = self.api.resultWidgets['Trace Output Plot']
+
         self.addResultDocks()
         self.restoreSettings()
 

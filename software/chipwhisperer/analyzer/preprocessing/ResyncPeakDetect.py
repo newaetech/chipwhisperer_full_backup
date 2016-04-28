@@ -26,8 +26,9 @@
 #=================================================
 
 import numpy as np
-from _base import PreprocessingBase
+from ._base import PreprocessingBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+
 
 class ResyncPeakDetect(PreprocessingBase):
     """
@@ -76,7 +77,7 @@ class ResyncPeakDetect(PreprocessingBase):
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             if str.lower(self.type) == 'max':
@@ -96,9 +97,8 @@ class ResyncPeakDetect(PreprocessingBase):
             elif diff > 0:
                 trace = np.append(trace[diff:], np.zeros(diff))
             return trace
-
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
 
     def init(self):
         try:
@@ -107,7 +107,7 @@ class ResyncPeakDetect(PreprocessingBase):
             self.findParam('enabled').setValue(False)
 
     def calcRefTrace(self, tnum):
-        reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
+        reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         if self.type == 'Max':
             self.refmaxloc = np.argmax(reftrace)
             self.refmaxsize = max(reftrace)

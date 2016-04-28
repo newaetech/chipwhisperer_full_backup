@@ -25,31 +25,31 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
+from chipwhisperer.common.utils.analysissource import AnalysisSource
 
 
-class AttackBaseClass(pluginmanager.Plugin):
+class AttackBaseClass(pluginmanager.Plugin, PassiveTraceObserver, AnalysisSource):
     """Generic Attack Interface"""
     name = "None"
 
     def __init__(self):
-        self._traceSource = None
-        super(AttackBaseClass, self).__init__()
-        self.attackStarted = util.Signal()
-        self.statsUpdated = util.Signal()
-        self.attackDone = util.Signal()
+        AnalysisSource.__init__(self)
+        PassiveTraceObserver.__init__(self)
+        pluginmanager.Plugin.__init__(self)
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
         return inpkey
 
-    def doAttack(self):
-        self.attackStarted.emit()
+    def processTraces(self):
+        self.sigAnalysisStarted.emit()
         # Do the attack
-        self.attackDone.emit()
+        self.sigAnalysisDone.emit()
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        self.statsUpdated.emit()
+        self.sigAnalysisUpdated.emit()
     
     def getStatistics(self):
         return None
@@ -87,19 +87,10 @@ class AttackBaseClass(pluginmanager.Plugin):
         else:
             return self._pointRange
 
-    def setTraceSource(self, traceSource):
-        """Set the input trace source"""
-        self._traceSource = traceSource
-
-    def traceSource(self):
-        return self._traceSource
-
     def knownKey(self):
         """Get the known key via attack"""
         try:
             return self.processKnownKey(self.traceSource().getKnownKey(self.getTraceStart()))
-        except AttributeError as e:
+        except Exception as e:
             print "WARNING: Failed to find KnownKey, error = %s" % str(e)
-
-    def getName(self):
-        return self.name
+            return None

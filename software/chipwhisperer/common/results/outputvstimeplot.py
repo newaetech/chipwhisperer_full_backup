@@ -24,15 +24,12 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _plotdata import ResultsPlotData
+from ._plotdata import AttackResultPlot
 
 
-class OutputVsTime(ResultsPlotData):
-    """
-    Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
-    correlation over all data points, or the most likely correlation over number of traces
-    """
+class OutputVsTime(AttackResultPlot):
     name = "Output vs Point Plot"
+    description = "Output vs Point Plot Description."
 
     def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
         super(OutputVsTime, self).__init__(parentParam)
@@ -44,7 +41,7 @@ class OutputVsTime(ResultsPlotData):
     def getPrange(self, bnum, diffs):
         """Get a list of all points for a given byte number statistic"""
 
-        prange = self.attack.getPointRange(bnum)
+        prange = self._analysisSource.getPointRange(bnum)
         prange = list(prange)
 
         if len(diffs[0]) == 1:
@@ -55,13 +52,10 @@ class OutputVsTime(ResultsPlotData):
         if (prange[1] - prange[0]) != len(diffs[0]):
             prange[1] = prange[0] + len(diffs[0])
 
-        prange = range(prange[0], prange[1])
-
-        return prange
+        return range(prange[0], prange[1])
 
     def redrawPlot(self):
-
-        data = self.attack.getStatistics().diffs
+        data = self._analysisSource.getStatistics().diffs
 
         enabledlist = []
         for i in range(0, self.numKeys):

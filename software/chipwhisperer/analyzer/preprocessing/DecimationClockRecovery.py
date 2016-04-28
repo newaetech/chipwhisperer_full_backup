@@ -25,11 +25,12 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import PreprocessingBase
-import scipy as sp
+from ._base import PreprocessingBase
+import scipy
 import scipy.fftpack
 import numpy as np
 from matplotlib.mlab import find
+
 
 def fft(signal, freq=None):
     FFT = abs(scipy.fft(signal))
@@ -94,7 +95,7 @@ class DecimationClockRecovery(PreprocessingBase):
             self._order = order
 
         try:
-            fftdata = scipy.fft(self.traceSource.getTrace(tnum))
+            fftdata = scipy.fft(self._traceSource.getTrace(tnum))
             fftdata = abs(fftdata[2:(len(fftdata) / 2)])
             maxindx = fftdata.argmax() + 2
             centerfreq = float(maxindx) / float(len(fftdata) + 2)
@@ -116,7 +117,7 @@ class DecimationClockRecovery(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -158,4 +159,4 @@ class DecimationClockRecovery(PreprocessingBase):
             #print len(filttrace)
             return filttrace
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)

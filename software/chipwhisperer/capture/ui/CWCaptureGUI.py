@@ -30,6 +30,7 @@ from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 from chipwhisperer.common.utils import pluginmanager
 
 
@@ -52,6 +53,12 @@ class CWCaptureGUI(CWMainGUI):
     def addSettingsDocks(self):
         self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
         self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
+        resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
+        for k, v in resultWidgets.iteritems():
+            if not issubclass(v.__class__, ActiveTraceObserver):
+                del resultWidgets[k]
+        self.api.addResultWidgets(resultWidgets)
+
         self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
         self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")

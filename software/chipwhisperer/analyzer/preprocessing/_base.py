@@ -26,11 +26,11 @@
 #=================================================
 
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.api.tracesource import TraceSource, TraceObserver
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 
 
-class PreprocessingBase(TraceSource, TraceObserver, AutoScript, pluginmanager.Plugin):
+class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmanager.Plugin):
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:
@@ -43,12 +43,12 @@ class PreprocessingBase(TraceSource, TraceObserver, AutoScript, pluginmanager.Pl
     def __init__(self, parentParam=None, traceSource = None):
         self.enabled = True
         TraceSource.__init__(self)
-        TraceObserver.__init__(self)
+        ActiveTraceObserver.__init__(self)
         AutoScript.__init__(self)
         pluginmanager.Plugin.__init__(self, parentParam=parentParam)
-        self.setObservedTraceSource(traceSource)
+        self.setTraceSource(traceSource)
         if traceSource:
-            traceSource.tracesChanged.connect(self.tracesChanged.emit)
+            traceSource.sigTracesChanged.connect(self.sigTracesChanged.emit)  # Forwards the traceChanged signal to the next observer in the chain
         self.updateScript()
 
     def setupParameters(self):
@@ -73,45 +73,39 @@ class PreprocessingBase(TraceSource, TraceObserver, AutoScript, pluginmanager.Pl
     def getTrace(self, n):
         """Get trace number n"""
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             # Do your preprocessing here
             return trace
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
 
     def getTextin(self, n):
         """Get text-in number n"""
-        return self.traceSource.getTextin(n)
+        return self._traceSource.getTextin(n)
 
     def getTextout(self, n):
         """Get text-out number n"""
-        return self.traceSource.getTextout(n)
+        return self._traceSource.getTextout(n)
 
     def getKnownKey(self, n=None):
         """Get known-key number n"""
-        return self.traceSource.getKnownKey(n)
+        return self._traceSource.getKnownKey(n)
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
         pass
 
-    def numPoint(self):
-        return self.traceSource.numPoints()
-
-    def numTrace(self):
-        return self.traceSource.numTraces()
-
     def getSegmentList(self):
-        return self.traceSource.getSegmentList()
+        return self._traceSource.getSegmentList()
 
     def getAuxData(self, n, auxDic):
-        return self.traceSource.getAuxData(n, auxDic)
+        return self._traceSource.getAuxData(n, auxDic)
 
     def findMappedTrace(self, n):
-        return self.traceSource.findMappedTrace(n)
+        return self._traceSource.findMappedTrace(n)
 
     def numTraces(self):
-        return self.traceSource.numTraces()
+        return self._traceSource.numTraces()
 
     def numPoints(self):
-        return self.traceSource.numPoints()
+        return self._traceSource.numPoints()
