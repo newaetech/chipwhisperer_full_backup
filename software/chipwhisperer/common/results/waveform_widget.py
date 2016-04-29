@@ -27,7 +27,7 @@
 from _base import ResultsWidgetBase
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
+from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 
 
 class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
@@ -38,13 +38,23 @@ class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
         GraphWidget.__init__(self)
         ResultsWidgetBase.__init__(self, parentParam)
         ActiveTraceObserver.__init__(self)
+        self.findParam('input').blockTreeChangeSignal()  # Prevents the sigValueChanged to be emited causing a error
+        self.findParam('input').setValue(TraceSource.allRegisteredTraceSources["Trace Manager"])
+        TraceSource.sigNewRegisteredTraceSouce.connect(self.newTraceSources)
+
         self.resetTraceLimits()
         self.setDefaultYRange(-0.5, 0.5)
         self.YDefault()
 
+    def newTraceSources(self):  # TODO: Consider call a reloadParameters() instead?
+        self.findParam('input').setLimits({}) # TODO: Why it only updates if I put it first?
+        self.findParam('input').setLimits(TraceSource.allRegisteredTraceSources)
+        self.paramListUpdated.emit()
+
     def _setupParameters(self):
         self.redrawAfterEach = False
         return [
+                    {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.allRegisteredTraceSources, 'set':self.setTraceSource},
                     {'name':'Redraw after Each', 'type':'bool', 'value':self.redrawAfterEach, 'set':self.setRedrawAfterEach},
                     {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'default':(0, 0)},
                     {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'default':(0, 0), 'graphwidget':self},
@@ -85,7 +95,7 @@ class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
             trace = self._traceSource.getTrace(tnum)
             if trace is not None:
                 ttotal += 1
-                self.passTrace(trace[pstart:pend+1], pstart)
+                self.passTrace(trace[pstart:pend+1], pstart, self._traceSource.offset())
 
                 if self.redrawAfterEach:
                     util.updateUI()

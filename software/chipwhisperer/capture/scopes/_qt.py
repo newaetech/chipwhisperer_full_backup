@@ -23,7 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
 import _OpenADCInterface as openadc
 from chipwhisperer.common.utils import util, timer, pluginmanager
 

@@ -31,6 +31,7 @@ from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
 
 
 class CWCoreAPI(pluginmanager.Parameterized):
@@ -86,6 +87,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         return ret
 
     def setupParameters(self):
+        TraceSource.registerTraceSource("Scope (Live)", LiveTraceSource())
+
         self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
         self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
@@ -93,7 +96,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
         self.resultWidgets = util.DictType()
-        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", True, True, self)
+        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
 
         self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
         self._auxList = [None]  # TODO: implement it as a list in the whole class
@@ -121,7 +124,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.setupResultWidgets()
 
     def setupResultWidgets(self):
-        [v.setTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v, "setTraceSource")]
+        # [v.setTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v, "setTraceSource")]
         [v.setAnalysisSource(self.getAttack()) for v in self.resultWidgets.itervalues() if hasattr(v, "setAnalysisSource")]
 
     def getScope(self):
@@ -133,6 +136,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getScope():
             self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
+            TraceSource.allRegisteredTraceSources["Scope (Live)"].setScope(self.getScope())
         self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):
@@ -193,6 +197,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
         self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
+        TraceSource.allRegisteredTraceSources["Trace Manager"] = self.project().traceManager()
         self.setupResultWidgets()
 
     def openProject(self, fname):

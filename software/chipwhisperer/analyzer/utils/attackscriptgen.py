@@ -120,10 +120,13 @@ class AttackScriptGen(pluginmanager.Parameterized):
         This ensures that the options for that module are then displayed in the GUI, along with
         writing the auto-generated script.
         """
-        self.preprocessingListGUI[num] = module
-        self.preprocessingParamTree.replace(self.preprocessingListGUI)
         if module:
-            module.scriptsUpdated.connect(self.reloadScripts)
+            self.preprocessingListGUI[num] = module()
+            self.preprocessingListGUI[num].scriptsUpdated.connect(self.reloadScripts)
+        else:
+            self.preprocessingListGUI[num] = None
+
+        self.preprocessingParamTree.replace(self.preprocessingListGUI)
         self.reloadScripts()
 
     def setAttack(self, module):

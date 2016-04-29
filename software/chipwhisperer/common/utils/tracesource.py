@@ -30,6 +30,8 @@ from chipwhisperer.common.utils import util
 
 class TraceSource(object):
     """ It has traces as output """
+    allRegisteredTraceSources = util.DictType()
+    sigNewRegisteredTraceSouce = util.Signal()
 
     def __init__(self):
         self.sigTracesChanged = util.Signal()
@@ -43,11 +45,54 @@ class TraceSource(object):
     def numTraces(self):
         return 0
 
+    def offset(self):
+        return 0
+
+    @classmethod
+    def registerTraceSource(cls, name, traceSource):
+        cls.allRegisteredTraceSources[name] = traceSource
+        cls.sigNewRegisteredTraceSouce.emit()
+
+
+class LiveTraceSource(TraceSource):
+
+    def __init__(self, scope=None):
+        TraceSource.__init__(self)
+        self._scope = None
+        self.setScope(scope)
+        self._lastData = []
+        self._lastOffset = 0
+
+    def setScope(self, newScope):
+        if self._scope:
+            self._scope.dataUpdated.disconnect(self.newScopeData)
+        if newScope:
+            newScope.dataUpdated.connect(self.newScopeData)
+        self._scope = newScope
+
+    def newScopeData(self, data=None, offset=0):
+        self._lastData = data
+        self._lastOffset = offset
+        self.sigTracesChanged.emit()
+
+    def getTrace(self, n):
+        return self._lastData
+
+    def numPoints(self):
+        return len(self._lastData)
+
+    def numTraces(self):
+        return 1
+
+    def offset(self):
+        return self._lastOffset
+
 
 class PassiveTraceObserver(object):
     """ It process data from a TraceSource when requested """
 
     def __init__(self, traceSource=None):
+        self._traceSource = None
         self.setTraceSource(traceSource)
 
     def setTraceSource(self, traceSource):
@@ -63,8 +108,10 @@ class PassiveTraceObserver(object):
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """
 
-    def setTraceSource(self, traceSource):
-        if traceSource:
-            traceSource.sigTracesChanged.connect(self.processTraces)
-        self._traceSource = traceSource
+    def setTraceSource(self, newTraceSource):
+        if self._traceSource:
+            self._traceSource.sigTracesChanged.disconnect(self.processTraces)
+        if newTraceSource:
+            newTraceSource.sigTracesChanged.connect(self.processTraces)
+        self._traceSource = newTraceSource
         self.processTraces()
