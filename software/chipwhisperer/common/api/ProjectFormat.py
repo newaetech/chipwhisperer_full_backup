@@ -58,26 +58,24 @@ class ConfigObjProj(ConfigObj):
 
 
 class ProjectFormat(object):
-    class Signals(object):
-        def __init__(self):
-            self.filenameChanged = util.Signal()
-            self.fileChangedOnDisk = util.Signal()
-            self.dirty = util.Observable(True)
-            self.statusChanged = util.Signal()
-
     untitledFileName = "tmp/default.cwp"
+
     def __init__(self):
-        self.signals = ProjectFormat.Signals()
+        self.sigFilenameChanged = util.Signal()
+        self.sigFleChangedOnDisk = util.Signal()
+        self.sigStatusChanged = util.Signal()
+        self.dirty = util.Observable(True)
+
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
         self.paramListList = []        
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self._traceManager = TraceManager()
-        self._traceManager.dirty.connect(lambda: self.signals.dirty.setValue(self._traceManager.dirty.value() or self.signals.dirty.value()))
+        self._traceManager.dirty.connect(lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value()))
         self.setFilename(ProjectFormat.untitledFileName)
 
     def configObjChanged(self, key):
-        self.signals.dirty.setValue(True)
+        self.dirty.setValue(True)
 
     def isUntitled(self):
         return self.filename == ProjectFormat.untitledFileName
@@ -114,7 +112,7 @@ class ProjectFormat(object):
         self.config.filename = f        
         self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
         self.createDataDirectory()
-        self.signals.statusChanged.emit()
+        self.sigStatusChanged.emit()
         
     def createDataDirectory(self):
         # Check if data-directory exists?
@@ -135,7 +133,7 @@ class ProjectFormat(object):
 
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
         self._traceManager.loadProject(self.filename)
-        self.signals.dirty.setValue(False)
+        self.dirty.setValue(False)
 
     def getDataFilepath(self, filename, subdirectory='analysis'):
         datadir = os.path.join(self.datadirectory, subdirectory)
@@ -224,9 +222,9 @@ class ProjectFormat(object):
         self.config[pn]['General Settings'] =  self.settingsDict
 
         self.config.write()
-        self.signals.fileChangedOnDisk.emit()
-        self.signals.statusChanged.emit()
-        self.signals.dirty.setValue(False)
+        self.sigFileChangedOnDisk.emit()
+        self.sigStatusChanged.emit()
+        self.dirty.setValue(False)
 
     def checkDiff(self):
         """
@@ -247,7 +245,7 @@ class ProjectFormat(object):
         return added, removed, changed
 
     def hasDiffs(self):
-        if self.signals.dirty.value(): return True
+        if self.dirty.value(): return True
 
         added, removed, changed = self.checkDiff()
         if (len(added) + len(removed) + len(changed)) == 0:
@@ -269,4 +267,4 @@ class ProjectFormat(object):
 
             util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
             t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
-        self.signals.statusChanged.emit()
+        self.sigStatusChanged.emit()

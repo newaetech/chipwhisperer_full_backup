@@ -38,7 +38,7 @@ class AttackScriptGen(pluginmanager.Parameterized):
         self.cwGUI = cwGUI
         super(AttackScriptGen, self).__init__(parentParam)
         self.scriptParamTree = pluginmanager.CWParameterTree("Script", [self])
-        self.cwGUI.api.signals.tracesChanged.connect(self.updateAttackTraceLimits)
+        self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
 
     def updateAttackTraceLimits(self):
         self.attack.setTraceLimits(self.cwGUI.api.project().traceManager().numTraces(), self.cwGUI.api.project().traceManager().numPoints())
