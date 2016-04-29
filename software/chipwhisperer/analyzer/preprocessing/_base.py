@@ -53,7 +53,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmana
 
     def setupParameters(self):
         """Setup parameters specific to preprocessing module"""
-        ret = [{'name':'Description', 'type':'text', 'value':self.description, 'readonly':True},
+        ret = [{'name':'', 'type':'label', 'value':self.description, 'readonly':True},
                {'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled}
                 ]
         ret.extend(self._setupParameters())

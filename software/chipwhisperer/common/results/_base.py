@@ -36,7 +36,7 @@ class ResultsBase(pluginmanager.Plugin):
         super(ResultsBase, self).__init__(parentParam)
 
     def setupParameters(self):
-        ret = [{'name':'Description', 'type':'text', 'value':self.description, 'readonly':True}]
+        ret = [{'name':'', 'type':'label', 'value':self.description, 'readonly':True}]
         ret.extend(self._setupParameters())
         return ret
 
@@ -56,7 +56,7 @@ class ResultsWidgetBase(ResultsBase):
         ResultsBase.__init__(self, parentParam)
 
     def setupParameters(self):
-        ret = [{'name':'Description', 'type':'text', 'value':self.description, 'readonly':True},
+        ret = [{'name':'', 'type':'label', 'value':self.description, 'readonly':True},
                {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit}
                ]
         ret.extend(self._setupParameters())
