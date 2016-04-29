@@ -40,23 +40,19 @@ class CWCoreAPI(pluginmanager.Parameterized):
     name = 'Generic Settings'
     instance = None
 
-    class Signals(object):
-        def __init__(self):
-            self.newProject = util.Signal()
-            self.newScopeData = util.Signal()
-            self.connectStatus = util.Signal()
-            self.acqPatternChanged = util.Signal()
-            self.attackChanged = util.Signal()
-            self.newInputData = util.Signal()
-            self.newTextResponse = util.Signal()
-            self.traceDone = util.Signal()
-            self.campaignStart = util.Signal()
-            self.campaignDone = util.Signal()
-            self.tracesChanged = util.Signal()
-
     def __init__(self):
         super(CWCoreAPI, self).__init__()
-        self.signals = self.Signals()
+        self.sigNewProject = util.Signal()
+        self.sigNewScopeData = util.Signal()
+        self.sigConnectStatus = util.Signal()
+        self.sigAttackChanged = util.Signal()
+        self.sigNewInputData = util.Signal()
+        self.sigNewTextResponse = util.Signal()
+        self.sigTraceDone = util.Signal()
+        self.sigCampaignStart = util.Signal()
+        self.sigCampaignDone = util.Signal()
+        self.sigTracesChanged = util.Signal()
+
         CWCoreAPI.instance = self
         self.graphWidget = None
 
@@ -135,8 +131,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getScope(): self.getScope().dis()
         self._scope = driver
         if self.getScope():
-            self.getScope().dataUpdated.connect(self.signals.newScopeData.emit)
-            self.getScope().connectStatus.connect(self.signals.connectStatus.emit)
+            self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
+            self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
         self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):
@@ -146,8 +142,8 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getTarget(): self.getTarget().dis()
         self._target = driver
         if self.getTarget():
-            self.getTarget().newInputData.connect(self.signals.newInputData.emit)
-            self.getTarget().connectStatus.connect(self.signals.connectStatus.emit)
+            self.getTarget().newInputData.connect(self.sigNewInputData.emit)
+            self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
         self.targetParamTree.replace([self.getTarget()])
 
     def getAuxList(self):
@@ -179,7 +175,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getAttack():
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
         self.attackParamTree.replace([self.getAttack()])
-        self.signals.attackChanged.emit()
+        self.sigAttackChanged.emit()
         self.setupResultWidgets()
 
     def project(self):
@@ -187,7 +183,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
     def setProject(self, proj):
         self._project = proj
-        self.signals.newProject.emit()
+        self.sigNewProject.emit()
 
     def newProject(self):
         self.setProject(ProjectFormat())
@@ -196,7 +192,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.project().addParamTree(self)
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
-        self.project().traceManager().sigTracesChanged.connect(self.signals.tracesChanged.emit)
+        self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
         self.setupResultWidgets()
 
     def openProject(self, fname):
@@ -262,7 +258,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         """Captures only one trace"""
         try:
             ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
-            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
+            ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
             return ac.doSingleReading()
         except Warning:
             sys.excepthook(*sys.exc_info())
@@ -308,14 +304,14 @@ class CWCoreAPI(pluginmanager.Parameterized):
 
                 ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
-                ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-                ac.signals.traceDone.connect(self.signals.traceDone.emit)
-                ac.signals.traceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
-                ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
+                ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
+                ac.sigTraceDone.connect(self.sigTraceDone.emit)
+                ac.sigTraceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
+                ac.sigTraceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
 
-                self.signals.campaignStart.emit(baseprefix)
+                self.sigCampaignStart.emit(baseprefix)
                 ac.doReadings(tracesDestination=self.project().traceManager())
-                self.signals.campaignDone.emit()
+                self.sigCampaignDone.emit()
                 tcnt += setSize
 
                 waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments to avoid memory realocation
@@ -392,7 +388,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
     def setupGuiActions(self, mainWindow):
         if not hasattr(self, 'encryptionStatusMonitor'):
             self.encryptionStatusMonitor = EncryptionStatusMonitor(mainWindow)
-            self.signals.newTextResponse.connect(self.encryptionStatusMonitor.newData)
+            self.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
         return [['Encryption Status Monitor','', self.encryptionStatusMonitor.show]]
 
 

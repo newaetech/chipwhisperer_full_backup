@@ -112,8 +112,8 @@ class ProjectTextEditor(QWidget):
         
     def setProject(self, proj):
         self._project = proj
-        self._project.signals.dirty.connect(self.checkGUIChanged)
-        self._project.signals.statusChanged.connect(self.update)
+        self._project.dirty.connect(self.checkGUIChanged)
+        self._project.sigStatusChanged.connect(self.update)
         self.update()
 
     def update(self):

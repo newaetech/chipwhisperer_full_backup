@@ -84,8 +84,8 @@ class CWMainGUI(QMainWindow):
         self.restoreSettings()
 
         self.projectChanged()
-        self.api.signals.newProject.connect(self.projectChanged)
-        self.api.signals.tracesChanged.connect(self.tracesChanged)
+        self.api.sigNewProject.connect(self.projectChanged)
+        self.api.sigTracesChanged.connect(self.tracesChanged)
         pluginmanager.CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
 
@@ -98,7 +98,7 @@ class CWMainGUI(QMainWindow):
     def projectChanged(self):
         self.traceManagerDialog.setTraceManager(self.api.project().traceManager())
         self.projEditWidget.setProject(self.api.project())
-        self.api.project().signals.statusChanged.connect(self.projectStatusChanged)
+        self.api.project().sigStatusChanged.connect(self.projectStatusChanged)
         self.projectStatusChanged()
 
     def addDock(self, dockWidget, name="Settings", area=Qt.TopDockWidgetArea,

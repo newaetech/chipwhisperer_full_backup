@@ -39,12 +39,12 @@ class CWCaptureGUI(CWMainGUI):
         super(CWCaptureGUI, self).__init__(api, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
 
         # Observers (callback methods)
-        self.api.signals.newInputData.connect(self.newTargetData)
-        self.api.signals.connectStatus.connect(self.connectStatusChanged)
-        self.api.signals.traceDone.connect(self.glitchMonitor.traceDone)
-        self.api.signals.campaignStart.connect(self.glitchMonitor.campaignStart)
-        self.api.signals.campaignDone.connect(self.glitchMonitor.campaignDone)
-        self.api.signals.newScopeData.connect(self.newScopeData)
+        self.api.sigNewInputData.connect(self.newTargetData)
+        self.api.sigConnectStatus.connect(self.connectStatusChanged)
+        self.api.sigTraceDone.connect(self.glitchMonitor.traceDone)
+        self.api.sigCampaignStart.connect(self.glitchMonitor.campaignStart)
+        self.api.sigCampaignDone.connect(self.glitchMonitor.campaignDone)
+        self.api.sigNewScopeData.connect(self.newScopeData)
 
     def loadExtraModules(self):
         self.serialTerminal = SerialTerminalDialog(self, self.api)

@@ -28,20 +28,18 @@ from chipwhisperer.common.utils import util
 
 
 class AcquisitionController():
-    class Signals:
-        def __init__(self):
-            self.traceDone = util.Signal()
-            self.captureDone = util.Signal()
-            self.newTextResponse = util.Signal()
 
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
+        self.sigTraceDone = util.Signal()
+        self.sigCaptureDone = util.Signal()
+        self.sigNewTextResponse = util.Signal()
+
         self.target = target
         self.scope = scope
         self.writer = writer
         self.auxList = auxList
         self.running = False
         self.setKeyTextPattern(keyTextPattern)
-        self.signals = AcquisitionController.Signals()
         keyTextPattern.setTarget(target)
 
         self.maxtraces = 1
@@ -88,7 +86,7 @@ class AcquisitionController():
         #    print " %02X"%i,
         # print ""
 
-        self.signals.newTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
+        self.sigNewTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
         return resp
 
     def doSingleReading(self, update=True, N=None):
@@ -167,7 +165,7 @@ class AcquisitionController():
             if self.doSingleReading(True, None) == True:
                 if self.writer:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
-                self.signals.traceDone.emit()
+                self.sigTraceDone.emit()
                 self.currentTrace = self.currentTrace + 1
 
         if self.auxList:
@@ -181,5 +179,5 @@ class AcquisitionController():
             if tracesDestination:
                 tracesDestination.appendTraceSet(self.writer)
 
-        self.signals.captureDone.emit(self.running)
+        self.sigCaptureDone.emit(self.running)
         self.running = False
