@@ -31,9 +31,6 @@ from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
 class ResyncSAD(PreprocessingBase):
-    """
-    Resync by minimizing the SAD.
-    """
     name = "Resync: Sum-of-Difference"
     description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
