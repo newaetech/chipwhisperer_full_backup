@@ -59,7 +59,7 @@ class ActiveAnalysisObserver(PassiveAnalysisObserver):
             analysisSource.sigAnalysisUpdated.connect(self.analysisUpdated)
             analysisSource.sigAnalysisDone.connect(self.processAnalysis)
         self._analysisSource = analysisSource
-        self.processAnalysis()
+        self.analysisStarted()
         
     def analysisStarted(self):
         pass

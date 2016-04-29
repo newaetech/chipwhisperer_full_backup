@@ -65,6 +65,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
         for y in range(1, self.numPerms+1):
             self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
+
         ActiveAnalysisObserver.__init__(self)
 
     def _setupParameters(self):
@@ -101,8 +102,8 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         """Resort data and redraw the table. If update-mode is 'pge' we only redraw entire table
         when  everything=True (analysis is completed)."""
         if not self._analysisSource:
-            self.clearTableContents()
             return
+
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._analysisSource.knownKey())
         attackStats.findMaximums(useAbsolute=self.useAbs)

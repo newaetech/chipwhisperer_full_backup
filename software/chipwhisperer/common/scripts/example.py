@@ -11,6 +11,7 @@ import chipwhisperer.analyzer.attacks.models.AES128_8bit
 class UserScript(UserScriptBase):
     name = "CPA with noise"
     description = "Simple example of attack script using CPA Progressive and random noise"
+
     def __init__(self, api):
         UserScriptBase.__init__(self, api)
         self.initProject()
@@ -41,16 +42,13 @@ class UserScript(UserScriptBase):
 
     def initReporting(self):
         # Configures the attack observers (usually a set of GUI widgets)
-        self.api.resultWidgets["Trace Output Plot"].setTraceSource(self.traces)
-        self.api.resultWidgets["Trace Output Plot"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Correlation vs Traces in Attack"].setTraceSource(self.traces)
         self.api.resultWidgets["Correlation vs Traces in Attack"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Output vs Point Plot"].setTraceSource(self.traces)
+        self.api.resultWidgets["Knownkey Source"].setAnalysisSource(self.attack)
         self.api.resultWidgets["Output vs Point Plot"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["PGE vs Trace Plot"].setTraceSource(self.traces)
         self.api.resultWidgets["PGE vs Trace Plot"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Results Table"].setTraceSource(self.traces)
         self.api.resultWidgets["Results Table"].setAnalysisSource(self.attack)
+        self.api.resultWidgets["Save to Files"].setAnalysisSource(self.attack)
+        self.api.resultWidgets["Trace Output Plot"].setTraceSource(self.traces)
 
     def run(self):
         self.attack.processTraces()
