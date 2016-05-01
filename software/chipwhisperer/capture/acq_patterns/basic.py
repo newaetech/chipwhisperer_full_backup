@@ -31,15 +31,17 @@ from _base import AcqKeyTextPattern_Base
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     name = "Basic"
 
-    def setupParameters(self):
+    def __init__(self, parentParam, target=None):
+        AcqKeyTextPattern_Base.__init__(self, parentParam, target)
         self._fixedPlain = False
         self._fixedKey = True
 
-        return [ {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-                 {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
-                 {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
-                 {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
-                ]
+        self.params.addChildren([
+            {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
+            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
+            {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
+            {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
+        ])
 
     def setKeyType(self, t):
         if t == 'Fixed':

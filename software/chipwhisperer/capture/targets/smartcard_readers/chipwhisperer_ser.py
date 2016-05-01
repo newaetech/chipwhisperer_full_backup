@@ -24,25 +24,24 @@
 #=================================================
 
 from _base import ReaderTemplate
-import chipwhisperer.capture.targets.SimpleSerial as SimpleSerial
+from ..simpleserial_readers.cw import SimpleSerial_ChipWhisperer
 import time
 
 
 class ReaderChipWhispererSER(ReaderTemplate):
     name = "CWCR2-SER"
 
-    def __init__(self, parentParam):
-        super(ReaderChipWhispererSER, self).__init__(parentParam)
+    def __init__(self, parentParam=None):
+        ReaderTemplate.__init__(self, parentParam)
 
-    def setupParameters(self):
-        self.ser = SimpleSerial.SimpleSerial_ChipWhisperer(self)
+        self.ser = SimpleSerial_ChipWhisperer(self)
         self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
 
-        return [
-                    {'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
-                    {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
-                    {'name':'ATR', 'key':'atr', 'type':'str'}
-                ]
+        self.params.addChildren([
+            {'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
+            {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
+            {'name':'ATR', 'key':'atr', 'type':'str'}
+        ])
 
     def waitEcho(self, data):
         rxdata = []
@@ -128,7 +127,6 @@ class ReaderChipWhispererSER(ReaderTemplate):
         return status
 
     def con(self, scope = None):
-        self.ser.setOpenADC(scope.qtadc.ser)
         self.ser.con(scope)
 
         #Set defaults

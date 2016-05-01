@@ -30,9 +30,12 @@ from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     name = 'ChipWhisperer-Lite'
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        SimpleSerialTemplate.__init__(self, parentParam)
         self.cwlite_usart = None
-        return [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
+        self.params.addChildren([
+            {'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}
+        ])
 
     def setBaud(self, baud):
         if self.cwlite_usart:

@@ -35,16 +35,17 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        SimpleSerialTemplate.__init__(self, parentParam)
         self._regVer = 0
-        return [
-                    {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
-                    {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
-                    {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
-                                    'set':self.setStopBits, 'readonly':True},
-                    {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
-                                    'set':self.setParity, 'readonly':True},
-                ]
+        self.params.addChildren([
+            {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
+            {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
+            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
+                            'set':self.setStopBits, 'readonly':True},
+            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
+                            'set':self.setParity, 'readonly':True},
+        ])
 
     def systemClk(self):
         return 30E6

@@ -26,30 +26,27 @@
 from _base import ReaderTemplate
 from chipwhisperer.common.utils import timer
 
-
 try:
     from smartcard.CardType import AnyCardType
     from smartcard.CardRequest import CardRequest
     from smartcard.CardConnection import CardConnection
     from smartcard.util import toHexString
 except ImportError:
-    AnyCardType = None
+    raise ImportError("Smartcard libraries are missing")
 
 
 class ReaderPCSC(ReaderTemplate):
     name = "PC/SC Reader"
 
-    def __init__(self):
-        super(ReaderPCSC, self).__init__()
+    def __init__(self, parentParam=None):
+        ReaderTemplate.__init__(self, parentParam)
 
-        if AnyCardType is None:
-            raise ImportError("smartcard libraries missing")
-
-    def setupParameters(self):
         self.timeoutTimer = timer.Timer()
         self.timeoutTimer.timeout.connect(self.timeoutFired)
         self.timeoutTimer.setInterval(2000)
-        return [{'name':'Keep-Alive Interval (off=0)', 'type':'int', 'value':2, 'set':self.setKeepalive}]
+        self.params.addChildren([
+            {'name':'Keep-Alive Interval (off=0)', 'type':'int', 'value':2, 'set':self.setKeepalive}
+        ])
 
     def setKeepalive(self, kinterval):
         self.timeoutTimer.setInterval(kinterval*1000)

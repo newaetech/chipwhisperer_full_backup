@@ -36,20 +36,18 @@ class GPIOToggle(AuxiliaryTemplate):
     name = 'GPIO Toggle'
 
     def __init__(self, parentParam=None):
-        super(GPIOToggle, self).__init__(parentParam)
-        self.settingsChanged()
-
-    def setupParameters(self):
+        AuxiliaryTemplate.__init__(self, parentParam)
         self.pin = None
         self.lastPin = None
-        return [
+        self.params.addChildren([
                  {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
                  {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},
                  {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
                  {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
                  {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
                  {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
-                ]
+        ])
+        self.settingsChanged()
 
     def settingsChanged(self, ignored=None):
         self.pin = self.findParam('gpiopin').value()

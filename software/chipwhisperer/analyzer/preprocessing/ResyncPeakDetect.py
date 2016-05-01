@@ -40,18 +40,22 @@ class ResyncPeakDetect(PreprocessingBase):
     "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
     "If 'valid limit' is 0 then this is ignored, and all traces are kept."
 
-    def _setupParameters(self):
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.rtrace = 0
         self.debugReturnCorr = False
         self.ccStart = 0
         self.ccEnd = 0
         self.limit = 0
         self.type = max
-        return [ {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                 {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-                 {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
-                 {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript},
-                ]
+
+        self.params.addChildren([
+            {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+            {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
+            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
+            {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript}
+        ])
+        self.updateScript()
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())

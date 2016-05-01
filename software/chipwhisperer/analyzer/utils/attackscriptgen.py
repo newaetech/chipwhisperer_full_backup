@@ -26,27 +26,22 @@
 
 from datetime import *
 from PySide.QtCore import *
-from chipwhisperer.common.utils import pluginmanager
+
+from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from functools import partial
 
 
-class AttackScriptGen(pluginmanager.Parameterized):
+class AttackScriptGen(Parameterized):
     name = "Attack Script Generator"
 
     def __init__(self, parentParam, cwGUI):
         self.cwGUI = cwGUI
         super(AttackScriptGen, self).__init__(parentParam)
-        self.scriptParamTree = pluginmanager.CWParameterTree("Script", [self])
-        self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
 
-    def updateAttackTraceLimits(self):
-        self.attack.setTraceLimits(self.cwGUI.api.project().traceManager().numTraces(), self.cwGUI.api.project().traceManager().numPoints())
-
-    def setupParameters(self):
-        self.preprocessingParamTree = pluginmanager.CWParameterTree("Preprocessing")
-        self.attackParamTree = pluginmanager.CWParameterTree("Attack",)
-        self.postprocessingParamTree = pluginmanager.CWParameterTree("Postprocessing")
+        self.preprocessingParamTree = CWParameterTree("Preprocessing")
+        self.attackParamTree = CWParameterTree("Attack", )
+        self.postprocessingParamTree = CWParameterTree("Postprocessing")
 
         self.utilList = []
         self.scriptList = []
@@ -58,20 +53,23 @@ class AttackScriptGen(pluginmanager.Parameterized):
         self.preprocessingListGUI = [None, None, None, None]
         self.setAttack(self.cwGUI.api.valid_attacks["CPA"])
 
-        return [
-                    {'name':'Attack Script', 'type':'group', 'children':[
-                        {'name':'Filename', 'key':'attackfilelist', 'type':'filelist', 'values':{autogen:0}, 'value':0, 'editor':self.editorControl,},
-                        ]},
+        self.params.addChildren([
+            {'name':'Attack Script', 'type':'group', 'children':[
+                {'name':'Filename', 'key':'attackfilelist', 'type':'filelist', 'values':{autogen:0}, 'value':0, 'editor':self.editorControl,},
+                                                                 ]},
+            {'name':'Pre-Processing', 'type':'group', 'children':[
+                {'name':'Module #%d' % step, 'type':'list', 'values':self.cwGUI.api.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))
+                                                                  ]},
+            {'name':'Attack', 'type':'group', 'children':[
+                {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_attacks, 'value':self.attack, 'set':self.setAttack},
+                                                          ]},
+            {'name':'Post-Processing', 'type':'group'}
+                                                                 ])
+        self.scriptParamTree = CWParameterTree("Script", [self])
+        self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
 
-                    {'name':'Pre-Processing', 'type':'group', 'children':
-                        [{'name':'Module #%d' % step, 'type':'list', 'values':self.cwGUI.api.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))]},
-
-                    {'name':'Attack', 'type':'group', 'children':[
-                        {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_attacks, 'value':self.attack, 'set':self.setAttack},
-                        ]},
-
-                    {'name':'Post-Processing', 'type':'group'}
-                ]
+    def updateAttackTraceLimits(self):
+        self.attack.setTraceLimits(self.cwGUI.api.project().traceManager().numTraces(), self.cwGUI.api.project().traceManager().numPoints())
 
     def editorControl(self, filename, filedesc, default=False, bringToFront=True):
         """This is the call-back from the script editor file list, which opens editors"""

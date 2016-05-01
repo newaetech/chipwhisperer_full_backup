@@ -26,12 +26,11 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class TraceSource(object):
+class TraceSource(util.Registrable):
     """ It has traces as output """
-    allRegisteredTraceSources = util.DictType()
-    sigNewRegisteredTraceSouce = util.Signal()
 
     def __init__(self):
         self.sigTracesChanged = util.Signal()
@@ -47,11 +46,6 @@ class TraceSource(object):
 
     def offset(self):
         return 0
-
-    @classmethod
-    def registerTraceSource(cls, name, traceSource):
-        cls.allRegisteredTraceSources[name] = traceSource
-        cls.sigNewRegisteredTraceSouce.emit()
 
 
 class LiveTraceSource(TraceSource):
@@ -88,12 +82,15 @@ class LiveTraceSource(TraceSource):
         return self._lastOffset
 
 
-class PassiveTraceObserver(object):
+class PassiveTraceObserver(Parameterized):
     """ It process data from a TraceSource when requested """
 
-    def __init__(self, traceSource=None):
+    def __init__(self, parentParam=None):
+        Parameterized.__init__(self, parentParam)
         self._traceSource = None
-        self.setTraceSource(traceSource)
+        self.params.addChildren([
+            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'set':self.setTraceSource}
+                    ])
 
     def setTraceSource(self, traceSource):
         self._traceSource = traceSource
@@ -103,6 +100,11 @@ class PassiveTraceObserver(object):
 
     def processTraces(self):
         pass
+
+    def newTraceSources(self):
+        par = self.findParam('input')
+        par.setLimits({})  # Will not update if the obj is the same :(
+        par.setLimits(TraceSource.registeredObjects)
 
 
 class ActiveTraceObserver(PassiveTraceObserver):

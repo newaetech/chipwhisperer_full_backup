@@ -22,139 +22,25 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import inspect
 import importlib
+import inspect
+import os.path
 import traceback
 import util
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-import os.path
-from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-
-class CWParameterTree(ParameterTree):
-    _helpWidget = None
-    _allParameterTrees = util.DictType()
-    paramTreeUpdated = util.Signal()
-
-    def __init__(self, groupName="Defaul", parameterizedObjs=None):
-        super(CWParameterTree, self).__init__()
-        self.parameterizedObjs = []
-        self.extend(parameterizedObjs)
-        self._allParameterTrees[groupName] = self
-
-    def replace(self, newParameterizedObjs):
-        for parameterizedObj in self.parameterizedObjs:
-            if parameterizedObj:
-                    parameterizedObj.paramListUpdated.disconnect(self.reloadParams)
-        self.parameterizedObjs = []
-        self.extend(newParameterizedObjs)
-
-    def extend(self, parameterizedObjs):
-        if parameterizedObjs:
-            for parameterizedObj in parameterizedObjs:
-                if parameterizedObj:
-                        parameterizedObj.paramListUpdated.connect(self.reloadParams)
-                        self.parameterizedObjs.append(parameterizedObj)
-        self.reloadParams()
-
-    def reloadParams(self):
-        activeParameters = []
-        for parameterizedObj in self.parameterizedObjs:
-            if parameterizedObj:
-                activeParameters.extend(parameterizedObj.paramList())
-        ExtendedParameter.reloadParams(activeParameters, self, help_window=self._helpWidget)
-        self.paramTreeUpdated.emit()
-
-    @classmethod
-    def setHelpWidget(cls, widget):
-        cls._helpWidget = widget
-
-    @classmethod
-    def getAllParameterTrees(cls):
-        return cls._allParameterTrees
-
-    @classmethod
-    def getAllGuiActions(cls, mainWindow):
-        ret = []
-        for parameterTrees in cls.getAllParameterTrees().itervalues():
-            if parameterTrees:
-                for parameterizedObj in parameterTrees.parameterizedObjs:
-                    if parameterizedObj:
-                        ret.extend(parameterizedObj.guiActions(mainWindow))
-        return ret
-
-
-class Parameterized(object):
-    name = "None"
-
-    def __init__(self, parentParam = None):
-        self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
-        self.__activeParams = [lambda: self.lazy(self)]
-        if parentParam:
-            self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=self.setupParameters())
-
-    def setupParameters(self):
-        """You should overload this. Copy/Paste into your class."""
-        # return [{'name':'Example Parameter', 'type':'int', 'value':5}]  # 'set':self.someFunction
-        return []
-
-    def paramList(self):
-        # Returns the current active parameters (including the child ones)
-        ret = []
-        for e in self.__activeParams:
-            currentParams = e()
-            if currentParams:
-                if currentParams == self:
-                    ret.append(currentParams.params)
-                else:
-                    ret.extend(currentParams.paramList())
-        return ret
-
-    def getName(self):
-        return self.name
-
-    def setupActiveParams(self, params):
-        # Use this method to setup the order of the parameterized objects to be shown
-        self.__activeParams = params
-        self.paramListUpdated.emit()
-
-    def addActiveParams(self, param):
-        # Use this method to setup the order of the parameterized objects to be shown
-        self.__activeParams.append(param)
-        self.paramListUpdated.emit()
-
-
-    def guiActions(self, mainWindow):
-        # Returns a list with all the gui actions in the active parameter tree.
-        ret = []
-        for e in self.__activeParams:
-            currentParams = e()
-            if currentParams:
-                if currentParams == self:
-                    ret.extend(currentParams.setupGuiActions(mainWindow))
-                else:
-                    ret.extend(currentParams.guiActions(mainWindow))
-        return ret
-
-    def setupGuiActions(self, mainWindow):
-        """You should overload this. Copy/Paste into your class."""
-        # self.window = Window(mainWindow, parameters)
-        # return [['Name of the menu item','Description', self.window.show],...]
-        return []
-
-    @staticmethod
-    def lazy(var):
-        # Dummye method to cause late evaluation of the attributes when parameters are passed as argument
-        # Ex.: self.setupActiveParams([lambda: lazy(self)])
-        return var
-
+from chipwhisperer.common.utils.parameters import Parameterized
 
 loadedItems = []
 
 
 class Plugin(Parameterized):
     description = "Some description"
+
+    def __init__(self, parentParam=None):
+        Parameterized.__init__(self, parentParam)
+        if self.description:
+            self.params.addChildren([
+                 {'name':'Description', 'type':'text', 'value':self.getDescription(), 'readonly':True},
+            ])
 
     def getDescription(self):
         return self.description
@@ -188,6 +74,7 @@ try:
 
 except ImportError:
     pass
+
 
 def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
     modules = importModulesInPackage(path)
@@ -237,6 +124,7 @@ def putInDict(items, instantiate, *args, **kwargs):
     if len(resp) == 0:
         print "Warning: Dictionary contains zero modules"
     return resp
+
 
 def module_reorder(resp):
     #None is first, then alphabetical

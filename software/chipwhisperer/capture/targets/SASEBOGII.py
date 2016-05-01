@@ -185,8 +185,8 @@ class SaseboGIIAESRev1(object):
 class SaseboGII(TargetTemplate):
     name = "SASEBO GII"
 
-    def setupParameters(self):
-        return []
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
 
     def con(self, scope = None):
         try:

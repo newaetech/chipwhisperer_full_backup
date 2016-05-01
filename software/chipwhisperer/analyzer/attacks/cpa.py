@@ -26,7 +26,6 @@
 #=================================================
 
 import sys
-import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 from chipwhisperer.common.utils import pluginmanager
 from _base import AttackBaseClass
 from _generic_parameters import AttackGenericParameters
@@ -40,22 +39,14 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def __init__(self):
         AttackGenericParameters.__init__(self)
         AttackBaseClass.__init__(self)
+
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False, self)
+        self.params.addChildren([
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+        ])
         self.setAnalysisAlgorithm(self.findParam('CPA_algo').value(), None, None)
         self.updateBytesVisible()
         self.updateScript()
-
-    def setupParameters(self):
-        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False, self)
-        return [    {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},
-                    {'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
-                        {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
-                        ]},
-
-                   #TODO: Should be called from the AES module to figure out # of bytes
-                   {'name':'Attacked Bytes', 'type':'group', 'children': self.getByteList()
-                    },
-                ]
 
     def updateAlgorithm(self, algo):
         # TODO: this hack required in case don't have setReportingInterval

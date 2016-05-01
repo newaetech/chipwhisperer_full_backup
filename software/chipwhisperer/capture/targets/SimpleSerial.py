@@ -32,30 +32,30 @@ class SimpleSerial(TargetTemplate):
     name = "Simple Serial"
 
     def __init__(self, parentParam=None):
-        super(SimpleSerial, self).__init__(parentParam)
-        self.setConnection(self.findParam('con').value())
+        TargetTemplate.__init__(self, parentParam)
 
-    def setupParameters(self):
         self.ser = None
         self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
         ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
 
         self.keylength = 16
         self.input = ""
-        return [
-                    {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite.name], 'set':self.setConnection},
-                    {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
-                 #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
-                    {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
-                    {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
-                    {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
-                    {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
-                    {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
-                    #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
-                    #                                                                 'DE AD BE EF':' ',
-                    #                                                                 'DE:AD:BE:EF':':',
-                    #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
-                ]
+        self.params.addChildren([
+            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite.name], 'set':self.setConnection},
+            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
+            # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
+            {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
+            {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
+            {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
+            {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
+            {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
+            #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
+            #                                                                 'DE AD BE EF':' ',
+            #                                                                 'DE:AD:BE:EF':':',
+            #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
+        ])
+
+        self.setConnection(self.findParam('con').value())
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """

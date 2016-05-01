@@ -31,8 +31,7 @@ class AcqKeyTextPattern_Base(pluginmanager.Plugin):
 
     def __init__(self, parentParam, target=None):
         pluginmanager.Plugin.__init__(self, parentParam)
-        self._target = target
-        self._initPattern()
+        self.setTarget(target)
 
     def setTarget(self, target):
         self._target = target

@@ -38,6 +38,14 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         ResultsWidgetBase.__init__(self, parentParam)
         QTableWidget.__init__(self, permPerSubkey+1, subkeys)
 
+        self.params.addChildren([
+            {'name':'Use Absolute Value for Rank', 'type':'list',
+            'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":True, "False":False},
+            'value':"Default", 'set':self.setAbsoluteMode},
+            {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
+            {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
+        ])
+
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)
         self.horizontalHeader().setResizeMode(QHeaderView.Stretch)
@@ -67,14 +75,6 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
             self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
 
         ActiveAnalysisObserver.__init__(self)
-
-    def _setupParameters(self):
-        return [{'name':'Use Absolute Value for Rank', 'type':'list',
-                'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":True, "False":False},
-                'value':"Default", 'set':self.setAbsoluteMode},
-                {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
-                {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
-                ]
 
     def clearTableContents(self):
         for x in range(0, self.columnCount()):

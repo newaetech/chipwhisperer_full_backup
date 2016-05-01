@@ -36,15 +36,14 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     REQ_CFG_PROTOCOL = 0x02
     REQ_CFG_TXRX = 0x05
 
-    def __init__(self):
-        super(ReaderChipWhispererLiteSCard, self).__init__()
+    def __init__(self, parentParam=None):
+        ReaderTemplate.__init__(self, parentParam)
 
-    def setupParameters(self):
         self.protocol = 0
-        return [
-                  {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
-                  {'name':'ATR', 'key':'atr', 'type':'str'},
-                ]
+        self.params.addChildren([
+            {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
+            {'name':'ATR', 'key':'atr', 'type':'str'},
+        ])
 
     def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
         """Send APDU to SmartCard, get Response"""

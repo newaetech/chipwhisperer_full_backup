@@ -176,17 +176,17 @@ class CPAProgressive_CAccel(AutoScript, pluginmanager.Plugin):
     def __init__(self, targetModel, leakageFunction):
         super(CPAProgressive_CAccel, self).__init__()
         pluginmanager.Plugin.__init__(self)
+
+        self.params.addChildren([
+            {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+            {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                                 ])
+
         self.model = targetModel
         self.leakage = leakageFunction
         self.sr = None
         self.stats = DataTypeDiffs()
         self.updateScript()
-
-    def setupParameters(self):
-        return [
-                    {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                    {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                ]
 
     def updateScript(self, ignored=None):
         pass

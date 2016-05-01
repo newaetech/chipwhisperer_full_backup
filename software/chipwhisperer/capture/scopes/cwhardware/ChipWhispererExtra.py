@@ -28,8 +28,7 @@
 import time
 from functools import partial
 import ChipWhispererGlitch
-import chipwhisperer.common.utils.pluginmanager
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -44,11 +43,11 @@ ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 
 
-class ChipWhispererExtra(pluginmanager.Parameterized):
+class ChipWhispererExtra(Parameterized):
     name = 'CW Extra'
 
     def __init__(self, parentParam, cwtype, scope):
-        super(ChipWhispererExtra, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
         #self.cwADV = CWAdvTrigger()
 
         if cwtype == "cwrev2":
@@ -87,7 +86,7 @@ class ChipWhispererExtra(pluginmanager.Parameterized):
     #    self.cwADV.setIOPattern(strToPattern("\n"), clkdiv=clkdivider)
 
 
-class CWExtraSettings(pluginmanager.Parameterized):
+class CWExtraSettings(Parameterized):
     PIN_FPA = 0x01
     PIN_FPB = 0x02
     PIN_RTIO1 = 0x04
@@ -124,46 +123,37 @@ class CWExtraSettings(pluginmanager.Parameterized):
         self.hasFPAFPB = hasFPAFPB
         self.hasGlitchOut = hasGlitchOut
         self.hasPLL = hasPLL
-        super(CWExtraSettings, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
 
-        #Added July 6/2015, Release 0.11RC1
-        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
-        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
-        if self.hasFPAFPB==False and self.hasPLL==False:
-            self.forceclkin = True
-        else:
-            self.forceclkin = False
-
-    def setupParameters(self):
         ret = []
-        
         # Generate list of input pins present on the hardware
         if self.hasFPAFPB:
             tpins = [
-                    {'name': 'Front Panel A', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
-                    {'name': 'Front Panel B', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)}
-                    ]
+                {'name': 'Front Panel A', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
+                {'name': 'Front Panel B', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)}
+            ]
         else:
             tpins = []
 
-        tpins.extend([{'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
-                    {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
-                    {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
-                    {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
-                    {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'value':"OR", 'get':self.getPinMode, 'set':self.setPinMode }
-                    ])
+        tpins.extend([
+            {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
+            {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
+            {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
+            {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
+            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'value':"OR", 'get':self.getPinMode, 'set':self.setPinMode }
+        ])
 
         # Add trigger pins & modules
         ret.extend([
-                {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
-                {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
-                 'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule}])
+            {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
+            {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
+             'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule}
+        ])
 
 
         # Generate list of clock sources present in the hardware
         if self.hasFPAFPB:
-            ret.append(
-                {'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut})
+            ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut})
             clksrc = {'Front Panel A':self.CLOCK_FPA, 'Front Panel B':self.CLOCK_FPB}
         else:
             clksrc = {}
@@ -174,44 +164,44 @@ class CWExtraSettings(pluginmanager.Parameterized):
         clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
         # clksrc["Fake"] = 0
 
-
         ret.extend([
-                {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
-                {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
-                ])
+            {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
+            {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
+        ])
 
         if self.hasGlitchOut:
             ret.extend([
                 {'name':'HS-Glitch Out Enable (High Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'A'), 'get':partial(self.targetGlitchOut, 'A')},
-                {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}])
+                {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}
+            ])
 
         ret.extend([
-                {'name':'Target IOn Pins', 'type':'group', 'children':[
-                    {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                    'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                           'value':self.IOROUTE_STX, 'set':partial(self.setTargetIOMode, IONumber=0), 'get':partial(self.getTargetIOMode, IONumber=0)},
-                    {'name': 'Target IO2', 'key':'gpio2mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                    'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                           'value':self.IOROUTE_SRX, 'set':partial(self.setTargetIOMode, IONumber=1), 'get':partial(self.getTargetIOMode, IONumber=1)},
-                    {'name': 'Target IO3', 'key':'gpio3mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
-                                                                    'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
-                                                                    'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                           'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
-                    {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                           'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
+            {'name':'Target IOn Pins', 'type':'group', 'children':[
+                {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
+                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'value':self.IOROUTE_STX, 'set':partial(self.setTargetIOMode, IONumber=0), 'get':partial(self.getTargetIOMode, IONumber=0)},
+                {'name': 'Target IO2', 'key':'gpio2mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
+                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'value':self.IOROUTE_SRX, 'set':partial(self.setTargetIOMode, IONumber=1), 'get':partial(self.getTargetIOMode, IONumber=1)},
+                {'name': 'Target IO3', 'key':'gpio3mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
+                                                                'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
+                                                                'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
+                {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
 
-                 ]},
+            ]},
 
-                {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
-                    {'name':'Target IO1: GPIO', 'key':'gpiostate1', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                           'get':partial(self.getGPIOState, IONumber=0), 'set':partial(self.setGPIOState, IONumber=0)},
-                    {'name':'Target IO2: GPIO', 'key':'gpiostate2', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                           'get':partial(self.getGPIOState, IONumber=1), 'set':partial(self.setGPIOState, IONumber=1)},
-                    {'name':'Target IO3: GPIO', 'key':'gpiostate3', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                           'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
-                    {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                           'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
-                ]},
+            {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
+                {'name':'Target IO1: GPIO', 'key':'gpiostate1', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
+                                       'get':partial(self.getGPIOState, IONumber=0), 'set':partial(self.setGPIOState, IONumber=0)},
+                {'name':'Target IO2: GPIO', 'key':'gpiostate2', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
+                                       'get':partial(self.getGPIOState, IONumber=1), 'set':partial(self.setGPIOState, IONumber=1)},
+                {'name':'Target IO3: GPIO', 'key':'gpiostate3', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
+                                       'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
+                {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
+                                       'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
+            ]},
         ])
 
         #Catch for CW-Lite Specific Stuff
@@ -219,7 +209,15 @@ class CWExtraSettings(pluginmanager.Parameterized):
             ret.extend([
                 {'name':'Target Power State', 'type':'bool', 'value':True, 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
             ])
-        return ret
+        self.params.addChildren(ret)
+
+        #Added July 6/2015, Release 0.11RC1
+        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
+        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
+        if self.hasFPAFPB==False and self.hasPLL==False:
+            self.forceclkin = True
+        else:
+            self.forceclkin = False
 
     def con(self, oa):
         self.oa = oa

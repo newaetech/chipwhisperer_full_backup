@@ -44,6 +44,11 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         ResultsWidgetBase.__init__(self, parentParam)
         ActiveAnalysisObserver.__init__(self)
 
+        self.params.addChildren([
+            {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
+            {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True}
+        ])
+
         self.setObjectName(self.name)
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
@@ -74,11 +79,6 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
 
         self.layout().addWidget(self.bselection)
         self.highlightTop = True
-
-    def _setupParameters(self):
-        return [{'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
-                {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True},
-                ]
 
     def setBytePlot(self, num, sel):
         """Set which bytes to plot"""

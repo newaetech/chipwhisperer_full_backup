@@ -236,7 +236,8 @@ class FTDIComm(object):
 class SakuraG(TargetTemplate):
     name = "SAKURA G"
 
-    def setupParameters(self): 
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
         self.hw = None
 
         conntypes = util.DictType()
@@ -248,11 +249,12 @@ class SakuraG(TargetTemplate):
         self.oa = None
         self.fixedStart = True
         self.hw = None
-        return [{'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'value':self.hw},
-                    {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':self.reset, 'visible':False},
-                    {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
-                    {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
-                   ]
+        self.params.addChildren([
+            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'value':self.hw},
+            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':self.reset, 'visible':False},
+            {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
+            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
+        ])
         
     def setConn(self, con):
         self.hw = con

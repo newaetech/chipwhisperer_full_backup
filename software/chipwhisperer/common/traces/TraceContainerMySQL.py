@@ -26,7 +26,8 @@ import pickle
 import numpy as np
 from _base import TraceContainer
 from _cfgfile import makeAttrDict
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
+
 try:
     import umysql as sql
 except ImportError, e:
@@ -46,22 +47,6 @@ class TraceContainerMySQL(TraceContainer):
         self.openMode = openMode
         self.fmt = None
 
-        #Connect actions if applicable
-        try:
-            self.getParams.findParam('tableListAct').opts['action'] = self.listAllTables
-        except AttributeError:
-            pass
-
-        self.getParams.findParam('tableName').opts['get'] = self._getTableName
-
-        #Save extra configuration options
-        self.attrDict = makeAttrDict("MySQL Config", "mysql", self.getParams.traceParams)
-        self.config.attrList.append(self.attrDict)
-
-        #Format name must agree with names from TraceContainerFormatList
-        self.config.setAttr("format", "mysql")
-
-    def setupParameters(self):
         traceParams = [{'name':'MySQL Configuration', 'type':'group', 'children':[
                         {'name':'Server Address', 'key':'addr', 'type':'str', 'value':'127.0.0.1'},
                         {'name':'Server Port', 'key':'port', 'type':'int', 'value':'3306'},
@@ -78,7 +63,22 @@ class TraceContainerMySQL(TraceContainer):
             traceParams[0]['children'].append({'name':'Table List', 'key':'tableNameList', 'type':'list', 'values':[], 'value':'', 'linked':['Table Name']})
 
         traceParams[0]['children'].append({'name':'Trace Format', 'key':'traceFormat', 'type':'list', 'values':['NumPy Pickle'], 'value':'NumPy Pickle', 'set':self.setFormat})
-        return traceParams
+        self.params.addChildren(traceParams)
+
+        #Connect actions if applicable
+        try:
+            self.getParams.findParam('tableListAct').opts['action'] = self.listAllTables
+        except AttributeError:
+            pass
+
+        self.getParams.findParam('tableName').opts['get'] = self._getTableName
+
+        #Save extra configuration options
+        self.attrDict = makeAttrDict("MySQL Config", "mysql", self.getParams.traceParams)
+        self.config.attrList.append(self.attrDict)
+
+        #Format name must agree with names from TraceContainerFormatList
+        self.config.setAttr("format", "mysql")
 
     def setFormat(self, fmt):
         self.fmt = fmt

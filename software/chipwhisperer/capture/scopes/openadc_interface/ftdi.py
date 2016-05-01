@@ -35,6 +35,12 @@ class OpenADCInterface_FTDI(pluginmanager.Plugin):
 
     def __init__(self, parentParam, oadcInstance):
         super(OpenADCInterface_FTDI, self).__init__(parentParam)
+
+        self.params.addChildren([
+            {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
+            {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
+        ])
+
         self.serialNumber = None
         self.ser = None
 
@@ -47,12 +53,6 @@ class OpenADCInterface_FTDI(pluginmanager.Plugin):
         #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
         #else:
         #    self.cwAdvancedSettings = None
-
-    def setupParameters(self):
-        return [
-                  {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-                  {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
-                ]
 
     def setSerialNumber(self, snum):
         self.serialNumber = snum

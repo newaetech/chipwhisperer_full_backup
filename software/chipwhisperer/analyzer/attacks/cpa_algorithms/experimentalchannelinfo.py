@@ -291,15 +291,16 @@ class CPAExperimentalChannelinfo(pluginmanager.Plugin):
 
     def __init__(self, model):
         pluginmanager.Plugin.__init__(self)
+
+        self.params.addChildren([
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
+            {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
+            {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+                                 ])
+
         self.model = model
         self.sr = None
         self.stats = DataTypeDiffs()
-
-    def setupParameters(self):
-        return [    {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
-                    {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-                    {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                ]
 
     def setByteList(self, brange):
         self.brange = brange

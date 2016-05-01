@@ -32,17 +32,16 @@ from chipwhisperer.common.utils import serialport
 class ReaderSystemSER(ReaderTemplate):
     name = "System Serial (SASEBO-W)"
 
-    def __init__(self):
-        super(ReaderSystemSER, self).__init__()
+    def __init__(self, parentParam=None):
+        ReaderTemplate.__init__(self, parentParam)
 
-    def setupParameters(self):
         self.ser = None
-        return [
-                    {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-                    {'name':'Refresh', 'type':'action', 'action':self.updateSerial},
-                    {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
-                    {'name':'ATR', 'key':'atr', 'type':'str'}
-                ]
+        self.params.addChildren([
+            {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
+            {'name':'Refresh', 'type':'action', 'action':self.updateSerial},
+            {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
+            {'name':'ATR', 'key':'atr', 'type':'str'}
+        ])
 
     def updateSerial(self):
         serialnames = serialport.scan()

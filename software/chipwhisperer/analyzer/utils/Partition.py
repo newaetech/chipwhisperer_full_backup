@@ -36,6 +36,8 @@ from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.utils.parameters import Parameterized
+
 
 class PartitionHDLastRound(object):
 
@@ -151,14 +153,13 @@ class PartitionDialog(QtFixes.QDialog):
         self.part.runPartitions(report=pb.setValue)
 
 
-class Partition(QObject):
+class Partition(QObject, Parameterized):
     """
     Base Class for all partioning modules
     """
-    paramListUpdated = Signal(list)
     # traceDone = Signal(int)
 
-    descrString = "Partition traces based on some method"
+    description = "Partition traces based on some method."
 
     attrDictPartition = {
                 "sectionName":"Partition Based on XXXX",
@@ -173,28 +174,16 @@ class Partition(QObject):
     supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
     def __init__(self, parent):
-        super(Partition, self).__init__(parent)
-        self.setupParameters()
-        self.partDataCache = None
-
-    def setupParameters(self):
-        """Setup parameters specific to preprocessing module"""
-        # ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-        #            # PUT YOUR PARAMETERS HERE
-        #            {'name':'Desc', 'type':'text', 'value':self.descrString}]
-        # self.params = ConfigParameter.create_extended(self, name='Name of Module', type='group', children=ssParams)
-
+        QObject.__init__(self, parent)
+        Parameterized.__init__(self)
         self.setPartMethod(PartitionRandvsFixed)
+        self.partDataCache = None
 
     def setPartMethod(self, method):
         self.partMethodClass = method
         self.partMethod = method()
         self.attrDictPartition["sectionName"] = self.partMethod.sectionName
         self.attrDictPartition["moduleName"] = self.partMethod.__class__.__name__
-
-    def paramList(self):
-        """Returns the parameter list"""
-        return [self.params]
 
     def init(self):
         """Do any initilization required once all traces are loaded"""
@@ -213,13 +202,11 @@ class Partition(QObject):
 
     def loadPartitions(self, tRange=(0, -1)):
         """Load partitions from trace files, convert to mapped range"""
-
         start = tRange[0]
         end = tRange[1]
 
         if end == -1:
             end = CWCoreAPI.getInstance().getTraceManager()
-
 
         # Generate blank partition table
         partitionTable = self.createBlankTable(CWCoreAPI.getInstance().getTraceManager().findMappedTrace(start))
@@ -258,7 +245,6 @@ class Partition(QObject):
         Generate partitions, using previously setup setTraceManager & partition class, or if they are passed as
         arguments will update the class data
         """
-
         if partitionClass:
             self.setPartMethod(partitionClass)
 

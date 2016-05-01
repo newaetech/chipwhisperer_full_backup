@@ -31,11 +31,11 @@ from chipwhisperer.common.utils import pluginmanager
 class SmartCard(TargetTemplate):
     name = "Smart Card"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
         self.driver = None
         self.window = None
 
-    def setupParameters(self):
         self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.driver)])
         readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False, self)
 
@@ -43,10 +43,11 @@ class SmartCard(TargetTemplate):
         protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False, self)
 
         from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER
-        return [    {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER.name], 'set':self.setConnection},
-                    {'name':'SmartCard Protocol', 'type':'list', 'values':protocols , 'value':None, 'set':self.setProtocol},
-                    {'name':'SmartCard Explorer', 'type':'action', 'action':self.scgui.show}
-                ]
+        self.params.addChildren([
+            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER.name], 'set':self.setConnection},
+            {'name':'SmartCard Protocol', 'type':'list', 'values':protocols , 'value':None, 'set':self.setProtocol},
+            {'name':'SmartCard Explorer', 'type':'action', 'action':lambda: self.scgui.show()}
+        ])
 
     def __del__(self):
         self.close()

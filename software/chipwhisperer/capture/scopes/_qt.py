@@ -24,15 +24,20 @@
 #=================================================
 
 import _OpenADCInterface as openadc
-from chipwhisperer.common.utils import util, timer, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils import util, timer
 
 
-class OpenADCQt(pluginmanager.Parameterized):
+class OpenADCQt(Parameterized):
     name='OpenADC'
     dataUpdated = util.Signal()
 
     def __init__(self):
         super(OpenADCQt,  self).__init__()
+
+        self.adc_settings = openadc.OpenADCSettings()
+        self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
+
         self.offset = 0.5
         self.ser = None
         self.sc = None
@@ -42,10 +47,6 @@ class OpenADCQt(pluginmanager.Parameterized):
         self.timerStatusRefresh = timer.Timer()
         self.timerStatusRefresh.timeout.connect(self.statusRefresh)
         self.adc_settings.setFindParam(self.findParam) #todo: this is a somewhat insane way to cut through the layers
-
-    def setupParameters(self):
-        self.adc_settings = openadc.OpenADCSettings()
-        return self.adc_settings.parameters(doUpdate=False)
 
     def setEnabled(self, enabled):
         pass

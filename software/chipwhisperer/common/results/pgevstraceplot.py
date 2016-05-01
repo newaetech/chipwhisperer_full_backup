@@ -39,10 +39,10 @@ class PGEVsTrace(AttackResultPlot):
         self.numKeys = subkeys
         self.numPerms = permPerSubkey
 
-    def _setupParameters(self):
-        return [ {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
-                 {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'},
-                ]
+        self.params.addChildren([
+            {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
+            {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'}
+        ])
 
     def copyPGE(self, dontCopy=False, addPlotMatlab=True):
         """Copy the Partial Guessing Entropy (PGE) to clipboard for use in other programs"""

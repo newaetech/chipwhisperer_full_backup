@@ -26,6 +26,7 @@ import traceback
 import sys
 import copy
 
+from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.ui.ProgressBar import *
@@ -34,7 +35,7 @@ from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMon
 from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
 
 
-class CWCoreAPI(pluginmanager.Parameterized):
+class CWCoreAPI(Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
@@ -55,16 +56,48 @@ class CWCoreAPI(pluginmanager.Parameterized):
         self.sigTracesChanged = util.Signal()
 
         CWCoreAPI.instance = self
+
+        LiveTraceSource().registerAs("Scope (Live)")
+
+        self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
+        self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
+        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
+        self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
+        self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
+        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
+        self.resultWidgets = util.DictType()
+        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
+
+        self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
+        self._auxList = [None]  # TODO: implement it as a list in the whole class
+        self._numTraces = 100
+        self._numTraceSets = 1
+
+        self.params.addChildren([
+            {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'value':self._scope, 'set':self.setScope, 'get':self.getScope},
+            {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'value':self._target, 'set':self.setTarget, 'get':self.getTarget},
+            {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'value':self._traceManager, 'set':self.setTraceFormat},
+            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
+            {'name':'Acquisition Settings', 'type':'group', 'children':[
+                    {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
+                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
+                     'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
+                     'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
+                    {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
+                    {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'value':self._acqPattern, 'set':self.setAcqPattern},
+                                                                        ]},
+                                 ])
+
         self.graphWidget = None
 
-        self.generalParamTree = pluginmanager.CWParameterTree("General Settings", [self])
+        self.generalParamTree = CWParameterTree("General Settings", [self])
         self.addActiveParams(lambda: self.lazy(self._acqPattern))
-        self.resultsParamTree = pluginmanager.CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
-        self.scopeParamTree = pluginmanager.CWParameterTree("Scope Settings", [self.getScope()])
-        self.targetParamTree = pluginmanager.CWParameterTree("Target Settings", [self.getTarget()])
-        self.traceParamTree = pluginmanager.CWParameterTree("Trace Settings", [self.getTraceFormat()])
-        self.auxParamTree = pluginmanager.CWParameterTree("Aux Settings", self.getAuxList())
-        self.attackParamTree = pluginmanager.CWParameterTree("Attack Settings", [self.getAttack()])
+        self.resultsParamTree = CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
+        self.scopeParamTree = CWParameterTree("Scope Settings", [self.getScope()])
+        self.targetParamTree = CWParameterTree("Target Settings", [self.getTarget()])
+        self.traceParamTree = CWParameterTree("Trace Settings", [self.getTraceFormat()])
+        self.auxParamTree = CWParameterTree("Aux Settings", self.getAuxList())
+        self.attackParamTree = CWParameterTree("Attack Settings", [self.getAttack()])
 
         # Initialize default values
         self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
@@ -86,38 +119,6 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getAttack(): ret.extend(self.getAttack().guiActions(mainWindow))
         return ret
 
-    def setupParameters(self):
-        TraceSource.registerTraceSource("Scope (Live)", LiveTraceSource())
-
-        self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
-        self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
-        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
-        self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
-        self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
-        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.resultWidgets = util.DictType()
-        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
-
-        self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
-        self._auxList = [None]  # TODO: implement it as a list in the whole class
-        self._numTraces = 100
-        self._numTraceSets = 1
-
-        return [
-                    {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'value':self._scope, 'set':self.setScope, 'get':self.getScope},
-                    {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'value':self._target, 'set':self.setTarget, 'get':self.getTarget},
-                    {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'value':self._traceManager, 'set':self.setTraceFormat},
-                    {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
-                    {'name':'Acquisition Settings', 'type':'group', 'children':[
-                            {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
-                            {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
-                             'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
-                             'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
-                            {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
-                            {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'value':self._acqPattern, 'set':self.setAcqPattern},
-                        ]},
-                ]
-
     def addResultWidgets(self, widgets):
         self.resultWidgets.update(widgets)
         self.resultsParamTree.extend([v for v in widgets.itervalues()])
@@ -136,7 +137,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         if self.getScope():
             self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
-            TraceSource.allRegisteredTraceSources["Scope (Live)"].setScope(self.getScope())
+            TraceSource.registeredObjects["Scope (Live)"].setScope(self.getScope())
         self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):
@@ -197,7 +198,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
         self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
-        TraceSource.allRegisteredTraceSources["Trace Manager"] = self.project().traceManager()
+        self.project().traceManager().registerAs("Trace Manager")
         self.setupResultWidgets()
 
     def openProject(self, fname):
@@ -377,7 +378,7 @@ class CWCoreAPI(pluginmanager.Parameterized):
         value = parameter[-1]
 
         try:
-            for t in pluginmanager.CWParameterTree.getAllParameterTrees().itervalues():
+            for t in CWParameterTree.getAllParameterTrees().itervalues():
                 for i in range(0, t.invisibleRootItem().childCount()):
                     self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
 

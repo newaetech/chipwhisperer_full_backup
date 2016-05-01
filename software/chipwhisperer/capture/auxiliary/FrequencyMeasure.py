@@ -96,12 +96,15 @@ class FreqMeasure():
 class FrequencyMeasure(AuxiliaryTemplate):
     name = "Frequency Counter"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        AuxiliaryTemplate.__init__(self, parentParam)
         scopes = {"None":None}
         if ps5000a is not None:
             scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
 
-        return [{'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}]
+        self.params.addChildren([
+            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}
+        ])
 
     def setConnection(self, con):
         self.fm = FreqMeasure(con)

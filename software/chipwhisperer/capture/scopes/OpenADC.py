@@ -42,28 +42,25 @@ class OpenADCInterface(ScopeTemplate):
     def __init__(self, parentParam=None):
         super(OpenADCInterface, self).__init__(parentParam)
 
+        self.scopetype = None
+        self.qtadc = openadc_qt.OpenADCQt()
+        self.qtadc.dataUpdated.connect(self.doDataUpdated)
+
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
+        self.params.addChildren([
+            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip.name], 'set':self.setCurrentScope},
+            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
+        ])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
+                                lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
+                                lambda: self.lazy(self.digitalPattern)])
+
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
         self.setCurrentScope(self.findParam('con').value())
-
-    def setupParameters(self):
-        self.scopetype = None
-        self.qtadc = openadc_qt.OpenADCQt()
-        self.qtadc.dataUpdated.connect(self.doDataUpdated)
-
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
-                                lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
-                                lambda: self.lazy(self.digitalPattern)])
-
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
-
-        return [
-                  {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip.name], 'set':self.setCurrentScope},
-                  {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
-                ]
 
     def dcmTimeout(self):
         try:

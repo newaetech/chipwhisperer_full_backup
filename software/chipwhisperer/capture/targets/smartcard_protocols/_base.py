@@ -23,18 +23,19 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ProtocolTemplate(pluginmanager.Parameterized):
+class ProtocolTemplate(Plugin):
     name='Smartcard Protocol'
 
-    def __init__(self):
+    def __init__(self, parentParam=None):
+        Plugin.__init__(self, parentParam)
         self.hw = None
 
-    # def setupParameters(self):
-    #     """You should overload this. Copy/Paste into your class."""
-    #     return [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]
+        # self.params.addChildren(
+        #     {'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}
+        # )
 
     def setSomething(self):
         pass
