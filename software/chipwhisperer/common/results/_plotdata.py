@@ -26,7 +26,6 @@
 
 from functools import partial
 import numpy as np
-from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
@@ -46,7 +45,6 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
 
         self.params.addChildren([
             {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
-            {'name':'Hide During Redraw', 'type':'bool', 'key':'hide', 'value':True}
         ])
 
         self.setObjectName(self.name)
@@ -134,18 +132,13 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
     #        self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
     #        self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
 
-    def drawData(self, xdatalst, ydatalst, enabledBytes=None):
+    def drawData(self, progress, xdatalst, ydatalst, enabledBytes=None):
         """Redraw the plot"""
         if enabledBytes is None:
             enabledBytes = [-1]
 
-        # Do Redraw
-        progress = QProgressDialog("Redrawing", "Abort", 0, 100)
-        progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(1000)  # _callSync='off'
-        progress.setMinimum(0)  # _callSync='off'
         progress.setMaximum(len(enabledBytes) * self.numPerms)  # _callSync='off'
-        progress.show()
+        progress.setStatusMask("Plotting...")
 
         self.clearPushed()
         self.setupHighlights()
@@ -154,101 +147,93 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
 
         pvalue = 0
 
-        if self.findParam('hide').value():
-            self.pw.setVisible(False)
+        for bnum in enabledBytes:
+            if not xdatalst[bnum] or len(xdatalst[bnum])==0:
+                break
 
-        try:
-            for bnum in enabledBytes:
-                if not xdatalst[bnum] or len(xdatalst[bnum])==0:
-                    raise StopIteration
+            progress.updateStatus(pvalue)
 
-                progress.setValue(pvalue)
+            if bnum != -1:
+                ydataptr = ydatalst[bnum]
+                xdataptr = xdatalst[bnum]
 
-                if bnum != -1:
-                    ydataptr = ydatalst[bnum]
-                    xdataptr = xdatalst[bnum]
+            else:
+                ydataptr = ydatalst
+                xdataptr = xdatalst
 
-                else:
-                    ydataptr = ydatalst
-                    xdataptr = xdatalst
+            pointargsg = {}
 
-                pointargsg = {}
+            if not hasattr(ydataptr[0], '__iter__'):
+                ydataptr = [[t] for t in ydataptr]
+                pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
 
-                if not hasattr(ydataptr[0], '__iter__'):
-                    ydataptr = [[t] for t in ydataptr]
-                    pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
-
-                if drawtype.startswith('fast'):
-                    if self.highlightTop:
-                        newdiff = np.array(ydataptr)
-                        for j in self.highlights[bnum]:
-                            newdiff[j] = 0
-                    else:
-                        newdiff = ydataptr
-
-                    maxlimit = np.amax(newdiff, 0)
-                    minlimit = np.amin(newdiff, 0)
-                    self.pw.plot(xdataptr, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                    if len(pointargsg) > 0:
-                        pointargsg["symbol"] = 'd'
-                    self.pw.plot(xdataptr, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                    pvalue += self.numPerms
-                    progress.setValue(pvalue)
-
-                elif drawtype.startswith('norm'):
-                    tlisttst = []
-                    maxlisttst = []
-                    if len(pointargsg) == 0:
-                        tlist_fixed = [xdataptr[-1], xdataptr[0]]
-                        tlist_fixed[:0] = xdataptr
-                    else:
-                        tlist_fixed = xdataptr
-                    for i in range(0, self.numPerms):
-
-                        if self.highlightTop and i in self.highlights[bnum]:
-                            continue
-
-                        tlisttst.extend(tlist_fixed)
-                        if len(pointargsg) == 0:
-                            newmax = [0, 0]
-                            newmax[:0] = ydataptr[i]
-                        else:
-                            newmax = ydataptr[i]
-                        maxlisttst.extend(newmax)
-
-                    self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg)
-                    pvalue += self.numPerms
-                    progress.setValue(pvalue)
-
-                elif drawtype.startswith('detail'):
-                    for i in range(0, self.numPerms):
-                        self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
-                        pvalue += 1
-                        progress.setValue(pvalue)
-
+            if drawtype.startswith('fast'):
                 if self.highlightTop:
-                    # Plot the highlighted byte(s) on top
-                    for bnum in enabledBytes:
+                    newdiff = np.array(ydataptr)
+                    for j in self.highlights[bnum]:
+                        newdiff[j] = 0
+                else:
+                    newdiff = ydataptr
 
-                        if bnum != -1:
-                            ydataptr = ydatalst[bnum]
-                            xdataptr = xdatalst[bnum]
+                maxlimit = np.amax(newdiff, 0)
+                minlimit = np.amin(newdiff, 0)
+                self.pw.plot(xdataptr, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
+                if len(pointargsg) > 0:
+                    pointargsg["symbol"] = 'd'
+                self.pw.plot(xdataptr, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
+                pvalue += self.numPerms
 
-                        else:
-                            ydataptr = ydatalst
-                            xdataptr = xdatalst
+            elif drawtype.startswith('norm'):
+                tlisttst = []
+                maxlisttst = []
+                if len(pointargsg) == 0:
+                    tlist_fixed = [xdataptr[-1], xdataptr[0]]
+                    tlist_fixed[:0] = xdataptr
+                else:
+                    tlist_fixed = xdataptr
+                for i in range(0, self.numPerms):
 
-                        pointargsr = {}
+                    if self.highlightTop and i in self.highlights[bnum]:
+                        continue
 
-                        if not hasattr(ydataptr[0], '__iter__'):
-                            ydataptr = [[t] for t in ydataptr]
-                            pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
+                    tlisttst.extend(tlist_fixed)
+                    if len(pointargsg) == 0:
+                        newmax = [0, 0]
+                        newmax[:0] = ydataptr[i]
+                    else:
+                        newmax = ydataptr[i]
+                    maxlisttst.extend(newmax)
 
-                        for i in range(0, self.numPerms):
-                            if i in self.highlights[bnum]:
-                                penclr = self._highlightColour(self.highlights[bnum].index(i))
-                                self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
-        except StopIteration:
-            pass
+                self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg)
+                pvalue += self.numPerms
 
-        self.pw.setVisible(True)
+            elif drawtype.startswith('detail'):
+                for i in range(0, self.numPerms):
+                    self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
+                    pvalue += 1
+
+            if self.highlightTop:
+                # Plot the highlighted byte(s) on top
+                for bnum in enabledBytes:
+
+                    if bnum != -1:
+                        ydataptr = ydatalst[bnum]
+                        xdataptr = xdatalst[bnum]
+
+                    else:
+                        ydataptr = ydatalst
+                        xdataptr = xdatalst
+
+                    pointargsr = {}
+
+                    if not hasattr(ydataptr[0], '__iter__'):
+                        ydataptr = [[t] for t in ydataptr]
+                        pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
+
+                    for i in range(0, self.numPerms):
+                        if i in self.highlights[bnum]:
+                            penclr = self._highlightColour(self.highlights[bnum].index(i))
+                            self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
+
+            if progress.wasAborted():
+                break
