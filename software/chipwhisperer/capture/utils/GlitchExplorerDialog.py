@@ -215,7 +215,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
 
     def executeScriptCommand(self, paramNum, script):
         #print script
-        self.parent().cwAPI.setParameter(script)
+        self.parent().api.setParameter(script)
 
     def updateParameters(self, ignored=None):
         numparams = self.findParam('numtune').value()

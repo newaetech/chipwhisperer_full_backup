@@ -67,8 +67,8 @@ class OpenADCInterface(ScopeTemplate):
             self.qtadc.sc.getStatus()
             # The following happen with signals, so a failure will likely occur outside of the try...except
             # For this reason we do the call to .getStatus() to verify USB connection first
-            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None])
-            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None])
+            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
+            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
         except Exception:
             self.dis()
             raise
