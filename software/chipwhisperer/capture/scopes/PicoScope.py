@@ -148,7 +148,7 @@ class PicoScope(Parameterized): #TODO: ScopeBase instead?
 class PicoScopeInterface(ScopeTemplate):
     name = "PicoScope"
 
-    def __init__(self, parentParam):
+    def __init__(self, parentParam=None):
         super(PicoScopeInterface, self).__init__(parentParam)
 
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
@@ -162,7 +162,7 @@ class PicoScopeInterface(ScopeTemplate):
 
         self.scopetype = None
         self.advancedSettings = None
-        self.setCurrentScope(self.findParam('type').value(type))
+        self.setCurrentScope(self.findParam('type').value())
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst
