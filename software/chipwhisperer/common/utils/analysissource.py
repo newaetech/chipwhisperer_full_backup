@@ -28,7 +28,7 @@
 from chipwhisperer.common.utils import util
 
 
-class AnalysisSource(util.Registrable):
+class AnalysisSource(object):
     """ It produces an analysis report as output """
 
     def __init__(self):
