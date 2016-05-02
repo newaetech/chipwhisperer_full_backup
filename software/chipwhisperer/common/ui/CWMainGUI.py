@@ -306,7 +306,7 @@ class CWMainGUI(QMainWindow):
         self.toolbar.show()
 
         # Project editor dock
-        self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
+        self.paramScriptingDock = self.addConsole("Script Commands", visible=False, redirectStdOut=False)
         ExtendedParameter.paramScriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
         self.consoleDock = self.addConsole()
         self.pythonConsoleDock = self.addPythonConsole()
