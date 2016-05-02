@@ -94,7 +94,7 @@ class Parameterized(object):
             self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={})
             if self.description:
                 self.params.addChildren([
-                     {'name':'Description', 'type':'text', 'value':self.getDescription(), 'readonly':True},
+                     {'name':'Description', 'type':'text', 'value':self.description, 'readonly':True},
                 ])
         if parentParam:
             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)

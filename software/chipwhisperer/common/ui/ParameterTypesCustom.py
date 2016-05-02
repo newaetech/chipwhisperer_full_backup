@@ -8,7 +8,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy
 from pyqtgraph.widgets.SpinBox import SpinBox
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
@@ -463,6 +463,8 @@ registerParameterType('filelist', FilelistParameter, override=True)
 
 
 class SpinBoxWithSetItem(WidgetParameterItem):
+
+    """ Spin-box with ability to have set/get functions """
     
     def __init__(self, *args, **kwargs):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
@@ -499,3 +501,74 @@ class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
 registerParameterType('int', SpinBoxWithSet, override=True)
+
+
+class QLabelExpanding(QtGui.QLabel):
+    def setValueExpand(self, txt):
+        self.setText(txt)
+        self.adjustSize()
+
+class LabelParameterItem(WidgetParameterItem):
+
+    """ Class used for description of an item. Spans both columns. """
+
+    def __init__(self, param, depth):
+        ParameterItem.__init__(self, param, depth)
+
+        self.hideWidget = True  ## hide edit widget, replace with label when not selected
+        ## set this to False to keep the editor widget always visible
+
+        ## build widget into column 1 with a display label and default button.
+        w = self.makeWidget()
+        self.widget = w
+        self.eventProxy = EventProxy(w, self.widgetEventFilter)
+
+        opts = self.param.opts
+        if 'tip' in opts:
+            w.setToolTip(opts['tip'])
+
+        self.displayLabel = QtGui.QLabel()
+
+        layout = QtGui.QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(w)
+        layout.addWidget(self.displayLabel)
+        self.layoutWidget = QtGui.QWidget()
+        self.layoutWidget.setLayout(layout)
+
+        self.defaultBtn = QtGui.QPushButton("")
+
+        if w.sigChanged is not None:
+            w.sigChanged.connect(self.widgetValueChanged)
+
+        if hasattr(w, 'sigChanging'):
+            w.sigChanging.connect(self.widgetValueChanging)
+
+        ## update value shown in widget.
+        if opts.get('value', None) is not None:
+            self.valueChanged(self, opts['value'], force=True)
+        else:
+            ## no starting value was given; use whatever the widget has
+            self.widgetValueChanged()
+
+    def makeWidget(self):
+        self.textBox = QLabelExpanding()
+        self.textBox.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
+        self.textBox.setWordWrap(True)
+        self.textBox.value = lambda: str(self.textBox.text())
+        self.textBox.setValue = self.textBox.setValueExpand
+        self.textBox.sigChanged = self.textBox.linkActivated
+        return self.textBox
+
+    def treeWidgetChanged(self):
+        self.treeWidget().setFirstItemColumnSpanned(self, True)
+        self.treeWidget().setItemWidget(self, 0, self.textBox)
+        self.displayLabel = self.textBox
+
+
+class LabelParameter(Parameter):
+    """Editable string; displayed as large text box in the tree."""
+    itemClass = LabelParameterItem
+
+registerParameterType('label', LabelParameter, override=True)
+

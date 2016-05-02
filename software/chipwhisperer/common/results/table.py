@@ -57,7 +57,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         self.useSingle = False
         self.updateMode = self.findParam('updateMode').value()
 
-        stdCell = QTableWidgetItem("")
+        stdCell = QTableWidgetItem(" \n ")
         stdCell.setFlags(stdCell.flags() ^ Qt.ItemIsEditable)
         stdCell.setTextAlignment(Qt.AlignCenter)
 
@@ -69,6 +69,8 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
             self.setItem(0, x, cell)
             for y in range(1, self.numPerms+1):
                 self.setItem(y, x, stdCell.clone())
+
+        self.resizeRowsToContents()
 
         self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
         for y in range(1, self.numPerms+1):
