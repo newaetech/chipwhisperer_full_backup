@@ -100,8 +100,8 @@ class CWCoreAPI(Parameterized):
         self.attackParamTree = CWParameterTree("Attack Settings", [self.getAttack()])
 
         # Initialize default values
-        #self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
-        #self.setTarget(self.valid_targets.get("Simple Serial", None))
+        # self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
+        # self.setTarget(self.valid_targets.get("Simple Serial", None))
         self.setAttack(self.valid_traces.get("CPA", None))
         self.setAcqPattern(self.valid_acqPatterns.get("Basic", None))
 
