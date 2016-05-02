@@ -52,6 +52,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmana
         self.params.addChildren([
                  {'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled}
         ])
+        self.findParam('input').hide()
 
     def updateScript(self, ignored=None):
         pass

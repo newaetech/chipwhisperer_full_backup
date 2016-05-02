@@ -65,7 +65,6 @@ class AttackGenericParameters(AutoScript, Parameterized):
             {'name':'Hardware Model', 'type':'group', 'children':[
                 {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
                 {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
-                {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'}
             ]},
             {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
            #TODO: Should be called from the AES module to figure out # of bytes
