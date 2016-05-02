@@ -97,10 +97,15 @@ class PassiveTraceObserver(Parameterized):
         Parameterized.__init__(self, parentParam)
         self._traceSource = None
         self.params.addChildren([
-            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'set':self.setTraceSource}
+            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'set':self._setTraceSource}
         ])
 
     def setTraceSource(self, traceSource):
+        par = self.findParam('input')
+        par.setValue(traceSource)
+        assert self._traceSource == traceSource
+
+    def _setTraceSource(self, traceSource):
         self._traceSource = traceSource
 
     def traceSource(self):
@@ -118,7 +123,7 @@ class PassiveTraceObserver(Parameterized):
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """
 
-    def setTraceSource(self, newTraceSource):
+    def _setTraceSource(self, newTraceSource):
         if self._traceSource:
             self._traceSource.sigTracesChanged.disconnect(self.processTraces)
         if newTraceSource:

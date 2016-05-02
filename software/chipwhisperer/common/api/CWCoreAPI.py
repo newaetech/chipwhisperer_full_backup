@@ -29,9 +29,11 @@ import copy
 from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.tracesource import TraceSource
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.common.results._base import ResultsBase
 
 
 class CWCoreAPI(Parameterized):
@@ -210,6 +212,9 @@ class CWCoreAPI(Parameterized):
         try:
             if self.getScope():
                 self.getScope().con()
+                # Sets the Plot Widget to the last added TraceSource
+                ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
+                    TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
