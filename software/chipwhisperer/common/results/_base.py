@@ -26,17 +26,25 @@
 
 # To be uses in conjunct with chipwhisperer.common.utils.analysissource/tracesource
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils import pluginmanager, util
 
 
 class ResultsBase(pluginmanager.Plugin):
     """ Base class for the output widgets """
+    """ Keeps a dictionary with all the registered objets and emits a signal when a new one is added"""
+    registeredObjects = util.DictType()
+    sigNewRegisteredObject = util.Signal()
 
-    def __init__(self, parentParam=None):
-        pluginmanager.Plugin.__init__(self, parentParam)
+    def __init__(self, parentParam=None, newName=None):
+        pluginmanager.Plugin.__init__(self, parentParam, newName)
+        self.registerAs(self.name)
 
     def getWidget(self):
         return None
+
+    def registerAs(self, name):
+        self.registeredObjects[name] = self
+        self.sigNewRegisteredObject.emit()
 
 
 class ResultsWidgetBase(ResultsBase):

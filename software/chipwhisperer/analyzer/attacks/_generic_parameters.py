@@ -57,7 +57,6 @@ class AttackGenericParameters(AutoScript, Parameterized):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.paramListUpdated = util.Signal()
         self.traceLimitsChanged = util.Signal()
 
         self.setupTraceParam()
@@ -215,9 +214,10 @@ class AttackGenericParameters(AutoScript, Parameterized):
         atrace = self.findParam('atraces', self.traceParams)
 
         strace.setValue(0)
-        strace.setLimits((0,traces))
-        atrace.setValue(traces)
+        strace.setLimits((0, traces))
+        atrace.setValue(1) #Avoid bug in pyqtgraph with  limits
         atrace.setLimits((1, traces))
+        atrace.setValue(traces)
 
         self.traceLimitsChanged.emit(traces, points)
 
@@ -245,14 +245,12 @@ class AttackGenericParameters(AutoScript, Parameterized):
             end = enforceLimits(end, self.endPointLimits)
             endparam.setValue(end)
 
-
         if bnum is None:
             self.startPoint[:] = [start] * len(self.startPoint)
             self.endPoint[:] = [end] * len(self.endPoint)
         else:
             self.startPoint[bnum] = start
             self.endPoint[bnum] = end
-        self.paramListUpdated.emit()
 
     # def setAllPointsSame(self, val):
     #    self.allPointsSame = val

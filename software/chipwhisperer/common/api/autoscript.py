@@ -139,7 +139,7 @@ class AutoScript(object):
         self.updateDelayTimer = timer.Timer()
         self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
         self.updateDelayTimer.setSingleShot(True)
-        self.updateDelayTimer.setInterval(1000)
+        self.updateDelayTimer.setInterval(500)
 
     def clearStatements(self):
         self.importStatements = []

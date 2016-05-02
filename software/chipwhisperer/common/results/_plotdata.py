@@ -151,8 +151,6 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
             if not xdatalst[bnum] or len(xdatalst[bnum])==0:
                 break
 
-            progress.updateStatus(pvalue)
-
             if bnum != -1:
                 ydataptr = ydatalst[bnum]
                 xdataptr = xdatalst[bnum]
@@ -235,5 +233,6 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                             penclr = self._highlightColour(self.highlights[bnum].index(i))
                             self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
 
+            progress.updateStatus(pvalue)
             if progress.wasAborted():
                 break

@@ -391,8 +391,8 @@ class CWMainGUI(QMainWindow):
             fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
-        self.api.openProject(fname)
         self.updateStatusBar("Opening Project: " + fname)
+        self.api.openProject(fname)
 
     def saveProject(self):
         fname = self.api.project().getFilename()

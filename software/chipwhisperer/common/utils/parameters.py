@@ -86,14 +86,15 @@ class Parameterized(object):
     name = "None"
     description = ""
 
-    def __init__(self, parentParam=None):
+    def __init__(self, parentParam=None, newName=None):
         if not hasattr(self, "params"):  # It was already called by other subclass (breaks diamond structure)
+            self.newName = newName
             self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
             self.__activeParams = [lambda: self.lazy(self)]
-            self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children={})
+            self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={})
             if self.description:
                 self.params.addChildren([
-                     {'name':'Description', 'type':'text', 'value':self.description, 'readonly':True},
+                     {'name':'Description', 'type':'text', 'value':self.getDescription(), 'readonly':True},
                 ])
         if parentParam:
             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
@@ -111,7 +112,7 @@ class Parameterized(object):
         return ret
 
     def getName(self):
-        return self.name
+        return self.name if not self.newName else self.newName
 
     def getDescription(self):
         return self.description

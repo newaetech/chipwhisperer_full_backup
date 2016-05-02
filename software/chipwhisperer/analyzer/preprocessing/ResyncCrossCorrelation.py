@@ -28,7 +28,7 @@
 from ._base import PreprocessingBase
 import numpy as np
 import scipy as sp
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.results._base import ResultsBase
 
 
 class ResyncCrossCorrelation(PreprocessingBase):
@@ -48,7 +48,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
+            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
             # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}
         ])
         self.updateScript()

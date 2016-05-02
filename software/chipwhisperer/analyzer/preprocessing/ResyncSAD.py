@@ -27,7 +27,7 @@
 
 import numpy as np
 from ._base import PreprocessingBase
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.results._base import ResultsBase
 
 
 class ResyncSAD(PreprocessingBase):
@@ -48,8 +48,8 @@ class ResyncSAD(PreprocessingBase):
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
-            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
+            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
+            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
             # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
             # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}
         ])
