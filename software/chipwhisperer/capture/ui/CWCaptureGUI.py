@@ -24,6 +24,8 @@
 #=================================================
 
 import sys
+from PySide.QtCore import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
+from PySide.QtGui import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.ui.ProgressBar import *
