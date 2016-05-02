@@ -59,8 +59,8 @@ class ScopeTemplate(pluginmanager.Plugin): #TODO: Consider the possibility of ex
         raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
-        TraceSource.registeredObjects.pop(self.getName() + " - Channel 1", None)
         if self._dis():
+            TraceSource.deregister(self.getName() + " - Channel 1")
             self.connectStatus.setValue(False)
 
     def _dis(self):

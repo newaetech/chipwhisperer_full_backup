@@ -33,7 +33,7 @@ class TraceSource(object):
     """ It has traces as output """
     """ Keeps a dictionary with all the registered objets and emits a signal when a new one is added"""
     registeredObjects = util.DictType()
-    sigNewRegisteredObject = util.Signal()
+    sigRegisteredObjectsChanged = util.Signal()
 
     def __init__(self):
         self.sigTracesChanged = util.Signal()
@@ -50,9 +50,14 @@ class TraceSource(object):
     def offset(self):
         return 0
 
+    @classmethod
+    def deregister(self, name):
+        if self.registeredObjects.pop(name, None):
+            self.sigRegisteredObjectsChanged.emit()
+
     def registerAs(self, name):
         self.registeredObjects[name] = self
-        self.sigNewRegisteredObject.emit()
+        self.sigRegisteredObjectsChanged.emit()
 
 
 class LiveTraceSource(TraceSource):
@@ -114,7 +119,7 @@ class PassiveTraceObserver(Parameterized):
     def processTraces(self):
         pass
 
-    def newTraceSources(self):
+    def traceSourcesChanged(self):
         par = self.findParam('input')
         par.setLimits({})  # Will not update if the obj is the same :(
         par.setLimits(TraceSource.registeredObjects)

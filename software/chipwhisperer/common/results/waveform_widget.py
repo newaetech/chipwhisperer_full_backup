@@ -48,7 +48,7 @@ class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
         ])
 
         self.findParam('input').setValue(TraceSource.registeredObjects["Trace Manager"])
-        TraceSource.sigNewRegisteredObject.connect(self.newTraceSources)
+        TraceSource.sigRegisteredObjectsChanged.connect(self.traceSourcesChanged)
 
         self.resetTraceLimits()
         self.setDefaultYRange(-0.5, 0.5)
