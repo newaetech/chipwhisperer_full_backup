@@ -372,7 +372,7 @@ class CWCoreAPI(Parameterized):
 
                 raise ValueError()
 
-    def setParameter(self, parameter, echo=False):
+    def setParameter(self, parameter, echo=False, blockSignal=False):
         """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
         path = parameter[:-1]
         value = parameter[-1]
@@ -389,7 +389,8 @@ class CWCoreAPI(Parameterized):
         except IndexError:
             raise IndexError("IndexError Setting Parameter %s\n%s" % (str(parameter), traceback.format_exc()))
 
-        self.paramListUpdated.emit()
+        if not blockSignal:
+            self.paramListUpdated.emit()
 
     def setupGuiActions(self, mainWindow):
         if not hasattr(self, 'encryptionStatusMonitor'):
