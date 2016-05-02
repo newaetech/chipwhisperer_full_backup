@@ -463,6 +463,8 @@ registerParameterType('filelist', FilelistParameter, override=True)
 
 
 class SpinBoxWithSetItem(WidgetParameterItem):
+
+    """ Spin-box with ability to have set/get functions """
     
     def __init__(self, *args, **kwargs):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
@@ -507,6 +509,8 @@ class QLabelExpanding(QtGui.QLabel):
         self.adjustSize()
 
 class LabelParameterItem(WidgetParameterItem):
+
+    """ Class used for description of an item. Spans both columns. """
 
     def __init__(self, param, depth):
         ParameterItem.__init__(self, param, depth)
