@@ -32,7 +32,6 @@ from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
-from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
 
 
 class CWCoreAPI(Parameterized):
@@ -56,8 +55,6 @@ class CWCoreAPI(Parameterized):
         self.sigTracesChanged = util.Signal()
 
         CWCoreAPI.instance = self
-
-        LiveTraceSource().registerAs("Scope (Live)")
 
         self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
@@ -132,12 +129,12 @@ class CWCoreAPI(Parameterized):
         return self._scope
 
     def setScope(self, driver):
-        if self.getScope(): self.getScope().dis()
+        if self.getScope():
+            self.getScope().dis()
         self._scope = driver
         if self.getScope():
             self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
-            TraceSource.registeredObjects["Scope (Live)"].setScope(self.getScope())
         self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):

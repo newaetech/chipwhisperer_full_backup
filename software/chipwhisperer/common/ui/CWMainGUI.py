@@ -374,7 +374,7 @@ class CWMainGUI(QMainWindow):
                 self.recentFilesAction[files_no].setText(text)
                 self.recentFilesAction[files_no].setData(f)
                 self.recentFilesAction[files_no].setVisible(True)
-                files_no = files_no + 1
+                files_no += 1
 
             for j in range(files_no, CWMainGUI.maxRecentFiles):
                 self.recentFilesAction[j].setVisible(False)

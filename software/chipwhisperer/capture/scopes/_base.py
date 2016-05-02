@@ -26,6 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
 
 
 class ScopeTemplate(pluginmanager.Plugin): #TODO: Consider the possibility of extend the LiveTraceSouce class
@@ -50,11 +51,20 @@ class ScopeTemplate(pluginmanager.Plugin): #TODO: Consider the possibility of ex
         return self.connectStatus.value()
 
     def con(self):
-        # raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
-        self.connectStatus.setValue(True)
+        LiveTraceSource(self).registerAs(self.getName() + " - Channel 1")
+        if self._con():
+            self.connectStatus.setValue(True)
+
+    def _con(self):
+        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def dis(self):
-        self.connectStatus.setValue(False)
+        TraceSource.registeredObjects.pop(self.getName() + " - Channel 1", None)
+        if self._dis():
+            self.connectStatus.setValue(False)
+
+    def _dis(self):
+        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
 
     def doDataUpdated(self,  l, offset=0):
         self.dataUpdated.emit(l, offset)

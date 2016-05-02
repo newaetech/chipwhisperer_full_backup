@@ -179,15 +179,16 @@ class PicoScopeInterface(ScopeTemplate):
         if update:
             self.paramListUpdated.emit()
    
-    def con(self):
+    def _con(self):
         if self.scopetype is not None:
             self.scopetype.con()
-            self.connectStatus.setValue(True)
+            return True
+        return False
 
-    def dis(self):
+    def _dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()  
-            self.connectStatus.setValue(False)
+        return True
 
     def doDataUpdated(self, l, offset=0):
         self.datapoints = l
