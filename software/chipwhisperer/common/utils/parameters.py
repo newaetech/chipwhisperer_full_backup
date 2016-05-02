@@ -139,6 +139,12 @@ class Parameterized(object):
                     ret.extend(currentParams.guiActions(mainWindow))
         return ret
 
+    def getAllActiveParameters(self):
+        for e in self.__activeParams:
+            currentParameters = e()
+            if currentParameters:
+                currentParameters.params.getAllParameters()
+
     def setupGuiActions(self, mainWindow):
         """You should overload this. Copy/Paste into your class."""
         # self.window = Window(mainWindow, parameters)

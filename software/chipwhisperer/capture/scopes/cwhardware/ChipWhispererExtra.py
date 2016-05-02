@@ -69,7 +69,7 @@ class ChipWhispererExtra(Parameterized):
         if self.enableGlitch:
             self.glitch.setOpenADC(oa.sc)
         self.cwEXTRA.con(oa.sc)
-        self.params.getAllParameters()
+        self.getAllActiveParameters()
 
     def armPreScope(self):
         if self.enableGlitch:
