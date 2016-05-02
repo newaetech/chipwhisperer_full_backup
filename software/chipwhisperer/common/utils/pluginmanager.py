@@ -33,17 +33,7 @@ loadedItems = []
 
 
 class Plugin(Parameterized):
-    description = "Some description"
-
-    def __init__(self, parentParam=None):
-        Parameterized.__init__(self, parentParam)
-        if self.description:
-            self.params.addChildren([
-                 {'name':'Description', 'type':'text', 'value':self.getDescription(), 'readonly':True},
-            ])
-
-    def getDescription(self):
-        return self.description
+    pass
 
 try:
     from PySide.QtCore import *

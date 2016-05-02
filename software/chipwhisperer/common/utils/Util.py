@@ -181,16 +181,6 @@ class Observable(Signal):
         return self.data
 
 
-class Registrable(object):
-    """ Keeps a dictionary with all the registered objets and emits a signal when a new one is added"""
-    registeredObjects = DictType()
-    sigNewRegisteredObject = Signal()
-
-    def registerAs(self, name):
-        self.registeredObjects[name] = self
-        self.sigNewRegisteredObject.emit()
-
-
 _uiupdateFunction = None
 
 def setUIupdateFunction(func):

@@ -205,9 +205,9 @@ class CWCaptureGUI(CWMainGUI):
             vw.addMessage(*i)
 
         if self.api.project().isUntitled():
-             vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before api", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
+            vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before api", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
-        if vw.numWarnings() > 0 or warnOnly == False:
+        if vw.numWarnings() > 0 or warnOnly is False:
             return vw.exec_()
         else:
             return True

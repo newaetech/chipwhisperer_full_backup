@@ -26,14 +26,14 @@
 
 # To be uses in conjunct with chipwhisperer.common.utils.analysissource/tracesource
 
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils import pluginmanager
 
 
 class ResultsBase(pluginmanager.Plugin):
     """ Base class for the output widgets """
 
     def __init__(self, parentParam=None):
-        super(ResultsBase, self).__init__(parentParam)
+        pluginmanager.Plugin.__init__(self, parentParam)
 
     def getWidget(self):
         return None
@@ -41,18 +41,6 @@ class ResultsBase(pluginmanager.Plugin):
 
 class ResultsWidgetBase(ResultsBase):
     """ Base class for the output GUI widgets. You can define a GUI Widget to be inserted in the tools menu """
-
-    def __init__(self, parentParam=None):
-        self.visibilityChanged = util.Signal()
-        ResultsBase.__init__(self, parentParam)
-
-        self.params.addChildren([
-            {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit}
-        ])
-
-    def updateVisibility(self, visible):
-        """Dock visability changed"""
-        self.findParam('show').setValue(visible)
 
     def getWidget(self):
         return self

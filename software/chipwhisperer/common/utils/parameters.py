@@ -84,12 +84,17 @@ class CWParameterTree(ParameterTree):
 
 class Parameterized(object):
     name = "None"
+    description = ""
 
     def __init__(self, parentParam=None):
         if not hasattr(self, "params"):  # It was already called by other subclass (breaks diamond structure)
             self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
             self.__activeParams = [lambda: self.lazy(self)]
             self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children={})
+            if self.description:
+                self.params.addChildren([
+                     {'name':'Description', 'type':'text', 'value':self.description, 'readonly':True},
+                ])
         if parentParam:
             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
 
@@ -107,6 +112,9 @@ class Parameterized(object):
 
     def getName(self):
         return self.name
+
+    def getDescription(self):
+        return self.description
 
     def setupActiveParams(self, params):
         # Use this method to setup the order of the parameterized objects to be shown
