@@ -555,6 +555,7 @@ class LabelParameterItem(WidgetParameterItem):
         self.textBox = QLabelExpanding()
         self.textBox.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
         self.textBox.setWordWrap(True)
+        self.textBox.setStyleSheet("QLabel { color : gray; }")
         self.textBox.value = lambda: str(self.textBox.text())
         self.textBox.setValue = self.textBox.setValueExpand
         self.textBox.sigChanged = self.textBox.linkActivated
