@@ -36,18 +36,18 @@ class OpenADCInterface_Serial(pluginmanager.Plugin):
 
     def __init__(self, parentParam, oadcInstance):
         super(OpenADCInterface_Serial, self).__init__(parentParam)
+
+        self.params.addChildren([
+            {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
+            {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
+        ])
+
         self.ser = None
 
         if (openadc_qt is None) or (serial is None):
             raise ImportError("Needed imports for serial missing")
         else:
             self.scope = oadcInstance
-
-    def setupParameters(self):
-        return [
-                  {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
-                  {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
-                ]
 
     def setPortName(self, snum):
         self.portName = snum

@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import ReaderTemplate
+from ._base import ReaderTemplate
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
 
 
@@ -31,16 +31,16 @@ class ReaderChipWhispererSCard(ReaderTemplate):
     name = "CWCR2-SCARD (obsolete)"
 
     def __init__(self, parentParam=None):
-        super(ReaderChipWhispererSCard, self).__init__(parentParam)
-        self.scard = ChipWhispererTargets.CWSCardIntegrated()
+        ReaderTemplate.__init__(self, parentParam)
 
-    def setupParameters(self):
-        return [
-                    {'name':'Card Present', 'key':'statusStr', 'type':'bool', 'value':False, 'readonly':True},
-                    {'name':'Update Status', 'type':'action', 'action':self.statusUpdate},
-                    {'name':'Answer To Reset (ATR)', 'key':'atr', 'type':'str', 'value':'', 'readonly':True},
-                    {'name':'Reset Card', 'type':'action', 'action':self.reset},
-                ]
+        self.params.addChildren([
+            {'name':'Card Present', 'key':'statusStr', 'type':'bool', 'value':False, 'readonly':True},
+            {'name':'Update Status', 'type':'action', 'action':self.statusUpdate},
+            {'name':'Answer To Reset (ATR)', 'key':'atr', 'type':'str', 'value':'', 'readonly':True},
+            {'name':'Reset Card', 'type':'action', 'action':self.reset},
+        ])
+
+        self.scard = ChipWhispererTargets.CWSCardIntegrated()
 
     def reset(self):
         atr = self.scard.reset()
@@ -52,7 +52,7 @@ class ReaderChipWhispererSCard(ReaderTemplate):
     def statusUpdate(self):
         self.findParam('statusStr').setValue(self.scard.isPresent())
 
-    def con(self, scope):
+    def con(self, scope=None):
         self.scard.con(scope.qtadc.ser)
         self.reset()
 

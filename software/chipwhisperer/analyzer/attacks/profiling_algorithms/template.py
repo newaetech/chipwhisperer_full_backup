@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, NewAE Technology Inc
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
 #
 # Authors: Colin O'Flynn
@@ -23,117 +23,18 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-#
-# ChipWhisperer is a trademark of NewAE Technology Inc.
-#============================================================================
+#=================================================
 
 import numpy as np
 import scipy
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.api.autoscript import AutoScript
-from ._stats import DataTypeDiffs
+from ._base import TemplateBasic, multivariate_normal
+from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from chipwhisperer.analyzer.attacks.models import AES128_8bit as AESModel
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-import chipwhisperer.analyzer.attacks.models.AES128_8bit as AESModel
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
+from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
-try:
-    from scipy.stats import multivariate_normal
-except ImportError:
-    multivariate_normal = None
-
-
-class TemplateBasic(AutoScript, PassiveTraceObserver):
-    """
-    Template using Multivariate Stats (mean + covariance matrix)
-    """
-    scriptsUpdated = util.Signal()
-
-    def __init__(self):
-        AutoScript.__init__(self)
-        PassiveTraceObserver.__init__(self)
-
-    def setProject(self, proj):
-        self._project = proj
-
-    def project(self):
-        return self._project
-
-    def generate(self, trange, poiList, partMethod, progressBar=None):
-        """Generate templates for all partitions over entire trace range"""
-
-        # Number of subkeys
-        subkeys = len(poiList)
-
-        numPartitions = partMethod.getNumPartitions()
-
-        tstart = trange[0]
-        tend = trange[1]
-
-        templateTraces = [ [ [] for j in range(0, numPartitions) ] for i in range(0, subkeys) ]
-
-        templateMeans = [ np.zeros((numPartitions, len(poiList[i]))) for i in range (0, subkeys) ]
-        templateCovs = [ np.zeros((numPartitions, len(poiList[i]), len(poiList[i]))) for i in range (0, subkeys) ]
-
-        # partData = generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None)
-        # partData = partObj.loadPartitions(trange)
-
-        if progressBar:
-            progressBar.setText('Generating Trace Matrix:')
-            progressBar.setMaximum(tend - tstart + subkeys)
-
-        for tnum in range(tstart, tend):
-            # partData = self.traceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
-            pnum = partMethod.getPartitionNum(self.traceSource(), tnum)
-            t = self.traceSource().getTrace(tnum)
-            for bnum in range(0, subkeys):
-                templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
-
-            if progressBar:
-                progressBar.updateStatus(tnum - tstart)
-                if progressBar.wasAborted():
-                    return None
-
-        if progressBar:
-            progressBar.setText('Generating Trace Covariance and Mean Matrices:')
-
-        for bnum in range(0, subkeys):
-            for i in range(0, numPartitions):
-                templateMeans[bnum][i] = np.mean(templateTraces[bnum][i], axis=0)
-                cov = np.cov(templateTraces[bnum][i], rowvar=0)
-                # print "templateTraces[%d][%d] = %d" % (bnum, i, len(templateTraces[bnum][i]))
-
-                if len(templateTraces[bnum][i]) > 0:
-                    templateCovs[bnum][i] = cov
-                else:
-                    print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
-                    templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
-
-            if progressBar:
-                progressBar.updateStatus(tend + bnum)
-                if progressBar.wasAborted():
-                    return None
-
-                # except ValueError:
-                #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
-
-        # self.templateMeans = templateMeans
-        # self.templateCovs = templateCovs
-        # self.templateSource = (tstart, tend)
-        # self.templatePoiList = poiList
-        # self.templatePartMethod = partMethod
-
-        self.template = {
-         "mean":templateMeans,
-         "cov":templateCovs,
-         "trange":(tstart, tend),
-         "poi":poiList,
-         "partitiontype":partMethod.__class__.__name__
-        }
-
-        if progressBar:
-            progressBar.close()
-
-        return self.template
 
 
 class ProfilingTemplate(AutoScript, PassiveTraceObserver):
@@ -142,6 +43,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
     """
     paramListUpdated = util.Signal()
     notifyUser = util.Signal()
+    name='Template Attack'
 
     def __init__(self, parent):
         AutoScript.__init__(self)
@@ -149,27 +51,22 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
         self.parent = parent
         self._project = None
 
-        resultsParams = [{'name':'Load Template', 'type':'group', 'children':[
-                            ]},
-                         {'name':'Generate New Template', 'type':'group', 'children':[
-                            {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                            {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'set':self.updateScript},
-                            {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
-                            {'name':'Read POI', 'type':'action', 'action':self.updateScript},
-                            {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
-                            ]},
-                         ]
-        self.params = ConfigParameter.create_extended(self, name='Template Attack', type='group', children=resultsParams)
+        self.params.addChildren([
+            {'name':'Load Template', 'type':'group', 'children':[]},
+            {'name':'Generate New Template', 'type':'group', 'children':[
+                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
+                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'set':self.updateScript},
+                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
+                {'name':'Read POI', 'type':'action', 'action':self.updateScript},
+                {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
+                                                                         ]},
+                                 ])
 
         self.addGroup("generateTemplates")
 
         self.sr = None
-
         self.stats = DataTypeDiffs()
         self.setProfileAlgorithm(TemplateBasic)
-
-        # Not needed as setProfileAlgorithm calls this
-        # self.updateScript()
 
     def setProfileAlgorithm(self, algo):
         self.profiling = algo()
@@ -204,9 +101,6 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
        #
        #  self.scriptsUpdated.emit()
 
-    def paramList(self):
-        return [self.params]
-
     def traceLimitsChanged(self, traces, points):
         tstart = self.findParam('tgenstart')
         tend = self.findParam('tgenstop')
@@ -224,9 +118,9 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
         self._reportinginterval = intv
 
     def setTraceSource(self, traceSource):
-        PassiveTraceObserver.setTraceSource(traceSource)
+        PassiveTraceObserver.setTraceSource(self, traceSource)
         # Set for children
-        self.profiling.setTraceManager(traceSource)
+        self.profiling.setTraceSource(traceSource)
 
     def setProject(self, proj):
         self._project = proj

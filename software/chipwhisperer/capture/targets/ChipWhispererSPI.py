@@ -88,10 +88,13 @@ class HIDSPI(object):
 class ChipWhispererSPI(TargetTemplate):
     name = "ChipWhisperer SPI"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
         self.hdev = HIDSPI()
         self.keylength = 16
-        return [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}]
+        self.params.addChildren([
+            {'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
+        ])
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """

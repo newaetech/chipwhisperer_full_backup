@@ -65,7 +65,8 @@ class CW305_USB(object):
 class CW305(TargetTemplate):
     name = "ChipWhisperer CW305 (Artix-7)"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, parent=self)
         self.fpga = FPGA(self._naeusb)
@@ -73,43 +74,44 @@ class CW305(TargetTemplate):
         self.hw = None
         self._fpgabs = QSettings().value("cw305-bitstream", '')
         self.oa = None
-        return [
-                    {'name':'PLL Settings', 'type':'group', 'children':[
-                        {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'value':False, 'set':self.pll.pll_enable_set, 'get':self.pll.pll_enable_get},
-                        {'name':'CLK-SMA (X6)', 'type':'group', 'children':[
-                            {'name':'CLK-SMA Enabled', 'key':'pll0enabled', 'type':'bool', 'value':False, 'set':partial(self.pll.pll_outenable_set, outnum=0), 'get':partial(self.pll.pll_outenable_get, outnum=0), },
-                            {'name':'CLK-SMA Source', 'key':'pll0source', 'type':'list', 'values':['PLL0', 'PLL1', 'PLL2'], 'value':'PLL0', 'set':partial(self.pll.pll_outsource_set, outnum=0), 'get':partial(self.pll.pll_outsource_get, outnum=0), },
-                            {'name':'CLK-SMA Slew Rate', 'key':'pll0slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=0), 'get':partial(self.pll.pll_outslew_get, outnum=0)},
-                            {'name':'PLL0 Frequency', 'key':'pll0freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
-                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=0), 'get':partial(self.pll.pll_outfreq_get, outnum=0)},
-                        ]},
-                        {'name':'CLK-N13 (FGPA Pin N13)', 'type':'group', 'children':[
-                            {'name':'CLK-N13 Enabled', 'key':'pll1enabled', 'type':'bool', 'value':False, 'set':partial(self.pll.pll_outenable_set, outnum=1), 'get':partial(self.pll.pll_outenable_get, outnum=1), },
-                            {'name':'CLK-N13 Source', 'key':'pll1source', 'type':'list', 'values':['PLL1'], 'value':'PLL1'},
-                            {'name':'CLK-N13 Slew Rate', 'key':'pll1slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=1), 'get':partial(self.pll.pll_outslew_get, outnum=1)},
-                            {'name':'PLL1 Frequency', 'key':'pll1freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
-                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=1), 'get':partial(self.pll.pll_outfreq_get, outnum=1)},
-                        ]},
-                        {'name':'CLK-E12 (FGPA Pin E12)', 'type':'group', 'children':[
-                            {'name':'CLK-E12 Enabled', 'key':'pll2enabled', 'type':'bool', 'value':False, 'set':partial(self.pll.pll_outenable_set, outnum=2), 'get':partial(self.pll.pll_outenable_get, outnum=2), },
-                            {'name':'CLK-E12 Source', 'key':'pll2source', 'type':'list', 'values':['PLL2'], 'value':'PLL2'},
-                            {'name':'CLK-E12 Slew Rate', 'key':'pll2slew', 'type':'list', 'values':['+0nS', '+1nS', '+2nS', '+3nS'], 'value':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=2), 'get':partial(self.pll.pll_outslew_get, outnum=2)},
-                            {'name':'PLL2 Frequency', 'key':'pll2freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
-                                'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=2), 'get':partial(self.pll.pll_outfreq_get, outnum=2)},
-                        ]},
-                        {'name':'Save as Default (stored in EEPROM)', 'type':'action', 'action':self.pll.pll_writedefaults},
-                        ]},
-                    {'name':'Disable CLKUSB For Capture', 'key':'clkusbautooff', 'type':'bool', 'value':True},
-                    {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
-                    {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.usb_clk_setenabled},
-                    {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
-                    {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'value':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
-                    {'name':'FPGA Bitstream', 'type':'group', 'children':[
-                            {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'str', 'value':self._fpgabs, 'set':self.gui_selectfpga},
-                            {'name':'Select Bitstream File', 'type':'action', 'action':self.gui_selectfpga},
-                            {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
-                            ]},
-                ]
+
+        self.params.addChildren([
+            {'name':'PLL Settings', 'type':'group', 'children':[
+                {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'value':False, 'set':self.pll.pll_enable_set, 'get':self.pll.pll_enable_get},
+                {'name':'CLK-SMA (X6)', 'type':'group', 'children':[
+                    {'name':'CLK-SMA Enabled', 'key':'pll0enabled', 'type':'bool', 'value':False, 'set':partial(self.pll.pll_outenable_set, outnum=0), 'get':partial(self.pll.pll_outenable_get, outnum=0), },
+                    {'name':'CLK-SMA Source', 'key':'pll0source', 'type':'list', 'values':['PLL0', 'PLL1', 'PLL2'], 'value':'PLL0', 'set':partial(self.pll.pll_outsource_set, outnum=0), 'get':partial(self.pll.pll_outsource_get, outnum=0), },
+                    {'name':'CLK-SMA Slew Rate', 'key':'pll0slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=0), 'get':partial(self.pll.pll_outslew_get, outnum=0)},
+                    {'name':'PLL0 Frequency', 'key':'pll0freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
+                        'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=0), 'get':partial(self.pll.pll_outfreq_get, outnum=0)},
+                ]},
+                {'name':'CLK-N13 (FGPA Pin N13)', 'type':'group', 'children':[
+                    {'name':'CLK-N13 Enabled', 'key':'pll1enabled', 'type':'bool', 'value':False, 'set':partial(self.pll.pll_outenable_set, outnum=1), 'get':partial(self.pll.pll_outenable_get, outnum=1), },
+                    {'name':'CLK-N13 Source', 'key':'pll1source', 'type':'list', 'values':['PLL1'], 'value':'PLL1'},
+                    {'name':'CLK-N13 Slew Rate', 'key':'pll1slew', 'type':'list', 'values':['+3nS', '+2nS', '+1nS', '+0nS'], 'value':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=1), 'get':partial(self.pll.pll_outslew_get, outnum=1)},
+                    {'name':'PLL1 Frequency', 'key':'pll1freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
+                        'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=1), 'get':partial(self.pll.pll_outfreq_get, outnum=1)},
+                ]},
+                {'name':'CLK-E12 (FGPA Pin E12)', 'type':'group', 'children':[
+                    {'name':'CLK-E12 Enabled', 'key':'pll2enabled', 'type':'bool', 'value':False, 'set':partial(self.pll.pll_outenable_set, outnum=2), 'get':partial(self.pll.pll_outenable_get, outnum=2), },
+                    {'name':'CLK-E12 Source', 'key':'pll2source', 'type':'list', 'values':['PLL2'], 'value':'PLL2'},
+                    {'name':'CLK-E12 Slew Rate', 'key':'pll2slew', 'type':'list', 'values':['+0nS', '+1nS', '+2nS', '+3nS'], 'value':'+0nS', 'set':partial(self.pll.pll_outslew_set, outnum=2), 'get':partial(self.pll.pll_outslew_get, outnum=2)},
+                    {'name':'PLL2 Frequency', 'key':'pll2freq', 'type':'float', 'limits':(0.625E6, 167E6), 'value':0, 'step':1E6,
+                        'siPrefix':True, 'suffix':'Hz', 'set':partial(self.pll.pll_outfreq_set, outnum=2), 'get':partial(self.pll.pll_outfreq_get, outnum=2)},
+                ]},
+                {'name':'Save as Default (stored in EEPROM)', 'type':'action', 'action':self.pll.pll_writedefaults},
+            ]},
+            {'name':'Disable CLKUSB For Capture', 'key':'clkusbautooff', 'type':'bool', 'value':True},
+            {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
+            {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.usb_clk_setenabled},
+            {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
+            {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'value':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
+            {'name':'FPGA Bitstream', 'type':'group', 'children':[
+                    {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'str', 'value':self._fpgabs, 'set':self.gui_selectfpga},
+                    {'name':'Select Bitstream File', 'type':'action', 'action':self.gui_selectfpga},
+                    {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
+            ]},
+        ])
 
     def fpga_write(self, addr, data):
         """ Write to specified address """

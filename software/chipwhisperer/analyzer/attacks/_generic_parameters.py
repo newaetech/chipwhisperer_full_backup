@@ -25,9 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameters import Parameterized
+import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 
 
 def enforceLimits(value, limits):
@@ -38,10 +40,13 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackGenericParameters(AutoScript):
+class AttackGenericParameters(AutoScript, Parameterized):
+    name='Attack Settings'
+
     def __init__(self):
         self.maxSubKeys = 32
-        super(AttackGenericParameters, self).__init__()
+        AutoScript.__init__(self)
+        Parameterized.__init__(self)
         self.useAbs = True
 
         #TODO: Where to get this from?
@@ -57,22 +62,16 @@ class AttackGenericParameters(AutoScript):
 
         self.setupTraceParam()
         self.setupPointsParam()
-        self.setupParameters()
-
-    def setupParameters(self):
-        attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':None}, 'value':'AES-128'},
-                        {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'}
-                        ]},
-                       {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
-
-                       #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()
-                        },
-                      ]
-
-        self.params = ConfigParameter.create_extended(self, name='Attack Settings', type='group', children=attackParams)
+        self.params.addChildren([
+            {'name':'Hardware Model', 'type':'group', 'children':[
+                {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
+                {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
+                {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'}
+            ]},
+            {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
+           #TODO: Should be called from the AES module to figure out # of bytes
+            {'name':'Attacked Bytes', 'type':'group', 'children': self.getByteList()},
+        ])
         self.updateBytesVisible()
 
     def getAbsoluteMode(self):

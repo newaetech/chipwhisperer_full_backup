@@ -30,12 +30,12 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 class ReaderChipWhispererUSI(ReaderTemplate):
     name = "CWCR2-USI (obsolete)"
 
-    def __init__(self):
-        super(ReaderChipWhispererUSI, self).__init__()
+    def __init__(self, parentParam=None):
+        ReaderTemplate.__init__(self, parentParam)
+        self.params.addChildren([
+            {'name':'Baud', 'type':'int', 'value':9600, 'set':self.setBaud}
+        ])
         self.usi = ChipWhispererTargets.CWUniversalSerial()
-
-    def setupParameters(self):
-        return [{'name':'Baud', 'type':'int', 'value':9600, 'set':self.setBaud}]
 
     def setBaud(self, brate):
         """Set baud rate of reader"""

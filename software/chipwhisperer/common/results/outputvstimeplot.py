@@ -25,6 +25,7 @@
 #=================================================
 
 from ._plotdata import AttackResultPlot
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class OutputVsTime(AttackResultPlot):
@@ -55,21 +56,24 @@ class OutputVsTime(AttackResultPlot):
         return range(prange[0], prange[1])
 
     def redrawPlot(self):
-        data = self._analysisSource.getStatistics().diffs
+        progress = ProgressBar("Redrawing...", "Status:")
 
-        enabledlist = []
-        for i in range(0, self.numKeys):
-            if self.enabledbytes[i]:
-                enabledlist.append(i)
+        with progress:
+            data = self._analysisSource.getStatistics().diffs
 
-        xrangelist = [0] * self.numKeys
-        for bnum in enabledlist:
-            diffs = data[bnum]
+            enabledlist = []
+            for i in range(0, self.numKeys):
+                if self.enabledbytes[i]:
+                    enabledlist.append(i)
 
-            if not hasattr(diffs[0], '__iter__'):
-                diffs = [[t] for t in diffs]
+            xrangelist = [0] * self.numKeys
+            for bnum in enabledlist:
+                diffs = data[bnum]
 
-            prange = self.getPrange(bnum, diffs)
-            xrangelist[bnum] = prange
+                if not hasattr(diffs[0], '__iter__'):
+                    diffs = [[t] for t in diffs]
 
-        self.drawData(xrangelist, data, enabledlist)
+                prange = self.getPrange(bnum, diffs)
+                xrangelist[bnum] = prange
+
+            self.drawData(progress, xrangelist, data, enabledlist)

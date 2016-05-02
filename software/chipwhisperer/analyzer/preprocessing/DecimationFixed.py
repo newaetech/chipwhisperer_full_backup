@@ -33,10 +33,13 @@ class DecimationFixed(PreprocessingBase):
     name = "Decimation: Fixed"
     description = "Decimate by a fixed factor"
 
-    def _setupParameters(self):
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.setDecimationFactor(2)
-        return [ {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript},
-                ]
+        self.params.addChildren([
+            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript}
+        ])
+        self.updateScript()
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())

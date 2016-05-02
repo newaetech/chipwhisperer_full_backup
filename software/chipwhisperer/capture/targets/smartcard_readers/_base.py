@@ -23,18 +23,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ReaderTemplate(pluginmanager.Parameterized):
+class ReaderTemplate(Plugin):
     name='Smartcard Reader'
 
-    def __init__(self, parentParam):
-        super(ReaderTemplate, self).__init__(parentParam)
+    def __init__(self, parentParam=None):
+        Plugin.__init__(self, parentParam)
 
-    def setupParameters(self):
-        """You should overload this. Copy/Paste into your class."""
-        return [{'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}]
+        # self.params.addChildren([
+        #     {'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}
+        # ])
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""
@@ -44,7 +44,7 @@ class ReaderTemplate(pluginmanager.Parameterized):
         """Send APDU to SmartCard, get Response"""
         pass
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         """Connect to reader."""
         pass
 

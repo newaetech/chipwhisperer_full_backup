@@ -32,21 +32,22 @@ must install
 """
 
 import time
-from chipwhisperer.capture.scopes._base import ScopeTemplate
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized
+from ._base import ScopeTemplate
+from chipwhisperer.common.utils import util
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
 
 
-class PicoScope(pluginmanager.Parameterized): #TODO: ScopeBase instead?
+class PicoScope(Parameterized): #TODO: ScopeBase instead?
     name = 'Scope Settings'
     dataUpdated = util.Signal()
 
     def __init__(self, psClass):
+        Parameterized.__init__(self)
         self.ps = psClass
 
-    def setupParameters(self):
         chlist = {}
         for t in self.ps.CHANNELS:
             if self.ps.CHANNELS[t] < self.ps.CHANNELS['MaxChannels']:
@@ -57,24 +58,25 @@ class PicoScope(pluginmanager.Parameterized): #TODO: ScopeBase instead?
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 
-        return [
-                      {'name':'Trace Measurement', 'type':'group', 'children':[
-                         {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
-                         {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
-                         {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'set':self.updateCurrentSettings},
-                         {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'set':self.updateCurrentSettings}, ]},
-                      {'name':'Trigger', 'type':'group', 'children':[
-                         {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'set':self.updateCurrentSettings},
-                         {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'set':self.updateCurrentSettings},
-                         {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'set':self.updateCurrentSettings},
-                         {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'set':self.updateCurrentSettings},
-                         {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
-                         {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
-                         ]},
-                      {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.updateSampleRateFreq, 'siPrefix':True, 'suffix': 'S/s'},
-                      {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.updateSampleRateFreq},
-                      {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.updateSampleRateFreq},
-                  ]
+        self.params.addChildren([
+            {'name':'Trace Measurement', 'type':'group', 'children':[
+                {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
+                {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
+                {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'set':self.updateCurrentSettings},
+                {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'set':self.updateCurrentSettings},
+            ]},
+            {'name':'Trigger', 'type':'group', 'children':[
+                {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'set':self.updateCurrentSettings},
+                {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'set':self.updateCurrentSettings},
+                {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'set':self.updateCurrentSettings},
+                {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'set':self.updateCurrentSettings},
+                {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
+                {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
+            ]},
+            {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.updateSampleRateFreq, 'siPrefix':True, 'suffix': 'S/s'},
+            {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.updateSampleRateFreq},
+            {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.updateSampleRateFreq},
+        ])
             
     def updateSampleRateFreq(self, ignored=None):
         if self.ps.handle is not None:
@@ -148,17 +150,19 @@ class PicoScopeInterface(ScopeTemplate):
 
     def __init__(self, parentParam):
         super(PicoScopeInterface, self).__init__(parentParam)
-        self.scopetype = None
-        self.advancedSettings = None
-        self.setCurrentScope(self.findParam('type').value(type))
 
-    def setupParameters(self):
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
                         "PS2000": ps2000.PS2000(connect=False)}
         # self.connectChildParamsSignals(scopes) #TODO: Fix
 
-        return [{'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}]
+        self.params.addChildren([
+            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}
+        ])
+        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
+
+        self.scopetype = None
+        self.advancedSettings = None
+        self.setCurrentScope(self.findParam('type').value(type))
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst

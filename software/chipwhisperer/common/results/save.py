@@ -42,8 +42,9 @@ class ResultsSave(ResultsBase, ActiveAnalysisObserver):
         self._enabled = False
         self.dataarray = None
 
-    def _setupParameters(self):
-        return [{'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.setEnabled}]
+        self.params.addChildren([
+            {'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.setEnabled}
+        ])
 
     def analysisUpdated(self):
         """Stats have been updated"""

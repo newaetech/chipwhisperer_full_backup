@@ -51,19 +51,22 @@ class DecimationClockRecovery(PreprocessingBase):
     name = "Decimation: Clock Recovery"
     description = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
                   "decimate to only points of interest.\n****CURRENTLY NOT SUPPORTED****"
-     
-    def _setupParameters(self):
+
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.setFilterOptions()
-        return [ {'name':'Filter Design', 'type':'group', 'children':[
-                    # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
-                    {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateScript},
-                    {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'value':20, 'set':self.updateScript},
-                    {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'value':False, 'set':self.updateScript},
-                    {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript},
-                                                                     ]},
-                 {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
-                 {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript},
-                ]
+        self.params.addChildren([
+            {'name':'Filter Design', 'type':'group', 'children':[
+                # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
+                {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'value':'bandpass', 'set':self.updateScript},
+                {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'value':20, 'set':self.updateScript},
+                {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'value':False, 'set':self.updateScript},
+                {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'value':3, 'set':self.updateScript},
+             ]},
+            {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'value':True, 'set':self.updateScript},
+            {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'value':True, 'set':self.updateScript}
+        ])
+        self.updateScript()
 
     def updateScript(self, param1=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())

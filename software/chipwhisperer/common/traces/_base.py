@@ -43,16 +43,14 @@ class TraceContainer(pluginmanager.Plugin):
     def __init__(self, parentParam=None, configfile=None):
         super(TraceContainer, self).__init__(parentParam)
         self.configfile = configfile
-        self.clear()
-
-    def setupParameters(self):
         self.fmt = None
-        return [
-                    {'name':'Trace Configuration', 'type':'group', 'children':[
-                        {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
-                        {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},]
-                     }
-                ]
+        self.params.addChildren([
+            {'name':'Trace Configuration', 'type':'group', 'children':[
+                {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
+                {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
+            ]}
+        ])
+        self.clear()
 
     def clear(self):
         self.config = _cfgfile.TraceContainerConfig(configfile=self.configfile)

@@ -22,6 +22,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+from chipwhisperer.common.utils.parameters import CWParameterTree
+
 __author__ = "Colin O'Flynn"
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -69,7 +71,7 @@ class CWMainGUI(QMainWindow):
         sys.excepthook = self.exceptionHandlerDialog
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
-        pluginmanager.CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
+        CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
         self.setCentralWidget(None)
         self.setDockNestingEnabled(True)
         self.traceManagerDialog = TraceManagerDialog(self)
@@ -78,7 +80,7 @@ class CWMainGUI(QMainWindow):
         self.loadExtraModules()
         self.addToolMenuItems()
         self.addSettingsDocks()
-        self.api.graphWidget = self.api.resultWidgets['Trace Output Plot']
+        # self.api.graphWidget = self.api.resultWidgets['Trace Output Plot']
 
         self.addResultDocks()
         self.restoreSettings()
@@ -86,7 +88,7 @@ class CWMainGUI(QMainWindow):
         self.projectChanged()
         self.api.sigNewProject.connect(self.projectChanged)
         self.api.sigTracesChanged.connect(self.tracesChanged)
-        pluginmanager.CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
+        CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
 
     def loadExtraModules(self):
@@ -131,10 +133,11 @@ class CWMainGUI(QMainWindow):
         return dock
 
     def tabifyDocks(self, docks):
-        for index in range(1, len(docks)):
-            docks[index].show()
-            self.tabifyDockWidget(docks[index-1], docks[index])
-        docks[0].raise_()
+        if len(docks) > 0:
+            for index in range(1, len(docks)):
+                docks[index].show()
+                self.tabifyDockWidget(docks[index-1], docks[index])
+            docks[0].raise_()
 
     def getTraceSource(self):
         raise self.api.project().traceManager()
@@ -170,7 +173,7 @@ class CWMainGUI(QMainWindow):
 
         self._ToolMenuItems = []
         self._ToolMenuItems.append(self.toolMenu.addSeparator())
-        for act in pluginmanager.CWParameterTree.getAllGuiActions(self):
+        for act in CWParameterTree.getAllGuiActions(self):
             self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
 
         for act in self._ToolMenuItems:

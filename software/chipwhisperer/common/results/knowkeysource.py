@@ -38,11 +38,11 @@ class KnowKeySource(ResultsBase, ActiveAnalysisObserver):
         ActiveAnalysisObserver.__init__(self)
         self._knowKey = []
 
-    def _setupParameters(self):
-        return [{'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
-                                                'value':'attack', 'set':self.setKnownKeySrc},
-                {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True},
-                ]
+        self.params.addChildren([
+            {'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
+             'value':'attack', 'set':self.setKnownKeySrc},
+            {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True}
+        ])
 
     def setKnownKeySrc(self, keysrc):
         """Set key as 'attack' or 'override'"""

@@ -26,9 +26,10 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class TraceSource(object):
+class TraceSource(util.Registrable):
     """ It has traces as output """
 
     def __init__(self):
@@ -43,12 +44,53 @@ class TraceSource(object):
     def numTraces(self):
         return 0
 
+    def offset(self):
+        return 0
 
-class PassiveTraceObserver(object):
+
+class LiveTraceSource(TraceSource):
+
+    def __init__(self, scope=None):
+        TraceSource.__init__(self)
+        self._scope = None
+        self.setScope(scope)
+        self._lastData = []
+        self._lastOffset = 0
+
+    def setScope(self, newScope):
+        if self._scope:
+            self._scope.dataUpdated.disconnect(self.newScopeData)
+        if newScope:
+            newScope.dataUpdated.connect(self.newScopeData)
+        self._scope = newScope
+
+    def newScopeData(self, data=None, offset=0):
+        self._lastData = data
+        self._lastOffset = offset
+        self.sigTracesChanged.emit()
+
+    def getTrace(self, n):
+        return self._lastData
+
+    def numPoints(self):
+        return len(self._lastData)
+
+    def numTraces(self):
+        return 1
+
+    def offset(self):
+        return self._lastOffset
+
+
+class PassiveTraceObserver(Parameterized):
     """ It process data from a TraceSource when requested """
 
-    def __init__(self, traceSource=None):
-        self.setTraceSource(traceSource)
+    def __init__(self, parentParam=None):
+        Parameterized.__init__(self, parentParam)
+        self._traceSource = None
+        self.params.addChildren([
+            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'set':self.setTraceSource}
+                    ])
 
     def setTraceSource(self, traceSource):
         self._traceSource = traceSource
@@ -59,12 +101,19 @@ class PassiveTraceObserver(object):
     def processTraces(self):
         pass
 
+    def newTraceSources(self):
+        par = self.findParam('input')
+        par.setLimits({})  # Will not update if the obj is the same :(
+        par.setLimits(TraceSource.registeredObjects)
+
 
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """
 
-    def setTraceSource(self, traceSource):
-        if traceSource:
-            traceSource.sigTracesChanged.connect(self.processTraces)
-        self._traceSource = traceSource
+    def setTraceSource(self, newTraceSource):
+        if self._traceSource:
+            self._traceSource.sigTracesChanged.disconnect(self.processTraces)
+        if newTraceSource:
+            newTraceSource.sigTracesChanged.connect(self.processTraces)
+        self._traceSource = newTraceSource
         self.processTraces()

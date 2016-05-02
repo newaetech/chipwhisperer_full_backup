@@ -44,7 +44,6 @@ class CWCaptureGUI(CWMainGUI):
         self.api.sigTraceDone.connect(self.glitchMonitor.traceDone)
         self.api.sigCampaignStart.connect(self.glitchMonitor.campaignStart)
         self.api.sigCampaignDone.connect(self.glitchMonitor.campaignDone)
-        self.api.sigNewScopeData.connect(self.newScopeData)
 
     def loadExtraModules(self):
         self.serialTerminal = SerialTerminalDialog(self, self.api)
@@ -98,8 +97,8 @@ class CWCaptureGUI(CWMainGUI):
                                         triggered=self.glitchMonitor.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
 
-    def newScopeData(self, data=None, offset=0):
-        self.api.getGraphWidget().passTrace(data, offset)
+    # def newScopeData(self, data=None, offset=0):
+    #     self.api.getGraphWidget().passTrace(data, offset)
 
     def addToolbarItems(self, toolbar):
         # Capture

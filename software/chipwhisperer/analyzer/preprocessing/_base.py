@@ -34,13 +34,13 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmana
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:
-        - setupParameters and updateScript are used by the GUI to create the parameters list and generate the API scripts
+        - updateScript is used by the GUI to create the parameters list and generate the API scripts
         - the other methods are used by the API to apply the preprocessing filtering
           You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
     name = "None"
 
-    def __init__(self, parentParam=None, traceSource = None):
+    def __init__(self, parentParam=None, traceSource=None):
         self.enabled = True
         TraceSource.__init__(self)
         ActiveTraceObserver.__init__(self)
@@ -49,19 +49,9 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmana
         self.setTraceSource(traceSource)
         if traceSource:
             traceSource.sigTracesChanged.connect(self.sigTracesChanged.emit)  # Forwards the traceChanged signal to the next observer in the chain
-        self.updateScript()
-
-    def setupParameters(self):
-        """Setup parameters specific to preprocessing module"""
-        ret = [{'name':'', 'type':'label', 'value':self.description, 'readonly':True},
-               {'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled}
-                ]
-        ret.extend(self._setupParameters())
-        return ret
-
-    def _setupParameters(self):
-        # PUT YOUR CUSTOMIZED PARAMETERS HERE
-        return []
+        self.params.addChildren([
+                 {'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled}
+        ])
 
     def updateScript(self, ignored=None):
         pass

@@ -336,7 +336,6 @@ class TriggerSettings():
         offset |= cmd[3] << 24
         return offset
 
-
     def setPresamples(self, samples):
         #enforce samples is multiple of 3
         samplesact = int(samples / 3)
@@ -388,26 +387,26 @@ class TriggerSettings():
     def setMode(self,  mode):
         """ Input to trigger module options: 'rising edge', 'falling edge', 'high', 'low' """
         if mode == 'rising edge':
-            trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES;
+            trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES
 
         elif mode == 'falling edge':
-            trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_YES;
+            trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_YES
 
         elif mode == 'high':
-            trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_NO;
+            trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_NO
 
         elif mode == 'low':
-            trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_NO;
+            trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_NO
 
         else:
             raise ValueError,  "%s invalid trigger mode"%mode
 
-        cur = self.oa.settings() & ~(SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES);
+        cur = self.oa.settings() & ~(SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
         self.oa.setSettings(cur | trigmode)
 
     def mode(self):
         sets = self.oa.settings()
-        case = sets & (SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES);
+        case = sets & (SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
 
         if case == SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES:
             mode = "rising edge"
@@ -608,7 +607,6 @@ class ClockSettings():
         #raise IOError("clkgen never loaded value?")
         return 0
 
-
     def adcSource(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         result[0] = result[0] & 0x07
@@ -689,16 +687,16 @@ class ClockSettings():
     def setPhase(self, phase):
         '''Set the phase adjust, range -255 to 255'''
 
-        LSB = phase & 0x00FF;
-        MSB = (phase & 0x0100) >> 8;
+        LSB = phase & 0x00FF
+        MSB = (phase & 0x0100) >> 8
 
         cmd = bytearray(2)
-        cmd[0] = LSB;
-        cmd[1] = MSB | 0x02;
+        cmd[0] = LSB
+        cmd[1] = MSB | 0x02
         self.oa.sendMessage(CODE_WRITE, ADDR_PHASE, cmd, False)
 
     def phase(self):
-        result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2);
+        result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2)
 
         if (result[1] & 0x02):
             LSB = result[0]
@@ -774,10 +772,10 @@ class ClockSettings():
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_FREQ, maxResp=4)
-        freq = freq | (temp[0] << 0);
-        freq = freq | (temp[1] << 8);
-        freq = freq | (temp[2] << 16);
-        freq = freq | (temp[3] << 24);
+        freq = freq | (temp[0] << 0)
+        freq = freq | (temp[1] << 8)
+        freq = freq | (temp[2] << 16)
+        freq = freq | (temp[3] << 24)
 
         measured = freq * samplefreq
         return long(measured)
@@ -791,10 +789,10 @@ class ClockSettings():
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_ADCFREQ, maxResp=4)
-        freq = freq | (temp[0] << 0);
-        freq = freq | (temp[1] << 8);
-        freq = freq | (temp[2] << 16);
-        freq = freq | (temp[3] << 24);
+        freq = freq | (temp[0] << 0)
+        freq = freq | (temp[1] << 8)
+        freq = freq | (temp[2] << 16)
+        freq = freq | (temp[3] << 24)
 
         measured = freq * samplefreq
 
@@ -817,7 +815,7 @@ class OpenADCInterface(object):
             pass
         else:
             nullmessage = bytearray([0] * 20)
-            self.serial.write(str(nullmessage));
+            self.serial.write(str(nullmessage))
 
         self.setReset(True)
         self.setReset(False)
@@ -1019,7 +1017,7 @@ class OpenADCInterface(object):
 
     def maxSamples(self):
         '''Return the number of samples captured in one go'''
-        samples = 0x00000000;
+        samples = 0x00000000
         temp = self.sendMessage(CODE_READ, ADDR_SAMPLES, maxResp=4)
         samples = samples | (temp[0] << 0)
         samples = samples | (temp[1] << 8)
@@ -1096,7 +1094,7 @@ class OpenADCInterface(object):
         return addr
 
     def arm(self):
-        self.setSettings(self.settings() | SETTINGS_ARM);
+        self.setSettings(self.settings() | SETTINGS_ARM)
 
     def capture(self, waitingCallback=None):
         #Wait for trigger
@@ -1120,7 +1118,7 @@ class OpenADCInterface(object):
             if waitingCallback:
                 waitingCallback()
 
-        self.setSettings(self.settings() & ~SETTINGS_ARM);
+        self.setSettings(self.settings() & ~SETTINGS_ARM)
         
         # If using large offsets, system doesn't know we are delaying api
         nosampletimeout = 100
@@ -1220,7 +1218,7 @@ class OpenADCInterface(object):
 
     def processData(self, data, pad=float('NaN'), pretrigger_out=None):
         fpData = []
-        lastpt = -100;
+        lastpt = -100
 
         if data[0] != 0xAC:
             print("Unexpected sync byte: 0x%x"%data[0])
@@ -1238,14 +1236,14 @@ class OpenADCInterface(object):
             #print "%x %x %x %x"%(data[i +0], data[i +1], data[i +2], data[i +3]);
             #print "%x"%temppt
 
-            intpt1 = temppt & 0x3FF;
-            intpt2 = (temppt >> 10) & 0x3FF;
-            intpt3 = (temppt >> 20) & 0x3FF;
+            intpt1 = temppt & 0x3FF
+            intpt2 = (temppt >> 10) & 0x3FF
+            intpt3 = (temppt >> 20) & 0x3FF
 
             # print "%x %x %x" % (intpt1, intpt2, intpt3)
 
             if trigfound == False:
-                mergpt = temppt >> 30;
+                mergpt = temppt >> 30
                 if (mergpt != 3):
                        trigfound = True
                        trigsamp = trigsamp + mergpt

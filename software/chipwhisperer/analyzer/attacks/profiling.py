@@ -28,10 +28,11 @@
 #===========================================================
 
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils import pluginmanager
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks._base import AttackBaseClass
-from chipwhisperer.analyzer.attacks._profiling_template import ProfilingTemplate
+from chipwhisperer.analyzer.attacks.profiling_algorithms.template import ProfilingTemplate
 from _generic_parameters import AttackGenericParameters
 
 
@@ -43,20 +44,16 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
 
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
+        self.params.addChildren([
+            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+        ])
+
         # Do not use absolute
         self.useAbs = False
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
         self.setAbsoluteMode(False)
-
-    def setupParameters(self):
-        profalgos = {'Basic':ProfilingTemplate}
-
-        return [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
-
-                       #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
-                      ]
 
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo)

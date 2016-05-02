@@ -32,12 +32,13 @@ from chipwhisperer.common.utils import util, timer
 class ResetCW1173Read(AuxiliaryTemplate):
     name = "Reset AVR/XMEGA via CW-Lite"
 
-    def setupParameters(self):
-        return [
-                 {'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
-                 {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
-                 {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-                ]
+    def __init__(self, parentParam=None):
+        AuxiliaryTemplate.__init__(self, parentParam)
+        self.params.addChildren([
+            {'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
+            {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
+            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+        ])
 
     def captureInit(self):
         pass

@@ -28,7 +28,7 @@
 from chipwhisperer.common.utils import util, pluginmanager
 
 
-class ScopeTemplate(pluginmanager.Plugin):
+class ScopeTemplate(pluginmanager.Plugin): #TODO: Consider the possibility of extend the LiveTraceSouce class
     name = "None"
 
     def __init__(self, parentParam):

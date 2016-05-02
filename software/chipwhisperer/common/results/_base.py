@@ -35,15 +35,6 @@ class ResultsBase(pluginmanager.Plugin):
     def __init__(self, parentParam=None):
         super(ResultsBase, self).__init__(parentParam)
 
-    def setupParameters(self):
-        ret = [{'name':'', 'type':'label', 'value':self.description, 'readonly':True}]
-        ret.extend(self._setupParameters())
-        return ret
-
-    def _setupParameters(self):
-        # PUT YOUR CUSTOMIZED PARAMETERS HERE
-        return []
-
     def getWidget(self):
         return None
 
@@ -55,12 +46,9 @@ class ResultsWidgetBase(ResultsBase):
         self.visibilityChanged = util.Signal()
         ResultsBase.__init__(self, parentParam)
 
-    def setupParameters(self):
-        ret = [{'name':'', 'type':'label', 'value':self.description, 'readonly':True},
-               {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit}
-               ]
-        ret.extend(self._setupParameters())
-        return ret
+        self.params.addChildren([
+            {'name':'Show', 'type':'bool', 'key':'show', 'value':False, 'set':self.visibilityChanged.emit}
+        ])
 
     def updateVisibility(self, visible):
         """Dock visability changed"""

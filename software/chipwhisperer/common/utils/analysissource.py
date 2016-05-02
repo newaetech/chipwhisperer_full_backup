@@ -28,7 +28,7 @@
 from chipwhisperer.common.utils import util
 
 
-class AnalysisSource(object):
+class AnalysisSource(util.Registrable):
     """ It produces an analysis report as output """
 
     def __init__(self):
@@ -60,7 +60,7 @@ class ActiveAnalysisObserver(PassiveAnalysisObserver):
             analysisSource.sigAnalysisDone.connect(self.processAnalysis)
         self._analysisSource = analysisSource
         self.analysisStarted()
-        
+
     def analysisStarted(self):
         pass
 

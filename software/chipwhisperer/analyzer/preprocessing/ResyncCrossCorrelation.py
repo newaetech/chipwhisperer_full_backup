@@ -39,15 +39,19 @@ class ResyncCrossCorrelation(PreprocessingBase):
     description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
-    def _setupParameters(self):
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.rtrace = 0
         self.debugReturnCorr = False
         self.ccStart = 0
         self.ccEnd = 0
-        return [ {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                 {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
-                 # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
-                ]
+
+        self.params.addChildren([
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':lambda: CWCoreAPI.getInstance().getGraphWidget(), 'set':self.updateScript, 'default':(0, 0)},
+            # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}
+        ])
+        self.updateScript()
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())

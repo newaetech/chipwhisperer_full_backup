@@ -170,7 +170,7 @@ class ExtendedParameter():
             # print change
 
             # Only trigger on 'value' changes!
-            if (change != 'value') and (change != 'activated') and (change != 'limits'):
+            if (change != 'value') and (change != 'activated'):# and (change != 'limits'):
                 return
 
             # Call specific 'set' routine associated with data
@@ -411,3 +411,12 @@ if __name__ == '__main__':
     t.resize(400, 800)
 
     QtGui.QApplication.instance().exec_()
+
+
+class ConfigParameter(Parameter):
+    @staticmethod
+    def create_extended(parent, *args, **kwargs):
+        params = Parameter.create(*args, **kwargs)
+        if parent:
+            ExtendedParameter.setupExtended(params, parent)
+        return params

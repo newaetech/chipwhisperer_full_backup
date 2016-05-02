@@ -21,10 +21,11 @@
 
 import time
 from visa import *
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils import util
 
 
-class VisaScope(pluginmanager.Parameterized):
+class VisaScope(Parameterized):
     name='Scope Settings'
     dataUpdated = util.Signal()
 
@@ -41,15 +42,14 @@ class VisaScope(pluginmanager.Parameterized):
         super(VisaScope, self).__init__(parentParam)
         self.visaInst = None
 
-    def setupParameters(self):
-        return [
-                  {'name':'X-Scale', 'key':'xscale', 'type':'list', 'values':self.xScales},
-                  {'name':'Y-Scale', 'key':'yscale', 'type':'list', 'values':self.yScales},
-                  {'name':'Y-Offset', 'key':'yoffset', 'type':'float', 'step':1E-3, 'siPrefix': True, 'suffix': 'V'},
-                  {'name':'X-Offset', 'key':'xoffset', 'type':'float', 'step':1E-6, 'siPrefix': True, 'suffix': 'S'},
-                  {'name':'Download Offset', 'key':'xdisporigin', 'type':'int',  'limits':(0,1E9)},
-                  {'name':'Download Size', 'key':'xdisprange', 'type':'int', 'limits':(0,1E9)},
-                ]
+        self.params.addChildren([
+            {'name':'X-Scale', 'key':'xscale', 'type':'list', 'values':self.xScales},
+            {'name':'Y-Scale', 'key':'yscale', 'type':'list', 'values':self.yScales},
+            {'name':'Y-Offset', 'key':'yoffset', 'type':'float', 'step':1E-3, 'siPrefix': True, 'suffix': 'V'},
+            {'name':'X-Offset', 'key':'xoffset', 'type':'float', 'step':1E-6, 'siPrefix': True, 'suffix': 'S'},
+            {'name':'Download Offset', 'key':'xdisporigin', 'type':'int',  'limits':(0,1E9)},
+            {'name':'Download Size', 'key':'xdisprange', 'type':'int', 'limits':(0,1E9)},
+        ])
 
     def con(self, constr):
         self.visaInst = instrument(constr)

@@ -26,6 +26,7 @@
 
 from ._plotdata import AttackResultPlot
 import numpy as np
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CorrelationVsTrace(AttackResultPlot):
@@ -43,30 +44,33 @@ class CorrelationVsTrace(AttackResultPlot):
         if not self._analysisSource:
             return
 
-        data = self._analysisSource.getStatistics().maxes_list
+        progress = ProgressBar("Redrawing...", "Status:")
 
-        enabledlist = []
-        for i in range(0, self.numKeys):
-            if self.enabledbytes[i]:
-                enabledlist.append(i)
+        with progress:
+            data = self._analysisSource.getStatistics().maxes_list
 
-        xrangelist = [0] * self.numKeys
-        newdata = [0] * self.numKeys
-        for bnum in enabledlist:
-            maxdata = data[bnum]
-            tlist = []
-            for m in maxdata:
-                tlist.append(m['trace'])
+            enabledlist = []
+            for i in range(0, self.numKeys):
+                if self.enabledbytes[i]:
+                    enabledlist.append(i)
 
-            maxlist = np.zeros((self.numPerms, len(tlist)))
-            for i, m in enumerate(maxdata):
-                for j in range(0, self.numPerms):
-                    maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
+            xrangelist = [0] * self.numKeys
+            newdata = [0] * self.numKeys
+            for bnum in enabledlist:
+                maxdata = data[bnum]
+                tlist = []
+                for m in maxdata:
+                    tlist.append(m['trace'])
 
-            newdata[bnum] = maxlist
-            xrangelist[bnum] = tlist
+                maxlist = np.zeros((self.numPerms, len(tlist)))
+                for i, m in enumerate(maxdata):
+                    for j in range(0, self.numPerms):
+                        maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
 
-        self.drawData(xrangelist, newdata, enabledlist)
+                newdata[bnum] = maxlist
+                xrangelist[bnum] = tlist
+
+            self.drawData(progress, xrangelist, newdata, enabledlist)
 
     def processAnalysis(self):
         self.redrawPlot()
