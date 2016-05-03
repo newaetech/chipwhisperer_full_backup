@@ -126,6 +126,7 @@ class ChipWhispererGlitch(Parameterized):
             self.findParam('offset').setLimits(lim)
 
     def setOpenADC(self, oa):
+        self.oa = None
         if self.prEnabled:
             self.prCon.con(oa)
 

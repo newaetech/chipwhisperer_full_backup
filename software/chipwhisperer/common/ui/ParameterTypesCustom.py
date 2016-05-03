@@ -497,6 +497,14 @@ class SpinBoxWithSetItem(WidgetParameterItem):
     def updateDefaultBtn(self):
         pass
 
+ #   def delayedChange(self):
+ #       #Modified to always emit change
+ #       try:
+ #           #if self.val != self.lastValEmitted:
+ #           self.emitChanged()
+ #       except RuntimeError:
+ #           pass  ## This can happen if we try to handle a delayed signal after someone else has already deleted the underlying C++ object.
+
 class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
@@ -582,17 +590,19 @@ def listParameterItem_Fix(self, param, depth):
 
 ListParameterItem.__init__ = listParameterItem_Fix
 
+def setValue_Fix(self, value, blockSignal=None):
+    # Fixes the CW requirement to not skip the setValue call when the previous value is the same
+    try:
+        if blockSignal is not None:
+            self.sigValueChanged.disconnect(blockSignal)
+        self.opts['value'] = value
+        self.sigValueChanged.emit(self, value)
+    finally:
+        if blockSignal is not None:
+            self.sigValueChanged.connect(blockSignal)
 
+#TODO: Fix parameter's to not skip setting same value, requires more effort than this.
+#      Useful when hardware reality is != software settings, and need to re-download
+#      things.
+Parameter.setValue = setValue_Fix
 
-# def setValue_Fix(self, value, blockSignal=None):
-# # Fixes the CW requirement to not skip the setValue call when the previous value is the same
-#     try:
-#         if blockSignal is not None:
-#             self.sigValueChanged.disconnect(blockSignal)
-#         self.opts['value'] = value
-#         self.sigValueChanged.emit(self, value)
-#     finally:
-#         if blockSignal is not None:
-#             self.sigValueChanged.connect(blockSignal)
-#
-# Parameter.setValue = setValue_Fix
