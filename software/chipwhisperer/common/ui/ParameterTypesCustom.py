@@ -8,7 +8,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter
 from pyqtgraph.widgets.SpinBox import SpinBox
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
@@ -574,10 +574,25 @@ class LabelParameter(Parameter):
 registerParameterType('label', LabelParameter, override=True)
 
 
-# Fixes a bug where the list would appear blank instead of showing the default value
 def listParameterItem_Fix(self, param, depth):
+    # Fixes a bug where the list would appear blank instead of showing the default value
     self.targetValue = None
     WidgetParameterItem.__init__(self, param, depth)
     self.updateDisplayLabel(self.value())
 
 ListParameterItem.__init__ = listParameterItem_Fix
+
+
+
+# def setValue_Fix(self, value, blockSignal=None):
+# # Fixes the CW requirement to not skip the setValue call when the previous value is the same
+#     try:
+#         if blockSignal is not None:
+#             self.sigValueChanged.disconnect(blockSignal)
+#         self.opts['value'] = value
+#         self.sigValueChanged.emit(self, value)
+#     finally:
+#         if blockSignal is not None:
+#             self.sigValueChanged.connect(blockSignal)
+#
+# Parameter.setValue = setValue_Fix
