@@ -23,14 +23,16 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager, util
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class SimpleSerialTemplate(pluginmanager.Plugin):
+class SimpleSerialTemplate(Parameterized, Plugin):
     name='Simple Serial Reader'
 
     def __init__(self, parentParam):
-        super(SimpleSerialTemplate, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
         self.connectStatus = util.Observable(False)
 
     def selectionChanged(self):

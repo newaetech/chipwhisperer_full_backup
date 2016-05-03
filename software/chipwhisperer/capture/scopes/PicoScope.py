@@ -41,12 +41,12 @@ from picoscope import ps6000
 
 
 class PicoScope(Parameterized): #TODO: ScopeBase instead?
-    name = 'Scope Settings'
-    dataUpdated = util.Signal()
+    name = 'Pico Scope'
 
-    def __init__(self, psClass):
-        Parameterized.__init__(self)
+    def __init__(self, parentParam=None, psClass=None):
+        ScopeTemplate.__init__(self, parentParam)
         self.ps = psClass
+        self.dataUpdated = util.Signal()
 
         chlist = {}
         for t in self.ps.CHANNELS:

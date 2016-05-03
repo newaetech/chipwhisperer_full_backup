@@ -62,7 +62,6 @@ class ProjectFormat(object):
 
     def __init__(self):
         self.sigFilenameChanged = util.Signal()
-        self.sigFleChangedOnDisk = util.Signal()
         self.sigStatusChanged = util.Signal()
         self.dirty = util.Observable(True)
 
@@ -160,7 +159,6 @@ class ProjectFormat(object):
         this would return a list of all sections of the type
         'Aux Data NNNN - Frequency'.
         """
-
         sections = []
 
         # Get all section names
@@ -222,7 +220,6 @@ class ProjectFormat(object):
         self.config[pn]['General Settings'] =  self.settingsDict
 
         self.config.write()
-        self.sigFileChangedOnDisk.emit()
         self.sigStatusChanged.emit()
         self.dirty.setValue(False)
 

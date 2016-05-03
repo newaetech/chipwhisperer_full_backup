@@ -23,14 +23,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
-
-class AcqKeyTextPattern_Base(pluginmanager.Plugin):
+class AcqKeyTextPattern_Base(Parameterized, Plugin):
     name = "Key/Text Pattern"
 
     def __init__(self, parentParam, target=None):
-        pluginmanager.Plugin.__init__(self, parentParam)
+        Parameterized.__init__(self, parentParam)
         self.setTarget(target)
 
     def setTarget(self, target):

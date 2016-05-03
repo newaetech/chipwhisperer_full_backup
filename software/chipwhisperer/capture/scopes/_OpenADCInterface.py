@@ -60,6 +60,7 @@ def SIGNEXT(x, b):
 
 
 class OpenADCSettings(object):
+
     def __init__(self, oaiface=None):
         self.parm_hwinfo = HWInformation()
         self.parm_gain = GainSettings()
@@ -116,7 +117,8 @@ class OpenADCSettings(object):
         return
 
 
-class HWInformation():
+class HWInformation(object):
+
     def __init__(self):
         self.name = "Hardware Information"
         self.sysFreq = 0
@@ -178,7 +180,8 @@ class HWInformation():
 
         return self.sysFreq
 
-class GainSettings():
+class GainSettings(object):
+
     def __init__(self):
         self.name = "Gain Setting"
         self.param = {'name': 'Gain Setting', 'type': 'group', 'children': [
@@ -800,6 +803,7 @@ class ClockSettings():
 
 
 class OpenADCInterface(object):
+
     def __init__(self, serial_instance, debug=None):
         self.serial = serial_instance
         self.offset = 0.5

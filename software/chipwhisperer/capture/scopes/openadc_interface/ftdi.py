@@ -20,21 +20,20 @@
 #=================================================
 
 import sys
-
 import chipwhisperer.capture.scopes._qt as openadc_qt
-from chipwhisperer.common.utils import pluginmanager
-
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 try:
     import ftd2xx as ft
 except:
     ft = None
 
 
-class OpenADCInterface_FTDI(pluginmanager.Plugin):
+class OpenADCInterface_FTDI(Parameterized, Plugin):
     name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, parentParam, oadcInstance):
-        super(OpenADCInterface_FTDI, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
 
         self.params.addChildren([
             {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},

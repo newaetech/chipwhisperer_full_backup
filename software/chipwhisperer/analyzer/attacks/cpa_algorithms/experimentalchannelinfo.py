@@ -30,7 +30,8 @@ from scipy.stats import norm
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 try:
     import pyximport
@@ -204,12 +205,12 @@ class MinDistOneSubkey(object):
 
                 # Generate the output of the SBOX
                 if modeltype == "Hamming Weight":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                 elif modeltype == "Hamming Weight (inverse)":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                     hypint = 8 - hypint
                 elif modeltype == "Hamming Distance":
-                    hypint = model.HypHD(pt, ct, key, bnum);
+                    hypint = model.HypHD(pt, ct, key, bnum)
                 else:
                     raise ValueError("modeltype invalid")
 
@@ -286,19 +287,19 @@ class TemplateOneSubkey(object):
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(pluginmanager.Plugin):
+class CPAExperimentalChannelinfo(Parameterized, Plugin):
     name = "CPA Experimental Channel Info"
 
-    def __init__(self, model):
-        pluginmanager.Plugin.__init__(self)
+    def __init__(self, parentParam, targetModel, leakageFunction):
+        Parameterized.__init__(self, parentParam)
 
         self.params.addChildren([
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                                 ])
+        ])
 
-        self.model = model
+        self.model = targetModel
         self.sr = None
         self.stats = DataTypeDiffs()
 

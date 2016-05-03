@@ -40,7 +40,7 @@ class OpenADCInterface(ScopeTemplate):
     name = "ChipWhisperer/OpenADC"
 
     def __init__(self, parentParam=None):
-        super(OpenADCInterface, self).__init__(parentParam)
+        ScopeTemplate.__init__(self, parentParam)
 
         self.scopetype = None
         self.qtadc = openadc_qt.OpenADCQt()

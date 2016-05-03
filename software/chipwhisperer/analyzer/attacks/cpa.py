@@ -27,8 +27,8 @@
 
 import sys
 from chipwhisperer.common.utils import pluginmanager
-from _base import AttackBaseClass
-from _generic_parameters import AttackGenericParameters
+from ._base import AttackBaseClass
+from ._generic_parameters import AttackGenericParameters
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
@@ -40,7 +40,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         AttackGenericParameters.__init__(self)
         AttackBaseClass.__init__(self)
 
-        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False, self)
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
         self.params.addChildren([
             {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
         ])
@@ -68,7 +68,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         return self._targetbytes
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
-        self.attack = analysisAlgorithm(hardwareModel, leakageModel)
+        self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
 
         try:
             self.attackParams = self.attack.paramList()[0]

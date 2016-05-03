@@ -52,7 +52,8 @@ class ChipWhispererGlitch(Parameterized):
     name='Glitch Module'
 
     def __init__(self, parentParam, cwtype, scope):
-        super(ChipWhispererGlitch, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
+
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None

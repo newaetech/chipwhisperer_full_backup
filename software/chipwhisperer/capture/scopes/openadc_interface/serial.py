@@ -22,7 +22,8 @@
 import sys
 
 import chipwhisperer.capture.scopes._qt as openadc_qt
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 try:
     import serial
@@ -31,11 +32,11 @@ except ImportError:
     serial = None
 
 
-class OpenADCInterface_Serial(pluginmanager.Plugin):
+class OpenADCInterface_Serial(Parameterized, Plugin):
     name = "Serial Port (LX9)"
 
     def __init__(self, parentParam, oadcInstance):
-        super(OpenADCInterface_Serial, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
 
         self.params.addChildren([
             {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
@@ -68,18 +69,18 @@ class OpenADCInterface_Serial(pluginmanager.Plugin):
                 try:
                     self.ser.open()
                     attempts = 0
-                except serial.SerialException, e:
+                except serial.SerialException as e:
                     attempts = attempts - 1
                     self.ser = None
                     if attempts == 0:
-                        raise IOError("Could not open %s"%self.ser.name)
+                        raise IOError("Could not open %s" % self.ser.name)
 
         try:
             self.scope.con(self.ser)
             print("OpenADC Found, Connecting")
-        except IOError,e:
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC Error (Serial Port): %s"%(str(exctype) + str(value)))
+            raise IOError("OpenADC Error (Serial Port): %s" % (str(exctype) + str(value)))
 
     def dis(self):
         if self.ser != None:

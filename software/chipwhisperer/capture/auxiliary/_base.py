@@ -25,14 +25,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class AuxiliaryTemplate(pluginmanager.Plugin):
+class AuxiliaryTemplate(Parameterized, Plugin):
     name = "None"
 
     def __init__(self, parentParam=None):
-        super(AuxiliaryTemplate, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
         self.prefix = ""
 
     def __del__(self):

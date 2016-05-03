@@ -27,10 +27,11 @@
 
 import numpy as np
 from .._stats import DataTypeDiffs
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class CPASimpleLoop(pluginmanager.Plugin):
+class CPASimpleLoop(Parameterized, Plugin):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
     This attack does not provide trace-by-trace statistics however, you can only gather results once
@@ -38,8 +39,8 @@ class CPASimpleLoop(pluginmanager.Plugin):
     """
     name = "Simple"
 
-    def __init__(self, targetModel, leakageFunction):
-        pluginmanager.Plugin.__init__(self)
+    def __init__(self, parentParam, targetModel, leakageFunction):
+        Parameterized.__init__(self, parentParam)
         self.model = targetModel
         self.leakage = leakageFunction
         self.stats = DataTypeDiffs()
@@ -154,7 +155,6 @@ class CPASimpleLoop(pluginmanager.Plugin):
             tnum = i + tracerange[0]
 
             d = tracedata.getTrace(tnum)
-
             if d is None:
                 continue
 

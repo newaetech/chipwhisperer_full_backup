@@ -26,10 +26,11 @@ import copy
 import re
 import numpy as np
 import _cfgfile
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class TraceContainer(pluginmanager.Plugin):
+class TraceContainer(Parameterized, Plugin):
     """
     TraceContainer holds traces for the system to operate on. This can include both reading in traces for analysis, and
     writing traces to disk.
@@ -37,11 +38,10 @@ class TraceContainer(pluginmanager.Plugin):
     This class is normally used as a base class for some specific format. For example the 'TraceFormatNative' class
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
-    
     name = "Trace Configuration"
     
     def __init__(self, parentParam=None, configfile=None):
-        super(TraceContainer, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
         self.configfile = configfile
         self.fmt = None
         self.params.addChildren([

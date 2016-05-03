@@ -34,7 +34,8 @@ class VisaScopeInterface(ScopeTemplate):
     name =  "VISA Scope"
 
     def __init__(self, parentParam=None):
-        super(VisaScopeInterface, self).__init__(parentParam)
+        ScopeTemplate.__init__(self, parentParam)
+
         self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
         for scope in scopes.itervalues():

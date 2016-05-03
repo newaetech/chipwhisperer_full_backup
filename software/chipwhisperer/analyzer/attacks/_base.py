@@ -25,19 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.common.utils.analysissource import AnalysisSource
 
 
-class AttackBaseClass(pluginmanager.Plugin, PassiveTraceObserver, AnalysisSource):
+class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
     """Generic Attack Interface"""
     name = "None"
 
     def __init__(self):
         AnalysisSource.__init__(self)
         PassiveTraceObserver.__init__(self)
-        pluginmanager.Plugin.__init__(self)
 
     def processKnownKey(self, inpkey):
         """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
@@ -50,7 +49,7 @@ class AttackBaseClass(pluginmanager.Plugin, PassiveTraceObserver, AnalysisSource
 
     def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
         self.sigAnalysisUpdated.emit()
-    
+
     def getStatistics(self):
         return None
 

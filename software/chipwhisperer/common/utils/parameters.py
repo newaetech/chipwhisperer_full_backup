@@ -51,7 +51,8 @@ class CWParameterTree(ParameterTree):
         if parameterizedObjs:
             for parameterizedObj in parameterizedObjs:
                 if parameterizedObj:
-                        parameterizedObj.paramListUpdated.connect(self.reloadParams)
+                        if hasattr(parameterizedObj, "paramListUpdated"):
+                            parameterizedObj.paramListUpdated.connect(self.reloadParams)
                         self.parameterizedObjs.append(parameterizedObj)
         self.reloadParams()
 
@@ -87,10 +88,10 @@ class Parameterized(object):
     description = ""
 
     def __init__(self, parentParam=None, newName=None):
+        self.__activeParams = [lambda: self.lazy(self)]
         if not hasattr(self, "params"):  # If it was already initialized by other subclass (breaks diamond structure)
             self.newName = newName
             self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
-            self.__activeParams = [lambda: self.lazy(self)]
             self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={},  tip=self.getDescription())
             if self.description:
                 self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])

@@ -44,7 +44,7 @@ class CWCoreAPI(Parameterized):
     instance = None
 
     def __init__(self):
-        super(CWCoreAPI, self).__init__()
+        Parameterized.__init__(self)
         self.sigNewProject = util.Signal()
         self.sigNewScopeData = util.Signal()
         self.sigConnectStatus = util.Signal()

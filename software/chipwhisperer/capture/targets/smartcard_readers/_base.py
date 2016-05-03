@@ -24,13 +24,14 @@
 #=================================================
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class ReaderTemplate(Plugin):
+class ReaderTemplate(Parameterized, Plugin):
     name='Smartcard Reader'
 
     def __init__(self, parentParam=None):
-        Plugin.__init__(self, parentParam)
+        Parameterized.__init__(self, parentParam)
 
         # self.params.addChildren([
         #     {'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}

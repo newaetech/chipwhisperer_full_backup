@@ -119,11 +119,11 @@ class CWExtraSettings(Parameterized):
     name = "CW Extra Settings"
 
     def __init__(self, parentParam, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
+        Parameterized.__init__(self, parentParam)
         self.oa = None
         self.hasFPAFPB = hasFPAFPB
         self.hasGlitchOut = hasGlitchOut
         self.hasPLL = hasPLL
-        Parameterized.__init__(self, parentParam)
 
         ret = []
         # Generate list of input pins present on the hardware

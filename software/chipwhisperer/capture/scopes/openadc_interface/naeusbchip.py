@@ -27,7 +27,8 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoad
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 try:
     import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
@@ -40,11 +41,11 @@ except ImportError:
     usb = None
 
 
-class OpenADCInterface_NAEUSBChip(pluginmanager.Plugin):
+class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
     name = "ChipWhisperer-Lite"
 
     def __init__(self, parentParam, oadcInstance):
-        super(OpenADCInterface_NAEUSBChip, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
         self.ser = None
         self._toolActs = []
 

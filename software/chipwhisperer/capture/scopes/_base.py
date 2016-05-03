@@ -25,15 +25,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class ScopeTemplate(pluginmanager.Plugin): #TODO: Consider the possibility of extend the LiveTraceSouce class
+class ScopeTemplate(Parameterized, Plugin):
     name = "None"
 
     def __init__(self, parentParam):
-        super(ScopeTemplate, self).__init__(parentParam)
+        Parameterized.__init__(self, parentParam)
         self.connectStatus = util.Observable(False)
         self.dataUpdated = util.Signal()
         self.datapoints = []

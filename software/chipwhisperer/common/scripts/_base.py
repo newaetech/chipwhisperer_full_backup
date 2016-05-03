@@ -24,12 +24,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
-class UserScriptBase(pluginmanager.Plugin):
+class UserScriptBase(Parameterized, Plugin):
 
     def __init__(self, api):
+        Parameterized.__init__(self)
         self.api = api
 
     def run(self, progressBar = None):

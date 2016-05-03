@@ -40,13 +40,13 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackGenericParameters(AutoScript, Parameterized):
+class AttackGenericParameters(Parameterized, AutoScript):
     name='Attack Settings'
 
     def __init__(self):
         self.maxSubKeys = 32
-        AutoScript.__init__(self)
         Parameterized.__init__(self)
+        AutoScript.__init__(self)
         self.useAbs = True
 
         #TODO: Where to get this from?

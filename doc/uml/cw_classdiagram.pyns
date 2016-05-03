@@ -1,0 +1,53 @@
+# PynSource Version 1.1
+{'type':'meta', 'info1':'Lorem ipsum dolor sit amet, consectetur adipiscing elit is latin.'}
+{'type':'umlshape', 'id':'PassiveAnalysisObserver', 'x':1059, 'y':5, 'width':203, 'height':111, 'attrs':'_analysisSource', 'meths':'__init__|setAnalysisSource|processAnalysis'}
+{'type':'umlshape', 'id':'ActiveAnalysisObserver', 'x':1068, 'y':158, 'width':195, 'height':124, 'attrs':'_analysisSource', 'meths':'setAnalysisSource|analysisStarted|analysisUpdated|highlightedKey'}
+{'type':'umlshape', 'id':'AnalysisSource', 'x':881, 'y':5, 'width':128, 'height':111, 'attrs':'sigAnalysisStarted|sigAnalysisUpdated|sigAnalysisDone', 'meths':'__init__'}
+{'type':'umlshape', 'id':'Parameterized', 'x':214, 'y':12, 'width':142, 'height':267, 'attrs':'name|description|newName|paramListUpdated|__activeParams|params', 'meths':'__init__|paramList|getName|getDescription|setupActiveParams|addActiveParams|guiActions|getAllActiveParameters|setupGuiActions|lazy'}
+{'type':'umlshape', 'id':'ActiveTraceObserver', 'x':320, 'y':494, 'width':170, 'height':62, 'attrs':'', 'meths':'_setTraceSource'}
+{'type':'umlshape', 'id':'LiveTraceSource', 'x':2, 'y':566, 'width':136, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'PassiveTraceObserver', 'x':286, 'y':320, 'width':178, 'height':150, 'attrs':'_traceSource', 'meths':'__init__|setTraceSource|_setTraceSource|traceSource|processTraces|traceSourcesChanged'}
+{'type':'umlshape', 'id':'TraceSource', 'x':19, 'y':296, 'width':172, 'height':189, 'attrs':'registeredObjects|sigRegisteredObjectsChanged|sigTracesChanged', 'meths':'__init__|getTrace|numPoints|numTraces|offset|deregister|registerAs'}
+{'type':'umlshape', 'id':'ResultsBase', 'x':654, 'y':132, 'width':172, 'height':137, 'attrs':'registeredObjects|sigRegisteredObjectsChanged', 'meths':'__init__|getWidget|deregister|registerAs'}
+{'type':'umlshape', 'id':'ResultsWidgetBase', 'x':489, 'y':324, 'width':153, 'height':62, 'attrs':'', 'meths':'getWidget'}
+{'type':'umlshape', 'id':'AttackResultPlot', 'x':783, 'y':561, 'width':144, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'GraphWidget', 'x':579, 'y':461, 'width':102, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'CorrelationVsTrace', 'x':775, 'y':636, 'width':161, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'KnowKeySource', 'x':731, 'y':326, 'width':119, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'OutputVsTime', 'x':945, 'y':636, 'width':111, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'PGEVsTrace', 'x':668, 'y':636, 'width':94, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'ResultsSave', 'x':859, 'y':326, 'width':102, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'ResultsTable', 'x':850, 'y':386, 'width':111, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'WaveFormWidget', 'x':456, 'y':636, 'width':128, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'UserScriptBase', 'x':496, 'y':53, 'width':128, 'height':75, 'attrs':'', 'meths':'__init__|run'}
+{'type':'umlshape', 'id':'PreprocessingBase', 'x':154, 'y':566, 'width':153, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'AttackBaseClass', 'x':967, 'y':506, 'width':136, 'height':29, 'attrs':'', 'meths':''}
+{'type':'edge', 'id':'ActiveAnalysisObserver_to_PassiveAnalysisObserver', 'source':'ActiveAnalysisObserver', 'target':'PassiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'UserScriptBase_to_Parameterized', 'source':'UserScriptBase', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AnalysisSource_to_PassiveAnalysisObserver', 'source':'AnalysisSource', 'target':'PassiveAnalysisObserver', 'uml_edge_type':'composition'}
+{'type':'edge', 'id':'AnalysisSource_to_ActiveAnalysisObserver', 'source':'AnalysisSource', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'composition'}
+{'type':'edge', 'id':'ActiveTraceObserver_to_PassiveTraceObserver', 'source':'ActiveTraceObserver', 'target':'PassiveTraceObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'LiveTraceSource_to_TraceSource', 'source':'LiveTraceSource', 'target':'TraceSource', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'PassiveTraceObserver_to_Parameterized', 'source':'PassiveTraceObserver', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'TraceSource_to_PassiveTraceObserver', 'source':'TraceSource', 'target':'PassiveTraceObserver', 'uml_edge_type':'composition'}
+{'type':'edge', 'id':'ResultsBase_to_Parameterized', 'source':'ResultsBase', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'PreprocessingBase_to_TraceSource', 'source':'PreprocessingBase', 'target':'TraceSource', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'PreprocessingBase_to_ActiveTraceObserver', 'source':'PreprocessingBase', 'target':'ActiveTraceObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsWidgetBase_to_ResultsBase', 'source':'ResultsWidgetBase', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AttackResultPlot_to_GraphWidget', 'source':'AttackResultPlot', 'target':'GraphWidget', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AttackResultPlot_to_ResultsWidgetBase', 'source':'AttackResultPlot', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AttackResultPlot_to_ActiveAnalysisObserver', 'source':'AttackResultPlot', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'CorrelationVsTrace_to_AttackResultPlot', 'source':'CorrelationVsTrace', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'KnowKeySource_to_ResultsBase', 'source':'KnowKeySource', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'KnowKeySource_to_ActiveAnalysisObserver', 'source':'KnowKeySource', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'OutputVsTime_to_AttackResultPlot', 'source':'OutputVsTime', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'PGEVsTrace_to_AttackResultPlot', 'source':'PGEVsTrace', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsSave_to_ResultsBase', 'source':'ResultsSave', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsSave_to_ActiveAnalysisObserver', 'source':'ResultsSave', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsTable_to_ResultsWidgetBase', 'source':'ResultsTable', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsTable_to_ActiveAnalysisObserver', 'source':'ResultsTable', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'WaveFormWidget_to_GraphWidget', 'source':'WaveFormWidget', 'target':'GraphWidget', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'WaveFormWidget_to_ResultsWidgetBase', 'source':'WaveFormWidget', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'WaveFormWidget_to_ActiveTraceObserver', 'source':'WaveFormWidget', 'target':'ActiveTraceObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AttackBaseClass_to_PassiveTraceObserver', 'source':'AttackBaseClass', 'target':'PassiveTraceObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AttackBaseClass_to_AnalysisSource', 'source':'AttackBaseClass', 'target':'AnalysisSource', 'uml_edge_type':'generalisation'}

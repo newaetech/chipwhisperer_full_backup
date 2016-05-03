@@ -30,11 +30,11 @@ from chipwhisperer.common.utils import util, timer
 
 class OpenADCQt(Parameterized):
     name='OpenADC'
-    dataUpdated = util.Signal()
 
-    def __init__(self):
-        super(OpenADCQt,  self).__init__()
+    def __init__(self, parentParam=None):
+        Parameterized.__init__(self, parentParam)
 
+        self.dataUpdated = util.Signal()
         self.adc_settings = openadc.OpenADCSettings()
         self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
 

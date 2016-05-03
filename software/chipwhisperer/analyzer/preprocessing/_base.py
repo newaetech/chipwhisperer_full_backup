@@ -26,11 +26,11 @@
 #=================================================
 
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 
 
-class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmanager.Plugin):
+class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     """
     Base Class for all preprocessing modules
     Derivate Classes work like this:
@@ -42,10 +42,9 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, pluginmana
 
     def __init__(self, parentParam=None, traceSource=None):
         self.enabled = True
+        ActiveTraceObserver.__init__(self, parentParam=parentParam)
         TraceSource.__init__(self)
-        ActiveTraceObserver.__init__(self)
         AutoScript.__init__(self)
-        pluginmanager.Plugin.__init__(self, parentParam=parentParam)
         self.setTraceSource(traceSource)
         if traceSource:
             traceSource.sigTracesChanged.connect(self.sigTracesChanged.emit)  # Forwards the traceChanged signal to the next observer in the chain

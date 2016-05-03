@@ -36,8 +36,8 @@ class AttackScriptGen(Parameterized):
     name = "Attack Script Generator"
 
     def __init__(self, parentParam, cwGUI):
+        Parameterized.__init__(self, parentParam)
         self.cwGUI = cwGUI
-        super(AttackScriptGen, self).__init__(parentParam)
 
         self.preprocessingParamTree = CWParameterTree("Preprocessing")
         self.attackParamTree = CWParameterTree("Attack", )

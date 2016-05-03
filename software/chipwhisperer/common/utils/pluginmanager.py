@@ -27,13 +27,14 @@ import inspect
 import os.path
 import traceback
 import util
-from chipwhisperer.common.utils.parameters import Parameterized
 
 loadedItems = []
 
 
-class Plugin(Parameterized):
+class Plugin(object):
+    # Just a Marker Interface so the plugins can be identified and load from the package
     pass
+
 
 try:
     from PySide.QtCore import *

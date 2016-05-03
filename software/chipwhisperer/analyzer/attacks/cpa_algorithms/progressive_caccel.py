@@ -31,7 +31,8 @@ import platform
 from ctypes import *
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
 
 
 class aesmodel_setup_t(Structure):
@@ -167,20 +168,20 @@ class CPAProgressiveOneSubkey(object):
         return (guessdata, pbcnt)
 
 
-class CPAProgressive_CAccel(AutoScript, pluginmanager.Plugin):
+class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     name = "Progressive-C Accel"
 
-    def __init__(self, targetModel, leakageFunction):
-        super(CPAProgressive_CAccel, self).__init__()
-        pluginmanager.Plugin.__init__(self)
+    def __init__(self, parentParam, targetModel, leakageFunction):
+        Parameterized.__init__(self, parentParam)
+        AutoScript.__init__(self)
 
         self.params.addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
-                                 ])
+        ])
 
         self.model = targetModel
         self.leakage = leakageFunction
