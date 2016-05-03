@@ -474,7 +474,7 @@ class ClockSettings():
                 {'name':'Multiply', 'type':'int', 'limits':(2, 256), 'value':2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
                 {'name':'Divide', 'type':'int', 'limits':(1, 256), 'value':2, 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'value':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
-                                            'set':self.autoMulDiv, 'linked':['Multiply', 'Divide']},
+                                            'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'str', 'value':0, 'readonly':True,
                                             'get':lambda: str(self.getClkgen()) + " Hz"},
                 {'name':'DCM Locked', 'type':'bool', 'value':False, 'get':self.clkgenLocked, 'readonly':True},
