@@ -89,7 +89,6 @@ class CWCoreAPI(Parameterized):
 
         self.graphWidget = None
 
-        self.generalParamTree = CWParameterTree("General Settings", [self])
         self.addActiveParams(lambda: self.lazy(self._acqPattern))
         self.resultsParamTree = CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
         self.scopeParamTree = CWParameterTree("Scope Settings", [self.getScope()])
@@ -97,6 +96,7 @@ class CWCoreAPI(Parameterized):
         self.traceParamTree = CWParameterTree("Trace Settings", [self.getTraceFormat()])
         self.auxParamTree = CWParameterTree("Aux Settings", self.getAuxList())
         self.attackParamTree = CWParameterTree("Attack Settings", [self.getAttack()])
+        self.generalParamTree = CWParameterTree("General Settings", [self])
 
         # Initialize default values
         # self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
@@ -155,7 +155,7 @@ class CWCoreAPI(Parameterized):
 
     def setAux(self, aux):
         self._auxList = [aux]
-        self.auxParamTree.replace([self.getAuxList()])
+        self.auxParamTree.replace([self.getAuxList()[0]]) #TODO - support multiple
 
     def getAcqPattern(self):
         return self._acqPattern
