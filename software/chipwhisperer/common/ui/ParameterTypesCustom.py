@@ -8,7 +8,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
@@ -573,3 +573,11 @@ class LabelParameter(Parameter):
 
 registerParameterType('label', LabelParameter, override=True)
 
+
+# Fixes a bug where the list would appear blank instead of showing the default value
+def listParameterItem_Fix(self, param, depth):
+    self.targetValue = None
+    WidgetParameterItem.__init__(self, param, depth)
+    self.updateDisplayLabel(self.value())
+
+ListParameterItem.__init__ = listParameterItem_Fix
