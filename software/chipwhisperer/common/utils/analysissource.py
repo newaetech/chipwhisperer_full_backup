@@ -49,6 +49,8 @@ class PassiveAnalysisObserver(object):
     def processAnalysis(self):
         pass
     
+    def highlightedKey(self):
+        return self._analysisSource.knownKey()
 
 class ActiveAnalysisObserver(PassiveAnalysisObserver):
     """ It observes an Analysis during execution and calls predefined methods according to the type of the event """
@@ -66,6 +68,3 @@ class ActiveAnalysisObserver(PassiveAnalysisObserver):
 
     def analysisUpdated(self):
         pass
-
-    def highlightedKey(self):
-        return self._analysisSource.knownKey()
