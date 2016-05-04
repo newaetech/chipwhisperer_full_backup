@@ -28,7 +28,7 @@ from _base import TraceContainer
 
 
 class TraceContainerNative(TraceContainer):
-    name = "ChipWhisperer/Native"
+    _name = "ChipWhisperer/Native"
 
     def copyTo(self, srcTraces=None):
         self.numTrace = srcTraces.numTraces()

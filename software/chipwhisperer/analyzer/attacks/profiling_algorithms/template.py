@@ -43,7 +43,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
     """
     paramListUpdated = util.Signal()
     notifyUser = util.Signal()
-    name='Template Attack'
+    _name= 'Template Attack'
 
     def __init__(self, parent):
         AutoScript.__init__(self)

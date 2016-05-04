@@ -183,7 +183,7 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
-    name = "SASEBO GII"
+    _name = "SASEBO GII"
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)

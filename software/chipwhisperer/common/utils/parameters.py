@@ -84,19 +84,24 @@ class CWParameterTree(ParameterTree):
 
 
 class Parameterized(object):
-    name = "None"
-    description = ""
+    """
+    Creates a new parameterTree group and adds its description
+    """
+    _name = "None"
+    _description = ""
 
-    def __init__(self, parentParam=None, newName=None):
+    def __init__(self, parentParam=None, name=None):
         self.__activeParams = [lambda: self.lazy(self)]
-        if not hasattr(self, "params"):  # If it was already initialized by other subclass (breaks diamond structure)
-            self.newName = newName
+        if not hasattr(self, "_instanceName") and name:  # These IFs avoids bugs in diamond class hierarchy
+            self._instanceName = name
+        if not hasattr(self, "paramListUpdated"):
             self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
-            self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={},  tip=self.getDescription())
-            if self.description:
-                self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])
         if parentParam:
             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
+        if not hasattr(self, "params"):
+            self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={}, tip=self.getDescription())
+            if self._description:
+                self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])
 
     def paramList(self):
         # Returns the current active parameters (including the child ones)
@@ -111,10 +116,16 @@ class Parameterized(object):
         return ret
 
     def getName(self):
-        return self.name if not self.newName else self.newName
+        # Returns the custom name (the class name can be overriden by the instance name)
+        return self.getClassName() if not hasattr(self, "_instanceName") else self._instanceName
 
-    def getDescription(self):
-        return self.description
+    @classmethod
+    def getClassName(cls):
+        return cls._name
+
+    @classmethod
+    def getDescription(cls):
+        return cls._description
 
     def setupActiveParams(self, params):
         # Use this method to setup the order of the parameterized objects to be shown

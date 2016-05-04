@@ -44,7 +44,7 @@ ADDR_IOROUTE = 55
 
 
 class ChipWhispererExtra(Parameterized):
-    name = 'CW Extra'
+    _name = 'CW Extra'
 
     def __init__(self, parentParam, cwtype, scope):
         Parameterized.__init__(self, parentParam)
@@ -116,7 +116,7 @@ class CWExtraSettings(Parameterized):
     IOROUTE_GPIO = 0b01000000
     IOROUTE_GPIOE = 0b10000000
 
-    name = "CW Extra Settings"
+    _name = "CW Extra Settings"
 
     def __init__(self, parentParam, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
         Parameterized.__init__(self, parentParam)

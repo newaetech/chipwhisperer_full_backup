@@ -27,7 +27,7 @@ from _base import ReaderTemplate
 
 
 class ReaderChipWhispererLiteSCard(ReaderTemplate):
-    name = "CW1173/1180-SCARD"
+    _name = "CW1173/1180-SCARD"
     REQ_DATA = 0x1C
     REQ_CFG = 0x1D
     REQ_AUX = 0x1E

@@ -26,16 +26,16 @@
 
 from ._base import ResultsBase
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
+from chipwhisperer.analyzer.attacks._base import ActiveAttackObserver
 
 
-class KnowKeySource(ResultsBase, ActiveAnalysisObserver):
-    name = "Knownkey Source"
-    description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
+class KnowKeySource(ResultsBase, ActiveAttackObserver):
+    _name = "Knownkey Source"
+    _description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
 
-    def __init__(self, parentParam=None):
-        ResultsBase.__init__(self, parentParam)
-        ActiveAnalysisObserver.__init__(self)
+    def __init__(self, parentParam=None, name=None):
+        ResultsBase.__init__(self, parentParam, name)
+        ActiveAttackObserver.__init__(self)
         self._knowKey = []
 
         self.params.addChildren([

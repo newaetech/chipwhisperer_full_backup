@@ -42,7 +42,7 @@ except ImportError:
 
 
 class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
-    name = "ChipWhisperer-Lite"
+    _name = "ChipWhisperer-Lite"
 
     def __init__(self, parentParam, oadcInstance):
         Parameterized.__init__(self, parentParam)

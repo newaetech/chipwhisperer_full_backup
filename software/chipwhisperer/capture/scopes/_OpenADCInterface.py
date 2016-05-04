@@ -248,7 +248,7 @@ class GainSettings(object):
 
         return gaindb
 
-class TriggerSettings():
+class TriggerSettings(object):
     def __init__(self):
         self.name = "Trigger Settings"
         self.param = {'name': 'Trigger Setup', 'type':'group', 'children': [
@@ -430,7 +430,7 @@ class TriggerSettings():
             return False
 
 
-class ClockSettings():
+class ClockSettings(object):
 
     readMask = [0x1f, 0xff, 0xff, 0xfd]
 

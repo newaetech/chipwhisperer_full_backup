@@ -40,7 +40,7 @@ class CWCoreAPI(Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
-    name = 'Generic Settings'
+    _name = 'Generic Settings'
     instance = None
 
     def __init__(self):
@@ -125,7 +125,8 @@ class CWCoreAPI(Parameterized):
 
     def setupResultWidgets(self):
         # [v.setTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v, "setTraceSource")]
-        [v.setAnalysisSource(self.getAttack()) for v in self.resultWidgets.itervalues() if hasattr(v, "setAnalysisSource")]
+        # [v.setAnalysisSource(self.getAttack()) for v in self.resultWidgets.itervalues() if hasattr(v, "setAnalysisSource")]
+        pass
 
     def getScope(self):
         return self._scope

@@ -33,8 +33,8 @@ class Filter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
-    name = "Digital Filter"
-    description = "Frequency specific filter"
+    _name = "Digital Filter"
+    _description = "Frequency specific filter"
 
     def __init__(self, parentParam=None, traceSource=None):
         PreprocessingBase.__init__(self, parentParam, traceSource)

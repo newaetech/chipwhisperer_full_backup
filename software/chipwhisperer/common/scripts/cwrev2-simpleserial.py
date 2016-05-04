@@ -40,8 +40,8 @@ from chipwhisperer.common.scripts._base import UserScriptBase
 
 
 class UserScript(UserScriptBase):
-    name = "ChipWhisperer-Rev2: SimpleSerial Target"
-    description = "SimpleSerial with CW Target Board"
+    _name = "ChipWhisperer-Rev2: SimpleSerial Target"
+    _description = "SimpleSerial with CW Target Board"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)

@@ -172,7 +172,7 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    name = "Progressive-C Accel"
+    _name = "Progressive-C Accel"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
         Parameterized.__init__(self, parentParam)

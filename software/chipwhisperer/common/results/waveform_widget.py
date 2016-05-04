@@ -31,12 +31,12 @@ from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObser
 
 
 class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
-    name = 'Trace Output Plot'
-    description = 'Plots the waveform for a given trace source'
+    _name = 'Trace Output Plot'
+    _description = 'Plots the waveform for a given trace source'
 
-    def __init__(self, parentParam=None):
+    def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsWidgetBase.__init__(self, parentParam)
+        ResultsWidgetBase.__init__(self, parentParam, name)
         ActiveTraceObserver.__init__(self)
 
         self.redrawAfterEach = False

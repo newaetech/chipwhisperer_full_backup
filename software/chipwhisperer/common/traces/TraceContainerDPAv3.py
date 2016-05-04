@@ -35,7 +35,7 @@ from _base import TraceContainer
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 class TraceContainerDPAv3(TraceContainer):
-    name = "DPAContestv3"
+    _name = "DPAContestv3"
 
     def __init__(self, parentParam=None):
         super(TraceContainerDPAv3, self).__init__(parentParam)

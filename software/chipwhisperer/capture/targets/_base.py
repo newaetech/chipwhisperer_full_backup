@@ -35,7 +35,7 @@ except ImportError:
 
 
 class TargetTemplate(Parameterized, Plugin):
-    name = 'Target Connection'
+    _name = 'Target Connection'
 
     def __init__(self, parentParam=None):
         Parameterized.__init__(self, parentParam)

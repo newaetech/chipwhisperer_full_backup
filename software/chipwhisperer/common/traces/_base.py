@@ -38,7 +38,7 @@ class TraceContainer(Parameterized, Plugin):
     This class is normally used as a base class for some specific format. For example the 'TraceFormatNative' class
     adds functions for reading/storing data in the 'native' ChipWhisperer format.
     """
-    name = "Trace Configuration"
+    _name = "Trace Configuration"
     
     def __init__(self, parentParam=None, configfile=None):
         Parameterized.__init__(self, parentParam)

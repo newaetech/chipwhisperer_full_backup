@@ -32,7 +32,7 @@ from chipwhisperer.common.utils.parameters import Parameterized
 
 
 class ScopeTemplate(Parameterized, Plugin):
-    name = "None"
+    _name = "None"
 
     def __init__(self, parentParam):
         Parameterized.__init__(self, parentParam)

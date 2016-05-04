@@ -94,7 +94,7 @@ class FreqMeasure():
 
 
 class FrequencyMeasure(AuxiliaryTemplate):
-    name = "Frequency Counter"
+    _name = "Frequency Counter"
 
     def __init__(self, parentParam=None):
         AuxiliaryTemplate.__init__(self, parentParam)

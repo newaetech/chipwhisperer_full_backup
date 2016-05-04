@@ -28,55 +28,60 @@ from functools import partial
 import numpy as np
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
+from chipwhisperer.analyzer.attacks._base import ActiveAttackObserver
 from ._base import ResultsWidgetBase
 
 
-class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
+class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAttackObserver):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
+    def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsWidgetBase.__init__(self, parentParam)
-        ActiveAnalysisObserver.__init__(self)
+        ResultsWidgetBase.__init__(self, parentParam, name)
 
         self.params.addChildren([
             {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
         ])
 
-        self.setObjectName(self.name)
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
-        self.enabledbytes = [False]*subkeys
-        self.doRedraw = True
-
+        self.setObjectName(self.getName())
         self.bselection = QToolBar()
-
-        self.byteNumAct = []
-        for i in range(0,self.numKeys):
-            self.byteNumAct.append(QAction('%d'%i, self))
-            self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
-            self.byteNumAct[i].setCheckable(True)
-            self.bselection.addAction(self.byteNumAct[i])
-
-        byteNumAllOn = QAction('All On', self)
-        byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
-        self.bselection.addAction(byteNumAllOn)
-
-        byteNumAllOff = QAction('All Off', self)
-        byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
-        self.bselection.addAction(byteNumAllOff)
-
-        showGrid = QAction('Show Grid', self)
-        showGrid.setCheckable(True)
-        showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
-        self.bselection.addAction(showGrid)
-
         self.layout().addWidget(self.bselection)
         self.highlightTop = True
+        self.doRedraw = True
+        self.byteNumAct = []
+        self.enabledbytes = []
+        ActiveAttackObserver.__init__(self)
+
+    def init(self):
+        ActiveAttackObserver.init(self)
+
+        if self.numKeys != len(self.byteNumAct):
+            self.enabledbytes = [False]*self.numKeys
+
+            self.bselection.clear()
+            self.byteNumAct=[]
+            if self._analysisSource:
+                for i in range(0, self.numKeys):  #TODO: Only display enabled Bytes
+                    self.byteNumAct.append(QAction('%d'%i, self))
+                    self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
+                    self.byteNumAct[i].setCheckable(True)
+                    self.bselection.addAction(self.byteNumAct[i])
+
+            byteNumAllOn = QAction('All On', self)
+            byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
+            self.bselection.addAction(byteNumAllOn)
+
+            byteNumAllOff = QAction('All Off', self)
+            byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
+            self.bselection.addAction(byteNumAllOff)
+
+            showGrid = QAction('Show Grid', self)
+            showGrid.setCheckable(True)
+            showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
+            self.bselection.addAction(showGrid)
 
     def setBytePlot(self, num, sel):
         """Set which bytes to plot"""
@@ -134,8 +139,6 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
 
     def drawData(self, progress, xdatalst, ydatalst, enabledBytes=None):
         """Redraw the plot"""
-        if enabledBytes is None:
-            enabledBytes = [-1]
 
         progress.setMaximum(len(enabledBytes) * self.numPerms)  # _callSync='off'
         progress.setStatusMask("Plotting...")
@@ -160,6 +163,9 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                 xdataptr = xdatalst
 
             pointargsg = {}
+
+            if len(ydataptr) == 0 or ydataptr[0] is None:
+                continue
 
             if not hasattr(ydataptr[0], '__iter__'):
                 ydataptr = [[t] for t in ydataptr]
@@ -236,3 +242,9 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
             progress.updateStatus(pvalue)
             if progress.wasAborted():
                 break
+
+    def analysisStarted(self):
+        self.init()
+
+    def analysisUpdated(self):
+        ActiveAttackObserver.init(self)

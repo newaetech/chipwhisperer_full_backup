@@ -33,7 +33,7 @@ except ImportError:
 
 
 class OpenADCInterface_Serial(Parameterized, Plugin):
-    name = "Serial Port (LX9)"
+    _name = "Serial Port (LX9)"
 
     def __init__(self, parentParam, oadcInstance):
         Parameterized.__init__(self, parentParam)

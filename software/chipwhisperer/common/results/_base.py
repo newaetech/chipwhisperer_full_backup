@@ -37,8 +37,8 @@ class ResultsBase(Parameterized, Plugin):
     registeredObjects = util.DictType()
     sigRegisteredObjectsChanged = util.Signal()
 
-    def __init__(self, parentParam=None, newName=None):
-        Parameterized.__init__(self, parentParam, newName)
+    def __init__(self, parentParam=None, name=None):
+        Parameterized.__init__(self, parentParam, name)
         self.registerAs(self.getName())
 
     def getWidget(self):

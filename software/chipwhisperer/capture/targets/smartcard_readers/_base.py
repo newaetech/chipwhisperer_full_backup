@@ -28,7 +28,7 @@ from chipwhisperer.common.utils.parameters import Parameterized
 
 
 class ReaderTemplate(Parameterized, Plugin):
-    name='Smartcard Reader'
+    _name= 'Smartcard Reader'
 
     def __init__(self, parentParam=None):
         Parameterized.__init__(self, parentParam)

@@ -40,8 +40,8 @@ from chipwhisperer.common.scripts._base import UserScriptBase
 
 
 class UserScript(UserScriptBase):
-    name = "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
-    description = "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
+    _name = "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
+    _description = "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)

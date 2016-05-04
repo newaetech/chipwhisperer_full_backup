@@ -118,8 +118,8 @@ class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
-    name = "Normalize"
-    description = "Normalizes by standard deviation"
+    _name = "Normalize"
+    _description = "Normalizes by standard deviation"
 
     def __init__(self, parentParam=None, traceSource = None):
         super(Normalize, self).__init__(parentParam, traceSource)

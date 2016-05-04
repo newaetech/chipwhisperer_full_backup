@@ -86,7 +86,7 @@ class HIDSPI(object):
 
 
 class ChipWhispererSPI(TargetTemplate):
-    name = "ChipWhisperer SPI"
+    _name = "ChipWhisperer SPI"
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)

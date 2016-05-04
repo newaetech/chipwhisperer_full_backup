@@ -41,7 +41,7 @@ from picoscope import ps6000
 
 
 class PicoScope(Parameterized): #TODO: ScopeBase instead?
-    name = 'Pico Scope'
+    _name = 'Pico Scope'
 
     def __init__(self, parentParam=None, psClass=None):
         ScopeTemplate.__init__(self, parentParam)
@@ -146,7 +146,7 @@ class PicoScope(Parameterized): #TODO: ScopeBase instead?
 
 
 class PicoScopeInterface(ScopeTemplate):
-    name = "PicoScope"
+    _name = "PicoScope"
 
     def __init__(self, parentParam=None):
         super(PicoScopeInterface, self).__init__(parentParam)

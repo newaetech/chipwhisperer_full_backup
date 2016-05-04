@@ -24,7 +24,7 @@ from _base import VisaScope
 
 
 class VisaScopeInterface_DSO1024A(VisaScope):
-    name = "Agilent DSO 1024A"
+    _name = "Agilent DSO 1024A"
 
     # TODO: What scales & ranges are allowed on the DSO1024A?
     xScales = {"500 mS":500E-3, "200 mS":200E-3, "100 mS":100E-3, "50 mS":50E-3,

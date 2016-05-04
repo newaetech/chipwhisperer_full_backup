@@ -38,7 +38,7 @@ from _generic_parameters import AttackGenericParameters
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
-    name = "Profiling"
+    _name = "Profiling"
 
     def __init__(self):
         AttackBaseClass.__init__(self)

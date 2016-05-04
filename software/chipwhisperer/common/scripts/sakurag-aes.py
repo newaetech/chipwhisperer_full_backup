@@ -40,8 +40,8 @@ from chipwhisperer.common.scripts._base import UserScriptBase
 
 
 class UserScript(UserScriptBase):
-    name = "SAKURA-G: AES-128 FPGA Target"
-    description = "SAKURA-G Loaded with ChipWhisperer"
+    _name = "SAKURA-G: AES-128 FPGA Target"
+    _description = "SAKURA-G Loaded with ChipWhisperer"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)

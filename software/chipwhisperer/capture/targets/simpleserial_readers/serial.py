@@ -29,7 +29,7 @@ from chipwhisperer.common.utils import serialport
 
 
 class SimpleSerial_serial(SimpleSerialTemplate):
-    name = "System Serial Port"
+    _name = "System Serial Port"
 
     def __init__(self, parentParam=None):
         SimpleSerialTemplate.__init__(self, parentParam)

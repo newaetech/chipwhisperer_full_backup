@@ -30,8 +30,8 @@ from ._base import PreprocessingBase
 
 
 class AddNoiseRandom(PreprocessingBase):
-    name = "Add Noise: Amplitude"
-    description = "Add random noise"
+    _name = "Add Noise: Amplitude"
+    _description = "Add random noise"
      
     def __init__(self, parentParam=None, traceSource=None):
         PreprocessingBase.__init__(self, parentParam, traceSource)

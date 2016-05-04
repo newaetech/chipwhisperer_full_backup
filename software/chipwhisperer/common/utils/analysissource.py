@@ -36,11 +36,15 @@ class AnalysisSource(object):
         self.sigAnalysisUpdated = util.Signal()
         self.sigAnalysisDone = util.Signal()
 
+    def knownKey(self):
+        pass
+
 
 class PassiveAnalysisObserver(object):
     """ It processes the data from an AnalysisSource when requested """
     
     def __init__(self, analysisSource=None):
+        self._analysisSource = None
         self.setAnalysisSource(analysisSource)
 
     def setAnalysisSource(self, analysisSource):
@@ -48,9 +52,7 @@ class PassiveAnalysisObserver(object):
 
     def processAnalysis(self):
         pass
-    
-    def highlightedKey(self):
-        return self._analysisSource.knownKey()
+
 
 class ActiveAnalysisObserver(PassiveAnalysisObserver):
     """ It observes an Analysis during execution and calls predefined methods according to the type of the event """
@@ -60,11 +62,11 @@ class ActiveAnalysisObserver(PassiveAnalysisObserver):
             analysisSource.sigAnalysisStarted.connect(self.analysisStarted)
             analysisSource.sigAnalysisUpdated.connect(self.analysisUpdated)
             analysisSource.sigAnalysisDone.connect(self.processAnalysis)
-        self._analysisSource = analysisSource
-        self.analysisStarted()
+        PassiveAnalysisObserver.setAnalysisSource(self, analysisSource)
 
     def analysisStarted(self):
         pass
 
     def analysisUpdated(self):
         pass
+

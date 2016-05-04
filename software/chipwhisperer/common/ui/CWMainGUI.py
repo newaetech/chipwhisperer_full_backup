@@ -147,7 +147,7 @@ class CWMainGUI(QMainWindow):
         self.resultDocks = []
         for v in self.api.resultWidgets.itervalues():
             if v.getWidget():
-                self.resultDocks.append(self.addDock(v.getWidget(), name=v.name, area=Qt.TopDockWidgetArea))
+                self.resultDocks.append(self.addDock(v.getWidget(), name=v.getName(), area=Qt.TopDockWidgetArea))
         self.tabifyDocks(self.resultDocks)
 
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
@@ -323,7 +323,7 @@ class CWMainGUI(QMainWindow):
         subMenu = QMenu("Submenu", self)
 
         for name, script in scripts.iteritems():
-            subMenu.addAction(QAction(name, self, statusTip=script.description, triggered=partial(self.runScript, script)))
+            subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=partial(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 

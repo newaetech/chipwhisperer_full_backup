@@ -44,6 +44,7 @@ leakagemodels['HD: AES SBox Input i to i+1'] = 'LEAK_HD_SBOX_IN_SUCCESSIVE'
 leakagemodels['HD: AES SBox Output i to i+1'] = 'LEAK_HD_SBOX_OUT_SUCCESSIVE'
 
 numSubKeys = 16
+permPerSubkey = 256
 
 ##Generate this table with:
 #HW = []

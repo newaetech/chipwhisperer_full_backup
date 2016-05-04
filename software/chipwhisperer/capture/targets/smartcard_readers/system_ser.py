@@ -30,7 +30,7 @@ from chipwhisperer.common.utils import serialport
 
 
 class ReaderSystemSER(ReaderTemplate):
-    name = "System Serial (SASEBO-W)"
+    _name = "System Serial (SASEBO-W)"
 
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)

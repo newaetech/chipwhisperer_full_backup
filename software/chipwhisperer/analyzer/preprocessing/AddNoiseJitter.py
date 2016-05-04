@@ -34,8 +34,8 @@ class AddNoiseJitter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
-    name = "Add Noise: Time Jitter"
-    description = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
+    _name = "Add Noise: Time Jitter"
+    _description = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
                   "in actual analysis."
 
     def __init__(self, parentParam=None, traceSource=None):

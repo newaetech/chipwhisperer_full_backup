@@ -29,7 +29,7 @@ from _base import AcqKeyTextPattern_Base
 
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
-    name = "Basic"
+    _name = "Basic"
 
     def __init__(self, parentParam, target=None):
         AcqKeyTextPattern_Base.__init__(self, parentParam, target)

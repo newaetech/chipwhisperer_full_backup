@@ -28,7 +28,7 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 
 
 class ReaderChipWhispererUSI(ReaderTemplate):
-    name = "CWCR2-USI (obsolete)"
+    _name = "CWCR2-USI (obsolete)"
 
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)

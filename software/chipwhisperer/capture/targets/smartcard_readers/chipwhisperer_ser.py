@@ -29,7 +29,7 @@ import time
 
 
 class ReaderChipWhispererSER(ReaderTemplate):
-    name = "CWCR2-SER"
+    _name = "CWCR2-SER"
 
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)

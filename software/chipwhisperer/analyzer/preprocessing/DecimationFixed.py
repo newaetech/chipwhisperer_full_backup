@@ -30,8 +30,8 @@ import numpy as np
 
         
 class DecimationFixed(PreprocessingBase):
-    name = "Decimation: Fixed"
-    description = "Decimate by a fixed factor"
+    _name = "Decimation: Fixed"
+    _description = "Decimate by a fixed factor"
 
     def __init__(self, parentParam=None, traceSource=None):
         PreprocessingBase.__init__(self, parentParam, traceSource)

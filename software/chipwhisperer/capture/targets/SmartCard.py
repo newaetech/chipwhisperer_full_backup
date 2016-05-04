@@ -29,7 +29,7 @@ from chipwhisperer.common.utils import pluginmanager
 
 
 class SmartCard(TargetTemplate):
-    name = "Smart Card"
+    _name = "Smart Card"
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
@@ -44,7 +44,7 @@ class SmartCard(TargetTemplate):
 
         from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER
         self.params.addChildren([
-            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER.name], 'set':self.setConnection},
+            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER._name], 'set':self.setConnection},
             {'name':'SmartCard Protocol', 'type':'list', 'values':protocols , 'value':None, 'set':self.setProtocol},
             {'name':'SmartCard Explorer', 'type':'action', 'action':lambda: self.scgui.show()}
         ])

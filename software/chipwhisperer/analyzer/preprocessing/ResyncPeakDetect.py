@@ -34,8 +34,8 @@ class ResyncPeakDetect(PreprocessingBase):
     """
     Resyncronize based on peak value.
     """
-    name = "Resync: Peak Detect"
-    description = "Line up traces so peak (either max positive or max negative) within" \
+    _name = "Resync: Peak Detect"
+    _description = "Line up traces so peak (either max positive or max negative) within" \
     " some given range of points all aligns. For each trace the following must hold or the trace is rejected:\n" \
     "   (1-valid limit) < (peak value from candidate trace) / (peak value from reference) < (1+valid limit)\n" \
     "If 'valid limit' is 0 then this is ignored, and all traces are kept."

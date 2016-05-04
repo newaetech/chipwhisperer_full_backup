@@ -30,14 +30,12 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CorrelationVsTrace(AttackResultPlot):
-    name = 'Correlation vs Traces in Attack'
-    description = "Plots maximum correlation vs number of traces in attack."
+    _name = 'Correlation vs Traces in Attack'
+    _description = "Plots maximum correlation vs number of traces in attack."
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
-        AttackResultPlot.__init__(self, parentParam)
-        self.setLabels(self.name, "Traces", self.name)
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
+    def __init__(self, parentParam=None, name=None):
+        AttackResultPlot.__init__(self, parentParam, name)
+        self.setLabels(self.getName(), "Traces", self.getName())
 
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""

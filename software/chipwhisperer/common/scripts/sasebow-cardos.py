@@ -40,8 +40,8 @@ from chipwhisperer.common.scripts._base import UserScriptBase
 
 
 class UserScript(UserScriptBase):
-    name = "SASEBO-W: AES-128 SASEBO-W Smart Card OS"
-    description = "SASEBO-W Loaded with ChipWhisperer using Provided AVR Smart Card"
+    _name = "SASEBO-W: AES-128 SASEBO-W Smart Card OS"
+    _description = "SASEBO-W Loaded with ChipWhisperer using Provided AVR Smart Card"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)

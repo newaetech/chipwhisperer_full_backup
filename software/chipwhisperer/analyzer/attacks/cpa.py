@@ -34,7 +34,7 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
-    name = "CPA"
+    _name = "CPA"
 
     def __init__(self):
         AttackGenericParameters.__init__(self)

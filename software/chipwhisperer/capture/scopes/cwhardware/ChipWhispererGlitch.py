@@ -49,7 +49,7 @@ class ChipWhispererGlitch(Parameterized):
     CLKSOURCE0_BIT = 0b00000000
     CLKSOURCE1_BIT = 0b00000001
     CLKSOURCE_MASK = 0b00000011
-    name='Glitch Module'
+    _name= 'Glitch Module'
 
     def __init__(self, parentParam, cwtype, scope):
         Parameterized.__init__(self, parentParam)

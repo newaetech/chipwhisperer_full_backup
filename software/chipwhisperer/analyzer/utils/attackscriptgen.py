@@ -33,7 +33,7 @@ from functools import partial
 
 
 class AttackScriptGen(Parameterized):
-    name = "Attack Script Generator"
+    _name = "Attack Script Generator"
 
     def __init__(self, parentParam, cwGUI):
         Parameterized.__init__(self, parentParam)
@@ -51,7 +51,7 @@ class AttackScriptGen(Parameterized):
         self.defaultEditor = self.scriptList[0]
         autogen = (self.defaultEditor['dockname'], self.defaultEditor['filename'])
         self.preprocessingListGUI = [None, None, None, None]
-        self.setAttack(self.cwGUI.api.valid_attacks["CPA"])
+        self.setAttack(self.cwGUI.api.valid_attacks.get("CPA", None))
 
         self.params.addChildren([
             {'name':'Attack Script', 'type':'group', 'children':[
@@ -129,11 +129,12 @@ class AttackScriptGen(Parameterized):
 
     def setAttack(self, module):
         self.attack = module
-        self.attackParamTree.replace([self.attack])
-        self.updateAttackTraceLimits()
-        self.reloadScripts()
-        self.attack.scriptsUpdated.connect(self.reloadScripts)
-        self.attack.runScriptFunction.connect(self.runScriptFunction)
+        if module:
+            self.attackParamTree.replace([self.attack])
+            self.updateAttackTraceLimits()
+            self.reloadScripts()
+            self.attack.scriptsUpdated.connect(self.reloadScripts)
+            self.attack.runScriptFunction.connect(self.runScriptFunction)
 
     def runScriptFunction(self, funcName, filename=None):
         """Loads a given script and runs a specific function within it."""

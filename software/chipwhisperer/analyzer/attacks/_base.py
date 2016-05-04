@@ -27,12 +27,12 @@
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
-from chipwhisperer.common.utils.analysissource import AnalysisSource
+from chipwhisperer.common.utils.analysissource import AnalysisSource, ActiveAnalysisObserver
 
 
 class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
     """Generic Attack Interface"""
-    name = "None"
+    _name = "None"
 
     def __init__(self):
         AnalysisSource.__init__(self)
@@ -93,3 +93,24 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         except Exception as e:
             print "WARNING: Failed to find KnownKey, error = %s" % str(e)
             return None
+
+
+class ActiveAttackObserver(ActiveAnalysisObserver):
+    def setAnalysisSource(self, analysisSource):
+        if issubclass(analysisSource.__class__, AttackBaseClass):
+            ActiveAnalysisObserver.setAnalysisSource(self, analysisSource)
+        else:
+            ActiveAnalysisObserver.setAnalysisSource(self, None)
+        self.init()
+
+    def init(self):
+        # Initializes the Attack observer according to the number of keys, permutations,...
+
+        if self._analysisSource:
+            self.numKeys = len(self._analysisSource.getStatistics().diffs)
+            self.numPerms = len(self._analysisSource.getStatistics().diffs[0]) if self._analysisSource.getStatistics().diffs[0] else 0
+        else:
+            self.numKeys = self.numPerms = 0
+
+    def highlightedKey(self):
+        return self._analysisSource.knownKey()

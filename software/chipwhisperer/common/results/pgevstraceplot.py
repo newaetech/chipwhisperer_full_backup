@@ -30,14 +30,12 @@ from chipwhisperer.common.utils import util
 
 
 class PGEVsTrace(AttackResultPlot):
-    name = "PGE vs Trace Plot"
-    description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
+    _name = "PGE vs Trace Plot"
+    _description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
-        super(PGEVsTrace, self).__init__(parentParam)
+    def __init__(self, parentParam=None, name=None):
+        AttackResultPlot.__init__(self, parentParam, name)
         self.setLabels("Partial Guessing Entropy vs. Traces", "Traces", "Partial Guessing Entropy")
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
 
         self.params.addChildren([
             {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
@@ -53,7 +51,7 @@ class PGEVsTrace(AttackResultPlot):
 
         if fmt == 'CSV':
             spge = "Trace Number, "
-            for i in range(0,self.numKeys):
+            for i in range(0, self.numKeys):
                 spge += "Subkey %d, "%i
             spge += "\n"
             for (tnum, plist) in allpge.iteritems():

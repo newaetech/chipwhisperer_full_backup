@@ -41,7 +41,7 @@ def enforceLimits(value, limits):
 
 
 class AttackGenericParameters(Parameterized, AutoScript):
-    name='Attack Settings'
+    _name= 'Attack Settings'
 
     def __init__(self):
         self.maxSubKeys = 32

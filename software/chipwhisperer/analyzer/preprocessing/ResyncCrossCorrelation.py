@@ -35,8 +35,8 @@ class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-    name = "Resync: Cross Correlation"
-    description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
+    _name = "Resync: Cross Correlation"
+    _description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
     def __init__(self, parentParam=None, traceSource=None):
