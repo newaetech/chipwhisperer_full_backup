@@ -117,12 +117,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def keyround(self):
         return self._keyround
 
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
-
-    def targetBytes(self):
-        return self._targetbytes
-
     def processKnownKey(self, inpkey):
         return inpkey
 
@@ -137,7 +131,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
         with progressBar:
-            self.sigAnalysisStarted.emit()
             self.attack.setReportingInterval(self.getReportingInterval())
 
             #TODO: support start/end point different per byte
@@ -145,6 +138,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
             self.attack.getStatistics().clear()
 
+            self.sigAnalysisStarted.emit()
             for itNum in range(1, self.getIterations() + 1):
                 startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
                 endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
@@ -166,7 +160,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                     textouts.append(self.traceSource().getTextout(i))
 
                 #self.attack.clearStats()
-                self.attack.setByteList(self.bytesEnabled())
+                self.attack.setByteList(self.targetBytes())
                 self.attack.setStatsReadyCallback(self.statsReady)
 
                 #TODO:  pointRange=self.TraceRangeList[1:17]

@@ -94,6 +94,12 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
             print "WARNING: Failed to find KnownKey, error = %s" % str(e)
             return None
 
+    def setTargetBytes(self, blist):
+        self._targetbytes = blist
+
+    def targetBytes(self):
+        return self._targetbytes
+
 
 class ActiveAttackObserver(ActiveAnalysisObserver):
     def setAnalysisSource(self, analysisSource):

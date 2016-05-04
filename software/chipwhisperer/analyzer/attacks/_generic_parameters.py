@@ -85,7 +85,12 @@ class AttackGenericParameters(Parameterized, AutoScript):
         return init
 
     def updateScriptBytesEnabled(self, ignored=None):
-        self.addFunction("init", "setTargetBytes", str(self.bytesEnabled()))
+        blist = []
+        for i,t in enumerate(self.bytesParameters()):
+            if i < self.numsubkeys:
+                if t.value() == True:
+                    blist.append(t.opts['bytenum'])
+        self.addFunction("init", "setTargetBytes", str(blist))
 
     def updateBytesVisible(self):
         for i,t in enumerate(self.bytesParameters()):
@@ -94,14 +99,6 @@ class AttackGenericParameters(Parameterized, AutoScript):
             else:
                 t.hide()
         self.updateScriptBytesEnabled()
-
-    def bytesEnabled(self):
-        blist = []
-        for i,t in enumerate(self.bytesParameters()):
-            if i < self.numsubkeys:
-                if t.value() == True:
-                    blist.append(t.opts['bytenum'])
-        return blist
 
     def allBytesOn(self):
         for t in self.bytesParameters():

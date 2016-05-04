@@ -61,12 +61,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateBytesVisible()
         self.updateScript()
 
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
-
-    def targetBytes(self):
-        return self._targetbytes
-
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
         self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
 
@@ -109,12 +103,12 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
         with progressBar:
-            self.sigAnalysisStarted.emit()
             self.attack.setTargetBytes(self.targetBytes())
             self.attack.setReportingInterval(self.getReportingInterval())
             self.attack.getStatistics().clear()
             self.attack.setStatsReadyCallback(self.statsReady)
 
+            self.sigAnalysisStarted.emit()
             for itNum in range(1, self.getIterations()+1):
                 startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
                 endingTrace = startingTrace + self.getTraceNum() - 1

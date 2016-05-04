@@ -58,30 +58,30 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAttackObserver):
     def init(self):
         ActiveAttackObserver.init(self)
 
-        if self.numKeys != len(self.byteNumAct):
-            self.enabledbytes = [False]*self.numKeys
+        self.enabledbytes = [False]*self.numKeys
 
-            self.bselection.clear()
-            self.byteNumAct=[]
-            if self._analysisSource:
-                for i in range(0, self.numKeys):  #TODO: Only display enabled Bytes
-                    self.byteNumAct.append(QAction('%d'%i, self))
-                    self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
-                    self.byteNumAct[i].setCheckable(True)
-                    self.bselection.addAction(self.byteNumAct[i])
+        self.bselection.clear()
+        self.byteNumAct=[]
+        if self._analysisSource:
+            for i in self._analysisSource.targetBytes():
+                newAct = QAction('%d' % i, self)
+                newAct.triggered[bool].connect(partial(self.setBytePlot, i))
+                newAct.setCheckable(True)
+                self.bselection.addAction(newAct)
+                self.byteNumAct.append(newAct)
 
-            byteNumAllOn = QAction('All On', self)
-            byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
-            self.bselection.addAction(byteNumAllOn)
+        byteNumAllOn = QAction('All On', self)
+        byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
+        self.bselection.addAction(byteNumAllOn)
 
-            byteNumAllOff = QAction('All Off', self)
-            byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
-            self.bselection.addAction(byteNumAllOff)
+        byteNumAllOff = QAction('All Off', self)
+        byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
+        self.bselection.addAction(byteNumAllOff)
 
-            showGrid = QAction('Show Grid', self)
-            showGrid.setCheckable(True)
-            showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
-            self.bselection.addAction(showGrid)
+        showGrid = QAction('Show Grid', self)
+        showGrid.setCheckable(True)
+        showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
+        self.bselection.addAction(showGrid)
 
     def setBytePlot(self, num, sel):
         """Set which bytes to plot"""
