@@ -56,7 +56,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, AttackObserver):
         AttackObserver.__init__(self)
         self.initUI(True)
 
-        # Setup the redrawPlot to be delayed when pressing the Key buttons
+        # Setup the redrawPlot() to be delayed when pressing the Key buttons
         self.delayedRedrawPlot = Timer()
         self.delayedRedrawPlot.timeout.connect(self.redrawPlot)
         self.delayedRedrawPlot.setSingleShot(True)

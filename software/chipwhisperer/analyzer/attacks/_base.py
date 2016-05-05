@@ -100,6 +100,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
 
 
 class AttackObserver(AnalysisObserver):
+    # It is an AnalysisObserver with methods to get information from attacks
 
     def setAnalysisSource(self, analysisSource):
         if issubclass(analysisSource.__class__, AttackBaseClass):
