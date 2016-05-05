@@ -59,11 +59,11 @@ class OutputVsTime(AttackResultPlot):
             data = self._analysisSource.getStatistics().diffs
 
             enabledlist = []
-            for i in range(0, self.numKeys):
-                if self.enabledbytes[i]:
-                    enabledlist.append(i)
+            for bnum in range(0, len(self.enabledbytes)):
+                if self.enabledbytes[bnum]:
+                    enabledlist.append(bnum)
 
-            xrangelist = [0] * self.numKeys
+            xrangelist = [0] * self._numKeys()
             for bnum in enabledlist:
                 diffs = data[bnum]
 

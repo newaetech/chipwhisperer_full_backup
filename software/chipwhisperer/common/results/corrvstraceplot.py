@@ -48,21 +48,21 @@ class CorrelationVsTrace(AttackResultPlot):
             data = self._analysisSource.getStatistics().maxes_list
 
             enabledlist = []
-            for i in range(0, self.numKeys):
-                if self.enabledbytes[i]:
-                    enabledlist.append(i)
+            for bnum in range(0, len(self.enabledbytes)):
+                if self.enabledbytes[bnum]:
+                    enabledlist.append(bnum)
 
-            xrangelist = [0] * self.numKeys
-            newdata = [0] * self.numKeys
+            xrangelist = [0] * self._numKeys()
+            newdata = [0] * self._numKeys()
             for bnum in enabledlist:
                 maxdata = data[bnum]
                 tlist = []
                 for m in maxdata:
                     tlist.append(m['trace'])
 
-                maxlist = np.zeros((self.numPerms, len(tlist)))
+                maxlist = np.zeros((self._numPerms(), len(tlist)))
                 for i, m in enumerate(maxdata):
-                    for j in range(0, self.numPerms):
+                    for j in range(0, self._numPerms()):
                         maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
 
                 newdata[bnum] = maxlist

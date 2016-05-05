@@ -67,11 +67,11 @@ class ResultsSave(ResultsBase, ActiveAttackObserver):
 
         # Record max & min, used as we don't know if user wanted absolute mode or not
 
-        tempmin = np.ndarray((self.numKeys, self.numPerms))
-        tempmax = np.ndarray((self.numKeys, self.numPerms))
+        tempmin = np.ndarray((self._numKeys(), self._numPerms()))
+        tempmax = np.ndarray((self._numKeys(), self._numPerms()))
 
-        for i in range(0, self.numKeys):
-            for j in range(0, self.numPerms):
+        for i in range(0, self._numKeys()):
+            for j in range(0, self._numPerms()):
                 tempmax[i][j] = np.nanmax(attackStats.diffs[i][j])
                 tempmin[i][j] = np.nanmin(attackStats.diffs[i][j])
 

@@ -102,21 +102,24 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
 
 
 class ActiveAttackObserver(ActiveAnalysisObserver):
+
     def setAnalysisSource(self, analysisSource):
         if issubclass(analysisSource.__class__, AttackBaseClass):
             ActiveAnalysisObserver.setAnalysisSource(self, analysisSource)
         else:
             ActiveAnalysisObserver.setAnalysisSource(self, None)
-        self.init()
-
-    def init(self):
-        # Initializes the Attack observer according to the number of keys, permutations,...
-
-        if self._analysisSource:
-            self.numKeys = len(self._analysisSource.getStatistics().diffs)
-            self.numPerms = len(self._analysisSource.getStatistics().diffs[0]) if self._analysisSource.getStatistics().diffs[0] else 0
-        else:
-            self.numKeys = self.numPerms = 0
 
     def highlightedKey(self):
         return self._analysisSource.knownKey()
+
+    def _numPerms(self):
+        try:
+            return len(self._analysisSource.getStatistics().diffs[0])
+        except Exception:
+            return 0
+
+    def _numKeys(self):
+        try:
+            return len(self._analysisSource.getStatistics().diffs)
+        except Exception:
+            return 0

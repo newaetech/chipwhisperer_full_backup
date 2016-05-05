@@ -51,7 +51,7 @@ class PGEVsTrace(AttackResultPlot):
 
         if fmt == 'CSV':
             spge = "Trace Number, "
-            for i in range(0, self.numKeys):
+            for i in range(0, self._numKeys()):
                 spge += "Subkey %d, "%i
             spge += "\n"
             for (tnum, plist) in allpge.iteritems():
@@ -85,9 +85,9 @@ class PGEVsTrace(AttackResultPlot):
                 spge += "ylabel('Average PGE (%d Trials)')\n" % trials
                 spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')\n"
                 spge += "legend("
-                for k in range(0, self.numKeys):
+                for k in range(0, self._numKeys()):
                     spge += "'Subkey %d'"%k
-                    if k != (self.numKeys-1):
+                    if k != (self._numKeys()-1):
                         spge += ", "
                 spge += ")\n"
         else:
@@ -135,7 +135,7 @@ class PGEVsTrace(AttackResultPlot):
         #prange = range(self.pstart[bnum], self.pend[bnum])
 
         try:
-            for bnum in range(0, self.numKeys):
+            for bnum in range(0, len(self.enabledbytes)):
                 if self.enabledbytes[bnum]:
                     trace = []
                     pge = []
@@ -149,7 +149,7 @@ class PGEVsTrace(AttackResultPlot):
 
                 #if self.highlightTop:
                 #    #Plot the highlighted byte(s) on top
-                #    for bnum in range(0, self.numKeys):
+                #    for bnum in range(0, self._numKeys()):
                 #        prange = self.attack.getPointRange(bnum)
                 #        prange = range(prange[0], prange[1])
         except StopIteration:

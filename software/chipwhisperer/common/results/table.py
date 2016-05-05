@@ -53,22 +53,21 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
         self.useSingle = False
         self.updateMode = self.findParam('updateMode').value()
         ActiveAttackObserver.__init__(self)
+        self.initUI(True)
 
-    def init(self):
+    def initUI(self, firstTime=False):
         # Resize the table according to the attack model (number of subkeys and permutations) if needed
-        ActiveAttackObserver.init(self)
-
-        if self.numPerms + 1 != self.rowCount() or self.numKeys != self.columnCount():
-            self.setRowCount(1 + self.numPerms)
-            self.setColumnCount(self.numKeys)
-            for x in range(0, self.numKeys):
+        if firstTime or self._numPerms() + 1 != self.rowCount() or self._numKeys() != self.columnCount():
+            self.setRowCount(1 + self._numPerms())
+            self.setColumnCount(self._numKeys())
+            for x in range(0, self._numKeys()):
                 self.setHorizontalHeaderItem(x, QTableWidgetItem("%d" % x))
                 cell = QTableWidgetItem("-")
                 cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
                 cell.setTextAlignment(Qt.AlignCenter)
                 cell.setBackground(QBrush(QColor(253, 255, 205)))
                 self.setItem(0, x, cell)
-                for y in range(1, self.numPerms+1):
+                for y in range(1, self._numPerms()+1):
                     cell = QTableWidgetItem(" \n ")
                     cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
                     cell.setTextAlignment(Qt.AlignCenter)
@@ -76,7 +75,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
 
             self.resizeRowsToContents()
             self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
-            for y in range(1, self.numPerms+1):
+            for y in range(1, self._numPerms()+1):
                 self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
 
     def clearTableContents(self):
@@ -103,13 +102,12 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
         if not self._analysisSource:
             return
 
-        self.init()
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._analysisSource.knownKey())
         attackStats.findMaximums(useAbsolute=self.useAbs)
         highlights = self.highlightedKey()
 
-        for bnum in range(0, self.numKeys):
+        for bnum in range(0, self._numKeys()):
             highlightValue = highlights[bnum] if highlights is not None and bnum < len(highlights) else None
             if bnum in self._analysisSource.targetBytes() and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
@@ -117,7 +115,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
 
                 self.item(0, bnum).setText("%d" % attackStats.pge[bnum])
                 if everything:
-                    for j in range(0, self.numPerms):
+                    for j in range(0, self._numPerms()):
                         cell = self.item(j+1, bnum)
                         cell.setText("%02X\n%.4f" % (maxes[j]['hyp'], maxes[j]['value']))
                         if maxes[j]['hyp'] == highlightValue:
@@ -129,9 +127,11 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
         self.setVisible(True)
 
     def analysisStarted(self):
+        self.initUI()
         self.clearTableContents()
 
     def analysisUpdated(self):
+        self.initUI()
         self.updateTable(everything=(self.updateMode == 'all'))
 
     def processAnalysis(self):
