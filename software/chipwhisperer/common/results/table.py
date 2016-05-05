@@ -35,8 +35,8 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
     _description = "Show all guesses based on sorting output of attack"
 
     def __init__(self, parentParam=None, name=None, useAbs=True):
-        ResultsWidgetBase.__init__(self, parentParam, name)
         QTableWidget.__init__(self)
+        ResultsWidgetBase.__init__(self, parentParam, name)
 
         self.params.addChildren([
             {'name':'Use Absolute Value for Rank', 'type':'list',

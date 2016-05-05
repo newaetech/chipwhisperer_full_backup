@@ -158,7 +158,7 @@ class PicoScopeInterface(ScopeTemplate):
         self.params.addChildren([
             {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}
         ])
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
+        self.setupActiveParams([lambda: self.lazy(self.scopetype)])
 
         self.scopetype = None
         self.advancedSettings = None

@@ -36,10 +36,10 @@ class SmartCard(TargetTemplate):
         self.driver = None
         self.window = None
 
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.driver)])
+        self.setupActiveParams([lambda: self.lazy(self.driver)])
         readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False, self)
 
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.protocol)])
+        self.setupActiveParams([lambda: self.lazy(self.protocol)])
         protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False, self)
 
         from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER

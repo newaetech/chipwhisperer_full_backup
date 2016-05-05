@@ -62,7 +62,7 @@ class ChipWhispererExtra(Parameterized):
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope)
 
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.cwEXTRA), lambda: self.lazy(self.glitch)])
+        self.setupActiveParams([lambda: self.lazy(self.cwEXTRA), lambda: self.lazy(self.glitch)])
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)

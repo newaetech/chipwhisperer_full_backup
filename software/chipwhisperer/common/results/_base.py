@@ -28,18 +28,22 @@
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameters import CWParameterTree, Parameterized
 
 
 class ResultsBase(Parameterized, Plugin):
-    """ Base class for the output widgets """
-    """ Keeps a dictionary with all the registered objects and emits a signal when a new one is added"""
+    """
+    Base class for the output widgets
+    Keeps a dictionary with all the registered objects and emits a signal when a new one is added
+    """
     registeredObjects = util.DictType()
     sigRegisteredObjectsChanged = util.Signal()
+    paramTree = None
 
     def __init__(self, parentParam=None, name=None):
+        if not self.paramTree:
+            ResultsBase.paramTree = CWParameterTree("Results")
         Parameterized.__init__(self, parentParam, name)
-        self.registerAs(self.getName())
 
     def getWidget(self):
         return None
@@ -47,12 +51,12 @@ class ResultsBase(Parameterized, Plugin):
     @classmethod
     def deregister(self, name):
         if self.registeredObjects.pop(name, None):
-            self.sigRegisteredObjectsChanged.emit()
+            self.sigRegisteredObjectsChanged.emit(None)
 
-    def registerAs(self, name):
-        self.registeredObjects[name] = self
-        self.sigRegisteredObjectsChanged.emit()
-
+    def registerObject(self):
+        self.registeredObjects[self.getName()] = self
+        self.sigRegisteredObjectsChanged.emit(self)
+        self.paramTree.extend([self])
 
 class ResultsWidgetBase(ResultsBase):
     """ Base class for the output GUI widgets. You can define a GUI Widget to be inserted in the tools menu """

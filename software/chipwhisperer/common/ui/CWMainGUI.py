@@ -54,6 +54,7 @@ from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import pluginmanager, util
+from chipwhisperer.common.results._base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
@@ -77,12 +78,12 @@ class CWMainGUI(QMainWindow):
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
         self.initUI(icon)
+        ResultsBase.sigRegisteredObjectsChanged.connect(self.newResultWidget)
+        self.resultDocks = []
+
         self.loadExtraModules()
         self.addToolMenuItems()
         self.addSettingsDocks()
-        # self.api.graphWidget = self.api.resultWidgets['Trace Output Plot']
-
-        self.addResultDocks()
         self.restoreSettings()
 
         self.projectChanged()
@@ -90,6 +91,11 @@ class CWMainGUI(QMainWindow):
         self.api.sigTracesChanged.connect(self.tracesChanged)
         CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
+
+    def newResultWidget(self, resultWidget):
+        # Remove all old actions that don't apply for new selection
+        if resultWidget.getWidget():
+            self.resultDocks.append(self.addDock(resultWidget.getWidget(), name=resultWidget.getName(), area=Qt.TopDockWidgetArea))
 
     def loadExtraModules(self):
         pass
@@ -141,14 +147,6 @@ class CWMainGUI(QMainWindow):
 
     def getTraceSource(self):
         raise self.api.project().traceManager()
-
-    def addResultDocks(self):
-        self.windowMenu.addSeparator()
-        self.resultDocks = []
-        for v in self.api.resultWidgets.itervalues():
-            if v.getWidget():
-                self.resultDocks.append(self.addDock(v.getWidget(), name=v.getName(), area=Qt.TopDockWidgetArea))
-        self.tabifyDocks(self.resultDocks)
 
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""

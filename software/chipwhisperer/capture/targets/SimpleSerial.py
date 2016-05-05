@@ -35,7 +35,7 @@ class SimpleSerial(TargetTemplate):
         TargetTemplate.__init__(self, parentParam)
 
         self.ser = None
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
+        self.setupActiveParams([lambda: self.lazy(self.ser)])
         ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
 
         self.keylength = 16
