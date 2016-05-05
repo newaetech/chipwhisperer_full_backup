@@ -45,44 +45,41 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         # Do the attack
         self.sigAnalysisDone.emit()
 
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        self.sigAnalysisUpdated.emit()
-
     def getStatistics(self):
         return None
-
-    def setTraceStart(self, tnum):
-        self._traceStart = tnum
-
-    def setIterations(self, its):
-        self._iterations = its
-
-    def setTracesPerAttack(self, trace):
-        self._tracePerAttack = trace
-
-    def setReportingInterval(self, ri):
-        self._reportinginterval = ri
 
     def getTraceStart(self):
         return self._traceStart
 
-    def getTraceNum(self):
-        return self._tracePerAttack
+    def setTraceStart(self, tnum):
+        self._traceStart = tnum
 
     def getIterations(self):
         return self._iterations
 
+    def setIterations(self, its):
+        self._iterations = its
+
+    def getTracesPerAttack(self):
+        return self._tracePerAttack
+
+    def setTracesPerAttack(self, trace):
+        self._tracePerAttack = trace
+
     def getReportingInterval(self):
         return self._reportinginterval
 
-    def setPointRange(self, rng):
-        self._pointRange = rng
+    def setReportingInterval(self, ri):
+        self._reportinginterval = ri
 
     def getPointRange(self, bnum=None):
         if isinstance(self._pointRange, list) and bnum is not None:
             return self._pointRange[bnum]
         else:
             return self._pointRange
+
+    def setPointRange(self, rng):
+        self._pointRange = rng
 
     def knownKey(self):
         """Get the known key via attack"""

@@ -49,9 +49,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def updateAlgorithm(self, algo):
-        # TODO: this hack required in case don't have setReportingInterval
-        # self.delFunction('init', 'attack.setReportingInterval')
-
         self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
         self.updateScript()
@@ -106,24 +103,18 @@ class CPA(AttackBaseClass, AttackGenericParameters):
             self.attack.setTargetBytes(self.targetBytes())
             self.attack.setReportingInterval(self.getReportingInterval())
             self.attack.getStatistics().clear()
-            self.attack.setStatsReadyCallback(self.statsReady)
+            self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
 
             self.sigAnalysisStarted.emit()
             for itNum in range(1, self.getIterations()+1):
-                startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-                endingTrace = startingTrace + self.getTraceNum() - 1
+                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
+                endingTrace = startingTrace + self.getTracesPerAttack() - 1
                 #TODO:  pointRange=self.TraceRangeList[1:17]
                 self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
                 if progressBar and progressBar.wasAborted():
                     return
 
         self.sigAnalysisDone.emit()
-
-    def statsReady(self):
-        self.sigAnalysisUpdated.emit()
-
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        pass
 
     def getStatistics(self):
         return self.attack.getStatistics()
