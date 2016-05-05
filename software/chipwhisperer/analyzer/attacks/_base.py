@@ -37,7 +37,10 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         PassiveTraceObserver.__init__(self)
 
     def processKnownKey(self, inpkey):
-        """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
+        """
+        Passes known first-round key (if available, may pass None).
+        Returns key under attack which should be highlighted in graph
+        """
         return inpkey
 
     def processTraces(self):
@@ -97,7 +100,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
 
 
 class AttackObserver(AnalysisObserver):
-    # It is an AnalysisObserver with methods to get information from attacks
+    """"It is an AnalysisObserver with methods to get information from attacks"""
 
     def setAnalysisSource(self, analysisSource):
         if issubclass(analysisSource.__class__, AttackBaseClass):
