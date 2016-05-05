@@ -1,7 +1,7 @@
 # PynSource Version 1.1
 {'type':'meta', 'info1':'Lorem ipsum dolor sit amet, consectetur adipiscing elit is latin.'}
-{'type':'umlshape', 'id':'PassiveAnalysisObserver', 'x':1059, 'y':5, 'width':203, 'height':124, 'attrs':'_analysisSource', 'meths':'__init__|setAnalysisSource|processAnalysis|highlightedKey'}
-{'type':'umlshape', 'id':'ActiveAnalysisObserver', 'x':1068, 'y':171, 'width':195, 'height':88, 'attrs':'', 'meths':'setAnalysisSource|analysisStarted|analysisUpdated'}
+{'type':'umlshape', 'id':'AnalysisObserver', 'x':1059, 'y':5, 'width':203, 'height':124, 'attrs':'_analysisSource', 'meths':'__init__|setAnalysisSource|processAnalysis|_highlightedKey'}
+{'type':'umlshape', 'id':'AnalysisObserver', 'x':1068, 'y':171, 'width':195, 'height':88, 'attrs':'', 'meths':'setAnalysisSource|analysisStarted|analysisUpdated'}
 {'type':'umlshape', 'id':'AnalysisSource', 'x':506, 'y':10, 'width':128, 'height':111, 'attrs':'sigAnalysisStarted|sigAnalysisUpdated|sigAnalysisDone', 'meths':'__init__'}
 {'type':'umlshape', 'id':'Parameterized', 'x':304, 'y':12, 'width':142, 'height':267, 'attrs':'name|description|newName|paramListUpdated|__activeParams|params', 'meths':'__init__|paramList|getName|getDescription|setupActiveParams|addActiveParams|guiActions|getAllActiveParameters|setupGuiActions|lazy'}
 {'type':'umlshape', 'id':'ActiveTraceObserver', 'x':290, 'y':494, 'width':170, 'height':62, 'attrs':'', 'meths':'_setTraceSource'}
@@ -29,9 +29,9 @@
 {'type':'edge', 'id':'ScopeTemplate_to_Parameterized', 'source':'ScopeTemplate', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'TraceManager_to_TraceSource', 'source':'TraceManager', 'target':'TraceSource', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'LiveTraceSource_to_ScopeTemplate', 'source':'LiveTraceSource', 'target':'ScopeTemplate', 'uml_edge_type':'composition'}
-{'type':'edge', 'id':'ActiveAnalysisObserver_to_PassiveAnalysisObserver', 'source':'ActiveAnalysisObserver', 'target':'PassiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ActiveAnalysisObserver_to_PassiveAnalysisObserver', 'source':'AnalysisObserver', 'target':'AnalysisObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'UserScriptBase_to_Parameterized', 'source':'UserScriptBase', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'AnalysisSource_to_PassiveAnalysisObserver', 'source':'AnalysisSource', 'target':'PassiveAnalysisObserver', 'uml_edge_type':'composition'}
+{'type':'edge', 'id':'AnalysisSource_to_PassiveAnalysisObserver', 'source':'AnalysisSource', 'target':'AnalysisObserver', 'uml_edge_type':'composition'}
 {'type':'edge', 'id':'ActiveTraceObserver_to_PassiveTraceObserver', 'source':'ActiveTraceObserver', 'target':'PassiveTraceObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'LiveTraceSource_to_TraceSource', 'source':'LiveTraceSource', 'target':'TraceSource', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'PassiveTraceObserver_to_Parameterized', 'source':'PassiveTraceObserver', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
@@ -42,16 +42,16 @@
 {'type':'edge', 'id':'ResultsWidgetBase_to_ResultsBase', 'source':'ResultsWidgetBase', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'AttackResultPlot_to_GraphWidget', 'source':'AttackResultPlot', 'target':'GraphWidget', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'AttackResultPlot_to_ResultsWidgetBase', 'source':'AttackResultPlot', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'AttackResultPlot_to_ActiveAnalysisObserver', 'source':'AttackResultPlot', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'AttackResultPlot_to_ActiveAnalysisObserver', 'source':'AttackResultPlot', 'target':'AnalysisObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'CorrelationVsTrace_to_AttackResultPlot', 'source':'CorrelationVsTrace', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'KnowKeySource_to_ResultsBase', 'source':'KnowKeySource', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'KnowKeySource_to_ActiveAnalysisObserver', 'source':'KnowKeySource', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'KnowKeySource_to_ActiveAnalysisObserver', 'source':'KnowKeySource', 'target':'AnalysisObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'OutputVsTime_to_AttackResultPlot', 'source':'OutputVsTime', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'PGEVsTrace_to_AttackResultPlot', 'source':'PGEVsTrace', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'ResultsSave_to_ResultsBase', 'source':'ResultsSave', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'ResultsSave_to_ActiveAnalysisObserver', 'source':'ResultsSave', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsSave_to_ActiveAnalysisObserver', 'source':'ResultsSave', 'target':'AnalysisObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'ResultsTable_to_ResultsWidgetBase', 'source':'ResultsTable', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'ResultsTable_to_ActiveAnalysisObserver', 'source':'ResultsTable', 'target':'ActiveAnalysisObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ResultsTable_to_ActiveAnalysisObserver', 'source':'ResultsTable', 'target':'AnalysisObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'WaveFormWidget_to_GraphWidget', 'source':'WaveFormWidget', 'target':'GraphWidget', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'WaveFormWidget_to_ResultsWidgetBase', 'source':'WaveFormWidget', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'WaveFormWidget_to_ActiveTraceObserver', 'source':'WaveFormWidget', 'target':'ActiveTraceObserver', 'uml_edge_type':'generalisation'}

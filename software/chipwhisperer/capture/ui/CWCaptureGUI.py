@@ -23,7 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 from PySide.QtCore import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
 from PySide.QtGui import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
@@ -98,9 +97,6 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitorAct = QAction('Open Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
                                         triggered=self.glitchMonitor.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
-
-    # def newScopeData(self, data=None, offset=0):
-    #     self.api.getGraphWidget().passTrace(data, offset)
 
     def addToolbarItems(self, toolbar):
         # Capture

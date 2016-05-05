@@ -26,20 +26,20 @@
 
 from ._base import ResultsBase
 from chipwhisperer.common.utils import util
-from chipwhisperer.analyzer.attacks._base import ActiveAttackObserver
+from chipwhisperer.analyzer.attacks._base import AttackObserver
 
 
-class KnowKeySource(ResultsBase, ActiveAttackObserver):
+class KnowKeySource(ResultsBase, AttackObserver):
     _name = "Knownkey Source"
     _description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
 
     def __init__(self, parentParam=None, name=None):
         ResultsBase.__init__(self, parentParam, name)
-        ActiveAttackObserver.__init__(self)
+        AttackObserver.__init__(self)
         self._knowKey = []
 
         self.params.addChildren([
-            {'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
+            {'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'Override':'override'},
              'value':'attack', 'set':self.setKnownKeySrc},
             {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True}
         ])
@@ -48,10 +48,10 @@ class KnowKeySource(ResultsBase, ActiveAttackObserver):
         """Set key as 'attack' or 'override'"""
         if keysrc == 'attack':
             self.findParam('knownkey').setReadonly(True)
-            ResultsBase.highlightedKey = self._analysisSource.knownKey
-        elif keysrc == 'gui':
+            ResultsBase._highlightedKey = self._analysisSource.knownKey
+        elif keysrc == 'override':
             self.findParam('knownkey').setReadonly(False)
-            ResultsBase.highlightedKey = self.knowKey
+            ResultsBase._highlightedKey = self.knowKey
         else:
             raise ValueError("Key Source Error")
 

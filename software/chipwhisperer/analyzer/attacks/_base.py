@@ -4,8 +4,6 @@
 # Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
 #
-# Authors: Colin O'Flynn
-#
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
 #
@@ -27,7 +25,7 @@
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
-from chipwhisperer.common.utils.analysissource import AnalysisSource, ActiveAnalysisObserver
+from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver
 
 
 class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
@@ -101,15 +99,15 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         return self._targetbytes
 
 
-class ActiveAttackObserver(ActiveAnalysisObserver):
+class AttackObserver(AnalysisObserver):
 
     def setAnalysisSource(self, analysisSource):
         if issubclass(analysisSource.__class__, AttackBaseClass):
-            ActiveAnalysisObserver.setAnalysisSource(self, analysisSource)
+            AnalysisObserver.setAnalysisSource(self, analysisSource)
         else:
-            ActiveAnalysisObserver.setAnalysisSource(self, None)
+            AnalysisObserver.setAnalysisSource(self, None)
 
-    def highlightedKey(self):
+    def _highlightedKey(self):
         return self._analysisSource.knownKey()
 
     def _numPerms(self):

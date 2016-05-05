@@ -517,7 +517,7 @@ def main():
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Window Demo")
-    ex = CWMainGUI(CWCoreAPI(), app.applicationName())
+    CWMainGUI(CWCoreAPI(), app.applicationName())
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

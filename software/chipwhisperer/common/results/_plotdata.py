@@ -28,11 +28,12 @@ from functools import partial
 import numpy as np
 from PySide.QtGui import *
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.analyzer.attacks._base import ActiveAttackObserver
+from chipwhisperer.common.utils.timer import Timer
+from chipwhisperer.analyzer.attacks._base import AttackObserver
 from ._base import ResultsWidgetBase
 
 
-class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAttackObserver):
+class AttackResultPlot(GraphWidget, ResultsWidgetBase, AttackObserver):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
@@ -52,8 +53,14 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAttackObserver):
         self.highlightTop = True
         self.doRedraw = True
         self.enabledbytes = []
-        ActiveAttackObserver.__init__(self)
+        AttackObserver.__init__(self)
         self.initUI(True)
+
+        # Setup the redrawPlot to be delayed when pressing the Key buttons
+        self.delayedRedrawPlot = Timer()
+        self.delayedRedrawPlot.timeout.connect(self.redrawPlot)
+        self.delayedRedrawPlot.setSingleShot(True)
+        self.delayedRedrawPlot.setInterval(1000)
 
     def initUI(self, firstTime=False):
         if firstTime or self._numKeys() != len(self.enabledbytes):
@@ -93,7 +100,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAttackObserver):
         """Set which bytes to plot"""
         self.enabledbytes[num] = sel
         if self.doRedraw:
-            self.redrawPlot()
+            self.delayedRedrawPlot.start()
 
     def setByteAll(self, status):
         """Enable all bytes in plot"""
@@ -108,7 +115,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAttackObserver):
         """Initialize the highlights based on the known key"""
         self.highlights = []
 
-        highlights = self.highlightedKey()
+        highlights = self._highlightedKey()
 
         for i in range(0, self._numKeys()):
             if highlights is not None and i < len(highlights):

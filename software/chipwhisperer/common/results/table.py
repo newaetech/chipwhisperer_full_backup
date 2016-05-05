@@ -27,10 +27,10 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from ._base import ResultsWidgetBase
-from chipwhisperer.analyzer.attacks._base import ActiveAttackObserver
+from chipwhisperer.analyzer.attacks._base import AttackObserver
 
 
-class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
+class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
     _name = 'Results Table'
     _description = "Show all guesses based on sorting output of attack"
 
@@ -52,7 +52,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
         self.useAbs = useAbs
         self.useSingle = False
         self.updateMode = self.findParam('updateMode').value()
-        ActiveAttackObserver.__init__(self)
+        AttackObserver.__init__(self)
         self.initUI(True)
 
     def initUI(self, firstTime=False):
@@ -82,7 +82,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
         for x in range(0, self.columnCount()):
             self.item(0, x).setText("-")
             for y in range(1, self.rowCount()):
-                self.item(y, x).setText("")
+                self.item(y, x).setText(" \n ")
 
     def setUpdateMode(self, mode):
         """Set if we update entire table or just PGE on every statistics update"""
@@ -105,7 +105,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAttackObserver):
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._analysisSource.knownKey())
         attackStats.findMaximums(useAbsolute=self.useAbs)
-        highlights = self.highlightedKey()
+        highlights = self._highlightedKey()
 
         for bnum in range(0, self._numKeys()):
             highlightValue = highlights[bnum] if highlights is not None and bnum < len(highlights) else None
