@@ -25,10 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from ._base import PreprocessingBase
 import numpy as np
 import scipy as sp
-from chipwhisperer.common.results._base import ResultsBase
+
+from chipwhisperer.common.results.base import ResultsBase
+from ._base import PreprocessingBase
 
 
 class ResyncCrossCorrelation(PreprocessingBase):

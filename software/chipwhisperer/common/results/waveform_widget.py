@@ -24,19 +24,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import ResultsWidgetBase
+from .base import ResultsBase
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
+class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
     _name = 'Trace Output Plot'
     _description = 'Plots the waveform for a given trace source'
 
     def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsWidgetBase.__init__(self, parentParam, name)
+        ResultsBase.__init__(self, parentParam, name)
         ActiveTraceObserver.__init__(self)
 
         self.redrawAfterEach = False
@@ -98,3 +99,6 @@ class WaveFormWidget(GraphWidget, ResultsWidgetBase, ActiveTraceObserver):
     def processTraces(self):
         self.resetTraceLimits()
         self.plotInputTrace()
+
+    def getWidget(self):
+        return self

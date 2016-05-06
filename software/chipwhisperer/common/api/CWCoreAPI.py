@@ -22,18 +22,17 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import traceback
-import sys
 import copy
+import traceback
 
-from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import util, pluginmanager
-from chipwhisperer.common.utils.tracesource import TraceSource
-from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
-from chipwhisperer.common.results._base import ResultsBase
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.ui.ProgressBar import *
+from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
+from chipwhisperer.common.utils.tracesource import TraceSource
 
 
 class CWCoreAPI(Parameterized):

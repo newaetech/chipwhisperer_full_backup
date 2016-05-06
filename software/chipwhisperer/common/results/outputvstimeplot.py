@@ -26,9 +26,10 @@
 
 from ._plotdata import AttackResultPlot
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class OutputVsTime(AttackResultPlot):
+class OutputVsTime(AttackResultPlot, Plugin):
     _name = "Output vs Point Plot"
     _description = "Output vs Point Plot Description."
 

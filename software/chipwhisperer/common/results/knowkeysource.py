@@ -24,12 +24,13 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from ._base import ResultsBase
-from chipwhisperer.common.utils import util
 from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class KnowKeySource(ResultsBase, AttackObserver):
+class KnowKeySource(ResultsBase, AttackObserver, Plugin):
     _name = "Knownkey Source"
     _description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
 

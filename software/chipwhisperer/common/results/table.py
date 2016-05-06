@@ -26,17 +26,18 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from ._base import ResultsWidgetBase
 from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
+class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     _name = 'Results Table'
     _description = "Show all guesses based on sorting output of attack"
 
     def __init__(self, parentParam=None, name=None, useAbs=True):
         QTableWidget.__init__(self)
-        ResultsWidgetBase.__init__(self, parentParam, name)
+        ResultsBase.__init__(self, parentParam, name)
 
         self.params.addChildren([
             {'name':'Use Absolute Value for Rank', 'type':'list',
@@ -136,3 +137,6 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, AttackObserver):
 
     def processAnalysis(self):
         self.updateTable(everything=True)
+
+    def getWidget(self):
+        return self

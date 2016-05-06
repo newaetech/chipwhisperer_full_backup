@@ -54,7 +54,7 @@ from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import pluginmanager, util
-from chipwhisperer.common.results._base import ResultsBase
+from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
@@ -449,9 +449,9 @@ class CWMainGUI(QMainWindow):
         self.statusBar().showMessage(msg)
 
     def runScript(self, scriptClass, funcName="run"):
-        self.updateStatusBar("Running Script: %s" % scriptClass.name)
+        self.updateStatusBar("Running Script: %s" % scriptClass.getClassName())
         self.api.runScriptClass(scriptClass, funcName="run")
-        self.updateStatusBar("Finished Script: %s" % scriptClass.name)
+        self.updateStatusBar("Finished Script: %s" % scriptClass.getClassName())
 
     def exceptionHandlerDialog(self, etype, value, trace):
         """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""

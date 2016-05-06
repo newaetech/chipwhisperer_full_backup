@@ -23,18 +23,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-from PySide.QtCore import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-from PySide.QtGui import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
-from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
-from chipwhisperer.common.ui.ProgressBar import *
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+import sys  # Do not remove!
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from chipwhisperer.common.ui.ProgressBar import *
+from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
-from chipwhisperer.common.utils import pluginmanager
-from chipwhisperer.common.results._base import ResultsBase
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -54,18 +51,16 @@ class CWCaptureGUI(CWMainGUI):
 
     def addSettingsDocks(self):
         self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
-        resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", False, False)
-        for k, v in resultWidgets.iteritems():
-            if issubclass(v, ActiveTraceObserver):
-                v().registerObject()
-
-        # from chipwhisperer.common.results.waveform_widget import WaveFormWidget
-        # WaveFormWidget(None, "Colin").registerObject()
-        self.settingsResultsDock = self.addSettings(ResultsBase.paramTree, "Results")
+        self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
         self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
         self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")
         self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
+
+        # Load all ActiveTraceObservers
+        for k, v in ResultsBase.getClasses().iteritems():
+            if issubclass(v, ActiveTraceObserver):
+                ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
                           self.settingsTraceDock, self.settingsAuxDock])

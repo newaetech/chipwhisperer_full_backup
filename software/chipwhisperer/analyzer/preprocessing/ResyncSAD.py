@@ -26,8 +26,9 @@
 #=================================================
 
 import numpy as np
+
+from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
-from chipwhisperer.common.results._base import ResultsBase
 
 
 class ResyncSAD(PreprocessingBase):

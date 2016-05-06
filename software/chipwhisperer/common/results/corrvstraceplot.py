@@ -27,9 +27,10 @@
 from ._plotdata import AttackResultPlot
 import numpy as np
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class CorrelationVsTrace(AttackResultPlot):
+class CorrelationVsTrace(AttackResultPlot, Plugin):
     _name = 'Correlation vs Traces in Attack'
     _description = "Plots maximum correlation vs number of traces in attack."
 

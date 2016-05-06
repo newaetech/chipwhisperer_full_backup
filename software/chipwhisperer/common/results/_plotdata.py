@@ -27,13 +27,13 @@
 from functools import partial
 import numpy as np
 from PySide.QtGui import *
+from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils.timer import Timer
-from chipwhisperer.analyzer.attacks._base import AttackObserver
-from ._base import ResultsWidgetBase
 
 
-class AttackResultPlot(GraphWidget, ResultsWidgetBase, AttackObserver):
+class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
@@ -41,7 +41,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, AttackObserver):
 
     def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsWidgetBase.__init__(self, parentParam, name)
+        ResultsBase.__init__(self, parentParam, name)
 
         self.params.addChildren([
             {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
@@ -260,3 +260,6 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, AttackObserver):
 
     def processAnalysis(self):
         self.redrawPlot()
+
+    def getWidget(self):
+        return self

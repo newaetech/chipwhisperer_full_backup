@@ -24,14 +24,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import numpy as np
 import copy
 from datetime import datetime
-from ._base import ResultsBase
+import numpy as np
 from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ResultsSave(ResultsBase, AttackObserver):
+class ResultsSave(ResultsBase, AttackObserver, Plugin):
     _name = "Save to Files"
     _description = "Save correlation output to files."
 

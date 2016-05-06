@@ -27,9 +27,10 @@
 from ._plotdata import AttackResultPlot
 from PySide.QtGui import *
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class PGEVsTrace(AttackResultPlot):
+class PGEVsTrace(AttackResultPlot, Plugin):
     _name = "PGE vs Trace Plot"
     _description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
 
