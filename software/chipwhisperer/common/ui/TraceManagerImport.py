@@ -112,7 +112,7 @@ class TraceManagerImport(QtFixes.QDialog):
             fmtclass = chipwhisperer.common.traces.TraceContainerTypes.TraceContainerFormatList[fmt]
             
             #Use temp class to finally initilize our "good" version
-            self.tmanager = fmtclass( fmtclass.getParamsClass(openMode=True) )
+            self.tmanager = fmtclass()
             self.tmanager.config.loadTrace(fname)
             self.tmanager.loadAllConfig()
             ExtendedParameter.reloadParams(self.tmanager.getParams.paramList(), self.paramTree)

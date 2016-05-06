@@ -102,7 +102,12 @@ class OpenADCInterface(ScopeTemplate):
                     cwtype = "cwrev2"
 
                 #For OpenADC: If we have CW Stuff, add that now
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype)
+                #TODO FIXME - this shouldn't be needed, but if you connect/disconnect you can no longer
+                #             use self.api.setParameter(...) with CWExtra-specific settings. The OpenADC
+                #             settings will work, but not CWExtra ones? For now this works, but doesn't let
+                #             you change the OpenADC type.
+                if not self.advancedSettings:
+                    self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype)
                 self.advancedSettings.setOpenADC(self.qtadc)
 
                 util.chipwhisperer_extra = self.advancedSettings
