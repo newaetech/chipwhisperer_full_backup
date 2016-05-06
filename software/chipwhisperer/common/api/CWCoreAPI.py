@@ -24,7 +24,7 @@
 
 import copy
 import traceback
-
+import sys
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
@@ -184,7 +184,6 @@ class CWCoreAPI(Parameterized):
         # self.project().addParamTree(self.getScope())
         # self.project().addParamTree(self.getTarget())
         self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
-        self.project().traceManager().registerAs("Trace Manager")
 
     def openProject(self, fname):
         self.newProject()

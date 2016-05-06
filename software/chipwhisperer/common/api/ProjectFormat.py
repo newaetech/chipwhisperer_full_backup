@@ -69,7 +69,7 @@ class ProjectFormat(object):
         self.paramListList = []        
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
-        self._traceManager = TraceManager()
+        self._traceManager = TraceManager().register()
         self._traceManager.dirty.connect(lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value()))
         self.setFilename(ProjectFormat.untitledFileName)
 

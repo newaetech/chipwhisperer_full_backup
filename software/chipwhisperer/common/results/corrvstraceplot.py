@@ -61,9 +61,9 @@ class CorrelationVsTrace(AttackResultPlot, Plugin):
                 for m in maxdata:
                     tlist.append(m['trace'])
 
-                maxlist = np.zeros((self._numPerms(), len(tlist)))
+                maxlist = np.zeros((self._numPerms(bnum), len(tlist)))
                 for i, m in enumerate(maxdata):
-                    for j in range(0, self._numPerms()):
+                    for j in range(0, self._numPerms(bnum)):
                         maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
 
                 newdata[bnum] = maxlist

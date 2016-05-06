@@ -61,6 +61,7 @@ class ResultsBase(Parameterized):
 
     @classmethod
     def createNew(cls, className, instanceName = None):
+        # To do it manually using the python console:
         # from chipwhisperer.common.results.base import ResultsBase
         # ResultsBase.createNew("Trace Output Plot", "Channel 2")
 
@@ -71,4 +72,4 @@ class ResultsBase(Parameterized):
         cls.registeredObjects[obj.getName()] = obj
         cls.sigRegisteredObjectsChanged.emit(obj)
         cls.getParamTree().extend([obj])
-        return cls
+        return obj

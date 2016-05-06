@@ -44,7 +44,7 @@ class TraceManagerDialog(QtFixes.QDialog):
 
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        self.setWindowTitle("Traces Management")
+        self.setWindowTitle("Trace Management")
         layout = QVBoxLayout()
 
         #Get labels in use

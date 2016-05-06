@@ -269,11 +269,11 @@ class CWMainGUI(QMainWindow):
         self.fileMenu.addAction(self.exitAct)
         
         self.projectMenu = self.menuBar().addMenu("&Project")
-        self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.traceManagerDialog.show)
+        self.traceManageAct = QAction('&Trace Management', self, statusTip='Add/Remove traces from project', triggered=self.traceManagerDialog.show)
         self.projectMenu.addAction(self.traceManageAct)
         self.consolidateAct = QAction('&Consolidate', self, statusTip='Copy trace files to project directory', triggered=self.consolidateDialog)
         self.projectMenu.addAction(self.consolidateAct)
-        self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit Project File', triggered=self.projEditDock.show)
+        self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit project file', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.scripts", False, False, self))
 
@@ -347,7 +347,7 @@ class CWMainGUI(QMainWindow):
         if self.api.project().isUntitled(): return
         
         files = QSettings().value('recentFileList')
-        if files is None:
+        if files is None or not isinstance(files, list):
             files = []
 
         try:
@@ -365,7 +365,7 @@ class CWMainGUI(QMainWindow):
     def updateRecentFileActions(self):
         """Update & Load the list of recent files"""
         files = QSettings().value('recentFileList')
-        if files is not None:
+        if files is not None and isinstance(files, list):
             files_no = 0
             for f in files:
                 text = "&%d %s" % (files_no + 1, util.strippedName(f))

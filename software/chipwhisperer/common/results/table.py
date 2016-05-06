@@ -58,8 +58,8 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
     def initUI(self, firstTime=False):
         # Resize the table according to the attack model (number of subkeys and permutations) if needed
-        if firstTime or self._numPerms() + 1 != self.rowCount() or self._numKeys() != self.columnCount():
-            self.setRowCount(1 + self._numPerms())
+        if firstTime or self._maxNumPerms() + 1 != self.rowCount() or self._numKeys() != self.columnCount():
+            self.setRowCount(1 + self._maxNumPerms())
             self.setColumnCount(self._numKeys())
             for x in range(0, self._numKeys()):
                 self.setHorizontalHeaderItem(x, QTableWidgetItem("%d" % x))
@@ -68,7 +68,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                 cell.setTextAlignment(Qt.AlignCenter)
                 cell.setBackground(QBrush(QColor(253, 255, 205)))
                 self.setItem(0, x, cell)
-                for y in range(1, self._numPerms()+1):
+                for y in range(1, self._maxNumPerms()+1):
                     cell = QTableWidgetItem(" \n ")
                     cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
                     cell.setTextAlignment(Qt.AlignCenter)
@@ -76,7 +76,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
             self.resizeRowsToContents()
             self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
-            for y in range(1, self._numPerms()+1):
+            for y in range(1, self._maxNumPerms()+1):
                 self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
 
     def clearTableContents(self):
@@ -116,7 +116,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
                 self.item(0, bnum).setText("%d" % attackStats.pge[bnum])
                 if everything:
-                    for j in range(0, self._numPerms()):
+                    for j in range(0, self._numPerms(bnum)):
                         cell = self.item(j+1, bnum)
                         cell.setText("%02X\n%.4f" % (maxes[j]['hyp'], maxes[j]['value']))
                         if maxes[j]['hyp'] == highlightValue:

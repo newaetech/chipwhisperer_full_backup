@@ -30,7 +30,7 @@ from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
-from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
 
 
@@ -81,9 +81,11 @@ class CWAnalyzerGUI(CWMainGUI):
         self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParamTree, "Preprocessing")
         self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParamTree, "Attack")
         self.settingsPostProcessingDock = self.addSettings(self.attackScriptGen.postprocessingParamTree, "Postprocessing")
-        resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
-        self.api.addResultWidgets(resultWidgets)
-        self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
+        self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
+
+        # Load all ActiveTraceObservers
+        for k, v in ResultsBase.getClasses().iteritems():
+            ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
                           self.settingsPostProcessingDock, self.settingsResultsDock])

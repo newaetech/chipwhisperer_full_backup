@@ -48,12 +48,16 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
 
-        self.findParam('input').setValue(TraceSource.registeredObjects["Trace Manager"])
+        self.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
         TraceSource.sigRegisteredObjectsChanged.connect(self.traceSourcesChanged)
 
         self.resetTraceLimits()
         self.setDefaultYRange(-0.5, 0.5)
         self.YDefault()
+
+    def _setTraceSource(self, newTraceSource):
+        ActiveTraceObserver._setTraceSource(self, newTraceSource)
+        self.setWindowTitle(self.getName() + " - " + self._traceSource.getName())
 
     def resetTraceLimits(self):
         if self._traceSource:

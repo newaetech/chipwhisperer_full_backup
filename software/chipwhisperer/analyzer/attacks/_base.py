@@ -111,9 +111,15 @@ class AttackObserver(AnalysisObserver):
     def _highlightedKey(self):
         return self._analysisSource.knownKey()
 
-    def _numPerms(self):
+    def _numPerms(self, key):
         try:
-            return len(self._analysisSource.getStatistics().diffs[0])
+            return len(self._analysisSource.getStatistics().diffs[key])
+        except Exception:
+            return 0
+
+    def _maxNumPerms(self):
+        try:
+            return self._analysisSource.getStatistics().numPerms
         except Exception:
             return 0
 

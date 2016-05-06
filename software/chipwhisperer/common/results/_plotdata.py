@@ -156,7 +156,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
     def drawData(self, progress, xdatalst, ydatalst, enabledBytes=None):
         """Redraw the plot"""
 
-        progress.setMaximum(len(enabledBytes) * self._numPerms())
+        progress.setMaximum(len(enabledBytes))
         progress.setStatusMask("Clearing previous plotting...")
         self.clearPushed()
         progress.setStatusMask("Plotting...")
@@ -200,7 +200,6 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 if len(pointargsg) > 0:
                     pointargsg["symbol"] = 'd'
                 self.pw.plot(xdataptr, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                pvalue += self._numPerms()
 
             elif drawtype.startswith('norm'):
                 tlisttst = []
@@ -210,7 +209,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     tlist_fixed[:0] = xdataptr
                 else:
                     tlist_fixed = xdataptr
-                for i in range(0, self._numPerms()):
+                for i in range(0, self._numPerms(bnum)):
 
                     if self.highlightTop and i in self.highlights[bnum]:
                         continue
@@ -224,12 +223,10 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     maxlisttst.extend(newmax)
 
                 self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg)
-                pvalue += self._numPerms()
 
             elif drawtype.startswith('detail'):
-                for i in range(0, self._numPerms()):
+                for i in range(0, self._numPerms(bnum)):
                     self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
-                    pvalue += 1
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top
@@ -249,11 +246,12 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                         ydataptr = [[t] for t in ydataptr]
                         pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
-                    for i in range(0, self._numPerms()):
+                    for i in range(0, self._numPerms(bnum)):
                         if i in self.highlights[bnum]:
                             penclr = self._highlightColour(self.highlights[bnum].index(i))
                             self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
 
+                    pvalue += 1
             progress.updateStatus(pvalue)
             if progress.wasAborted():
                 break

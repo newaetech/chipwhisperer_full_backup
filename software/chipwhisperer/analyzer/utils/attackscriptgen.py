@@ -29,6 +29,7 @@ from PySide.QtCore import *
 
 from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
+from chipwhisperer.common.results.base import ResultsBase
 from functools import partial
 
 
@@ -165,6 +166,7 @@ class AttackScriptGen(Parameterized):
 
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
         mse.append("from chipwhisperer.common.scripts._base import UserScriptBase", 0)
+        mse.append("from chipwhisperer.common.results.base import ResultsBase", 0)
 
         # Get imports from preprocessing
         mse.append("# Imports from Preprocessing", 0)
@@ -230,12 +232,12 @@ class AttackScriptGen(Parameterized):
         # Get init from reporting
         mse.append("def initReporting(self):", 1)
         mse.append("# Configures the attack observers (usually a set of GUI widgets)")
-        if len(self.cwGUI.api.resultWidgets)>0:
-            for k, v in self.cwGUI.api.resultWidgets.iteritems():
+        if len(ResultsBase.registeredObjects)>0:
+            for k, v in ResultsBase.registeredObjects.iteritems():
                 if hasattr(v,"setTraceSource"):
-                    mse.append("self.api.resultWidgets[\"%s\"].setTraceSource(self.traces)" % k)
+                    mse.append("ResultsBase.registeredObjects[\"%s\"].setTraceSource(self.traces)" % k)
                 if hasattr(v,"setAnalysisSource"):
-                    mse.append("self.api.resultWidgets[\"%s\"].setAnalysisSource(self.attack)" % k)
+                    mse.append("ResultsBase.registeredObjects[\"%s\"].setAnalysisSource(self.attack)" % k)
         else:
             mse.append("pass")
 

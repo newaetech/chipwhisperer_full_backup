@@ -30,13 +30,19 @@ from chipwhisperer.common.utils.parameters import Parameterized
 
 
 class TraceSource(object):
-    """ It has traces as output """
-    """ Keeps a dictionary with all the registered objets and emits a signal when a new one is added"""
+    """
+    It has traces as output
+    Keeps a dictionary with all the registered objets and emits a signal when a new one is added
+    """
     registeredObjects = util.DictType()
     sigRegisteredObjectsChanged = util.Signal()
 
-    def __init__(self):
+    def __init__(self, name):
         self.sigTracesChanged = util.Signal()
+        self.name = name
+
+    def getName(self):
+        return self.name
 
     def getTrace(self, n):
         return None
@@ -50,21 +56,22 @@ class TraceSource(object):
     def offset(self):
         return 0
 
+    def register(self):
+        self.registeredObjects[self.name] = self
+        self.sigRegisteredObjectsChanged.emit()
+        return self
+
     @classmethod
     def deregister(cls, name):
         if cls.registeredObjects.pop(name, None):
             cls.sigRegisteredObjectsChanged.emit()
 
-    def registerAs(self, name):
-        self.registeredObjects[name] = self
-        self.sigRegisteredObjectsChanged.emit()
-
 
 class LiveTraceSource(TraceSource):
     """ It has live traces as output """
 
-    def __init__(self, scope=None):
-        TraceSource.__init__(self)
+    def __init__(self, scope=None, name="Scope"):
+        TraceSource.__init__(self, name)
         self._scope = None
         self.setScope(scope)
         self._lastData = []

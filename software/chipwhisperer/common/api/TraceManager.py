@@ -38,10 +38,9 @@ class TraceManager(TraceSource):
     load and manage the traces.
     """
 
-    secName = "Trace Management"
-
-    def __init__(self):
-        TraceSource.__init__(self)
+    def __init__(self, name = "Trace Management"):
+        TraceSource.__init__(self, name)
+        self.name = name
         self.dirty = util.Observable(False)
         self._numTraces = 0
         self._numPoints = 0
@@ -55,16 +54,16 @@ class TraceManager(TraceSource):
         self.sigTracesChanged.emit()
 
     def saveProject(self, config, configfilename):
-        config[self.secName].clear()
+        config[self.name].clear()
         for indx, t in enumerate(self.traceSets):
-            config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
-            config[self.secName]['enabled%d' % indx] = str(t.enabled)
+            config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
+            config[self.name]['enabled%d' % indx] = str(t.enabled)
         self.dirty.setValue(False)
 
     def loadProject(self, configfilename):
         config = ConfigParser.RawConfigParser()
         config.read(configfilename)
-        alltraces = config.items(self.secName)
+        alltraces = config.items(self.name)
         self.newProject()
 
         fdir = os.path.split(configfilename)[0] + "/"

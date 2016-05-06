@@ -141,8 +141,9 @@ class PGEVsTrace(AttackResultPlot, Plugin):
                     trace = []
                     pge = []
                     for (tnum, plist) in allpge.iteritems():
-                        trace.append(tnum)
-                        pge.append(plist[bnum]['pge'])
+                        if plist[bnum]['pge'] is not None:
+                            trace.append(tnum)
+                            pge.append(plist[bnum]['pge'])
                     self.pw.plot(trace, pge, pen='r')
 
                 # penclr = self._highlightColour( self.highlights[bnum].index(i) )

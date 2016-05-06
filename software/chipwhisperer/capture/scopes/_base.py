@@ -53,7 +53,7 @@ class ScopeTemplate(Parameterized, Plugin):
         return self.connectStatus.value()
 
     def con(self):
-        LiveTraceSource(self).registerAs(self.getName() + " - Channel 1")
+        LiveTraceSource(self, self.getName() + " - Channel 1").register()
         if self._con():
             self.connectStatus.setValue(True)
 
