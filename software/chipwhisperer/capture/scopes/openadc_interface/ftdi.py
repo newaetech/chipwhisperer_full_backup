@@ -30,7 +30,7 @@ except:
 
 
 class OpenADCInterface_FTDI(Parameterized, Plugin):
-    name = "FTDI (SASEBO-W/SAKURA-G)"
+    _name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, parentParam, oadcInstance):
         Parameterized.__init__(self, parentParam)

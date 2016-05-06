@@ -37,7 +37,7 @@ except ImportError, e:
 
 
 class TraceContainerMySQL(TraceContainer):
-    name = "MySQL"
+    _name = "MySQL"
 
     def __init__(self, openMode = False):
         super(TraceContainerMySQL, self).__init__()

@@ -29,7 +29,7 @@ from chipwhisperer.common.utils import util, timer
 
 
 class OpenADCQt(Parameterized):
-    name='OpenADC'
+    _name= 'OpenADC'
 
     def __init__(self, parentParam=None):
         Parameterized.__init__(self, parentParam)

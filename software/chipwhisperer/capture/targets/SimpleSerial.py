@@ -29,19 +29,19 @@ from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 
 
 class SimpleSerial(TargetTemplate):
-    name = "Simple Serial"
+    _name = "Simple Serial"
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
 
         self.ser = None
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.ser)])
+        self.setupActiveParams([lambda: self.lazy(self.ser)])
         ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
 
         self.keylength = 16
         self.input = ""
         self.params.addChildren([
-            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite.name], 'set':self.setConnection},
+            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite._name], 'set':self.setConnection},
             {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},

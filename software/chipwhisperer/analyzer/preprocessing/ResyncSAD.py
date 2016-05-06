@@ -26,13 +26,14 @@
 #=================================================
 
 import numpy as np
+
+from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
-from chipwhisperer.common.results._base import ResultsBase
 
 
 class ResyncSAD(PreprocessingBase):
-    name = "Resync: Sum-of-Difference"
-    description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
+    _name = "Resync: Sum-of-Difference"
+    _description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."

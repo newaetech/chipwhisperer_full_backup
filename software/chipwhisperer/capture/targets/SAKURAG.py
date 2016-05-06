@@ -234,7 +234,7 @@ class FTDIComm(object):
 
 
 class SakuraG(TargetTemplate):
-    name = "SAKURA G"
+    _name = "SAKURA G"
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)

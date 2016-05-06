@@ -23,17 +23,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-from PySide.QtCore import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-from PySide.QtGui import * #DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
-from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
-from chipwhisperer.common.ui.ProgressBar import *
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+import sys  # Do not remove!
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from chipwhisperer.common.ui.ProgressBar import *
+from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
-from chipwhisperer.common.utils import pluginmanager
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -53,17 +51,16 @@ class CWCaptureGUI(CWMainGUI):
 
     def addSettingsDocks(self):
         self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
-        self.settingsResultsDock = self.addSettings(self.api.resultsParamTree, "Results")
-        resultWidgets = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.results", True, False)
-        for k, v in resultWidgets.iteritems():
-            if not issubclass(v.__class__, ActiveTraceObserver):
-                del resultWidgets[k]
-        self.api.addResultWidgets(resultWidgets)
-
+        self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
         self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
         self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
         self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")
         self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
+
+        # Load all ActiveTraceObservers
+        for k, v in ResultsBase.getClasses().iteritems():
+            if issubclass(v, ActiveTraceObserver):
+                ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
                           self.settingsTraceDock, self.settingsAuxDock])
@@ -98,9 +95,6 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitorAct = QAction('Open Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
                                         triggered=self.glitchMonitor.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
-
-    # def newScopeData(self, data=None, offset=0):
-    #     self.api.getGraphWidget().passTrace(data, offset)
 
     def addToolbarItems(self, toolbar):
         # Capture

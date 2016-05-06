@@ -28,7 +28,7 @@ from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
 
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
-    name = 'ChipWhisperer-Lite'
+    _name = 'ChipWhisperer-Lite'
 
     def __init__(self, parentParam=None):
         SimpleSerialTemplate.__init__(self, parentParam)

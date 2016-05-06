@@ -29,7 +29,7 @@ from _base import AuxiliaryTemplate
 
 
 class ResetAVR(AuxiliaryTemplate):
-    name = 'Reset AVR via STK500'
+    _name = 'Reset AVR via STK500'
 
     def __init__(self, parentParam=None):
         AuxiliaryTemplate.__init__(self, parentParam)

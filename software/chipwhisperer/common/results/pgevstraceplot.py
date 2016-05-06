@@ -27,17 +27,16 @@
 from ._plotdata import AttackResultPlot
 from PySide.QtGui import *
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class PGEVsTrace(AttackResultPlot):
-    name = "PGE vs Trace Plot"
-    description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
+class PGEVsTrace(AttackResultPlot, Plugin):
+    _name = "PGE vs Trace Plot"
+    _description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
-        super(PGEVsTrace, self).__init__(parentParam)
+    def __init__(self, parentParam=None, name=None):
+        AttackResultPlot.__init__(self, parentParam, name)
         self.setLabels("Partial Guessing Entropy vs. Traces", "Traces", "Partial Guessing Entropy")
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
 
         self.params.addChildren([
             {'name':'Copy PGE Data to Clipboard', 'type':'action', 'action':self.copyPGE},
@@ -53,7 +52,7 @@ class PGEVsTrace(AttackResultPlot):
 
         if fmt == 'CSV':
             spge = "Trace Number, "
-            for i in range(0,self.numKeys):
+            for i in range(0, self._numKeys()):
                 spge += "Subkey %d, "%i
             spge += "\n"
             for (tnum, plist) in allpge.iteritems():
@@ -87,9 +86,9 @@ class PGEVsTrace(AttackResultPlot):
                 spge += "ylabel('Average PGE (%d Trials)')\n" % trials
                 spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')\n"
                 spge += "legend("
-                for k in range(0, self.numKeys):
+                for k in range(0, self._numKeys()):
                     spge += "'Subkey %d'"%k
-                    if k != (self.numKeys-1):
+                    if k != (self._numKeys()-1):
                         spge += ", "
                 spge += ")\n"
         else:
@@ -137,7 +136,7 @@ class PGEVsTrace(AttackResultPlot):
         #prange = range(self.pstart[bnum], self.pend[bnum])
 
         try:
-            for bnum in range(0, self.numKeys):
+            for bnum in range(0, len(self.enabledbytes)):
                 if self.enabledbytes[bnum]:
                     trace = []
                     pge = []
@@ -151,7 +150,7 @@ class PGEVsTrace(AttackResultPlot):
 
                 #if self.highlightTop:
                 #    #Plot the highlighted byte(s) on top
-                #    for bnum in range(0, self.numKeys):
+                #    for bnum in range(0, self._numKeys()):
                 #        prange = self.attack.getPointRange(bnum)
                 #        prange = range(prange[0], prange[1])
         except StopIteration:

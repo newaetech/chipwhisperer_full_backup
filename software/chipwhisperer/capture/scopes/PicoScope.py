@@ -41,7 +41,7 @@ from picoscope import ps6000
 
 
 class PicoScope(Parameterized): #TODO: ScopeBase instead?
-    name = 'Pico Scope'
+    _name = 'Pico Scope'
 
     def __init__(self, parentParam=None, psClass=None):
         ScopeTemplate.__init__(self, parentParam)
@@ -146,7 +146,7 @@ class PicoScope(Parameterized): #TODO: ScopeBase instead?
 
 
 class PicoScopeInterface(ScopeTemplate):
-    name = "PicoScope"
+    _name = "PicoScope"
 
     def __init__(self, parentParam=None):
         super(PicoScopeInterface, self).__init__(parentParam)
@@ -158,7 +158,7 @@ class PicoScopeInterface(ScopeTemplate):
         self.params.addChildren([
             {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}
         ])
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
+        self.setupActiveParams([lambda: self.lazy(self.scopetype)])
 
         self.scopetype = None
         self.advancedSettings = None

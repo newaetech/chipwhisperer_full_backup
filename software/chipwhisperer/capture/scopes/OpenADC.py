@@ -37,7 +37,7 @@ from chipwhisperer.common.utils import util, timer, pluginmanager
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
-    name = "ChipWhisperer/OpenADC"
+    _name = "ChipWhisperer/OpenADC"
 
     def __init__(self, parentParam=None):
         ScopeTemplate.__init__(self, parentParam)
@@ -48,10 +48,10 @@ class OpenADCInterface(ScopeTemplate):
 
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
         self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip.name], 'set':self.setCurrentScope},
+            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip._name], 'set':self.setCurrentScope},
             {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
         ])
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
+        self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
                                 lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
                                 lambda: self.lazy(self.digitalPattern)])
 

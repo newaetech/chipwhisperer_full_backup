@@ -26,18 +26,16 @@
 
 from ._plotdata import AttackResultPlot
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class OutputVsTime(AttackResultPlot):
-    name = "Output vs Point Plot"
-    description = "Output vs Point Plot Description."
+class OutputVsTime(AttackResultPlot, Plugin):
+    _name = "Output vs Point Plot"
+    _description = "Output vs Point Plot Description."
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
-        super(OutputVsTime, self).__init__(parentParam)
-
+    def __init__(self, parentParam=None, name=None):
+        AttackResultPlot.__init__(self, parentParam, name)
         self.setLabels("Attack Output vs. Sample for Subkey Guesses", "Sample Number", "Attack Output")
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
 
     def getPrange(self, bnum, diffs):
         """Get a list of all points for a given byte number statistic"""
@@ -62,18 +60,19 @@ class OutputVsTime(AttackResultPlot):
             data = self._analysisSource.getStatistics().diffs
 
             enabledlist = []
-            for i in range(0, self.numKeys):
-                if self.enabledbytes[i]:
-                    enabledlist.append(i)
+            for bnum in range(0, len(self.enabledbytes)):
+                if self.enabledbytes[bnum]:
+                    enabledlist.append(bnum)
 
-            xrangelist = [0] * self.numKeys
+            xrangelist = [0] * self._numKeys()
             for bnum in enabledlist:
                 diffs = data[bnum]
 
-                if not hasattr(diffs[0], '__iter__'):
-                    diffs = [[t] for t in diffs]
+                if diffs:
+                    if not hasattr(diffs[0], '__iter__'):
+                        diffs = [[t] for t in diffs]
 
-                prange = self.getPrange(bnum, diffs)
-                xrangelist[bnum] = prange
+                    prange = self.getPrange(bnum, diffs)
+                    xrangelist[bnum] = prange
 
             self.drawData(progress, xrangelist, data, enabledlist)

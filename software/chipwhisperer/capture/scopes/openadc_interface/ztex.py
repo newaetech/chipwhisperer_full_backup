@@ -35,7 +35,7 @@ except ImportError:
 
 
 class OpenADCInterface_ZTEX(Parameterized, Plugin):
-    name = "OpenADC-ZTEX"
+    _name = "OpenADC-ZTEX"
 
     def __init__(self, parentParam, oadcInstance):
         Parameterized.__init__(self, parentParam)

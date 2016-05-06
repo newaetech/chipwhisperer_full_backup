@@ -27,17 +27,16 @@
 from ._plotdata import AttackResultPlot
 import numpy as np
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class CorrelationVsTrace(AttackResultPlot):
-    name = 'Correlation vs Traces in Attack'
-    description = "Plots maximum correlation vs number of traces in attack."
+class CorrelationVsTrace(AttackResultPlot, Plugin):
+    _name = 'Correlation vs Traces in Attack'
+    _description = "Plots maximum correlation vs number of traces in attack."
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
-        AttackResultPlot.__init__(self, parentParam)
-        self.setLabels(self.name, "Traces", self.name)
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
+    def __init__(self, parentParam=None, name=None):
+        AttackResultPlot.__init__(self, parentParam, name)
+        self.setLabels(self.getName(), "Traces", self.getName())
 
     def redrawPlot(self):
         """Redraw the plot, loading data from attack"""
@@ -50,21 +49,21 @@ class CorrelationVsTrace(AttackResultPlot):
             data = self._analysisSource.getStatistics().maxes_list
 
             enabledlist = []
-            for i in range(0, self.numKeys):
-                if self.enabledbytes[i]:
-                    enabledlist.append(i)
+            for bnum in range(0, len(self.enabledbytes)):
+                if self.enabledbytes[bnum]:
+                    enabledlist.append(bnum)
 
-            xrangelist = [0] * self.numKeys
-            newdata = [0] * self.numKeys
+            xrangelist = [0] * self._numKeys()
+            newdata = [0] * self._numKeys()
             for bnum in enabledlist:
                 maxdata = data[bnum]
                 tlist = []
                 for m in maxdata:
                     tlist.append(m['trace'])
 
-                maxlist = np.zeros((self.numPerms, len(tlist)))
+                maxlist = np.zeros((self._numPerms(), len(tlist)))
                 for i, m in enumerate(maxdata):
-                    for j in range(0, self.numPerms):
+                    for j in range(0, self._numPerms()):
                         maxlist[m['maxes'][j][0], i] = m['maxes'][j][2]
 
                 newdata[bnum] = maxlist

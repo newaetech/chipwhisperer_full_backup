@@ -24,20 +24,21 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import numpy as np
 import copy
 from datetime import datetime
-from ._base import ResultsBase
-from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
+import numpy as np
+from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ResultsSave(ResultsBase, ActiveAnalysisObserver):
-    name = "Save to Files"
-    description = "Save correlation output to files."
+class ResultsSave(ResultsBase, AttackObserver, Plugin):
+    _name = "Save to Files"
+    _description = "Save correlation output to files."
 
-    def __init__(self, parentParam=None):
-        ResultsBase.__init__(self, parentParam)
-        ActiveAnalysisObserver.__init__(self)
+    def __init__(self, parentParam=None, name=None):
+        ResultsBase.__init__(self, parentParam, name)
+        AttackObserver.__init__(self)
         self._filename = None
         self._enabled = False
         self.dataarray = None
@@ -66,14 +67,12 @@ class ResultsSave(ResultsBase, ActiveAnalysisObserver):
             self.dataarray = []
 
         # Record max & min, used as we don't know if user wanted absolute mode or not
-        numkeys = len(attackStats.diffs)
-        numhyps = len(attackStats.diffs[0])
 
-        tempmin = np.ndarray((numkeys, numhyps))
-        tempmax = np.ndarray((numkeys, numhyps))
+        tempmin = np.ndarray((self._numKeys(), self._numPerms()))
+        tempmax = np.ndarray((self._numKeys(), self._numPerms()))
 
-        for i in range(0, numkeys):
-            for j in range(0, numhyps):
+        for i in range(0, self._numKeys()):
+            for j in range(0, self._numPerms()):
                 tempmax[i][j] = np.nanmax(attackStats.diffs[i][j])
                 tempmin[i][j] = np.nanmin(attackStats.diffs[i][j])
 

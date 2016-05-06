@@ -159,7 +159,7 @@ class Partition(QObject, Parameterized):
     """
     # traceDone = Signal(int)
 
-    description = "Partition traces based on some method."
+    _description = "Partition traces based on some method."
 
     attrDictPartition = {
                 "sectionName":"Partition Based on XXXX",

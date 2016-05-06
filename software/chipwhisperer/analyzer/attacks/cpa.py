@@ -34,7 +34,7 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
-    name = "CPA"
+    _name = "CPA"
 
     def __init__(self):
         AttackGenericParameters.__init__(self)
@@ -49,9 +49,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def updateAlgorithm(self, algo):
-        # TODO: this hack required in case don't have setReportingInterval
-        # self.delFunction('init', 'attack.setReportingInterval')
-
         self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
         self.updateScript()
@@ -60,12 +57,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.numsubkeys = model.numSubKeys
         self.updateBytesVisible()
         self.updateScript()
-
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
-
-    def targetBytes(self):
-        return self._targetbytes
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
         self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
@@ -109,27 +100,21 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
         with progressBar:
-            self.sigAnalysisStarted.emit()
             self.attack.setTargetBytes(self.targetBytes())
             self.attack.setReportingInterval(self.getReportingInterval())
             self.attack.getStatistics().clear()
-            self.attack.setStatsReadyCallback(self.statsReady)
+            self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
 
+            self.sigAnalysisStarted.emit()
             for itNum in range(1, self.getIterations()+1):
-                startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-                endingTrace = startingTrace + self.getTraceNum() - 1
+                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
+                endingTrace = startingTrace + self.getTracesPerAttack() - 1
                 #TODO:  pointRange=self.TraceRangeList[1:17]
                 self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
                 if progressBar and progressBar.wasAborted():
                     return
 
         self.sigAnalysisDone.emit()
-
-    def statsReady(self):
-        self.sigAnalysisUpdated.emit()
-
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        pass
 
     def getStatistics(self):
         return self.attack.getStatistics()

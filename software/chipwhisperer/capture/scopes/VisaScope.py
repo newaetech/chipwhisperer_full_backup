@@ -31,18 +31,18 @@ from chipwhisperer.common.utils import pluginmanager
 
 
 class VisaScopeInterface(ScopeTemplate):
-    name =  "VISA Scope"
+    _name = "VISA Scope"
 
     def __init__(self, parentParam=None):
         ScopeTemplate.__init__(self, parentParam)
 
-        self.setupActiveParams([lambda: self.lazy(self), lambda: self.lazy(self.scopetype)])
+        self.setupActiveParams([lambda: self.lazy(self.scopetype)])
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
         for scope in scopes.itervalues():
             scope.dataUpdated.connect(self.passUpdated)
 
         self.params.addChildren([
-            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes[VisaScopeInterface_MSO54831D.name], 'set':self.setCurrentScope},
+            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes[VisaScopeInterface_MSO54831D._name], 'set':self.setCurrentScope},
             {'name':'Connect String', 'key':'connStr', 'type':'str', 'value':''},
             {'name':'Example Strings', 'type':'list', 'values':['', 'TCPIP0::192.168.2.100::inst0::INSTR'], 'value':'', 'set':self.exampleString},
         ])

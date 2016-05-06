@@ -55,7 +55,7 @@ class AcquisitionController():
             self._keyTextPattern.initPair()
 
     def targetDoTrace(self, plaintext, key=None):
-        if self.target is None or self.target.getName()=="None":
+        if self.target is None or self.target.getName()== "None":
             return []
 
         if key:

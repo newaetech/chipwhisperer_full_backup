@@ -30,7 +30,7 @@ from chipwhisperer.common.utils import util, timer
 
 
 class ResetCW1173Read(AuxiliaryTemplate):
-    name = "Reset AVR/XMEGA via CW-Lite"
+    _name = "Reset AVR/XMEGA via CW-Lite"
 
     def __init__(self, parentParam=None):
         AuxiliaryTemplate.__init__(self, parentParam)

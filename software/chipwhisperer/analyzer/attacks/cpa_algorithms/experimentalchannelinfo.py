@@ -288,7 +288,7 @@ class TemplateOneSubkey(object):
 
 
 class CPAExperimentalChannelinfo(Parameterized, Plugin):
-    name = "CPA Experimental Channel Info"
+    _name = "CPA Experimental Channel Info"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
         Parameterized.__init__(self, parentParam)

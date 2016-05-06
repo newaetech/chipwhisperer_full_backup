@@ -25,18 +25,19 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from ._base import PreprocessingBase
 import numpy as np
 import scipy as sp
-from chipwhisperer.common.results._base import ResultsBase
+
+from chipwhisperer.common.results.base import ResultsBase
+from ._base import PreprocessingBase
 
 
 class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-    name = "Resync: Cross Correlation"
-    description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
+    _name = "Resync: Cross Correlation"
+    _description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
     def __init__(self, parentParam=None, traceSource=None):

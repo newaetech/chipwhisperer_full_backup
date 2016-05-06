@@ -48,8 +48,8 @@ class DecimationClockRecovery(PreprocessingBase):
     """
     Attempts Clock recovery & then decimates based on that
     """
-    name = "Decimation: Clock Recovery"
-    description = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
+    _name = "Decimation: Clock Recovery"
+    _description = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
                   "decimate to only points of interest.\n****CURRENTLY NOT SUPPORTED****"
 
     def __init__(self, parentParam=None, traceSource=None):

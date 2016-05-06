@@ -27,62 +27,80 @@
 from functools import partial
 import numpy as np
 from PySide.QtGui import *
+from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
-from ._base import ResultsWidgetBase
+from chipwhisperer.common.utils.timer import Timer
 
 
-class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
+class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
     """
     Generic data plotting stuff. Adds ability to highlight certain guesses, used in plotting for example the
     correlation over all data points, or the most likely correlation over number of traces
     """
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256):
+    def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsWidgetBase.__init__(self, parentParam)
-        ActiveAnalysisObserver.__init__(self)
+        ResultsBase.__init__(self, parentParam, name)
 
         self.params.addChildren([
             {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal'},
         ])
 
-        self.setObjectName(self.name)
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
-        self.enabledbytes = [False]*subkeys
-        self.doRedraw = True
-
+        self.setObjectName(self.getName())
         self.bselection = QToolBar()
-
-        self.byteNumAct = []
-        for i in range(0,self.numKeys):
-            self.byteNumAct.append(QAction('%d'%i, self))
-            self.byteNumAct[i].triggered[bool].connect(partial(self.setBytePlot, i))
-            self.byteNumAct[i].setCheckable(True)
-            self.bselection.addAction(self.byteNumAct[i])
-
-        byteNumAllOn = QAction('All On', self)
-        byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
-        self.bselection.addAction(byteNumAllOn)
-
-        byteNumAllOff = QAction('All Off', self)
-        byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
-        self.bselection.addAction(byteNumAllOff)
-
-        showGrid = QAction('Show Grid', self)
-        showGrid.setCheckable(True)
-        showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
-        self.bselection.addAction(showGrid)
-
         self.layout().addWidget(self.bselection)
         self.highlightTop = True
+        self.doRedraw = True
+        self.enabledbytes = []
+        AttackObserver.__init__(self)
+        self.initUI(True)
+
+        # Setup the redrawPlot() to be delayed when pressing the Key buttons
+        self.delayedRedrawPlot = Timer()
+        self.delayedRedrawPlot.timeout.connect(self.redrawPlot)
+        self.delayedRedrawPlot.setSingleShot(True)
+        self.delayedRedrawPlot.setInterval(1000)
+
+    def initUI(self, firstTime=False):
+        if firstTime or self._numKeys() != len(self.enabledbytes):
+            self.enabledbytes = [False]*self._numKeys()
+            self.bselection.clear()
+            self.byteNumAct=[]
+            if self._analysisSource:
+                for i in range(0, self._numKeys()):
+                    newAct = QAction('%d' % i, self)
+                    newAct.triggered[bool].connect(partial(self.setBytePlot, i))
+                    newAct.setCheckable(True)
+                    self.bselection.addAction(newAct)
+                    self.byteNumAct.append(newAct)
+
+            byteNumAllOn = QAction('All On', self)
+            byteNumAllOn.triggered.connect(partial(self.setByteAll, False))
+            self.bselection.addAction(byteNumAllOn)
+
+            byteNumAllOff = QAction('All Off', self)
+            byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
+            self.bselection.addAction(byteNumAllOff)
+
+            showGrid = QAction('Show Grid', self)
+            showGrid.setCheckable(True)
+            showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
+            self.bselection.addAction(showGrid)
+
+    def analysisStarted(self):
+        self.initUI()
+        for i in range(0, self._numKeys()):
+            if i in self._analysisSource.targetBytes():
+                self.byteNumAct[i].setVisible(True)
+            else:
+                self.byteNumAct[i].setVisible(False)
 
     def setBytePlot(self, num, sel):
         """Set which bytes to plot"""
         self.enabledbytes[num] = sel
         if self.doRedraw:
-            self.redrawPlot()
+            self.delayedRedrawPlot.start()
 
     def setByteAll(self, status):
         """Enable all bytes in plot"""
@@ -97,9 +115,9 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         """Initialize the highlights based on the known key"""
         self.highlights = []
 
-        highlights = self.highlightedKey()
+        highlights = self._highlightedKey()
 
-        for i in range(0, self.numKeys):
+        for i in range(0, self._numKeys()):
             if highlights is not None and i < len(highlights):
                 self.highlights.append([highlights[i]])
             else:
@@ -132,19 +150,19 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
     #        self.backgroundplotMax = np.fmax(self.backgroundplotMax, data)
     #        self.backgroundplotMin = np.fmin(self.backgroundplotMin, data)
 
+    def redrawPlot(self):
+        pass
+
     def drawData(self, progress, xdatalst, ydatalst, enabledBytes=None):
         """Redraw the plot"""
-        if enabledBytes is None:
-            enabledBytes = [-1]
 
-        progress.setMaximum(len(enabledBytes) * self.numPerms)  # _callSync='off'
+        progress.setMaximum(len(enabledBytes) * self._numPerms())
+        progress.setStatusMask("Clearing previous plotting...")
+        self.clearPushed()
         progress.setStatusMask("Plotting...")
 
-        self.clearPushed()
         self.setupHighlights()
-
         drawtype = self.findParam('drawtype').value().lower()
-
         pvalue = 0
 
         for bnum in enabledBytes:
@@ -160,6 +178,9 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                 xdataptr = xdatalst
 
             pointargsg = {}
+
+            if len(ydataptr) == 0 or ydataptr[0] is None:
+                continue
 
             if not hasattr(ydataptr[0], '__iter__'):
                 ydataptr = [[t] for t in ydataptr]
@@ -179,7 +200,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                 if len(pointargsg) > 0:
                     pointargsg["symbol"] = 'd'
                 self.pw.plot(xdataptr, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                pvalue += self.numPerms
+                pvalue += self._numPerms()
 
             elif drawtype.startswith('norm'):
                 tlisttst = []
@@ -189,7 +210,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                     tlist_fixed[:0] = xdataptr
                 else:
                     tlist_fixed = xdataptr
-                for i in range(0, self.numPerms):
+                for i in range(0, self._numPerms()):
 
                     if self.highlightTop and i in self.highlights[bnum]:
                         continue
@@ -203,10 +224,10 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                     maxlisttst.extend(newmax)
 
                 self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg)
-                pvalue += self.numPerms
+                pvalue += self._numPerms()
 
             elif drawtype.startswith('detail'):
-                for i in range(0, self.numPerms):
+                for i in range(0, self._numPerms()):
                     self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
                     pvalue += 1
 
@@ -228,7 +249,7 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
                         ydataptr = [[t] for t in ydataptr]
                         pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
-                    for i in range(0, self.numPerms):
+                    for i in range(0, self._numPerms()):
                         if i in self.highlights[bnum]:
                             penclr = self._highlightColour(self.highlights[bnum].index(i))
                             self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
@@ -236,3 +257,9 @@ class AttackResultPlot(GraphWidget, ResultsWidgetBase, ActiveAnalysisObserver):
             progress.updateStatus(pvalue)
             if progress.wasAborted():
                 break
+
+    def processAnalysis(self):
+        self.redrawPlot()
+
+    def getWidget(self):
+        return self

@@ -24,22 +24,23 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from ._base import ResultsBase
+from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class KnowKeySource(ResultsBase, ActiveAnalysisObserver):
-    name = "Knownkey Source"
-    description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
+class KnowKeySource(ResultsBase, AttackObserver, Plugin):
+    _name = "Knownkey Source"
+    _description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
 
-    def __init__(self, parentParam=None):
-        ResultsBase.__init__(self, parentParam)
-        ActiveAnalysisObserver.__init__(self)
+    def __init__(self, parentParam=None, name=None):
+        ResultsBase.__init__(self, parentParam, name)
+        AttackObserver.__init__(self)
         self._knowKey = []
 
         self.params.addChildren([
-            {'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'GUI Override':'gui'},
+            {'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'Override':'override'},
              'value':'attack', 'set':self.setKnownKeySrc},
             {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True}
         ])
@@ -48,10 +49,10 @@ class KnowKeySource(ResultsBase, ActiveAnalysisObserver):
         """Set key as 'attack' or 'override'"""
         if keysrc == 'attack':
             self.findParam('knownkey').setReadonly(True)
-            ResultsBase.highlightedKey = self._analysisSource.knownKey
-        elif keysrc == 'gui':
+            ResultsBase._highlightedKey = self._analysisSource.knownKey
+        elif keysrc == 'override':
             self.findParam('knownkey').setReadonly(False)
-            ResultsBase.highlightedKey = self.knowKey
+            ResultsBase._highlightedKey = self.knowKey
         else:
             raise ValueError("Key Source Error")
 

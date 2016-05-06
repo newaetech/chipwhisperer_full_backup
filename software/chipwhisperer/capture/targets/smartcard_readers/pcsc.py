@@ -36,7 +36,7 @@ except ImportError:
 
 
 class ReaderPCSC(ReaderTemplate):
-    name = "PC/SC Reader"
+    _name = "PC/SC Reader"
 
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)

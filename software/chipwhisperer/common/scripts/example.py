@@ -9,8 +9,8 @@ import chipwhisperer.analyzer.attacks.models.AES128_8bit
 # Imports from utilList
 
 class UserScript(UserScriptBase):
-    name = "CPA with noise"
-    description = "Simple example of attack script using CPA Progressive and random noise"
+    _name = "CPA with noise"
+    _description = "Simple example of attack script using CPA Progressive and random noise"
 
     def __init__(self, api):
         UserScriptBase.__init__(self, api)

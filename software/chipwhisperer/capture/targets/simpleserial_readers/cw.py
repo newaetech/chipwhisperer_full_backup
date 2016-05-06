@@ -28,7 +28,7 @@ import time
 
 
 class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
-    name = "ChipWhisperer"
+    _name = "ChipWhisperer"
     CODE_READ       = 0x80
     CODE_WRITE      = 0xC0
     ADDR_DATA       = 33

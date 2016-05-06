@@ -63,7 +63,7 @@ class CW305_USB(object):
 
 
 class CW305(TargetTemplate):
-    name = "ChipWhisperer CW305 (Artix-7)"
+    _name = "ChipWhisperer CW305 (Artix-7)"
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)

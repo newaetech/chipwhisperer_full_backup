@@ -22,25 +22,24 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import traceback
-import sys
 import copy
+import traceback
 
-from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import util, pluginmanager
-from chipwhisperer.common.utils.tracesource import TraceSource
-from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
-from chipwhisperer.common.results._base import ResultsBase
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.ui.ProgressBar import *
+from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
+from chipwhisperer.common.utils.tracesource import TraceSource
 
 
 class CWCoreAPI(Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
-    name = 'Generic Settings'
+    _name = 'Generic Settings'
     instance = None
 
     def __init__(self):
@@ -64,7 +63,6 @@ class CWCoreAPI(Parameterized):
         self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
         self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.resultWidgets = util.DictType()
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
 
         self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
@@ -90,7 +88,6 @@ class CWCoreAPI(Parameterized):
         self.graphWidget = None
 
         self.addActiveParams(lambda: self.lazy(self._acqPattern))
-        self.resultsParamTree = CWParameterTree("Results", [v for v in self.resultWidgets.itervalues()])
         self.scopeParamTree = CWParameterTree("Scope Settings", [self.getScope()])
         self.targetParamTree = CWParameterTree("Target Settings", [self.getTarget()])
         self.traceParamTree = CWParameterTree("Trace Settings", [self.getTraceFormat()])
@@ -117,15 +114,6 @@ class CWCoreAPI(Parameterized):
         if self.getAuxList()[0]: ret.extend(self.getAuxList()[0].guiActions(mainWindow))
         if self.getAttack(): ret.extend(self.getAttack().guiActions(mainWindow))
         return ret
-
-    def addResultWidgets(self, widgets):
-        self.resultWidgets.update(widgets)
-        self.resultsParamTree.extend([v for v in widgets.itervalues()])
-        self.setupResultWidgets()
-
-    def setupResultWidgets(self):
-        # [v.setTraceSource(self.project().traceManager()) for v in self.resultWidgets.itervalues() if hasattr(v, "setTraceSource")]
-        [v.setAnalysisSource(self.getAttack()) for v in self.resultWidgets.itervalues() if hasattr(v, "setAnalysisSource")]
 
     def getScope(self):
         return self._scope
@@ -180,7 +168,6 @@ class CWCoreAPI(Parameterized):
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
         self.attackParamTree.replace([self.getAttack()])
         self.sigAttackChanged.emit()
-        self.setupResultWidgets()
 
     def project(self):
         return self._project
@@ -198,7 +185,6 @@ class CWCoreAPI(Parameterized):
         # self.project().addParamTree(self.getTarget())
         self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
         self.project().traceManager().registerAs("Trace Manager")
-        self.setupResultWidgets()
 
     def openProject(self, fname):
         self.newProject()

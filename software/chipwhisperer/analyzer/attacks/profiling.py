@@ -38,7 +38,7 @@ from _generic_parameters import AttackGenericParameters
 
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
-    name = "Profiling"
+    _name = "Profiling"
 
     def __init__(self):
         AttackBaseClass.__init__(self)
@@ -117,27 +117,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def keyround(self):
         return self._keyround
 
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
-
-    def targetBytes(self):
-        return self._targetbytes
-
-    def processKnownKey(self, inpkey):
-        return inpkey
-
-        # if inpkey is None:
-        #    return None
-
-        # if self.findParam('hw_round').value() == 'last':
-        #    return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
-        # else:
-        #    return inpkey
-
     def processTraces(self):
         progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
         with progressBar:
-            self.sigAnalysisStarted.emit()
             self.attack.setReportingInterval(self.getReportingInterval())
 
             #TODO: support start/end point different per byte
@@ -145,9 +127,10 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
             self.attack.getStatistics().clear()
 
+            self.sigAnalysisStarted.emit()
             for itNum in range(1, self.getIterations() + 1):
-                startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-                endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
+                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
+                endingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
 
                 data = []
                 textins = []
@@ -166,20 +149,13 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                     textouts.append(self.traceSource().getTextout(i))
 
                 #self.attack.clearStats()
-                self.attack.setByteList(self.bytesEnabled())
-                self.attack.setStatsReadyCallback(self.statsReady)
+                self.attack.setByteList(self.targetBytes())
+                self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
 
                 #TODO:  pointRange=self.TraceRangeList[1:17]
                 self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
 
         self.sigAnalysisDone.emit()
-
-    def statsReady(self):
-        self.sigAnalysisUpdated.emit()
-        # QApplication.processEvents()
-
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        pass
 
     def getStatistics(self):
         return self.attack.getStatistics()

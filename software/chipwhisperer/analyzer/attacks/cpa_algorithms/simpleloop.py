@@ -37,7 +37,7 @@ class CPASimpleLoop(Parameterized, Plugin):
     This attack does not provide trace-by-trace statistics however, you can only gather results once
     all the traces have been run through the attack.
     """
-    name = "Simple"
+    _name = "Simple"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
         Parameterized.__init__(self, parentParam)

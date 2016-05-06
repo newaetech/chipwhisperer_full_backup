@@ -6,9 +6,9 @@
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
-from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
+from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, GroupParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
@@ -605,4 +605,3 @@ def setValue_Fix(self, value, blockSignal=None):
 #      Useful when hardware reality is != software settings, and need to re-download
 #      things.
 Parameter.setValue = setValue_Fix
-

@@ -30,7 +30,7 @@ from chipwhisperer.common.utils.parameters import Parameterized
 
 
 class AuxiliaryTemplate(Parameterized, Plugin):
-    name = "None"
+    _name = "None"
 
     def __init__(self, parentParam=None):
         Parameterized.__init__(self, parentParam)

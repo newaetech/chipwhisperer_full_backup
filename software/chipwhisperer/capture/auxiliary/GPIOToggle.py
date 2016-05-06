@@ -33,7 +33,7 @@ from chipwhisperer.common.utils import util
 
 
 class GPIOToggle(AuxiliaryTemplate):
-    name = 'GPIO Toggle'
+    _name = 'GPIO Toggle'
 
     def __init__(self, parentParam=None):
         AuxiliaryTemplate.__init__(self, parentParam)

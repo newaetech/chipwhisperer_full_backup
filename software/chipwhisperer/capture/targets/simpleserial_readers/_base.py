@@ -29,7 +29,7 @@ from chipwhisperer.common.utils.parameters import Parameterized
 
 
 class SimpleSerialTemplate(Parameterized, Plugin):
-    name='Simple Serial Reader'
+    _name= 'Simple Serial Reader'
 
     def __init__(self, parentParam):
         Parameterized.__init__(self, parentParam)

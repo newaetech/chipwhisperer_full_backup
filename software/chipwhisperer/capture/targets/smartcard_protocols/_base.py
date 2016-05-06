@@ -27,7 +27,7 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameters import Parameterized
 
 class ProtocolTemplate(Parameterized, Plugin):
-    name='Smartcard Protocol'
+    _name= 'Smartcard Protocol'
 
     def __init__(self, parentParam=None):
         Parameterized.__init__(self, parentParam)

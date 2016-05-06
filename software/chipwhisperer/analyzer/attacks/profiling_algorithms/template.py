@@ -41,9 +41,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
-    paramListUpdated = util.Signal()
-    notifyUser = util.Signal()
-    name='Template Attack'
+    _name= 'Template Attack'
 
     def __init__(self, parent):
         AutoScript.__init__(self)
@@ -59,8 +57,8 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
                 {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
                 {'name':'Read POI', 'type':'action', 'action':self.updateScript},
                 {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
-                                                                         ]},
-                                 ])
+            ]},
+        ])
 
         self.addGroup("generateTemplates")
 

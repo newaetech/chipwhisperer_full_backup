@@ -38,7 +38,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         - the other methods are used by the API to apply the preprocessing filtering
           You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
     """
-    name = "None"
+    _name = "None"
 
     def __init__(self, parentParam=None, traceSource=None):
         self.enabled = True

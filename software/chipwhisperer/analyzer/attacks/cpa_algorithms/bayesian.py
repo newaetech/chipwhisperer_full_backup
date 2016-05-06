@@ -34,7 +34,7 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
     """
     Bayesian CPA, as described in .
     """
-    name = "Bayesian CPA"
+    _name = "Bayesian CPA"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
         Parameterized.__init__(self, parentParam)

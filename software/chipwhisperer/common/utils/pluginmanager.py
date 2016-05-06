@@ -104,9 +104,10 @@ def putInDict(items, instantiate, *args, **kwargs):
         try:
             if instantiate:
                 item = c(*args, **kwargs)
+                resp[item.getName()] = item
             else:
                 item = c
-            resp[item.name] = item
+                resp[item.getClassName()] = item
             loadedItems.append([str(c), True, "", ""])
         except Exception as e:
             print "INFO: Could not instantiate module " + str(c) + ": " + str(e)

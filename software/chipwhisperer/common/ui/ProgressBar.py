@@ -70,7 +70,8 @@ class ProgressBarText(object):
         return self.statusMask
 
     def printStatus(self):
-        print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
+        if self.maximum!=0:
+            print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
 
     def updateStatus(self, currentProgress, textValues = None):
         self.textValues = textValues
@@ -144,15 +145,20 @@ try:
             # if self.getText() == "":
             #     self.textLabel.hide()
 
+        def setStatusMask(self, statusTextMask, textValues = None):
+            ProgressBarText.setStatusMask(self, statusTextMask, textValues)
+            self.updateStatus(self.currentProgress, textValues)
+
         def abort(self, message = None):
             ProgressBarText.abort(self, message)
             if message:
                 QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
 
         def updateStatus(self, currentProgress, textValues = None):
-            super(ProgressBarGUI, self).updateStatus(currentProgress, textValues)
+            ProgressBarText.updateStatus(self, currentProgress, textValues)
             self.statusLabel.setText(self.getStatusText())
-            self.pbar.setValue((self.currentProgress/self.maximum) * 100)
+            if self.maximum!=0:
+                self.pbar.setValue((self.currentProgress/self.maximum) * 100)
             QCoreApplication.processEvents()
 
         def close(self):

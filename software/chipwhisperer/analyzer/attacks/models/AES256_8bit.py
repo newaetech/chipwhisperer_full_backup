@@ -182,6 +182,7 @@ class AES(object):
 
 
 numSubKeys = 32
+permPerSubkey = 256
 
 ##Generate this table with:
 #HW = []

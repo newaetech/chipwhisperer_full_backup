@@ -26,17 +26,18 @@
 
 from PySide.QtCore import *
 from PySide.QtGui import *
-from ._base import ResultsWidgetBase
-from chipwhisperer.common.utils.analysissource import ActiveAnalysisObserver
+from chipwhisperer.analyzer.attacks._base import AttackObserver
+from .base import ResultsBase
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
-    name = 'Results Table'
-    description = "Show all guesses based on sorting output of attack"
+class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
+    _name = 'Results Table'
+    _description = "Show all guesses based on sorting output of attack"
 
-    def __init__(self, parentParam=None, subkeys=16, permPerSubkey=256, useAbs=True):
-        ResultsWidgetBase.__init__(self, parentParam)
-        QTableWidget.__init__(self, permPerSubkey+1, subkeys)
+    def __init__(self, parentParam=None, name=None, useAbs=True):
+        QTableWidget.__init__(self)
+        ResultsBase.__init__(self, parentParam, name)
 
         self.params.addChildren([
             {'name':'Use Absolute Value for Rank', 'type':'list',
@@ -49,48 +50,44 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)
         self.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.setRowCount(permPerSubkey+1)
-        self.numKeys = subkeys
-        self.numPerms = permPerSubkey
-        self.setBytesEnabled([])
         self.useAbs = useAbs
         self.useSingle = False
         self.updateMode = self.findParam('updateMode').value()
+        AttackObserver.__init__(self)
+        self.initUI(True)
 
-        stdCell = QTableWidgetItem(" \n ")
-        stdCell.setFlags(stdCell.flags() ^ Qt.ItemIsEditable)
-        stdCell.setTextAlignment(Qt.AlignCenter)
+    def initUI(self, firstTime=False):
+        # Resize the table according to the attack model (number of subkeys and permutations) if needed
+        if firstTime or self._numPerms() + 1 != self.rowCount() or self._numKeys() != self.columnCount():
+            self.setRowCount(1 + self._numPerms())
+            self.setColumnCount(self._numKeys())
+            for x in range(0, self._numKeys()):
+                self.setHorizontalHeaderItem(x, QTableWidgetItem("%d" % x))
+                cell = QTableWidgetItem("-")
+                cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
+                cell.setTextAlignment(Qt.AlignCenter)
+                cell.setBackground(QBrush(QColor(253, 255, 205)))
+                self.setItem(0, x, cell)
+                for y in range(1, self._numPerms()+1):
+                    cell = QTableWidgetItem(" \n ")
+                    cell.setFlags(cell.flags() ^ Qt.ItemIsEditable)
+                    cell.setTextAlignment(Qt.AlignCenter)
+                    self.setItem(y, x, cell)
 
-        for x in range(0, self.numKeys):
-            self.setHorizontalHeaderItem(x, QTableWidgetItem("%d" % x))
-            cell = stdCell.clone()
-            cell.setText("-")
-            cell.setBackground(QBrush(QColor(253, 255, 205)))
-            self.setItem(0, x, cell)
-            for y in range(1, self.numPerms+1):
-                self.setItem(y, x, stdCell.clone())
-
-        self.resizeRowsToContents()
-
-        self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
-        for y in range(1, self.numPerms+1):
-            self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
-
-        ActiveAnalysisObserver.__init__(self)
+            self.resizeRowsToContents()
+            self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
+            for y in range(1, self._numPerms()+1):
+                self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
 
     def clearTableContents(self):
         for x in range(0, self.columnCount()):
             self.item(0, x).setText("-")
-            for y in range(1, self.numPerms+1):
-                self.item(y, x).setText("")
+            for y in range(1, self.rowCount()):
+                self.item(y, x).setText(" \n ")
 
     def setUpdateMode(self, mode):
         """Set if we update entire table or just PGE on every statistics update"""
         self.updateMode = mode
-
-    def setBytesEnabled(self, enabledbytes):
-        """Set what bytes to include in table"""
-        self.enabledBytes = enabledbytes
 
     def setAbsoluteMode(self, enabled):
         """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
@@ -101,7 +98,7 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         self.useSingle = enabled
 
     def updateTable(self, everything=False):
-        """Resort data and redraw the table. If update-mode is 'pge' we only redraw entire table
+        """Re-sort data and redraw the table. If update-mode is 'pge' we only redraw entire table
         when  everything=True (analysis is completed)."""
         if not self._analysisSource:
             return
@@ -109,17 +106,17 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._analysisSource.knownKey())
         attackStats.findMaximums(useAbsolute=self.useAbs)
-        highlights = self.highlightedKey()
+        highlights = self._highlightedKey()
 
-        for bnum in range(0, self.numKeys):
+        for bnum in range(0, self._numKeys()):
             highlightValue = highlights[bnum] if highlights is not None and bnum < len(highlights) else None
-            if bnum in self.enabledBytes and attackStats.maxValid[bnum]:
+            if bnum in self._analysisSource.targetBytes() and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
 
                 self.item(0, bnum).setText("%d" % attackStats.pge[bnum])
                 if everything:
-                    for j in range(0, self.numPerms):
+                    for j in range(0, self._numPerms()):
                         cell = self.item(j+1, bnum)
                         cell.setText("%02X\n%.4f" % (maxes[j]['hyp'], maxes[j]['value']))
                         if maxes[j]['hyp'] == highlightValue:
@@ -131,14 +128,15 @@ class ResultsTable(QTableWidget, ResultsWidgetBase, ActiveAnalysisObserver):
         self.setVisible(True)
 
     def analysisStarted(self):
+        self.initUI()
         self.clearTableContents()
 
     def analysisUpdated(self):
-        if self._analysisSource:
-            self.setBytesEnabled(self._analysisSource.bytesEnabled())
+        self.initUI()
         self.updateTable(everything=(self.updateMode == 'all'))
 
     def processAnalysis(self):
-        if self._analysisSource:
-            self.setBytesEnabled(self._analysisSource.bytesEnabled())
         self.updateTable(everything=True)
+
+    def getWidget(self):
+        return self

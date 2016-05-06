@@ -4,8 +4,6 @@
 # Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
 #
-# Authors: Colin O'Flynn
-#
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
 #
@@ -27,19 +25,22 @@
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
-from chipwhisperer.common.utils.analysissource import AnalysisSource
+from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver
 
 
 class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
     """Generic Attack Interface"""
-    name = "None"
+    _name = "None"
 
     def __init__(self):
         AnalysisSource.__init__(self)
         PassiveTraceObserver.__init__(self)
 
     def processKnownKey(self, inpkey):
-        """Passes known first-round key (if available, may pass None). Returns key under attack which should be highlighted in graph"""
+        """
+        Passes known first-round key (if available, may pass None).
+        Returns key under attack which should be highlighted in graph
+        """
         return inpkey
 
     def processTraces(self):
@@ -47,44 +48,41 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         # Do the attack
         self.sigAnalysisDone.emit()
 
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        self.sigAnalysisUpdated.emit()
-
     def getStatistics(self):
         return None
-
-    def setTraceStart(self, tnum):
-        self._traceStart = tnum
-
-    def setIterations(self, its):
-        self._iterations = its
-
-    def setTracesPerAttack(self, trace):
-        self._tracePerAttack = trace
-
-    def setReportingInterval(self, ri):
-        self._reportinginterval = ri
 
     def getTraceStart(self):
         return self._traceStart
 
-    def getTraceNum(self):
-        return self._tracePerAttack
+    def setTraceStart(self, tnum):
+        self._traceStart = tnum
 
     def getIterations(self):
         return self._iterations
 
+    def setIterations(self, its):
+        self._iterations = its
+
+    def getTracesPerAttack(self):
+        return self._tracePerAttack
+
+    def setTracesPerAttack(self, trace):
+        self._tracePerAttack = trace
+
     def getReportingInterval(self):
         return self._reportinginterval
 
-    def setPointRange(self, rng):
-        self._pointRange = rng
+    def setReportingInterval(self, ri):
+        self._reportinginterval = ri
 
     def getPointRange(self, bnum=None):
         if isinstance(self._pointRange, list) and bnum is not None:
             return self._pointRange[bnum]
         else:
             return self._pointRange
+
+    def setPointRange(self, rng):
+        self._pointRange = rng
 
     def knownKey(self):
         """Get the known key via attack"""
@@ -93,3 +91,34 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         except Exception as e:
             print "WARNING: Failed to find KnownKey, error = %s" % str(e)
             return None
+
+    def setTargetBytes(self, blist):
+        self._targetbytes = blist
+
+    def targetBytes(self):
+        return self._targetbytes
+
+
+class AttackObserver(AnalysisObserver):
+    """"It is an AnalysisObserver with methods to get information from attacks"""
+
+    def setAnalysisSource(self, analysisSource):
+        if issubclass(analysisSource.__class__, AttackBaseClass):
+            AnalysisObserver.setAnalysisSource(self, analysisSource)
+        else:
+            AnalysisObserver.setAnalysisSource(self, None)
+
+    def _highlightedKey(self):
+        return self._analysisSource.knownKey()
+
+    def _numPerms(self):
+        try:
+            return len(self._analysisSource.getStatistics().diffs[0])
+        except Exception:
+            return 0
+
+    def _numKeys(self):
+        try:
+            return len(self._analysisSource.getStatistics().diffs)
+        except Exception:
+            return 0
