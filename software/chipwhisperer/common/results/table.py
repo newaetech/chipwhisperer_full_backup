@@ -123,6 +123,8 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                             cell.setForeground(QBrush(Qt.red))
                         else:
                             cell.setForeground(QBrush(Qt.black))
+                        tmp = 255*maxes[j]['value']
+                        cell.setBackground(QColor(tmp,tmp,255))
             else:
                 self.setColumnHidden(bnum, True)
         self.setVisible(True)
