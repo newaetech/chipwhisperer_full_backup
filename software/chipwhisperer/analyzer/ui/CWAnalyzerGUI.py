@@ -84,6 +84,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
 
         # Load all ActiveTraceObservers
+        self.windowMenu.addSeparator()
         for k, v in ResultsBase.getClasses().iteritems():
             ResultsBase.createNew(k)
         self.tabifyDocks(self.resultDocks)

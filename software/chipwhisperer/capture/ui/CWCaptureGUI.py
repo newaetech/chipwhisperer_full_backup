@@ -58,6 +58,7 @@ class CWCaptureGUI(CWMainGUI):
         self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
 
         # Load all ActiveTraceObservers
+        self.windowMenu.addSeparator()
         for k, v in ResultsBase.getClasses().iteritems():
             if issubclass(v, ActiveTraceObserver):
                 ResultsBase.createNew(k)

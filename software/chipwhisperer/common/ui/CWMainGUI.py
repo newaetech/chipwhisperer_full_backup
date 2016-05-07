@@ -82,6 +82,7 @@ class CWMainGUI(QMainWindow):
 
         self.loadExtraModules()
         self.addToolMenuItems()
+        self.toolMenu.addSeparator()
         self.addSettingsDocks()
         self.restoreSettings()
 
@@ -282,17 +283,16 @@ class CWMainGUI(QMainWindow):
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.scripts", False, False, self))
 
         self.toolMenu = self.menuBar().addMenu("&Tools")
-        self.toolMenu.addSeparator()
 
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpMenu.addAction(QAction('&Save Settings', self, statusTip='Save all settings', triggered=self.saveSettings))
         self.helpMenu.addAction(QAction('&Restore Settings', self, statusTip='Restore all settings to previous saved state', triggered=self.restoreSettings))
-        self.helpMenu.addAction(QAction('&Reset Settings and Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
+        self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
-        self.helpMenu.addAction(QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog))
+        self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
 
     def addToolMenuItems(self):
         pass
