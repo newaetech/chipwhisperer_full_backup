@@ -39,25 +39,26 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
         QTableWidget.__init__(self)
         ResultsBase.__init__(self, parentParam, name)
 
+        self.colorGradient = True
         self.params.addChildren([
-            {'name':'Use Absolute Value for Rank', 'type':'list',
-            'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":True, "False":False},
-            'value':"Default", 'set':self.setAbsoluteMode},
+            {'name':'Use Absolute Value for Rank', 'key':'useAbs', 'type':'list',
+            'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":lambda: True, "False":lambda: False},
+            'value':"Default"},
             {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
             {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
+            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
         ])
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)
         self.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.useAbs = useAbs
         self.useSingle = False
         self.updateMode = self.findParam('updateMode').value()
         AttackObserver.__init__(self)
         self.initUI(True)
 
     def initUI(self, firstTime=False):
-        # Resize the table according to the attack model (number of subkeys and permutations) if needed
+        """Resize the table according to the attack model (number of subkeys and permutations) if needed"""
         if firstTime or self._maxNumPerms() + 1 != self.rowCount() or self._numKeys() != self.columnCount():
             self.setRowCount(1 + self._maxNumPerms())
             self.setColumnCount(self._numKeys())
@@ -84,6 +85,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
             self.item(0, x).setText("-")
             for y in range(1, self.rowCount()):
                 self.item(y, x).setText(" \n ")
+                self.item(y, x).setBackground(Qt.white)
 
     def setUpdateMode(self, mode):
         """Set if we update entire table or just PGE on every statistics update"""
@@ -92,6 +94,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     def setAbsoluteMode(self, enabled):
         """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
         self.useAbs = enabled
+        self.update()
 
     def setSingleMode(self, enabled):
         """Single mode uses the same point across all traces, not useful normally"""
@@ -105,7 +108,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._analysisSource.knownKey())
-        attackStats.findMaximums(useAbsolute=self.useAbs)
+        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()())
         highlights = self._highlightedKey()
 
         for bnum in range(0, self._numKeys()):
@@ -123,11 +126,15 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                             cell.setForeground(QBrush(Qt.red))
                         else:
                             cell.setForeground(QBrush(Qt.black))
-                        tmp = 255*maxes[j]['value']
-                        cell.setBackground(QColor(tmp,tmp,255))
+                        color = 255*maxes[j]['value'] if self.colorGradient else 255
+                        cell.setBackground(QColor(color, color, color))
             else:
                 self.setColumnHidden(bnum, True)
         self.setVisible(True)
+
+    def setColorGradient(self, value):
+        self.colorGradient = value
+        self.updateTable()
 
     def analysisStarted(self):
         self.initUI()

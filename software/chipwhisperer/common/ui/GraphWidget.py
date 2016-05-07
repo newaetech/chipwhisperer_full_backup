@@ -43,7 +43,7 @@ class ColorDialog(QtFixes.QDialog):
         if auto is None:
             auto = True
 
-        self.cbAuto = QCheckBox("Auto-Increment Persistant Colours")
+        self.cbAuto = QCheckBox("Auto-Increment Persistent Colours")
         self.cbAuto.setChecked(auto)
         
         layout.addWidget(self.cbAuto)
@@ -102,6 +102,7 @@ class GraphWidget(QWidget):
         self.colorDialog = ColorDialog()
 
         self.pw = pg.PlotWidget(name="Power Trace View")
+        self.pw.plotItem.vb.scene().sigMouseMoved.connect(self.mouseMoved)
         self.pw.setLabel('top', 'Power Trace View')
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
@@ -110,6 +111,11 @@ class GraphWidget(QWidget):
         vb.setMouseMode(vb.RectMode)
         vb.sigStateChanged.connect(self.VBStateChanged)
         vb.sigXRangeChanged.connect(self.VBXRangeChanged)
+
+        self.vLine = pg.InfiniteLine(angle=90, movable=False)
+        self.hLine = pg.InfiniteLine(angle=0, movable=False)
+        vb.addItem(self.vLine, ignoreBounds=True)
+        vb.addItem(self.hLine, ignoreBounds=True)
 
         ###Toolbar
         xLockedAction = QAction(QIcon(self.imagepath+'xlock.png'), 'Lock X Axis', self)
@@ -139,7 +145,26 @@ class GraphWidget(QWidget):
         
         clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
         clear.triggered.connect(self.clearPushed)
-        
+
+        crossHair = QAction("+", self)
+        crossHair.setCheckable(True)
+        crossHair.setChecked(True)
+        crossHair.triggered.connect(lambda: self.setCrossHair(crossHair.isChecked()))
+
+        grid = QAction("#", self)
+        # grid = QAction(QIcon(self.imagepath+'grid.png'), 'Show Grid', self)
+        grid.setCheckable(True)
+        grid.triggered.connect(lambda: self.pw.showGrid(grid.isChecked(), grid.isChecked(), 0.1))
+
+        mouseMode = QAction("M", self)
+        mouseMode.setCheckable(True)
+        mouseMode.triggered.connect(lambda: vb.setMouseMode(
+            pg.ViewBox.PanMode if mouseMode.isChecked() else pg.ViewBox.RectMode))
+
+        help = QAction("?", self)
+        help.triggered.connect(lambda: QMessageBox.information(self, "Help",
+                                                               "Right click the graph for more options."))
+
         self.GraphToolbar = QToolBar('Graph Tools')
         self.GraphToolbar.addAction(xLockedAction)
         self.GraphToolbar.addAction(yLockedAction)
@@ -149,6 +174,14 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(self.actionPersistance)
         self.GraphToolbar.addAction(setColour)
         self.GraphToolbar.addAction(clear)
+        self.GraphToolbar.addAction(crossHair)
+        self.GraphToolbar.addAction(grid)
+        self.GraphToolbar.addAction(mouseMode)
+        self.GraphToolbar.addAction(help)
+        self.GraphToolbar.addSeparator()
+
+        self.pos = QLabel("")
+        self.GraphToolbar.addWidget(self.pos)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
@@ -284,7 +317,6 @@ class GraphWidget(QWidget):
         # TODO: This was commented out, why?
         self.checkPersistantItems()
 
-
     def clearPushed(self):
         """Clear display"""
         self.pw.clear()
@@ -320,3 +352,14 @@ class GraphWidget(QWidget):
 
         if yaxis:
             self.pw.setLabel('left', yaxis)
+
+    def setCrossHair(self, enabled):
+        self.vLine.setVisible(enabled)
+        self.hLine.setVisible(enabled)
+
+    def mouseMoved(self, mousePoint):
+        if self.pw.plotItem.vb.sceneBoundingRect().contains(mousePoint):
+            pos = self.pw.plotItem.vb.mapSceneToView(mousePoint)
+            self.pos.setText("Pos: (%f, %f)" % (pos.x(), pos.y()))
+            self.vLine.setPos(pos.x())
+            self.hLine.setPos(pos.y())

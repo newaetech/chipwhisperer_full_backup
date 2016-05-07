@@ -83,11 +83,6 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
             byteNumAllOff.triggered.connect(partial(self.setByteAll, True))
             self.bselection.addAction(byteNumAllOff)
 
-            showGrid = QAction('Show Grid', self)
-            showGrid.setCheckable(True)
-            showGrid.triggered.connect(lambda: self.pw.showGrid(showGrid.isChecked(), showGrid.isChecked(), 0.1))
-            self.bselection.addAction(showGrid)
-
     def analysisStarted(self):
         self.initUI()
         for i in range(0, self._numKeys()):
