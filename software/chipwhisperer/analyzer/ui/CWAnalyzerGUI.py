@@ -86,6 +86,7 @@ class CWAnalyzerGUI(CWMainGUI):
         # Load all ActiveTraceObservers
         for k, v in ResultsBase.getClasses().iteritems():
             ResultsBase.createNew(k)
+        self.tabifyDocks(self.resultDocks)
 
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
                           self.settingsPostProcessingDock, self.settingsResultsDock])

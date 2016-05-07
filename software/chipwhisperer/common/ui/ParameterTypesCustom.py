@@ -102,7 +102,11 @@ class RangeParameterItem(WidgetParameterItem):
         defs.update(opts)
 
         wlow = SpinBox()
+        wlow.setMaximumWidth(80)
+        wlow.setAlignment(QtCore.Qt.AlignRight)
         whigh = SpinBox()
+        whigh.setMaximumWidth(80)
+        whigh.setAlignment(QtCore.Qt.AlignRight)
 
         # The following required for pyqtgraph > 0.9.10
         for k in defs:
@@ -122,11 +126,14 @@ class RangeParameterItem(WidgetParameterItem):
         wlow.sigValueChanging.connect(self.svLowChanging)
 
         l = QtGui.QHBoxLayout()
+        l.setAlignment(QtCore.Qt.AlignLeft)
         l.setContentsMargins(0,0,0,0)
-
+        l.addWidget(QtGui.QLabel("("))
         l.addWidget(wlow)
-        l.addWidget(QtGui.QLabel(" : "))
+        l.addWidget(QtGui.QLabel(","))
         l.addWidget(whigh)
+        l.addWidget(QtGui.QLabel(")"))
+        l.addStretch()
 
         self.wlow = wlow
         self.whigh = whigh
@@ -179,11 +186,12 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.graphBtn.setFixedHeight(20)
         self.graphBtn.setIcon(graphIcon)
         self.graphBtn.setCheckable(True)
-        self.graphBtn.clicked[bool].connect(self.buttonPressed)
+        self.graphBtn.clicked.connect(self.buttonPressed)
 
         l = self.makeLayout()
         l.addWidget(self.graphBtn)
         l.addWidget(QtGui.QLabel("  "))
+
         w = QtGui.QWidget()
         w.setLayout(l)
         w.sigChanged = self.sigs.sigValueChanged
@@ -511,18 +519,13 @@ class SpinBoxWithSet(Parameter):
 registerParameterType('int', SpinBoxWithSet, override=True)
 
 
-class QLabelExpanding(QtGui.QLabel):
-    def setValueExpand(self, txt):
-        self.setText(txt)
-        self.adjustSize()
-
 class LabelParameterItem(WidgetParameterItem):
 
     """ Class used for description of an item. Spans both columns. """
 
     def __init__(self, param, depth):
         ParameterItem.__init__(self, param, depth)
-
+        self.setFirstColumnSpanned(True)
         self.hideWidget = True  ## hide edit widget, replace with label when not selected
         ## set this to False to keep the editor widget always visible
 
@@ -536,15 +539,18 @@ class LabelParameterItem(WidgetParameterItem):
             w.setToolTip(opts['tip'])
 
         self.displayLabel = QtGui.QLabel()
+        self.displayLabel.hide()
+
+        self.defaultBtn = QtGui.QPushButton("")
+        self.defaultBtn.hide()
 
         layout = QtGui.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(w)
         layout.addWidget(self.displayLabel)
+        layout.addWidget(self.defaultBtn)
         self.layoutWidget = QtGui.QWidget()
         self.layoutWidget.setLayout(layout)
-
-        self.defaultBtn = QtGui.QPushButton("")
 
         if w.sigChanged is not None:
             w.sigChanged.connect(self.widgetValueChanged)
@@ -560,12 +566,12 @@ class LabelParameterItem(WidgetParameterItem):
             self.widgetValueChanged()
 
     def makeWidget(self):
-        self.textBox = QLabelExpanding()
+        self.textBox = QtGui.QLabel()
         self.textBox.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
         self.textBox.setWordWrap(True)
         self.textBox.setStyleSheet("QLabel { color : gray; }")
         self.textBox.value = lambda: str(self.textBox.text())
-        self.textBox.setValue = self.textBox.setValueExpand
+        self.textBox.setValue = self.textBox.setText
         self.textBox.sigChanged = self.textBox.linkActivated
         return self.textBox
 

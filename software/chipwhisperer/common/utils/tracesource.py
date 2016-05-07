@@ -37,12 +37,9 @@ class TraceSource(object):
     registeredObjects = util.DictType()
     sigRegisteredObjectsChanged = util.Signal()
 
-    def __init__(self, name):
+    def __init__(self, name="Unknown"):
         self.sigTracesChanged = util.Signal()
         self.name = name
-
-    def getName(self):
-        return self.name
 
     def getTrace(self, n):
         return None

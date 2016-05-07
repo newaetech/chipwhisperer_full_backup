@@ -57,7 +57,6 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
     def _setTraceSource(self, newTraceSource):
         ActiveTraceObserver._setTraceSource(self, newTraceSource)
-        self.setWindowTitle(self.getName() + " - " + self._traceSource.getName())
 
     def resetTraceLimits(self):
         if self._traceSource:

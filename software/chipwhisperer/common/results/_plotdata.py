@@ -227,6 +227,8 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
             elif drawtype.startswith('detail'):
                 for i in range(0, self._numPerms(bnum)):
                     self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
+                    if progress.wasAborted():
+                        break
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top
