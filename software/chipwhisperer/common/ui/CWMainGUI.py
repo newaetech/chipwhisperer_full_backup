@@ -22,8 +22,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-from chipwhisperer.common.utils.parameters import CWParameterTree
-
 __author__ = "Colin O'Flynn"
 
 #We always import PySide first, to force usage of PySide over PyQt
@@ -36,6 +34,7 @@ except ImportError:
 
 try:
     import pyqtgraph
+    import pyqtgraph.console
     pyqtgraph.setConfigOption('background', 'w')
     pyqtgraph.setConfigOption('foreground', 'k')
 except ImportError:
@@ -56,7 +55,7 @@ from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import pluginmanager, util
 from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.parameters import CWParameterTree
 
 
 class CWMainGUI(QMainWindow):
@@ -160,7 +159,10 @@ class CWMainGUI(QMainWindow):
     
     def addPythonConsole(self, name="Python Console", visible=False):
         """Add a python console, inside which you can access the Python interpreter"""
-        wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
+        tmp = locals()
+        tmp.update({'self':self})
+        wid = pyqtgraph.console.ConsoleWidget(namespace=tmp, text="")
+        # wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
     def reloadGuiActions(self):
@@ -177,22 +179,24 @@ class CWMainGUI(QMainWindow):
         for act in self._ToolMenuItems:
             self.toolMenu.addAction(act)
 
-    def clearAllSettings(self):
-        """Clear all saved QSettings(), such as window location etc"""
-        QSettings().clear()
-
     def reset(self):
-        self.clearAllSettings()
-        sys.exit()
+        """Clear all saved QSettings(), such as window location etc and exit"""
+        QSettings().clear()
+        self.dontSaveGeometry = True
+        self.close()
 
     def restoreSettings(self):
         self.restoreGeometry(QSettings().value("geometry"))
         self.restoreState(QSettings().value("windowState"))
 
-    def closeEvent(self, event):
-        """Called when window is closed, attempts to save state/geometry"""
+    def saveSettings(self):
         QSettings().setValue("geometry", self.saveGeometry())
         QSettings().setValue("windowState", self.saveState())
+
+    def closeEvent(self, event):
+        """Called when window is closed, attempts to save state/geometry"""
+        if not (hasattr(self, "dontSaveGeometry") and self.dontSaveGeometry):
+            self.saveSettings()
 
         if self.okToContinue():
             QMainWindow.closeEvent(self, event)
@@ -283,7 +287,9 @@ class CWMainGUI(QMainWindow):
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpMenu.addAction(QAction('&Clear All Settings', self, statusTip='Restore All Settings to Default Values', triggered=self.clearAllSettings))
+        self.helpMenu.addAction(QAction('&Save Settings', self, statusTip='Save all settings', triggered=self.saveSettings))
+        self.helpMenu.addAction(QAction('&Restore Settings', self, statusTip='Restore all settings to previous saved state', triggered=self.restoreSettings))
+        self.helpMenu.addAction(QAction('&Reset Settings and Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog))
