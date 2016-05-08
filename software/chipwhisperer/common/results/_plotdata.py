@@ -31,6 +31,7 @@ from chipwhisperer.analyzer.attacks._base import AttackObserver
 from .base import ResultsBase
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils.timer import Timer
+import pyqtgraph as pg
 
 
 class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
@@ -159,6 +160,8 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         self.setupHighlights()
         drawtype = self.findParam('drawtype').value().lower()
         pvalue = 0
+        top = bottom = None
+        xdataptr = None
 
         for bnum in enabledBytes:
             if not xdatalst[bnum] or len(xdatalst[bnum])==0:
@@ -185,16 +188,16 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 if self.highlightTop:
                     newdiff = np.array(ydataptr)
                     for j in self.highlights[bnum]:
-                        newdiff[j] = 0
+                        newdiff = np.delete(newdiff, j, 0)
                 else:
                     newdiff = ydataptr
 
-                maxlimit = np.amax(newdiff, 0)
-                minlimit = np.amin(newdiff, 0)
-                self.pw.plot(xdataptr, maxlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
-                if len(pointargsg) > 0:
-                    pointargsg["symbol"] = 'd'
-                self.pw.plot(xdataptr, minlimit, pen='g', fillLevel=0.0, brush='g', **pointargsg)
+                if top is not None:
+                    top = np.maximum.reduce([top, np.amax(newdiff, 0)])
+                    bottom = np.minimum.reduce([bottom, np.amin(newdiff, 0)])
+                else:
+                    top = np.amax(newdiff, 0)
+                    bottom = np.amin(newdiff, 0)
 
             elif drawtype.startswith('norm'):
                 tlisttst = []
@@ -221,39 +224,41 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
 
             elif drawtype.startswith('detail'):
                 for i in range(0, self._numPerms(bnum)):
-                    self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
+                    p = self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
+                    p.curve.setClickable(True)
+                    p.id = str(bnum) + ":" + str(i)
+                    p.sigClicked.connect(self.selectTrace)
                     if progress.wasAborted():
                         break
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top
-                for bnum in enabledBytes:
+                pointargsr = {}
+                if not hasattr(ydataptr[0], '__iter__'):
+                    ydataptr = [[t] for t in ydataptr]
+                    pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
-                    if bnum != -1:
-                        ydataptr = ydatalst[bnum]
-                        xdataptr = xdatalst[bnum]
+                for i in self.highlights[bnum]:
+                    penclr = self._highlightColour(self.highlights[bnum].index(i))
+                    p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
+                    p.setZValue(+1)
+                    p.curve.setClickable(True)
+                    p.id = str(bnum)
+                    p.sigClicked.connect(self.selectTrace)
 
-                    else:
-                        ydataptr = ydatalst
-                        xdataptr = xdatalst
-
-                    pointargsr = {}
-
-                    if not hasattr(ydataptr[0], '__iter__'):
-                        ydataptr = [[t] for t in ydataptr]
-                        pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
-
-                    for i in self.highlights[bnum]:
-                        penclr = self._highlightColour(self.highlights[bnum].index(i))
-                        p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
-                        p.curve.setClickable(True)
-                        p.id = str(bnum) + ":" + str(i)
-                        p.sigClicked.connect(self.selectTrace)
-
-                    pvalue += 1
+            pvalue += 1
             progress.updateStatus(pvalue)
             if progress.wasAborted():
                 break
+
+        if drawtype.startswith('fast') and xdataptr:
+            p1 = self.pw.plot(x=xdataptr, y=top)
+            p1.setZValue(-1)
+            p2 = self.pw.plot(x=xdataptr, y=bottom)
+            p2.setZValue(-1)
+            p3 = pg.FillBetweenItem(p1, p2, brush='g')
+            p3.setZValue(-1)
+            self.pw.addItem(p3)
 
     def processAnalysis(self):
         self.redrawPlot()

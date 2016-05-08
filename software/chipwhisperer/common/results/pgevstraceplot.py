@@ -147,14 +147,5 @@ class PGEVsTrace(AttackResultPlot, Plugin):
                     p.curve.setClickable(True)
                     p.id = str(bnum)
                     p.sigClicked.connect(self.selectTrace)
-
-                # penclr = self._highlightColour( self.highlights[bnum].index(i) )
-                #                   self.pw.plot(prange, diffs[i], pen=penclr )
-
-                #if self.highlightTop:
-                #    #Plot the highlighted byte(s) on top
-                #    for bnum in range(0, self._numKeys()):
-                #        prange = self.attack.getPointRange(bnum)
-                #        prange = range(prange[0], prange[1])
         except StopIteration:
             pass

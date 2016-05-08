@@ -77,7 +77,7 @@ class ProgressBarText(object):
         self.textValues = textValues
         self.currentProgress = currentProgress
         if self.printAll or self.currentProgress == 0 or self.currentProgress == self.maximum\
-                or self.currentProgress/self.maximum - self.last/self.maximum >= 0.1:
+                or self.currentProgress/self.maximum - self.last/self.maximum >= 0.2:
             self.last = currentProgress
             self.printStatus()
 
