@@ -188,7 +188,8 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 if self.highlightTop:
                     newdiff = np.array(ydataptr)
                     for j in self.highlights[bnum]:
-                        newdiff = np.delete(newdiff, j, 0)
+                        if j:
+                            newdiff = np.delete(newdiff, j, 0)
                 else:
                     newdiff = ydataptr
 
@@ -239,12 +240,13 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
                 for i in self.highlights[bnum]:
-                    penclr = self._highlightColour(self.highlights[bnum].index(i))
-                    p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
-                    p.setZValue(+1)
-                    p.curve.setClickable(True)
-                    p.id = str(bnum)
-                    p.sigClicked.connect(self.selectTrace)
+                    if i:
+                        penclr = self._highlightColour(self.highlights[bnum].index(i))
+                        p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
+                        p.setZValue(+1)
+                        p.curve.setClickable(True)
+                        p.id = str(bnum)
+                        p.sigClicked.connect(self.selectTrace)
 
             pvalue += 1
             progress.updateStatus(pvalue)
