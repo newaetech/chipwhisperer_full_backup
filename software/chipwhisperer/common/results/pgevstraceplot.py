@@ -29,7 +29,6 @@ from PySide.QtGui import *
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
-
 class PGEVsTrace(AttackResultPlot, Plugin):
     _name = "PGE vs Trace Plot"
     _description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
@@ -144,7 +143,10 @@ class PGEVsTrace(AttackResultPlot, Plugin):
                         if plist[bnum]['pge'] is not None:
                             trace.append(tnum)
                             pge.append(plist[bnum]['pge'])
-                    self.pw.plot(trace, pge, pen='r')
+                    p = self.pw.plot(trace, pge, pen='r')
+                    p.curve.setClickable(True)
+                    p.id = str(bnum)
+                    p.sigClicked.connect(self.selectTrace)
 
                 # penclr = self._highlightColour( self.highlights[bnum].index(i) )
                 #                   self.pw.plot(prange, diffs[i], pen=penclr )

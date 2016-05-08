@@ -243,10 +243,12 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                         ydataptr = [[t] for t in ydataptr]
                         pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
-                    for i in range(0, self._numPerms(bnum)):
-                        if i in self.highlights[bnum]:
-                            penclr = self._highlightColour(self.highlights[bnum].index(i))
-                            self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
+                    for i in self.highlights[bnum]:
+                        penclr = self._highlightColour(self.highlights[bnum].index(i))
+                        p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
+                        p.curve.setClickable(True)
+                        p.id = str(bnum) + ":" + str(i)
+                        p.sigClicked.connect(self.selectTrace)
 
                     pvalue += 1
             progress.updateStatus(pvalue)

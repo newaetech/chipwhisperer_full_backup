@@ -95,6 +95,8 @@ class GraphWidget(QWidget):
         pg.setConfigOption('foreground', 'k')
         
         self.imagepath = ":/images/"
+        self.selectedTrace = None
+        self.selectedTraceId = None
 
         self.persistantItems = []
         self._customWidgets = []
@@ -180,6 +182,8 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(help)
         self.GraphToolbar.addSeparator()
 
+        self.selection = QLabel("")
+        self.GraphToolbar.addWidget(self.selection)
         self.pos = QLabel("")
         self.GraphToolbar.addWidget(self.pos)
 
@@ -309,13 +313,16 @@ class GraphWidget(QWidget):
         if pen is None:
             pen = pg.mkPen(self.acolor)
 
-        self.pw.plot(xaxis, trace, pen=pen)
+        p = self.pw.plot(xaxis, trace, pen=pen)
+        p.curve.setClickable(True)
+        p.sigClicked.connect(self.selectTrace)
 
         if ghostTrace is False:
             self.dataChanged.emit(trace, startoffset)
 
         # TODO: This was commented out, why?
         self.checkPersistantItems()
+        return p
 
     def clearPushed(self):
         """Clear display"""
@@ -357,9 +364,20 @@ class GraphWidget(QWidget):
         self.vLine.setVisible(enabled)
         self.hLine.setVisible(enabled)
 
+    def selectTrace(self, trace):
+        if self.selectedTrace:
+            self.selectedTrace.setShadowPen(None)
+        if self.selectedTrace == trace:  # Deselects if the trace was already selected
+            self.selectedTrace = None
+            self.selection.setText("")
+        else:
+            self.selectedTrace = trace
+            self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=2, style=Qt.DashLine))
+            self.selection.setText("Selected Trace: %s" % (self.selectedTrace.id if hasattr(self.selectedTrace, "id") else ""))
+
     def mouseMoved(self, mousePoint):
         if self.pw.plotItem.vb.sceneBoundingRect().contains(mousePoint):
             pos = self.pw.plotItem.vb.mapSceneToView(mousePoint)
-            self.pos.setText("Pos: (%f, %f)" % (pos.x(), pos.y()))
+            self.pos.setText("Cursor Position: (%f, %f)" % (pos.x(), pos.y()))
             self.vLine.setPos(pos.x())
             self.hLine.setPos(pos.y())
