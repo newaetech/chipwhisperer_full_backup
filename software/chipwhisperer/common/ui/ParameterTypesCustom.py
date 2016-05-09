@@ -186,7 +186,7 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.graphBtn.setFixedHeight(20)
         self.graphBtn.setIcon(graphIcon)
         self.graphBtn.setCheckable(True)
-        self.graphBtn.clicked.connect(self.buttonPressed)
+        self.graphBtn.clicked[bool].connect(self.buttonPressed)
 
         l = self.makeLayout()
         l.addWidget(self.graphBtn)
