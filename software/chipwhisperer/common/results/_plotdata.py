@@ -229,8 +229,6 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     p.curve.setClickable(True)
                     p.id = str(bnum) + ":" + str(i)
                     p.sigClicked.connect(self.selectTrace)
-                    if progress.wasAborted():
-                        break
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top
@@ -245,7 +243,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                         p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
                         p.setZValue(+1)
                         p.curve.setClickable(True)
-                        p.id = str(bnum)
+                        p.id = str(bnum) + ":" + str(i)
                         p.sigClicked.connect(self.selectTrace)
 
             pvalue += 1

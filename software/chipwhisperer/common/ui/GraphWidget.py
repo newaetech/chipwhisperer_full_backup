@@ -372,7 +372,7 @@ class GraphWidget(QWidget):
             self.selection.setText("")
         else:
             self.selectedTrace = trace
-            self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=2, style=Qt.DashLine))
+            self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=3, style=Qt.DashLine))
             self.selection.setText("Selected Trace: %s" % (self.selectedTrace.id if hasattr(self.selectedTrace, "id") else ""))
 
     def mouseMoved(self, mousePoint):
