@@ -148,24 +148,23 @@ class GraphWidget(QWidget):
         clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
         clear.triggered.connect(self.clearPushed)
 
-        crossHair = QAction("+", self)
+        crossHair = QAction(QIcon(self.imagepath+'crosshair.png'), 'Show Crosshairs', self)
         crossHair.setCheckable(True)
         crossHair.setChecked(True)
         crossHair.triggered.connect(lambda: self.setCrossHair(crossHair.isChecked()))
 
-        grid = QAction("#", self)
-        # grid = QAction(QIcon(self.imagepath+'grid.png'), 'Show Grid', self)
+        grid = QAction(QIcon(self.imagepath+'grid.png'), 'Show Grid', self)
         grid.setCheckable(True)
         grid.triggered.connect(lambda: self.pw.showGrid(grid.isChecked(), grid.isChecked(), 0.1))
 
-        mouseMode = QAction("M", self)
+        mouseMode = QAction(QIcon(self.imagepath+'hand.png'), 'Move', self)
         mouseMode.setCheckable(True)
         mouseMode.triggered.connect(lambda: vb.setMouseMode(
             pg.ViewBox.PanMode if mouseMode.isChecked() else pg.ViewBox.RectMode))
 
-        help = QAction("?", self)
+        help = QAction(QIcon(self.imagepath+'help.png'), 'Help', self)
         help.triggered.connect(lambda: QMessageBox.information(self, "Help",
-                                                               "Right click the graph for more options."))
+                                "Right click the graph and check the Result Settings for more options."))
 
         self.GraphToolbar = QToolBar('Graph Tools')
         self.GraphToolbar.addAction(xLockedAction)
@@ -181,10 +180,10 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(mouseMode)
         self.GraphToolbar.addAction(help)
         self.GraphToolbar.addSeparator()
-
-        self.selection = QLabel("")
+        self.selection = QLabel("Selected Trace: None")
         self.GraphToolbar.addWidget(self.selection)
-        self.pos = QLabel("")
+        self.GraphToolbar.addSeparator()
+        self.pos = QLabel("Position: (-, -)")
         self.GraphToolbar.addWidget(self.pos)
 
         layout = QVBoxLayout()
@@ -283,7 +282,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
-    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = ""):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
@@ -314,8 +313,7 @@ class GraphWidget(QWidget):
             pen = pg.mkPen(self.acolor)
 
         p = self.pw.plot(xaxis, trace, pen=pen)
-        p.curve.setClickable(True)
-        p.sigClicked.connect(self.selectTrace)
+        self.setupPlot(p, 0, True, idString)
 
         if ghostTrace is False:
             self.dataChanged.emit(trace, startoffset)
@@ -369,7 +367,7 @@ class GraphWidget(QWidget):
             self.selectedTrace.setShadowPen(None)
         if self.selectedTrace == trace:  # Deselects if the trace was already selected
             self.selectedTrace = None
-            self.selection.setText("")
+            self.selection.setText("Selected Trace: None")
         else:
             self.selectedTrace = trace
             self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=3, style=Qt.DashLine))
@@ -378,6 +376,14 @@ class GraphWidget(QWidget):
     def mouseMoved(self, mousePoint):
         if self.pw.plotItem.vb.sceneBoundingRect().contains(mousePoint):
             pos = self.pw.plotItem.vb.mapSceneToView(mousePoint)
-            self.pos.setText("Cursor Position: (%f, %f)" % (pos.x(), pos.y()))
+            self.pos.setText("Position: (%f, %f)" % (pos.x(), pos.y()))
             self.vLine.setPos(pos.x())
             self.hLine.setPos(pos.y())
+
+    def setupPlot(self, plot, zOrdering, clickable, id):
+        plot.setZValue(zOrdering)
+        plot.id = id
+        if clickable:
+            plot.curve.setClickable(clickable)
+            plot.sigClicked.connect(self.selectTrace)
+        return plot

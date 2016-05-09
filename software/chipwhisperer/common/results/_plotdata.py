@@ -220,15 +220,11 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     else:
                         newmax = ydataptr[i]
                     maxlisttst.extend(newmax)
-
-                self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg)
+                self.setupPlot(self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg), 0, True, str(bnum) + ":All")
 
             elif drawtype.startswith('detail'):
                 for i in range(0, self._numPerms(bnum)):
-                    p = self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg)
-                    p.curve.setClickable(True)
-                    p.id = str(bnum) + ":" + str(i)
-                    p.sigClicked.connect(self.selectTrace)
+                    self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg), 0, True, str(bnum) + ":%02X" % i)
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top
@@ -240,22 +236,15 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 for i in self.highlights[bnum]:
                     if i:
                         penclr = self._highlightColour(self.highlights[bnum].index(i))
-                        p = self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr)
-                        p.setZValue(+1)
-                        p.curve.setClickable(True)
-                        p.id = str(bnum) + ":" + str(i)
-                        p.sigClicked.connect(self.selectTrace)
-
+                        self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr), 1, True, str(bnum) + ":%02X" % i)
             pvalue += 1
             progress.updateStatus(pvalue)
             if progress.wasAborted():
                 break
 
         if drawtype.startswith('fast') and xdataptr:
-            p1 = self.pw.plot(x=xdataptr, y=top)
-            p1.setZValue(-1)
-            p2 = self.pw.plot(x=xdataptr, y=bottom)
-            p2.setZValue(-1)
+            p1 = self.setupPlot(self.pw.plot(x=xdataptr, y=top), -1, True, "Maxes")
+            p2 = self.setupPlot(self.pw.plot(x=xdataptr, y=bottom), -1, True, "Mins")
             p3 = pg.FillBetweenItem(p1, p2, brush='g')
             p3.setZValue(-1)
             self.pw.addItem(p3)

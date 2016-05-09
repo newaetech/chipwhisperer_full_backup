@@ -92,7 +92,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             trace = self._traceSource.getTrace(tnum)
             if trace is not None:
                 ttotal += 1
-                self.passTrace(trace[pstart:pend+1], pstart, self._traceSource.offset()).id = str(tnum)
+                self.passTrace(trace[pstart:pend+1], pstart, self._traceSource.offset(), idString = str(tnum))
 
                 if self.redrawAfterEach:
                     util.updateUI()
