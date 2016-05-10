@@ -46,6 +46,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
             'value':"Default"},
             {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
             {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
+            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
         ])
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -121,12 +122,16 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                     for j in range(0, self._numPerms(bnum)):
                         cell = self.item(j+1, bnum)
                         cell.setText("%02X\n%.4f" % (maxes[j]['hyp'], maxes[j]['value']))
+
                         if maxes[j]['hyp'] == highlightValue:
                             cell.setForeground(QColor(*self.highlightedKeyColor))
                         else:
                             cell.setForeground(QBrush(Qt.black))
-                        c = QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value'])))
-                        cell.setBackground(c)
+
+                        if self.colorGradient:
+                            cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
+                        else:
+                            cell.setBackground(QBrush(Qt.white))
             else:
                 self.setColumnHidden(bnum, True)
         self.setVisible(True)
@@ -144,3 +149,12 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
     def getWidget(self):
         return self
+
+    def setColorGradient(self, value):
+        self.colorGradient = value
+
+    def getTraceGradientColor(self, val0to1):
+        r, g, b = self.traceColor
+        val0to1 = val0to1 if self.colorGradient else 0
+        r, g, b = r+(255-r)*val0to1, g+(255-g)*val0to1, b+(255-b)*val0to1
+        return r, g, b

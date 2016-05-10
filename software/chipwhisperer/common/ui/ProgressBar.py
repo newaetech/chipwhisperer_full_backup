@@ -24,7 +24,8 @@
 #=================================================
 
 from datetime import *
-
+from ..utils.timer import Timer
+from ..utils import qt_tweaks
 
 class ProgressBarText(object):
     def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None, show=True):
@@ -110,7 +111,7 @@ try:
     from PySide.QtCore import *
     from PySide.QtGui import *
 
-    class ProgressBarGUI(QDialog, ProgressBarText):
+    class ProgressBarGUI(qt_tweaks.QDialog, ProgressBarText):
         def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None, show=True):
 
             ProgressBarText.__init__(self, title = title, text=text, statusMask= statusMask, textValues = textValues)
@@ -120,7 +121,6 @@ try:
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)
             self.resize(200,100)
-
             clayout = QHBoxLayout()
             clayout.addStretch()
             cancel = QPushButton("Abort")
@@ -141,7 +141,6 @@ try:
             if show:
                 self.show()
                 self.raise_()
-            QCoreApplication.processEvents()
 
         def setText(self, text):
             ProgressBarText.setText(self, text)

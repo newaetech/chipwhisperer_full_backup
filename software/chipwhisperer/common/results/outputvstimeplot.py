@@ -54,7 +54,7 @@ class OutputVsTime(AttackResultPlot, Plugin):
         return range(prange[0], prange[1])
 
     def redrawPlot(self):
-        progress = ProgressBar("Redrawing...", "Status:")
+        progress = ProgressBar("Redrawing " + OutputVsTime._name, "Status:")
 
         with progress:
             data = self._analysisSource.getStatistics().diffs
