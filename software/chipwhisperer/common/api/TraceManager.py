@@ -157,7 +157,7 @@ class TraceManager(TraceSource):
             t = self.findMappedTrace(n)
             return t.getKnownKey(n - t.mappedRange[0])
         except ValueError:
-            return None
+            return []
 
     def updateRanges(self):
         startTrace = 0

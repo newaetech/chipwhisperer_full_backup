@@ -42,19 +42,20 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
         self.params.addChildren([
             {'name':'Highlighted key', 'type':'list', 'values':{'Know key from attack':'attack', 'Override':'override'},
              'value':'attack', 'set':self.setKnownKeySrc},
-            {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True},
+            {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':'00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00', 'set':self.setKnownKey, 'readonly':True},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'set':self.setHighlightedKeyColor},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'set':self.setTraceColor},
             {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
         ])
+        self.findParam('knownkey').hide()
 
     def setKnownKeySrc(self, keysrc):
         """Set key as 'attack' or 'override'"""
         if keysrc == 'attack':
-            self.findParam('knownkey').setReadonly(True)
+            self.findParam('knownkey').hide()
             AttackObserver._highlightedKeys = self._analysisSource.knownKey
         elif keysrc == 'override':
-            self.findParam('knownkey').setReadonly(False)
+            self.findParam('knownkey').show()
             AttackObserver._highlightedKeys = self.knowKey
         else:
             raise ValueError("Key Source Error")
