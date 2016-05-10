@@ -130,3 +130,4 @@ class AttackObserver(AnalysisObserver):
             return len(self._analysisSource.getStatistics().diffs)
         except Exception:
             return 0
+

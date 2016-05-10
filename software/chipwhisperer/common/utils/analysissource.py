@@ -52,13 +52,13 @@ class AnalysisObserver(object):
         self._analysisSource = analysisSource
 
     def analysisStarted(self):
-        # Setup the environment (i.e. GUI)
+        """Setup the environment (i.e. GUI)"""
         pass
 
     def analysisUpdated(self):
-        # Do partial reports
+        """Do partial reports"""
         pass
 
     def processAnalysis(self):
-        # Do final report
+        """Do final report"""
         pass
