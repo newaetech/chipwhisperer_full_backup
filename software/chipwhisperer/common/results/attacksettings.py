@@ -42,12 +42,20 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
         self.params.addChildren([
             {'name':'Highlighted key', 'type':'list', 'values':{'Know key from attack':'attack', 'Override':'override'},
              'value':'attack', 'set':self.setKnownKeySrc},
-            {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':'00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00', 'set':self.setKnownKey, 'readonly':True},
+            {'name':'Override with', 'type':'str', 'key':'knownkey', 'set':self.setKnownKey},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'set':self.setHighlightedKeyColor},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'set':self.setTraceColor},
             {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
+            {'name':'Redraw Widgets',  'type':'action', 'action':self.updateAll},
         ])
+        self.findParam('knownkey').setValue('00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00')
         self.findParam('knownkey').hide()
+
+
+    def updateAll(self):
+        for i in self.registeredObjects.itervalues():
+            if isinstance(i, AttackObserver):
+                i.processAnalysis()
 
     def setKnownKeySrc(self, keysrc):
         """Set key as 'attack' or 'override'"""
@@ -59,12 +67,6 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
             AttackObserver._highlightedKeys = self.knowKey
         else:
             raise ValueError("Key Source Error")
-        self.updateAll()
-
-    def updateAll(self):
-        for i in self.registeredObjects.itervalues():
-            if isinstance(i, AttackObserver):
-                i.processAnalysis()
 
     def knowKey(self):
         return self._knowKey
@@ -75,16 +77,12 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
             self._knowKey = util.hexstr2list(strkey)
         except ValueError:
             raise Warning("Key Selection - Could not convert '%s' to hex, key unchanged!" % strkey)
-        self.updateAll()
 
     def setHighlightedKeyColor(self, color):
         AttackObserver.highlightedKeyColor = color.red(), color.green(), color.blue()
-        self.updateAll()
 
     def setTraceColor(self, color):
         AttackObserver.traceColor = color.red(), color.green(), color.blue()
-        self.updateAll()
 
     def setColorGradient(self, value):
         AttackObserver.colorGradient = value
-        self.updateAll()

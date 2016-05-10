@@ -204,7 +204,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
 
             elif drawtype.startswith('detail'):
                 for i in range(0, self._numPerms(bnum)):
-                    self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen=QColor(*self.getTraceGradientColor(self._analysisSource.getStatistics().maxes[bnum][i]['value'])), **pointargsg), 0, True, str(bnum) + ":%02X" % i)
+                    self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen=QColor(*self.traceColor), **pointargsg), 0, True, str(bnum) + ":%02X" % i)
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top

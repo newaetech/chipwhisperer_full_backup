@@ -113,7 +113,7 @@ class GraphWidget(QWidget):
         vb.sigStateChanged.connect(self.VBStateChanged)
         vb.sigXRangeChanged.connect(self.VBXRangeChanged)
 
-        self.proxysig = pg.SignalProxy(self.pw.plotItem.vb.scene().sigMouseMoved, rateLimit=5, slot=self.mouseMoved)
+        self.proxysig = pg.SignalProxy(self.pw.plotItem.vb.scene().sigMouseMoved, rateLimit=10, slot=self.mouseMoved)
 
         self.vLine = pg.InfiniteLine(angle=90, movable=False)
         self.hLine = pg.InfiniteLine(angle=0, movable=False)
@@ -151,8 +151,9 @@ class GraphWidget(QWidget):
 
         crossHair = QAction(QIcon(self.imagepath+'crosshair.png'), 'Show Crosshairs', self)
         crossHair.setCheckable(True)
-        crossHair.setChecked(True)
-        crossHair.triggered.connect(lambda: self.setCrossHair(crossHair.isChecked()))
+        crossHair.setChecked(False)
+        self.setCrossHairs(crossHair.isChecked())
+        crossHair.triggered.connect(lambda: self.setCrossHairs(crossHair.isChecked()))
 
         grid = QAction(QIcon(self.imagepath+'grid.png'), 'Show Grid', self)
         grid.setCheckable(True)
@@ -359,7 +360,7 @@ class GraphWidget(QWidget):
         if yaxis:
             self.pw.setLabel('left', yaxis)
 
-    def setCrossHair(self, enabled):
+    def setCrossHairs(self, enabled):
         self.vLine.setVisible(enabled)
         self.hLine.setVisible(enabled)
 
@@ -379,8 +380,9 @@ class GraphWidget(QWidget):
         if self.pw.plotItem.vb.sceneBoundingRect().contains(mousePoint):
             pos = self.pw.plotItem.vb.mapSceneToView(mousePoint)
             self.pos.setText("Position: (%f, %f)" % (pos.x(), pos.y()))
-            self.vLine.setPos(pos.x())
-            self.hLine.setPos(pos.y())
+            if self.vLine.isVisible():
+                self.vLine.setPos(pos.x())
+                self.hLine.setPos(pos.y())
 
     def setupPlot(self, plot, zOrdering, clickable, id):
         plot.setZValue(zOrdering)
