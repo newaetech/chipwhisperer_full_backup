@@ -34,7 +34,6 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameters import Parameterized
 
@@ -148,9 +147,9 @@ class PartitionDialog(QtFixes.QDialog):
 
         # TODO: Partition generation doesn't work
         pb.setMinimum(0)
-        pb.setMinimum(self.part.traceSource.numTraces())
+        pb.setMaximum(self.part.traceSource.numTraces())
 
-        self.part.runPartitions(report=pb.setValue)
+        self.part.runPartitions(report=pb.updateStatus)
 
 
 class Partition(QObject, Parameterized):
@@ -206,15 +205,15 @@ class Partition(QObject, Parameterized):
         end = tRange[1]
 
         if end == -1:
-            end = CWCoreAPI.getInstance().getTraceManager()
+            end = self._traces.numTraces()
 
         # Generate blank partition table
-        partitionTable = self.createBlankTable(CWCoreAPI.getInstance().getTraceManager().findMappedTrace(start))
+        partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
         print np.shape(partitionTable)
 
         tnum = start
         while tnum < end:
-            t = CWCoreAPI.getInstance().getTraceManager().findMappedTrace(tnum)
+            t = self._traces.findMappedTrace(tnum)
             # Discover where this trace starts & ends
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
@@ -258,19 +257,19 @@ class Partition(QObject, Parameterized):
         end = tRange[1]
 
         if partitionTable is None:
-            partitionTable = self.createBlankTable(CWCoreAPI.getInstance().getTraceManager().findMappedTrace(start))
+            partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
 
             if end == -1:
-                end = CWCoreAPI.getInstance().getTraceManager().numTraces()
+                end = self._traces.numTraces()
 
             tnum = start
             while tnum < end:
-                t = CWCoreAPI.getInstance().getTraceManager().findMappedTrace(tnum)
+                t = self._traces.findMappedTrace(tnum)
                 # Discover where this trace starts & ends
                 tmapstart = t.mappedRange[0]
                 tmapend = t.mappedRange[1]
                 
-                partitionTableTemp = self.createBlankTable(CWCoreAPI.getInstance().getTraceManager().findMappedTrace(start))
+                partitionTableTemp = self.createBlankTable(self._traces.findMappedTrace(start))
 
                 for tnum in range(tmapstart, tmapend + 1):
                     # Check each trace, write partition number
@@ -297,3 +296,6 @@ class Partition(QObject, Parameterized):
 
         self.partDataCache = partitionTable
         return partitionTable
+
+    def setTraceSource(self, traces):
+        self._traces = traces

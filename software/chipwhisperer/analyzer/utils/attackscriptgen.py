@@ -260,11 +260,12 @@ class AttackScriptGen(Parameterized):
             if hasattr(util, '_smartstatements') and util.isVisible():
                 for k in util._smartstatements:
                     util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
-                    util._smartstatements[k].addSelfReplacement("parent.")
+                    util._smartstatements[k].addSelfReplacement("cwagui.attackScriptGen.") #TODO-temp hack
                     statements = util.getStatements(k)
 
                     if len(statements) > 0:
                         mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
+                        mse.append("self.cwagui = CWAnalyzerGUI.getInstance()") #TODO - temp hack
                         for s in statements:
                             mse.append(s.replace("UserScript.", "self."))
 
