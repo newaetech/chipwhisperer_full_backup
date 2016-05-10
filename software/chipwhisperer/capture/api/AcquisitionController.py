@@ -24,31 +24,30 @@
 #=================================================
 
 import time
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 
 class AcquisitionController():
-    class Signals:
-        def __init__(self):
-            self.traceDone = Util.Signal()
-            self.captureDone = Util.Signal()
-            self.newTextResponse = Util.Signal()
 
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
+        self.sigTraceDone = util.Signal()
+        self.sigCaptureDone = util.Signal()
+        self.sigNewTextResponse = util.Signal()
+
         self.target = target
         self.scope = scope
         self.writer = writer
         self.auxList = auxList
         self.running = False
         self.setKeyTextPattern(keyTextPattern)
-        self.signals = AcquisitionController.Signals()
         keyTextPattern.setTarget(target)
 
         self.maxtraces = 1
 
         if self.auxList is not None:
             for aux in auxList:
-                aux.captureInit()
+                if aux:
+                    aux.captureInit()
 
     def setKeyTextPattern(self, pat):
         self._keyTextPattern = pat
@@ -56,7 +55,7 @@ class AcquisitionController():
             self._keyTextPattern.initPair()
 
     def targetDoTrace(self, plaintext, key=None):
-        if self.target is None or self.target.getName()=="None":
+        if self.target is None or self.target.getName()== "None":
             return []
 
         if key:
@@ -87,24 +86,25 @@ class AcquisitionController():
         #    print " %02X"%i,
         # print ""
 
-        self.signals.newTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
-
+        self.sigNewTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
         return resp
 
     def doSingleReading(self, update=True, N=None):
         # Set mode
-        if self.auxList is not None:
+        if self.auxList:
             for aux in self.auxList:
-                aux.traceArm()
+                if aux:
+                    aux.traceArm()
 
-        if self.scope is not None:
+        if self.scope:
             self.scope.arm()
 
-        if self.auxList is not None:
+        if self.auxList:
             for aux in self.auxList:
-                aux.traceArmPost()
+                if aux:
+                    aux.traceArmPost()
 
-        if self.target is not None:
+        if self.target:
             # Get key / plaintext now
             data = self._keyTextPattern.newPair()
             self.key = data[0]
@@ -119,19 +119,20 @@ class AcquisitionController():
             self.textout = [0]
 
         # Get ADC reading
-        if self.scope is not None:
+        if self.scope:
             try:
                 if self.scope.capture(update, N) == True:
-#                if self.scope.capture(update, N, waitingCallback=QApplication.processEvents) == True:
+#                if self.scope.api(update, N, waitingCallback=QApplication.processEvents) == True:
                     print "Timeout"
                     return False
             except IOError as e:
                 print "IOError: %s" % str(e)
                 return False
 
-        if self.auxList is not None:
+        if self.auxList:
             for aux in self.auxList:
-                aux.traceDone()
+                if aux:
+                    aux.traceDone()
 
         return True
 
@@ -156,19 +157,21 @@ class AcquisitionController():
 
         if self.auxList:
             for aux in self.auxList:
-                aux.traceArm()
+                if aux:
+                    aux.traceArm()
 
         self.currentTrace = 0
         while (self.currentTrace < self.maxtraces) and self.running:
             if self.doSingleReading(True, None) == True:
                 if self.writer:
                     self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
-                self.signals.traceDone.emit()
+                self.sigTraceDone.emit()
                 self.currentTrace = self.currentTrace + 1
 
         if self.auxList:
             for aux in self.auxList:
-                aux.captureComplete()
+                if aux:
+                    aux.captureComplete()
 
         if self.writer:
             # Don't clear trace as we re-use the buffer
@@ -176,5 +179,5 @@ class AcquisitionController():
             if tracesDestination:
                 tracesDestination.appendTraceSet(self.writer)
 
-        self.signals.captureDone.emit(self.running)
+        self.sigCaptureDone.emit(self.running)
         self.running = False

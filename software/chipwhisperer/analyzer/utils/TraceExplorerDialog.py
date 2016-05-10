@@ -28,11 +28,13 @@
 from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import PartitionDisplay
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
 from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
+
 
 class TraceExplorerDialog(QMainWindow, AutoScript):
     """Open dialog to explore trace properties, data graphs, etc"""
@@ -56,8 +58,8 @@ class TraceExplorerDialog(QMainWindow, AutoScript):
         self.graphDockList = []
         self.getGraphWidgets(["Basic Plot"])
 
-        self.progressBar = QProgressDialog(self)
-        self.progressBar.setWindowModality(Qt.WindowModal)
+        self.progressBar = ProgressBar(show=False)
+        #self.progressBar.setWindowModality(Qt.WindowModal)
 
     def showEvent(self, event):
         QMainWindow.showEvent(self, event)

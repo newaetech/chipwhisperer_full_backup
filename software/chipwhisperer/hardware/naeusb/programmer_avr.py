@@ -24,7 +24,7 @@
 
 
 import time
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 from naeusb import packuint32
 
@@ -239,7 +239,7 @@ class AVRISP(object):
         """
 
         if status:
-            Util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+            util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
             time.sleep(0.1)
             self._avrDoWrite(self.ISP_CMD_ENTER_PROGMODE_ISP, [self._chip.timeout, self._chip.stabdelay, self._chip.cmdexedelay, self._chip.synchloops,
                                                                self._chip.bytedelay, self._chip.pollvalue, self._chip.pollindex, 0xAC, 0x53, 0, 0])
@@ -248,9 +248,9 @@ class AVRISP(object):
                 self._avrDoWrite(self.ISP_CMD_LEAVE_PROGMODE_ISP, [self._chip.predelay, self._chip.postdelay])
             except:
                 # Always disable ISP mode lines!
-                Util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+                util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
                 raise
-            Util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
+            util.chipwhisperer_extra.cwEXTRA.setAVRISPMode(status)
 
     def _readFuseLockSig(self, cmd, cmds, respindx=4):
         if len(cmds) != 4:

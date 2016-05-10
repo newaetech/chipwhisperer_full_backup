@@ -114,7 +114,7 @@ class tracereader_dpacontestv3:
 #Test Example
 if __name__ == "__main__":
     tr = tracereader_dpacontestv3()
-    tr.loadAllTraces("capture-2012.11.30-19.22.58")
+    tr.loadAllTraces("api-2012.11.30-19.22.58")
 
     
     

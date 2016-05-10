@@ -25,10 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameters import Parameterized
+import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 
 
 def enforceLimits(value, limits):
@@ -39,13 +40,13 @@ def enforceLimits(value, limits):
     return value
 
 
-class AttackGenericParameters(AutoScript):
-    def __init__(self):
-        super(AttackGenericParameters, self).__init__()
-        self._traceSource = None
-        self._project = None
+class AttackGenericParameters(Parameterized, AutoScript):
+    _name= 'Attack Settings'
 
+    def __init__(self):
         self.maxSubKeys = 32
+        Parameterized.__init__(self)
+        AutoScript.__init__(self)
         self.useAbs = True
 
         #TODO: Where to get this from?
@@ -56,35 +57,26 @@ class AttackGenericParameters(AutoScript):
         self.endPoint = [0]*self.numsubkeys
         self.traceMax = 1
 
-        self.paramListUpdated = Util.Signal()
-        self.traceManagerChanged = Util.Signal()
-        self.projectChanged = Util.Signal()
-        self.settingsChanged = Util.Signal()
-        self.traceLimitsChanged = Util.Signal()
+        self.traceLimitsChanged = util.Signal()
 
         self.setupTraceParam()
         self.setupPointsParam()
-        self.setupParameters()
-
-    def setupParameters(self):
-        attackParams = [{'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'type':'list', 'values':{'AES-128 (8-bit)':None}, 'value':'AES-128'},
-                        {'name':'Key Round', 'type':'list', 'values':['first', 'last'], 'value':'first'}
-                        ]},
-                       {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
-
-                       #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()
-                        },
-                      ]
-
-        self.params = ConfigParameter.create_extended(self, name='Attack Settings', type='group', children=attackParams)
+        self.params.addChildren([
+            {'name':'Hardware Model', 'type':'group', 'children':[
+                {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
+                {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
+            ]},
+            {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
+           #TODO: Should be called from the AES module to figure out # of bytes
+            {'name':'Attacked Bytes', 'type':'group', 'children': self.getByteList()},
+        ])
         self.updateBytesVisible()
+
+    def getAbsoluteMode(self):
+        return self.useAbs
 
     def setAbsoluteMode(self, mode):
         self.useAbs = mode
-        self.settingsChanged.emit(mode)
 
     def getByteList(self):
         init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, set=self.updateScriptBytesEnabled) for bnum in range(0, self.maxSubKeys)]
@@ -93,7 +85,12 @@ class AttackGenericParameters(AutoScript):
         return init
 
     def updateScriptBytesEnabled(self, ignored=None):
-        self.addFunction("init", "setTargetBytes", str(self.bytesEnabled()))
+        blist = []
+        for i,t in enumerate(self.bytesParameters()):
+            if i < self.numsubkeys:
+                if t.value() == True:
+                    blist.append(t.opts['bytenum'])
+        self.addFunction("init", "setTargetBytes", str(blist))
 
     def updateBytesVisible(self):
         for i,t in enumerate(self.bytesParameters()):
@@ -102,14 +99,6 @@ class AttackGenericParameters(AutoScript):
             else:
                 t.hide()
         self.updateScriptBytesEnabled()
-
-    def bytesEnabled(self):
-        blist = []
-        for i,t in enumerate(self.bytesParameters()):
-            if i < self.numsubkeys:
-                if t.value() == True:
-                    blist.append(t.opts['bytenum'])
-        return blist
 
     def allBytesOn(self):
         for t in self.bytesParameters():
@@ -126,21 +115,6 @@ class AttackGenericParameters(AutoScript):
             if p:
                 blist.append(p)
         return blist
-
-    def setTraceSource(self, traceSource):
-        """Set the input trace source"""
-        self._traceSource = traceSource
-        self.traceManagerChanged.emit(traceSource)
-
-    def traceSource(self):
-        return self._traceSource
-
-    def setProject(self, proj):
-        self._project = proj
-        self.projectChanged.emit(proj)
-
-    def project(self):
-        return self._project
 
 ############ Trace-Specific
     def setupTraceParam(self):
@@ -236,9 +210,10 @@ class AttackGenericParameters(AutoScript):
         atrace = self.findParam('atraces', self.traceParams)
 
         strace.setValue(0)
-        strace.setLimits((0,traces))
-        atrace.setValue(traces)
+        strace.setLimits((0, traces))
+        atrace.setValue(1) #Avoid bug in pyqtgraph with  limits
         atrace.setLimits((1, traces))
+        atrace.setValue(traces)
 
         self.traceLimitsChanged.emit(traces, points)
 
@@ -266,14 +241,12 @@ class AttackGenericParameters(AutoScript):
             end = enforceLimits(end, self.endPointLimits)
             endparam.setValue(end)
 
-
         if bnum is None:
             self.startPoint[:] = [start] * len(self.startPoint)
             self.endPoint[:] = [end] * len(self.endPoint)
         else:
             self.startPoint[bnum] = start
             self.endPoint[bnum] = end
-        self.paramListUpdated.emit(None)
 
     # def setAllPointsSame(self, val):
     #    self.allPointsSame = val

@@ -200,7 +200,6 @@ class CWUniversalSerial(object):
     
     def con(self, oa):
         self.oa = oa
-
             
     def setIdle(self, idle):
         resp = self.oa.sendMessage(CODE_READ, self.ADDR_USISTATUS, Validate=False, maxResp=4)

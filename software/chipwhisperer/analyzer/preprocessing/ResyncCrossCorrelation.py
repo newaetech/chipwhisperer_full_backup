@@ -25,39 +25,35 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 import numpy as np
 import scipy as sp
-        
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return ResyncCrossCorrelation
+
+from chipwhisperer.common.results.base import ResultsBase
+from ._base import PreprocessingBase
 
 
 class ResyncCrossCorrelation(PreprocessingBase):
     """
     Cross-Correlation Resyncronization
     """
-    name = "Resync: Cross Correlation"
-    descrString = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
+    _name = "Resync: Cross Correlation"
+    _description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.rtrace = 0
         self.debugReturnCorr = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':self.graphWidget, 'set':self.updateScript, 'default':(0, 0)},
-                         # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
         self.ccStart = 0
         self.ccEnd = 0
-        
+
+        self.params.addChildren([
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
+            # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}
+        ])
         self.updateScript()
-        
+
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
         rtrace = self.findParam('reftrace').value()
@@ -80,14 +76,14 @@ class ResyncCrossCorrelation(PreprocessingBase):
     def getTrace(self, n):
         if self.enabled:
             #TODO: fftconvolve
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
             if self.debugReturnCorr:
                 return cross
             newmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-            maxval = max(cross[self.ccStart:self.ccEnd])
+            # maxval = max(cross[self.ccStart:self.ccEnd])
             # if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
             #    return None
             
@@ -99,7 +95,7 @@ class ResyncCrossCorrelation(PreprocessingBase):
             return trace
             
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -112,9 +108,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         if self.enabled == False:
             return
 
-        self.reftrace = self.traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
+        self.reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
         self.reftrace = self.reftrace[::-1]
         #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self.traceSource.getTrace(tnum), self.reftrace, mode='valid')
+        cross = sp.signal.fftconvolve(self._traceSource.getTrace(tnum), self.reftrace, mode='valid')
         self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
         self.refmaxsize = max(cross[self.ccStart:self.ccEnd])

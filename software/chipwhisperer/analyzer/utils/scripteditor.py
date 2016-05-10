@@ -36,7 +36,6 @@ from PySide.QtGui import *
 from chipwhisperer.analyzer.utils.syntaxhighlighter import PythonHighlighter
 
 class CodeEditor(QTextEdit):
-
     runFunction = Signal(str)
     assignFunction = Signal(str)
 
@@ -72,6 +71,7 @@ class CodeEditor(QTextEdit):
 
     def assFuncAct(self):
         self.assignFunction.emit(self.textCursor().selectedText())
+
 
 class MainScriptEditor(QWidget):
     def __init__(self, parent, filename=None):
@@ -168,7 +168,10 @@ class MainScriptEditor(QWidget):
         self.markClean()
 
         modulename = str(uuid.uuid1())
-        self.scriptModule = imp.load_source(modulename, self.filename)
+        try:
+            self.scriptModule = imp.load_source(modulename, self.filename)
+        except SyntaxError as e:
+            raise Warning("Could not execute the python code (%s) in the Script Editor:\n%s in line %s" % (self.filename, e.msg, e.lineno))
 
         # print self.scriptModule
         return self.scriptModule

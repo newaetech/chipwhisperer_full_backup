@@ -6,9 +6,9 @@
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
-from pyqtgraph.parametertree.Parameter import Parameter, registerParameterType
+from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, GroupParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
@@ -102,7 +102,11 @@ class RangeParameterItem(WidgetParameterItem):
         defs.update(opts)
 
         wlow = SpinBox()
+        wlow.setMaximumWidth(80)
+        wlow.setAlignment(QtCore.Qt.AlignRight)
         whigh = SpinBox()
+        whigh.setMaximumWidth(80)
+        whigh.setAlignment(QtCore.Qt.AlignRight)
 
         # The following required for pyqtgraph > 0.9.10
         for k in defs:
@@ -122,11 +126,14 @@ class RangeParameterItem(WidgetParameterItem):
         wlow.sigValueChanging.connect(self.svLowChanging)
 
         l = QtGui.QHBoxLayout()
+        l.setAlignment(QtCore.Qt.AlignLeft)
         l.setContentsMargins(0,0,0,0)
-
+        l.addWidget(QtGui.QLabel("("))
         l.addWidget(wlow)
-        l.addWidget(QtGui.QLabel(" : "))
+        l.addWidget(QtGui.QLabel(","))
         l.addWidget(whigh)
+        l.addWidget(QtGui.QLabel(")"))
+        l.addStretch()
 
         self.wlow = wlow
         self.whigh = whigh
@@ -184,6 +191,7 @@ class RangeParameterGraphItem(RangeParameterItem):
         l = self.makeLayout()
         l.addWidget(self.graphBtn)
         l.addWidget(QtGui.QLabel("  "))
+
         w = QtGui.QWidget()
         w.setLayout(l)
         w.sigChanged = self.sigs.sigValueChanged
@@ -288,7 +296,6 @@ class FilelistItem(WidgetParameterItem):
 
         if hasattr(self, 'widget'):
             self.treeWidgetChanged()
-
 
     def copyFile(self):
         if self.table.currentRow() < 0:
@@ -464,6 +471,8 @@ registerParameterType('filelist', FilelistParameter, override=True)
 
 
 class SpinBoxWithSetItem(WidgetParameterItem):
+
+    """ Spin-box with ability to have set/get functions """
     
     def __init__(self, *args, **kwargs):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
@@ -496,10 +505,109 @@ class SpinBoxWithSetItem(WidgetParameterItem):
     def updateDefaultBtn(self):
         pass
 
+ #   def delayedChange(self):
+ #       #Modified to always emit change
+ #       try:
+ #           #if self.val != self.lastValEmitted:
+ #           self.emitChanged()
+ #       except RuntimeError:
+ #           pass  ## This can happen if we try to handle a delayed signal after someone else has already deleted the underlying C++ object.
+
 class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
 registerParameterType('int', SpinBoxWithSet, override=True)
 
 
+class LabelParameterItem(WidgetParameterItem):
 
+    """ Class used for description of an item. Spans both columns. """
+
+    def __init__(self, param, depth):
+        ParameterItem.__init__(self, param, depth)
+        self.setFirstColumnSpanned(True)
+        self.hideWidget = True  ## hide edit widget, replace with label when not selected
+        ## set this to False to keep the editor widget always visible
+
+        ## build widget into column 1 with a display label and default button.
+        w = self.makeWidget()
+        self.widget = w
+        self.eventProxy = EventProxy(w, self.widgetEventFilter)
+
+        opts = self.param.opts
+        if 'tip' in opts:
+            w.setToolTip(opts['tip'])
+
+        self.displayLabel = QtGui.QLabel()
+        self.displayLabel.hide()
+
+        self.defaultBtn = QtGui.QPushButton("")
+        self.defaultBtn.hide()
+
+        layout = QtGui.QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(w)
+        layout.addWidget(self.displayLabel)
+        layout.addWidget(self.defaultBtn)
+        self.layoutWidget = QtGui.QWidget()
+        self.layoutWidget.setLayout(layout)
+
+        if w.sigChanged is not None:
+            w.sigChanged.connect(self.widgetValueChanged)
+
+        if hasattr(w, 'sigChanging'):
+            w.sigChanging.connect(self.widgetValueChanging)
+
+        ## update value shown in widget.
+        if opts.get('value', None) is not None:
+            self.valueChanged(self, opts['value'], force=True)
+        else:
+            ## no starting value was given; use whatever the widget has
+            self.widgetValueChanged()
+
+    def makeWidget(self):
+        self.textBox = QtGui.QLabel()
+        self.textBox.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.MinimumExpanding)
+        self.textBox.setWordWrap(True)
+        self.textBox.setStyleSheet("QLabel { color : gray; }")
+        self.textBox.value = lambda: str(self.textBox.text())
+        self.textBox.setValue = self.textBox.setText
+        self.textBox.sigChanged = self.textBox.linkActivated
+        return self.textBox
+
+    def treeWidgetChanged(self):
+        self.treeWidget().setFirstItemColumnSpanned(self, True)
+        self.treeWidget().setItemWidget(self, 0, self.textBox)
+        self.displayLabel = self.textBox
+
+
+class LabelParameter(Parameter):
+    """Editable string; displayed as large text box in the tree."""
+    itemClass = LabelParameterItem
+
+registerParameterType('label', LabelParameter, override=True)
+
+
+def listParameterItem_Fix(self, param, depth):
+    # Fixes a bug where the list would appear blank instead of showing the default value
+    self.targetValue = None
+    WidgetParameterItem.__init__(self, param, depth)
+    self.updateDisplayLabel(self.value())
+
+ListParameterItem.__init__ = listParameterItem_Fix
+
+def setValue_Fix(self, value, blockSignal=None):
+    # Fixes the CW requirement to not skip the setValue call when the previous value is the same
+    try:
+        if blockSignal is not None:
+            self.sigValueChanged.disconnect(blockSignal)
+        self.opts['value'] = value
+        self.sigValueChanged.emit(self, value)
+    finally:
+        if blockSignal is not None:
+            self.sigValueChanged.connect(blockSignal)
+
+#TODO: Fix parameter's to not skip setting same value, requires more effort than this.
+#      Useful when hardware reality is != software settings, and need to re-download
+#      things.
+Parameter.setValue = setValue_Fix

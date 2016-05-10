@@ -25,28 +25,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from ._base import PreprocessingBase
 import numpy as np
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return DecimationFixed
 
         
 class DecimationFixed(PreprocessingBase):
-    name = "Decimation: Fixed"
-    descrString = "Decimate by a fixed factor"
+    _name = "Decimation: Fixed"
+    _description = "Decimate by a fixed factor"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.setDecimationFactor(2)
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript},
-                         # {'name':'Decimation Type', 'values':''}
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
+        self.params.addChildren([
+            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript}
+        ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -58,21 +50,18 @@ class DecimationFixed(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
 
             decfactor = self._decfactor
 
             # outtrace = np.zeros(len(trace))
-
             outtrace = np.zeros(len(range(0, len(trace), decfactor)))
-
 
             for idx, val in enumerate(range(0, len(trace), decfactor)):
                 outtrace[idx] = trace[val]
 
             return outtrace
-
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)

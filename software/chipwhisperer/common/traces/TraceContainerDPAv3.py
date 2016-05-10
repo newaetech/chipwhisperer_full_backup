@@ -31,19 +31,14 @@ from PySide.QtCore import *
 from chipwhisperer.common.utils import tracereader_dpacontestv3, tracereader_native
 import numpy as np
 from time import gmtime, strftime
-from TraceContainer import TraceContainer
+from _base import TraceContainer
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
-
-def getClass():
-    return TraceContainerDPAv3
-
-
 class TraceContainerDPAv3(TraceContainer):
-    name = "DPAContestv3"
+    _name = "DPAContestv3"
 
-    def __init__(self):
-        super(TraceContainerDPAv3, self).__init__()
+    def __init__(self, parentParam=None):
+        super(TraceContainerDPAv3, self).__init__(parentParam)
         self.dir = "."
 
     def setDirectory(self, directory):
@@ -53,7 +48,7 @@ class TraceContainerDPAv3(TraceContainer):
 
     def prepareDisk(self):
         self.startTime = gmtime()
-        self.setDirectory("capture-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
+        self.setDirectory("api-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
         
         if os.path.exists(self.dir + "text_in.txt"):
             print "Textin File exists!"

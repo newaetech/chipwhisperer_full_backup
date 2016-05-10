@@ -26,15 +26,18 @@ import time
 import usb.core
 import usb.util
 
+
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
 
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
+
 def packuint16(data):
     """Converts a 16-bit integer into format expected by USB firmware"""
 
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
+
 
 #List of all NewAE PID's
 NEWAE_VID = 0x2B3E
@@ -42,6 +45,8 @@ NEWAE_PIDS = {
     0xACE2: "ChipWhisperer-Lite",
     0xC305: "CW305 Artix FPGA Board",
 }
+
+
 class NAEUSB(object):
     """
     USB Interface for NewAE Products with Custom USB Firmware
@@ -113,7 +118,7 @@ class NAEUSB(object):
         # self.usbdev().close()
         try:
             usb.util.dispose_resources(self.usbdev())
-        except usb.USBError, e:
+        except usb.USBError as e:
             print "INFO: USB Failure calling dispose_resources: %s" % str(e)
 
     def readFwVersion(self):
@@ -226,7 +231,7 @@ if __name__ == '__main__':
         starttime = datetime.now()
         fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise\cwlite_interface.bit", "rb"))
         # fpga.FPGAProgram(open(r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp\artix7test\artix7test.runs\impl_1\cw305_top.bit", "rb"))
-        # fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\capture\chipwhisperer-lite\hdl\cwlite_ise_spifake\cwlite_interface.bit", "rb"))
+        # fpga.FPGAProgram(open(r"C:\E\Documents\academic\sidechannel\chipwhisperer\hardware\api\chipwhisperer-lite\hdl\cwlite_ise_spifake\cwlite_interface.bit", "rb"))
         stoptime = datetime.now()
         print "FPGA Config time: %s" % str(stoptime - starttime)
 

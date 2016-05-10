@@ -32,6 +32,7 @@
 # Currently only support AES-128 and AES-256
 #
 
+
 def sbox(inp):
     s =  [0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67,
             0x2b, 0xfe, 0xd7, 0xab, 0x76, 0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59,
@@ -58,6 +59,7 @@ def sbox(inp):
             0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0,
             0x54, 0xbb, 0x16]
     return s[inp]
+
 
 def invsbox(inp):
     s = [0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3,
@@ -112,6 +114,7 @@ rcon = [0x8d, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36,
             0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74,
             0xe8, 0xcb ]
 
+
 def g_func(inp, rcon):
     #Step 1: change order
     newlist = [inp[1], inp[2], inp[3], inp[0]]
@@ -124,14 +127,17 @@ def g_func(inp, rcon):
 
     return newlist
 
+
 def h_func(inp):
     #Step 1: s-box
     newlist = [sbox(t) for t in inp]
 
     return newlist
 
+
 def xor(l1, l2):
     return [l1[i] ^ l2[i] for i in range(0, len(l1))]
+
 
 def keyScheduleRounds(inputkey, inputround, desiredround):
     """
@@ -168,7 +174,6 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
                 else:
                     return inputkey[16:32]
 
-
     else:
         raise ValueError("Invalid keylength: %d"%n)
 
@@ -204,7 +209,6 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
         if rnd == desiredround:
             break
 
-
         # Reverse algorithm, thus need at least one round
         for i in range(n-4, 0, -4):
             if n == 32 and i == 16:
@@ -227,7 +231,6 @@ def keyScheduleRounds(inputkey, inputround, desiredround):
 
 
 def test():
-
     #Manual tests right now - need to automate this.
 
     ##### AES-128 Tests
@@ -257,7 +260,6 @@ def test():
         result = keyScheduleRounds(ok, 10, i)
         print " ".join(["%2x" % d for d in result])
 
-
     ##### AES-256 Tests
     print "**********AES-256 Tests***************"
 
@@ -281,7 +283,6 @@ def test():
     # e7 b0 e8 9c 43 47 78 8b 16 76 0b 7b 8e b9 1a 62
     # 74 ed 0b a1 73 9b 7e 25 22 51 ad 14 ce 20 d4 3b
     #10 f8 0a 17 53 bf 72 9c 45 c9 79 e7 cb 70 63 85
-
 
     print ""
 

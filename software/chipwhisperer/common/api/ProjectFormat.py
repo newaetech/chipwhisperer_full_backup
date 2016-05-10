@@ -27,7 +27,7 @@ __author__ = "Colin O'Flynn"
 import os
 import re
 import sys
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
 
@@ -58,26 +58,23 @@ class ConfigObjProj(ConfigObj):
 
 
 class ProjectFormat(object):
-    class Signals(object):
-        def __init__(self):
-            self.filenameChanged = Util.Signal()
-            self.fileChangedOnDisk = Util.Signal()
-            self.dirty = Util.Observable(True)
-            self.statusChanged = Util.Signal()
-
     untitledFileName = "tmp/default.cwp"
+
     def __init__(self):
-        self.signals = ProjectFormat.Signals()
+        self.sigFilenameChanged = util.Signal()
+        self.sigStatusChanged = util.Signal()
+        self.dirty = util.Observable(True)
+
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
         self.paramListList = []        
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
-        self._traceManager = TraceManager()
-        self._traceManager.dirty.connect(lambda: self.signals.dirty.setValue(self._traceManager.dirty.value() or self.signals.dirty.value()))
+        self._traceManager = TraceManager().register()
+        self._traceManager.dirty.connect(lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value()))
         self.setFilename(ProjectFormat.untitledFileName)
 
     def configObjChanged(self, key):
-        self.signals.dirty.setValue(True)
+        self.dirty.setValue(True)
 
     def isUntitled(self):
         return self.filename == ProjectFormat.untitledFileName
@@ -114,7 +111,7 @@ class ProjectFormat(object):
         self.config.filename = f        
         self.datadirectory = os.path.splitext(self.filename)[0] + "_data/"
         self.createDataDirectory()
-        self.signals.statusChanged.emit()
+        self.sigStatusChanged.emit()
         
     def createDataDirectory(self):
         # Check if data-directory exists?
@@ -135,7 +132,7 @@ class ProjectFormat(object):
 
         self.config = ConfigObjProj(infile=self.filename, callback=self.configObjChanged)
         self._traceManager.loadProject(self.filename)
-        self.signals.dirty.setValue(False)
+        self.dirty.setValue(False)
 
     def getDataFilepath(self, filename, subdirectory='analysis'):
         datadir = os.path.join(self.datadirectory, subdirectory)
@@ -150,8 +147,8 @@ class ProjectFormat(object):
 
     def checkDataConfig(self, config, requiredSettings):
         """Check a configuration section for various settings"""
-        requiredSettings = Util.convert_to_str(requiredSettings)
-        config = Util.convert_to_str(config)
+        requiredSettings = util.convert_to_str(requiredSettings)
+        config = util.convert_to_str(config)
         return set(requiredSettings.items()).issubset(set(config.items()))
 
     def getDataConfig(self, sectionName="Aux Data", subsectionName=None, requiredSettings=None):
@@ -162,7 +159,6 @@ class ProjectFormat(object):
         this would return a list of all sections of the type
         'Aux Data NNNN - Frequency'.
         """
-
         sections = []
 
         # Get all section names
@@ -224,9 +220,8 @@ class ProjectFormat(object):
         self.config[pn]['General Settings'] =  self.settingsDict
 
         self.config.write()
-        self.signals.fileChangedOnDisk.emit()
-        self.signals.statusChanged.emit()
-        self.signals.dirty.setValue(False)
+        self.sigStatusChanged.emit()
+        self.dirty.setValue(False)
 
     def checkDiff(self):
         """
@@ -236,8 +231,8 @@ class ProjectFormat(object):
         """
         self.saveTraceManager()
 
-        disk = Util.convert_to_str(ConfigObjProj(infile=self.filename))
-        ram = Util.convert_to_str(self.config)
+        disk = util.convert_to_str(ConfigObjProj(infile=self.filename))
+        ram = util.convert_to_str(self.config)
         diff = DictDiffer(ram, disk)
 
         added = diff.added()
@@ -247,7 +242,7 @@ class ProjectFormat(object):
         return added, removed, changed
 
     def hasDiffs(self):
-        if self.signals.dirty.value(): return True
+        if self.dirty.value(): return True
 
         added, removed, changed = self.checkDiff()
         if (len(added) + len(removed) + len(changed)) == 0:
@@ -265,8 +260,8 @@ class ProjectFormat(object):
 
             for traceFile in os.listdir(tracePath):
                 if traceFile.startswith(prefix):
-                    Util.copyFile(os.path.normpath(tracePath + "/" + traceFile), destinationDir, keepOriginals)
+                    util.copyFile(os.path.normpath(tracePath + "/" + traceFile), destinationDir, keepOriginals)
 
-            Util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
+            util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
             t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
-        self.signals.statusChanged.emit()
+        self.sigStatusChanged.emit()

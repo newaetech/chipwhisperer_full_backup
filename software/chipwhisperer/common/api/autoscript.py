@@ -25,7 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.common.utils import Util, timer
+from chipwhisperer.common.utils import util, timer
+
 
 class SmartStatements(object):
     """
@@ -120,17 +121,20 @@ class SmartStatements(object):
         if force or newstr not in self._selfreplacement:
             # print newstr not in self._selfreplacement
             # print "%s: %s" % (self._selfreplacement, newstr)
-             
-            sp = self._selfreplacement.split(".", 1)
-            self._selfreplacement = sp[0] + "." + newstr + sp[1]
+
+            if len(self._selfreplacement) > 0:
+                sp = self._selfreplacement.split(".", 1)
+                self._selfreplacement = sp[0] + "." + newstr + sp[1]
+            else:
+                self._selfreplacement =  newstr
 
 
 class AutoScript(object):
     """Base functions for getting/setting stuff to make main script file"""
 
     def __init__(self):
-        self.scriptsUpdated = Util.Signal()
-        self.runScriptFunction = Util.Signal()
+        self.scriptsUpdated = util.Signal()
+        self.runScriptFunction = util.Signal()
         self.autoScriptInit()
 
     def autoScriptInit(self):
@@ -138,7 +142,7 @@ class AutoScript(object):
         self.updateDelayTimer = timer.Timer()
         self.updateDelayTimer.timeout.connect(self.scriptsUpdated.emit)
         self.updateDelayTimer.setSingleShot(True)
-        self.updateDelayTimer.setInterval(1000)
+        self.updateDelayTimer.setInterval(500)
 
     def clearStatements(self):
         self.importStatements = []
@@ -167,7 +171,7 @@ class AutoScript(object):
             if key not in self._smartstatements:
                 self.addGroup(key)
             if k["type"] == "function":
-                if len(prefix) > 0 and k["obj"] != "userScript.":
+                if len(prefix) > 0 and k["obj"] != "UserScript.":
                     obj = k["obj"] + prefix
                 else:
                     obj = k["obj"].rstrip('.')
@@ -188,33 +192,3 @@ class AutoScript(object):
 
     def getStatements(self, key):
         return self._smartstatements[key].statements()
-
-
-class AutoScriptBase(object):
-
-    def __init__(self, project):
-        self._project = project
-
-    def initProject(self):
-        pass
-
-    def initPreprocessing(self):
-        pass
-
-    def initAnalysis(self):
-        pass
-
-    def initReporting(self):
-        pass
-
-    def doAnalysis(self):
-        pass
-
-    def doneAnalysis(self):
-        pass
-
-    def doneReporting(self):
-        pass
-
-    def project(self):
-        return self._project

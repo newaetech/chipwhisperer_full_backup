@@ -29,7 +29,7 @@ from PySide.QtCore import *
 from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.traces.TraceContainerTypes
 from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.traces.TraceContainerConfig import TraceContainerConfig
+from chipwhisperer.common.traces._cfgfile import TraceContainerConfig
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
 try:
@@ -112,7 +112,7 @@ class TraceManagerImport(QtFixes.QDialog):
             fmtclass = chipwhisperer.common.traces.TraceContainerTypes.TraceContainerFormatList[fmt]
             
             #Use temp class to finally initilize our "good" version
-            self.tmanager = fmtclass( fmtclass.getParamsClass(openMode=True) )
+            self.tmanager = fmtclass()
             self.tmanager.config.loadTrace(fname)
             self.tmanager.loadAllConfig()
             ExtendedParameter.reloadParams(self.tmanager.getParams.paramList(), self.paramTree)

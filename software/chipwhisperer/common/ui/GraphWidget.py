@@ -43,7 +43,7 @@ class ColorDialog(QtFixes.QDialog):
         if auto is None:
             auto = True
 
-        self.cbAuto = QCheckBox("Auto-Increment Persistant Colours")
+        self.cbAuto = QCheckBox("Auto-Increment Persistent Colours")
         self.cbAuto.setChecked(auto)
         
         layout.addWidget(self.cbAuto)
@@ -80,6 +80,7 @@ class ColorDialog(QtFixes.QDialog):
     def getValues(self):
         return (self.colorInt, self.cbAuto.isChecked())
 
+
 class GraphWidget(QWidget):
     """
     This GraphWidget holds a pyqtgraph PlotWidget, and adds a toolbar for the user to control it.
@@ -87,14 +88,15 @@ class GraphWidget(QWidget):
     
     xRangeChanged = Signal(int, int)
     dataChanged = Signal(list, int)
-    
-    
+
     def __init__(self):
         QWidget.__init__(self)
         pg.setConfigOption('background', 'w')
         pg.setConfigOption('foreground', 'k')
         
         self.imagepath = ":/images/"
+        self.selectedTrace = None
+        self.selectedTraceId = None
 
         self.persistantItems = []
         self._customWidgets = []
@@ -110,6 +112,13 @@ class GraphWidget(QWidget):
         vb.setMouseMode(vb.RectMode)
         vb.sigStateChanged.connect(self.VBStateChanged)
         vb.sigXRangeChanged.connect(self.VBXRangeChanged)
+
+        self.proxysig = pg.SignalProxy(self.pw.plotItem.vb.scene().sigMouseMoved, rateLimit=10, slot=self.mouseMoved)
+
+        self.vLine = pg.InfiniteLine(angle=90, movable=False)
+        self.hLine = pg.InfiniteLine(angle=0, movable=False)
+        vb.addItem(self.vLine, ignoreBounds=True)
+        vb.addItem(self.hLine, ignoreBounds=True)
 
         ###Toolbar
         xLockedAction = QAction(QIcon(self.imagepath+'xlock.png'), 'Lock X Axis', self)
@@ -139,7 +148,26 @@ class GraphWidget(QWidget):
         
         clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
         clear.triggered.connect(self.clearPushed)
-        
+
+        crossHair = QAction(QIcon(self.imagepath+'crosshair.png'), 'Show Crosshairs', self)
+        crossHair.setCheckable(True)
+        crossHair.setChecked(False)
+        self.setCrossHairs(crossHair.isChecked())
+        crossHair.triggered.connect(lambda: self.setCrossHairs(crossHair.isChecked()))
+
+        grid = QAction(QIcon(self.imagepath+'grid.png'), 'Show Grid', self)
+        grid.setCheckable(True)
+        grid.triggered.connect(lambda: self.pw.showGrid(grid.isChecked(), grid.isChecked(), 0.1))
+
+        mouseMode = QAction(QIcon(self.imagepath+'hand.png'), 'Move', self)
+        mouseMode.setCheckable(True)
+        mouseMode.triggered.connect(lambda: vb.setMouseMode(
+            pg.ViewBox.PanMode if mouseMode.isChecked() else pg.ViewBox.RectMode))
+
+        help = QAction(QIcon(self.imagepath+'help.png'), 'Help', self)
+        help.triggered.connect(lambda: QMessageBox.information(self, "Help",
+                                "Right click the graph and check the Result Settings for more options."))
+
         self.GraphToolbar = QToolBar('Graph Tools')
         self.GraphToolbar.addAction(xLockedAction)
         self.GraphToolbar.addAction(yLockedAction)
@@ -149,6 +177,16 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(self.actionPersistance)
         self.GraphToolbar.addAction(setColour)
         self.GraphToolbar.addAction(clear)
+        self.GraphToolbar.addAction(crossHair)
+        self.GraphToolbar.addAction(grid)
+        self.GraphToolbar.addAction(mouseMode)
+        self.GraphToolbar.addAction(help)
+        self.GraphToolbar.addSeparator()
+        self.selection = QLabel("Selected Trace: None")
+        self.GraphToolbar.addWidget(self.selection)
+        self.GraphToolbar.addSeparator()
+        self.pos = QLabel("Position: (-, -)")
+        self.GraphToolbar.addWidget(self.pos)
 
         layout = QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
@@ -161,7 +199,7 @@ class GraphWidget(QWidget):
     def setDefaults(self):
         self.setPersistance(False)
         self.color = 0
-        self.acolor = 0
+        self.acolor = self.seedColor = 0
         self.autocolor = True
         self.defaultYRange = None
 
@@ -181,7 +219,7 @@ class GraphWidget(QWidget):
         if self.colorDialog.exec_():
             data = self.colorDialog.getValues()
             self.setColorInt(data[0], 9)
-            self.acolor = data[0]
+            self.acolor = self.seedColor = data[0]
             self.autocolor = data[1]
         
     def VBStateChanged(self, obj):
@@ -246,7 +284,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
-    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = ""):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
@@ -276,19 +314,21 @@ class GraphWidget(QWidget):
         if pen is None:
             pen = pg.mkPen(self.acolor)
 
-        self.pw.plot(xaxis, trace, pen=pen)
+        p = self.pw.plot(xaxis, trace, pen=pen)
+        self.setupPlot(p, 0, True, idString)
 
         if ghostTrace is False:
             self.dataChanged.emit(trace, startoffset)
 
         # TODO: This was commented out, why?
         self.checkPersistantItems()
-
+        return p
 
     def clearPushed(self):
         """Clear display"""
         self.pw.clear()
         self.checkPersistantItems()
+        self.acolor = self.seedColor
 
     def addPersistantItem(self, item):
         self.persistantItems.append(item)
@@ -320,3 +360,34 @@ class GraphWidget(QWidget):
         if yaxis:
             self.pw.setLabel('left', yaxis)
 
+    def setCrossHairs(self, enabled):
+        self.vLine.setVisible(enabled)
+        self.hLine.setVisible(enabled)
+
+    def selectTrace(self, trace):
+        if self.selectedTrace:
+            self.selectedTrace.setShadowPen(None)
+        if self.selectedTrace == trace:  # Deselects if the trace was already selected
+            self.selectedTrace = None
+            self.selection.setText("Selected Trace: None")
+        else:
+            self.selectedTrace = trace
+            self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=3, style=Qt.DashLine))
+            self.selection.setText("Selected Trace: %s" % (self.selectedTrace.id if hasattr(self.selectedTrace, "id") else ""))
+
+    def mouseMoved(self, evt):
+        mousePoint = evt[0]
+        if self.pw.plotItem.vb.sceneBoundingRect().contains(mousePoint):
+            pos = self.pw.plotItem.vb.mapSceneToView(mousePoint)
+            self.pos.setText("Position: (%f, %f)" % (pos.x(), pos.y()))
+            if self.vLine.isVisible():
+                self.vLine.setPos(pos.x())
+                self.hLine.setPos(pos.y())
+
+    def setupPlot(self, plot, zOrdering, clickable, id):
+        plot.setZValue(zOrdering)
+        plot.id = id
+        if clickable:
+            plot.curve.setClickable(clickable)
+            plot.sigClicked.connect(self.selectTrace)
+        return plot

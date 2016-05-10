@@ -27,45 +27,32 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #===========================================================
 
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils import pluginmanager
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
-from chipwhisperer.analyzer.attacks._base_class import AttackBaseClass
-from chipwhisperer.analyzer.attacks._profiling_template import ProfilingTemplate
+from chipwhisperer.analyzer.attacks._base import AttackBaseClass
+from chipwhisperer.analyzer.attacks.profiling_algorithms.template import ProfilingTemplate
 from _generic_parameters import AttackGenericParameters
 
 
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return Profiling
-
 class Profiling(AttackBaseClass, AttackGenericParameters):
     """Profiling Power Analysis Attack"""
+    _name = "Profiling"
 
-    name = "Profiling"
     def __init__(self):
         AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
 
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
+        self.params.addChildren([
+            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+        ])
+
         # Do not use absolute
         self.useAbs = False
-
-    def setupParameters(self):
-        profalgos = {'Basic':ProfilingTemplate}
-
-        attackParams = [{'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':profalgos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},
-
-                       #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':self.getByteList()},
-                      ]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
-
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
-
-        self.traceManagerChanged.connect(self.attack.setTraceManager)
-        self.projectChanged.connect(self.attack.setProject)
-
         self.setAbsoluteMode(False)
 
     def updateAlgorithm(self, algo):
@@ -90,14 +77,14 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        self.addFunction("init", "setSourceManager", "userScript.ppOutput")
-        self.addFunction("init", "setProject", "userScript.project()")
+        self.addFunction("init", "setTraceSource", "UserScript.traces")
+        self.addFunction("init", "setProject", "UserScript.project()")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
+        self.attack.setTraceSource(self.traceSource())
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
-        self.traceManagerChanged.connect(self.attack.setTraceManager)
 
         try:
             self.attackParams = self.attack.paramList()[0]
@@ -130,66 +117,45 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def keyround(self):
         return self._keyround
 
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
+    def processTraces(self):
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        with progressBar:
+            self.attack.setReportingInterval(self.getReportingInterval())
 
-    def targetBytes(self):
-        return self._targetbytes
+            #TODO: support start/end point different per byte
+            (startingPoint, endingPoint) = self.getPointRange(None)
 
-    def processKnownKey(self, inpkey):
-        return inpkey
+            self.attack.getStatistics().clear()
 
-        # if inpkey is None:
-        #    return None
+            self.sigAnalysisStarted.emit()
+            for itNum in range(1, self.getIterations() + 1):
+                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
+                endingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
 
-        # if self.findParam('hw_round').value() == 'last':
-        #    return models_AES_RoundKeys.AES_RoundKeys().getFinalKey(inpkey)
-        # else:
-        #    return inpkey
+                data = []
+                textins = []
+                textouts = []
 
-    def doAttack(self, progressBar):
-        self.attack.setReportingInterval(self.getReportingInterval())
+                for i in range(startingTrace, endingTrace):
+                    d = self.traceSource().getTrace(i)
 
-        #TODO: support start/end point different per byte
-        (startingPoint, endingPoint) = self.getPointRange(None)
+                    if d is None:
+                        continue
 
-        self.attack.getStatistics().clear()
+                    d = d[startingPoint:endingPoint]
 
-        for itNum in range(1, self.getIterations() + 1):
-            startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-            endingTrace = self.getTraceNum() * itNum + self.getTraceStart()
+                    data.append(d)
+                    textins.append(self.traceSource().getTextin(i))
+                    textouts.append(self.traceSource().getTextout(i))
 
-            data = []
-            textins = []
-            textouts = []
+                #self.attack.clearStats()
+                self.attack.setByteList(self.targetBytes())
+                self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
 
-            for i in range(startingTrace, endingTrace):
-                d = self.traceSource().getTrace(i)
+                #TODO:  pointRange=self.TraceRangeList[1:17]
+                self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
 
-                if d is None:
-                    continue
-
-                d = d[startingPoint:endingPoint]
-
-                data.append(d)
-                textins.append(self.traceSource().getTextin(i))
-                textouts.append(self.traceSource().getTextout(i))
-
-            #self.attack.clearStats()
-            self.attack.setByteList(self.bytesEnabled())
-            self.attack.setStatsReadyCallback(self.statsReady)
-
-            #TODO:  pointRange=self.TraceRangeList[1:17]
-            self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
-
-        self.attackDone.emit()
-
-    def statsReady(self):
-        self.statsUpdated.emit()
-        # QApplication.processEvents()
-
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        pass
+        self.sigAnalysisDone.emit()
 
     def getStatistics(self):
         return self.attack.getStatistics()

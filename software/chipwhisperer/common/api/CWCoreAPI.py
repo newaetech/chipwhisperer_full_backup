@@ -22,123 +22,211 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+import copy
 import traceback
-import sys, os
-from chipwhisperer.common.api.ProjectFormat import ProjectFormat
-from chipwhisperer.common.utils import Util
-from chipwhisperer.common.ui.ProgressBar import *
+import sys
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.common.api.ProjectFormat import ProjectFormat
+from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.ui.ProgressBar import *
+from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
+from chipwhisperer.common.utils.tracesource import TraceSource
 
 
-class CWCoreAPI(object):
+class CWCoreAPI(Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
     __version__ = "V3.0"
+    _name = 'Generic Settings'
     instance = None
 
-    class Signals(object):
-        def __init__(self):
-            self.parametersChanged = Util.Signal()
-            self.traceChanged = Util.Signal()
-            self.newProject = Util.Signal()
-            self.reloadAttackParamList = Util.Signal()
-            self.attackChanged = Util.Signal()
-            self.paramListUpdated = Util.Signal()
-            self.scopeChanged = Util.Signal()
-            self.targetChanged = Util.Signal()
-            self.auxChanged = Util.Signal()
-            self.acqPatternChanged = Util.Signal()
-            self.connectStatus = Util.Signal()
-            self.newInputData = Util.Signal()
-            self.newTextResponse = Util.Signal()
-            self.traceDone = Util.Signal()
-            self.campaignStart = Util.Signal()
-            self.campaignDone = Util.Signal()
-
     def __init__(self):
-        self.paramTrees = []
-        self._project = None
-        self._scope = None
-        self._target = None
-        self._traceClass = None
-        self._attack = None
-        self._numTraces = 100
-        self._numTraceSets = 1
-        self.results = None
-        self.signals = self.Signals()
+        Parameterized.__init__(self)
+        self.sigNewProject = util.Signal()
+        self.sigNewScopeData = util.Signal()
+        self.sigConnectStatus = util.Signal()
+        self.sigAttackChanged = util.Signal()
+        self.sigNewInputData = util.Signal()
+        self.sigNewTextResponse = util.Signal()
+        self.sigTraceDone = util.Signal()
+        self.sigCampaignStart = util.Signal()
+        self.sigCampaignDone = util.Signal()
+        self.sigTracesChanged = util.Signal()
+
         CWCoreAPI.instance = self
 
-    def getRootDir(self):
-        return Util.getRootDir()
+        self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
+        self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
+        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
+        self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
+        self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
+        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
+        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
 
-    def hasScope(self):
-        return self._scope is not None
+        self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
+        self._auxList = [None]  # TODO: implement it as a list in the whole class
+        self._numTraces = 100
+        self._numTraceSets = 1
+
+        self.params.addChildren([
+            {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'value':self._scope, 'set':self.setScope, 'get':self.getScope},
+            {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'value':self._target, 'set':self.setTarget, 'get':self.getTarget},
+            {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'value':self._traceManager, 'set':self.setTraceFormat},
+            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
+            {'name':'Acquisition Settings', 'type':'group', 'children':[
+                    {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
+                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
+                     'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
+                     'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
+                    {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
+                    {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'value':self._acqPattern, 'set':self.setAcqPattern},
+                                                                        ]},
+                                 ])
+
+        self.graphWidget = None
+
+        self.addActiveParams(lambda: self.lazy(self._acqPattern))
+        self.scopeParamTree = CWParameterTree("Scope Settings", [self.getScope()])
+        self.targetParamTree = CWParameterTree("Target Settings", [self.getTarget()])
+        self.traceParamTree = CWParameterTree("Trace Settings", [self.getTraceFormat()])
+        self.auxParamTree = CWParameterTree("Aux Settings", self.getAuxList())
+        self.attackParamTree = CWParameterTree("Attack Settings", [self.getAttack()])
+        self.generalParamTree = CWParameterTree("General Settings", [self])
+
+        # Initialize default values
+        # self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
+        # self.setTarget(self.valid_targets.get("Simple Serial", None))
+        self.setAttack(self.valid_traces.get("CPA", None))
+        self.setAcqPattern(self.valid_acqPatterns.get("Basic", None))
+
+        self.newProject()
+
+    def getGraphWidget(self):
+        return self.graphWidget
+
+    def allGuiActions(self, mainWindow):
+        ret = self.guiActions(mainWindow)
+        if self.getScope(): ret.extend(self.getScope().guiActions(mainWindow))
+        if self.getTarget(): ret.extend(self.getTarget().guiActions(mainWindow))
+        if self.getTraceFormat(): ret.extend(self.getTraceFormat().guiActions(mainWindow))
+        if self.getAuxList()[0]: ret.extend(self.getAuxList()[0].guiActions(mainWindow))
+        if self.getAttack(): ret.extend(self.getAttack().guiActions(mainWindow))
+        return ret
 
     def getScope(self):
-        if not self.hasScope(): raise Warning("Scope Module not loaded")
         return self._scope
 
     def setScope(self, driver):
-        if self.hasScope(): self.getScope().dis()
+        if self.getScope():
+            self.getScope().dis()
         self._scope = driver
-        self.signals.scopeChanged.emit()
-
-    def hasTarget(self):
-        return self._target is not None
+        if self.getScope():
+            self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
+            self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
+        self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):
-        if not self.hasTarget(): raise Warning("Target Module not loaded")
         return self._target
 
     def setTarget(self, driver):
-        if self.hasTarget(): self.getTarget().dis()
+        if self.getTarget(): self.getTarget().dis()
         self._target = driver
-        self._target.paramListUpdated.connect(self.signals.paramListUpdated.emit)
-        self._target.newInputData.connect(self.signals.newInputData.emit)
-        self.signals.paramListUpdated.emit()
-        self.signals.targetChanged.emit()
+        if self.getTarget():
+            self.getTarget().newInputData.connect(self.sigNewInputData.emit)
+            self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
+        self.targetParamTree.replace([self.getTarget()])
+
+    def getAuxList(self):
+        return self._auxList
 
     def setAux(self, aux):
-        self.auxList = [aux]
-        self.signals.auxChanged.emit()
+        self._auxList = [aux]
+        self.auxParamTree.replace([self.getAuxList()[0]]) #TODO - support multiple
 
-    def getAux(self):
-        return self.auxList
+    def getAcqPattern(self):
+        return self._acqPattern
 
     def setAcqPattern(self, pat):
-        self.acqPattern = pat
-        self.acqPattern.setTarget(self.getTarget())
-        self.signals.acqPatternChanged.emit()
+        self._acqPattern = pat
+        self.paramListUpdated.emit()
+
+    def getTraceFormat(self):
+        return self._traceManager
+
+    def setTraceFormat(self, format):
+        self._traceManager = format
+        self.traceParamTree.replace([self.getTraceFormat()])
+
+    def getAttack(self):
+        return self._attack
+
+    def setAttack(self, attack):
+        self._attack = attack
+        if self.getAttack():
+            self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
+        self.attackParamTree.replace([self.getAttack()])
+        self.sigAttackChanged.emit()
+
+    def project(self):
+        return self._project
+
+    def setProject(self, proj):
+        self._project = proj
+        self.sigNewProject.emit()
+
+    def newProject(self):
+        self.setProject(ProjectFormat())
+        self.project().setProgramName(self.__name__)
+        self.project().setProgramVersion(self.__version__)
+        self.project().addParamTree(self)
+        # self.project().addParamTree(self.getScope())
+        # self.project().addParamTree(self.getTarget())
+        self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
+
+    def openProject(self, fname):
+        self.newProject()
+        self.project().load(fname)
+
+    def saveProject(self, fname):
+        self.project().setFilename(fname)
+        self.project().save()
 
     def connectScope(self):
         try:
-            self.getScope().con()
+            if self.getScope():
+                self.getScope().con()
+                # Sets the Plot Widget to the last added TraceSource
+                ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
+                    TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
         return True
+
+    def disconnectScope(self):
+        self.getScope().dis()
 
     def connectTarget(self):
         try:
-            self.getTarget().con(scope = self.getScope())
+            if self.getTarget():
+                self.getTarget().con(scope=self.getScope())
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
         return True
 
+    def disconnectTarget(self):
+        self.getTarget().dis()
+
     def doConDis(self):
-        """DEPRECATED: Is here just for compatibility reasons"""
+        """DEPRECATED: It is here just for compatibility reasons"""
         print "Method doConDis() is deprecated... use connect() or disconnect() instead"
         return self.connect()
 
     def connect(self):
         return self.connectScope() and self.connectTarget()
-
-    def disconnectScope(self):
-        self.getScope().dis()
-
-    def disconnectTarget(self):
-        self.getTarget().dis()
 
     def disconnect(self):
         self.disconnectScope()
@@ -161,22 +249,18 @@ class CWCoreAPI(object):
 
     def capture1(self):
         """Captures only one trace"""
-
         try:
-            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self.auxList, keyTextPattern=self.acqPattern)
-            ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-            ac.doSingleReading()
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
+            ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
+            return ac.doSingleReading()
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
-        return True
 
     def captureM(self, progressBar = None):
         """Captures multiple traces and saves it in the Trace Manager"""
-
         if not progressBar: progressBar = ProgressBarText()
 
-        writerlist = []
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
             progressBar.setMaximum(self._numTraces - 1)
@@ -186,7 +270,8 @@ class CWCoreAPI(object):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                currentTrace = self.getTraceClassInstance()
+                currentTrace = copy.copy(self._traceManager)
+                currentTrace.clear()
 
                 # Load trace writer information
                 starttime = datetime.now()
@@ -199,100 +284,58 @@ class CWCoreAPI(object):
                 currentTrace.config.setAttr("targetSW", "unknown")
                 currentTrace.config.setAttr("scopeName", self.getScope().getName())
                 currentTrace.config.setAttr("scopeSampleRate", 0)
-                currentTrace.config.setAttr("notes", "Aux: " + ', '.join(w.getName() for w in self.auxList))
+                # currentTrace.config.setAttr("notes", "Aux: " + ', '.join(str(self._auxList)))
                 currentTrace.setTraceHint(setSize)
 
-                if waveBuffer is not None:
+                if waveBuffer:
                     currentTrace.setTraceBuffer(waveBuffer)
 
-                if self.auxList is not None:
-                    for aux in self.auxList:
-                        aux.setPrefix(baseprefix)
+                if self._auxList:
+                    for aux in self._auxList:
+                        if aux:
+                            aux.setPrefix(baseprefix)
 
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self.auxList, self.acqPattern)
+                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
-                ac.signals.newTextResponse.connect(self.signals.newTextResponse.emit)
-                ac.signals.traceDone.connect(self.signals.traceDone.emit)
-                ac.signals.traceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
-                ac.signals.traceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
+                ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
+                ac.sigTraceDone.connect(self.sigTraceDone.emit)
+                ac.sigTraceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
+                ac.sigTraceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
 
-                self.signals.campaignStart.emit(baseprefix)
+                self.sigCampaignStart.emit(baseprefix)
                 ac.doReadings(tracesDestination=self.project().traceManager())
-                self.signals.campaignDone.emit()
+                self.sigCampaignDone.emit()
                 tcnt += setSize
 
                 waveBuffer = currentTrace.traces   # Re-use the wave buffer for later segments to avoid memory realocation
-                writerlist.append(currentTrace)
 
                 if progressBar.wasAborted():
                     break
 
-        return writerlist
+    def runScriptModule(self, mod, funcName="run"):
+        try:
+            classes = pluginmanager.getPluginClassesFromModules([mod])
+            if len(classes) == 0:
+                raise Warning("No UserScriptBase class found")
+            for c in classes:
+                self.runScriptClass(c, funcName)
+        except Exception as e:
+            sys.excepthook(Warning, "Could not execute Script Module %s: %s" % (str(mod), e.message), "")
 
-    def project(self):
-        return self._project
+    def runScriptClass(self, scriptClass, funcName="run"):
+        try:
+            m = scriptClass(self)
+            if funcName is not None:
+                eval('m.%s()' % funcName)
+        except Exception as e:
+                #TODO - hack
+                if funcName == 'TraceExplorerDialog_PartitionDisplay_findPOI':
+                    return
 
-    def setProject(self, proj):
-        self._project = proj
-        self.signals.newProject.emit()
-
-    def newProject(self):
-        self.setProject(ProjectFormat())
-        self.project().setProgramName(self.__name__)
-        self.project().setProgramVersion(self.__version__)
-        self.project().addParamTree(self)
-        # self.project().addParamTree(self.getScope())
-        # self.project().addParamTree(self.getTarget())
-
-    def openProject(self, fname):
-        self.newProject()
-        self.project().load(fname)
-
-    def saveProject(self, fname):
-        self.project().setFilename(fname)
-        self.project().save()
-
-    def hasTraceClass(self):
-        return self._traceClass is not None
-
-    def getTraceClassInstance(self):
-        if not self.hasTraceClass(): raise Warning("Trace format not defined")
-        return self._traceClass(self._traceClass.getParams)
-
-    def getTraceClass(self):
-        return self._traceClass
-
-    def setTraceClass(self, driver):
-        self.signals.traceChanged.emit()
-        self._traceClass = driver
-
-    def getAttack(self):
-        return self._attack
-
-    def setAttack(self, attack): # Move to GUI??
-        """Set the attack module, reloading GUI and connecting appropriate signals"""
-        self._attack = attack
-        self.signals.reloadAttackParamList.emit()
-        self.getAttack().paramListUpdated.connect(self.signals.reloadAttackParamList.emit)
-        self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.signals.attackChanged.emit()
-
-    def doAttack(self, mod, progressBar = None):
-        """Called when the 'Do Attack' button is pressed, or can be called via API to cause attack to run"""
-        if not progressBar: progressBar = ProgressBar()
-
-        with progressBar:
-            mod.initProject()
-            mod.initPreprocessing()
-            mod.initAnalysis()
-            mod.initReporting(self.results)
-            mod.doAnalysis(progressBar)
-            mod.doneAnalysis()
-            mod.doneReporting()
+                sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), sys.exc_info()[2])
 
     def _setParameter_children(self, top, path, value, echo):
         """Descends down a given path, looking for value to set"""
-        #print top.name()
         if top.name() == path[0]:
             if len(path) > 1:
                 for c in top.children():
@@ -305,6 +348,8 @@ class CWCoreAPI(object):
                             value = top.opts["values"][value]
                     except TypeError:
                         pass
+                    except KeyError:
+                        print "Parameter value %s is invalid. Check if it is spelled correctly or if the module was loaded properly" % value
 
                 if echo == False:
                     top.opts["echooff"] = True
@@ -316,24 +361,32 @@ class CWCoreAPI(object):
 
                 raise ValueError()
 
-    def setParameter(self, parameter, echo=False):
+    def setParameter(self, parameter, echo=False, blockSignal=False):
         """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
         path = parameter[:-1]
         value = parameter[-1]
 
         try:
-            for t in self.paramTrees:
+            for t in CWParameterTree.getAllParameterTrees().itervalues():
                 for i in range(0, t.invisibleRootItem().childCount()):
                     self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
 
-            print "Parameter not found: %s"%str(parameter)
+            print "Parameter not found: %s" % str(parameter)
         except ValueError:
             #A little klunky: we use exceptions to tell us the system DID work as intended
             pass
         except IndexError:
-            raise IndexError("IndexError Setting Parameter %s\n%s"%(str(parameter), traceback.format_exc()))
+            raise IndexError("IndexError Setting Parameter %s\n%s" % (str(parameter), traceback.format_exc()))
 
-        self.signals.parametersChanged.emit()
+        if not blockSignal:
+            self.paramListUpdated.emit()
+
+    def setupGuiActions(self, mainWindow):
+        if not hasattr(self, 'encryptionStatusMonitor'):
+            self.encryptionStatusMonitor = EncryptionStatusMonitor(mainWindow)
+            self.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
+        return [['Encryption Status Monitor','', self.encryptionStatusMonitor.show]]
+
 
     @staticmethod
     def getInstance():

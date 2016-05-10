@@ -24,22 +24,6 @@
 
 __author__ = "Colin O'Flynn"
 
-import os
-import sys, traceback
-from functools import partial
-from datetime import datetime
-from pyqtgraph.parametertree import Parameter, ParameterTree
-import chipwhisperer.common.ui.PythonConsole
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.ui.HelpWindow import HelpBrowser
-from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
-from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
-from chipwhisperer.common.utils import qt_tweaks
-from chipwhisperer.common.utils import Util
-import chipwhisperer.common.ui.qrc_resources
-
 #We always import PySide first, to force usage of PySide over PyQt
 try:
     from PySide.QtCore import *
@@ -49,197 +33,81 @@ except ImportError:
     sys.exit()
 
 try:
-    import pyqtgraph as pg
+    import pyqtgraph
+    import pyqtgraph.console
+    pyqtgraph.setConfigOption('background', 'w')
+    pyqtgraph.setConfigOption('foreground', 'k')
 except ImportError:
     print "ERROR: PyQtGraph is required for this program"
     sys.exit()
 
+import os
+import sys, traceback
+from functools import partial
+from datetime import datetime
+from PythonConsole import QPythonConsole
+from saveproject import SaveProjectDialog
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.ui.HelpWindow import HelpBrowser
+from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
+from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
+from chipwhisperer.common.utils import pluginmanager, util
+from chipwhisperer.common.results.base import ResultsBase
+import chipwhisperer.common.ui.qrc_resources
+from chipwhisperer.common.utils.parameters import CWParameterTree
 
-class ProjectDiffWidget(QWidget):
-    """Widget that displays differences between versions of the project file"""
-
-    def __init__(self, parent=None, project=None):
-        super(ProjectDiffWidget, self).__init__(parent)
-        self._project = project
-
-        hlayout = QHBoxLayout()
-
-        self.changedTree = ParameterTree()
-        self.addedTree = ParameterTree()
-        self.deletedTree = ParameterTree()
-
-        self.updateParamTree(self.changedTree, [], "Changed Sections")
-        self.updateParamTree(self.addedTree, [], "Added Sections")
-        self.updateParamTree(self.deletedTree, [], "Removed Sections")
-
-        hlayout.addWidget(self.changedTree)
-        hlayout.addWidget(self.addedTree)
-        hlayout.addWidget(self.deletedTree)
-
-        self.setLayout(hlayout)
-        self.checkDiff()
-
-    def updateParamTree(self, paramTree, changelist, name):
-        paramlist = []
-        for k in changelist:
-            paramlist.append({'name':k})
-        params = Parameter.create(name=name, type='group', children=paramlist)
-        ExtendedParameter.reloadParams([params], paramTree)
-
-    def checkDiff(self, ignored=None, updateGUI=False):
-        """
-        Check if there is a difference - returns True if so, and False
-        if no changes present. Also updates widget with overview of the
-        differences if requested with updateGUI
-        """
-        added, removed, changed = self._project.checkDiff()
-        if updateGUI:
-            self.updateParamTree(self.changedTree, changed, "Changed Sections")
-            self.updateParamTree(self.addedTree, added, "Added Sections (not on disk)")
-            self.updateParamTree(self.deletedTree, removed, "Removed Sections (on disk)")
-
-
-class SaveProjectDialog(QDialog):
-
-    def __init__(self, parent):
-        super(SaveProjectDialog, self).__init__(parent)
-        self.setWindowTitle("Unsaved Changes Detected")
-        self.setModal(True)
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Save unsaved changes?"))
-        self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
-        layout.addWidget(self.buttonBox)
-
-        detailedWidget = ProjectDiffWidget(self, project=self.parent().cwAPI.project())
-        detailedWidget.checkDiff(updateGUI=True)
-        detailedLayout = QVBoxLayout()
-        detailedLayout.addWidget(detailedWidget)
-
-        detailedHidableWidget = QWidget()
-        detailedHidableWidget.setLayout(detailedLayout)
-        detailedHidableWidget.hide()
-
-        pbShowDetails = QPushButton("Show Details")
-        pbShowDetails.clicked.connect(detailedHidableWidget.show)
-        detailpblayout = QHBoxLayout()
-        detailpblayout.addWidget(pbShowDetails)
-        detailpblayout.addStretch()
-        layout.addLayout(detailpblayout)
-        layout.addWidget(detailedHidableWidget)
-        
-        self.setLayout(layout)
-
-        self._lastpushed = QDialogButtonBox.RejectRole
-        self.buttonBox.clicked.connect(self.setValue)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-    def setValue(self, but):
-        self._lastpushed = self.buttonBox.buttonRole(but)
-
-    def value(self):
-        return self._lastpushed
-
-    @staticmethod
-    def getSaveProjectDialog(parent, project):
-        if not project.hasDiffs():
-            return QDialogButtonBox.NoRole
-        dialog = SaveProjectDialog(parent)
-        dialog.exec_()
-        return dialog.value()
-
-
-# class ModuleListDialog(QDialog):
-#     def __init__(self, lmFunc):
-#         super(ModuleListDialog, self).__init__()
-#         self.setWindowTitle("Enabled Modules")
-#
-#         modules = lmFunc()
-#
-#         table = QTableWidget(len(modules), 3, self)
-#         table.setHorizontalHeaderLabels(["Module", "Enabled", "Details"])
-#
-#         for indx,itm in enumerate(modules):
-#             table.setItem(indx, 0, QTableWidgetItem(itm[0]))
-#             table.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
-#             table.setItem(indx, 2, QTableWidgetItem(itm[2]))
-#
-#         layout = QVBoxLayout()
-#         layout.addWidget(table)
-#         self.setLayout(layout)
-
-class OutLog:
-    def __init__(self, edit, out=None, color=None, origStdout=None):
-        """(edit, out=None, color=None) -> can write stdout, stderr to a
-        QTextEdit.
-        edit = QTextEdit
-        out = alternate stream ( can be the original sys.stdout )
-        color = alternate color (i.e. color stderr a different color)
-        """
-        self.edit = edit
-        self.out = None
-        self.color = color
-        self.origStdout = origStdout
-
-    def write(self, m):
-        # Still redirect to original STDOUT
-
-        tc = self.edit.textColor()
-        if self.color:
-            self.edit.setTextColor(self.color)
-
-        self.edit.moveCursor(QTextCursor.End)
-        self.edit.insertPlainText(m)
-
-        if self.color:
-            self.edit.setTextColor(tc)
-
-        if self.out:
-            self.out.write(m)
-
-        if self.origStdout:
-            self.origStdout.write(m)
 
 class CWMainGUI(QMainWindow):
     """
     This is the base GUI class, used for both the Analyzer and Capture software. It defines a number of
-    useful features such as the ability to add docks, setting windows, consoles for logging errors, etc. 
-    You can run a demo which shows the basic features, which would look like this:
-    
-    .. image:: /images/mainchip-demo.png
-       
+    useful features such as the ability to add docks, setting windows, consoles for logging errors, etc.
     """
-    MaxRecentFiles = 4
+    maxRecentFiles = 4
 
-    def __init__(self, cwCoreAPI, name="Demo", icon="cwicon"):
-        super(CWMainGUI, self).__init__()
-        self.cwAPI = cwCoreAPI
+    def __init__(self, api, name="Demo", icon="cwicon"):
+        QMainWindow.__init__(self)
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
-        self.traceManagerDialog = TraceManagerDialog(self)
-        self.projEditWidget = ProjectTextEditor(self)
-        self.lastMenuActionSection = None
-        self.originalStdout = None
-        self.initUI(icon)
+        util.setUIupdateFunction(QCoreApplication.processEvents)
+        self.api = api
+        CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
         self.setCentralWidget(None)
         self.setDockNestingEnabled(True)
-        self.helpbrowser = HelpBrowser(self)
-        pg.setConfigOption('background', 'w')
-        pg.setConfigOption('foreground', 'k')
-        self.cwAPI.signals.parametersChanged.connect(QCoreApplication.processEvents)
-        self.cwAPI.signals.newProject.connect(self.projectChanged)
-        self.cwAPI.newProject()
+        self.traceManagerDialog = TraceManagerDialog(self)
+        self.projEditWidget = ProjectTextEditor(self)
+        self.initUI(icon)
+        ResultsBase.sigRegisteredObjectsChanged.connect(self.newResultWidget)
+        self.resultDocks = []
+
+        self.loadExtraModules()
+        self.addToolMenuItems()
+        self.toolMenu.addSeparator()
+        self.addSettingsDocks()
+        self.restoreSettings()
+
+        self.projectChanged()
+        self.api.sigNewProject.connect(self.projectChanged)
+        self.api.sigTracesChanged.connect(self.tracesChanged)
+        CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
 
-    def projectChanged(self):
-        self.traceManagerDialog.setTraceManager(self.cwAPI.project().traceManager())
-        self.projEditWidget.setProject(self.cwAPI.project())
-        self.cwAPI.project().signals.statusChanged.connect(self.statusChanged)
-        self.statusChanged()
+    def newResultWidget(self, resultWidget):
+        # Remove all old actions that don't apply for new selection
+        if resultWidget.getWidget():
+            self.resultDocks.append(self.addDock(resultWidget.getWidget(), name=resultWidget.getName(), area=Qt.TopDockWidgetArea))
 
-    def restoreSettings(self):
-        self.restoreGeometry(QSettings().value("geometry"))
-        self.restoreState(QSettings().value("windowState"))
+    def loadExtraModules(self):
+        pass
+
+    def tracesChanged(self):
+        pass
+
+    def projectChanged(self):
+        self.traceManagerDialog.setTraceManager(self.api.project().traceManager())
+        self.projEditWidget.setProject(self.api.project())
+        self.api.project().sigStatusChanged.connect(self.projectStatusChanged)
+        self.projectStatusChanged()
 
     def addDock(self, dockWidget, name="Settings", area=Qt.TopDockWidgetArea,
                 allowedAreas=Qt.AllDockWidgetAreas,
@@ -251,6 +119,9 @@ class CWMainGUI(QMainWindow):
         dock.setAllowedAreas(allowedAreas)
         dock.setObjectName(name)
         self.addDockWidget(area, dock)
+        if(hasattr(dockWidget,"visibilityChanged")):
+            dockWidget.visibilityChanged.connect(dock.setVisible)
+            dock.visibilityChanged.connect(lambda: dockWidget.updateVisibility(dock.isVisible()))
 
         if visible == False:
             dock.toggleViewAction()
@@ -263,30 +134,25 @@ class CWMainGUI(QMainWindow):
     
     def addSettings(self, tree, name):
         """Adds a dockwidget designed to store a ParameterTree, also adds to 'Windows' menu"""
-        self.cwAPI.paramTrees.append(tree)
         dock = self.addDock(tree, name=name, area=Qt.TopDockWidgetArea)
         dock.setMaximumWidth(560)
         return dock
 
     def tabifyDocks(self, docks):
-        for index in range(1, len(docks)):
-            docks[index].show()
-            self.tabifyDockWidget(docks[index-1], docks[index])
-        docks[0].raise_()
+        if len(docks) > 0:
+            for index in range(1, len(docks)):
+                docks[index].show()
+                self.tabifyDockWidget(docks[index-1], docks[index])
+            docks[0].raise_()
 
-    def addTraceDock(self, name):
-        """Add a new GraphWidget in a dock, you can get the GW with .widget()"""
-        self.waveformDock = self.addDock(GraphWidget(), name=name, area=Qt.TopDockWidgetArea)
-        self.waveformDock.widget().setDefaultYRange(-0.5, 0.5)
-        self.waveformDock.widget().YDefault()
-        return self.waveformDock
-        
+    def getTraceSource(self):
+        raise self.api.project().traceManager()
+
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
         if redirectStdOut:
-            if self.originalStdout is None:
-                self.originalStdout = sys.stdout
+            self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
             sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0), origStdout=self.originalStdout)
 
@@ -294,52 +160,49 @@ class CWMainGUI(QMainWindow):
     
     def addPythonConsole(self, name="Python Console", visible=False):
         """Add a python console, inside which you can access the Python interpreter"""
-        wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
+        tmp = locals()
+        tmp.update({'self':self})
+        wid = pyqtgraph.console.ConsoleWidget(namespace=tmp, text="")
+        # wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
-    def clearAllSettings(self):
-        """Clear all saved QSettings(), such as window location etc"""
-        QSettings().clear()
+    def reloadGuiActions(self):
+        # Remove all old actions that don't apply for new selection
+        if hasattr(self,"_ToolMenuItems"):
+            for act in self._ToolMenuItems:
+                self.toolMenu.removeAction(act)
+
+        self._ToolMenuItems = []
+        self._ToolMenuItems.append(self.toolMenu.addSeparator())
+        for act in CWParameterTree.getAllGuiActions(self):
+            self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
+
+        for act in self._ToolMenuItems:
+            self.toolMenu.addAction(act)
 
     def reset(self):
-        self.clearAllSettings()
-        sys.exit()
+        """Clear all saved QSettings(), such as window location etc and exit"""
+        QSettings().clear()
+        self.dontSaveGeometry = True
+        self.close()
+
+    def restoreSettings(self):
+        self.restoreGeometry(QSettings().value("geometry"))
+        self.restoreState(QSettings().value("windowState"))
+
+    def saveSettings(self):
+        QSettings().setValue("geometry", self.saveGeometry())
+        QSettings().setValue("windowState", self.saveState())
 
     def closeEvent(self, event):
         """Called when window is closed, attempts to save state/geometry"""
-        QSettings().setValue("geometry", self.saveGeometry())
-        QSettings().setValue("windowState", self.saveState())
+        if not (hasattr(self, "dontSaveGeometry") and self.dontSaveGeometry):
+            self.saveSettings()
 
         if self.okToContinue():
             QMainWindow.closeEvent(self, event)
         else:
             event.ignore()
-
-    def createFileActions(self):
-        """Add the file actions (open/save/new)"""
-        self.openRec = QMenu('Open &Recent')
-
-        self.openAct = QAction(QIcon('open.png'), '&Open...', self,
-                               shortcut=QKeySequence.Open,
-                               statusTip='Open Project File',
-                               triggered=self.openProject)
-
-        self.saveAct = QAction(QIcon('save.png'), '&Save...', self,
-                               shortcut=QKeySequence.Save,
-                               statusTip='Save current project to Disk',
-                               triggered=self.saveProject)
-
-        self.newAct = QAction(QIcon('new.png'), '&New', self,
-                               shortcut=QKeySequence.New,
-                               statusTip='Create new Project',
-                               triggered=self.newProject)
-
-        self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
-                statusTip="Exit the application",
-                triggered=self.close)
-
-        for i in range(CWMainGUI.MaxRecentFiles):
-            self.recentFileActs.append(QAction(self, visible=False, triggered=self.openRecentFile))
 
     def helpdialog(self):
         """Helps the User"""
@@ -382,56 +245,81 @@ class CWMainGUI(QMainWindow):
                                          ''
                                          )
 
+    def pluginDialog(self):
+        self.dialog = pluginmanager.PluginStatusDialog(self)
+        self.dialog.show()
+
     def createMenus(self):
         """Create all menus (File, Window, etc)"""
+
         self.fileMenu= self.menuBar().addMenu("&File")
+        self.newAct = QAction(QIcon('new.png'), '&New', self, shortcut=QKeySequence.New,
+                               statusTip='Create new Project', triggered=self.newProject)
         self.fileMenu.addAction(self.newAct)
+        self.openAct = QAction(QIcon('open.png'), '&Open...', self, shortcut=QKeySequence.Open,
+                               statusTip='Open Project File', triggered=self.openProject)
         self.fileMenu.addAction(self.openAct)
+        self.openRec = QMenu('Open &Recent')
         self.fileMenu.addMenu(self.openRec)
+        self.recentFilesAction = []
+        for i in range(CWMainGUI.maxRecentFiles):
+            self.recentFilesAction.append(QAction(self, visible=False, triggered=self.openRecentFile))
+            self.openRec.addAction(self.recentFilesAction[i])
+        self.saveAct = QAction(QIcon('save.png'), '&Save...', self, shortcut=QKeySequence.Save,
+                               statusTip='Save current project to Disk', triggered=self.saveProject)
         self.fileMenu.addAction(self.saveAct)
-#        self.fileMenu.addAction(self.importAct)
-        for i in range(CWMainGUI.MaxRecentFiles):
-            self.openRec.addAction(self.recentFileActs[i])
+        self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
+                               statusTip="Exit the application", triggered=self.close)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAct)
         
         self.projectMenu = self.menuBar().addMenu("&Project")
-        self.traceManageAct = QAction('&Manage Traces', self, statusTip='Add/Remove Traces from Project', triggered=self.traceManagerDialog.show)
+        self.traceManageAct = QAction('&Trace Management', self, statusTip='Add/Remove traces from project', triggered=self.traceManagerDialog.show)
         self.projectMenu.addAction(self.traceManageAct)
         self.consolidateAct = QAction('&Consolidate', self, statusTip='Copy trace files to project directory', triggered=self.consolidateDialog)
         self.projectMenu.addAction(self.consolidateAct)
-        self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit Project File', triggered=self.projEditDock.show)
+        self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit project file', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
-            
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.scripts", False, False, self))
+
         self.toolMenu = self.menuBar().addMenu("&Tools")
 
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
-        # self.helpListAct = QAction('&List Enabled/Disable Modules', self, statusTip="Check if you're missing modules", triggered=self.listModulesShow)
-        self.helpMenu.addAction(QAction('&Clear All Settings', self, statusTip='Restore All Settings to Default Values', triggered=self.clearAllSettings))
+        self.helpMenu.addAction(QAction('&Save Settings', self, statusTip='Save all settings', triggered=self.saveSettings))
+        self.helpMenu.addAction(QAction('&Restore Settings', self, statusTip='Restore all settings to previous saved state', triggered=self.restoreSettings))
+        self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
-        self.helpMenu.addAction(QAction('&About', self, statusTip='About Dialog', triggered=self.aboutdialog))
+        self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
+        self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
+
+    def addToolMenuItems(self):
+        pass
 
     def initUI(self, icon="cwicon"):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
         self.setWindowIcon(QIcon(":/images/%s.png" % icon))
-        self.recentFileActs = []
-        self.createFileActions()
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.addExampleScripts(Util.getModulesInDictFromPackage("chipwhisperer.capture.scripts", instantiate = False))
+        self.toolbar = self.addToolBar('Tools')
+        self.toolbar.setObjectName('Tools')
+        self.addToolbarItems(self.toolbar)
+        self.toolbar.show()
 
         # Project editor dock
-        self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
-        ExtendedParameter.paramScriptingOutput = self.paramScriptingDock.widget()
+        self.paramScriptingDock = self.addConsole("Script Commands", visible=False, redirectStdOut=False)
+        ExtendedParameter.paramScriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
         self.consoleDock = self.addConsole()
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
         self.setBaseSize(800,600)
-        
+
+    def addToolbarItems(self, toolbar):
+        pass
+
     def addExampleScripts(self, scripts):
         self.exampleScriptAct = QAction('&Example Scripts', self, statusTip='Predefined Scripts')
         self.projectMenu.addSeparator()
@@ -439,13 +327,13 @@ class CWMainGUI(QMainWindow):
         subMenu = QMenu("Submenu", self)
 
         for name, script in scripts.iteritems():
-            subMenu.addAction(QAction(name, self, statusTip=script.description, triggered=partial(self.runScript, script)))
+            subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=partial(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 
     def updateTitleBar(self):
         """Update filename shown in title bar"""
-        fname = os.path.basename(self.cwAPI.project().getFilename())
+        fname = os.path.basename(self.api.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(True)
         
@@ -458,23 +346,23 @@ class CWMainGUI(QMainWindow):
     #     """Should return a list of all possible imports, used to test which modules are missing"""
     #     return [["MainChip", True, ""]]
 
-    def statusChanged(self):
+    def projectStatusChanged(self):
         """Add File to recent file list"""
         self.updateTitleBar()
         
-        if self.cwAPI.project().isUntitled(): return
+        if self.api.project().isUntitled(): return
         
         files = QSettings().value('recentFileList')
-        if files is None:
+        if files is None or not isinstance(files, list):
             files = []
 
         try:
-            files.remove(self.cwAPI.project().getFilename())
+            files.remove(self.api.project().getFilename())
         except Exception:
             pass
 
-        files.insert(0, self.cwAPI.project().getFilename())
-        numRecentFiles = min(len(files), CWMainGUI.MaxRecentFiles)
+        files.insert(0, self.api.project().getFilename())
+        numRecentFiles = min(len(files), CWMainGUI.maxRecentFiles)
         files = files[:numRecentFiles]
 
         QSettings().setValue('recentFileList', files)
@@ -483,17 +371,17 @@ class CWMainGUI(QMainWindow):
     def updateRecentFileActions(self):
         """Update & Load the list of recent files"""
         files = QSettings().value('recentFileList')
-        if files is not None:
+        if files is not None and isinstance(files, list):
             files_no = 0
             for f in files:
-                text = "&%d %s" % (files_no + 1, Util.strippedName(f))
-                self.recentFileActs[files_no].setText(text)
-                self.recentFileActs[files_no].setData(f)
-                self.recentFileActs[files_no].setVisible(True)
-                files_no = files_no + 1
+                text = "&%d %s" % (files_no + 1, util.strippedName(f))
+                self.recentFilesAction[files_no].setText(text)
+                self.recentFilesAction[files_no].setData(f)
+                self.recentFilesAction[files_no].setVisible(True)
+                files_no += 1
 
-            for j in range(files_no, CWMainGUI.MaxRecentFiles):
-                self.recentFileActs[j].setVisible(False)
+            for j in range(files_no, CWMainGUI.maxRecentFiles):
+                self.recentFilesAction[j].setVisible(False)
 
     def openRecentFile(self):
         action = self.sender()
@@ -507,12 +395,12 @@ class CWMainGUI(QMainWindow):
             fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
-        self.cwAPI.openProject(fname)
         self.updateStatusBar("Opening Project: " + fname)
+        self.api.openProject(fname)
 
     def saveProject(self):
-        fname = self.cwAPI.project().getFilename()
-        if self.cwAPI.project().isUntitled():
+        fname = self.api.project().getFilename()
+        if self.api.project().isUntitled():
             fd = QFileDialog(self, 'Save New File', './projects/', 'ChipWhisperer Project (*.cwp)')
             fd.setOption(QFileDialog.DontUseNativeDialog)
             fd.setDefaultSuffix('cwp') # Will not append the file extension if using the static file dialog
@@ -523,21 +411,21 @@ class CWMainGUI(QMainWindow):
 
             fname = fd.selectedFiles()[0]
 
-        self.cwAPI.saveProject(fname)
+        self.api.saveProject(fname)
         self.updateStatusBar("Project Saved")
 
     def newProject(self):
         self.okToContinue()
-        self.cwAPI.newProject()
+        self.api.newProject()
         self.updateStatusBar("New Project Created")
 
     def setProject(self, proj):
-        self.cwAPI.setProject(proj)
+        self.api.setProject(proj)
 
     def okToContinue(self):
-        if self.cwAPI.project() is None: return False
+        if self.api.project() is None: return False
 
-        reply = SaveProjectDialog.getSaveProjectDialog(self, self.cwAPI.project())
+        reply = SaveProjectDialog.getSaveProjectDialog(self, self.api.project())
         if reply == QDialogButtonBox.RejectRole:
             return False
         elif reply == QDialogButtonBox.YesRole:
@@ -557,20 +445,19 @@ class CWMainGUI(QMainWindow):
         ret = msgBox.exec_()
 
         if ret == QMessageBox.Yes:
-            self.cwAPI.project().consolidate(keepOriginals = True)
+            self.api.project().consolidate(keepOriginals = True)
         elif ret == QMessageBox.No:
-            self.cwAPI.project().consolidate(keepOriginals = False)
+            self.api.project().consolidate(keepOriginals = False)
 
     def updateStatusBar(self, message):
         msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
         print "Status: " + msg
         self.statusBar().showMessage(msg)
 
-    def runScript(self, mod):
-        self.updateStatusBar("Running Script: %s" % mod.name)
-        m = mod(self.cwAPI)
-        m.run()
-        self.updateStatusBar("Finished Script: %s" % mod.name)
+    def runScript(self, scriptClass, funcName="run"):
+        self.updateStatusBar("Running Script: %s" % scriptClass.getClassName())
+        self.api.runScriptClass(scriptClass, funcName="run")
+        self.updateStatusBar("Finished Script: %s" % scriptClass.getClassName())
 
     def exceptionHandlerDialog(self, etype, value, trace):
         """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""
@@ -579,13 +466,16 @@ class CWMainGUI(QMainWindow):
             self.close()
             return
 
-        if issubclass(etype, Warning):
-            print str(value)
-            QMessageBox.warning(self, "Warning", str(value))
-            return
-
         details = "".join(traceback.format_exception(etype, value, trace))
         print details
+
+        if issubclass(etype, Warning):
+            print "WARNING: " + str(value)
+            dialog = QMessageBox(QMessageBox.Warning, "Warning", str(value), QMessageBox.Close, self)
+            dialog.setDetailedText(details)
+            dialog.exec_()
+            return
+
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
                     "If the error occurs again, please create a new ticket <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>here</a> informing the details bellow." % value, QMessageBox.Close, self)
@@ -597,11 +487,44 @@ class CWMainGUI(QMainWindow):
     def getInstance():
         return CWMainGUI.instance
 
+
+class OutLog:
+    def __init__(self, edit, out=None, color=None, origStdout=None):
+        """(edit, out=None, color=None) -> can write stdout, stderr to a
+        QTextEdit.
+        edit = QTextEdit
+        out = alternate stream ( can be the original sys.stdout )
+        color = alternate color (i.e. color stderr a different color)
+        """
+        self.edit = edit
+        self.out = None
+        self.color = color
+        self.origStdout = origStdout
+
+    def write(self, m):
+        # Still redirect to original STDOUT
+        tc = self.edit.textColor()
+        if self.color:
+            self.edit.setTextColor(self.color)
+
+        self.edit.moveCursor(QTextCursor.End)
+        self.edit.insertPlainText(m)
+
+        if self.color:
+            self.edit.setTextColor(tc)
+
+        if self.out:
+            self.out.write(m)
+
+        if self.origStdout:
+            self.origStdout.write(m)
+
+
 def main():    
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Window Demo")
-    ex = CWMainGUI(CWCoreAPI(), app.applicationName())
+    CWMainGUI(CWCoreAPI(), app.applicationName())
     sys.exit(app.exec_())
 
 if __name__ == '__main__':

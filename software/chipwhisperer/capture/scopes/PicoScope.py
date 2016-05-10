@@ -31,68 +31,54 @@ picoscope library at https://github.com/colinoflynn/pico-python which you
 must install
 """
 
-import collections
 import time
-
+from chipwhisperer.common.utils.parameters import Parameterized
+from ._base import ScopeTemplate
+from chipwhisperer.common.utils import util
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
 
-from chipwhisperer.capture.scopes.ScopeTemplate import ScopeTemplate
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
 
+class PicoScope(Parameterized): #TODO: ScopeBase instead?
+    _name = 'Pico Scope'
 
-def getClass():
-    return PicoScopeInterface
-
-
-class PicoScope(object):
-    paramListUpdated = Util.Signal()
-    dataUpdated = Util.Signal()
-
-    def __init__(self, psClass):
+    def __init__(self, parentParam=None, psClass=None):
+        ScopeTemplate.__init__(self, parentParam)
         self.ps = psClass
-        
+        self.dataUpdated = util.Signal()
+
         chlist = {}
         for t in self.ps.CHANNELS:
             if self.ps.CHANNELS[t] < self.ps.CHANNELS['MaxChannels']:
                 chlist[t] = self.ps.CHANNELS[t]
 
         # Rebuild channel range as string + api value
-        chRange = collections.OrderedDict()
+        chRange = util.DictType()
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 
-        scopeParams = [
-                      {'name':'Trace Measurement', 'type':'group', 'children':[
-                         {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
-                         {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
-                         {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'set':self.updateCurrentSettings},
-                         {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'set':self.updateCurrentSettings}, ]},
-                      {'name':'Trigger', 'type':'group', 'children':[
-                         {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'set':self.updateCurrentSettings},
-                         {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'set':self.updateCurrentSettings},
-                         {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'set':self.updateCurrentSettings},
-                         {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'set':self.updateCurrentSettings},
-                         {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
-                         {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
-                         ]},
-                      {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.UpdateSampleRateFreq, 'siPrefix':True, 'suffix':'S/s'},
-                      {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.UpdateSampleRateFreq},
-                      {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.UpdateSampleRateFreq},
-                  ]
-        
-        for t in self.getAdditionalParams():
-            scopeParams.append(t)
-
-        self.params = ConfigParameter.create_extended(self, name='Scope Settings', type='group', children=scopeParams)
+        self.params.addChildren([
+            {'name':'Trace Measurement', 'type':'group', 'children':[
+                {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
+                {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
+                {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'set':self.updateCurrentSettings},
+                {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'set':self.updateCurrentSettings},
+            ]},
+            {'name':'Trigger', 'type':'group', 'children':[
+                {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'set':self.updateCurrentSettings},
+                {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'set':self.updateCurrentSettings},
+                {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'set':self.updateCurrentSettings},
+                {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'set':self.updateCurrentSettings},
+                {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
+                {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
+            ]},
+            {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.updateSampleRateFreq, 'siPrefix':True, 'suffix': 'S/s'},
+            {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.updateSampleRateFreq},
+            {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.updateSampleRateFreq},
+        ])
             
-    def getAdditionalParams(self):
-        """Override this to define additional parameters"""
-        return []
-            
-    def UpdateSampleRateFreq(self, ignored=None):
+    def updateSampleRateFreq(self, ignored=None):
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
@@ -110,9 +96,6 @@ class PicoScope(object):
     def con(self):
         self.ps.open()
         self.updateCurrentSettings()
-            
-    def paramList(self):
-        return [self.params]
     
     def updateCurrentSettings(self, ignored=False):
         if self.ps.handle is None: return
@@ -142,10 +125,9 @@ class PicoScope(object):
             # Trigger
             self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').value(), direction=self.findParam('trigtype').value(), timeout_ms=1000)
 
-            self.UpdateSampleRateFreq()
+            self.updateSampleRateFreq()
         except IOError, e:
             raise IOError("Caught Error: %s" % str(e))
-
 
     def arm(self):       
         self.ps.runBlock()
@@ -162,27 +144,25 @@ class PicoScope(object):
         # No timeout?
         return False
 
+
 class PicoScopeInterface(ScopeTemplate):
-    name =  "PicoScope"
-    dataUpdated = Util.Signal()
+    _name = "PicoScope"
 
-    def __init__(self):
-        super(PicoScopeInterface, self).__init__()
+    def __init__(self, parentParam=None):
+        super(PicoScopeInterface, self).__init__(parentParam)
+
+        scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
+                        "PS2000": ps2000.PS2000(connect=False)}
+        # self.connectChildParamsSignals(scopes) #TODO: Fix
+
+        self.params.addChildren([
+            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}
+        ])
+        self.setupActiveParams([lambda: self.lazy(self.scopetype)])
+
         self.scopetype = None
-
-        scope_cons = {}
-        scope_cons["PS6000"] = ps6000.PS6000(connect=False)
-        scope_cons["PS5000a"] = ps5000a.PS5000a(connect=False)
-        scope_cons["PS2000"] = ps2000.PS2000(connect=False)
-        defscope = scope_cons["PS5000a"]
-
         self.advancedSettings = None
-        
-        scopeParams = [{'name':'Scope Type', 'type':'list', 'values':scope_cons, 'value':defscope, 'set':self.setCurrentScope},
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name='PicoScope Interface', type='group', children=scopeParams)
-        self.setCurrentScope(defscope)
+        self.setCurrentScope(self.findParam('type').value())
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst
@@ -199,17 +179,18 @@ class PicoScopeInterface(ScopeTemplate):
         if update:
             self.paramListUpdated.emit()
    
-    def con(self):
+    def _con(self):
         if self.scopetype is not None:
             self.scopetype.con()
-            self.connectStatus.setValue(True)
+            return True
+        return False
 
-    def dis(self):
+    def _dis(self):
         if self.scopetype is not None:
             self.scopetype.dis()  
-            self.connectStatus.setValue(False)
+        return True
 
-    def doDataUpdated(self,  l, offset=0):
+    def doDataUpdated(self, l, offset=0):
         self.datapoints = l
         self.offset = offset
         if len(l) > 0:
@@ -225,18 +206,3 @@ class PicoScopeInterface(ScopeTemplate):
     def capture(self, update=True, NumberPoints=None, waitingCallback=None):
         """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
         return self.scopetype.capture(update, NumberPoints, waitingCallback)
-        
-    def paramList(self):
-        p = []       
-        p.append(self.params)  
-         
-        if self.scopetype is not None:
-            for a in self.scopetype.paramList(): p.append(a)
-            
-        #if self.advancedSettings is not None:
-        #    for a in self.advancedSettings.paramList(): p.append(a)    
-            
-        return p
-
-    def validateSettings(self):
-        return []

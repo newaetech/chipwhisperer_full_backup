@@ -32,8 +32,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import Parameter, ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter, ConfigParameter
 
 
 class TuningParameter(QObject):
@@ -179,7 +178,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
         self.findParam('numtune').setReadonly(not status)
 
     def campaignStart(self, prefixname):
-        """Called when acqusition campaign (multi-capture) starts, generates filename"""
+        """Called when acqusition campaign (multi-api) starts, generates filename"""
         suffix = "_glitchresults.p"
         try:
             fname = self.parent().project().getDataFilepath(prefixname + suffix, subdirectory="glitchresults")
@@ -199,7 +198,6 @@ class GlitchExplorerDialog(QtFixes.QDialog):
             self._autosavef.close()
             self._autosavef = None
 
-
     def updateStatus(self):
         okcnt = 0
         for t in self.tableList:
@@ -217,7 +215,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
 
     def executeScriptCommand(self, paramNum, script):
         #print script
-        self.parent().cwAPI.setParameter(script)
+        self.parent().api.setParameter(script)
 
     def updateParameters(self, ignored=None):
         numparams = self.findParam('numtune').value()
@@ -282,7 +280,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
             self.tuneParamList[pnum + 1].findNewValue()
 
     def traceDone(self):
-        """ Single capture done """
+        """ Single api done """
 
         # TODO: Improve how looping is done
         if len(self.tuneParamList) > 0:

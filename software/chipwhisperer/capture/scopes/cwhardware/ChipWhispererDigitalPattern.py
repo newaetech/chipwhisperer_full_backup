@@ -27,8 +27,8 @@
 
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
+from chipwhisperer.common.utils import util
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -172,12 +172,13 @@ class CWAdvTrigger(object):
     def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
         return self.bitsToPattern(totalpat)
 
+
 class ChipWhispererDigitalPattern(object):
     """
     Communicates and drives with the Digital Pattern Match module inside the FPGA. 
     """
 
-    paramListUpdated = Util.Signal()
+    paramListUpdated = util.Signal()
 
     def __init__(self):
         self.cwAdv = CWAdvTrigger()   

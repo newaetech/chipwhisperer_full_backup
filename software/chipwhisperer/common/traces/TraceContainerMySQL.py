@@ -23,12 +23,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import pickle
-
 import numpy as np
+from _base import TraceContainer
+from _cfgfile import makeAttrDict
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 
-import TraceContainer
-from TraceContainerConfig import makeAttrDict
-from chipwhisperer.common.api.config_parameter import ConfigParameter
 try:
     import umysql as sql
 except ImportError, e:
@@ -36,12 +35,18 @@ except ImportError, e:
     # print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)
 
-def getClass():
-    return TraceContainerMySQL
 
-class parameters(object):
-    def __init__(self, openMode=False):
+class TraceContainerMySQL(TraceContainer):
+    _name = "MySQL"
+
+    def __init__(self, openMode = False):
+        super(TraceContainerMySQL, self).__init__()
+        self.db = None
+        self.idOffset = 0
+        self.lastId = 0
+        self.openMode = openMode
         self.fmt = None
+
         traceParams = [{'name':'MySQL Configuration', 'type':'group', 'children':[
                         {'name':'Server Address', 'key':'addr', 'type':'str', 'value':'127.0.0.1'},
                         {'name':'Server Port', 'key':'port', 'type':'int', 'value':'3306'},
@@ -51,44 +56,14 @@ class parameters(object):
                         {'name':'Table Name', 'key':'tableName', 'type':'str', 'value':'', 'readonly':True}
                       ]}]
 
-        if openMode == False:
+        if self.openMode == False:
             traceParams[0]['children'].append({'name':'Table Naming', 'key':'tableNameType', 'type':'list', 'values':{'Auto-Prefix':'prefix'}, 'value':'prefix'})
         else:
             traceParams[0]['children'].append({'name':'Relist Tables', 'key':'tableListAct', 'type':'action'})
             traceParams[0]['children'].append({'name':'Table List', 'key':'tableNameList', 'type':'list', 'values':[], 'value':'', 'linked':['Table Name']})
 
         traceParams[0]['children'].append({'name':'Trace Format', 'key':'traceFormat', 'type':'list', 'values':['NumPy Pickle'], 'value':'NumPy Pickle', 'set':self.setFormat})
-
-        self.traceParams = traceParams
-
-        self.params = ConfigParameter.create_extended(self, name='MySQL Settings', type='group', children=traceParams)
-
-    def setFormat(self, fmt):
-        self.fmt = fmt
-
-    def format(self):
-        if self.fmt is None:
-            self.fmt = self.findParam('traceFormat').value()
-
-        return self.fmt
-
-    def paramList(self):
-        return [self.params]
-
-
-class TraceContainerMySQL(TraceContainer.TraceContainer):
-    name = "MySQL"
-    getParamsClass = parameters
-    getParams = parameters()
-
-    def __init__(self, params=None):
-        super(TraceContainerMySQL, self).__init__()
-        self.db = None
-        self.idOffset = 0
-        self.lastId = 0
-
-        if params is not None:
-            self.getParams = params
+        self.params.addChildren(traceParams)
 
         #Connect actions if applicable
         try:
@@ -104,6 +79,15 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
 
         #Format name must agree with names from TraceContainerFormatList
         self.config.setAttr("format", "mysql")
+
+    def setFormat(self, fmt):
+        self.fmt = fmt
+
+    def format(self):
+        if self.fmt is None:
+            self.fmt = self.findParam('traceFormat').value()
+
+        return self.fmt
 
     def makePrefix(self, mode='prefix'):
         if mode == 'prefix':
@@ -190,7 +174,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
         if update:
             self.updateConfigData()
         return self._numTraces
-
 
     def numPoints(self, update=False):
         if update:

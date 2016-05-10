@@ -9,7 +9,7 @@
 
 import types
 from pyqtgraph.parametertree.parameterTypes import *
-from chipwhisperer.common.utils import Util
+from chipwhisperer.common.utils import util
 
 # This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
 # They are especially helpful for the work done here
@@ -58,15 +58,9 @@ classmapping = {
 }
 
 
-class fakeParamScriptOutput(object):
-    @staticmethod
-    def append(s):
-        pass
-        #print s
-
 class ExtendedParameter():
 
-    paramScriptingOutput = fakeParamScriptOutput
+    paramScriptingOutput = None
 
     @staticmethod
     def getAllParameters(self, parent=None):
@@ -176,7 +170,7 @@ class ExtendedParameter():
             # print change
 
             # Only trigger on 'value' changes!
-            if (change != 'value') and (change != 'activated') and (change != 'limits'):
+            if (change != 'value') and (change != 'activated'):# and (change != 'limits'):
                 return
 
             # Call specific 'set' routine associated with data
@@ -299,7 +293,9 @@ class ExtendedParameter():
             else:
                 name.append(data)
 
-            ExtendedParameter.paramScriptingOutput.append(str(name))
+            if ExtendedParameter.paramScriptingOutput:
+                ExtendedParameter.paramScriptingOutput.append(str(name))
+
 
 if __name__ == '__main__':
     from pyqtgraph.Qt import QtCore, QtGui
@@ -308,7 +304,7 @@ if __name__ == '__main__':
     from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 
     class submodule(QtCore.QObject):
-        paramListUpdated = Util.Signal()
+        paramListUpdated = util.Signal()
 
         def __init__(self):
             super(submodule, self).__init__()
@@ -328,7 +324,7 @@ if __name__ == '__main__':
 
 
     class module(QtCore.QObject):
-        paramListUpdated = Util.Signal()
+        paramListUpdated = util.Signal()
 
         def __init__(self):
             super(module, self).__init__()
@@ -352,7 +348,7 @@ if __name__ == '__main__':
 
 
     class maintest(QtCore.QObject):
-        paramListUpdated = Util.Signal()
+        paramListUpdated = util.Signal()
 
         def __init__(self):
             super(maintest, self).__init__()
@@ -415,3 +411,12 @@ if __name__ == '__main__':
     t.resize(400, 800)
 
     QtGui.QApplication.instance().exec_()
+
+
+class ConfigParameter(Parameter):
+    @staticmethod
+    def create_extended(parent, *args, **kwargs):
+        params = Parameter.create(*args, **kwargs)
+        if parent:
+            ExtendedParameter.setupExtended(params, parent)
+        return params

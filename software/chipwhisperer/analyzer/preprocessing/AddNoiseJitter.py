@@ -27,30 +27,23 @@
 
 import random
 import numpy as np
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return AddNoiseJitter
+from ._base import PreprocessingBase
 
 
 class AddNoiseJitter(PreprocessingBase):
     """
     Generic filter, pulls in from SciPy for doing the actual filtering of things
     """
-
-    name = "Add Noise: Time Jitter"
-    descrString = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
+    _name = "Add Noise: Time Jitter"
+    _description = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
                   "in actual analysis."
-     
-    def setupParameters(self):
+
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.maxJitter = 0
-        ssParams = [{'name':'Enabled', 'type':'bool', 'key':'enabled', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=ssParams)
+        self.params.addChildren([
+            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'set':self.updateScript}
+        ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -63,7 +56,7 @@ class AddNoiseJitter(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             
@@ -71,7 +64,7 @@ class AddNoiseJitter(PreprocessingBase):
 
             return roll_zeropad(trace, jit)
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
 
         
 # This function stolen from: http://stackoverflow.com/questions/2777907/python-numpy-roll-with-padding

@@ -24,15 +24,11 @@
 
 import os
 import numpy as np
-import TraceContainer
+from _base import TraceContainer
 
 
-def getClass():
-    return TraceContainerNative
-
-
-class TraceContainerNative(TraceContainer.TraceContainer):
-    name = "ChipWhisperer/Native"
+class TraceContainerNative(TraceContainer):
+    _name = "ChipWhisperer/Native"
 
     def copyTo(self, srcTraces=None):
         self.numTrace = srcTraces.numTraces()
@@ -62,11 +58,11 @@ class TraceContainerNative(TraceContainer.TraceContainer):
     def loadAllTraces(self, directory=None, prefix=""):
         """Load all traces into memory"""
 
-        if directory is None:
-            directory = self.directory
-
-        if prefix is None:
-            prefix = self.prefix
+        if self.config.configFilename():
+            if directory is None:
+                directory = os.path.split(self.config.configFilename())[0]
+            if prefix is None:
+                prefix = self.config.attr("prefix")
 
         self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
         self.textins = np.load(directory + "/%stextin.npy" % prefix)

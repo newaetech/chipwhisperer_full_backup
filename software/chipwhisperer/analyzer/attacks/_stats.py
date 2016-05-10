@@ -49,14 +49,14 @@ class DataTypeDiffs(object):
         #Maximum diff & location of maximum
         self.maxes = [0]*self.numSubkeys
         for i in range(0, self.numSubkeys):
-            self.maxes[i] = np.zeros(self.numPerms,dtype=[('hyp','i2'),('point','i4'),('value','f8')])
+            self.maxes[i] = np.zeros(self.numPerms, dtype=[('hyp', 'i2'), ('point', 'i4'), ('value', 'f8')])
 
         #If maximum diffs are valid & sorted correctly
         self.maxValid = [False]*self.numSubkeys
         self.pge = [255]*self.numSubkeys
         self.diffs_tnum = [None]*self.numSubkeys
         self.pge_total = []
-        self.maxes_list = [ list() for i in range(0, self.numSubkeys)]
+        self.maxes_list = [list() for i in range(0, self.numSubkeys)]
 
         #TODO: Ensure this gets called by attack algorithms when rerunning
 
@@ -114,8 +114,7 @@ class DataTypeDiffs(object):
                 #TODO: workaround for PGE, as NaN's get ranked first
                 numnans = np.isnan(self.maxes[i]['value']).sum()
 
-                self.maxes[i].sort(order='value')
-                self.maxes[i] = self.maxes[i][::-1]
+                self.maxes[i][::-1].sort(order='value') # sorts nunpy array in place and in reverse order
                 self.maxValid[i] = True
 
                 if useSingle:

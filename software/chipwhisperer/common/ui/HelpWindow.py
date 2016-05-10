@@ -7,6 +7,7 @@
 # file which should have came with this code.
 
 from PySide.QtGui import *
+from PySide.QtCore import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from PySide import QtWebKit
 from docutils import core, io
@@ -48,14 +49,13 @@ def html_parts(input_string, source_path=None, destination_path=None,
         writer_name='html', settings_overrides=overrides)
     return parts
 
+
 def html_body(input_string, source_path=None, destination_path=None,
               input_encoding='unicode', output_encoding='unicode',
               doctitle=True, initial_header_level=1):
     """
     Given an input string, returns an HTML fragment as a string.
-
     The return value is the contents of the <body> element.
-
     Parameters (see `html_parts()` for the remainder):
 
     - `output_encoding`: The desired encoding of the output.  If a Unicode
@@ -72,24 +72,17 @@ def html_body(input_string, source_path=None, destination_path=None,
     return fragment
 
 
-class HelpBrowser(QtFixes.QDialog):
+class HelpBrowser(QtWebKit.QWebView):
 
     def __init__(self, parent=None):
         super(HelpBrowser, self).__init__(parent)
-
-        self.layout = QVBoxLayout()
         self.setWindowTitle('Help Browser')
-        self.webkit = QtWebKit.QWebView(None)
-        self.layout.addWidget(self.webkit)
-        self.setLayout(self.layout)
+        self.setWindowFlags(Qt.Window)
 
-    def showHelp(self, rstinput):
-        data = html_body(unicode(rstinput))
-        self.webkit.setHtml(data)
+    def showHelp(self, rstinput, curParam):
+        self.setHtml(html_body(unicode(rstinput)))
+        self.raise_()
         self.show()
-
-    def helpwnd(self, text, param=None):
-        self.showHelp(text)
 
 
 if __name__ == '__main__':

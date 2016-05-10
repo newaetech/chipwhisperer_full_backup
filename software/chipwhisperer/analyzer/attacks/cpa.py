@@ -25,52 +25,30 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-from chipwhisperer.analyzer.attacks._base_class import AttackBaseClass
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from _generic_parameters import AttackGenericParameters
-from chipwhisperer.common.utils import Util
-
-
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return CPA
+import sys
+from chipwhisperer.common.utils import pluginmanager
+from ._base import AttackBaseClass
+from ._generic_parameters import AttackGenericParameters
+from chipwhisperer.common.ui.ProgressBar import ProgressBar
 
 
 class CPA(AttackBaseClass, AttackGenericParameters):
     """Correlation Power Analysis Attack"""
-
-    name = "CPA"
+    _name = "CPA"
 
     def __init__(self):
-        AttackBaseClass.__init__(self)
         AttackGenericParameters.__init__(self)
+        AttackBaseClass.__init__(self)
 
-    def setupParameters(self):
-        algos = Util.getModulesInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False)
-        default_algo = algos["Progressive"]
-        attackParams = [{'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':default_algo, 'set':self.updateAlgorithm},
-                        {'name':'Hardware Model', 'type':'group', 'children':[
-                        {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
-                        {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
-                        ]},
-
-                       #TODO: Should be called from the AES module to figure out # of bytes
-                       {'name':'Attacked Bytes', 'type':'group', 'children':
-                         self.getByteList()
-                        },
-                      ]
-
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=attackParams)
-
-        self.setAnalysisAlgorithm(default_algo, None, None)
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
+        self.params.addChildren([
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+        ])
+        self.setAnalysisAlgorithm(self.findParam('CPA_algo').value(), None, None)
         self.updateBytesVisible()
         self.updateScript()
 
     def updateAlgorithm(self, algo):
-        # TODO: this hack required in case don't have setReportingInterval
-        # self.delFunction('init', 'attack.setReportingInterval')
-
         self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
         self.updateScript()
@@ -80,21 +58,15 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateBytesVisible()
         self.updateScript()
 
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
-
-    def targetBytes(self):
-        return self._targetbytes
-
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
-        self.attack = analysisAlgorithm(hardwareModel, leakageModel)
+        self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
 
         try:
             self.attackParams = self.attack.paramList()[0]
         except:
             self.attackParams = None
 
-        self.paramListUpdated.emit(self.paramList())
+        self.paramListUpdated.emit()
 
         if hasattr(self.attack, 'scriptsUpdated'):
             self.attack.scriptsUpdated.connect(self.updateScript)
@@ -102,11 +74,11 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def updateScript(self, ignored=None):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
-        analysAlgoStr = self.findParam('CPA_algo').value().__name__
+        analysAlgoStr = self.attack.__class__.__name__
         hardwareStr = self.findParam('hw_algo').value().__name__
         leakModelStr = hardwareStr + "." + self.findParam('hw_leak').value()
 
-        self.importsAppend("from chipwhisperer.analyzer.attacks.cpa_algorithms.%s import %s" % (analysAlgoStr, analysAlgoStr))
+        self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
@@ -114,8 +86,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceSource", "userScript.ppOutput")
-        self.addFunction("init", "setProject", "userScript.project()")
+        self.addFunction("init", "setTraceSource", "UserScript.traces")
 
     def processKnownKey(self, inpkey):
         if inpkey is None:
@@ -126,29 +97,24 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         else:
             return inpkey
 
-    def doAttack(self, progressBar):
-        self.attack.setTargetBytes(self.targetBytes())
-        self.attack.setReportingInterval(self.getReportingInterval())
+    def processTraces(self):
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        with progressBar:
+            self.attack.setTargetBytes(self.targetBytes())
+            self.attack.setReportingInterval(self.getReportingInterval())
+            self.attack.getStatistics().clear()
+            self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
 
-        self.attack.getStatistics().clear()
-        self.attack.setStatsReadyCallback(self.statsReady)
+            self.sigAnalysisStarted.emit()
+            for itNum in range(1, self.getIterations()+1):
+                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
+                endingTrace = startingTrace + self.getTracesPerAttack() - 1
+                #TODO:  pointRange=self.TraceRangeList[1:17]
+                self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
+                if progressBar and progressBar.wasAborted():
+                    return
 
-        for itNum in range(1, self.getIterations()+1):
-            startingTrace = self.getTraceNum() * (itNum - 1) + self.getTraceStart()
-            endingTrace = startingTrace + self.getTraceNum() - 1
-            #TODO:  pointRange=self.TraceRangeList[1:17]
-            self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
-            if progressBar and progressBar.wasAborted():
-                return
-
-        self.attackDone.emit()
-
-    def statsReady(self):
-        self.statsUpdated.emit()
-        # QApplication.processEvents()
-
-    def passTrace(self, powertrace, plaintext=None, ciphertext=None, knownkey=None):
-        pass
+        self.sigAnalysisDone.emit()
 
     def getStatistics(self):
         return self.attack.getStatistics()

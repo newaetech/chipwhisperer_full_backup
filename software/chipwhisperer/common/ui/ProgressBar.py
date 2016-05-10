@@ -24,10 +24,11 @@
 #=================================================
 
 from datetime import *
-
+from ..utils.timer import Timer
+from ..utils import qt_tweaks
 
 class ProgressBarText(object):
-    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None):
+    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None, show=True):
         self.title = title
         self.last = self.currentProgress = 0
         self.maximum = 100
@@ -70,13 +71,14 @@ class ProgressBarText(object):
         return self.statusMask
 
     def printStatus(self):
-        print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
+        if self.maximum!=0:
+            print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
 
     def updateStatus(self, currentProgress, textValues = None):
         self.textValues = textValues
         self.currentProgress = currentProgress
         if self.printAll or self.currentProgress == 0 or self.currentProgress == self.maximum\
-                or self.currentProgress/self.maximum - self.last/self.maximum >= 0.1:
+                or self.currentProgress/self.maximum - self.last/self.maximum >= 0.2:
             self.last = currentProgress
             self.printStatus()
 
@@ -99,6 +101,9 @@ class ProgressBarText(object):
     def setMaximum(self, value):
         self.maximum = float(value)
 
+    def setMinimum(self, value):
+        assert value == 0
+
     def printAll(self, value):
         self.printAll = value
 
@@ -106,18 +111,16 @@ try:
     from PySide.QtCore import *
     from PySide.QtGui import *
 
-    class ProgressBarGUI(QDialog, ProgressBarText):
-        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None):
+    class ProgressBarGUI(qt_tweaks.QDialog, ProgressBarText):
+        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None, show=True):
 
             ProgressBarText.__init__(self, title = title, text=text, statusMask= statusMask, textValues = textValues)
             QDialog.__init__(self, None)
 
             self.setModal(False)
-            self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
-            # self.setWindowFlags((self.windowFlags() | Qt.CustomizeWindowHint) & (not Qt.WindowContextHelpButtonHint))
+            self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)
             self.resize(200,100)
-
             clayout = QHBoxLayout()
             clayout.addStretch()
             cancel = QPushButton("Abort")
@@ -135,8 +138,9 @@ try:
             layout.addWidget(self.statusLabel)
             layout.addLayout(clayout)
             self.setLayout(layout)
-            self.show()
-            QCoreApplication.processEvents()
+            if show:
+                self.show()
+                self.raise_()
 
         def setText(self, text):
             ProgressBarText.setText(self, text)
@@ -144,15 +148,20 @@ try:
             # if self.getText() == "":
             #     self.textLabel.hide()
 
+        def setStatusMask(self, statusTextMask, textValues = None):
+            ProgressBarText.setStatusMask(self, statusTextMask, textValues)
+            self.updateStatus(self.currentProgress, textValues)
+
         def abort(self, message = None):
             ProgressBarText.abort(self, message)
             if message:
                 QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
 
         def updateStatus(self, currentProgress, textValues = None):
-            super(ProgressBarGUI, self).updateStatus(currentProgress, textValues)
+            ProgressBarText.updateStatus(self, currentProgress, textValues)
             self.statusLabel.setText(self.getStatusText())
-            self.pbar.setValue((self.currentProgress/self.maximum) * 100)
+            if self.maximum!=0:
+                self.pbar.setValue((self.currentProgress/self.maximum) * 100)
             QCoreApplication.processEvents()
 
         def close(self):

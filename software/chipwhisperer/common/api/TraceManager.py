@@ -22,26 +22,26 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+import ConfigParser
 import os.path
 import re
-from chipwhisperer.common.utils import Util
-import chipwhisperer.common.traces.TraceContainerConfig
-import chipwhisperer.common.traces.TraceContainerNative
-import ConfigParser
+
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.tracesource import TraceSource
 
 
-class TraceManager(object):
+class TraceManager(TraceSource):
     """
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
     block of traces. This class is used to handle the remapping and provide methods to save,
     load and manage the traces.
     """
 
-    secName = "Trace Management"
-
-    def __init__(self):
-        self.dirty = Util.Observable(False)
-        self.tracesChanged = Util.Signal()
+    def __init__(self, name = "Trace Management"):
+        TraceSource.__init__(self, name)
+        self.name = name
+        self.dirty = util.Observable(False)
         self._numTraces = 0
         self._numPoints = 0
         self.lastMapped = None
@@ -51,19 +51,19 @@ class TraceManager(object):
         """Creates a new empty set of traces"""
         self.traceSets = []
         self.dirty.setValue(False)
-        self.tracesChanged.emit()
+        self.sigTracesChanged.emit()
 
     def saveProject(self, config, configfilename):
-        config[self.secName].clear()
+        config[self.name].clear()
         for indx, t in enumerate(self.traceSets):
-            config[self.secName]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
-            config[self.secName]['enabled%d' % indx] = str(t.enabled)
+            config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
+            config[self.name]['enabled%d' % indx] = str(t.enabled)
         self.dirty.setValue(False)
 
     def loadProject(self, configfilename):
         config = ConfigParser.RawConfigParser()
         config.read(configfilename)
-        alltraces = config.items(self.secName)
+        alltraces = config.items(self.name)
         self.newProject()
 
         fdir = os.path.split(configfilename)[0] + "/"
@@ -73,7 +73,7 @@ class TraceManager(object):
                 fname = fdir + t[1]
                 fname = os.path.normpath(fname.replace("\\", "/"))
                 # print "Opening %s"%fname
-                ti = chipwhisperer.common.traces.TraceContainerNative.TraceContainerNative()
+                ti = TraceContainerNative()
                 try:
                     ti.config.loadTrace(fname)
                 except Exception, e:
@@ -153,8 +153,11 @@ class TraceManager(object):
         return t.getTextout(n - t.mappedRange[0])
 
     def getKnownKey(self, n):
-        t = self.findMappedTrace(n)
-        return t.getKnownKey(n - t.mappedRange[0])
+        try:
+            t = self.findMappedTrace(n)
+            return t.getKnownKey(n - t.mappedRange[0])
+        except ValueError:
+            return []
 
     def updateRanges(self):
         startTrace = 0
@@ -165,15 +168,6 @@ class TraceManager(object):
                 t.mappedRange = [startTrace, startTrace+tlen-1]
                 startTrace = startTrace + tlen
                 self._numPoints = max(self._numPoints, int(t.config.attr("numPoints")))
-                if t.traces is None:
-                    if t.config.configFilename() is not None:
-                        path = os.path.split(t.config.configFilename())[0]
-                        pref = t.config.attr("prefix")
-                    else:
-                        path = None
-                        pref = None
-                    t.directory = path
-                    t.prefix = pref
             else:
                 t.mappedRange = None
         self._numTraces = startTrace
@@ -192,4 +186,4 @@ class TraceManager(object):
     def setModified(self):
         self.dirty.setValue(True)
         self.updateRanges()
-        self.tracesChanged.emit()
+        self.sigTracesChanged.emit()

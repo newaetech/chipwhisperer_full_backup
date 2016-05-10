@@ -33,7 +33,7 @@ from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import ConfigParser
 import pstats, cProfile #For profiling support (not 100% needed)
-import chipwhisperer.common.traces.TraceContainerConfig
+import chipwhisperer.common.traces._cfgfile
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
 from TraceManagerImport import TraceManagerImport
@@ -44,11 +44,11 @@ class TraceManagerDialog(QtFixes.QDialog):
 
     def __init__(self, parent):
         QDialog.__init__(self, parent)
-        self.setWindowTitle("Traces Management")
+        self.setWindowTitle("Trace Management")
         layout = QVBoxLayout()
 
         #Get labels in use
-        self.attrs = chipwhisperer.common.traces.TraceContainerConfig.TraceContainerConfig().attrHeaderValues()
+        self.attrs = chipwhisperer.common.traces._cfgfile.TraceContainerConfig().attrHeaderValues()
         attrHeaders = [i["header"] for i in self.attrs]
         attrHeaders.insert(0, "Options")
         attrHeaders.insert(1, "Mapped Range")
@@ -85,7 +85,7 @@ class TraceManagerDialog(QtFixes.QDialog):
     def setTraceManager(self, traceManager):
         """Defines the current observed TraceManager."""
         self._traceManager = traceManager
-        self._traceManager.tracesChanged.connect(self.refresh)
+        self._traceManager.sigTracesChanged.connect(self.refresh)
 
     def checkProject(self, ask=True):
         """Checks trace attributes."""

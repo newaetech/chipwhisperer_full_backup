@@ -23,343 +23,38 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import time
-from TargetTemplate import TargetTemplate
-from chipwhisperer.common.utils import Util
-from chipwhisperer.common.utils.Scan import scan
-from chipwhisperer.common.api.config_parameter import ConfigParameter
-from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
-
-
-def getClass():
-    return SimpleSerial
-
-
-try:
-    import serial
-
-    class SimpleSerial_serial(TargetTemplate):
-        name = "System Serial Port"
-
-        def setupParameters(self):
-            ssParams = [{'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
-                        {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-                        {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
-                        ]
-            self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
-            self.ser = None
-    
-        def paramList(self):
-            return [self.params]
-    
-        def updateSerial(self):
-            serialnames = scan.scan()
-            self.findParam('port').setLimits(serialnames)
-            if len(serialnames) > 0:
-                self.findParam('port').setValue(serialnames[0])
-
-        def selectionChanged(self):
-            self.updateSerial()
-    
-        def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
-            pass
-    
-        def write(self, string):
-            return self.ser.write(string)
-    
-        def read(self, num=0, timeout=100):
-            return self.ser.read(num)
-    
-        def flush(self):
-            self.ser.flushInput()
-    
-        def flushInput(self):
-            self.ser.flushInput()
-    
-        def close(self):
-            if self.ser is not None:
-                self.ser.close()
-                self.ser = None
-    
-        def con(self, scope = None):
-            if self.ser == None:
-    
-                # Open serial port if not already
-                self.ser = serial.Serial()
-                self.ser.port     = self.findParam('port').value()
-                self.ser.baudrate = self.findParam('baud').value()
-                self.ser.timeout  = 2     # 2 second timeout
-                self.ser.open()
-                
-except ImportError:
-    SimpleSerial_serial = None
-
-
-class SimpleSerial_ChipWhispererLite(TargetTemplate):
-    name = "ChipWhisperer-Lite"
-
-    def setupParameters(self):
-        ssParams = [{'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}]
-
-        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
-        self.cwlite_usart = None
-
-    def setBaud(self, baud):
-        if self.cwlite_usart:
-            self.cwlite_usart.init(baud)
-        else:
-            print "Baud rate not set, need to connect first"
-    
-    def baud(self):
-        return 38400
-        
-    def write(self, string):
-        self.cwlite_usart.write(string)
-
-    def inWaiting(self):
-        return self.cwlite_usart.inWaiting()
-
-    def read(self, num=0, timeout=250):
-        data = bytearray(self.cwlite_usart.read(num, timeout=timeout))
-
-        result = data.decode('latin-1')
-        return result
-
-    def flush(self):
-        waiting = self.inWaiting()
-        while waiting > 0:
-            self.cwlite_usart.read(waiting)
-            waiting = self.inWaiting()
-
-    def flushInput(self):
-        self.flush()
-
-    def close(self):
-        pass
-
-    def con(self, scope = None):
-        if scope is None or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
-
-        scope.connectStatus.connect(self.dis)
-        self.params.getAllParameters()
-        self.cwlite_usart = CWL_USART(scope.qtadc.ser)
-        self.cwlite_usart.init(baud=self.findParam('baud').value())
-        self.connectStatus.setValue(True)
-        
-    def selectionChanged(self):
-        pass
-
-
-class SimpleSerial_ChipWhisperer(TargetTemplate):
-    name = "ChipWhisperer"
-    CODE_READ       = 0x80
-    CODE_WRITE      = 0xC0
-    ADDR_DATA       = 33
-    ADDR_LEN        = 34
-    ADDR_BAUD       = 35
-
-    def setupParameters(self):
-        ssParams = [{'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
-                    {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
-                    {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
-                                    'set':self.setStopBits, 'readonly':True},
-                    {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
-                                    'set':self.setParity, 'readonly':True},
-                    ]
-        self.params = ConfigParameter.create_extended(self, name='Serial Port Settings', type='group', children=ssParams)
-        self._regVer = 0
-
-    def systemClk(self):
-        return 30E6
-
-    def setTxBaud(self, baud):
-        breg = (baud * 4096 + self.systemClk() / 32) / (self.systemClk() / 16)
-        breg = int(round(breg))
-        self.setTxBaudReg(breg)
-
-    def setRxBaud(self, baud):
-        breg = (baud * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
-        breg = int(round(breg))
-        self.setRxBaudReg(breg)
-
-    def txBaud(self):
-        breg = self.txBaudReg()
-        baud = ((breg * (self.systemClk() / 16)) - (self.systemClk() / 32)) / 4096
-        return baud
-
-    def rxBaud(self):
-        breg = self.rxBaudReg()
-        baud = ((breg * (self.systemClk() / 128)) - (self.systemClk() / 255)) / 512
-        baud = baud / 8
-        return baud
-
-    def checkVersion(self):
-        """Check for newer version of register set - this MUST be called before any
-           calls to setxxBaud, as otherwise these bits get blasted away
-        """
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-
-        if data is None:
-            raise IOError("ChipWhisperer-SER Module not found, check you are using updated FPGA Bitstream")
-
-        if(data[3] & 0b11000000) == 0b11000000:
-            self._regVer = 1
-            self.findParam('stopbits').setReadonly(False)
-            self.findParam('parity').setReadonly(False)
-
-    def setTxBaudReg(self, breg):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        data[2] = breg & 0xff
-        data[3] = (breg >> 8) & 0xff
-        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
-
-    def setRxBaudReg(self, breg):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        data[0] = breg & 0xff
-        highbyte = (breg >> 8) & 0x3F
-        data[1] = (data[1] & 0xC0) | highbyte
-        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
-
-    def txBaudReg(self):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        breg = data[2] | ((data[3] & 0x3F) << 8)
-        return breg
-
-    def rxBaudReg(self):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        breg = data[0] | ((data[1] & 0x3F) << 8)
-        return breg
-    
-    def stopBits(self):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        if data[1] & (1 << 6):
-            return 2
-        else:
-            return 1        
-        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
-    
-    def setStopBits(self, stopbits):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        if stopbits == 1:
-            data[1] = data[1] & ~(1 << 6)
-        else:
-            data[1] = data[1] | (1 << 6)
-        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
-            
-    def parity(self):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        if data[1] & (1 << 7):
-            return 'e'
-        else:
-            return 'n'
-
-    def setParity(self, par):
-        data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
-        if par == 'e':
-            data[1] = data[1] | (1 << 7)
-        else:
-            data[1] = data[1] & ~(1 << 7)
-        self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
-
-    def paramList(self):
-        return [self.params]
-
-    def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
-        #if self.debugLog is not None:
-        #    self.debugLog(lastTx, lastRx)
-        pass
-
-    def write(self, string):
-        for s in string:
-            if isinstance(string, basestring):
-                d = bytearray(s, 'latin-1')
-            else:
-                d = [s]
-            #print "%x"%d[0]
-            self.oa.sendMessage(self.CODE_WRITE, self.ADDR_DATA, d, Validate=False)
-
-            self.debugInfo(s)
-
-    def inWaiting(self):
-        resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_LEN, Validate=False, maxResp=2)
-        resp = resp[1]
-        # print "%d waiting"%resp
-        return resp
-
-    def read(self, num=0, timeout=100):
-        waiting = self.inWaiting()
-        data = bytearray()
-
-        #TODO: why is this needed? Some garbage at front...
-        # num = num + 1
-
-        while (len(data) < num) and (timeout > 1):
-            if waiting > 0:
-                resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, Validate=False, maxResp=1)
-                if resp:
-                    data.append(resp[0])
-            else:
-                time.sleep(0.01)
-                timeout = timeout - 1
-            waiting = self.inWaiting()
-
-        if timeout <= 0:
-            print("CW Serial timed out")
-
-        #TODO: fix removing garbage at front
-        # result = data[1:(len(data)+1)]
-        result = data
-        result = result.decode('latin-1')
-        self.debugInfo(lastRx=result)
-        return result
-
-    def flush(self):
-        waiting = self.inWaiting()
-        while waiting > 0:
-            self.oa.sendMessage(self.CODE_READ, self.ADDR_DATA, Validate=False, maxResp=1)
-            waiting = self.inWaiting()
-
-    def flushInput(self):
-        self.flush()
-
-    def con(self, scope = None):
-        if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
-
-        scope.connectStatus.connect(self.dis())
-        # Check first!
-        self.checkVersion()
-        self.params.getAllParameters()
-        self.connectStatus.setValue(True)
-        
-    def selectionChanged(self):
-        pass
+from ._base import TargetTemplate
+from chipwhisperer.common.utils import pluginmanager
+from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 
 
 class SimpleSerial(TargetTemplate):
-    name = "Simple Serial"
+    _name = "Simple Serial"
 
-    def setupParameters(self):
-        
-        ser_cons = Util.putInDict([SimpleSerial_serial, SimpleSerial_ChipWhisperer, SimpleSerial_ChipWhispererLite], True)
-        defSer = ser_cons[SimpleSerial_ChipWhispererLite.name]
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
 
-        ssParams = [{'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':defSer, 'set':self.setConnection},
-                    {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
-                 #   {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
-                    {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
-                    {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
-                    {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
-                    {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
-                    {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
-                    #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
-                    #                                                                 'DE AD BE EF':' ',
-                    #                                                                 'DE:AD:BE:EF':':',
-                    #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
-                    ]
-        self.params = ConfigParameter.create_extended(self, name='Target Connection', type='group', children=ssParams)
         self.ser = None
+        self.setupActiveParams([lambda: self.lazy(self.ser)])
+        ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
+
         self.keylength = 16
         self.input = ""
+        self.params.addChildren([
+            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite._name], 'set':self.setConnection},
+            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
+            # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
+            {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
+            {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
+            {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
+            {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
+            {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
+            #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
+            #                                                                 'DE AD BE EF':' ',
+            #                                                                 'DE:AD:BE:EF':':',
+            #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
+        ])
+
         self.setConnection(self.findParam('con').value())
 
     def setKeyLen(self, klen):
@@ -372,15 +67,9 @@ class SimpleSerial(TargetTemplate):
 
     def setConnection(self, con):
         self.ser = con
-        self.connectStatus = self.ser.connectStatus
+        self.ser.connectStatus.connect(self.connectStatus.emit)
         self.paramListUpdated.emit()
         self.ser.selectionChanged()
-
-    def paramList(self):
-        p = [self.params]
-        if self.ser is not None:
-            for a in self.ser.paramList(): p.append(a)
-        return p
 
     def con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
@@ -394,7 +83,6 @@ class SimpleSerial(TargetTemplate):
     def close(self):
         if self.ser != None:
             self.ser.close()
-            # self.ser = None
 
     def init(self):
         self.runCommand(self.findParam('cmdinit').value())
@@ -526,67 +214,7 @@ class SimpleSerial(TargetTemplate):
             newkey += bytearray([0]*(blen - len(kin)))
             return newkey
         elif len(kin) > blen:
-            print "note: Trunacating key..."
+            print "note: Truncating key..."
             return kin[0:blen]
 
         return kin
-
-    def validateSettings(self):
-        return []
-
-
-class SimpleSerialWidget(SimpleSerial):
-    def __init__(self):
-        super(SimpleSerialWidget, self).__init__()
-
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-
-        #Serial Settings (not changable right now)
-        gbSerial = QGroupBox("Serial Settings")
-        gbSerialLayout = QVBoxLayout()
-        gbSerial.setLayout(gbSerialLayout)
-
-        #Protocol Setup
-        cbProtocol = QGroupBox("Protocol Information")
-        cbProtocolLayout = QVBoxLayout()
-        cbProtocol.setLayout(cbProtocolLayout)
-
-        cbProtocolLayout.addWidget(QLabel("Set Key:       kXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-        cbProtocolLayout.addWidget(QLabel( "Do Encryption: pXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-        cbProtocolLayout.addWidget(QLabel( "Response:      rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\\n"))
-
-        layout.addWidget(cbProtocol)
-
-        #Debug Stuff
-        cbDebug = QGroupBox("Debug Information")
-        cbDebugLayout = QGridLayout()
-        cbDebug.setLayout(cbDebugLayout)
-
-        self.txDebugASCII = QLabel()
-        self.txDebugHEX = QLabel()
-        self.rxDebugASCII = QLabel()
-        self.rxDebugHEX = QLabel()
-
-        cbDebugLayout.addWidget(QLabel("Last TX(ASCII)"), 1, 1)
-        cbDebugLayout.addWidget(self.txDebugASCII, 1,  2)
-        cbDebugLayout.addWidget(self.txDebugHEX, 2,  2)
-        cbDebugLayout.addWidget(QLabel("Last RX"), 3, 1)
-        cbDebugLayout.addWidget(self.rxDebugASCII, 3,  2)
-        cbDebugLayout.addWidget(self.rxDebugHEX, 4,  2)
-
-        layout.addWidget(cbDebug)
-
-    def setDebugInfo(self,  lastSent=None,  lastResponse=None):
-        if lastSent:
-            self.txDebugASCII.setText(lastSent)
-            string = ""
-            for s in lastSent:
-                string = string + "%02x "%ord(s)
-            self.txDebugHEX.setText(string)
-        if lastResponse:
-            self.rxDebugASCII.setText(lastResponse)
-            string = ""
-            for s in lastResponse:
-                string = string + "%02x "%ord(s)
-            self.rxDebugHEX.setText(string)

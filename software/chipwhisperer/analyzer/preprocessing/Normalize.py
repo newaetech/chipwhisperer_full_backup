@@ -25,17 +25,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtGui import *
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from chipwhisperer.common.api.config_parameter import ConfigParameter
+from ._base import PreprocessingBase
 import numpy as np
-     
-def getClass():
-    """"Returns the Main Class in this Module"""
-    return Normalize
 
 
-class NormBase(QWidget):
+class NormBase(object):
     """Base Class for Normalization"""
     UseF1Coeff = False
     UseF2Coeff = False
@@ -53,90 +47,99 @@ class NormBase(QWidget):
     def loadZFile(self, f):
         pass
 
-class normmean(NormBase):
+
+class NormMean(NormBase):
     """Normalize by mean (e.g. make traces zero-mean)"""
     def processTrace(self, t, tindex):
         return t - np.mean(t)
 
-class normmeanstd(NormBase):
+
+class NormMeanStd(NormBase):
     """Normalize by mean & std-dev """
     def processTrace(self, t, tindex):
         return (t - np.mean(t)) / np.std(t)
-        
-class normlinfunc(NormBase):
-    """Normalize by two polynomial functions based on additional information"""
-    UseF1Coeff = True
-    UseF2Coeff = True
-    UseZSource = True
 
-    def loadF1File(self, f):
-        if f is 0:
-            self.f1coeff = 0
-        elif f is None:
-            f, _ = QFileDialog.getOpenFileName(self, 'F1 Coefficients', '.', '*.npy')
-            if f:
+
+try:
+    from PySide.QtGui import *
+
+    class NormLinFunc(NormBase):
+        """Normalize by two polynomial functions based on additional information"""
+        UseF1Coeff = True
+        UseF2Coeff = True
+        UseZSource = True
+
+        def loadF1File(self, f):
+            if f is 0:
+                self.f1coeff = 0
+            elif f is None:
+                f, _ = QFileDialog.getOpenFileName(None, 'F1 Coefficients', '.', '*.npy')
+                if f:
+                    self.f1coeff = np.load(f)
+            else:
                 self.f1coeff = np.load(f)
-        else:
-            self.f1coeff = np.load(f)
 
-    def loadF2File(self, f):
-        if f is 1:
-            self.f2coeff = 1
-        elif f is None:
-            f, _ = QFileDialog.getOpenFileName(self, 'F2 Coefficients', '.', '*.npy')
-            if f:
+        def loadF2File(self, f):
+            if f is 1:
+                self.f2coeff = 1
+            elif f is None:
+                f, _ = QFileDialog.getOpenFileName(None, 'F2 Coefficients', '.', '*.npy')
+                if f:
+                    self.f2coeff = np.load(f)
+            else:
                 self.f2coeff = np.load(f)
-        else:
-            self.f2coeff = np.load(f)
 
-    def loadZFile(self, f):
-        if f is None:
-            f, _ = QFileDialog.getOpenFileName(self, 'Z Data File', '.', '*.npy')
-            if f:
+        def loadZFile(self, f):
+            if f is None:
+                f, _ = QFileDialog.getOpenFileName(None, 'Z Data File', '.', '*.npy')
+                if f:
+                    self.zdata = np.load(f)
+            else:
                 self.zdata = np.load(f)
-        else:
-            self.zdata = np.load(f)
 
-    def processTrace(self, t, tindex):
-        if isinstance(self.f1coeff, (int, long)) and self.f1coeff == 0:             
-            f1 = 0
-        else:
-            f1 = np.polyval(self.f1coeff, self.zdata[tindex])
+        def processTrace(self, t, tindex):
+            if isinstance(self.f1coeff, (int, long)) and self.f1coeff == 0:
+                f1 = 0
+            else:
+                f1 = np.polyval(self.f1coeff, self.zdata[tindex])
 
-        if isinstance(self.f2coeff, (int, long)) and self.f2coeff == 1:
-            f2 = 1
-        else:
-            f2 = np.polyval(self.f2coeff, self.zdata[tindex])
+            if isinstance(self.f2coeff, (int, long)) and self.f2coeff == 1:
+                f2 = 1
+            else:
+                f2 = np.polyval(self.f2coeff, self.zdata[tindex])
 
-        return (t - f1) / f2
+            return (t - f1) / f2
+except:
+    class NormLinFunc(NormBase):
+        pass
 
 
 class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
     """
-    name = "Normalize"
-    descrString = "Normalizes by standard deviation"
+    _name = "Normalize"
+    _description = "Normalizes by standard deviation"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None, traceSource = None):
+        super(Normalize, self).__init__(parentParam, traceSource)
+        self.updateNormClass(NormMean)
 
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.updateScript},
-                         {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":normmean, "y=(x-mean(x))/stddev(x)":normmeanstd, "y=(x-f1(z))/f2(z)":normlinfunc}, 'set':self.updateNormClass},
-                         {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
-                         {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
-                         {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
-     #                    {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Description', 'type':'text', 'value':self.descrString, 'readonly':True}
-                      ]
-        
-        self.params = ConfigParameter.create_extended(self, name=self.name, type='group', children=resultsParams)
-        self.updateNormClass(normmean)
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.ptStart = 0
         self.ptEnd = 0
-        
-        self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import normmean,normmeanstd,normlinfunc")
+        self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
+
+        self.params.addChildren([
+            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'set':self.updateNormClass},
+            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
+            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
+            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
+            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript}
+        ])
         self.updateScript()
-        
+
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
         self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').value().__name__)
@@ -220,7 +223,7 @@ class Normalize(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.traceSource.getTrace(n)
+            trace = self._traceSource.getTrace(n)
 
             if trace is None:
                 return None
@@ -228,7 +231,7 @@ class Normalize(PreprocessingBase):
 
             return proc
         else:
-            return self.traceSource.getTrace(n)
+            return self._traceSource.getTrace(n)
 
     # def init(self):
     #    if self.ptEnd == 0:
