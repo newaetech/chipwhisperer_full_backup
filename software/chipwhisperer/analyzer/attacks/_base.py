@@ -101,6 +101,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
 
 class AttackObserver(AnalysisObserver):
     """"It is an AnalysisObserver with methods to get information from attacks"""
+    highlightedKeyColor = 255, 0, 0
+    traceColor = 0, 255, 0
+    colorGradient = True
 
     def setAnalysisSource(self, analysisSource):
         if issubclass(analysisSource.__class__, AttackBaseClass):
@@ -108,7 +111,7 @@ class AttackObserver(AnalysisObserver):
         else:
             AnalysisObserver.setAnalysisSource(self, None)
 
-    def _highlightedKey(self):
+    def _highlightedKeys(self):
         return self._analysisSource.knownKey()
 
     def _numPerms(self, key):
@@ -128,3 +131,10 @@ class AttackObserver(AnalysisObserver):
             return len(self._analysisSource.getStatistics().diffs)
         except Exception:
             return 0
+
+    @classmethod
+    def getTraceGradientColor(cls, val0to1):
+        r, g, b = cls.traceColor
+        val0to1 = val0to1 if cls.colorGradient else 0
+        r, g, b = r+(255-r)*val0to1, g+(255-g)*val0to1, b+(255-b)*val0to1
+        return r, g, b

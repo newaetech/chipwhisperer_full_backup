@@ -107,24 +107,6 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         self.doRedraw = True
         self.redrawPlot()
 
-    def setupHighlights(self):
-        """Initialize the highlights based on the known key"""
-        self.highlights = []
-
-        highlights = self._highlightedKey()
-
-        for i in range(0, self._numKeys()):
-            if highlights is not None and i < len(highlights):
-                self.highlights.append([highlights[i]])
-            else:
-                self.highlights.append([None])
-
-    def _highlightColour(self, index):
-        if index == 0:
-            return 'r'
-        else:
-            return 'b'
-
     # def backgroundplot(self, prange, data, pen=None, highres=False):
     #    datalen =  max(prange)-min(prange)+1
     #    if data is None:
@@ -157,7 +139,6 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         self.clearPushed()
         progress.setStatusMask("Plotting...")
 
-        self.setupHighlights()
         drawtype = self.findParam('drawtype').value().lower()
         pvalue = 0
         top = bottom = None
@@ -187,9 +168,8 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
             if drawtype.startswith('fast'):
                 if self.highlightTop:
                     newdiff = np.array(ydataptr)
-                    for j in self.highlights[bnum]:
-                        if j:
-                            newdiff = np.delete(newdiff, j, 0)
+                    if bnum < len(self._highlightedKeys()):
+                        newdiff = np.delete(newdiff, self._highlightedKeys()[bnum], 0)
                 else:
                     newdiff = ydataptr
 
@@ -210,7 +190,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     tlist_fixed = xdataptr
                 for i in range(0, self._numPerms(bnum)):
 
-                    if self.highlightTop and i in self.highlights[bnum]:
+                    if self.highlightTop and i in self._highlightedKeys():
                         continue
 
                     tlisttst.extend(tlist_fixed)
@@ -220,11 +200,11 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     else:
                         newmax = ydataptr[i]
                     maxlisttst.extend(newmax)
-                self.setupPlot(self.pw.plot(tlisttst, maxlisttst, pen='g', **pointargsg), 0, True, str(bnum) + ":All")
+                self.setupPlot(self.pw.plot(tlisttst, maxlisttst, pen=self.traceColor, **pointargsg), 0, True, str(bnum) + ":All")
 
             elif drawtype.startswith('detail'):
                 for i in range(0, self._numPerms(bnum)):
-                    self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen='g', **pointargsg), 0, True, str(bnum) + ":%02X" % i)
+                    self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen=QColor(*self.getTraceGradientColor(self._analysisSource.getStatistics().maxes[bnum][i]['value'])), **pointargsg), 0, True, str(bnum) + ":%02X" % i)
 
             if self.highlightTop:
                 # Plot the highlighted byte(s) on top
@@ -233,10 +213,10 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     ydataptr = [[t] for t in ydataptr]
                     pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
-                for i in self.highlights[bnum]:
-                    if i:
-                        penclr = self._highlightColour(self.highlights[bnum].index(i))
-                        self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen=penclr, **pointargsr), 1, True, str(bnum) + ":%02X" % i)
+                if bnum < len(self._highlightedKeys()):
+                    b = self._highlightedKeys()[bnum]
+                    if b >=0 and b < len(ydataptr):
+                        self.setupPlot(self.pw.plot(xdataptr, ydataptr[b], pen=QColor(*self.highlightedKeyColor), **pointargsr), 1, True, str(bnum) + ":%02X" % b)
             pvalue += 1
             progress.updateStatus(pvalue)
             if progress.wasAborted():
@@ -245,7 +225,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         if drawtype.startswith('fast') and xdataptr:
             p1 = self.setupPlot(self.pw.plot(x=xdataptr, y=top), -1, True, "Maxes")
             p2 = self.setupPlot(self.pw.plot(x=xdataptr, y=bottom), -1, True, "Mins")
-            p3 = pg.FillBetweenItem(p1, p2, brush='g')
+            p3 = pg.FillBetweenItem(p1, p2, brush=self.traceColor)
             p3.setZValue(-1)
             self.pw.addItem(p3)
 

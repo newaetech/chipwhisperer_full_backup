@@ -30,9 +30,9 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class KnowKeySource(ResultsBase, AttackObserver, Plugin):
-    _name = "Knownkey Source"
-    _description = "Modifies the knownkey to be highlighted in other AnalysisObservers."
+class AttackSettings(ResultsBase, AttackObserver, Plugin):
+    _name = "Attack Settings"
+    _description = "General settings for all the attack widgets"
 
     def __init__(self, parentParam=None, name=None):
         ResultsBase.__init__(self, parentParam, name)
@@ -40,21 +40,30 @@ class KnowKeySource(ResultsBase, AttackObserver, Plugin):
         self._knowKey = []
 
         self.params.addChildren([
-            {'name':'Knownkey Source', 'type':'list', 'values':{'Attack Module':'attack', 'Override':'override'},
+            {'name':'Highlighted key', 'type':'list', 'values':{'Know key from attack':'attack', 'Override':'override'},
              'value':'attack', 'set':self.setKnownKeySrc},
-            {'name':'Override Key', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True}
+            {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':'', 'set':self.setKnownKey, 'readonly':True},
+            {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'set':self.setHighlightedKeyColor},
+            {'name':'Trace color', 'type':'color', 'value':"0F0", 'set':self.setTraceColor},
+            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
         ])
 
     def setKnownKeySrc(self, keysrc):
         """Set key as 'attack' or 'override'"""
         if keysrc == 'attack':
             self.findParam('knownkey').setReadonly(True)
-            ResultsBase._highlightedKey = self._analysisSource.knownKey
+            AttackObserver._highlightedKeys = self._analysisSource.knownKey
         elif keysrc == 'override':
             self.findParam('knownkey').setReadonly(False)
-            ResultsBase._highlightedKey = self.knowKey
+            AttackObserver._highlightedKeys = self.knowKey
         else:
             raise ValueError("Key Source Error")
+        self.updateAll()
+
+    def updateAll(self):
+        for i in self.registeredObjects.itervalues():
+            if isinstance(i, AttackObserver):
+                i.processAnalysis()
 
     def knowKey(self):
         return self._knowKey
@@ -65,3 +74,16 @@ class KnowKeySource(ResultsBase, AttackObserver, Plugin):
             self._knowKey = util.hexstr2list(strkey)
         except ValueError:
             raise Warning("Key Selection - Could not convert '%s' to hex, key unchanged!" % strkey)
+        self.updateAll()
+
+    def setHighlightedKeyColor(self, color):
+        AttackObserver.highlightedKeyColor = color.red(), color.green(), color.blue()
+        self.updateAll()
+
+    def setTraceColor(self, color):
+        AttackObserver.traceColor = color.red(), color.green(), color.blue()
+        self.updateAll()
+
+    def setColorGradient(self, value):
+        AttackObserver.colorGradient = value
+        self.updateAll()

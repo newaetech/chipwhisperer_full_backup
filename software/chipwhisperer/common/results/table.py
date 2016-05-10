@@ -35,7 +35,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     _name = 'Results Table'
     _description = "Show all guesses based on sorting output of attack"
 
-    def __init__(self, parentParam=None, name=None, useAbs=True):
+    def __init__(self, parentParam=None, name=None):
         QTableWidget.__init__(self)
         ResultsBase.__init__(self, parentParam, name)
 
@@ -46,7 +46,6 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
             'value':"Default"},
             {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
             {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
-            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
         ])
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -109,10 +108,10 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._analysisSource.knownKey())
         attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()())
-        highlights = self._highlightedKey()
+        highlights = self._highlightedKeys()
 
         for bnum in range(0, self._numKeys()):
-            highlightValue = highlights[bnum] if highlights is not None and bnum < len(highlights) else None
+            highlightValue = highlights[bnum] if bnum < len(highlights) else None
             if bnum in self._analysisSource.targetBytes() and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
@@ -123,21 +122,17 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                         cell = self.item(j+1, bnum)
                         cell.setText("%02X\n%.4f" % (maxes[j]['hyp'], maxes[j]['value']))
                         if maxes[j]['hyp'] == highlightValue:
-                            cell.setForeground(QBrush(Qt.red))
+                            cell.setForeground(QColor(*self.highlightedKeyColor))
                         else:
                             cell.setForeground(QBrush(Qt.black))
-                        color = 255*maxes[j]['value'] if self.colorGradient else 255
-                        cell.setBackground(QColor(color, color, color))
+                        c = QColor(*self.getTraceGradientColor(maxes[j]['value']))
+                        cell.setBackground(c)
             else:
                 self.setColumnHidden(bnum, True)
         self.setVisible(True)
 
-    def setColorGradient(self, value):
-        self.colorGradient = value
-        self.updateTable()
-
     def analysisStarted(self):
-        self.initUI()
+        self.initUI(True)
         self.clearTableContents()
 
     def analysisUpdated(self):

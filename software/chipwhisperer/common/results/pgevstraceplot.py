@@ -29,6 +29,7 @@ from PySide.QtGui import *
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
+
 class PGEVsTrace(AttackResultPlot, Plugin):
     _name = "PGE vs Trace Plot"
     _description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
@@ -131,7 +132,6 @@ class PGEVsTrace(AttackResultPlot, Plugin):
         allpge = self.calculatePGE()
 
         self.clearPushed()
-        self.setupHighlights()
         #prange = range(self.pstart[bnum], self.pend[bnum])
 
         try:

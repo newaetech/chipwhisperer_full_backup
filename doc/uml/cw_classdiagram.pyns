@@ -13,7 +13,7 @@
 {'type':'umlshape', 'id':'AttackResultPlot', 'x':823, 'y':546, 'width':144, 'height':29, 'attrs':'', 'meths':''}
 {'type':'umlshape', 'id':'GraphWidget', 'x':714, 'y':471, 'width':102, 'height':29, 'attrs':'', 'meths':''}
 {'type':'umlshape', 'id':'CorrelationVsTrace', 'x':790, 'y':636, 'width':161, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'KnowKeySource', 'x':771, 'y':296, 'width':119, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'AttackSettings', 'x':771, 'y':296, 'width':119, 'height':29, 'attrs':'', 'meths':''}
 {'type':'umlshape', 'id':'OutputVsTime', 'x':960, 'y':636, 'width':111, 'height':29, 'attrs':'', 'meths':''}
 {'type':'umlshape', 'id':'PGEVsTrace', 'x':683, 'y':636, 'width':94, 'height':29, 'attrs':'', 'meths':''}
 {'type':'umlshape', 'id':'ResultsSave', 'x':899, 'y':296, 'width':102, 'height':29, 'attrs':'', 'meths':''}
@@ -44,8 +44,8 @@
 {'type':'edge', 'id':'AttackResultPlot_to_ResultsWidgetBase', 'source':'AttackResultPlot', 'target':'ResultsWidgetBase', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'AttackResultPlot_to_AttackObserver', 'source':'AttackResultPlot', 'target':'AttackObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'CorrelationVsTrace_to_AttackResultPlot', 'source':'CorrelationVsTrace', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'KnowKeySource_to_ResultsBase', 'source':'KnowKeySource', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
-{'type':'edge', 'id':'KnowKeySource_to_AttackObserver', 'source':'KnowKeySource', 'target':'AttackObserver', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'KnowKeySource_to_ResultsBase', 'source':'AttackSettings', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'KnowKeySource_to_AttackObserver', 'source':'AttackSettings', 'target':'AttackObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'OutputVsTime_to_AttackResultPlot', 'source':'OutputVsTime', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'PGEVsTrace_to_AttackResultPlot', 'source':'PGEVsTrace', 'target':'AttackResultPlot', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'ResultsSave_to_ResultsBase', 'source':'ResultsSave', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
