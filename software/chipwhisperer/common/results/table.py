@@ -106,7 +106,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
             return
 
         attackStats = self._analysisSource.getStatistics()
-        attackStats.setKnownkey(self._analysisSource.knownKey())
+        attackStats.setKnownkey(self._highlightedKeys())
         attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()())
         highlights = self._highlightedKeys()
 
