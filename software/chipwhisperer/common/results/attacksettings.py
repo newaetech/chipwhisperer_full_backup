@@ -45,7 +45,6 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
             {'name':'Override with', 'type':'str', 'key':'knownkey', 'set':self.setKnownKey},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'set':self.setHighlightedKeyColor},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'set':self.setTraceColor},
-            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
             {'name':'Redraw Widgets',  'type':'action', 'action':self.updateAll},
         ])
         self.findParam('knownkey').setValue('00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00')
@@ -83,6 +82,3 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
 
     def setTraceColor(self, color):
         AttackObserver.traceColor = color.red(), color.green(), color.blue()
-
-    def setColorGradient(self, value):
-        AttackObserver.colorGradient = value

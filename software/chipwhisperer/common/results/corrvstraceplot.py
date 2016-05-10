@@ -43,7 +43,7 @@ class CorrelationVsTrace(AttackResultPlot, Plugin):
         if not self._analysisSource:
             return
 
-        progress = ProgressBar("Redrawing...", "Status:")
+        progress = ProgressBar("Redrawing " + CorrelationVsTrace._name, "Status:")
 
         with progress:
             data = self._analysisSource.getStatistics().maxes_list
