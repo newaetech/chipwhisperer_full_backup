@@ -27,7 +27,7 @@ from datetime import *
 
 
 class ProgressBarText(object):
-    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None):
+    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None, show=True):
         self.title = title
         self.last = self.currentProgress = 0
         self.maximum = 100
@@ -100,6 +100,9 @@ class ProgressBarText(object):
     def setMaximum(self, value):
         self.maximum = float(value)
 
+    def setMinimum(self, value):
+        assert value == 0
+
     def printAll(self, value):
         self.printAll = value
 
@@ -108,7 +111,7 @@ try:
     from PySide.QtGui import *
 
     class ProgressBarGUI(QDialog, ProgressBarText):
-        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None):
+        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None, show=True):
 
             ProgressBarText.__init__(self, title = title, text=text, statusMask= statusMask, textValues = textValues)
             QDialog.__init__(self, None)
@@ -135,8 +138,9 @@ try:
             layout.addWidget(self.statusLabel)
             layout.addLayout(clayout)
             self.setLayout(layout)
-            self.show()
-            self.raise_()
+            if show:
+                self.show()
+                self.raise_()
             QCoreApplication.processEvents()
 
         def setText(self, text):
