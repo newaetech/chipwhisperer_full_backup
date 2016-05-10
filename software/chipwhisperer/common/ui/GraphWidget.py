@@ -104,7 +104,6 @@ class GraphWidget(QWidget):
         self.colorDialog = ColorDialog()
 
         self.pw = pg.PlotWidget(name="Power Trace View")
-        self.pw.plotItem.vb.scene().sigMouseMoved.connect(self.mouseMoved)
         self.pw.setLabel('top', 'Power Trace View')
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
@@ -113,6 +112,8 @@ class GraphWidget(QWidget):
         vb.setMouseMode(vb.RectMode)
         vb.sigStateChanged.connect(self.VBStateChanged)
         vb.sigXRangeChanged.connect(self.VBXRangeChanged)
+
+        self.proxysig = pg.SignalProxy(self.pw.plotItem.vb.scene().sigMouseMoved, rateLimit=5, slot=self.mouseMoved)
 
         self.vLine = pg.InfiniteLine(angle=90, movable=False)
         self.hLine = pg.InfiniteLine(angle=0, movable=False)
@@ -373,7 +374,8 @@ class GraphWidget(QWidget):
             self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=3, style=Qt.DashLine))
             self.selection.setText("Selected Trace: %s" % (self.selectedTrace.id if hasattr(self.selectedTrace, "id") else ""))
 
-    def mouseMoved(self, mousePoint):
+    def mouseMoved(self, evt):
+        mousePoint = evt[0]
         if self.pw.plotItem.vb.sceneBoundingRect().contains(mousePoint):
             pos = self.pw.plotItem.vb.mapSceneToView(mousePoint)
             self.pos.setText("Position: (%f, %f)" % (pos.x(), pos.y()))

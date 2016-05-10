@@ -200,7 +200,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                     else:
                         newmax = ydataptr[i]
                     maxlisttst.extend(newmax)
-                self.setupPlot(self.pw.plot(tlisttst, maxlisttst, pen=self.traceColor, **pointargsg), 0, True, str(bnum) + ":All")
+                self.setupPlot(self.pw.plot(tlisttst, maxlisttst, pen=self.traceColor, **pointargsg), 0, False, str(bnum) + ":All")
 
             elif drawtype.startswith('detail'):
                 for i in range(0, self._numPerms(bnum)):
