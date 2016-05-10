@@ -466,13 +466,16 @@ class CWMainGUI(QMainWindow):
             self.close()
             return
 
-        if issubclass(etype, Warning):
-            print "WARNING: " + str(value)
-            QMessageBox.warning(self, "Warning", str(value))
-            return
-
         details = "".join(traceback.format_exception(etype, value, trace))
         print details
+
+        if issubclass(etype, Warning):
+            print "WARNING: " + str(value)
+            dialog = QMessageBox(QMessageBox.Warning, "Warning", str(value), QMessageBox.Close, self)
+            dialog.setDetailedText(details)
+            dialog.exec_()
+            return
+
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
                     "If the error occurs again, please create a new ticket <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>here</a> informing the details bellow." % value, QMessageBox.Close, self)

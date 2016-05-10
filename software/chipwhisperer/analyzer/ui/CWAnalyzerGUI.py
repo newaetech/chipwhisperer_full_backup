@@ -41,6 +41,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
     def __init__(self, api):
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+        CWAnalyzerGUI.instance = self
         self.attackScriptGen.reloadScripts()
 
     def loadExtraModules(self):
@@ -98,6 +99,10 @@ class CWAnalyzerGUI(CWMainGUI):
         so adjust limits displayed and re-plot the new input trace"""
 
         self.attackScriptGen.reloadScripts()
+
+    @staticmethod
+    def getInstance():
+        return CWAnalyzerGUI.instance
 
 def makeApplication():
     # Create the Qt Application

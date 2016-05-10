@@ -121,9 +121,12 @@ class SmartStatements(object):
         if force or newstr not in self._selfreplacement:
             # print newstr not in self._selfreplacement
             # print "%s: %s" % (self._selfreplacement, newstr)
-             
-            sp = self._selfreplacement.split(".", 1)
-            self._selfreplacement = sp[0] + "." + newstr + sp[1]
+
+            if len(self._selfreplacement) > 0:
+                sp = self._selfreplacement.split(".", 1)
+                self._selfreplacement = sp[0] + "." + newstr + sp[1]
+            else:
+                self._selfreplacement =  newstr
 
 
 class AutoScript(object):
