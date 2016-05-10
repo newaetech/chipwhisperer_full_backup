@@ -125,7 +125,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                             cell.setForeground(QColor(*self.highlightedKeyColor))
                         else:
                             cell.setForeground(QBrush(Qt.black))
-                        c = QColor(*self.getTraceGradientColor(maxes[j]['value']))
+                        c = QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value'])))
                         cell.setBackground(c)
             else:
                 self.setColumnHidden(bnum, True)

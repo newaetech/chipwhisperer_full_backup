@@ -70,6 +70,7 @@ class CorrelationVsTrace(AttackResultPlot, Plugin):
                 xrangelist[bnum] = tlist
 
             self.drawData(progress, xrangelist, newdata, enabledlist)
+            self.pw.setYRange(0, 1, update=True)
 
     def processAnalysis(self):
         self.redrawPlot()
