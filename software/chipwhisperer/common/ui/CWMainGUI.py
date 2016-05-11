@@ -279,7 +279,6 @@ class CWMainGUI(QMainWindow):
         self.projectMenu.addAction(self.consolidateAct)
         self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit project file', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.scripts", False, False, self))
 
         self.toolMenu = self.menuBar().addMenu("&Tools")
 

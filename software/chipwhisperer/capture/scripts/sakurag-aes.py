@@ -36,12 +36,12 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
-from chipwhisperer.common.scripts._base import UserScriptBase
+from chipwhisperer.common.scripts.base import UserScriptBase
 
 
 class UserScript(UserScriptBase):
-    _name = "ChipWhisperer-Lite: SPA SimpleSerial on XMEGA"
-    _description = "SimpleSerial with Standard Target for SPA (XMEGA)"
+    _name = "SAKURA-G: AES-128 FPGA Target"
+    _description = "SAKURA-G Loaded with ChipWhisperer"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)
@@ -49,27 +49,21 @@ class UserScript(UserScriptBase):
     def run(self):
         #User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        self.api.setParameter(['FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
+        self.api.setParameter(['Generic Settings', 'Target Module', 'SAKURA G'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
-        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
 
-        #Load FW (must be configured in GUI first)
-        # self.api.FWLoaderGo()
-                
         self.api.connect()
-
+        
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
-                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
-                      ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
-                      ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
-                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
-                      ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
-                      ['OpenADC', 'Gain Setting', 'Setting', 45],
-                      ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
-                      #Final step: make DCMs relock in case they are lost
+        lstexample = [['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
+                      ['OpenADC', 'Trigger Setup', 'Total Samples', 400],
+                      ['OpenADC', 'Trigger Setup', 'Offset', 0],
+                      ['OpenADC', 'Gain Setting', 'Setting', 40],
+                      ['OpenADC', 'Trigger Setup', 'Mode', 'falling edge'],
+                      ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Divide', 2],
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x1 via DCM'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ]
         

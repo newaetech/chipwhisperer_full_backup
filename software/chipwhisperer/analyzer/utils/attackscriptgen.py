@@ -165,7 +165,7 @@ class AttackScriptGen(Parameterized):
         mse.editWindow.clear()
 
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
-        mse.append("from chipwhisperer.common.scripts._base import UserScriptBase", 0)
+        mse.append("from chipwhisperer.common.scripts.base import UserScriptBase", 0)
         mse.append("from chipwhisperer.common.results.base import ResultsBase", 0)
 
         # Get imports from preprocessing

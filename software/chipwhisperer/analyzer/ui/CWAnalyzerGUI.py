@@ -32,6 +32,7 @@ from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
+from chipwhisperer.common.utils import pluginmanager
 
 
 class CWAnalyzerGUI(CWMainGUI):
@@ -41,6 +42,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
     def __init__(self, api):
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
         CWAnalyzerGUI.instance = self
         self.attackScriptGen.reloadScripts()
 
