@@ -166,7 +166,12 @@ class GraphWidget(QWidget):
 
         help = QAction(QIcon(self.imagepath+'help.png'), 'Help', self)
         help.triggered.connect(lambda: QMessageBox.information(self, "Help",
-                                "Right click the graph and check the Result Settings for more options."))
+                                "Right click or check the Results Settings for more options.\n\n"
+                                "Draw types:\n"
+                                "- Fast: Group traces into a min/max area;\n"
+                                "- Normal: Plot all traces continuously;\n"
+                                "- Detailed: Plot all traces individually.\n\n"
+                                "Only highlighted traces can be selected in fast/normal."))
 
         self.GraphToolbar = QToolBar('Graph Tools')
         self.GraphToolbar.addAction(xLockedAction)
