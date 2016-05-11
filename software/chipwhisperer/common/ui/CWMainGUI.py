@@ -34,7 +34,6 @@ except ImportError:
 
 try:
     import pyqtgraph
-    import pyqtgraph.console
     pyqtgraph.setConfigOption('background', 'w')
     pyqtgraph.setConfigOption('foreground', 'k')
 except ImportError:
@@ -160,10 +159,10 @@ class CWMainGUI(QMainWindow):
     
     def addPythonConsole(self, name="Python Console", visible=False):
         """Add a python console, inside which you can access the Python interpreter"""
-        tmp = locals()
-        tmp.update({'self':self})
-        wid = pyqtgraph.console.ConsoleWidget(namespace=tmp, text="")
-        # wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
+        # tmp = locals()
+        # tmp.update({'self':self})
+        # wid = pyqtgraph.console.ConsoleWidget(namespace=tmp, text="")
+        wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
     def reloadGuiActions(self):

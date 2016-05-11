@@ -331,7 +331,6 @@ class CWCoreAPI(Parameterized):
                 #TODO - hack
                 if funcName == 'TraceExplorerDialog_PartitionDisplay_findPOI':
                     return
-
                 sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), sys.exc_info()[2])
 
     def _setParameter_children(self, top, path, value, echo):
