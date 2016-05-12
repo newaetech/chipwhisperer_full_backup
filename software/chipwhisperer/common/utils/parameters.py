@@ -29,40 +29,39 @@ import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!
 from chipwhisperer.common.utils import util
 
 
-class CWParameterTree(ParameterTree):
+class CWParameterTree(object):
     _helpWidget = None
     _allParameterTrees = util.DictType()
-    paramTreeUpdated = util.Signal()
+    sigParamTreeUpdated = util.Signal()
 
-    def __init__(self, groupName="Defaul", parameterizedObjs=None):
-        super(CWParameterTree, self).__init__()
-        self.parameterizedObjs = []
+    def __init__(self, groupName="Default", parameterizedObjs=None):
+        self.parameterLists = []
         self.extend(parameterizedObjs)
         self._allParameterTrees[groupName] = self
 
-    def replace(self, newParameterizedObjs):
-        for parameterizedObj in self.parameterizedObjs:
-            if parameterizedObj:
-                    parameterizedObj.paramListUpdated.disconnect(self.reloadParams)
-        self.parameterizedObjs = []
-        self.extend(newParameterizedObjs)
+    def getPyQtGraphParamTree(self):
+        if not hasattr(self, "parameterTree"):
+            self.parameterTree = ParameterTree()
+        return self.parameterTree
 
-    def extend(self, parameterizedObjs):
-        if parameterizedObjs:
-            for parameterizedObj in parameterizedObjs:
-                if parameterizedObj:
-                        if hasattr(parameterizedObj, "paramListUpdated"):
-                            parameterizedObj.paramListUpdated.connect(self.reloadParams)
-                        self.parameterizedObjs.append(parameterizedObj)
+    def replace(self, parameterLists):
+        self.parameterLists = []
+        self.extend(parameterLists)
+        self.reloadParams()
+
+    def extend(self, parameterLists):
+        for parameterList in parameterLists:
+            if parameterList:
+                self.parameterLists.append(parameterList)
         self.reloadParams()
 
     def reloadParams(self):
         activeParameters = []
-        for parameterizedObj in self.parameterizedObjs:
-            if parameterizedObj:
-                activeParameters.extend(parameterizedObj.paramList())
-        ExtendedParameter.reloadParams(activeParameters, self, help_window=self._helpWidget)
-        self.paramTreeUpdated.emit()
+        for parameterList in self.parameterLists:
+            if parameterList:
+                activeParameters.extend(parameterList.paramList())
+        ExtendedParameter.reloadParams(activeParameters, self.getPyQtGraphParamTree(), help_window=self._helpWidget)
+        self.sigParamTreeUpdated.emit()
 
     @classmethod
     def setHelpWidget(cls, widget):
@@ -163,3 +162,247 @@ class Parameterized(object):
         # Dummye method to cause late evaluation of the attributes when parameters are passed as argument
         # Ex.: self.setupActiveParams([lambda: lazy(self)])
         return var
+
+
+v = 0
+def actSomething(value):
+    print "action called with value = " + str(value)
+    global act
+    act = value
+
+def setSomething(value):
+    global v
+    v = value
+    print "set to " + str(v)
+
+def getSomething():
+    global v
+    print "get " + str(v)
+    return v
+
+
+class ParameterItem(object):
+
+    def __init__(self, opts):
+        self.sigValueChanged = util.Signal()
+        self.opts = opts
+
+    def getValue(self, default=None):
+        val = self.opts.get("get", None)
+        if val is None:
+            return self.opts.get("value", default)
+        else:
+            return val()
+
+    def setValue(self, value):
+        if self.readonly():
+            raise ValueError("Parameter is currently set to read only")
+
+        limits = self.opts.get("limits", None)
+        if limits is not None:
+            type = self.opts.get("type", None)
+            if (type == "list" and value not in limits) or\
+                    (type == "bool" and value not in [True, False]) or\
+                    ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
+                    (type =="rangegraph" and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
+                raise ValueError("Value out of limits")
+
+        if self.getValue() != value:
+            self.sigValueChanged.emit(self, value)
+
+        ref = self.opts.get("set", None)
+        if ref is None:
+            self.opts["value"] = value
+        else:
+            ref(value)
+        self.callAction()
+
+    def callAction(self):
+        act = self.opts.get("action", None)
+        if act is not None:
+            act(self.opts)
+
+    def setLimits(self, limits):
+        self.opts['limits'] = limits
+        if type =="rangegraph" and limits[0] > limits[1]:
+            self.setReadonly(True)
+
+    def readonly(self):
+        return self.opts.get('readonly', False)
+
+    def setReadonly(self, readonly=True):
+        self.opts["readonly"] = readonly
+
+    def hide(self):
+        self.show(False)
+
+    def show(self, s=True):
+        self.opts['visible'] = s
+        # self.sigOptionsChanged.emit(self, {'visible': s})
+
+
+class ParameterGroup(object):
+    # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
+    #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
+
+    def __init__(self, opts=None):
+        self.opts = opts
+        self.parameters = []
+        self.lut = {}
+        if opts is not None:
+            children = opts.get("children", None)
+            if children is not None:
+                self.addFromDict(children)
+
+    def addFromDict(self, parameters):
+        for item in parameters:
+            if item["type"] == "group":
+                newParameter = ParameterGroup(item)
+                item["children"]=newParameter.opts
+            else:
+                newParameter = ParameterItem(item)
+            self.append(newParameter)
+
+    def append(self, parameter):
+        if 'key' in parameter.opts:
+            self.lut[parameter.opts["key"]] = parameter
+        if 'name' in parameter.opts:
+            self.lut[parameter.opts["name"]] = parameter
+        self.parameters.append(parameter)
+
+    def extend(self, parameters):
+        for parameter in parameters:
+            self.append(parameter)
+
+    def remove(self, name):
+        item = self.lut[name]
+        self.parameters.remove(item)
+        self.lut.pop(item.opts["name"])
+        try:
+            self.lut.pop(item.opts["key"])
+        except KeyError:
+            pass
+
+    def findParam(self, name):
+        return self.lut.get(name, None)
+
+    def findParamPath(self, path):
+        item = self.lut.get(path[0], None)
+
+        if len(path) == 1:
+            return item
+
+        if item is not None:
+            if item.opts["type"] == "group":
+                return item.findParamPath(path[1:])
+            else:
+                raise KeyError("Parameter item %s is not a group in path: %s" % (item.opts["name"], path))
+        return item
+
+    def getParamTree(self):
+        ret = []
+        for item in self.parameters:
+            ret.append(item.opts)
+        return ret
+
+def main():
+    p2 = ParameterGroup({'name': 'group2', 'type':'group', 'children':[
+            {'name': 'blah', 'type':'int', 'value':5}
+         ]})
+    p = ParameterGroup()
+    p.addFromDict([
+        {'name': 'name1', 'key': 'n1', 'type': 'list', 'values': {"a": 1, "b": 2},
+         'set': setSomething, 'get': getSomething},
+        {'name': 'name2', 'key': 'n2', 'type': 'list', 'values': {"a": 1, "b": 2}, 'value': 1},
+        {'name': 'action1', 'key': 'act1', 'type': 'list', 'values': {"a": 1, "b": 2}, 'value': 1, 'action':actSomething},
+        {'name': 'action2', 'key': 'act2', 'type': 'list', 'values': {"a": 1, "b": 2}, 'action':actSomething},
+        {'name': 'name3', 'key': 'n3', 'type': 'int', 'limits': [10,20],'value': 11},
+        {'name': 'name4', 'key': 'n4', 'type': 'bool', 'value': True},
+        {'name': 'group1', 'type':'group', 'children':[
+            {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':0, 'Serial RXD':1, 'USI-Out':2}, 'value':2}
+         ]},
+        {'name': 'name5', 'type': 'graphwidget', 'limits': [10,20], 'value': [10,20]},
+    ])
+
+    assert p.findParamPath(["group1", 'Target IO1']).getValue()==2
+    try:
+        p.findParamPath(["group1", 'Target IO1', "Target IO1"]).getValue()==2
+        assert False
+    except KeyError:
+        pass
+
+    try:
+        p.findParamPath(["group1", 'adsf']).getValue()==2
+        assert False
+    except:
+        pass
+
+    global act
+    act = 0
+
+    assert p.findParam("name1").getValue() == 0
+    assert p.findParam("n1").getValue() == 0
+    assert p.findParam("act2").getValue("blah") == "blah"
+    p.findParam("n1").setValue(10)
+    assert p.findParam("name1").getValue() == 10
+    assert p.findParam("name1").getValue() == p.findParam("n1").getValue()
+    p.findParam("name2").setValue(20)
+    assert p.findParam("n2").getValue() == 20
+    p.findParam("action1").setValue(30)
+    assert p.findParam("act1").getValue(None) == 30
+    assert p.findParam("act1").getValue(None) == act["value"]
+    p.findParam("act2").callAction()
+    assert p.findParam("act2").opts["name"] == act["name"]
+    try:
+        p.findParam("name3").setValue(9)
+        assert False
+    except:
+        pass
+    try:
+        p.findParam("n3").setValue(21)
+        assert False
+    except:
+        pass
+
+    p.findParam("name3").setValue(10)
+    assert p.findParam("n3").getValue() == 10
+
+    try:
+        p.findParam("name4").setValue(9)
+        assert False
+    except:
+        pass
+    try:
+        p.findParam("n4").setValue("a")
+        assert False
+    except:
+        pass
+
+    p.findParam("name4").setValue(False)
+    assert p.findParam("n4").getValue() == False
+
+    try:
+        p.findParam("name5").setValue([9,11])
+        assert False
+    except:
+        pass
+    try:
+        p.findParam("name5").setValue([20,21])
+        assert False
+    except:
+        pass
+
+    p.findParam("name5").setValue([10,20])
+    p.findParam("name5").setValue([10,20])
+
+
+    p.remove("name5")
+    assert p.findParam("name5") == None
+    p.append(p2)
+    p.findParamPath(["group2","blah"]).setValue(10)
+
+    list = p.getParamTree()
+    print list
+
+if __name__ == '__main__':
+    main()
