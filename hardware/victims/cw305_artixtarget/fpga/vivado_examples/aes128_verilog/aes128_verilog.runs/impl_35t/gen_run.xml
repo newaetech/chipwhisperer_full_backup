@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="impl_35t" LaunchPart="xc7a35tftg256-2" LaunchTime="1458516800">
+<GenRun Id="impl_35t" LaunchPart="xc7a35tftg256-2" LaunchTime="1463153638">
   <File Type="OPT-DCP" Name="cw305_top_opt.dcp"/>
   <File Type="RUN-CONSTRS" Name="$PDATADIR/runs/impl_35t/constrs_in.xml"/>
   <File Type="RUN-SRCS" Name="$PDATADIR/runs/impl_35t/sources.xml"/>
@@ -78,6 +78,13 @@
       </FileInfo>
     </File>
     <File Path="$PPRDIR/../../cryptosrc/aes_googlevault/aes_core.v">
+      <FileInfo>
+        <Attr Name="UsedIn" Val="synthesis"/>
+        <Attr Name="UsedIn" Val="implementation"/>
+        <Attr Name="UsedIn" Val="simulation"/>
+      </FileInfo>
+    </File>
+    <File Path="$PPRDIR/../../common/usb_module.v">
       <FileInfo>
         <Attr Name="UsedIn" Val="synthesis"/>
         <Attr Name="UsedIn" Val="implementation"/>

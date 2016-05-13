@@ -120,6 +120,8 @@ module registers(
     output wire          cryptoclk,
     output wire [KEY_WIDTH-1:0]  key,
     output wire [PT_WIDTH-1:0]  textin,
+    input  wire [PT_WIDTH-1:0]  textout,
+    output wire [CT_WIDTH-1:0]  cipherin,
     input wire  [CT_WIDTH-1:0]  cipherout,
     
     //TODO: Init wire doesn't work
@@ -165,6 +167,7 @@ module registers(
     
     assign key = reg_crypt_key;
     assign textin = reg_crypt_textin;
+    assign cipherin = reg_crypt_cipherin;
     
     reg done_old;
     always @(posedge cryptoclk) begin
@@ -174,6 +177,7 @@ module registers(
     always @(posedge cryptoclk) begin        
         if ((done) && (done_old == 1'b0)) begin
             reg_crypt_cipherout <= cipherout;
+            reg_crypt_textout   <= textout;
         end
     end
     

@@ -33,7 +33,7 @@ either expressed or implied, of NewAE Technology Inc.
 module usb_module(
     input wire        clk_usb,      // Raw clock signal from external USB connections
     inout wire [7:0]  data,     // Data bus
-    input wire [21:0] addr,     // Address bus
+    input wire [20:0] addr,     // Address bus
     input wire        rd_en,    // !RD: low when addr valid for read
     input wire        wr_en,      // !WR: low when data+addr valid for write
     input wire        cen,      // !CE: not used here
