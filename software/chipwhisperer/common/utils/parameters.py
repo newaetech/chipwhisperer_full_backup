@@ -347,7 +347,7 @@ class ParameterGroup(Parameter):
     def getPyQtGraphParameter(self):
         if not hasattr(self,"_PyQtGraphParameter"):
             self._PyQtGraphParameter = pyqtgraphParameter.create(**self.getOpts())
-            self.sigChildRemoved.connect(lambda c: c._PyQtGraphParameter.remove())
+            self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
             self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
             for item in self.children:
                 self._PyQtGraphParameter.addChild(item.getPyQtGraphParameter())
@@ -460,6 +460,7 @@ if __name__ == '__main__':
     app = QtGui.QApplication([])
     # from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 
+
     class submodule(object):
         def __init__(self):
             super(submodule, self).__init__()
@@ -472,10 +473,7 @@ if __name__ == '__main__':
             print "set %s" % value
 
 
-
     class module(object):
-        paramListUpdated = util.Signal()
-
         def __init__(self, d):
             super(module, self).__init__()
             moreparams = [
@@ -487,6 +485,8 @@ if __name__ == '__main__':
             self.sm = None
 
         def setSubmodule(self, sm):
+            if self.sm:
+                self.params.remove(self.sm.params)
             self.sm = sm
             self.params.append(sm.params)
 
