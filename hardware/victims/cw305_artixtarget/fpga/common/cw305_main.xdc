@@ -86,5 +86,5 @@ create_clock -period 10.000 -name pll_clk1 -waveform {0.000 5.000} [get_nets pll
 
 set_input_delay -clock [get_clocks -filter { NAME =~  "*usb_clk*" }] 3.000 [get_ports -filter { NAME =~  "*usb_data*" && DIRECTION == "INOUT" }]
 
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets usb_rdn_IBUF]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets usb_wrn_IBUF]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets usb_rdn]
+set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets usb_wrn]
