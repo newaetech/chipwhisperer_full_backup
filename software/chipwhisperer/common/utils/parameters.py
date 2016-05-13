@@ -84,86 +84,86 @@ class CWParameterTree(object):
         return ret
 
 
-class Parameterized(object):
-    """
-    Creates a new parameterTree group and adds its description
-    """
-    _name = "None"
-    _description = ""
-
-    def __init__(self, parentParam=None, name=None):
-        if not hasattr(self, "_instanceName") and name:  # These IFs avoids bugs in diamond class hierarchy
-            self._instanceName = name
-        if not hasattr(self, "__activeParams"):  # These IFs avoids bugs in diamond class hierarchy
-            self.__activeParams = []
-        if not hasattr(self, "paramListUpdated"):
-            self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
-        if parentParam:
-            self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
-        if not hasattr(self, "params"):
-            self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={}, tip=self.getDescription())
-            if self._description:
-                self.params.addChildren([{'name': '', 'type': 'label', 'value':self.getDescription(), 'readonly':True}])
-
-    def paramList(self):
-        # Returns the current active parameters (including the child ones)
-        ret = []
-        ret.append(self.params)
-        for e in self.__activeParams:
-            currentParams = e()
-            if currentParams:
-                ret.extend(currentParams.paramList())
-        return ret
-
-    def getName(self):
-        # Returns the custom name (the class name can be overriden by the instance name)
-        return self.getClassName() if not hasattr(self, "_instanceName") else self._instanceName
-
-    @classmethod
-    def getClassName(cls):
-        return cls._name
-
-    @classmethod
-    def getDescription(cls):
-        return cls._description
-
-    def setupActiveParams(self, params):
-        # Use this method to setup the order of the parameterized objects to be shown
-        self.__activeParams = params
-        self.paramListUpdated.emit()
-
-    def addActiveParams(self, param):
-        # Use this method to setup the order of the parameterized objects to be shown
-        self.__activeParams.append(param)
-        self.paramListUpdated.emit()
-
-    def guiActions(self, mainWindow):
-        # Returns a list with all the gui actions in the active parameter tree.
-        ret = []
-        ret.extend(self.setupGuiActions(mainWindow))
-        for e in self.__activeParams:
-            currentParams = e()
-            if currentParams:
-                ret.extend(currentParams.guiActions(mainWindow))
-        return ret
-
-    def getAllActiveParameters(self):
-        for e in self.__activeParams:
-            currentParameters = e()
-            if currentParameters:
-                currentParameters.params.getAllParameters()
-
-    def setupGuiActions(self, mainWindow):
-        """You should overload this. Copy/Paste into your class."""
-        # self.window = Window(mainWindow, parameters)
-        # return [['Name of the menu item','Description', self.window.show],...]
-        return []
-
-    @staticmethod
-    def lazy(var):
-        # Dummye method to cause late evaluation of the attributes when parameters are passed as argument
-        # Ex.: self.setupActiveParams([lambda: lazy(self)])
-        return var
+# class Parameterized(object):
+#     """
+#     Creates a new parameterTree group and adds its description
+#     """
+#     _name = "None"
+#     _description = ""
+#
+#     def __init__(self, parentParam=None, name=None):
+#         if not hasattr(self, "_instanceName") and name:  # These IFs avoids bugs in diamond class hierarchy
+#             self._instanceName = name
+#         if not hasattr(self, "__activeParams"):  # These IFs avoids bugs in diamond class hierarchy
+#             self.__activeParams = []
+#         if not hasattr(self, "paramListUpdated"):
+#             self.paramListUpdated = util.Signal()  # Called to refresh the Param List (i.e. new parameters were added)
+#         if parentParam:
+#             self.paramListUpdated.connect(parentParam.paramListUpdated.emit)
+#         if not hasattr(self, "params"):
+#             self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={}, tip=self.getDescription())
+#             if self._description:
+#                 self.params.addChildren([{'name': '', 'type': 'label', 'value':self.getDescription(), 'readonly':True}])
+#
+#     def paramList(self):
+#         # Returns the current active parameters (including the child ones)
+#         ret = []
+#         ret.append(self.params)
+#         for e in self.__activeParams:
+#             currentParams = e()
+#             if currentParams:
+#                 ret.extend(currentParams.paramList())
+#         return ret
+#
+#     def getName(self):
+#         # Returns the custom name (the class name can be overriden by the instance name)
+#         return self.getClassName() if not hasattr(self, "_instanceName") else self._instanceName
+#
+#     @classmethod
+#     def getClassName(cls):
+#         return cls._name
+#
+#     @classmethod
+#     def getDescription(cls):
+#         return cls._description
+#
+#     def setupActiveParams(self, params):
+#         # Use this method to setup the order of the parameterized objects to be shown
+#         self.__activeParams = params
+#         self.paramListUpdated.emit()
+#
+#     def addActiveParams(self, param):
+#         # Use this method to setup the order of the parameterized objects to be shown
+#         self.__activeParams.append(param)
+#         self.paramListUpdated.emit()
+#
+#     def guiActions(self, mainWindow):
+#         # Returns a list with all the gui actions in the active parameter tree.
+#         ret = []
+#         ret.extend(self.setupGuiActions(mainWindow))
+#         for e in self.__activeParams:
+#             currentParams = e()
+#             if currentParams:
+#                 ret.extend(currentParams.guiActions(mainWindow))
+#         return ret
+#
+#     def getAllActiveParameters(self):
+#         for e in self.__activeParams:
+#             currentParameters = e()
+#             if currentParameters:
+#                 currentParameters.params.getAllParameters()
+#
+#     def setupGuiActions(self, mainWindow):
+#         """You should overload this. Copy/Paste into your class."""
+#         # self.window = Window(mainWindow, parameters)
+#         # return [['Name of the menu item','Description', self.window.show],...]
+#         return []
+#
+#     @staticmethod
+#     def lazy(var):
+#         # Dummye method to cause late evaluation of the attributes when parameters are passed as argument
+#         # Ex.: self.setupActiveParams([lambda: lazy(self)])
+#         return var
 
 
 v = 0
@@ -182,40 +182,50 @@ def getSomething():
     print "get " + str(v)
     return v
 
+class Parameterized(object):
+    def getParams(self):
+        return self.params
 
 class Parameter(object):
+    supportedTypes = ["group", "list", "str", "bool", "action", "int", "float", "rangegraph", "graphwidget"]
     # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
     #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
+    
     def __init__(self, **opts):
+        self.sigValueChanged = util.Signal()
+        self.sigChildAdded = util.Signal()
+        self.sigChildRemoved = util.Signal()
+
         self.opts = {}
         self.opts.update(opts)
 
         if 'name' not in self.opts or not isinstance(self.opts['name'], basestring):
             raise Exception("Parameter must have a string name specified in opts.")
 
-        if 'type' not in self.opts or not isinstance(self.opts['type'], basestring):
-            raise Exception("Parameter must have a string type specified in opts.")
+        if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts['type'] not in Parameter.supportedTypes:
+            raise Exception("Parameter must have a valid string type specified in opts.")
 
+        self.children = []
+        self.keys = {}
+        self.addChildren(opts.get("children", []))
+        self.opts.pop("children", None)
+
+        self.setValue(self.getValue())
+
+    def addChildren(self, children):
+        for child in children:
+            self.append(Parameter(**child))
+
+    def append(self, child):
+        if 'key' in child.getOpts():
+            self.keys[child.getOpts()["key"]] = child
+        if 'name' in child.getOpts():
+            self.keys[child.getOpts()["name"]] = child
+        self.children.append(child)
+        self.sigChildAdded.emit(child)
+        
     def getOpts(self):
         return self.opts
-
-    @staticmethod
-    def create(**opts):
-        if opts["type"] == "group":
-            newParameter = ParameterGroup(**opts)
-        else:
-            newParameter = ParameterItem(**opts)
-        return newParameter
-
-class ParameterItem(Parameter):
-    supportedTypes = ["list", "str", "bool", "action", "int", "float", "rangegraph", "graphwidget"]
-
-    def __init__(self, **opts):
-        self.sigValueChanged = util.Signal()
-        Parameter.__init__(self, **opts)
-
-        if self.opts['type'] not in ParameterItem.supportedTypes:
-            raise Exception("Parameter must have one of these types: " + str(ParameterItem.supportedTypes) )
 
     def getValue(self, default=None):
         val = self.opts.get("get", None)
@@ -237,6 +247,9 @@ class ParameterItem(Parameter):
                     (type =="rangegraph" and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
                 raise ValueError("Value out of limits")
 
+        if previousValue is not None and isinstance(previousValue, Parameterized):
+            self.clearChildren()
+
         ref = self.opts.get("set", None)
         if ref is None:
             self.opts["value"] = value
@@ -247,6 +260,9 @@ class ParameterItem(Parameter):
             self.sigValueChanged.emit(value)
 
         self.callAction()
+
+        if isinstance(value, Parameterized):
+            self.append(value.getParams())
 
     def callAction(self):
         act = self.opts.get("action", None)
@@ -274,49 +290,11 @@ class ParameterItem(Parameter):
     def valueChanged(self, parameter, value):
         self.setValue(value)
 
-    def getPyQtGraphParameter(self):
-        if not hasattr(self,"_PyQtGraphParameter"):
-            self._PyQtGraphParameter = pyqtgraphParameter.create(**self.getOpts())
-            self._PyQtGraphParameter.sigValueChanged.connect(self.valueChanged)
-            self.sigValueChanged.connect(lambda v: self._PyQtGraphParameter.setValue(v, self.valueChanged))
-        return self._PyQtGraphParameter
+    def clearChildren(self):
+        for ch in self.children:
+            self.removeChild(ch)
 
-
-class ParameterGroup(Parameter):
-
-    def __init__(self, **opts):
-        self.sigChildAdded = util.Signal()
-        self.sigChildRemoved = util.Signal()
-
-        type = opts.get('type', None)
-        if type is not None and type != "group":
-            raise Exception("Parameter must have a type=group specified in opts.")
-        opts["type"]="group"
-
-        Parameter.__init__(self, **opts)
-
-        self.children = []
-        self.keys = {}
-        self.addChildren(opts.get("children", []))
-        del self.opts["children"]
-
-    def addChildren(self, children):
-        for child in children:
-            self.append(Parameter.create(**child))
-
-    def append(self, child):
-        if 'key' in child.getOpts():
-            self.keys[child.getOpts()["key"]] = child
-        if 'name' in child.getOpts():
-            self.keys[child.getOpts()["name"]] = child
-        self.children.append(child)
-        self.sigChildAdded.emit(child)
-
-    def extend(self, children):
-        for parameter in children:
-            self.append(parameter)
-
-    def remove(self, child):
+    def removeChild(self, child):
         if child is None:
             return
 
@@ -328,38 +306,37 @@ class ParameterGroup(Parameter):
         except KeyError:
             pass
 
-    def findParam(self, name):
+    def getChild(self, name):
         return self.keys.get(name, None)
 
-    def findParamPath(self, path):
-        item = self.keys.get(path[0], None)
-
+    def getChildPath(self, path):
+        try:
+            item = self.keys[path[0]]
+        except KeyError:
+            raise Exception("Parameter %s has no child named %s" % (self.opts["name"], path[0]))
+        
         if len(path) == 1:
             return item
-
-        if item is not None:
-            if item.getOpts()["type"] == "group":
-                return item.findParamPath(path[1:])
-            else:
-                raise KeyError("Parameter item %s is not a group in path: %s" % (item.getOpts()["name"], path))
-        return item
-
+        else:
+            return item.getChildPath(path[1:])
+        
     def getPyQtGraphParameter(self):
         if not hasattr(self,"_PyQtGraphParameter"):
             self._PyQtGraphParameter = pyqtgraphParameter.create(**self.getOpts())
             self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
             self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
+            self._PyQtGraphParameter.sigValueChanged.connect(self.valueChanged)
+            self.sigValueChanged.connect(lambda v: self._PyQtGraphParameter.setValue(v, self.valueChanged))
             for item in self.children:
                 self._PyQtGraphParameter.addChild(item.getPyQtGraphParameter())
-
-        return self._PyQtGraphParameter
+        return self._PyQtGraphParameter    
 
 
 def main():
-    p2 = Parameter.create(name='group2', type='group', children=[
+    p2 = Parameter(name='group2', type='group', children=[
             {'name': 'blah', 'type':'int', 'value':5}
          ])
-    p = Parameter.create(name="root", type='group')
+    p = Parameter(name="root", type='group')
     p.addChildren([
         {'name': 'name1', 'key': 'n1', 'type': 'list', 'values': {"a": 1, "b": 2},
          'set': setSomething, 'get': getSomething},
@@ -374,15 +351,15 @@ def main():
         {'name': 'name5', 'type': 'graphwidget', 'limits': [10,20], 'value': [10,20]},
     ])
 
-    assert p.findParamPath(["group1", 'Target IO1']).getValue()==2
+    assert p.getChildPath(["group1", 'Target IO1']).getValue()==2
     try:
-        p.findParamPath(["group1", 'Target IO1', "Target IO1"]).getValue()==2
+        p.getChildPath(["group1", 'Target IO1', "Target IO1"]).getValue()==2
         assert False
     except KeyError:
         pass
 
     try:
-        p.findParamPath(["group1", 'adsf']).getValue()==2
+        p.getChildPath(["group1", 'adsf']).getValue()==2
         assert False
     except:
         pass
@@ -390,66 +367,66 @@ def main():
     global act
     act = 0
 
-    assert p.findParam("name1").getValue() == 0
-    assert p.findParam("n1").getValue() == 0
-    assert p.findParam("act2").getValue("blah") == "blah"
-    p.findParam("n1").setValue(10)
-    assert p.findParam("name1").getValue() == 10
-    assert p.findParam("name1").getValue() == p.findParam("n1").getValue()
-    p.findParam("name2").setValue(20)
-    assert p.findParam("n2").getValue() == 20
-    p.findParam("action1").setValue(30)
-    assert p.findParam("act1").getValue(None) == 30
-    assert p.findParam("act1").getValue(None) == act["value"]
-    p.findParam("act2").callAction()
-    assert p.findParam("act2").opts["name"] == act["name"]
+    assert p.getChild("name1").getValue() == 0
+    assert p.getChild("n1").getValue() == 0
+    assert p.getChild("act2").getValue("blah") == "blah"
+    p.getChild("n1").setValue(10)
+    assert p.getChild("name1").getValue() == 10
+    assert p.getChild("name1").getValue() == p.getChild("n1").getValue()
+    p.getChild("name2").setValue(20)
+    assert p.getChild("n2").getValue() == 20
+    p.getChild("action1").setValue(30)
+    assert p.getChild("act1").getValue(None) == 30
+    assert p.getChild("act1").getValue(None) == act["value"]
+    p.getChild("act2").callAction()
+    assert p.getChild("act2").opts["name"] == act["name"]
     try:
-        p.findParam("name3").setValue(9)
+        p.getChild("name3").setValue(9)
         assert False
     except:
         pass
     try:
-        p.findParam("n3").setValue(21)
+        p.getChild("n3").setValue(21)
         assert False
     except:
         pass
 
-    p.findParam("name3").setValue(10)
-    assert p.findParam("n3").getValue() == 10
+    p.getChild("name3").setValue(10)
+    assert p.getChild("n3").getValue() == 10
 
     try:
-        p.findParam("name4").setValue(9)
-        assert False
-    except:
-        pass
-    try:
-        p.findParam("n4").setValue("a")
-        assert False
-    except:
-        pass
-
-    p.findParam("name4").setValue(False)
-    assert p.findParam("n4").getValue() == False
-
-    try:
-        p.findParam("name5").setValue([9,11])
+        p.getChild("name4").setValue(9)
         assert False
     except:
         pass
     try:
-        p.findParam("name5").setValue([20,21])
+        p.getChild("n4").setValue("a")
         assert False
     except:
         pass
 
-    p.findParam("name5").setValue([10,20])
-    p.findParam("name5").setValue([10,20])
+    p.getChild("name4").setValue(False)
+    assert p.getChild("n4").getValue() == False
+
+    try:
+        p.getChild("name5").setValue([9,11])
+        assert False
+    except:
+        pass
+    try:
+        p.getChild("name5").setValue([20,21])
+        assert False
+    except:
+        pass
+
+    p.getChild("name5").setValue([10,20])
+    p.getChild("name5").setValue([10,20])
 
 
-    p.remove(p.findParam("name5"))
-    assert p.findParam("name5") == None
+    p.removeChild(p.getChild("name5"))
+    assert p.getChild("name5") == None
     p.append(p2)
-    p.findParamPath(["group2","blah"]).setValue(10)
+    p.getChildPath(["group2","blah"]).setValue(10)
 
     list = p.getOpts()
     print list
@@ -458,51 +435,52 @@ if __name__ == '__main__':
     from pyqtgraph.Qt import QtCore, QtGui
 
     app = QtGui.QApplication([])
-    # from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
 
-
-    class submodule(object):
+    class submodule(Parameterized):
         def __init__(self):
             super(submodule, self).__init__()
             moreparams = [
                 {'name': 'Value', 'type': 'list', 'values': ['2', '3', '4'], 'set': self.set}
             ]
-            self.params = Parameter.create(name='Test', type='group', children=moreparams)
+            self.params = Parameter(name='Test', type='group', children=moreparams)
 
         def set(self, value):
             print "set %s" % value
 
 
-    class module(object):
+    class module(Parameterized):
         def __init__(self, d):
             super(module, self).__init__()
+            values = {'sm1': submodule(), 'sm2': submodule(), 'sm3': submodule()}
+            self.sm = values['sm2']
             moreparams = [
                 {'name': 'SubModule', 'type': 'list',
-                 'values': {'sm1': submodule(), 'sm2': submodule(), 'sm3': submodule()}, 'set': self.setSubmodule},
+                 'values': values, 'set': self.setSubmodule, 'get': self.getSubmodule},
                 # {'name':"something", 'type':"placeholder"}
             ]
-            self.params = Parameter.create(name='Test %d'%d, type='group', children=moreparams)
-            self.sm = None
+            self.params = Parameter(name='Test %d'%d, type='group', children=moreparams)
+
+        def getSubmodule(self):
+            return self.sm
 
         def setSubmodule(self, sm):
-            if self.sm:
-                self.params.remove(self.sm.params)
             self.sm = sm
-            self.params.append(sm.params)
-
 
     class maintest(object):
         def __init__(self):
             super(maintest, self).__init__()
+            values = {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)}
+            self.module = values['module 2']
             p = [
                 {'name': 'Basic parameter data types', 'type': 'group', 'helpwnd': self.printhelp, 'children': [
                     {'name': 'Module 1', 'type': 'list',
-                     'values': {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)},
+                     'values': values,
                      'set': self.setmodule,
+                     'get': self.getmodule,
                      'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
                     {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
                 ]}]
-            self.params = Parameter.create(name='Test', type='group', children=p)
+            self.params = Parameter(name='Test', type='group', children=p)
             self.module = None
 
             self.t = ParameterTree()
@@ -511,12 +489,12 @@ if __name__ == '__main__':
         def printhelp(self, msg, obj):
             print msg
 
+        def getmodule(self):
+            return self.module
+
         def setmodule(self, module):
             print "Changing Module"
-            if self.module:
-                self.params.remove(self.module.params)
             self.module = module
-            self.params.append(module.params)
 
     m = maintest()
 
