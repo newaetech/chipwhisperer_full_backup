@@ -74,19 +74,15 @@ module usb_module(
 
     
     reg  [7:0] data_out;
-    
-    // Implementation
-    always @ (posedge clk_buf) begin
-        if (addr_section) begin  // top half of memory
-            if(~wr_en) begin
-                memory_input[addr_masked*8 +: 8] <= data;
-            end
-            //Uncomment following to enable readback (Increases logic usage and normally not needed)
-            data_out <= memory_input[addr_masked*8 +: 8];
+           
+    always @(posedge wr_en) begin
+        if (addr_section) begin
+            memory_input[addr_masked*8 +: 8] <= data;
         end
-        else begin
-            data_out <= memory_output[addr_masked*8 +: 8];
-        end
+    end
+        
+    always @(negedge rd_en) begin
+        data_out <= memory_output[addr_masked*8 +: 8];
     end
     
     wire isout;
