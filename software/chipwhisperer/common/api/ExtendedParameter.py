@@ -326,13 +326,13 @@ if __name__ == '__main__':
     class module(QtCore.QObject):
         paramListUpdated = util.Signal()
 
-        def __init__(self):
+        def __init__(self, d):
             super(module, self).__init__()
             moreparams = [
                 {'name': 'SubModule', 'type': 'list',
                  'values': {'sm1': submodule(), 'sm2': submodule(), 'sm3': submodule()}, 'set': self.setSubmodule}
             ]
-            self.params = Parameter.create(name='Test', type='group', children=moreparams)
+            self.params = Parameter.create(name='Test %d'%d, type='group', children=moreparams)
             ExtendedParameter.setupExtended(self.params)
             self.sm = None
 
@@ -355,7 +355,7 @@ if __name__ == '__main__':
             p = [
                 {'name': 'Basic parameter data types', 'type': 'group', 'helpwnd': self.printhelp, 'children': [
                     {'name': 'Module 1', 'type': 'list',
-                     'values': {'module 1': module(), 'module 2': module(), 'module 3': module()},
+                     'values': {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)},
                      'set': self.setmodule,
                      'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
                     {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}

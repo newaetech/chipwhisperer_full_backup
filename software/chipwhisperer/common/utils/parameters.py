@@ -24,7 +24,9 @@
 #=================================================
 
 from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter, ConfigParameter
+from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
+
+# from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter, ConfigParameter
 import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!
 from chipwhisperer.common.utils import util
 
@@ -40,9 +42,9 @@ class CWParameterTree(object):
         self._allParameterTrees[groupName] = self
 
     def getPyQtGraphParamTree(self):
-        if not hasattr(self, "parameterTree"):
-            self.parameterTree = ParameterTree()
-        return self.parameterTree
+        if not hasattr(self, "PyQtGraphParamTree"):
+            self.PyQtGraphParamTree = ParameterTree()
+        return self.PyQtGraphParamTree
 
     def replace(self, parameterLists):
         self.parameterLists = []
@@ -101,7 +103,7 @@ class Parameterized(object):
         if not hasattr(self, "params"):
             self.params = ConfigParameter.create_extended(self, name=self.getName(), type='group', children={}, tip=self.getDescription())
             if self._description:
-                self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])
+                self.params.addChildren([{'name': '', 'type': 'label', 'value':self.getDescription(), 'readonly':True}])
 
     def paramList(self):
         # Returns the current active parameters (including the child ones)
@@ -181,11 +183,39 @@ def getSomething():
     return v
 
 
-class ParameterItem(object):
+class Parameter(object):
+    # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
+    #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
+    def __init__(self, **opts):
+        self.opts = {}
+        self.opts.update(opts)
 
-    def __init__(self, opts):
+        if 'name' not in self.opts or not isinstance(self.opts['name'], basestring):
+            raise Exception("Parameter must have a string name specified in opts.")
+
+        if 'type' not in self.opts or not isinstance(self.opts['type'], basestring):
+            raise Exception("Parameter must have a string type specified in opts.")
+
+    def getOpts(self):
+        return self.opts
+
+    @staticmethod
+    def create(**opts):
+        if opts["type"] == "group":
+            newParameter = ParameterGroup(**opts)
+        else:
+            newParameter = ParameterItem(**opts)
+        return newParameter
+
+class ParameterItem(Parameter):
+    supportedTypes = ["list", "str", "bool", "action", "int", "float", "rangegraph", "graphwidget"]
+
+    def __init__(self, **opts):
         self.sigValueChanged = util.Signal()
-        self.opts = opts
+        Parameter.__init__(self, **opts)
+
+        if self.opts['type'] not in ParameterItem.supportedTypes:
+            raise Exception("Parameter must have one of these types: " + str(ParameterItem.supportedTypes) )
 
     def getValue(self, default=None):
         val = self.opts.get("get", None)
@@ -196,8 +226,8 @@ class ParameterItem(object):
 
     def setValue(self, value):
         if self.readonly():
-            raise ValueError("Parameter is currently set to read only")
-
+            raise ValueError("Parameter is currently set to read only.")
+        previousValue = self.getValue()
         limits = self.opts.get("limits", None)
         if limits is not None:
             type = self.opts.get("type", None)
@@ -207,14 +237,15 @@ class ParameterItem(object):
                     (type =="rangegraph" and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
                 raise ValueError("Value out of limits")
 
-        if self.getValue() != value:
-            self.sigValueChanged.emit(self, value)
-
         ref = self.opts.get("set", None)
         if ref is None:
             self.opts["value"] = value
         else:
             ref(value)
+
+        if previousValue != self.getValue():
+            self.sigValueChanged.emit(value)
+
         self.callAction()
 
     def callAction(self):
@@ -240,77 +271,96 @@ class ParameterItem(object):
         self.opts['visible'] = s
         # self.sigOptionsChanged.emit(self, {'visible': s})
 
+    def valueChanged(self, parameter, value):
+        self.setValue(value)
 
-class ParameterGroup(object):
-    # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
-    #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
+    def getPyQtGraphParameter(self):
+        if not hasattr(self,"_PyQtGraphParameter"):
+            self._PyQtGraphParameter = pyqtgraphParameter.create(**self.getOpts())
+            self._PyQtGraphParameter.sigValueChanged.connect(self.valueChanged)
+            self.sigValueChanged.connect(lambda v: self._PyQtGraphParameter.setValue(v, self.valueChanged))
+        return self._PyQtGraphParameter
 
-    def __init__(self, opts=None):
-        self.opts = opts
-        self.parameters = []
-        self.lut = {}
-        if opts is not None:
-            children = opts.get("children", None)
-            if children is not None:
-                self.addFromDict(children)
 
-    def addFromDict(self, parameters):
-        for item in parameters:
-            if item["type"] == "group":
-                newParameter = ParameterGroup(item)
-                item["children"]=newParameter.opts
-            else:
-                newParameter = ParameterItem(item)
-            self.append(newParameter)
+class ParameterGroup(Parameter):
 
-    def append(self, parameter):
-        if 'key' in parameter.opts:
-            self.lut[parameter.opts["key"]] = parameter
-        if 'name' in parameter.opts:
-            self.lut[parameter.opts["name"]] = parameter
-        self.parameters.append(parameter)
+    def __init__(self, **opts):
+        self.sigChildAdded = util.Signal()
+        self.sigChildRemoved = util.Signal()
 
-    def extend(self, parameters):
-        for parameter in parameters:
+        type = opts.get('type', None)
+        if type is not None and type != "group":
+            raise Exception("Parameter must have a type=group specified in opts.")
+        opts["type"]="group"
+
+        Parameter.__init__(self, **opts)
+
+        self.children = []
+        self.keys = {}
+        self.addChildren(opts.get("children", []))
+        del self.opts["children"]
+
+    def addChildren(self, children):
+        for child in children:
+            self.append(Parameter.create(**child))
+
+    def append(self, child):
+        if 'key' in child.getOpts():
+            self.keys[child.getOpts()["key"]] = child
+        if 'name' in child.getOpts():
+            self.keys[child.getOpts()["name"]] = child
+        self.children.append(child)
+        self.sigChildAdded.emit(child)
+
+    def extend(self, children):
+        for parameter in children:
             self.append(parameter)
 
-    def remove(self, name):
-        item = self.lut[name]
-        self.parameters.remove(item)
-        self.lut.pop(item.opts["name"])
+    def remove(self, child):
+        if child is None:
+            return
+
+        self.children.remove(child)
+        self.sigChildRemoved.emit(child)
+        self.keys.pop(child.getOpts()["name"])
         try:
-            self.lut.pop(item.opts["key"])
+            self.keys.pop(child.getOpts()["key"])
         except KeyError:
             pass
 
     def findParam(self, name):
-        return self.lut.get(name, None)
+        return self.keys.get(name, None)
 
     def findParamPath(self, path):
-        item = self.lut.get(path[0], None)
+        item = self.keys.get(path[0], None)
 
         if len(path) == 1:
             return item
 
         if item is not None:
-            if item.opts["type"] == "group":
+            if item.getOpts()["type"] == "group":
                 return item.findParamPath(path[1:])
             else:
-                raise KeyError("Parameter item %s is not a group in path: %s" % (item.opts["name"], path))
+                raise KeyError("Parameter item %s is not a group in path: %s" % (item.getOpts()["name"], path))
         return item
 
-    def getParamTree(self):
-        ret = []
-        for item in self.parameters:
-            ret.append(item.opts)
-        return ret
+    def getPyQtGraphParameter(self):
+        if not hasattr(self,"_PyQtGraphParameter"):
+            self._PyQtGraphParameter = pyqtgraphParameter.create(**self.getOpts())
+            self.sigChildRemoved.connect(lambda c: c._PyQtGraphParameter.remove())
+            self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
+            for item in self.children:
+                self._PyQtGraphParameter.addChild(item.getPyQtGraphParameter())
+
+        return self._PyQtGraphParameter
+
 
 def main():
-    p2 = ParameterGroup({'name': 'group2', 'type':'group', 'children':[
+    p2 = Parameter.create(name='group2', type='group', children=[
             {'name': 'blah', 'type':'int', 'value':5}
-         ]})
-    p = ParameterGroup()
-    p.addFromDict([
+         ])
+    p = Parameter.create(name="root", type='group')
+    p.addChildren([
         {'name': 'name1', 'key': 'n1', 'type': 'list', 'values': {"a": 1, "b": 2},
          'set': setSomething, 'get': getSomething},
         {'name': 'name2', 'key': 'n2', 'type': 'list', 'values': {"a": 1, "b": 2}, 'value': 1},
@@ -396,13 +446,83 @@ def main():
     p.findParam("name5").setValue([10,20])
 
 
-    p.remove("name5")
+    p.remove(p.findParam("name5"))
     assert p.findParam("name5") == None
     p.append(p2)
     p.findParamPath(["group2","blah"]).setValue(10)
 
-    list = p.getParamTree()
+    list = p.getOpts()
     print list
 
 if __name__ == '__main__':
-    main()
+    from pyqtgraph.Qt import QtCore, QtGui
+
+    app = QtGui.QApplication([])
+    # from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
+
+    class submodule(object):
+        def __init__(self):
+            super(submodule, self).__init__()
+            moreparams = [
+                {'name': 'Value', 'type': 'list', 'values': ['2', '3', '4'], 'set': self.set}
+            ]
+            self.params = Parameter.create(name='Test', type='group', children=moreparams)
+
+        def set(self, value):
+            print "set %s" % value
+
+
+
+    class module(object):
+        paramListUpdated = util.Signal()
+
+        def __init__(self, d):
+            super(module, self).__init__()
+            moreparams = [
+                {'name': 'SubModule', 'type': 'list',
+                 'values': {'sm1': submodule(), 'sm2': submodule(), 'sm3': submodule()}, 'set': self.setSubmodule},
+                # {'name':"something", 'type':"placeholder"}
+            ]
+            self.params = Parameter.create(name='Test %d'%d, type='group', children=moreparams)
+            self.sm = None
+
+        def setSubmodule(self, sm):
+            self.sm = sm
+            self.params.append(sm.params)
+
+
+    class maintest(object):
+        def __init__(self):
+            super(maintest, self).__init__()
+            p = [
+                {'name': 'Basic parameter data types', 'type': 'group', 'helpwnd': self.printhelp, 'children': [
+                    {'name': 'Module 1', 'type': 'list',
+                     'values': {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)},
+                     'set': self.setmodule,
+                     'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
+                    {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
+                ]}]
+            self.params = Parameter.create(name='Test', type='group', children=p)
+            self.module = None
+
+            self.t = ParameterTree()
+            self.t.addParameters(self.params.getPyQtGraphParameter())
+
+        def printhelp(self, msg, obj):
+            print msg
+
+        def setmodule(self, module):
+            print "Changing Module"
+            if self.module:
+                self.params.remove(self.module.params)
+            self.module = module
+            self.params.append(module.params)
+
+    m = maintest()
+
+    t = m.t
+    t.show()
+    t.setWindowTitle('pyqtgraph example: Parameter Tree')
+    t.resize(400, 800)
+
+    QtGui.QApplication.instance().exec_()
