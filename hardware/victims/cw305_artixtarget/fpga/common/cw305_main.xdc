@@ -81,6 +81,7 @@ set_property PACKAGE_PIN A5 [get_ports usb_trigger]
 
 
 create_clock -period 10.000 -name usb_clk -waveform {0.000 5.000} [get_nets usb_clk]
-#create_clock -period 10.000 -name usb_clk -waveform {0.000 5.000} [get_nets tio_clkin]
+create_clock -period 10.000 -name tio_clkin -waveform {0.000 5.000} [get_nets tio_clkin]
+create_clock -period 10.000 -name pll_clk1 -waveform {0.000 5.000} [get_nets pll_clk1]
 
 set_input_delay -clock [get_clocks -filter { NAME =~  "*usb_clk*" }] 3.000 [get_ports -filter { NAME =~  "*usb_data*" && DIRECTION == "INOUT" }]
