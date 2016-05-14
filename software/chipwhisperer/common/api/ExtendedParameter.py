@@ -357,7 +357,13 @@ if __name__ == '__main__':
                     {'name': 'Module 1', 'type': 'list',
                      'values': {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)},
                      'set': self.setmodule,
+                     'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.', 'children': [
+                    {'name': 'Module 1', 'type': 'list',
+                     'values': {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)},
+                     'set': self.setmodule,
                      'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
+                    {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
+                ]},
                     {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
                 ]}]
             self.params = Parameter.create(name='Test', type='group', children=p)

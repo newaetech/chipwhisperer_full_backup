@@ -210,7 +210,8 @@ class Parameter(object):
         self.addChildren(opts.get("children", []))
         self.opts.pop("children", None)
 
-        self.setValue(self.getValue())
+        value = self.getValue()
+        self.setValue(value)
 
     def addChildren(self, children):
         for child in children:
@@ -327,6 +328,7 @@ class Parameter(object):
             self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
             self._PyQtGraphParameter.sigValueChanged.connect(self.valueChanged)
             self.sigValueChanged.connect(lambda v: self._PyQtGraphParameter.setValue(v, self.valueChanged))
+            self.sigValueChanged.emit(self.getValue())
             for item in self.children:
                 self._PyQtGraphParameter.addChild(item.getPyQtGraphParameter())
         return self._PyQtGraphParameter    
@@ -481,7 +483,6 @@ if __name__ == '__main__':
                     {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
                 ]}]
             self.params = Parameter(name='Test', type='group', children=p)
-            self.module = None
 
             self.t = ParameterTree()
             self.t.addParameters(self.params.getPyQtGraphParameter())
