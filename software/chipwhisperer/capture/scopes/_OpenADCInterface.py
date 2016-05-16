@@ -607,8 +607,9 @@ class ClockSettings(object):
 
             timeout -= 1
 
-        #raise IOError("clkgen never loaded value?")
-        return 0
+        raise Warning("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+                      " source settings.")
+        #return 0
 
     def adcSource(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
