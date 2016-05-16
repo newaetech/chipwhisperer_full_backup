@@ -64,31 +64,25 @@ module cw305_top(
     wire [1024*8-1:0] memory_output;    // 1024 bytes, from 0x000 to 0x3FF
     wire [1024*8-1:0] memory_input;     // 1024 bytes, from 0x400 to 0x7FF
     
+    // Our main clock for controlling our own stuff
+    wire main_clk;
       
     // Set up USB with memory registers
     usb_module #(
         .MEMORY_WIDTH(10) // 2^10 = 1024 = 0x400 bytes each for input and output memory
     )my_usb(
-        .clk(usb_clk),
+        .clk_usb(usb_clk),
         .data(usb_data),
         .addr(usb_addr),
         .rd_en(usb_rdn),
         .wr_en(usb_wrn),
         .cen(usb_cen),
         .trigger(usb_trigger),
+        
+        .clk_sys(main_clk),
         .memory_input(memory_input),
         .memory_output(memory_output)
-    );    
-    
-    
-    // Set up clock selector
-    wire main_clk;
-    BUFGMUX_CTRL clock_selector (
-        .O(main_clk),
-        .I0(pll_clk1),  // Clock from on-board PLL
-        .I1(tio_clkin), // Clock from external connector
-        .S(0)           // Pick input 0 for now
-    );
+    );   
     
     
     // Put your own stuff below here
