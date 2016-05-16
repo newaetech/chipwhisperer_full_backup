@@ -287,7 +287,7 @@ class CWCoreAPI(Parameterized):
                 # currentTrace.config.setAttr("notes", "Aux: " + ', '.join(str(self._auxList)))
                 currentTrace.setTraceHint(setSize)
 
-                if waveBuffer:
+                if waveBuffer is not None:
                     currentTrace.setTraceBuffer(waveBuffer)
 
                 if self._auxList:
