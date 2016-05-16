@@ -93,8 +93,9 @@ class ProgressBarText(object):
         return self.aborted
 
     def close(self):
-        assert self.currentProgress == self.maximum or self.wasAborted(), \
-            self.title + "Closing not in 100%: progress = %d and maximum = %d" % (self.currentProgress, self.maximum)
+        #assert self.currentProgress == self.maximum or self.wasAborted(), \
+        if (self.currentProgress != self.maximum) and (self.wasAborted() == False):
+            print "WARNING: ProgressBar %s"%self.title + "Closing not in 100%%: progress = %d and maximum = %d" % (self.currentProgress, self.maximum)
 
         print self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime))
 

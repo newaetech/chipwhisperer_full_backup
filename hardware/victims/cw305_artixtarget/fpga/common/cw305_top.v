@@ -31,9 +31,6 @@ either expressed or implied, of NewAE Technology Inc.
 
 `include "board.v"
 
-//Defines how long after we keep data-bus active - shouldn't need to change
-`define REG_RDDLY_LEN 3
-
 module cw305_top(
     
     /****** USB Interface ******/
@@ -80,17 +77,8 @@ module cw305_top(
 `endif
     );
     
-    wire usb_clk_bufg;
     wire usb_clk_buf;
-    IBUFG usbclkibuf (
-      .O(usb_clk_bufg),
-      .I(usb_clk) );
-      
-    BUFG usbclkbuf(
-      .O(usb_clk_buf),
-      .I(usb_clk_bufg)
-    );
-         
+    
     /* USB CLK Heartbeat */
     reg [24:0] usb_timer_heartbeat;
     always @(posedge usb_clk_buf) usb_timer_heartbeat <= usb_timer_heartbeat +  25'd1;
@@ -100,18 +88,7 @@ module cw305_top(
     reg [22:0] crypt_clk_heartbeat;
     always @(posedge crypt_clk) crypt_clk_heartbeat <= crypt_clk_heartbeat +  23'd1;
     assign led2 = crypt_clk_heartbeat[22];
-                
-    reg [`REG_RDDLY_LEN-1:0] isoutreg;
-    wire isout;        
-    always @(posedge usb_clk_buf) begin
-        isoutreg[0] <= ~usb_rdn;
-        isoutreg[`REG_RDDLY_LEN-1:1] <= isoutreg[`REG_RDDLY_LEN-2:0];
-    end
-    assign isout = (|isoutreg) | (~usb_rdn);
-    
-    wire [7:0] dataout_int;
-    assign usb_data = (isout) ? dataout_int : 8'hZZ;
-    
+                   
     /* Connections between crypto module & registers */
     wire crypt_clk;    
     wire [`CRYPTO_TEXT_WIDTH-1:0] crypt_key;
@@ -122,15 +99,33 @@ module cw305_top(
     wire crypt_start;
     wire crypt_done;
     
-    /******* REGISTERS ********/
-    registers reg_inst(
-        .clk(usb_clk_buf),
-        .datain(usb_data),
-        .dataout(dataout_int),
+    /******* USB Interface ****/
+    wire [1024*8-1:0] memory_input;
+    wire [1024*8-1:0] memory_output;
+    // Set up USB with memory registers
+    usb_module #(
+        .MEMORY_WIDTH(10) // 2^10 = 1024 = 0x400 bytes each for input and output memory
+    )my_usb(
+        .clk_usb(usb_clk),
+        .data(usb_data),
         .addr(usb_addr),
-        .wren(~usb_wrn),
-        .rden(~usb_rdn),
-        
+        .rd_en(usb_rdn),
+        .wr_en(usb_wrn),
+        .cen(usb_cen),
+        .trigger(usb_trigger),
+        .clk_sys(usb_clk_buf),
+        .memory_input(memory_input),
+        .memory_output(memory_output)
+    );   
+    
+    /******* REGISTERS ********/
+    registers  #(
+        .MEMORY_WIDTH(10) // 2^10 = 1024 = 0x400 bytes each for input and output memory
+    ) reg_inst (
+        .mem_clk(usb_clk_buf),
+        .mem_input(memory_input),
+        .mem_output(memory_output),
+              
         .user_led(led3),
         .dipsw_1(sw1),
         .dipsw_2(sw2),
