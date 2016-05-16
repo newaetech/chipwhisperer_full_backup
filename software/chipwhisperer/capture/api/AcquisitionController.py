@@ -163,8 +163,12 @@ class AcquisitionController():
         self.currentTrace = 0
         while (self.currentTrace < self.maxtraces) and self.running:
             if self.doSingleReading(True, None) == True:
-                if self.writer:
-                    self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
+                try:
+                    if self.writer:
+                        self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
+                except ValueError, e:
+                    print "WARNING: Exception caught in adding trace %d, trace skipped."%self.currentTrace
+                    print "         Exception info: %s"%str(e)
                 self.sigTraceDone.emit()
                 self.currentTrace = self.currentTrace + 1
 
