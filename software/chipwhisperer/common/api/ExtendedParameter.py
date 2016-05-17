@@ -79,65 +79,6 @@ class ExtendedParameter():
                     parent.hide()
 
     @staticmethod
-    def findHelpWindowMethod(curParam):
-        if hasattr(curParam, 'param'):
-            if hasattr(curParam.param, 'opts'):
-                if 'helpwnd' in curParam.param.opts:
-                    return curParam.param.opts['helpwnd']
-
-        if hasattr(curParam, 'parent'):
-            return ExtendedParameter.findHelpWindowMethod(curParam.parent())
-
-        return None
-
-    @staticmethod
-    def showHelpWindow(curParam):
-        """
-        Helper to show the help text. If class defines a 'helpwnd' it uses that function, otherwise
-        a simple message box is called upon.
-        """
-
-        nametext = curParam.param.opts['name']
-        helptext = curParam.param.opts['help']
-        hdrtext = '-' * len(nametext)
-
-        helptext = helptext.replace('%namehdr%', '%s\n%s\n\n' % (nametext, hdrtext))
-
-        helpwnd = ExtendedParameter.findHelpWindowMethod(curParam)
-
-        if helpwnd:
-            helpwnd(helptext, curParam)
-        else:
-            # Shitty default window
-            if hasattr(curParam, 'widget'):
-                wdgt = curParam.widget
-            else:
-                wdgt = None
-            QtGui.QMessageBox.information(wdgt, 'Help: %s' % nametext, helptext, QtGui.QMessageBox.Cancel,
-                                          QtGui.QMessageBox.Cancel)
-
-    @staticmethod
-    def drawHelpIcon(curParam):
-        """Add a single help icons to a Parameter Item. Also removes the "default" button which isn't really used in our applications"""
-        layout = curParam.layoutWidget.layout()
-
-        # Bonus: We don't want the default button so delete it here
-        numitems = layout.count()
-        lastitem = layout.itemAt(numitems - 1)
-
-        if (type(lastitem.widget()) == QtGui.QPushButton) and lastitem.widget().width() == 20:
-            lastitem.widget().deleteLater()
-
-        # If help option add the button
-        if 'help' in curParam.param.opts:
-            buthelp = QtGui.QPushButton()
-            buthelp.setFixedWidth(20)
-            buthelp.setFixedHeight(20)
-            buthelp.setIcon(curParam.layoutWidget.style().standardIcon(QtGui.QStyle.SP_TitleBarContextHelpButton))
-            buthelp.clicked[bool].connect(lambda ignored: ExtendedParameter.showHelpWindow(curParam))
-            layout.addWidget(buthelp)
-
-    @staticmethod
     def addHelpIcons(curParam):
         """Iterate through parameter tree, and add help icon to each one. Replaces existing class with overloaded class which will generate
            a help icon when the widget is made."""

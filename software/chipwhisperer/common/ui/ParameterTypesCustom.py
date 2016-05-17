@@ -10,8 +10,51 @@ from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
 from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
-from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 
+
+helpwnd = None
+
+def showHelpWindow(curParam):
+    """
+    Helper to show the help text. If class defines a 'helpwnd' it uses that function, otherwise
+    a simple message box is called upon.
+    """
+
+    nametext = curParam.param.opts['name']
+    helptext = curParam.param.opts['help']
+    hdrtext = '-' * len(nametext)
+    helptext = helptext.replace('%namehdr%', '%s\n%s\n\n' % (nametext, hdrtext))
+
+    if helpwnd:
+        helpwnd(helptext, curParam)
+    else:
+        # Shitty default window
+        if hasattr(curParam, 'widget'):
+            wdgt = curParam.widget
+        else:
+            wdgt = None
+        QtGui.QMessageBox.information(wdgt, 'Help: %s' % nametext, helptext, QtGui.QMessageBox.Cancel,
+                                      QtGui.QMessageBox.Cancel)
+
+def drawHelpIcon(curParam):
+    """Add a single help icons to a Parameter Item. Also removes the "default" button which isn't really used in our applications"""
+    layout = curParam.layoutWidget.layout()
+
+    # Bonus: We don't want the default button so delete it here
+    numitems = layout.count()
+    lastitem = layout.itemAt(numitems - 1)
+
+    if (type(lastitem.widget()) == QtGui.QPushButton) and lastitem.widget().width() == 20:
+        lastitem.widget().deleteLater()
+
+    # If help option add the button
+    if 'help' in curParam.param.opts:
+        buthelp = QtGui.QPushButton()
+        buthelp.setFixedWidth(20)
+        buthelp.setFixedHeight(20)
+        buthelp.setIcon(curParam.layoutWidget.style().standardIcon(QtGui.QStyle.SP_TitleBarContextHelpButton))
+        buthelp.clicked[bool].connect(lambda ignored: showHelpWindow(curParam))
+        layout.addWidget(buthelp)
 
 
 # This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
@@ -20,7 +63,7 @@ from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 class WidgetParameterItemHelp(WidgetParameterItem):
     def __init__(self, *args, **kwargs):
         super(WidgetParameterItemHelp, self).__init__(*args, **kwargs)
-        ExtendedParameter.drawHelpIcon(self)
+        drawHelpIcon(self)
 
     def updateDefaultBtn(self):
         pass
@@ -29,7 +72,7 @@ class WidgetParameterItemHelp(WidgetParameterItem):
 class ListParameterItemHelp(ListParameterItem):
     def __init__(self, *args, **kwargs):
         super(ListParameterItemHelp, self).__init__(*args, **kwargs)
-        ExtendedParameter.drawHelpIcon(self)
+        drawHelpIcon(self)
 
     def updateDefaultBtn(self):
         pass
@@ -38,7 +81,7 @@ class ListParameterItemHelp(ListParameterItem):
 class ActionParameterItemHelp(ActionParameterItem):
     def __init__(self, *args, **kwargs):
         super(ActionParameterItemHelp, self).__init__(*args, **kwargs)
-        ExtendedParameter.drawHelpIcon(self)
+        drawHelpIcon(self)
 
     def updateDefaultBtn(self):
         pass
@@ -47,7 +90,7 @@ class ActionParameterItemHelp(ActionParameterItem):
 class TextParameterItemHelp(TextParameterItem):
     def __init__(self, *args, **kwargs):
         super(TextParameterItemHelp, self).__init__(*args, **kwargs)
-        ExtendedParameter.drawHelpIcon(self)
+        drawHelpIcon(self)
 
     def updateDefaultBtn(self):
         pass
@@ -524,7 +567,7 @@ class SpinBoxWithSetItem(WidgetParameterItem):
     
     def __init__(self, *args, **kwargs):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
-        ExtendedParameter.drawHelpIcon(self)
+        drawHelpIcon(self)
     
     def makeWidget(self):
         """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
@@ -636,6 +679,9 @@ class LabelParameter(Parameter):
 registerParameterType('label', LabelParameter, override=True)
 
 
+#TODO: Fix parameter's to not skip setting same value, requires more effort than this.
+#      Useful when hardware reality is != software settings, and need to re-download
+#      things.
 def setValue_Fix(self, value, blockSignal=None):
     # Fixes the CW requirement to not skip the setValue call when the previous value is the same
     try:
@@ -647,12 +693,10 @@ def setValue_Fix(self, value, blockSignal=None):
         if blockSignal is not None:
             self.sigValueChanged.connect(blockSignal)
 
-#TODO: Fix parameter's to not skip setting same value, requires more effort than this.
-#      Useful when hardware reality is != software settings, and need to re-download
-#      things.
 Parameter.setValue = setValue_Fix
 
 
+#Call base class to hide/show group-type parameter item
 def optsChanged_Fix(self, param, opts):
     ParameterItem.optsChanged(self, param, opts)
     if 'addList' in opts:

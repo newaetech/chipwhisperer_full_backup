@@ -50,6 +50,7 @@ class OpenADCInterface(ScopeTemplate):
         self.params.addChildren([
             {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip._name], 'set':self.setCurrentScope},
             {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
+
         ])
         self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
                                 lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
