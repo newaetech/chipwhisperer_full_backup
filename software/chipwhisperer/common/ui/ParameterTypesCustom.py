@@ -8,9 +8,57 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, GroupParameterItem
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
 from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
+
+
+# This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
+# They are especially helpful for the work done here
+
+class WidgetParameterItemHelp(WidgetParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(WidgetParameterItemHelp, self).__init__(*args, **kwargs)
+        ExtendedParameter.drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+class ListParameterItemHelp(ListParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(ListParameterItemHelp, self).__init__(*args, **kwargs)
+        ExtendedParameter.drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+class ActionParameterItemHelp(ActionParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(ActionParameterItemHelp, self).__init__(*args, **kwargs)
+        ExtendedParameter.drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+class TextParameterItemHelp(TextParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(TextParameterItemHelp, self).__init__(*args, **kwargs)
+        ExtendedParameter.drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+classmapping = {
+    "<class 'pyqtgraph.parametertree.parameterTypes.WidgetParameterItem'>": WidgetParameterItemHelp,
+    "<class 'pyqtgraph.parametertree.parameterTypes.ListParameterItem'>": ListParameterItemHelp,
+    "<class 'pyqtgraph.parametertree.parameterTypes.ActionParameterItem'>": ActionParameterItemHelp,
+    "<class 'pyqtgraph.parametertree.parameterTypes.TextParameterItem'>": TextParameterItemHelp
+}
 
 
 class SigStuff(QtGui.QWidget):
@@ -588,14 +636,6 @@ class LabelParameter(Parameter):
 registerParameterType('label', LabelParameter, override=True)
 
 
-def listParameterItem_Fix(self, param, depth):
-    # Fixes a bug where the list would appear blank instead of showing the default value
-    self.targetValue = None
-    WidgetParameterItem.__init__(self, param, depth)
-    self.updateDisplayLabel(self.value())
-
-ListParameterItem.__init__ = listParameterItem_Fix
-
 def setValue_Fix(self, value, blockSignal=None):
     # Fixes the CW requirement to not skip the setValue call when the previous value is the same
     try:
@@ -611,3 +651,11 @@ def setValue_Fix(self, value, blockSignal=None):
 #      Useful when hardware reality is != software settings, and need to re-download
 #      things.
 Parameter.setValue = setValue_Fix
+
+
+def optsChanged_Fix(self, param, opts):
+    ParameterItem.optsChanged(self, param, opts)
+    if 'addList' in opts:
+        self.updateAddList()
+
+GroupParameterItem.optsChanged = optsChanged_Fix

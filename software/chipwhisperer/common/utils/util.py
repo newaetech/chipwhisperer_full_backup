@@ -153,10 +153,10 @@ class Signal(object):
     def disconnect(self, observer):
         self.observers.remove(observer)
 
-    def emit(self, *arg):
+    def emit(self, *arg, **args):
         for observer in self.observers:
             try:
-                observer(*arg)
+                observer(*arg, **args)
             except Exception as e:
                 etype, value, trace = sys.exc_info()
                 value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s." % \

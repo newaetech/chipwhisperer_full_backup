@@ -362,16 +362,20 @@ if __name__ == '__main__':
                      'values': {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)},
                      'set': self.setmodule,
                      'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
-                    {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
-                ]},
-                    {'name': 'Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None}
+                    {'name': 'Rocks to Skips', 'key':'r', 'type': 'int', 'value': 0, 'help': 'Another help example', 'helpwnd': None, 'linked':['1/Rocks to Skips']},
+                    {'name': '1/Rocks to Skips', 'type': 'int', 'help': 'Another help example', 'helpwnd': None, 'get': self.getLinked}
+                    ]},
                 ]}]
             self.params = Parameter.create(name='Test', type='group', children=p)
-            ExtendedParameter.setupExtended(self.params)
+            ExtendedParameter.setupExtended(self.params, self)
             self.module = None
 
             self.t = ParameterTree()
             self.reloadParams()
+
+        def getLinked(self):
+            tmp =  1.0/float(self.findParam('r').value())
+            return tmp
 
         def printhelp(self, msg, obj):
             print msg
