@@ -78,5 +78,5 @@ class ScopeTemplate(Parameterized, Plugin):
         #    raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
         #raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
 
-    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
+    def capture(self, update=True, NumberPoints=None):
         pass

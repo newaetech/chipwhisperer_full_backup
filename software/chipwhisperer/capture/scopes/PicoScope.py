@@ -139,7 +139,6 @@ class PicoScope(Parameterized): #TODO: ScopeBase instead?
             print "WARNING: OVERFLOW IN DATA"
         self.datapoints = data[0]
         self.dataUpdated.emit(self.datapoints, 0)
-#        waitingCallback()
 
         # No timeout?
         return False
@@ -203,6 +202,6 @@ class PicoScopeInterface(ScopeTemplate):
             self.dis()
             raise
 
-    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
+    def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
-        return self.scopetype.capture(update, NumberPoints, waitingCallback)
+        return self.scopetype.capture(update, NumberPoints)
