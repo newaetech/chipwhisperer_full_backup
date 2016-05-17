@@ -32,15 +32,14 @@ must install
 """
 
 import time
-from chipwhisperer.common.utils.parameters import Parameterized
 from ._base import ScopeTemplate
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils import util, timer
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
 
 
-class PicoScope(Parameterized): #TODO: ScopeBase instead?
+class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
     _name = 'Pico Scope'
 
     def __init__(self, parentParam=None, psClass=None):
@@ -83,15 +82,22 @@ class PicoScope(Parameterized): #TODO: ScopeBase instead?
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
             self.ps.setSamplingFrequency(paramSR.value(), paramSL.value() + self.findParam('sampleoffset').value(), 1)
+
+            self._faketimer = timer.runTask(self.updateSampleRateFreqUI, 0.1, True, True)
+
+    def updateSampleRateFreqUI(self):
+        paramSR = self.findParam('samplerate')
+        paramSL = self.findParam('samplelength')
+
+        print self.ps.sampleRate
+
+        if self.ps.sampleRate != paramSR.value():
             paramSR.setValue(self.ps.sampleRate)
-            paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
-    #         QTimer.singleShot(0, self.UpdateSampleParameters)
-    #
-    # def UpdateSampleParameters(self):
-    #     paramSR = self.findParam('samplerate')
-    #     paramSL = self.findParam('samplelength')
-    #     paramSR.setValue(self.ps.sampleRate)
-    #     paramSL.setValue(min(self.ps.maxSamples, paramSL.value()))
+
+        newSL = min(self.ps.maxSamples, paramSL.value())
+        if newSL != paramSL.value():
+            paramSL.setValue(newSL)
+
 
     def con(self):
         self.ps.open()
@@ -151,7 +157,7 @@ class PicoScopeInterface(ScopeTemplate):
         super(PicoScopeInterface, self).__init__(parentParam)
 
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
-                        "PS2000": ps2000.PS2000(connect=False)}
+                  "PS2000": ps2000.PS2000(connect=False)}
         # self.connectChildParamsSignals(scopes) #TODO: Fix
 
         self.params.addChildren([
@@ -170,7 +176,7 @@ class PicoScopeInterface(ScopeTemplate):
 
     def setCurrentScope(self, scope, update=True):
         if scope is not None:
-            self.scopetype = PicoScope(scope)
+            self.scopetype = PicoScope(self, scope)
             self.scopetype.dataUpdated.connect(self.passUpdated)
         else:
             self.scopetype = scope
