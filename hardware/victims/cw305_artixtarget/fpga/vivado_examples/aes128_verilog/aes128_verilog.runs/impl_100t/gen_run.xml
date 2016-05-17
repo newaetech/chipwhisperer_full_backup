@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<GenRun Id="impl_35t" LaunchPart="xc7a35tftg256-2" LaunchTime="1463184066">
+<GenRun Id="impl_100t" LaunchPart="xc7a100tftg256-2" LaunchTime="1463184531">
   <File Type="OPT-DCP" Name="cw305_top_opt.dcp"/>
-  <File Type="RUN-CONSTRS" Name="$PDATADIR/runs/impl_35t/constrs_in.xml"/>
-  <File Type="RUN-SRCS" Name="$PDATADIR/runs/impl_35t/sources.xml"/>
+  <File Type="RUN-CONSTRS" Name="$PDATADIR/runs/impl_100t/constrs_in.xml"/>
+  <File Type="RUN-SRCS" Name="$PDATADIR/runs/impl_100t/sources.xml"/>
   <File Type="ROUTE-DCP" Name="cw305_top_routed.dcp"/>
   <File Type="PA-TCL" Name="cw305_top.tcl"/>
-  <File Type="RUN-STRAT" Name="$PDATADIR/runs/impl_35t/impl_35t.psg"/>
+  <File Type="RUN-STRAT" Name="$PDATADIR/runs/impl_100t/impl_100t.psg"/>
   <File Type="OPT-DRC" Name="cw305_top_drc_opted.rpt"/>
   <File Type="INIT-TIMING" Name="cw305_top_timing_summary_init.rpt"/>
   <File Type="OPT-TIMING" Name="cw305_top_timing_summary_opted.rpt"/>

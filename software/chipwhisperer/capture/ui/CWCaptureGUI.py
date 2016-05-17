@@ -32,11 +32,13 @@ from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
+from chipwhisperer.common.utils import pluginmanager
 
 
 class CWCaptureGUI(CWMainGUI):
     def __init__(self, api):
         super(CWCaptureGUI, self).__init__(api, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
+        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
 
         # Observers (callback methods)
         self.api.sigNewInputData.connect(self.newTargetData)

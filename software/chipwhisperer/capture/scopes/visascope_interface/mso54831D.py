@@ -84,7 +84,7 @@ class VisaScopeInterface_MSO54831D(VisaScope):
     def arm(self):
         self.visaInst.write(":DIGitize")
 
-    def capture(self, Update=False, N=None, waitingCallback=None):
+    def capture(self, Update=False, N=None):
         xdstart = self.findParam("xdisporigin").value()
         xdrange = self.findParam("xdisprange").value()
 

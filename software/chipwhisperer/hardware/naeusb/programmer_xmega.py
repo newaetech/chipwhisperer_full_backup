@@ -49,9 +49,9 @@ class XMEGA128A4U(object):
        "fuse5":{"offset":0x8f0025, "size":1},
      }
 
-class XMEGA128D4U(object):
+class XMEGA128D4(object):
     signature = [0x1e, 0x97, 0x47]
-    name = "XMEGA128D4U"
+    name = "XMEGA128D4"
 
     memtypes = {
        "signature":{"offset":0x1000090, "size":3},
@@ -63,8 +63,7 @@ class XMEGA128D4U(object):
        "fuse5":{"offset":0x8f0025, "size":1},
      }
 
-
-supported_xmega = [XMEGA128A4U(), XMEGA128D4U()]
+supported_xmega = [XMEGA128A4U(), XMEGA128D4()]
 
 class XMEGAPDI(object):
     """

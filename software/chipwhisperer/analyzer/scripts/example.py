@@ -1,5 +1,5 @@
 # Date Auto-Generated: 2016.04.25-16.18.28
-from chipwhisperer.common.scripts._base import UserScriptBase
+from chipwhisperer.common.scripts.base import UserScriptBase
 # Imports from Preprocessing
 import chipwhisperer.analyzer.preprocessing as preprocessing
 # Imports from Capture

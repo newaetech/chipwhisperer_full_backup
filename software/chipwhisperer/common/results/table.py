@@ -44,7 +44,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
             {'name':'Use Absolute Value for Rank', 'key':'useAbs', 'type':'list',
             'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":lambda: True, "False":lambda: False},
             'value':"Default"},
-            {'name':'Use single point for Rank', 'type':'bool', 'value':False, 'set':self.setSingleMode},
+            {'name':'Use single point for rank', 'key':'singlepoint', 'type':'bool', 'value':False},
             {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
             {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
         ])
@@ -96,10 +96,6 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
         self.useAbs = enabled
         self.update()
 
-    def setSingleMode(self, enabled):
-        """Single mode uses the same point across all traces, not useful normally"""
-        self.useSingle = enabled
-
     def updateTable(self, everything=False):
         """Re-sort data and redraw the table. If update-mode is 'pge' we only redraw entire table
         when  everything=True (analysis is completed)."""
@@ -108,11 +104,14 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._highlightedKeys())
-        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()())
+        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()(), useSingle=self.findParam('singlepoint').value())
         highlights = self._highlightedKeys()
 
         for bnum in range(0, self._numKeys()):
-            highlightValue = highlights[bnum] if bnum < len(highlights) else None
+            if highlights is not None and bnum < len(highlights):
+                highlightValue = highlights[bnum]
+            else:
+                highlightValue = None
             if bnum in self._analysisSource.targetBytes() and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]

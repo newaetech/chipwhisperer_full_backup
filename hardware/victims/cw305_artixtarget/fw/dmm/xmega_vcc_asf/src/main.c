@@ -84,7 +84,7 @@ int main(void)
 		// = 0.5 mV/count
 		//So divide count by 2 to get mV reading		
 		if (adccnt < AVG_READINGS){
-			adc_readings[adccnt] = adc_get_result(&MY_ADC, MY_ADC_CH);	
+			adc_readings[adccnt] = adc_get_unsigned_result(&MY_ADC, MY_ADC_CH);
 		
 			if (adc_readings[adccnt] < 0){
 				adc_readings[adccnt] = 0;
@@ -97,7 +97,7 @@ int main(void)
 			}
 			i = adctemp / AVG_READINGS;
 			//Limit negative values to 0
-			i = i - 2048;
+			//i = i - 2048;
 			if (i < 0) i = 0;
 			i = i / 2;
 			
@@ -234,7 +234,7 @@ int adc_init(void)
 	adc_set_conversion_parameters(&adc_conf, ADC_SIGN_OFF, ADC_RES_12, ADC_REF_AREFA);
 	adc_set_conversion_trigger(&adc_conf, ADC_TRIG_MANUAL, 1, 0);
 	adc_set_clock_rate(&adc_conf, 62500UL);
-	adcch_set_input(&adcch_conf, ADCCH_POS_PIN4, ADCCH_NEG_PAD_GND, 1);
+	adcch_set_input(&adcch_conf, ADCCH_POS_PIN4, ADCCH_NEG_NONE, 1); //PAD_GND
 	adc_write_configuration(&MY_ADC, &adc_conf);
 	adcch_write_configuration(&MY_ADC, MY_ADC_CH, &adcch_conf);
 	adc_enable(&MY_ADC);

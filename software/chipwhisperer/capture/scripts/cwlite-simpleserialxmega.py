@@ -36,12 +36,12 @@
 import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
-from chipwhisperer.common.scripts._base import UserScriptBase
+from chipwhisperer.common.scripts.base import UserScriptBase
 
 
 class UserScript(UserScriptBase):
-    _name = "ChipWhisperer-Lite: AES SimpleSerial on ATMega328P"
-    _description = "SimpleSerial with Standard Target for AES (NOTDUINO - ATMega328P)"
+    _name = "ChipWhisperer-Lite: AES SimpleSerial on XMEGA"
+    _description = "SimpleSerial with Standard Target for AES (XMEGA)"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)
@@ -56,13 +56,13 @@ class UserScript(UserScriptBase):
 
         #Load FW (must be configured in GUI first)
         # self.api.FWLoaderGo()
-
+                
         self.api.connect()
-
+        
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial RXD'],
-                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial TXD'],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
                       ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
                       ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
@@ -86,9 +86,7 @@ class UserScript(UserScriptBase):
 
         #Start api process
         #writer = self.api.captureM()
-        #
         #self.api.proj.setFilename("../capturev2/test_live.cwp")
-        #
         #self.api.saveProject()
 
 

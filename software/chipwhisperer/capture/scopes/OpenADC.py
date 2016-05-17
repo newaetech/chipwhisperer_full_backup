@@ -153,6 +153,6 @@ class OpenADCInterface(ScopeTemplate):
         if self.advancedSettings:
             self.advancedSettings.armPostScope()
 
-    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
+    def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        return self.qtadc.capture(update, NumberPoints, waitingCallback)
+        return self.qtadc.capture(update, NumberPoints)

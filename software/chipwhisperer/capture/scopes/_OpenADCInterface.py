@@ -11,6 +11,7 @@ import sys
 import time
 import datetime
 from functools import partial
+from chipwhisperer.common.utils import util
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -607,8 +608,8 @@ class ClockSettings(object):
 
             timeout -= 1
 
-        #raise IOError("clkgen never loaded value?")
-        return 0
+        raise Warning("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+                      " source settings.")
 
     def adcSource(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
@@ -1100,27 +1101,27 @@ class OpenADCInterface(object):
     def arm(self):
         self.setSettings(self.settings() | SETTINGS_ARM)
 
-    def capture(self, waitingCallback=None):
-        #Wait for trigger
+    def capture(self):
         timeout = False
-
         status = self.getStatus()
-
         starttime = datetime.datetime.now()
 
+        # Wait for a trigger, letting the UI run when it can
         while ((status & STATUS_ARM_MASK) == STATUS_ARM_MASK) | ((status & STATUS_FIFO_MASK) == 0):
             status = self.getStatus()
+            
+            # Wait for a moment before re-running the loop
             time.sleep(0.05)
-
             diff = datetime.datetime.now() - starttime
 
+            # If we've timed out, don't wait any longer for a trigger
             if (diff.total_seconds() > self._timeout):
                 print("Timeout in OpenADC api(), trigger FORCED")
                 timeout = True
                 self.triggerNow()
 
-            if waitingCallback:
-                waitingCallback()
+            # Give the UI a chance to update (does nothing if not using UI)
+            util.updateUI()
 
         self.setSettings(self.settings() & ~SETTINGS_ARM)
         

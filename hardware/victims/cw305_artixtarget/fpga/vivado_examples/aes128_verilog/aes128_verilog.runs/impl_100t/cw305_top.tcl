@@ -53,9 +53,9 @@ set rc [catch {
   set_property parent.project_path C:/chipwhisperer/hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.xpr [current_project]
   set_property ip_repo_paths c:/chipwhisperer/hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.cache/ip [current_project]
   set_property ip_output_repo c:/chipwhisperer/hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.cache/ip [current_project]
-  add_files -quiet C:/chipwhisperer/hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/synth_35t/cw305_top.dcp
+  add_files -quiet C:/chipwhisperer/hardware/victims/cw305_artixtarget/fpga/vivado_examples/aes128_verilog/aes128_verilog.runs/synth_100t/cw305_top.dcp
   read_xdc C:/chipwhisperer/hardware/victims/cw305_artixtarget/fpga/common/cw305_main.xdc
-  link_design -top cw305_top -part xc7a35tftg256-2
+  link_design -top cw305_top -part xc7a100tftg256-2
   close_msg_db -file init_design.pb
 } RESULT]
 if {$rc} {

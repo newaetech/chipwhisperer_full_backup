@@ -21,6 +21,7 @@
 
 import time
 from _base import VisaScope
+from chipwhisperer.common.utils import util
 
 
 class VisaScopeInterface_DSO1024A(VisaScope):
@@ -70,11 +71,11 @@ class VisaScopeInterface_DSO1024A(VisaScope):
             time.sleep(0.1)
             print "1Waiting..."
 
-    def capture(self, Update=False, N=None, waitingCallback=None):
+    def capture(self, Update=False, N=None):
         # Wait?
         while (self.visaInst.ask("*OPC?\n") != "1"):
             time.sleep(0.1)
-            waitingCallback()
+            util.updateUI()
             print "2Waiting..."
 
         # print command

@@ -75,6 +75,8 @@ class CW305(TargetTemplate):
         self._fpgabs = QSettings().value("cw305-bitstream", '')
         self.oa = None
 
+        self._woffset = 0x400
+
         self.params.addChildren([
             {'name':'PLL Settings', 'type':'group', 'children':[
                 {'name':'Enabled', 'key':'pllenabled', 'type':'bool', 'value':False, 'set':self.pll.pll_enable_set, 'get':self.pll.pll_enable_get},
@@ -115,10 +117,18 @@ class CW305(TargetTemplate):
 
     def fpga_write(self, addr, data):
         """ Write to specified address """
+
+        if addr < self._woffset:
+            raise IOError("Write to read-only location: 0x%04x"%addr)
+
         return self._naeusb.cmdWriteMem(addr, data)
         
     def fpga_read(self, addr, readlen):
         """ Read from address """
+
+        if addr > self._woffset:
+            print "NOTE: Read from write address, confirm this is not an error"
+
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
 
@@ -208,7 +218,7 @@ class CW305(TargetTemplate):
                 stoptime = datetime.now()
                 print "FPGA Config time: %s" % str(stoptime - starttime)
         self.usb_clk_setenabled(True)
-        self.fpga_write(0x100, [0])
+        self.fpga_write(0x100+self._woffset, [0])
         self.params.getAllParameters()
         self.pll.cdce906init()
         self.connectStatus.setValue(True)
@@ -221,30 +231,30 @@ class CW305(TargetTemplate):
         """Write encryption key to FPGA"""
         self.key = key
         key = key[::-1]
-        self.fpga_write(0x200, key)
+        self.fpga_write(0x100+self._woffset, key)
 
     def loadInput(self, inputtext):
         """Write input to FPGA"""
         self.input = inputtext
         text = inputtext[::-1]
-        self.fpga_write(0x300, text)
+        self.fpga_write(0x200+self._woffset, text)
 
     def isDone(self):
         """Check if FPGA is done"""
-        result = self.fpga_read(0x110, 1)[0]
+        result = self.fpga_read(0x50, 1)[0]
 
         if result == 0x00:
             return False
         else:
             # Clear trigger
-            self.fpga_write(0x100, [0])
+            self.fpga_write(0x40+self._woffset, [0])
             # LED Off
-            self.fpga_write(0x10, [0])
+            self.fpga_write(0x10+self._woffset, [0])
             return True
         
     def readOutput(self):
         """"Read output from FPGA"""
-        data = self.fpga_read(0x600, 16)
+        data = self.fpga_read(0x200, 16)
         data = data[::-1]
         return data
 
@@ -254,7 +264,7 @@ class CW305(TargetTemplate):
             self.usb_clk_setenabled(False)
             
         #LED On
-        self.fpga_write(0x10, [0x01])
+        self.fpga_write(0x10+self._woffset, [0x01])
             
 
         time.sleep(0.01)
