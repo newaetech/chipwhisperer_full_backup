@@ -79,4 +79,12 @@ class ScopeTemplate(Parameterized, Plugin):
         #raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
 
     def capture(self, update=True, NumberPoints=None):
+
+        #NOTE: If you have a waiting loop (waiting for arm), call the function util.updateUI() inside that loop to keep
+        #      the UI responsive:
+        #
+        # while self.done() == False:
+        #     time.sleep(0.05)
+        #     util.updateUI()
+        
         pass
