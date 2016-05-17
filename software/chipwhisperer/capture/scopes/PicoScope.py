@@ -83,13 +83,13 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
             paramSL = self.findParam('samplelength')
             self.ps.setSamplingFrequency(paramSR.value(), paramSL.value() + self.findParam('sampleoffset').value(), 1)
 
+            #Need this callback as otherwise the setValue() is overwritten when the user toggles off, might be fixed
+            #with Adriel's new parameterTypes, will have to test again
             self._faketimer = timer.runTask(self.updateSampleRateFreqUI, 0.1, True, True)
 
     def updateSampleRateFreqUI(self):
         paramSR = self.findParam('samplerate')
         paramSL = self.findParam('samplelength')
-
-        print self.ps.sampleRate
 
         if self.ps.sampleRate != paramSR.value():
             paramSR.setValue(self.ps.sampleRate)
@@ -102,6 +102,9 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
     def con(self):
         self.ps.open()
         self.updateCurrentSettings()
+
+    def dis(self):
+        self.ps.close()
     
     def updateCurrentSettings(self, ignored=False):
         if self.ps.handle is None: return

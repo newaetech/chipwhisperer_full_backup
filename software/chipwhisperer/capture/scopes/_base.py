@@ -66,7 +66,7 @@ class ScopeTemplate(Parameterized, Plugin):
             self.connectStatus.setValue(False)
 
     def _dis(self):
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
 
     def doDataUpdated(self,  l, offset=0):
         self.dataUpdated.emit(l, offset)
