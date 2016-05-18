@@ -80,6 +80,6 @@ class VisaScopeInterface(ScopeTemplate):
             self.dis()
             raise
 
-    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
+    def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
-        return self.scopetype.capture(update, NumberPoints, waitingCallback)
+        return self.scopetype.capture(update, NumberPoints)

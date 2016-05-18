@@ -610,7 +610,6 @@ class ClockSettings(object):
 
         raise Warning("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
                       " source settings.")
-        #return 0
 
     def adcSource(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
