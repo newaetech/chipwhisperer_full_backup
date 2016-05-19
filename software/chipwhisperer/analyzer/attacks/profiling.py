@@ -54,6 +54,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
         self.setAbsoluteMode(False)
+        self.updateScript()
 
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo)
@@ -61,10 +62,14 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.importsAppend("from chipwhisperer.analyzer.attacks.Profiling import Profiling")
+        # Add our imports to the auto-generated script
+        self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
 
+        # Get the class name and path from the algorithm module...
         analysAlgoStr = self.findParam('Prof_algo').value().__name__
-        self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
+        analysPathStr = self.findParam('Prof_algo').value().path
+        # ...and build another import string from them
+        self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysPathStr, analysAlgoStr))
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
         # self.addFunction("init", "setKeyround", "0")
@@ -78,7 +83,15 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                 self.importsAppend(k)
 
         self.addFunction("init", "setTraceSource", "UserScript.traces")
-        self.addFunction("init", "setProject", "UserScript.project()")
+        self.addFunction("init", "attack.setTraceSource", "UserScript.traces")
+        self.addFunction("init", "setProject", "UserScript.api.project()")
+
+    def setProject(self, project):
+        self._project = project
+
+    def project(self):
+        if self._project is None:
+            C
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
@@ -118,7 +131,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         return self._keyround
 
     def processTraces(self):
-        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with Profiling:")
         with progressBar:
             self.attack.setReportingInterval(self.getReportingInterval())
 

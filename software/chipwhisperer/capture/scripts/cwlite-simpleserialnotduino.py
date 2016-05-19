@@ -67,7 +67,7 @@ class UserScript(UserScriptBase):
                       ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
-                      ['OpenADC', 'Trigger Setup', 'Offset', 1500],
+                      ['OpenADC', 'Trigger Setup', 'Offset', 1250],
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
                       #Final step: make DCMs relock in case they are lost
