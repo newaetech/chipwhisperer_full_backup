@@ -27,7 +27,6 @@
 
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.utils import util
 
 CODE_READ       = 0x80

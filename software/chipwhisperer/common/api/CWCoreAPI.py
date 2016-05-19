@@ -31,7 +31,7 @@ from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.utils import util, pluginmanager
-from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils.tracesource import TraceSource
 
 
@@ -43,7 +43,6 @@ class CWCoreAPI(Parameterized):
     instance = None
 
     def __init__(self):
-        Parameterized.__init__(self)
         self.sigNewProject = util.Signal()
         self.sigNewScopeData = util.Signal()
         self.sigConnectStatus = util.Signal()
@@ -65,41 +64,46 @@ class CWCoreAPI(Parameterized):
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
 
+        # Initialize default values
         self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
+        self._attack = self.valid_attacks.get("CPA", None)
+        self._acqPattern = self.valid_acqPatterns.get("Basic", None)
         self._auxList = [None]  # TODO: implement it as a list in the whole class
-        self._numTraces = 100
+        self._numTraces = 50
         self._numTraceSets = 1
 
+        self.params = Parameter(name='Generic Settings', type='group').register()
         self.params.addChildren([
-            {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'value':self._scope, 'set':self.setScope, 'get':self.getScope},
-            {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'value':self._target, 'set':self.setTarget, 'get':self.getTarget},
-            {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'value':self._traceManager, 'set':self.setTraceFormat},
-            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'value':self.getAuxList()[0], 'set':self.setAux},
+            {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
+            {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'get':self.getTarget, 'set':self.setTarget},
+            {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'get':self.getTraceFormat, 'set':self.setTraceFormat},
+            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':lambda: self.getAuxList()[0], 'set':self.setAux},
             {'name':'Acquisition Settings', 'type':'group', 'children':[
-                    {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'value':self.numTraces(), 'set':self.setNumTraces, 'get':self.numTraces, 'linked':['Traces per Set']},
-                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'value':self.numTraceSets(), 'set':self.setNumTraceSets, 'get':self.numTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
+                    {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
+                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
                      'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
                      'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
-                    {'name':'Traces per Set', 'type':'int', 'value':self.tracesPerSet(), 'readonly':True, 'get':self.tracesPerSet},
-                    {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'value':self._acqPattern, 'set':self.setAcqPattern},
-                                                                        ]},
-                                 ])
+                    {'name':'Traces per Set', 'type':'int', 'readonly':True, 'get':self.tracesPerSet},
+                    {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
+                    ]},
+            ])
 
         self.graphWidget = None
 
-        self.addActiveParams(lambda: self.lazy(self._acqPattern))
-        self.scopeParamTree = CWParameterTree("Scope Settings", [self.getScope()])
-        self.targetParamTree = CWParameterTree("Target Settings", [self.getTarget()])
-        self.traceParamTree = CWParameterTree("Trace Settings", [self.getTraceFormat()])
-        self.auxParamTree = CWParameterTree("Aux Settings", self.getAuxList())
-        self.attackParamTree = CWParameterTree("Attack Settings", [self.getAttack()])
-        self.generalParamTree = CWParameterTree("General Settings", [self])
+        self.scopeParam = Parameter(name="Scope Settings", type='group')
+        self.params.getChild('Scope Module').stealDynamicParameters(self.scopeParam)
 
-        # Initialize default values
-        # self.setScope(self.valid_scopes.get("ChipWhisperer/OpenADC", None))
-        # self.setTarget(self.valid_targets.get("Simple Serial", None))
-        self.setAttack(self.valid_traces.get("CPA", None))
-        self.setAcqPattern(self.valid_acqPatterns.get("Basic", None))
+        self.targetParam = Parameter(name="Target Settings", type='group')
+        self.params.getChild('Target Module').stealDynamicParameters(self.targetParam)
+
+        self.traceParam = Parameter(name="Trace Settings", type='group')
+        self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
+
+        self.auxParam = Parameter(name="Aux Settings", type='group')
+        self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
+
+        # self.attackParam = Parameter(name="Attack Settings", type='group')
+        # self.params.getChild('Attack Module').getDynamicParameters(self.attackParam)
 
         self.newProject()
 
@@ -118,6 +122,7 @@ class CWCoreAPI(Parameterized):
     def getScope(self):
         return self._scope
 
+    @setupSetParam("Scope Module")
     def setScope(self, driver):
         if self.getScope():
             self.getScope().dis()
@@ -125,48 +130,47 @@ class CWCoreAPI(Parameterized):
         if self.getScope():
             self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
-        self.scopeParamTree.replace([self.getScope()])
 
     def getTarget(self):
         return self._target
 
+    @setupSetParam("Target Module")
     def setTarget(self, driver):
         if self.getTarget(): self.getTarget().dis()
         self._target = driver
         if self.getTarget():
             self.getTarget().newInputData.connect(self.sigNewInputData.emit)
             self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
-        self.targetParamTree.replace([self.getTarget()])
 
     def getAuxList(self):
         return self._auxList
 
+    @setupSetParam("Auxiliary Module")
     def setAux(self, aux):
         self._auxList = [aux]
-        self.auxParamTree.replace([self.getAuxList()[0]]) #TODO - support multiple
 
     def getAcqPattern(self):
         return self._acqPattern
 
+    @setupSetParam(['Acquisition Settings', "Key/Text Pattern"])
     def setAcqPattern(self, pat):
         self._acqPattern = pat
-        self.paramListUpdated.emit()
 
     def getTraceFormat(self):
         return self._traceManager
 
+    @setupSetParam("Trace Format")
     def setTraceFormat(self, format):
         self._traceManager = format
-        self.traceParamTree.replace([self.getTraceFormat()])
 
     def getAttack(self):
         return self._attack
 
+    # @setupSetParam("Attack Module")
     def setAttack(self, attack):
         self._attack = attack
         if self.getAttack():
             self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.attackParamTree.replace([self.getAttack()])
         self.sigAttackChanged.emit()
 
     def project(self):
@@ -232,15 +236,17 @@ class CWCoreAPI(Parameterized):
         self.disconnectScope()
         self.disconnectTarget()
 
-    def numTraces(self):
+    def getNumTraces(self):
         return self._numTraces
 
+    @setupSetParam("Number of Traces")
     def setNumTraces(self, t):
         self._numTraces = t
 
-    def numTraceSets(self):
+    def getNumTraceSets(self):
         return self._numTraceSets
 
+    @setupSetParam("Number of Sets")
     def setNumTraceSets(self, s):
         self._numTraceSets = s
 
@@ -332,53 +338,6 @@ class CWCoreAPI(Parameterized):
                 if funcName == 'TraceExplorerDialog_PartitionDisplay_findPOI':
                     return
                 sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), sys.exc_info()[2])
-
-    def _setParameter_children(self, top, path, value, echo):
-        """Descends down a given path, looking for value to set"""
-        if top.name() == path[0]:
-            if len(path) > 1:
-                for c in top.children():
-                    self._setParameter_children(c, path[1:], value, echo)
-            else:
-                #Check if this is a dictionary/list
-                if "values" in top.opts:
-                    try:
-                        if isinstance(top.opts["values"], dict):
-                            value = top.opts["values"][value]
-                    except TypeError:
-                        pass
-                    except KeyError:
-                        print "Parameter value %s is invalid. Check if it is spelled correctly or if the module was loaded properly" % value
-
-                if echo == False:
-                    top.opts["echooff"] = True
-
-                if top.opts["type"] == "action":
-                    top.activate()
-                else:
-                    top.setValue(value)
-
-                raise ValueError()
-
-    def setParameter(self, parameter, echo=False, blockSignal=False):
-        """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
-        path = parameter[:-1]
-        value = parameter[-1]
-
-        try:
-            for t in CWParameterTree.getAllParameterTrees().itervalues():
-                for i in range(0, t.invisibleRootItem().childCount()):
-                    self._setParameter_children(t.invisibleRootItem().child(i).param, path, value, echo)
-
-            print "Parameter not found: %s" % str(parameter)
-        except ValueError:
-            #A little klunky: we use exceptions to tell us the system DID work as intended
-            pass
-        except IndexError:
-            raise IndexError("IndexError Setting Parameter %s\n%s" % (str(parameter), traceback.format_exc()))
-
-        if not blockSignal:
-            self.paramListUpdated.emit()
 
     def setupGuiActions(self, mainWindow):
         if not hasattr(self, 'encryptionStatusMonitor'):

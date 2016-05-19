@@ -34,34 +34,35 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def __init__(self, parentParam, target=None):
         AcqKeyTextPattern_Base.__init__(self, parentParam, target)
         self._fixedPlain = False
+        self.initkey = ""
         self._fixedKey = True
+        self.initkey = ""
 
         self.params.addChildren([
-            {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
-            {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
-            {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
+            {'name':'Key', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getKeyType, 'set':self.setKeyType},
+            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey},
+            {'name':'Plaintext', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getPlainType, 'set':self.setPlainType},
+            {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText},
         ])
 
+    def getKeyType(self):
+        return self._fixedKey
+
     def setKeyType(self, t):
-        if t == 'Fixed':
-            self._fixedKey = True
-        elif t == 'Random':
-            self._fixedKey = False
-        else:
-            raise ValueError("Invalid value for Key Type: %s" % t)
+        self._fixedKey = t
+
+    def getPlainType(self):
+        return self._fixedPlain
 
     def setPlainType(self, t):
-        if t == 'Fixed':
-            self._fixedPlain = True
-        elif t == 'Random':
-            self._fixedPlain = False
-        else:
-            raise ValueError("Invalid value for Text Type: %s" % t)
+        self._fixedPlain = t
 
     def _initPattern(self):
         self.setInitialKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
         self.setInitialText('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
+
+    def getInitialKey(self):
+        return self.initkey
 
     def setInitialKey(self, initialKey, binaryKey=False):
         if initialKey:
@@ -75,6 +76,9 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._key = util.hexStrToByteArray(initialKey)
 
             self.initkey = keyStr
+
+    def getInitialText(self):
+        return self.inittext
 
     def setInitialText(self, initialText, binaryText=False):
         if initialText:

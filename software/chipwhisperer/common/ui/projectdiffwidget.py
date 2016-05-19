@@ -1,5 +1,4 @@
 from pyqtgraph.parametertree import Parameter, ParameterTree
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from PySide.QtGui import *
 
 class ProjectDiffWidget(QWidget):

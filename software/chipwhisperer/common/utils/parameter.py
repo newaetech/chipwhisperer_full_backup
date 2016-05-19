@@ -26,24 +26,40 @@
 import sys
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
 from chipwhisperer.common.utils import util
-import chipwhisperer.common.ui.ParameterTypesCustom
+import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 
 
 class Parameterized(object):
+    _name = "None"
+    _description = ""
+
     def getParams(self):
         assert not hasattr(self, "param") and self.getParams is not None
         return self.params
 
+    def findParam(self, name):
+        return self.getParams().getChild(name)
+
+    def setupGuiActions(self, mainWindow):
+        """You should overload this. Copy/Paste into your class."""
+        # self.window = Window(mainWindow, parameters)
+        # return [['Name of the menu item','Description', self.window.show],...]
+#         return []
+        pass
+
+    def getName(self):
+        return self._name
 
 class Parameter(object):
     registeredParameters = []
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "str", "bool", "action", "int", "float", "rangegraph", "graphwidget"]
+    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget"]
     # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
     #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
 
     def __init__(self, parent=None, setupPyQtGraph=True, **opts):
         self.sigValueChanged = util.Signal()
+        self.sigLimitsChanged = util.Signal()
         self.sigOptionsChanged = util.Signal()
         self.sigChildAdded = util.Signal()
         self.sigChildRemoved = util.Signal()
@@ -53,25 +69,30 @@ class Parameter(object):
         self.opts.update(opts)
 
         if 'name' not in self.opts or not isinstance(self.opts['name'], basestring):
-            raise Exception("Parameter must have a string name specified in opts.")
+            raise Exception("Parameter must have a name.")
 
+        name = self.opts["name"]
         if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts['type'] not in Parameter.supportedTypes:
-            raise Exception("Parameter must have a valid string type specified in opts.")
+            raise Exception("Parameter %s must have a valid string type." % name)
 
         if self.opts['type'] != 'group':
-            if ('set' in self.opts or 'get' in self.opts) and 'value' in self.opts:
-                raise Exception("Use set/get or value, not both simultaneously. If an action is needed, use the action option.")
+            if (('set' in self.opts) or ('get' in self.opts)) and ('value' in self.opts):
+                raise Exception("Use set/get or value, not both simultaneously in %s. If an action is needed, use the action option." % name)
 
-            if not ('set' in self.opts or 'get' in self.opts or 'value' in self.opts):
-                raise Exception("Useless parameter because not set/get/value field is specified.")
+            if not ('set' in self.opts or 'get' in self.opts or 'value' in self.opts or 'action' in self.opts or 'linked' in self.opts):
+                raise Exception("Useless parameter %s because no set/get/value/action/linked option is defined." % name)
 
             if 'set' in self.opts and (not ('get' in self.opts)) :
-                raise Exception("Option set and get should be used together.")
+                raise Exception("Option set and get should be used together in %s." % name)
+
+            if 'get' in self.opts and (not 'set' in self.opts) and (not 'readonly' in self.opts) and self.opts['readonly'] == False :
+                raise Exception("Parameters %s has get and no set. Should be marked as readonly." % name)
 
             if self.opts.get("type", None) == "list":
                 self.opts['limits'] = opts['values']
 
-        # name = self.opts["name"]
+            if 'set' in self.opts:
+                self.sigValueChanged.connect(self.opts['set'])
 
         self.children=[]
         tmp = self.opts.pop("children", [])
@@ -81,11 +102,16 @@ class Parameter(object):
         self.keys = {}
         self.addChildren(tmp)
 
+    def getName(self):
+        return self.opts["name"]
+
     def addChildren(self, children):
         for child in children:
             self.append(Parameter(self, **child))
 
     def append(self, child):
+        if child is None:
+            return
         if 'key' in child.getOpts():
             self.keys[child.getOpts()["key"]] = child
         if 'name' in child.getOpts():
@@ -104,7 +130,7 @@ class Parameter(object):
         else:
             return val()
 
-    def setValue(self, value,  blockSignal=False, init=False, echo=True):
+    def setValue(self, value,  blockSignal=None, init=False, echo=True):
         if self.readonly():
             raise ValueError("Parameter is currently set to read only.")
         previousValue = self.getValue()
@@ -120,20 +146,23 @@ class Parameter(object):
                     (type =="rangegraph" and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
                 raise ValueError("Value out of limits")
 
-        ref = self.opts.get("set", None)
-        if ref is None:
-            self.opts["value"] = value
-        else:
-            ref(value)
+        try:
+            if blockSignal is not None:
+                self.sigValueChanged.disconnect(blockSignal)
+
+            if "value" in self.opts:
+                self.opts["value"] = value
+            self.sigValueChanged.emit(value, self.setValue)
+
+        finally:
+            if blockSignal is not None:
+                self.sigValueChanged.connect(blockSignal)
 
         if previousValue is not None and isinstance(previousValue, Parameterized):
             previousValue.getParams().hide()
 
         if isinstance(value, Parameterized):
             value.getParams().show()
-
-        if not blockSignal:
-            self.sigValueChanged.emit(value)
 
         if not init:
             self.callAction()
@@ -148,7 +177,7 @@ class Parameter(object):
         for name in self.opts.get("linked", []):
             linked = self.parent.getChild(name)
             if linked is not None:
-                linked.sigValueChanged.emit(linked.getValue())
+                linked.sigValueChanged.emit(linked.getValue(), None)
 
     def callAction(self):
         act = self.opts.get("action", None)
@@ -159,6 +188,8 @@ class Parameter(object):
         self.opts['limits'] = limits
         if type =="rangegraph" and limits[0] > limits[1]:
             self.setReadonly(True)
+        self.sigLimitsChanged.emit({})
+        self.sigLimitsChanged.emit(limits)
 
     def readonly(self):
         return self.opts.get('readonly', False)
@@ -196,31 +227,34 @@ class Parameter(object):
         self.sigChildRemoved.emit(child)
         self.children.remove(child)
 
-    def getChild(self, name):
-        return self.keys.get(name, None)
+    def getChild(self, path):
+        if isinstance(path, list):
+            item = self.keys.get(path[0], None)
 
-    def getChildPath(self, path):
-        item = self.keys.get(path[0], None)
-
-        if len(path) == 1 or item is None:
-            return item
+            if len(path) == 1 or item is None:
+                return item
+            else:
+                return item.getChild(path[1:])
         else:
-            return item.getChildPath(path[1:])
+            return self.keys.get(path, None)
+
 
     def getPyQtGraphParameter(self):
         if hasattr(self,"_PyQtGraphParameter"):
             return self._PyQtGraphParameter
         return False
 
-    def valueChanged(self, parameter, value):
-        self.setValue(value, True)
-
     def setupPyQtGraphParameter(self):
-        self._PyQtGraphParameter = pyqtgraphParameter.create(**self.getOpts())
+        opts = self.getOpts()
+        self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
+        self._PyQtGraphParameter.setValue(self.getValue())
         self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
-        self._PyQtGraphParameter.sigValueChanged.connect(self.valueChanged)
-        self.sigValueChanged.connect(lambda v: self._PyQtGraphParameter.setValue(v, self.valueChanged))
+        updateParamValue = lambda _, v: self.setValue(v, guiCallback)
+        guiCallback = lambda v, _: self._PyQtGraphParameter.setValue(v, updateParamValue)
+        self._PyQtGraphParameter.sigValueChanged.connect(updateParamValue)
+        self.sigValueChanged.connect(guiCallback)
+        self.sigLimitsChanged.connect(lambda v: self._PyQtGraphParameter.setLimits(v))
         self.sigOptionsChanged.connect(self._PyQtGraphParameter.setOpts)
 
     def setParent(self, parent):
@@ -237,11 +271,12 @@ class Parameter(object):
         path.append(self.opts["name"])
         return path
 
-    def getDynamicParameters(self, parent):
+    def stealDynamicParameters(self, parent):
          if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
             for value in self.opts["values"].itervalues():
                 if isinstance(value, Parameterized):
                         parent.append(value.getParams())
+                        value.getParams().hide()
 
     def refreshAllParameters(self):
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
@@ -254,7 +289,6 @@ class Parameter(object):
                         self.getRoot().append(value.getParams())
                     elif mode == "child":
                         self.append(value.getParams())
-                    value.getParams().hide()
 
         self.setValue(self.getValue(), init=True)
         for child in self.children:
@@ -285,6 +319,27 @@ class Parameter(object):
         if child is None:
             raise KeyError("Parameter not found: %s" % str(parameter))
 
+    # def getGuiActions(self, mainWindow):
+    #     # Returns a list with all the gui actions in the active parameter tree.
+    #     ret = []
+    #     for p in cls.registeredParameters:
+    #         if self.getParams().getOpts()["visible"]:
+    #             ret.extend(self.setupGuiActions(mainWindow))
+    #             for e in self.getParams().getOpts()["visible"]__activeParams:
+    #                 currentParams = e()
+    #                 if currentParams:
+    #                     ret.extend(currentParams.guiActions(mainWindow))
+    #     return ret
+
+def setupSetParam(key):
+    def func_decorator(func):
+        def func_wrapper(self, v, blockSignal=None):
+            param = self.findParam(key)
+            if blockSignal is None:
+                param.setValue(v, param.opts["set"])
+            func(self, v)
+        return func_wrapper
+    return func_decorator
 
 if __name__ == '__main__':
     from pyqtgraph.Qt import QtGui
@@ -325,17 +380,18 @@ if __name__ == '__main__':
         def getSubmodule(self):
             return self.sm
 
+        @setupSetParam("SubModule")
         def setSubmodule(self, sm):
             self.sm = sm
 
     class maintest(object):
         def __init__(self):
             super(maintest, self).__init__()
-            values = {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)}
-            self.module = values['module 2']
+            self.values = {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)}
+            self.module = self.values['module 2']
             p = [
                     {'name': 'Module', 'type': 'list',
-                     'values': values,
+                     'values': self.values,
                      'set': self.setmodule,
                      'get': self.getmodule,
                      'childmode': "root",
@@ -351,7 +407,7 @@ if __name__ == '__main__':
 
             self.t2 = ParameterTree()
             self.params2 = Parameter(name='Root', type='group')
-            self.params.getChild("Module").getDynamicParameters(self.params2)
+            self.params.getChild("Module").stealDynamicParameters(self.params2)
             self.t2.addParameters(self.params2._PyQtGraphParameter)
 
         def printhelp(self, msg, obj):
@@ -360,6 +416,7 @@ if __name__ == '__main__':
         def getmodule(self):
             return self.module
 
+        @setupSetParam("Module")
         def setmodule(self, module):
             print "Changing Module"
             self.module = module
@@ -381,5 +438,6 @@ if __name__ == '__main__':
     t2.setWindowTitle('pyqtgraph example: Parameter Tree')
     t2.resize(400, 800)
     Parameter.setParameter(['Root', 'Module', 'module 3'])
+    m.setmodule(m.values['module 1'])
 
     QtGui.QApplication.instance().exec_()

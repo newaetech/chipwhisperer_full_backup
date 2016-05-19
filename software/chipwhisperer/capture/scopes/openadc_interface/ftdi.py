@@ -22,7 +22,7 @@
 import sys
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 try:
     import ftd2xx as ft
 except:
@@ -33,14 +33,13 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
+        self.serialNumber = None
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
+            {'name':'Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSerialNumber},
         ])
-
-        self.serialNumber = None
         self.ser = None
 
         if (openadc_qt is None) or (ft is None):
@@ -48,10 +47,8 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         else:
             self.scope = oadcInstance
 
-        #if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        #else:
-        #    self.cwAdvancedSettings = None
+    def getSerialNumber(self):
+        return self.serialNumber
 
     def setSerialNumber(self, snum):
         self.serialNumber = snum

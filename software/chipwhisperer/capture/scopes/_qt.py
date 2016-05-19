@@ -24,7 +24,7 @@
 #=================================================
 
 import _OpenADCInterface as openadc
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util, timer
 
 
@@ -32,10 +32,10 @@ class OpenADCQt(Parameterized):
     _name= 'OpenADC'
 
     def __init__(self, parentParam=None):
-        Parameterized.__init__(self, parentParam)
-
         self.dataUpdated = util.Signal()
         self.adc_settings = openadc.OpenADCSettings()
+
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
 
         self.offset = 0.5
@@ -54,11 +54,10 @@ class OpenADCQt(Parameterized):
     def statusRefresh(self):
         pass
 
-    def reloadParameterTree(self):
-        self.adc_settings.setInterface(self.sc)
-        self.params.blockTreeChangeSignal()
-        self.params.getAllParameters()
-        self.params.unblockTreeChangeSignal()
+    # def reloadParameterTree(self):
+    #     self.adc_settings.setInterface(self.sc)
+        # self.params.getAllParameters()
+        # self.params.unblockTreeChangeSignal()
 
     def processData(self, data):
         fpData = []
@@ -109,7 +108,7 @@ class OpenADCQt(Parameterized):
 
     def reset(self):
         self.sc.setReset(True)
-        self.reloadParameterTree()
+        self.params.refreshAllParameters()
 
     def test(self):
         self.sc.testAndTime()
@@ -118,6 +117,7 @@ class OpenADCQt(Parameterized):
         self.ser = ser
         #See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
+        self.adc_settings.setInterface(self.sc)
 
         deviceFound = False
         numTries = 0
@@ -141,7 +141,7 @@ class OpenADCQt(Parameterized):
 
                 raise IOError("Opened port %s but failed to find OpenADC" % portname)
 
-        self.reloadParameterTree()
+        self.params.refreshAllParameters()
         self.setEnabled(True)
 
     def close(self):

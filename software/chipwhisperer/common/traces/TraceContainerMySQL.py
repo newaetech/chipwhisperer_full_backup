@@ -26,7 +26,6 @@ import pickle
 import numpy as np
 from _base import TraceContainer
 from _cfgfile import makeAttrDict
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 
 try:
     import umysql as sql

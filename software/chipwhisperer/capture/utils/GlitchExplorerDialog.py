@@ -30,9 +30,9 @@ import sys
 from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
-from pyqtgraph.parametertree import Parameter, ParameterTree
+from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter, ConfigParameter
+from chipwhisperer.common.utils.parameter import Parameter
 
 
 class TuningParameter(QObject):
@@ -57,7 +57,7 @@ class TuningParameter(QObject):
             {'name':'Mode', 'type':'list', 'key':'mode', 'values':["Linear"], 'set':self.updateParams},
             ]
 
-        self.params = ConfigParameter.create_extended(self, name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
+        self.params = Parameter(name='Tuning Parameter %d' % num, type='group', children=paramTemplate)
         self.cnt = 0
         self.updateParams()
 
@@ -136,7 +136,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
         self.mainSplitter.addWidget(self.table)
 
         self.glitchParams =[{'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
-                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'set':self.updateParameters, 'readonly':False},
+                            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'action':self.updateParameters, 'readonly':False},
                             {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True},
                             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
                             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
@@ -144,13 +144,12 @@ class GlitchExplorerDialog(QtFixes.QDialog):
                             {'name':'Recordings', 'type':'group', 'expanded':False, 'children':[
                                 # {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
                                 {'name':'Last autosave Filename', 'type':'str', 'key':'savefilename', 'value':''},
-                                {'name':'Notes', 'type':'text', 'key':'savenotes'},
-                                {'name':'Write notes to last autosave file', 'type':'action'}
+                                {'name':'Notes', 'type':'text', 'key':'savenotes', 'value':""},
                             ]},
                             ]
 
 
-        self.params = ConfigParameter.create_extended(self, name='Glitch Explorer', type='group', children=self.glitchParams)
+        self.params = Parameter(self, name='Glitch Explorer', type='group', children=self.glitchParams)
         self.paramTree = ParameterTree()
 
         self.reloadParameters()
@@ -251,7 +250,8 @@ class GlitchExplorerDialog(QtFixes.QDialog):
         self.findParam('tracesreq').setValue(treq)
 
     def reloadParameters(self):
-        ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
+        # ExtendedParameter.reloadParams(self.paramList(), self.paramTree)
+        pass
 
     def paramList(self):
         p = [self.params]

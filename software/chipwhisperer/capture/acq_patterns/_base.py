@@ -24,13 +24,13 @@
 #=================================================
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 class AcqKeyTextPattern_Base(Parameterized, Plugin):
     _name = "Key/Text Pattern"
 
     def __init__(self, parentParam, target=None):
-        Parameterized.__init__(self, parentParam)
+        self.params = Parameter(name=self.getName(), type='group')
         self.setTarget(target)
 
     def setTarget(self, target):

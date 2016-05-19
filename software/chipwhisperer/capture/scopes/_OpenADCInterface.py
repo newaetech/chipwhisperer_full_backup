@@ -122,12 +122,13 @@ class HWInformation(object):
 
     def __init__(self):
         self.name = "Hardware Information"
+        self.oa = None
         self.sysFreq = 0
         self.param = {'name': 'HW Information', 'type': 'group', 'children': [
-                {'name': 'Version', 'type': 'str', 'value': "unknown", 'get':self.versions, 'readonly':True},
-                {'name': 'Synth Date', 'type': 'str', 'value': "unknown", 'get':self.synthDate, 'readonly':True},
-                {'name': 'System Freq', 'type': 'int', 'value': 0, 'siPrefix':True, 'suffix': 'Hz', 'get':self.sysFrequency, 'readonly':True},
-                {'name': 'Max Samples', 'type': 'int', 'value': 0, 'get':self.maxSamples, 'readonly':True}
+                {'name': 'Version', 'type': 'str', 'get':self.versions, 'readonly':True},
+                {'name': 'Synth Date', 'type': 'str', 'get':self.synthDate, 'readonly':True},
+                {'name': 'System Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'get':self.sysFrequency, 'readonly':True},
+                {'name': 'Max Samples', 'type': 'int', 'get':self.maxSamples, 'readonly':True}
                 ]}
 
         self.vers = None
@@ -137,6 +138,8 @@ class HWInformation(object):
         oa.hwInfo = self
 
     def versions(self):
+        if self.oa is None:
+            return "unknown"
         result = self.oa.sendMessage(CODE_READ, ADDR_VERSIONS, maxResp=6)
 
         regver = result[0] & 0xff
@@ -162,9 +165,13 @@ class HWInformation(object):
         return "unknown"
 
     def maxSamples(self):
+        if self.oa is None:
+            return 0
         return self.oa.hwMaxSamples
 
     def sysFrequency(self, force=False):
+        if self.oa is None:
+            return 0
         if (self.sysFreq > 0) & (force == False):
             return self.sysFreq
 
@@ -181,17 +188,21 @@ class HWInformation(object):
 
         return self.sysFreq
 
+
 class GainSettings(object):
 
     def __init__(self):
         self.name = "Gain Setting"
+        self.gainlow_cached = False
+        self.gain_cached = 0
+        self.oa = None
         self.param = {'name': 'Gain Setting', 'type': 'group', 'children': [
-                {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'value':"low", 'set':self.setMode, 'get':self.mode,
+                {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'set':self.setMode, 'get':self.mode,
                          'help': '%namehdr%'+
                                  'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
                                  '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
                                  'using the "High" gain mode typically.'},
-                {'name': 'Setting', 'type': 'int', 'value':0, 'limits': (0, 78), 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
+                {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
                          'help':'%namehdr%'+
                                 'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
                                 ' The resulting gain in dB is given in the "calculated" output.'},
@@ -199,8 +210,6 @@ class GainSettings(object):
                          'help':'%namehdr%'+
                                 'Gives the gain the AD8331 should have, based on the "High/Low" setting and the "gain setting".'},
                 ]}
-        self.gainlow_cached = False
-        self.gain_cached = 0
 
     def setInterface(self, oa):
         self.oa = oa
@@ -231,6 +240,9 @@ class GainSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_GAIN, cmd)
 
     def gain(self, cached=False):
+        if self.oa is None:
+            return 0
+
         if cached == False:
             self.gain_cached = self.oa.sendMessage(CODE_READ, ADDR_GAIN)[0]
 
@@ -249,21 +261,29 @@ class GainSettings(object):
 
         return gaindb
 
+
 class TriggerSettings(object):
     def __init__(self):
         self.name = "Trigger Settings"
+        self.maxsamples = 0
+        self.presamples_desired = 0
+        self.presamples_actual = 0
+        self.presampleTempMargin = 24
+        self._timeout = 2
+        self.oa = None
+
         self.param = {'name': 'Trigger Setup', 'type':'group', 'children': [
             {'name': 'Refresh Status', 'type':'action', 'linked':['Digital Pin State'], 'visible':False,
                      'help':'%namehdr%'+
                             'Refreshes the "Digital Pin State" status.'},
-            {'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'value':"digital", 'set':self.setSource, 'get':self.source,
+            {'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'set':self.setSource, 'get':self.source,
                      'help':'%namehdr%'+
                             'Selects if trigger system is based on digital signal (including internally generated), or an ADC level. Currently ' +
                             'only the digital trigger system is supported.'},
-            {'name': 'Digital Pin State', 'type':'bool', 'value':False, 'readonly':True, 'get':self.extTriggerPin,
+            {'name': 'Digital Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
                      'help':'%namehdr%'+
                             'Gives the status of the digital signal being used as the trigger signal, either high or low.'},
-            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'value':'low', 'set':self.setMode, 'get':self.mode,
+            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'set':self.setMode, 'get':self.mode,
                      'help':'%namehdr%'+
                             'When using a digital system, sets the trigger mode:\n\n'
                             '  =============== ==============================\n' +
@@ -276,29 +296,22 @@ class TriggerSettings(object):
                             '  =============== ==============================\n\n' +
                             'Note the "Trigger Mode" should be set to "Rising Edge" if using either the "SAD Trigger" or "IO Trigger" modes.'
                             },
-            {'name': 'Timeout (secs)', 'type':'float', 'value':2, 'step':1, 'limits':(0, 1E99), 'set':self.setTimeout, 'get':self.timeout,
+            {'name': 'Timeout (secs)', 'type':'float', 'step':1, 'limits':(0, 1E99), 'set':self.setTimeout, 'get':self.timeout,
                      'help':'%namehdr%'+
                             'If no trigger occurs in this many seconds, force the trigger.'},
-            {'name': 'Offset', 'type':'int', 'value':0, 'limits':(0, 4294967294), 'set':self.setOffset, 'get':self.offset,
+            {'name': 'Offset', 'type':'int', 'limits':(0, 4294967294), 'set':self.setOffset, 'get':self.offset,
                      'help':'%namehdr%'+
                             'Delays this many samples after the trigger event before recording samples. Based on the ADC clock cycles. ' +
                             'If using a 4x mode for example, an offset of "1000" would mean we skip 250 cycles of the target device.'},
-            {'name': 'Pre-Trigger Samples', 'type':'int', 'value':0, 'limits':(0, 1000000), 'set':self.setPresamples, 'get':self.presamples,
+            {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, 1000000), 'set':self.setPresamples, 'get':self.presamples,
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
                             'recording samples BEFORE the trigger event.'},
-            {'name': 'Total Samples', 'type':'int', 'value':0, 'limits':(0, 1000000), 'set':self.setMaxSamples, 'get':self.maxSamples,
+            {'name': 'Total Samples', 'type':'int', 'limits':(0, 1000000), 'set':self.setMaxSamples, 'get':self.maxSamples,
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the api system has an upper limit, and may have a practical lower limit (i.e.,' +
                             ' if this value is set too low the system may not api samples. Suggest to always set > 256 samples.'},
         ]}
-        self.maxsamples = 0
-        self.presamples_desired = 0
-        self.presamples_actual = 0
-
-        self.presampleTempMargin = 24
-        self._timeout = 2
-
 
     def setInterface(self, oa):
         self.oa = oa
@@ -311,6 +324,9 @@ class TriggerSettings(object):
         self.oa.setMaxSamples(samples)
 
     def maxSamples(self,  cached=False):
+        if self.oa is None:
+            return 0
+
         if cached:
             return self.maxsamples
         else:
@@ -333,6 +349,9 @@ class TriggerSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_OFFSET, cmd)
 
     def offset(self):
+        if self.oa is None:
+            return 0
+
         cmd = self.oa.sendMessage(CODE_READ, ADDR_OFFSET, maxResp=4)
         offset = cmd[0]
         offset |= cmd[1] << 8
@@ -366,11 +385,13 @@ class TriggerSettings(object):
 
     def presamples(self, cached=False):
         """If cached returns DESIRED presamples"""
+        if self.oa is None:
+            return 0
 
         if cached:
             return self.presamples_desired
 
-        samples = 0x00000000;
+        samples = 0x00000000
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_PRESAMPLES, maxResp=4)
         samples = samples | (temp[0] << 0)
@@ -409,6 +430,9 @@ class TriggerSettings(object):
         self.oa.setSettings(cur | trigmode)
 
     def mode(self):
+        if self.oa is None:
+            return 'low'
+
         sets = self.oa.settings()
         case = sets & (SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
 
@@ -424,8 +448,7 @@ class TriggerSettings(object):
         return mode
 
     def extTriggerPin(self):
-        sets = self.oa.getStatus()
-        if sets & STATUS_EXT_MASK:
+        if (self.oa is not None) and (self.oa.getStatus() & STATUS_EXT_MASK):
             return True
         else:
             return False
@@ -438,6 +461,7 @@ class ClockSettings(object):
     def __init__(self, hwinfo=None):
         self.name = "Clock Setup"
         self.findParam = None
+        self.oa = None
         self.param = {'name': 'Clock Setup', 'type':'group', 'children': [
             {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
                      'help':'%namehdr%' +
@@ -450,7 +474,12 @@ class ClockSettings(object):
                             'the blocks to lose lock.'},
 
             {'name': 'ADC Clock', 'type':'group', 'children': [
-                {'name': 'Source', 'type':'list', 'values':{"EXTCLK Direct":("extclk", 4, "clkgen"), "EXTCLK x4 via DCM":("dcm", 4, "extclk"), "EXTCLK x1 via DCM":("dcm", 1, "extclk"), "CLKGEN x4 via DCM":("dcm", 4, "clkgen"), "CLKGEN x1 via DCM":("dcm", 1, "clkgen")}, 'value':("dcm", 1, "extclk"), 'set':self.setAdcSource, 'get':self.adcSource,
+                {'name': 'Source', 'type':'list', 'values':{"EXTCLK Direct":("extclk", 4, "clkgen"),
+                                                            "EXTCLK x4 via DCM":("dcm", 4, "extclk"),
+                                                            "EXTCLK x1 via DCM":("dcm", 1, "extclk"),
+                                                            "CLKGEN x4 via DCM":("dcm", 4, "clkgen"),
+                                                            "CLKGEN x1 via DCM":("dcm", 1, "clkgen")},
+                          'set':self.setAdcSource, 'get':self.adcSource,
                           'help':'%namehdr%' +
                                 'The ADC sample clock is generated from this source. Options are either an external input (which input set elsewhere) or an internal clock generator. Details of each option:\n\n' +
                                 '=================== ====================== =================== ===============\n' +
@@ -612,6 +641,9 @@ class ClockSettings(object):
                       " source settings.")
 
     def adcSource(self):
+        if self.oa is None:
+            return ("dcm", 1, "extclk")
+
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         result[0] = result[0] & 0x07
 

@@ -28,17 +28,17 @@
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class ScopeTemplate(Parameterized, Plugin):
     _name = "None"
 
     def __init__(self, parentParam):
-        Parameterized.__init__(self, parentParam)
         self.connectStatus = util.Observable(False)
         self.dataUpdated = util.Signal()
         self.datapoints = []
+        self.params = Parameter(name=self.getName(), type='group').register()
 
     def dcmTimeout(self):
         pass

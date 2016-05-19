@@ -28,7 +28,7 @@
 import time
 from functools import partial
 import ChipWhispererGlitch
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -47,7 +47,6 @@ class ChipWhispererExtra(Parameterized):
     _name = 'CW Extra'
 
     def __init__(self, parentParam, cwtype, scope):
-        Parameterized.__init__(self, parentParam)
         #self.cwADV = CWAdvTrigger()
 
         if cwtype == "cwrev2":
@@ -62,14 +61,15 @@ class ChipWhispererExtra(Parameterized):
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope)
 
-        self.setupActiveParams([lambda: self.lazy(self.cwEXTRA), lambda: self.lazy(self.glitch)])
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.append(self.cwEXTRA.getParams())
+        self.params.append(self.glitch.getParams())
 
     def setOpenADC(self, oa):
         #self.cwADV.setOpenADC(oa)
         if self.enableGlitch:
             self.glitch.setOpenADC(oa.sc)
         self.cwEXTRA.con(oa.sc)
-        self.getAllActiveParameters()
 
     def armPreScope(self):
         if self.enableGlitch:

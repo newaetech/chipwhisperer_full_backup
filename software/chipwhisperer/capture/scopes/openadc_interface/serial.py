@@ -23,7 +23,7 @@ import sys
 
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import serial
@@ -36,19 +36,22 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
     _name = "Serial Port (LX9)"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
+        self.portName = None
+        self.ser = None
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Port', 'type':'list', 'values':[''], 'value':None, 'set':self.setPortName},
+            {'name':'Port', 'type':'list', 'values':[''], 'get':self.getPortName, 'set':self.setPortName},
         ])
-
-        self.ser = None
 
         if (openadc_qt is None) or (serial is None):
             raise ImportError("Needed imports for serial missing")
         else:
             self.scope = oadcInstance
+
+    def getPortName(self):
+        return self.portName
 
     def setPortName(self, snum):
         self.portName = snum
@@ -96,8 +99,6 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
             if p.name() == 'Port':
                 p.setLimits(serialnames)
                 p.setValue(serialnames[0])
-
-        self.paramListUpdated.emit()
 
     def getTextName(self):
         try:

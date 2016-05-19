@@ -52,12 +52,12 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitor = GlitchExplorerDialog(self)
 
     def addSettingsDocks(self):
-        self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
-        self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
-        self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
-        self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
-        self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")
-        self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
+        self.settingsGeneralDock = self.addSettings(self.api.params)
+        self.settingsResultsDock = self.addSettings(ResultsBase.getClassParameter())
+        self.settingsScopeDock = self.addSettings(self.api.scopeParam)
+        self.settingsTargetDock = self.addSettings(self.api.targetParam)
+        self.settingsTraceDock = self.addSettings(self.api.traceParam)
+        self.settingsAuxDock = self.addSettings(self.api.auxParam)
 
         # Load all ActiveTraceObservers
         self.windowMenu.addSeparator()

@@ -33,7 +33,7 @@ from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import util, timer, pluginmanager
-
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
@@ -42,13 +42,13 @@ class OpenADCInterface(ScopeTemplate):
     def __init__(self, parentParam=None):
         ScopeTemplate.__init__(self, parentParam)
 
-        self.scopetype = None
         self.qtadc = openadc_qt.OpenADCQt()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
 
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
+        self.scopetype =  scopes[OpenADCInterface_NAEUSBChip._name]
         self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip._name], 'set':self.setCurrentScope},
+            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope},
             {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
 
         ])
@@ -61,7 +61,6 @@ class OpenADCInterface(ScopeTemplate):
         self.advancedSAD = None
         self.digitalPattern = None
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
-        self.setCurrentScope(self.findParam('con').value())
 
     def dcmTimeout(self):
         try:
@@ -80,10 +79,12 @@ class OpenADCInterface(ScopeTemplate):
         else:
             self.refreshTimer.stop()
 
-    def setCurrentScope(self, scope, update=True):
+    def getCurrentScope(self):
+        return self.scopetype
+
+    @setupSetParam("Connection")
+    def setCurrentScope(self, scope):
         self.scopetype = scope
-        if update:
-            self.paramListUpdated.emit()
 
     def _con(self):
         if self.scopetype is not None:

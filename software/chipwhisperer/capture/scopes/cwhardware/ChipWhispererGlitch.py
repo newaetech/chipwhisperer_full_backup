@@ -27,7 +27,7 @@
 
 import zipfile
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 glitchaddr = 51
 glitchoffsetaddr = 25
@@ -52,12 +52,12 @@ class ChipWhispererGlitch(Parameterized):
     _name= 'Glitch Module'
 
     def __init__(self, parentParam, cwtype, scope):
-        Parameterized.__init__(self, parentParam)
 
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
         self.oa = None
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
             {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},

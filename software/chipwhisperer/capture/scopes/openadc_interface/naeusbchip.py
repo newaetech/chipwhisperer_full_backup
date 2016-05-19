@@ -28,7 +28,7 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWL
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
@@ -45,9 +45,10 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
     _name = "ChipWhisperer-Lite"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
         self.ser = None
         self._toolActs = []
+
+        self.params = Parameter(name=self.getName(), type='group')
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -59,11 +60,6 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         else:
             self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
             self.scope = oadcInstance
-
-        # if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        # else:
-        #    self.cwAdvancedSettings = None
 
     def __del__(self):
         if self.ser:

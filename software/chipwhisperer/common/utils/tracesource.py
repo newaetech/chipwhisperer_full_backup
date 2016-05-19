@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 
 class TraceSource(object):
@@ -105,19 +105,17 @@ class PassiveTraceObserver(Parameterized):
     def __init__(self, parentParam=None):
         Parameterized.__init__(self, parentParam)
         self._traceSource = None
+
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'set':self._setTraceSource}
+            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'get':self.getTraceSource, 'set':self.setTraceSource}
         ])
 
+    @setupSetParam("Input")
     def setTraceSource(self, traceSource):
-        par = self.findParam('input')
-        par.setValue(traceSource)
-        assert self._traceSource == traceSource
-
-    def _setTraceSource(self, traceSource):
         self._traceSource = traceSource
 
-    def traceSource(self):
+    def getTraceSource(self):
         return self._traceSource
 
     def processTraces(self):

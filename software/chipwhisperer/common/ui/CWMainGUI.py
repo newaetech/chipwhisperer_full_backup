@@ -47,15 +47,15 @@ from datetime import datetime
 from PythonConsole import QPythonConsole
 from saveproject import SaveProjectDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import pluginmanager, util
 from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
-from chipwhisperer.common.utils.parameters import CWParameterTree
-
+from pyqtgraph.parametertree import ParameterTree
+from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.ui.HelpWindow import HelpBrowser
+from chipwhisperer.common.ui import ParameterTypesCustom
 
 class CWMainGUI(QMainWindow):
     """
@@ -70,8 +70,8 @@ class CWMainGUI(QMainWindow):
         sys.excepthook = self.exceptionHandlerDialog
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
-        CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
         self.setCentralWidget(None)
+        ParameterTypesCustom.helpwnd = HelpBrowser(self).showHelp
         self.setDockNestingEnabled(True)
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
@@ -88,7 +88,7 @@ class CWMainGUI(QMainWindow):
         self.projectChanged()
         self.api.sigNewProject.connect(self.projectChanged)
         self.api.sigTracesChanged.connect(self.tracesChanged)
-        CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
+        # CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
         CWMainGUI.instance = self
 
     def newResultWidget(self, resultWidget):
@@ -131,9 +131,11 @@ class CWMainGUI(QMainWindow):
 
         return dock
     
-    def addSettings(self, tree, name):
+    def addSettings(self, param):
         """Adds a dockwidget designed to store a ParameterTree, also adds to 'Windows' menu"""
-        dock = self.addDock(tree, name=name, area=Qt.TopDockWidgetArea)
+        parameterTree = ParameterTree()
+        parameterTree.addParameters(param._PyQtGraphParameter)
+        dock = self.addDock(parameterTree, name=param.getName(), area=Qt.TopDockWidgetArea)
         dock.setMaximumWidth(560)
         return dock
 
@@ -150,6 +152,7 @@ class CWMainGUI(QMainWindow):
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
+        console.write = console.append
         if redirectStdOut:
             self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
@@ -173,8 +176,8 @@ class CWMainGUI(QMainWindow):
 
         self._ToolMenuItems = []
         self._ToolMenuItems.append(self.toolMenu.addSeparator())
-        for act in CWParameterTree.getAllGuiActions(self):
-            self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
+        # for act in CWParameterTree.getAllGuiActions(self):
+        #     self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
 
         for act in self._ToolMenuItems:
             self.toolMenu.addAction(act)
@@ -309,7 +312,7 @@ class CWMainGUI(QMainWindow):
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False, redirectStdOut=False)
-        ExtendedParameter.paramScriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
+        Parameter.scriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
         self.consoleDock = self.addConsole()
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])

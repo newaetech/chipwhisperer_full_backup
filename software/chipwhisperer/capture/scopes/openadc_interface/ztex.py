@@ -26,7 +26,7 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import usb
@@ -38,7 +38,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
     _name = "OpenADC-ZTEX"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
+        self.params = Parameter(name=self.getName(), type='group')
         self.ser = None
         self._toolActs = []
 
@@ -52,11 +52,6 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
         else:
             self.scope = oadcInstance
             self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
-
-        #if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        #else:
-        #    self.cwAdvancedSettings = None
 
     def __del__(self):
         if self.ser != None:

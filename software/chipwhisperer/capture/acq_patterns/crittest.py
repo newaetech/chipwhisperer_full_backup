@@ -34,9 +34,6 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
         AcqKeyTextPattern_Base.__init__(self, parentParam, target)
         self._fixedPlain = False
         self._fixedKey = True
-        self.params.addChildren([
-            # {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-        ])
 
     def _initPattern(self):
         pass

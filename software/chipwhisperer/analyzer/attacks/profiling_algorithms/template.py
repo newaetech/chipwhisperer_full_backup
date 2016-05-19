@@ -31,7 +31,6 @@ from ._base import TemplateBasic, multivariate_normal
 from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as AESModel
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
