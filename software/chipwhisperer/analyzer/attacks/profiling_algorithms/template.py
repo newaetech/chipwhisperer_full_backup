@@ -42,6 +42,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     _name= 'Template Attack'
+    path = 'profiling_algorithms.template'
 
     def __init__(self, parent):
         AutoScript.__init__(self)
