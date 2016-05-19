@@ -128,7 +128,10 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                             cell.setForeground(QBrush(Qt.black))
 
                         if self.colorGradient:
-                            cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
+                            if maxes[0]['value'] == maxes[-1]['value']:
+                                cell.setBackground(QBrush(Qt.white))
+                            else:
+                                cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
                         else:
                             cell.setBackground(QBrush(Qt.white))
             else:
