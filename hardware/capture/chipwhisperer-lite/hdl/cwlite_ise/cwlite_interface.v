@@ -1,4 +1,4 @@
-//`include "includes.v"
+`include "includes.v"
 `default_nettype none
 
 module cwlite_interface(  
