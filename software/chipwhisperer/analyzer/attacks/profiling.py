@@ -54,6 +54,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
         self.setAbsoluteMode(False)
+        self.updateScript()
 
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo)
@@ -81,8 +82,16 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        #self.addFunction("init", "setTraceSource", "UserScript.traces")
-        #self.addFunction("init", "setProject", "UserScript.project()")
+        self.addFunction("init", "setTraceSource", "UserScript.traces")
+        self.addFunction("init", "attack.setTraceSource", "UserScript.traces")
+        self.addFunction("init", "setProject", "UserScript.api.project()")
+
+    def setProject(self, project):
+        self._project = project
+
+    def project(self):
+        if self._project is None:
+            C
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
@@ -122,7 +131,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         return self._keyround
 
     def processTraces(self):
-        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with Profiling:")
         with progressBar:
             self.attack.setReportingInterval(self.getReportingInterval())
 

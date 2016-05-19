@@ -35,9 +35,13 @@ from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
+from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
-class ProfilingTemplate(AutoScript, PassiveTraceObserver):
+class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
@@ -45,16 +49,17 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
     path = 'profiling_algorithms.template'
 
     def __init__(self, parent):
+        Parameterized.__init__(self)
         AutoScript.__init__(self)
         PassiveTraceObserver.__init__(self)
-        self.parent = parent
+        self._parent = parent
         self._project = None
 
         self.params.addChildren([
             {'name':'Load Template', 'type':'group', 'children':[]},
             {'name':'Generate New Template', 'type':'group', 'children':[
                 {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'set':self.updateScript},
+                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent().traceMax, 'type':'int', 'set':self.updateScript},
                 {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
                 {'name':'Read POI', 'type':'action', 'action':self.updateScript},
                 {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
@@ -75,30 +80,34 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        pass
-       # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
-       #
-       #  ted = self.parent.traceExplorerDialog.exampleScripts[0]
-       #
-       #  self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
-       #  self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
-       #
-       #  if self.findParam('poimode').value() == 0:
-       #      self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
-       #      self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
-       #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
-       #  else:
-       #      poidata = self.loadPOIs()[-1]
-       #      self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
-       #      self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
-       #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
-       #
-       #  self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
-       #
-       #  #Save template data to project
-       #  self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
-       #
-       #  self.scriptsUpdated.emit()
+        #self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+
+        try:
+            ted = CWAnalyzerGUI.getInstance().traceExplorerDialog.exampleScripts[0]
+        except AttributeError:
+            print("INFO: Delaying script for template attack until TraceExplorer exists...")
+            return
+
+        self.addFunction('generateTemplates', 'initPreprocessing', '', obj='UserScript')
+        self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
+        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+
+        if self.findParam('poimode').value() == 0:
+            self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
+            self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
+            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
+        else:
+            poidata = self.loadPOIs()[-1]
+            self.addVariable('generateTemplates', 'poiList', '%s' % poidata["poi"])
+            self.addVariable('generateTemplates', 'partMethod', '%s()' % poidata["partitiontype"])
+            self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
+
+        self.addFunction('generateTemplates', 'profiling.generate', 'tRange, poiList, partMethod', 'templatedata')
+
+        #Save template data to project
+        self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
+
+        self.scriptsUpdated.emit()
 
     def traceLimitsChanged(self, traces, points):
         tstart = self.findParam('tgenstart')
@@ -126,9 +135,13 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
         # Set for children
         self.profiling.setProject(proj)
 
+    def parent(self):
+        return self._parent
+
     def project(self):
         if self._project is None:
-            self.setProject(self.parent().project())
+            temp_project = CWCoreAPI.getInstance().project()
+            self.setProject(temp_project)
         return self._project
 
     def saveTemplatesToProject(self, trange, templatedata):
@@ -150,11 +163,11 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
 
     def loadTemplatesFromProject(self):
         # Load Template
-        foundsecs = self.parent().project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
+        foundsecs = self.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
         templates = []
 
         for f in foundsecs:
-            fname = self.parent().project().convertDataFilepathAbs(f["filename"])
+            fname = self.project().convertDataFilepathAbs(f["filename"])
             t = np.load(fname)
             templates.append(t)
 
@@ -201,8 +214,13 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
         pcnt = 0
 
         for tnum in range(0, len(traces)):
-            for bnum in range(0, 16):
-                newresultsint = [multivariate_normal.logpdf(traces[tnum][pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, numparts)]
+            for bnum in self.brange:
+                try:
+                    newresultsint = [multivariate_normal.logpdf(traces[tnum][pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, numparts)]
+                except np.linalg.LinAlgError, e:
+                    print("WARNING: Error in applying template, probably template is poorly formed or POI incorrect. Error: " + str(e))
+                    print("         Byte %d for tnum %d skipped due to this error."%(bnum, tnum))
+                    newresultsint = [0] * 256
 
                 ptype = template["partitiontype"]
 

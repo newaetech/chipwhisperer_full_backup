@@ -578,10 +578,10 @@ class PartitionDisplay(AutoScript, QObject):
 
         self.graph.setPersistance(True)
 
-        # self.poi.setDifferences(SADList)
+        self.poi.setDifferences(self.SADList)
 
-        # self.parent.findParam('poi-pointrng').setLimits((0, len(SADList[0])))
-        # self.parent.findParam('poi-pointrng').setValue((0, len(SADList[0])))
+        self.parent.findParam('poi-pointrng').setLimits((0, len(self.SADList[0])))
+        self.parent.findParam('poi-pointrng').setValue((0, len(self.SADList[0])))
         self.redrawPlot()
 
     def runAction(self):
