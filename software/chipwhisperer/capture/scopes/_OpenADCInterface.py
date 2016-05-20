@@ -197,12 +197,12 @@ class GainSettings(object):
         self.gain_cached = 0
         self.oa = None
         self.param = {'name': 'Gain Setting', 'type': 'group', 'children': [
-                {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'set':self.setMode, 'get':self.mode,
+                {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.mode,
                          'help': '%namehdr%'+
                                  'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
                                  '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
                                  'using the "High" gain mode typically.'},
-                {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
+                {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'default': 0, 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
                          'help':'%namehdr%'+
                                 'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
                                 ' The resulting gain in dB is given in the "calculated" output.'},
@@ -240,9 +240,6 @@ class GainSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_GAIN, cmd)
 
     def gain(self, cached=False):
-        if self.oa is None:
-            return 0
-
         if cached == False:
             self.gain_cached = self.oa.sendMessage(CODE_READ, ADDR_GAIN)[0]
 
@@ -252,7 +249,7 @@ class GainSettings(object):
         #GAIN (dB) = 50 (dB/V) * VGAIN - 6.5 dB, (HILO = LO)
         # GAIN (dB) = 50 (dB/V) * VGAIN + 5.5 dB, (HILO = HI)
 
-        gainV = (float(self.gain_cached) / 256.0) * 3.3;
+        gainV = (float(self.gain_cached) / 256.0) * 3.3
 
         if self.gainlow_cached:
             gaindb = 50.0 * gainV - 6.5
@@ -493,25 +490,25 @@ class ClockSettings(object):
                                 ' CLKGEN xN via DCM  Multiples CLKGEN by       5-105 MHz (x1)       YES\n\n' +
                                 '                    xN and feeds to ADC.      5-26.25 MHz (x4)        \n\n' +
                                 '=================== ====================== =================== ===============\n'},
-                {'name': 'Phase Adjust', 'type':'int', 'value':0, 'limits':(-255, 255), 'set':self.setPhase, 'get':self.phase, 'help':'%namehdr%' +
+                {'name': 'Phase Adjust', 'type':'int', 'limits':(-255, 255), 'set':self.setPhase, 'get':self.phase, 'help':'%namehdr%' +
                          'Makes small amount of adjustment to sampling point compared to the clock source. This can be used to improve the stability ' +
                          'of the measurement. Total phase adjustment range is < 5nS regardless of input frequency.'},
-                {'name': 'ADC Freq', 'type': 'int', 'value': 0, 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self.adcFrequency},
-                {'name': 'DCM Locked', 'type':'bool', 'value':False, 'get':self.dcmADCLocked, 'readonly':True},
-                {'name':'Reset ADC DCM', 'type':'action', 'action':partial(self.resetDcms, True, False), 'linked':['Phase Adjust']},
+                {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self.adcFrequency},
+                {'name': 'DCM Locked', 'type':'bool', 'get':self.dcmADCLocked, 'readonly':True},
+                {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.resetDcms(True, False), 'linked':['Phase Adjust']},
             ]},
-            {'name': 'Freq Counter', 'type': 'str', 'value': 0, 'readonly':True, 'get':lambda: str(self.extFrequency()) + " Hz"},
-            {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'value':0, 'set':self.setFreqSrc, 'get':self.freqSrc},
+            {'name': 'Freq Counter', 'type': 'str', 'readonly':True, 'get':lambda: str(self.extFrequency()) + " Hz"},
+            {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
-                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'value':"system", 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
-                {'name':'Multiply', 'type':'int', 'limits':(2, 256), 'value':2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
-                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'value':2, 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
-                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'value':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
+                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
+                {'name':'Multiply', 'type':'int', 'limits':(2, 256), 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
+                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
+                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
-                {'name':'Current Frequency', 'type':'str', 'value':0, 'readonly':True,
+                {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
                                             'get':lambda: str(self.getClkgen()) + " Hz"},
-                {'name':'DCM Locked', 'type':'bool', 'value':False, 'get':self.clkgenLocked, 'readonly':True},
-                {'name':'Reset CLKGEN DCM', 'type':'action', 'action':partial(self.resetDcms, False, True), 'linked':['Multiply', 'Divide']},
+                {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
+                {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
             ]},
         ]}
 
@@ -531,6 +528,8 @@ class ClockSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
 
     def freqSrc(self):
+        if self.oa is None:
+            return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         return ((result[3] & 0x08) >> 3)
 
@@ -538,9 +537,7 @@ class ClockSettings(object):
         return (self._hwinfo.sysFrequency() * self.clkgenMul()) / self.clkgenDiv()
 
     def autoMulDiv(self, freq):
-
         inpfreq = self._hwinfo.sysFrequency()
-
         sets = self.calculateClkGenMulDiv(freq, inpfreq)
         self.setClkgenMul(sets[0])
         self.setClkgenDiv(sets[1])
@@ -584,11 +581,16 @@ class ClockSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
 
     def clkgenMul(self):
-        timeout = 2
+        if self.oa is None:
+            return 2
 
+        timeout = 2
         while timeout > 0:
             result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
             val =  result[1]
+            if val==0:
+                val = 1  # Fix incorrect initialization on FPGA
+                self.setClkgenMul(2)
             val += 1
 
             if (result[3] & 0x02):
@@ -621,9 +623,9 @@ class ClockSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
 
     def clkgenDiv(self):
-
+        if self.oa is None:
+            return 2
         timeout = 2
-
         while timeout > 0:
             result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
             val =  result[2]
@@ -714,8 +716,7 @@ class ClockSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
 
     def clkgenSrc(self):
-        result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-        if result[0] & 0x08:
+        if self.oa is not None and self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)[0] & 0x08:
             return "extclk"
         else:
             return "system"
@@ -732,6 +733,8 @@ class ClockSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_PHASE, cmd, False)
 
     def phase(self):
+        if self.oa is None:
+            return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2)
 
         if (result[1] & 0x02):
@@ -757,6 +760,9 @@ class ClockSettings(object):
         return result[1]
 
     def DCMStatus(self):
+        if self.oa is None:
+            return (False, False)
+
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         if (result[0] & 0x80) == 0:
             print("ERROR: ADVCLK register not present. Version mismatch")
@@ -802,7 +808,9 @@ class ClockSettings(object):
 
     def extFrequency(self):
         """Return frequency of clock measured on EXTCLOCK pin in Hz"""
-        freq = 0x00000000;
+        if self.oa is None:
+            return 0
+        freq = 0x00000000
 
         #Get sample frequency
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
@@ -819,7 +827,9 @@ class ClockSettings(object):
     def adcFrequency(self):
         """Return the external frequency measured on 'CLOCK' pin. Returned value
            is in Hz"""
-        freq = 0x00000000;
+        if self.oa is None:
+            return 0
+        freq = 0x00000000
 
         #Get sample frequency
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
@@ -1080,7 +1090,7 @@ class OpenADCInterface(object):
 
     def devicePresent(self):
         msgin = bytearray([])
-        msgin.append(0xAC);
+        msgin.append(0xAC)
 
         self.flushInput()
 

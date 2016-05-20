@@ -73,28 +73,34 @@ class Parameter(object):
 
         name = self.opts["name"]
         if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts['type'] not in Parameter.supportedTypes:
-            raise Exception("Parameter %s must have a valid string type." % name)
+            raise Exception("Parameter \"%s\" must have a valid string type." % name)
 
         if self.opts['type'] != 'group':
             if (('set' in self.opts) or ('get' in self.opts)) and ('value' in self.opts):
-                raise Exception("Use set/get or value, not both simultaneously in %s. If an action is needed, use the action option." % name)
+                raise Exception("Use set/get or value, not both simultaneously in parameter \"%s\". If an action is needed, use the action option." % name)
 
             if not ('set' in self.opts or 'get' in self.opts or 'value' in self.opts or 'action' in self.opts or 'linked' in self.opts):
-                raise Exception("Useless parameter %s because no set/get/value/action/linked option is defined." % name)
+                raise Exception("Useless parameter \"%s\" because no set/get/value/action/linked option is defined." % name)
 
             if 'set' in self.opts and (not ('get' in self.opts)) :
-                raise Exception("Option set and get should be used together in %s." % name)
+                raise Exception("Option set and get should be used together in parameter \"%s\"." % name)
 
             if 'get' in self.opts and (not 'set' in self.opts) and (not 'readonly' in self.opts) and self.opts['readonly'] == False :
-                raise Exception("Parameters %s has get and no set. Should be marked as readonly." % name)
+                raise Exception("Parameters \"%s\" has get and no set. Should be marked as readonly." % name)
 
             if self.opts.get("type", None) == "list":
                 self.opts['limits'] = opts['values']
 
             if 'set' in self.opts:
+                # MAGIC: Injects the decorator inside the set method to syncronize the parameters when the set method is called directly
+                self.opts['set'] = setupSetParam(self)(self.opts['set'])
                 self.sigValueChanged.connect(self.opts['set'])
 
-        self.children=[]
+        if self.opts.get("default", None) is None:
+            self.opts["default"] = self.getValue()
+            self.setValue(self.getValue(), init=True)
+
+        self.children=util.DictType()
         tmp = self.opts.pop("children", [])
         self.setupPyQtGraph = setupPyQtGraph
         if self.setupPyQtGraph:
@@ -112,12 +118,13 @@ class Parameter(object):
     def append(self, child):
         if child is None:
             return
+        self.keys[child.getName()] = child
         if 'key' in child.getOpts():
             self.keys[child.getOpts()["key"]] = child
-        if 'name' in child.getOpts():
-            self.keys[child.getOpts()["name"]] = child
         child.setParent(self)
-        self.children.append(child)
+        if child.getName() in self.children:
+            self.sigChildRemoved.emit(self.children[child.getName()])
+        self.children[child.getName()] = child
         self.sigChildAdded.emit(child)
 
     def getOpts(self):
@@ -131,20 +138,20 @@ class Parameter(object):
             return val()
 
     def setValue(self, value,  blockSignal=None, init=False, echo=True):
-        if self.readonly():
-            raise ValueError("Parameter is currently set to read only.")
         previousValue = self.getValue()
+        if not init and previousValue!=value and self.readonly():
+            raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
         limits = self.opts.get("limits", None)
         if limits is not None:
             type = self.opts.get("type", None)
             if      (type == "list" and
-                        (isinstance(limits, dict) and value not in limits.values()) or\
-                        (not isinstance(limits, dict) and value not in limits)
+                        ((isinstance(limits, dict) and value not in limits.values()) or\
+                        (not isinstance(limits, dict) and value not in limits))
                     ) or\
                     (type == "bool" and value not in [True, False]) or\
                     ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
                     (type =="rangegraph" and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
-                raise ValueError("Value out of limits")
+                raise ValueError("Value %s out of limits in parameter \"%s\"" % (str(value), self.getName()))
 
         try:
             if blockSignal is not None:
@@ -174,6 +181,7 @@ class Parameter(object):
             if echo and not self.opts.get("echooff", False):
                 print >> Parameter.scriptingOutput, (str(self.getPath() + [value]))
 
+    def callLinked(self):
         for name in self.opts.get("linked", []):
             linked = self.parent.getChild(name)
             if linked is not None:
@@ -183,6 +191,9 @@ class Parameter(object):
         act = self.opts.get("action", None)
         if act is not None:
             act(self)
+            print >> Parameter.scriptingOutput, (str(self.getPath()))
+        self.callLinked()
+
 
     def setLimits(self, limits):
         self.opts['limits'] = limits
@@ -211,7 +222,7 @@ class Parameter(object):
         self.parent = None
 
     def clearChildren(self):
-        for ch in self.children:
+        for ch in self.children.itervalues():
             self.removeChild(ch)
 
     def removeChild(self, child):
@@ -225,10 +236,10 @@ class Parameter(object):
             pass
 
         self.sigChildRemoved.emit(child)
-        self.children.remove(child)
+        del self.children[child.child.getName()]
 
     def getChild(self, path):
-        if isinstance(path, list):
+        if isinstance(path, list) or isinstance(path, tuple):
             item = self.keys.get(path[0], None)
 
             if len(path) == 1 or item is None:
@@ -245,9 +256,12 @@ class Parameter(object):
         return False
 
     def setupPyQtGraphParameter(self):
-        opts = self.getOpts()
+        opts = {}
+        opts.update(self.getOpts())
+        opts["value"] = opts["default"]
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
-        self._PyQtGraphParameter.setValue(self.getValue())
+        if hasattr(self._PyQtGraphParameter, "sigActivated"):
+            self._PyQtGraphParameter.sigActivated.connect(self.callAction)
         self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
         updateParamValue = lambda _, v: self.setValue(v, guiCallback)
@@ -291,7 +305,7 @@ class Parameter(object):
                         self.append(value.getParams())
 
         self.setValue(self.getValue(), init=True)
-        for child in self.children:
+        for child in self.children.itervalues():
             child.refreshAllParameters()
 
     def init(self):
@@ -331,13 +345,12 @@ class Parameter(object):
     #                     ret.extend(currentParams.guiActions(mainWindow))
     #     return ret
 
-def setupSetParam(key):
+def setupSetParam(parameter):
     def func_decorator(func):
-        def func_wrapper(self, v, blockSignal=None):
-            param = self.findParam(key)
+        def func_wrapper(v, blockSignal=None):
             if blockSignal is None:
-                param.setValue(v, param.opts["set"])
-            func(self, v)
+                parameter.setValue(v, parameter.opts["set"])
+            func(v)
         return func_wrapper
     return func_decorator
 
@@ -380,7 +393,6 @@ if __name__ == '__main__':
         def getSubmodule(self):
             return self.sm
 
-        @setupSetParam("SubModule")
         def setSubmodule(self, sm):
             self.sm = sm
 
@@ -416,7 +428,6 @@ if __name__ == '__main__':
         def getmodule(self):
             return self.module
 
-        @setupSetParam("Module")
         def setmodule(self, module):
             print "Changing Module"
             self.module = module

@@ -33,12 +33,12 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, parentParam, oadcInstance):
-        self.serialNumber = None
+        self.serialNumber = ''
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSerialNumber},
+            {'name':'Device Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSerialNumber},
         ])
         self.ser = None
 
@@ -67,7 +67,7 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
                 self.ser = self
             except ft.ftd2xx.DeviceError, e:
                 self.ser = None
-                raise IOError("Could not open %s: %s"%(self.serialNumber,e))
+                raise IOError("Could not open %s: %s" % (self.serialNumber, e))
 
         try:
             self.scope.con(self.ser)
@@ -87,14 +87,11 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     def serialRefresh(self):
         serialnames = ft.listDevices()
         if serialnames == None:
-            serialnames = [" "]
+            serialnames = [""]
 
-        for p in self.params.children():
-            if p.name() == 'Serial Number':
-                p.setLimits(serialnames)
-                p.setValue(serialnames[0])
-
-        self.paramListUpdated.emit()
+        p = self.params.getChild('Serial Number')
+        p.setLimits(serialnames)
+        p.setValue(serialnames[0])
 
     def read(self, N=0, debug=False):
         return bytearray(self.dev.read(N))

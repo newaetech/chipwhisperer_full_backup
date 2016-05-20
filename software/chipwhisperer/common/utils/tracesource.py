@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class TraceSource(object):
@@ -111,7 +111,6 @@ class PassiveTraceObserver(Parameterized):
             {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'get':self.getTraceSource, 'set':self.setTraceSource}
         ])
 
-    @setupSetParam("Input")
     def setTraceSource(self, traceSource):
         self._traceSource = traceSource
 

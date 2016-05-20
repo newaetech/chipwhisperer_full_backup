@@ -51,22 +51,22 @@ class ChipWhispererGlitch(Parameterized):
     CLKSOURCE_MASK = 0b00000011
     _name= 'Glitch Module'
 
-    def __init__(self, parentParam, cwtype, scope):
+    def __init__(self, parentParam, cwtype, scope, oa):
 
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
-        self.oa = None
+        self.oa = oa
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT}, 'value':self.CLKSOURCE0_BIT, 'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
-            {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
-            {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine},
-            {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'set':self.updatePartialReconfig},
-            {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine},
-            {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'value':0, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
+            {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT},'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
+            {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'action':self.updatePartialReconfig},
+            {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine, 'get':self.getGlitchWidthFine},
+            {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'action':self.updatePartialReconfig},
+            {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine, 'get':self.getGlitchOffsetFine},
+            {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
             {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
-            {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'value':0, 'set':self.setTriggerOffset, 'get':self.triggerOffset},
+            {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
             {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
             {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action':self.glitchManual},
             {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
@@ -125,6 +125,8 @@ class ChipWhispererGlitch(Parameterized):
             lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55)
             self.findParam('offset').setLimits(lim)
 
+        self.setOpenADC(oa)
+
     def setOpenADC(self, oa):
         self.oa = None
         if self.prEnabled:
@@ -141,7 +143,7 @@ class ChipWhispererGlitch(Parameterized):
         self.oa = oa
 
         try:
-            self.params.getAllParameters()
+            self.params.refreshAllParameters()
         except TypeError:
             return
 
@@ -151,8 +153,8 @@ class ChipWhispererGlitch(Parameterized):
         is enabled with self.prEnabled.
         """
 
-        width = float(self.findParam('width').value())
-        offset = float(self.findParam('offset').value())
+        width = float(self.findParam('width').getValue())
+        offset = float(self.findParam('offset').getValue())
 
         widthint = round((width / 100) * 256)
         offsetint = round((offset / 100) * 256)

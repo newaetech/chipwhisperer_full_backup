@@ -36,13 +36,13 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
     _name = "Serial Port (LX9)"
 
     def __init__(self, parentParam, oadcInstance):
-        self.portName = None
+        self.portName = ''
         self.ser = None
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Port', 'type':'list', 'values':[''], 'get':self.getPortName, 'set':self.setPortName},
+            {'name':'Selected Port', 'type':'list', 'values':[''], 'get':self.getPortName, 'set':self.setPortName},
         ])
 
         if (openadc_qt is None) or (serial is None):

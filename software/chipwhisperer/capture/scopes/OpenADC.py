@@ -33,7 +33,6 @@ from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import util, timer, pluginmanager
-from chipwhisperer.common.utils.parameter import setupSetParam
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
@@ -44,24 +43,23 @@ class OpenADCInterface(ScopeTemplate):
 
         self.qtadc = openadc_qt.OpenADCQt()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
-
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
-        self.scopetype =  scopes[OpenADCInterface_NAEUSBChip._name]
-        self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope},
-            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
-
-        ])
-        self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
-                                lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
-                                lambda: self.lazy(self.digitalPattern)])
-
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
 
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
+        self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
+        self.params.addChildren([
+            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'child'},
+            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM}
+        ])
+        self.params.append(self.qtadc.getParams())
+
+        # self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
+        #                         lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
+        #                         lambda: self.lazy(self.digitalPattern)])
     def dcmTimeout(self):
         try:
             self.qtadc.sc.getStatus()
@@ -73,8 +71,8 @@ class OpenADCInterface(ScopeTemplate):
             self.dis()
             raise
 
-    def setAutorefreshDCM(self, enabled):
-        if enabled:
+    def updateAutorefreshDCM(self, parameter):
+        if parameter.getValue():
             self.refreshTimer.start()
         else:
             self.refreshTimer.stop()
@@ -82,7 +80,6 @@ class OpenADCInterface(ScopeTemplate):
     def getCurrentScope(self):
         return self.scopetype
 
-    @setupSetParam("Connection")
     def setCurrentScope(self, scope):
         self.scopetype = scope
 
@@ -109,19 +106,19 @@ class OpenADCInterface(ScopeTemplate):
                 #             settings will work, but not CWExtra ones? For now this works, but doesn't let
                 #             you change the OpenADC type.
                 if not self.advancedSettings:
-                    self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype)
-                self.advancedSettings.setOpenADC(self.qtadc)
+                    self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype, self.qtadc.sc)
 
                 util.chipwhisperer_extra = self.advancedSettings
+                self.params.append(self.advancedSettings.getParams())
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
                     self.advancedSAD.setOpenADC(self.qtadc)
+                    self.params.append(self.advancedSAD.getParams())
 
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()
                     self.digitalPattern.setOpenADC(self.qtadc)
-
-                self.paramListUpdated.emit()
+                    self.params.append(self.digitalPattern.getParams())
 
             return True
         return False

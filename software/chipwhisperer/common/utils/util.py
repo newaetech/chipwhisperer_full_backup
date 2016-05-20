@@ -159,8 +159,8 @@ class Signal(object):
                 observer(*arg, **args)
             except Exception as e:
                 etype, value, trace = sys.exc_info()
-                value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s." % \
-                        (type(e).__name__, e, observer)
+                value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s with arguments: %s, %s" % \
+                        (type(e).__name__, e, observer, str(arg), str(args))
                 sys.excepthook(etype, value, trace)
 
     def disconnectAll(self):
