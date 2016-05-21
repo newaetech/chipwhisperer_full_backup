@@ -34,7 +34,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         SimpleSerialTemplate.__init__(self, parentParam)
         self.cwlite_usart = None
         self.params.addChildren([
-            {'name':'baud', 'type':'int', 'key':'baud', 'value':38400, 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}
+            {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}
         ])
 
     def setBaud(self, baud):

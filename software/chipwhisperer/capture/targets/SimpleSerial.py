@@ -34,15 +34,14 @@ class SimpleSerial(TargetTemplate):
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
 
-        self.ser = None
-        self.setupActiveParams([lambda: self.lazy(self.ser)])
         ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
+        self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
 
-        self.keylength = 16
+        self.keylength = 128
         self.input = ""
         self.params.addChildren([
-            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite._name], 'set':self.setConnection},
-            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
+            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
+            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'get':self.keyLen, 'set':self.setKeyLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -55,7 +54,7 @@ class SimpleSerial(TargetTemplate):
             #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
         ])
 
-        self.setConnection(self.findParam('con').value())
+        self.setConnection(self.ser)
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -65,10 +64,13 @@ class SimpleSerial(TargetTemplate):
         """ Return key length in BYTES """
         return self.keylength
 
+    def getConnection(self):
+        return self.ser
+
     def setConnection(self, con):
         self.ser = con
+        self.params.append(self.ser.getParams())
         self.ser.connectStatus.connect(self.connectStatus.emit)
-        self.paramListUpdated.emit()
         self.ser.selectionChanged()
 
     def con(self, scope = None):

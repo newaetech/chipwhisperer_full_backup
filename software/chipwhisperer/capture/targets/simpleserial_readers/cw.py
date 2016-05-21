@@ -39,11 +39,11 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         SimpleSerialTemplate.__init__(self, parentParam)
         self._regVer = 0
         self.params.addChildren([
-            {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
-            {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
-            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
+            {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.txBaud, 'set':self.setTxBaud},
+            {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
+            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'default':0, 'get':self.stopBits,
                             'set':self.setStopBits, 'readonly':True},
-            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
+            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'default':0, 'get':self.parity,
                             'set':self.setParity, 'readonly':True},
         ])
 
@@ -197,7 +197,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
     def flushInput(self):
         self.flush()
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.oa = scope.qtadc.ser
