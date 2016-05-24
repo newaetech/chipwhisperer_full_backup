@@ -52,9 +52,10 @@ class OpenADCInterface(ScopeTemplate):
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
         self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
         self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'child'},
+            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'parent'},
             {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM}
         ])
+        self.params.init()
         self.params.append(self.qtadc.getParams())
 
         # self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),

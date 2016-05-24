@@ -94,7 +94,7 @@ class Parameter(object):
             if 'set' in self.opts and (not ('get' in self.opts)) :
                 raise Exception("Option set and get should be used together in parameter \"%s\"." % name)
 
-            if 'get' in self.opts and (not 'set' in self.opts) and (not 'readonly' in self.opts) and self.opts['readonly'] == False :
+            if 'get' in self.opts and (not 'set' in self.opts) and ('readonly' in self.opts) and self.opts['readonly'] == False :
                 raise Exception("Parameters \"%s\" has get and no set. Should be marked as readonly." % name)
 
             if self.opts.get("type", None) == "list":
@@ -102,14 +102,14 @@ class Parameter(object):
 
             if 'set' in self.opts:
                 # MAGIC: Injects the decorator inside the set method to syncronize the parameters when the set method is called directly
-                self.opts['set'] = setupSetParam(self)(self.opts['set'])
+                # self.opts['set'] = setupSetParam(self)(self.opts['set'])
                 self.sigValueChanged.connect(self.opts['set'])
 
-        if self.opts.get("default", None) is None:
+        if "default" not in self.opts:
             self.opts["default"] = self.getValue()
             self.setValue(self.getValue(), init=True)
 
-        self.children=util.DictType()
+        self.children = util.DictType()
         tmp = self.opts.pop("children", [])
         self.setupPyQtGraph = setupPyQtGraph
         if self.setupPyQtGraph:
@@ -205,10 +205,11 @@ class Parameter(object):
 
     def setLimits(self, limits):
         self.opts['limits'] = limits
-        if type =="rangegraph" and limits[0] > limits[1]:
-            self.setReadonly(True)
-        self.sigLimitsChanged.emit({})
-        self.sigLimitsChanged.emit(limits)
+        if self.opts['type'] =="rangegraph" and limits[0] > limits[1]:
+            self.hide()
+        else:
+            self.show()
+            self.sigLimitsChanged.emit(limits)
 
     def readonly(self):
         return self.opts.get('readonly', False)
@@ -266,7 +267,8 @@ class Parameter(object):
     def setupPyQtGraphParameter(self):
         opts = {}
         opts.update(self.getOpts())
-        opts["value"] = opts["default"]
+        if "default" in self.opts:
+            opts["value"] = opts["default"]
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
         if hasattr(self._PyQtGraphParameter, "sigActivated"):
             self._PyQtGraphParameter.sigActivated.connect(self.callAction)
@@ -307,8 +309,10 @@ class Parameter(object):
                     mode = self.opts.get("childmode", None)
                     if mode == "parent":
                         self.parent.append(value.getParams())
+                        value.getParams().hide()
                     elif mode == "root":  # Warning, this path is relative... can't call init more than once and sub-modules can't repeat name
                         self.getRoot().append(value.getParams())
+                        value.getParams().hide()
                     elif mode == "child":
                         self.append(value.getParams())
 
@@ -356,7 +360,7 @@ class Parameter(object):
 
 def setupSetParam(parameter):
     def func_decorator(func):
-        def func_wrapper(v, blockSignal=None):
+        def func_wrapper(_, v, blockSignal=None):
             if blockSignal is None:
                 parameter.setValue(v, parameter.opts["set"])
             func(v)
@@ -374,7 +378,7 @@ if __name__ == '__main__':
             super(submodule, self).__init__()
             moreparams = [
                 {'name': 'Value', 'type': 'list', 'values': [2, 3, 4], 'value':3, 'action': self.action, 'linked':['Linked Value (1/Value)']},
-                {'name': 'Linked Value (1/Value)', 'type': 'float', 'get': self.getLinked}
+                {'name': 'Linked Value (1/Value)', 'type': 'float', 'default':1/3, 'get': self.getLinked}
             ]
             self.params = Parameter(name='Sub-module %d' % d, type='group', children=moreparams)
 
@@ -437,6 +441,7 @@ if __name__ == '__main__':
         def getmodule(self):
             return self.module
 
+        @setupSetParam("Module")
         def setmodule(self, module):
             print "Changing Module"
             self.module = module
