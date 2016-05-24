@@ -276,11 +276,11 @@ class SakuraG(TargetTemplate):
 
     def con(self, scope = None):
         self.oa = scope.qtadc.ser
-        self.hw = self.findParam('conn').value()
+        self.hw = self.findParam('conn').getValue()
 
         if hasattr(self.hw, 'setSerial'):
             # For SAKURA-G normally we use 'A' channel
-            ser = self.findParam('serno').value()
+            ser = self.findParam('serno').getValue()
             if ser.endswith('A') is False:
                 print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
             self.hw.setSerial(ser)

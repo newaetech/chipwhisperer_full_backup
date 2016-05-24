@@ -141,25 +141,25 @@ class Normalize(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').value().__name__)
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').getValue().__name__)
         
-        f1src = self.findParam('f1coeff').value()
+        f1src = self.findParam('f1coeff').getValue()
         if f1src is not None:
             if f1src == 5: f1src = None
             self.addFunction("init", "norm.loadF1File", "%s" % str(f1src))
 
-        f2src = self.findParam('f2coeff').value()
+        f2src = self.findParam('f2coeff').getValue()
         if f2src is not None:
             if f2src == 5: f2src = None
             self.addFunction("init", "norm.loadF2File", "%s" % str(f2src))
 
-        zsrc = self.findParam('zsource').value()
+        zsrc = self.findParam('zsource').getValue()
         if zsrc is not None:
             if zsrc == 5: zsrc = None
             self.addFunction("init", "norm.loadZFile", "%s" % str(zsrc))
 
-    #    rng = self.findParam('ptrange').value()
+    #    rng = self.findParam('ptrange').getValue()
     #    if rng:
     #        self.addFunction("init", "setPointRange", " (%d, %d) " % (rng[0], rng[1]))
 

@@ -102,9 +102,13 @@ class FrequencyMeasure(AuxiliaryTemplate):
         if ps5000a is not None:
             scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
 
+        self.fm = None
         self.params.addChildren([
-            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}
+            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'get':self.getConnection, 'set':self.setConnection}
         ])
+
+    def getConnection(self):
+        return self.fm
 
     def setConnection(self, con):
         self.fm = FreqMeasure(con)

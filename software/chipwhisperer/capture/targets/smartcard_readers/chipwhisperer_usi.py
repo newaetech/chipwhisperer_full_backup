@@ -33,7 +33,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)
         self.params.addChildren([
-            {'name':'Baud', 'type':'int', 'value':9600, 'set':self.setBaud}
+            {'name':'Baud', 'type':'int', 'value':9600, 'action':lambda p: self.setBaud(p.getValue())}
         ])
         self.usi = ChipWhispererTargets.CWUniversalSerial()
 

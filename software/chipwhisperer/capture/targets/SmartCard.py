@@ -33,19 +33,15 @@ class SmartCard(TargetTemplate):
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
+
+        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, True, self)
+        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, True, self)
         self.driver = None
-        self.window = None
+        self.protocol = None
 
-        self.setupActiveParams([lambda: self.lazy(self.driver)])
-        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False, self)
-
-        self.setupActiveParams([lambda: self.lazy(self.protocol)])
-        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False, self)
-
-        from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER
         self.params.addChildren([
-            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER._name], 'set':self.setConnection},
-            {'name':'SmartCard Protocol', 'type':'list', 'values':protocols , 'value':None, 'set':self.setProtocol},
+            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'get':self.getConnection, 'set':self.setConnection},
+            {'name':'SmartCard Protocol', 'type':'list', 'values':protocols, 'get':self.getProtocol, 'set':self.setProtocol},
             {'name':'SmartCard Explorer', 'type':'action', 'action':lambda: self.scgui.show()}
         ])
 
@@ -56,15 +52,22 @@ class SmartCard(TargetTemplate):
         """ Return key length in BYTES """
         return 16
 
+    def getConnection(self):
+        return self.driver
+
     def setConnection(self, con):
         self.driver = con        
-        self.paramListUpdated.emit()
-        self.scgui.setConnection(con)
-        
+        if self.driver is not None:
+            self.params.append(self.driver.getParams())
+
+    def getProtocol(self):
+        return self.protocol
+
     def setProtocol(self, con):
         self.protocol = con
-        self.paramListUpdated.emit()
-        self.protocol.setReaderHardware(self.driver)
+        if self.protocol is not None:
+            self.params.append(self.protocol.getParams())
+            self.protocol.setReaderHardware(self.driver)
 
     def con(self, scope = None):
         self.driver.con(scope)
@@ -111,5 +114,5 @@ class SmartCard(TargetTemplate):
 
     def setupGuiActions(self, mainWindow):
         if not hasattr(self, 'scgui'):
-            self.scgui = SmartCardGUICard(mainWindow)
+            self.scgui = SmartCardGUICard(mainWindow, self)
         return [['SmartCard Explorer','', self.scgui.show],]

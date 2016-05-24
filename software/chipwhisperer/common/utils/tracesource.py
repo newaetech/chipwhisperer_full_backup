@@ -35,6 +35,7 @@ class TraceSource(object):
     Keeps a dictionary with all the registered objets and emits a signal when a new one is added
     """
     registeredObjects = util.DictType()
+    registeredObjects["None"] = None
     sigRegisteredObjectsChanged = util.Signal()
 
     def __init__(self, name="Unknown"):

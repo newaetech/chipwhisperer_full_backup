@@ -271,8 +271,8 @@ class ChipWhispererGlitch(Parameterized):
 
         # Reload any special phase offset
         if keepPhase:
-            self.setGlitchWidthFine(self.findParam('widthfine').value())
-            self.setGlitchOffsetFine(self.findParam('offsetfine').value())
+            self.setGlitchWidthFine(self.findParam('widthfine').getValue())
+            self.setGlitchOffsetFine(self.findParam('offsetfine').getValue())
         else:
             self.findParam('widthfine').setValue(0)
             self.findParam('offsetfine').setValue(0)
@@ -350,10 +350,10 @@ class ChipWhispererGlitch(Parameterized):
 
     def armPreScope(self):
         """Called before scope trigger is armed"""
-        if self.findParam('ssarm').value() == 1:
+        if self.findParam('ssarm').getValue() == 1:
             self.glitchArm()
 
     def armPostScope(self):
         """Called after scope trigger is armed"""
-        if self.findParam('ssarm').value() == 2:
+        if self.findParam('ssarm').getValue() == 2:
             self.glitchArm()

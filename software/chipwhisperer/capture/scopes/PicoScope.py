@@ -81,7 +81,7 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
-            self.ps.setSamplingFrequency(paramSR.value(), paramSL.value() + self.findParam('sampleoffset').value(), 1)
+            self.ps.setSamplingFrequency(paramSR.getValue(), paramSL.getValue() + self.findParam('sampleoffset').getValue(), 1)
 
             #Need this callback as otherwise the setValue() is overwritten when the user toggles off, might be fixed
             #with Adriel's new parameterTypes, will have to test again
@@ -118,21 +118,21 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
 
         try:
             # Trace Channel
-            TraceCh = self.findParam('tracesource').value()
-            TraceCo = self.findParam('tracecouple').value()
-            TraceY = self.findParam('traceyrange').value()
-            TraceP = self.findParam('traceprobe').value()
+            TraceCh = self.findParam('tracesource').getValue()
+            TraceCo = self.findParam('tracecouple').getValue()
+            TraceY = self.findParam('traceyrange').getValue()
+            TraceP = self.findParam('traceprobe').getValue()
             self.ps.setChannel(channel=TraceCh, coupling=TraceCo, VRange=TraceY, probeAttenuation=TraceP, enabled=True)
 
             # Trigger Channel
-            TrigCh = self.findParam('trigsource').value()
-            TrigCo = self.findParam('trigcouple').value()
-            TrigY = self.findParam('trigrange').value()
-            TrigP = self.findParam('trigprobe').value()
+            TrigCh = self.findParam('trigsource').getValue()
+            TrigCo = self.findParam('trigcouple').getValue()
+            TrigY = self.findParam('trigrange').getValue()
+            TrigP = self.findParam('trigprobe').getValue()
             self.ps.setChannel(channel=TrigCh, coupling=TrigCo, VRange=TrigY, probeAttenuation=TrigP, enabled=True)
 
             # Trigger
-            self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').value(), direction=self.findParam('trigtype').value(), timeout_ms=1000)
+            self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').getValue(), direction=self.findParam('trigtype').getValue(), timeout_ms=1000)
 
             self.updateSampleRateFreq()
         except IOError, e:
@@ -143,7 +143,7 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
         
     def capture(self):
         while(self.ps.isReady() == False): time.sleep(0.01)
-        data = self.ps.getDataV(self.findParam('tracesource').value(), self.findParam('samplelength').value(), startIndex=self.findParam('sampleoffset').value(), returnOverflow=True)
+        data = self.ps.getDataV(self.findParam('tracesource').getValue(), self.findParam('samplelength').getValue(), startIndex=self.findParam('sampleoffset').getValue(), returnOverflow=True)
         if data[1] is True:
             print "WARNING: OVERFLOW IN DATA"
         self.datapoints = data[0]
@@ -170,7 +170,7 @@ class PicoScopeInterface(ScopeTemplate):
 
         self.scopetype = None
         self.advancedSettings = None
-        self.setCurrentScope(self.findParam('type').value())
+        self.setCurrentScope(self.findParam('type').getValue())
 
     def passUpdated(self, lst, offset):
         self.datapoints = lst

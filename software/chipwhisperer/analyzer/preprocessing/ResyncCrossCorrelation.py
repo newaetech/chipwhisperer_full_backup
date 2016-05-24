@@ -55,9 +55,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        rtrace = self.findParam('reftrace').value()
-        rrange = self.findParam('rwindow').value()
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        rtrace = self.findParam('reftrace').getValue()
+        rrange = self.findParam('rwindow').getValue()
 
         if rrange is None:
             rrange = (0, 0)

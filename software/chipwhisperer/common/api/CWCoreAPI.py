@@ -337,6 +337,8 @@ class CWCoreAPI(Parameterized):
             self.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
         return [['Encryption Status Monitor','', self.encryptionStatusMonitor.show]]
 
+    def setParameter(self, pathAndValue):
+        Parameter.setParameter(pathAndValue)
 
     @staticmethod
     def getInstance():

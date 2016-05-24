@@ -73,7 +73,7 @@ class SimpleSerial_serial(SimpleSerialTemplate):
         if self.ser == None:
             # Open serial port if not already
             self.ser = serial.Serial()
-            self.ser.port     = self.findParam('port').value()
-            self.ser.baudrate = self.findParam('baud').value()
+            self.ser.port     = self.findParam('port').getValue()
+            self.ser.baudrate = self.findParam('baud').getValue()
             self.ser.timeout  = 2     # 2 second timeout
             self.ser.open()

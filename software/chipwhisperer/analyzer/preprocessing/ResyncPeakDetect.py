@@ -59,16 +59,16 @@ class ResyncPeakDetect(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
-        pt = self.findParam('ptrange').value()
+        pt = self.findParam('ptrange').getValue()
         if pt is None: pt = (0, 0)
 
         self.addFunction("init", "setReference", "rtraceno=%d, peaktype='%s', refrange=(%d, %d), validlimit=%f" % (
-                            self.findParam('reftrace').value(),
-                            self.findParam('peaktype').value(),
+                            self.findParam('reftrace').getValue(),
+                            self.findParam('peaktype').getValue(),
                             pt[0], pt[1],
-                            self.findParam('vlimit').value()
+                            self.findParam('vlimit').getValue()
                             ))
 
     def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):

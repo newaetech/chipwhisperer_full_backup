@@ -209,10 +209,10 @@ class ChipWhispererDigitalPattern(object):
 
     def reset(self, ignored=None):
         # Reload pattern
-        self.setPattern(self.findParam('trigpatt').value())
+        self.setPattern(self.findParam('trigpatt').getValue())
 
     def updateSampleRate(self, ignored=None):
-        res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam('baud').value() * self.findParam('osrate').value())
+        res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam('baud').getValue() * self.findParam('osrate').getValue())
         self.findParam('calcclkdiv').setValue(res[0])
         self.findParam('calcerror').setValue(res[1] * 100)
         self.clkdiv = res[0]
@@ -227,15 +227,15 @@ class ChipWhispererDigitalPattern(object):
             return
 
         # Convert to bits
-        bitpattern = strToBits(patt, startbits=self.findParam('startbits').value(),
-                               stopbits=self.findParam('stopbits').value(),
-                               parity=self.findParam('parity').value())
+        bitpattern = strToBits(patt, startbits=self.findParam('startbits').getValue(),
+                               stopbits=self.findParam('stopbits').getValue(),
+                               parity=self.findParam('parity').getValue())
 
         # Convert to pattern & Download
         try:
-            pat = self.cwAdv.bitsToPattern(bitpattern, osRate=self.findParam('osrate').value(),
-                                                       threshold=self.findParam('threshold').value())
-            self.cwAdv.setIOPattern(pat, clkdiv=self.clkdiv, hackit=self.findParam('initialcorrect').value())
+            pat = self.cwAdv.bitsToPattern(bitpattern, osRate=self.findParam('osrate').getValue(),
+                                                       threshold=self.findParam('threshold').getValue())
+            self.cwAdv.setIOPattern(pat, clkdiv=self.clkdiv, hackit=self.findParam('initialcorrect').getValue())
 
             bitstr = ""
             for t in bitpattern: bitstr += "%d" % t
@@ -248,11 +248,9 @@ class ChipWhispererDigitalPattern(object):
 
     def setOpenADC(self, oa):
         """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
-
         self.oa = oa.sc
-
         self.cwAdv.con(oa.sc)
-        self.params.getAllParameters()
+        self.params.refreshAllParameters()
         self.updateSampleRate()
 
     def paramList(self):

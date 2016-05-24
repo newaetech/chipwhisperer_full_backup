@@ -87,7 +87,7 @@ class SimpleSerial(TargetTemplate):
             self.ser.close()
 
     def init(self):
-        self.runCommand(self.findParam('cmdinit').value())
+        self.runCommand(self.findParam('cmdinit').getValue())
 
     def setModeEncrypt(self):
         pass
@@ -135,11 +135,11 @@ class SimpleSerial(TargetTemplate):
     def loadEncryptionKey(self, key):
         self.key = key
         if self.key:
-            self.runCommand(self.findParam('cmdkey').value())
+            self.runCommand(self.findParam('cmdkey').getValue())
 
     def loadInput(self, inputtext):
         self.input = inputtext
-        self.runCommand(self.findParam('cmdinput').value())
+        self.runCommand(self.findParam('cmdinput').getValue())
 
     def isDone(self):
         return True
@@ -147,7 +147,7 @@ class SimpleSerial(TargetTemplate):
     def readOutput(self):
         dataLen= 32
 
-        fmt = self.findParam('cmdout').value()
+        fmt = self.findParam('cmdout').getValue()
         #This is dumb
         fmt = fmt.replace("\\n", "\n")
         fmt = fmt.replace("\\r", "\r")
@@ -205,7 +205,7 @@ class SimpleSerial(TargetTemplate):
         return data
 
     def go(self):
-        self.runCommand(self.findParam('cmdgo').value())
+        self.runCommand(self.findParam('cmdgo').getValue())
 
     def checkEncryptionKey(self, kin):
         blen = self.keyLen()

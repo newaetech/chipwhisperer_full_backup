@@ -84,7 +84,7 @@ class TraceContainerMySQL(TraceContainer):
 
     def format(self):
         if self.fmt is None:
-            self.fmt = self.findParam('traceFormat').value()
+            self.fmt = self.findParam('traceFormat').getValue()
 
         return self.fmt
 
@@ -98,7 +98,6 @@ class TraceContainerMySQL(TraceContainer):
             prefix = "tracedb_" + prefix
             prefix = prefix.replace("-","_")
             prefix = ''.join(c for c in prefix if c.isalnum() or c in("_"))
-
             return prefix
 
         raise ValueError("Invalid mode: %s"%mode)
@@ -106,7 +105,7 @@ class TraceContainerMySQL(TraceContainer):
     def prepareDisk(self):
         self.con()
         #CREATE DATABASE `cwtraces` /*!40100 COLLATE 'utf8_unicode_ci' */
-        traceprefix = self.makePrefix(self.getParams.findParam('tableNameType').value())
+        traceprefix = self.makePrefix(self.getParams.findParam('tableNameType').getValue())
 
         #Check version as simple validation
         result = self.db.query("SELECT VERSION()")
@@ -126,11 +125,11 @@ class TraceContainerMySQL(TraceContainer):
 
         db = sql.Connection()
 
-        server = self.getParams.findParam('addr').value()
-        port = int(self.getParams.findParam('port').value())
-        user = self.getParams.findParam('user').value()
-        password = self.getParams.findParam('password').value()
-        database = self.getParams.findParam('database').value()
+        server = self.getParams.findParam('addr').getValue()
+        port = int(self.getParams.findParam('port').getValue())
+        user = self.getParams.findParam('user').getValue()
+        password = self.getParams.findParam('password').getValue()
+        database = self.getParams.findParam('database').getValue()
 
         #Connection
         db.connect(server,port,user,password,database)
@@ -138,11 +137,11 @@ class TraceContainerMySQL(TraceContainer):
         self.db = db
 
     def _getTableName(self):
-        return self.getParams.findParam('tableNameList').value()
+        return self.getParams.findParam('tableNameList').getValue()
 
     def listAllTables(self):
         self.con()
-        database = self.getParams.findParam('database').value()
+        database = self.getParams.findParam('database').getValue()
         results = self.db.query("SHOW TABLES IN %s"%database)
         tables = []
         for r in results.rows:
@@ -160,7 +159,7 @@ class TraceContainerMySQL(TraceContainer):
     def updateConfigData(self):
         self.con()
 
-        self.tableName = self.getParams.findParam('tableName').value()
+        self.tableName = self.getParams.findParam('tableName').getValue()
         res = self.db.query("SELECT COUNT(*) FROM %s" % self.tableName)
         self._numTraces = res.rows[0][0]
         self.config.setAttr('numTraces', self._numTraces)
@@ -186,7 +185,7 @@ class TraceContainerMySQL(TraceContainer):
                 self.getParams.findParam(p["key"]).setValue(val)
             except ValueError:
                 pass
-            #print "%s to %s=%s"%(p["key"], val, self.getParams.findParam(p["key"]).value())
+            #print "%s to %s=%s"%(p["key"], val, self.getParams.findParam(p["key"]).getValue())
 
     def loadAllTraces(self, path=None, prefix=None):
         self.updateConfigData()
@@ -221,7 +220,7 @@ class TraceContainerMySQL(TraceContainer):
     def saveAll(self):
         #Save attributes from config settings
         for t in self.getParams.traceParams[0]['children']:
-            self.config.setAttr(t["key"],  self.getParams.findParam(t["key"]).value() ,"mysql")
+            self.config.setAttr(t["key"],  self.getParams.findParam(t["key"]).getValue() ,"mysql")
 
         #Save table name/prefix too
         self.config.setAttr("tableName", self.tableName, "mysql")

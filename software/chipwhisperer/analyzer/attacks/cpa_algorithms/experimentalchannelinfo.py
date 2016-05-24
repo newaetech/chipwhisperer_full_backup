@@ -315,7 +315,7 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
 
         self.all_diffs = range(0,16)
 
-        tdiff = self.findParam('reportinterval').value()
+        tdiff = self.findParam('reportinterval').getValue()
 
         numtraces = tracerange[1] - tracerange[0]
 
@@ -337,8 +337,8 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
             brangeMap[bnum] = i
             i += 1
 
-        skipPGE = self.findParam('checkpge').value()
-        bf = self.findParam('itmode').value() == 'bf'
+        skipPGE = self.findParam('checkpge').getValue()
+        bf = self.findParam('itmode').getValue() == 'bf'
 
         #bf specifies a 'breadth-first' search. bf means we search across each
         #subkey by only the amount of traces specified. Depth-First means we

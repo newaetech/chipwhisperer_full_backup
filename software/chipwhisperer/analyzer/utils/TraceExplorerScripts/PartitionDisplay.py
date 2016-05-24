@@ -317,8 +317,8 @@ class PartitionDisplay(AutoScript, QObject):
     def updateScript(self, ignored=None):
         ##Partitioning & Differences
         try:
-            diffMethodStr = self.parent.findParam('diffmode').value().__name__
-            partMethodStr = self.parent.findParam('partmode').value().__name__
+            diffMethodStr = self.parent.findParam('diffmode').getValue().__name__
+            partMethodStr = self.parent.findParam('partmode').getValue().__name__
         except AttributeError as e:
             return
 
@@ -343,13 +343,13 @@ class PartitionDisplay(AutoScript, QObject):
         self.addFunction('displayPartitionStats', 'poi.setDifferences', 'partDiffs', obj='ted')
 
         ##Points of Interest
-        ptrng = self.parent.findParam('poi-pointrng').value()
+        ptrng = self.parent.findParam('poi-pointrng').getValue()
         self.addGroup("findPOI")
         self.addVariable('findPOI', 'ted', 'self.')
         self.addFunction('findPOI', 'poi.calcPOI', 'numMax=%d, pointRange=(%d, %d), minSpace=%d' % (
-                            self.parent.findParam('poi-nummax').value(),
+                            self.parent.findParam('poi-nummax').getValue(),
                             ptrng[0], ptrng[1],
-                            self.parent.findParam('poi-minspace').value()),
+                            self.parent.findParam('poi-minspace').getValue()),
                           obj='ted')
 
     def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False,  tRange=(0, -1), progressBar=None):

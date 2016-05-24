@@ -69,17 +69,17 @@ class DecimationClockRecovery(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, param1=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
         self.addFunction("init", "setFilterParams", "form='%s', freqbw=%.2f / 100.0, order=%d" % (
-                                self.findParam('type').value(),
-                                self.findParam('freqbw').value(),
-                                self.findParam('order').value()
+                                self.findParam('type').getValue(),
+                                self.findParam('freqbw').getValue(),
+                                self.findParam('order').getValue()
                             ))
 
         self.addFunction("init", "setFilterOptions", "recalcPerTrace=%s, enableZC=%s, enableDecimation=%s" % (
-                                self.findParam('recalcpertrace').value(),
-                                self.findParam('enableZero').value(),
-                                self.findParam('decimate').value()
+                                self.findParam('recalcpertrace').getValue(),
+                                self.findParam('enableZero').getValue(),
+                                self.findParam('decimate').getValue()
                             ))
    
     def setFilterOptions(self, recalcPerTrace=False, enableZC=True, enableDecimation=True):

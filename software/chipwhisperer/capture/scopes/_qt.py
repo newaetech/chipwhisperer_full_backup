@@ -33,10 +33,8 @@ class OpenADCQt(Parameterized):
 
     def __init__(self, parentParam=None):
         self.dataUpdated = util.Signal()
-        self.adc_settings = openadc.OpenADCSettings()
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
+        self.params = Parameter(name=self.getName(), type='group').register()
 
         self.offset = 0.5
         self.ser = None
@@ -46,7 +44,6 @@ class OpenADCQt(Parameterized):
 
         self.timerStatusRefresh = timer.Timer()
         self.timerStatusRefresh.timeout.connect(self.statusRefresh)
-        self.adc_settings.setFindParam(self.findParam) #todo: this is a somewhat insane way to cut through the layers
 
     def setEnabled(self, enabled):
         pass
@@ -56,7 +53,7 @@ class OpenADCQt(Parameterized):
 
     # def reloadParameterTree(self):
     #     self.adc_settings.setInterface(self.sc)
-        # self.params.getAllParameters()
+        # self.params.refreshAllParameters()
         # self.params.unblockTreeChangeSignal()
 
     def processData(self, data):
@@ -117,7 +114,9 @@ class OpenADCQt(Parameterized):
         self.ser = ser
         #See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
+        self.adc_settings = openadc.OpenADCSettings()
         self.adc_settings.setInterface(self.sc)
+        self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
 
         deviceFound = False
         numTries = 0

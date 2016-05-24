@@ -338,8 +338,6 @@ class CWUniversalSerial(object):
     def setParity(self, par):
         if (par != "none") & (par != "even") & (par != "odd"):
             raise ValueError("Invalid settings for parity: %s"%par)
-        
-        
         self.parity = par
         
     def read(self, maxbytes=10, timeout=0.5, startonly=False, waitonly=False):

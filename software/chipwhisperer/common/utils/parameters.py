@@ -145,7 +145,7 @@ class CWParameterTree(object):
 #         for e in self.__activeParams:
 #             currentParameters = e()
 #             if currentParameters:
-#                 currentParameters.params.getAllParameters()
+#                 currentParameters.params.refreshAllParameters()
 #
 #     def setupGuiActions(self, mainWindow):
 #         """You should overload this. Copy/Paste into your class."""

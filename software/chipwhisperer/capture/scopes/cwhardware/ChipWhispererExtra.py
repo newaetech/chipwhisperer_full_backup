@@ -222,7 +222,7 @@ class CWExtraSettings(Parameterized):
         if self.forceclkin:
             self.setClockSource(self.CLOCK_RTIOIN)
 
-        self.params = Parameter(name=self.getName(), type='group' , children=ret)
+        self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
 
     def con(self, oa):
         self.oa = oa

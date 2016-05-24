@@ -152,7 +152,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
                 self.singleEmit = False
                 atraces.sigLimitsChanged.emit(atraces, lim)
 
-        pointrng = (self.findParam('startpoint', self.pointsParams).value(), self.findParam('endpoint', self.pointsParams).value())
+        pointrng = (self.findParam('startpoint', self.pointsParams).getValue(), self.findParam('endpoint', self.pointsParams).getValue())
 
         self.addFunction("init", "setTraceStart", "%d" % strace.value())
         self.addFunction("init", "setTracesPerAttack", "%d" % atraces.value())

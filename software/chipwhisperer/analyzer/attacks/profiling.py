@@ -51,7 +51,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
         # Do not use absolute
         self.useAbs = False
-        self.updateAlgorithm(self.findParam('Prof_algo').value())
+        self.updateAlgorithm(self.findParam('Prof_algo').getValue())
         self.updateBytesVisible()
         self.setAbsoluteMode(False)
 
@@ -63,7 +63,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
     def updateScript(self, ignored=None):
         self.importsAppend("from chipwhisperer.analyzer.attacks.Profiling import Profiling")
 
-        analysAlgoStr = self.findParam('Prof_algo').value().__name__
+        analysAlgoStr = self.findParam('Prof_algo').getValue().__name__
         self.importsAppend("from chipwhisperer.analyzer.attacks.%s import %s" % (analysAlgoStr, analysAlgoStr))
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)

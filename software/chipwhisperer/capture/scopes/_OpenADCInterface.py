@@ -78,13 +78,6 @@ class OpenADCSettings(object):
         if oaiface is not None:
             self.setInterface(oaiface)
 
-    def setFindParam(self, findParam):
-        self.findParam = findParam
-
-        for t in self.params:
-            if hasattr(t, 'setFindParam'):
-                t.setFindParam(findParam)
-
     def setInterface(self, oaiface):
         self.oa = oaiface
         for p in self.params:
@@ -280,7 +273,7 @@ class TriggerSettings(object):
             {'name': 'Digital Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
                      'help':'%namehdr%'+
                             'Gives the status of the digital signal being used as the trigger signal, either high or low.'},
-            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'set':self.setMode, 'get':self.mode,
+            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'default':"low", 'set':self.setMode, 'get':self.mode,
                      'help':'%namehdr%'+
                             'When using a digital system, sets the trigger mode:\n\n'
                             '  =============== ==============================\n' +
@@ -457,7 +450,6 @@ class ClockSettings(object):
 
     def __init__(self, hwinfo=None):
         self.name = "Clock Setup"
-        self.findParam = None
         self.oa = None
         self.param = {'name': 'Clock Setup', 'type':'group', 'children': [
             {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
@@ -516,9 +508,6 @@ class ClockSettings(object):
 
     def setInterface(self, oa):
         self.oa = oa
-
-    def setFindParam(self, fp):
-        self.findParam = fp
 
     def setFreqSrc(self, src):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)

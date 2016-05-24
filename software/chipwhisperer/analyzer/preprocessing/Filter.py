@@ -56,11 +56,11 @@ class Filter(PreprocessingBase):
         self.b, self.a = self.filterForm(order, freq, form)
 
     def updateScript(self, param1=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
         
-        ftype = self.findParam('type').value()
-        freq1 = self.findParam('freq1').value()
-        freq2 = self.findParam('freq2').value()
+        ftype = self.findParam('type').getValue()
+        freq1 = self.findParam('freq1').getValue()
+        freq2 = self.findParam('freq2').getValue()
         
         if ftype == "bandpass":
             self.findParam('freq2').show()
@@ -69,11 +69,11 @@ class Filter(PreprocessingBase):
             self.findParam('freq2').hide()
             freqs = "%f" % freq1
 
-        self.addFunction("init", "setFilterForm", self.findParam('form').value())
+        self.addFunction("init", "setFilterForm", self.findParam('form').getValue())
         self.addFunction("init", "setFilterParams", "form='%s', freq=%s, order=%d" % (
                                 ftype,
                                 freqs,
-                                self.findParam('order').value()
+                                self.findParam('order').getValue()
                             ))
    
     def getTrace(self, n):

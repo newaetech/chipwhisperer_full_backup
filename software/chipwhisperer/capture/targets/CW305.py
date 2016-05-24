@@ -72,7 +72,7 @@ class CW305(TargetTemplate):
         self.fpga = FPGA(self._naeusb)
 
         self.hw = None
-        self._fpgabs = QSettings().value("cw305-bitstream", '')
+        # self._fpgabs = QSettings().value("cw305-bitstream", '')
         self.oa = None
 
         self._woffset = 0x400
@@ -105,12 +105,11 @@ class CW305(TargetTemplate):
             ]},
             {'name':'Disable CLKUSB For Capture', 'key':'clkusbautooff', 'type':'bool', 'value':True},
             {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
-            {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'set':self.usb_clk_setenabled},
+            {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'action':self.usb_clk_setenabled_action},
             {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
             {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'default':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
             {'name':'FPGA Bitstream', 'type':'group', 'children':[
-                    {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'str', 'value':self._fpgabs, 'set':self.gui_selectfpga},
-                    {'name':'Select Bitstream File', 'type':'action', 'action':self.gui_selectfpga},
+                    {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'file', 'value':"", "filter":'*.bit'},
                     {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
             ]},
         ])
@@ -131,6 +130,9 @@ class CW305(TargetTemplate):
 
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
+
+    def usb_clk_setenabled_action(self, p):
+        self.usb_clk_setenabled(p.value())
 
     def usb_clk_setenabled(self, status):
         """ Turn on or off the Data Clock to the FPGA """
@@ -170,34 +172,10 @@ class CW305(TargetTemplate):
         resp = self._naeusb.readCtrl(CW305_USB.REQ_VCCINT, dlen=3)
         return float(resp[1] | (resp[2] << 8)) / 1000.0
 
-    def gui_getfpgabs(self):
-        
-        if os.path.isfile(self._fpgabs):
-            return self._fpgabs
-        else:
-            # Try the user
-            self.gui_selectfpga()
-
-            if self._fpgabs is None:
-                raise IOError("FPGA Bitstream not configured or %s not a file." % str(self._fpgabs))
-
-            return self._fpgabs
-
-        # # Example of a version of this that hard-codes a bitstream
-        # return r"C:\Users\colin\dropbox\engineering\git_repos\CW305_ArtixTarget\temp_vivado\CW305_VivadoSample\CW305_VivadoSample.runs\impl_1\cw305_blockexample.bit"
-
-    def gui_selectfpga(self, fname=None):
-        if fname is None:
-            fname, _ = QFileDialog.getOpenFileName(None, 'Find FPGA Bitstream', QSettings().value("cw305-bitstream"), '*.bit')
-
-        if fname:
-            self.findParam('fpgabsfile').setValue(fname)
-            self._fpgabs = fname
-
-            QSettings().setValue("cw305-bitstream", fname)
-
-    def gui_programfpga(self):
-        bsfile = self.gui_getfpgabs()
+    def gui_programfpga(self, _=None):
+        bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
+        if not os.path.isfile(bsfile):
+            raise Warning("FPGA Bitstream not configured or %s not a file." % str(bsfile))
         starttime = datetime.now()
         self.fpga.FPGAProgram(open(bsfile, "rb"))
         stoptime = datetime.now()
@@ -208,10 +186,10 @@ class CW305(TargetTemplate):
 
         self._naeusb.con(idProduct=0xC305)
         if self.fpga.isFPGAProgrammed() == False or force:
-            if bsfile is None:
-                bsfile = self.gui_getfpgabs()
-
-            if bsfile:
+            bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"])
+            if not os.path.isfile(bsfile):
+                raise Warning("FPGA Bitstream not configured or %s not a file." % str(bsfile))
+            else:
                 from datetime import datetime
                 starttime = datetime.now()
                 self.fpga.FPGAProgram(open(bsfile, "rb"))
@@ -219,7 +197,7 @@ class CW305(TargetTemplate):
                 print "FPGA Config time: %s" % str(stoptime - starttime)
         self.usb_clk_setenabled(True)
         self.fpga_write(0x100+self._woffset, [0])
-        self.params.getAllParameters()
+        self.params.refreshAllParameters()
         self.pll.cdce906init()
         self.connectStatus.setValue(True)
 
@@ -260,7 +238,7 @@ class CW305(TargetTemplate):
 
     def go(self):
         """Disable USB clock (if requested), perform encryption, re-enable clock"""
-        if self.findParam('clkusbautooff').value():
+        if self.findParam('clkusbautooff').getValue():
             self.usb_clk_setenabled(False)
             
         #LED On
@@ -272,6 +250,6 @@ class CW305(TargetTemplate):
         # self.FPGAWrite(0x100, [1])
         # self.FPGAWrite(0x100, [0])
 
-        if self.findParam('clkusbautooff').value():
-            time.sleep(self.findParam('clksleeptime').value() / 1000.0)
+        if self.findParam('clkusbautooff').getValue():
+            time.sleep(self.findParam('clksleeptime').getValue() / 1000.0)
             self.usb_clk_setenabled(True)

@@ -88,8 +88,8 @@ class ChipWhispererSAD(object):
     def getCaptueTraceRef(self):
         """ Get the reference data for SAD algorithm from the api trace window """
 
-        pstart = self.findParam('pointrng').value()[0] - self.waveformDock.widget().lastStartOffset
-        pend = self.findParam('pointrng').value()[1] - self.waveformDock.widget().lastStartOffset
+        pstart = self.findParam('pointrng').getValue()[0] - self.waveformDock.widget().lastStartOffset
+        pend = self.findParam('pointrng').getValue()[1] - self.waveformDock.widget().lastStartOffset
         data = self.waveformDock.widget().lastTraceData[pstart:pend]
         data = np.array(data)
         data = (data + 0.5) * 1024
@@ -186,11 +186,9 @@ class ChipWhispererSAD(object):
 
     def setOpenADC(self, oa):
         """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
-
         self.oa = oa.sc
-            
         try:
-            self.params.getAllParameters()
+            self.params.refreshAllParameters()
         except TypeError:
             return
         

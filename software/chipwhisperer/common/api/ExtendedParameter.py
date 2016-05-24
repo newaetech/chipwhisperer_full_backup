@@ -315,7 +315,7 @@ if __name__ == '__main__':
             self.reloadParams()
 
         def getLinked(self):
-            tmp =  1.0/float(self.findParam('r').value())
+            tmp =  1.0/float(self.findParam('r').getValue())
             return tmp
 
         def printhelp(self, msg, obj):

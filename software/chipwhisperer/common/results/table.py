@@ -53,7 +53,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
         self.horizontalHeader().setMinimumSectionSize(51)
         self.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         self.useSingle = False
-        self.updateMode = self.findParam('updateMode').value()
+        self.updateMode = self.findParam('updateMode').getValue()
         AttackObserver.__init__(self)
         self.initUI(True)
 
@@ -104,7 +104,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._highlightedKeys())
-        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()(), useSingle=self.findParam('singlepoint').value())
+        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').getValue()(), useSingle=self.findParam('singlepoint').getValue())
         highlights = self._highlightedKeys()
 
         for bnum in range(0, self._numKeys()):

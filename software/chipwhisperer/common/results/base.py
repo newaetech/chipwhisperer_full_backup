@@ -71,5 +71,5 @@ class ResultsBase(Parameterized):
         obj = cls.getClasses()[className](None, instanceName)
         cls.registeredObjects[obj.getName()] = obj
         cls.sigRegisteredObjectsChanged.emit(obj)
-        cls.getClassParameter().append(obj)
+        cls.getClassParameter().append(obj.getParams())
         return obj

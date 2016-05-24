@@ -225,8 +225,8 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
             brangeMap[bnum] = i
             i += 1
 
-        skipPGE = False  # self.findParam('checkpge').value()
-        bf = True  # self.findParam('itmode').value() == 'bf'
+        skipPGE = False  # self.findParam('checkpge').getValue()
+        bf = True  # self.findParam('itmode').getValue() == 'bf'
 
         #bf specifies a 'breadth-first' search. bf means we search across each
         #subkey by only the amount of traces specified. Depth-First means we

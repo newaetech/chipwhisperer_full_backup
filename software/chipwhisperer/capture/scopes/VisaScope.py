@@ -48,7 +48,7 @@ class VisaScopeInterface(ScopeTemplate):
         ])
 
         self.scopetype = None
-        self.setCurrentScope(self.findParam('type').value(type))
+        self.setCurrentScope(self.findParam('type').getValue(type))
 
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
@@ -65,7 +65,7 @@ class VisaScopeInterface(ScopeTemplate):
 
     def _con(self):
         if self.scopetype is not None:
-            self.scopetype.con(self.findParam('connStr').value())
+            self.scopetype.con(self.findParam('connStr').getValue())
             return True
         return False
 

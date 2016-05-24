@@ -57,16 +57,16 @@ class ResyncSAD(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
-        refpt = self.findParam('refpts').value()
-        windowpt = self.findParam('windowpt').value()
+        refpt = self.findParam('refpts').getValue()
+        windowpt = self.findParam('windowpt').getValue()
 
         if refpt is None: refpt = (0, 0)
         if windowpt is None: windowpt = (0, 0)
 
         self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" %
-                         (self.findParam('reftrace').value(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
+                         (self.findParam('reftrace').getValue(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
 
     def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
         self.rtrace = rtraceno

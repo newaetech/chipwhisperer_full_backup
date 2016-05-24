@@ -146,7 +146,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         self.clearPushed()
         progress.setStatusMask("Plotting...")
 
-        drawtype = self.findParam('drawtype').value().lower()
+        drawtype = self.findParam('drawtype').getValue().lower()
         pvalue = 0
         top = bottom = None
         xdataptr = None

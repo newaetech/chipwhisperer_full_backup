@@ -42,8 +42,8 @@ class DecimationFixed(PreprocessingBase):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        self.addFunction("init", "setDecimationFactor", self.findParam('decfactor').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        self.addFunction("init", "setDecimationFactor", self.findParam('decfactor').getValue())
 
     def setDecimationFactor(self, decfactor=1):
         self._decfactor = decfactor

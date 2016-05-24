@@ -24,15 +24,14 @@
 #=================================================
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 class ProtocolTemplate(Parameterized, Plugin):
     _name= 'Smartcard Protocol'
 
     def __init__(self, parentParam=None):
-        Parameterized.__init__(self, parentParam)
         self.hw = None
-
+        self.params = Parameter(name=self.getName(), type='group')
         # self.params.addChildren(
         #     {'name':'Example Parameter', 'type':'int', 'value':5, 'set':self.setSomething}
         # )

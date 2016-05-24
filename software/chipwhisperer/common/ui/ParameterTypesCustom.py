@@ -95,6 +95,39 @@ class TextParameterItemHelp(TextParameterItem):
     def updateDefaultBtn(self):
         pass
 
+class FileParameterItemHelp(WidgetParameterItemHelp):
+    def __init__(self, *args, **kwargs):
+        super(FileParameterItemHelp, self).__init__(*args, **kwargs)
+
+        fileButton = QtGui.QPushButton()
+        fileButton.setFixedWidth(20)
+        fileButton.setFixedHeight(20)
+        fileButton.setIcon(self.layoutWidget.style().standardIcon(QtGui.QStyle.SP_FileDialogContentsView))
+        fileButton.clicked[bool].connect(self.openFile)
+        self.layoutWidget.layout().addWidget(fileButton)
+        fname = QtCore.QSettings().value(self.param.opts["name"])
+        if fname:
+            self.param.setValue(fname)
+
+    def makeWidget(self):
+        w = QtGui.QLineEdit()
+        w.sigChanged = w.editingFinished
+        w.value = w.text
+        w.setValue = w.setText
+        w.sigChanging = w.textChanged
+        return w
+
+    def openFile(self):
+        fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Get file path', QtCore.QSettings().value(self.param.opts["name"]), self.param.opts["filter"])
+        if fname:
+            self.param.setValue(fname)
+            QtCore.QSettings().setValue(self.param.opts["name"], fname)
+
+
+class FileParameter(Parameter):
+    itemClass = FileParameterItemHelp
+
+registerParameterType('file', FileParameter, override=True)
 
 classmapping = {
     "<class 'pyqtgraph.parametertree.parameterTypes.WidgetParameterItem'>": WidgetParameterItemHelp,
@@ -337,6 +370,7 @@ class RangeParameterGraph(Parameter):
     itemClass = RangeParameterGraphItem
 
 registerParameterType('rangegraph', RangeParameterGraph, override=True)
+
 
 class FilelistItem(WidgetParameterItem):
     """

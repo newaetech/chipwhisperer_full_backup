@@ -50,10 +50,19 @@ class Parameterized(object):
     def getName(self):
         return self._name
 
+    @classmethod
+    def getClassName(cls):
+        return cls._name
+
+    @classmethod
+    def getDescription(cls):
+        return cls._description
+
+
 class Parameter(object):
     registeredParameters = []
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget"]
+    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", "range"]
     # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
     #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
 
@@ -150,7 +159,7 @@ class Parameter(object):
                     ) or\
                     (type == "bool" and value not in [True, False]) or\
                     ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
-                    (type =="rangegraph" and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
+                    (type =="rangegraph" and (value[1] - value[0] != -1) and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
                 raise ValueError("Value %s out of limits in parameter \"%s\"" % (str(value), self.getName()))
 
         try:
@@ -193,7 +202,6 @@ class Parameter(object):
             act(self)
             print >> Parameter.scriptingOutput, (str(self.getPath()))
         self.callLinked()
-
 
     def setLimits(self, limits):
         self.opts['limits'] = limits
@@ -324,9 +332,10 @@ class Parameter(object):
         child = None
         for p in cls.registeredParameters:
             if p.getOpts()["name"] == path[0]:
-                child = p.getChildPath(path[1:])
+                child = p.getChild(path[1:])
                 if child is not None:
-                    if isinstance(child.getOpts()["values"], dict):
+
+                    if isinstance(child.getOpts().get("values", None), dict):
                         value = child.getOpts()["values"][value]
                     child.setValue(value, echo=echo)
 

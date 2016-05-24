@@ -32,7 +32,7 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class TuningParameter(QObject):
@@ -65,14 +65,14 @@ class TuningParameter(QObject):
         self.nameChanged.emit(self.paramNum, newname)
 
     def name(self):
-        return self.findParam('humanname').value()
+        return self.findParam('humanname').getValue()
 
     def updateParams(self, ignored=None):
 
-        rng = self.findParam('range').value()
+        rng = self.findParam('range').getValue()
 
         # Force to be valid values
-        curval = self.findParam('curval').value()
+        curval = self.findParam('curval').getValue()
         curval = max(curval, rng[0])
         self.findParam('curval').setValue(curval)
 
@@ -82,11 +82,11 @@ class TuningParameter(QObject):
 
         self.paramRange = rng
         self.paramValueItem = self.findParam('curval')
-        self.paramStep = self.findParam('step').value()
-        self.paramRepeat = self.findParam('repeat').value()
-        self.paramType = self.findParam('datatype').value()
+        self.paramStep = self.findParam('step').getValue()
+        self.paramRepeat = self.findParam('repeat').getValue()
+        self.paramType = self.findParam('datatype').getValue()
         try:
-            self.paramScript = eval(self.findParam('script').value())
+            self.paramScript = eval(self.findParam('script').getValue())
         except SyntaxError, e:
             print "Syntax Error: %s" % str(e)
 
@@ -102,7 +102,7 @@ class TuningParameter(QObject):
             if self.cnt == self.paramRepeat:
                 # Done this one, next step
                 self.cnt = 0
-                newval = self.paramValueItem.value() + self.paramStep
+                newval = self.paramValueItem.getValue() + self.paramStep
 
                 if newval > self.paramRange[1]:
                     newval = self.paramRange[0]
@@ -118,7 +118,7 @@ class TuningParameter(QObject):
             raise ValueError("Unknown Increment Type %s" % mode)
 
 
-class GlitchExplorerDialog(QtFixes.QDialog):
+class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
     def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
         self.setWindowTitle("Glitch Explorer")
@@ -217,7 +217,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
         self.parent().api.setParameter(script)
 
     def updateParameters(self, ignored=None):
-        numparams = self.findParam('numtune').value()
+        numparams = self.findParam('numtune').getValue()
 
         # Did number change? Adjust if needed
         while numparams < len(self.tuneParamList):
@@ -256,7 +256,7 @@ class GlitchExplorerDialog(QtFixes.QDialog):
     def paramList(self):
         p = [self.params]
 
-        # for i in range(0, self.findParam('numtune').value()):
+        # for i in range(0, self.findParam('numtune').getValue()):
         #    p.append(self.tuneParamList[i])
 
         for t in self.tuneParamList:
@@ -310,8 +310,8 @@ class GlitchExplorerDialog(QtFixes.QDialog):
     def addResponse(self, resp):
         """ Add a response from the system to glitch table + logs """
 
-        normeval = self.findParam('normalresp').value()
-        succeval = self.findParam('successresp').value()
+        normeval = self.findParam('normalresp').getValue()
+        succeval = self.findParam('successresp').getValue()
 
         if len(normeval) > 0:
             #Check if Normal
@@ -356,10 +356,10 @@ class GlitchExplorerDialog(QtFixes.QDialog):
                 self.findParam('savefilename').setValue(self._autosavefname)
 
                 # Add notes
-                pickle.dump({"notes":self.findParam('savenotes').value()}, self._autosavef)
+                pickle.dump({"notes":self.findParam('savenotes').getValue()}, self._autosavef)
 
                 # Add headers
-                cmds = [self.tuneParamList[i].findParam('script').value() for i in range(0, len(self.tuneParamList))]
+                cmds = [self.tuneParamList[i].findParam('script').getValue() for i in range(0, len(self.tuneParamList))]
                 pickle.dump({"commands":cmds}, self._autosavef)
 
             # Add data

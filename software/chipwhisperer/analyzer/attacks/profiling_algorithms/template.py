@@ -74,14 +74,14 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver):
 
     def updateScript(self, ignored=None):
         pass
-       # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+       # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
        #
        #  ted = self.parent.traceExplorerDialog.exampleScripts[0]
        #
        #  self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
-       #  self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+       #  self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').getValue(), self.findParam('tgenstop').getValue()))
        #
-       #  if self.findParam('poimode').value() == 0:
+       #  if self.findParam('poimode').getValue() == 0:
        #      self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
        #      self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
        #      self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)

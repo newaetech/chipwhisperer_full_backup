@@ -34,7 +34,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         SimpleSerialTemplate.__init__(self, parentParam)
         self.cwlite_usart = None
         self.params.addChildren([
-            {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud}
+            {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud, 'default':38400}
         ])
 
     def setBaud(self, baud):
@@ -54,7 +54,6 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
 
     def read(self, num=0, timeout=250):
         data = bytearray(self.cwlite_usart.read(num, timeout=timeout))
-
         result = data.decode('latin-1')
         return result
 
@@ -74,8 +73,8 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         if scope is None or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         scope.connectStatus.connect(self.dis)
-        self.params.getAllParameters()
         self.cwlite_usart = CWL_USART(scope.qtadc.ser)
-        self.cwlite_usart.init(baud=self.findParam('baud').value())
+        self.cwlite_usart.init(baud=self.findParam('baud').getValue())
+        self.params.refreshAllParameters()
         self.connectStatus.setValue(True)
 

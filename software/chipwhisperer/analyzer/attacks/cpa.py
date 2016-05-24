@@ -44,7 +44,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.params.addChildren([
             {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
         ])
-        self.setAnalysisAlgorithm(self.findParam('CPA_algo').value(), None, None)
+        self.setAnalysisAlgorithm(self.findParam('CPA_algo').getValue(), None, None)
         self.updateBytesVisible()
         self.updateScript()
 
@@ -75,8 +75,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
         analysAlgoStr = self.attack.__class__.__name__
-        hardwareStr = self.findParam('hw_algo').value().__name__
-        leakModelStr = hardwareStr + "." + self.findParam('hw_leak').value()
+        hardwareStr = self.findParam('hw_algo').getValue().__name__
+        leakModelStr = hardwareStr + "." + self.findParam('hw_leak').getValue()
 
         self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)

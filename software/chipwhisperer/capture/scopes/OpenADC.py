@@ -31,8 +31,8 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhisperer
 import _qt as openadc_qt
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import util, timer, pluginmanager
+from chipwhisperer.common.utils.parameter import Parameter
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
@@ -65,11 +65,11 @@ class OpenADCInterface(ScopeTemplate):
             self.qtadc.sc.getStatus()
             # The following happen with signals, so a failure will likely occur outside of the try...except
             # For this reason we do the call to .getStatus() to verify USB connection first
-            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
-            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
-        except Exception:
+            Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
+            Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
+        except Exception as e:
             self.dis()
-            raise
+            raise e
 
     def updateAutorefreshDCM(self, parameter):
         if parameter.getValue():

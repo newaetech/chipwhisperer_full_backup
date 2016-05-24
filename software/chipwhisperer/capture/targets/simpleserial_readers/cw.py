@@ -204,5 +204,5 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         scope.connectStatus.connect(self.dis())
         # Check first!
         self.checkVersion()
-        self.params.getAllParameters()
+        self.params.refreshAllParameters()
         self.connectStatus.setValue(True)
