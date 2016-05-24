@@ -29,18 +29,21 @@ void uart_puts(char * s){
 void glitch_infinite(void)
 {
     char str[64];
+    unsigned int k = 0;
     //Declared volatile to avoid optimizing away loop.
     //This also adds lots of SRAM access
     volatile uint16_t i, j;
     volatile uint32_t cnt;
     while(1){
         cnt = 0;
-        for(i=0; i<500; i++){
-            for(j=0; j<500; j++){
+        trigger_high();
+        trigger_low();
+        for(i=0; i<200; i++){
+            for(j=0; j<200; j++){
                 cnt++;
             }
         }
-        sprintf(str, "%lu %d %d\n", cnt, i, j);
+        sprintf(str, "%lu %d %d %d\n", cnt, i, j, k++);
         uart_puts(str);
     }
 }
@@ -177,7 +180,7 @@ int main(void){
 		
         
     while(1){
-        glitch_infinite();
+        glitch1();
     }
         
 	return 1;

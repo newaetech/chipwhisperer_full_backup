@@ -1,3 +1,4 @@
+`include "includes.v"
 `timescale 1ns / 1ps
 //`define CHIPSCOPE
 

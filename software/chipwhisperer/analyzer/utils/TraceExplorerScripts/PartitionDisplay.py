@@ -187,8 +187,8 @@ class POI(QWidget):
         self.parent.parent.findParam('poi-pointrng').setValue((0, len(self.parent.SADList[0])))
 
     def savePOI(self):
-        poiDict = {"poi":self.poiArray}
-        self.parent.parent.parent.project().addDataConfig(poiDict, "Template Data", "Points of Interest")
+        poiDict = {"poi":self.poiArray, "partitiontype":self.parent.partObject.partMethod.__class__.__name__}
+        CWCoreAPI.getInstance().project().addDataConfig(poiDict, "Template Data", "Points of Interest")
 
     def calcPOI(self, numMax, pointRange, minSpace, diffs=None):
         if diffs:
@@ -240,6 +240,7 @@ class PartitionDisplay(AutoScript, QObject):
     def __init__(self, parent):
         QObject.__init__(self, parent)
         AutoScript.__init__(self)
+        self._autoscript_init = False
         self.parent = parent
         self.defineName()
         self._traces = None
@@ -289,9 +290,13 @@ class PartitionDisplay(AutoScript, QObject):
 
     def updatePOI(self, ignored=None):
         self.updateScript()
+
+        if self._autoscript_init == False:
+            return
+
         # Some sort of race condition - applying Therac-25 type engineering and just
         # randomly hope this is enough delay
-        QTimer.singleShot(250, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
+        QTimer.singleShot(500, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -315,6 +320,7 @@ class PartitionDisplay(AutoScript, QObject):
                 self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)))
 
     def updateScript(self, ignored=None):
+
         ##Partitioning & Differences
         try:
             diffMethodStr = self.parent.findParam('diffmode').value().__name__
@@ -351,6 +357,10 @@ class PartitionDisplay(AutoScript, QObject):
                             ptrng[0], ptrng[1],
                             self.parent.findParam('poi-minspace').value()),
                           obj='ted')
+
+        #Check if this updateScript was called as a result of showing the TraceExplorer window
+        if ignored == "traceexplorer_show":
+            self._autoscript_init = True
 
     def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False,  tRange=(0, -1), progressBar=None):
 
@@ -578,10 +588,10 @@ class PartitionDisplay(AutoScript, QObject):
 
         self.graph.setPersistance(True)
 
-        # self.poi.setDifferences(SADList)
+        self.poi.setDifferences(self.SADList)
 
-        # self.parent.findParam('poi-pointrng').setLimits((0, len(SADList[0])))
-        # self.parent.findParam('poi-pointrng').setValue((0, len(SADList[0])))
+        self.parent.findParam('poi-pointrng').setLimits((0, len(self.SADList[0])))
+        self.parent.findParam('poi-pointrng').setValue((0, len(self.SADList[0])))
         self.redrawPlot()
 
     def runAction(self):
