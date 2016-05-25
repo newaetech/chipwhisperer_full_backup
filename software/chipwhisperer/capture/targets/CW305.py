@@ -32,25 +32,7 @@ from _base import TargetTemplate
 from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
-
-try:
-    from PySide.QtCore import QSettings
-    from PySide.QtGui import QFileDialog
-except ImportError:
-    class QSettings(object):
-        def value(self, name, default=None):
-            if default:
-                return default
-            else:
-                return None
-        def setValue(self, name, val):
-            pass
-
-    class QFileDialog(object):
-        def getOpenFileName(self, *args, **kwargs):
-            pass
-
-    print "CW305: GUI functions disabled"
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class CW305_USB(object):
@@ -145,6 +127,7 @@ class CW305(TargetTemplate):
         """ Toggle the trigger line high then low """
         self._naeusb.sendCtrl(CW305_USB.REQ_SYSCFG, CW305_USB.SYSCFG_TOGGLE)
         
+    @setupSetParam("VCC-INT")
     def vccint_set(self, vccint=1.0):
         """ Set the VCC-INT for the FPGA """
 

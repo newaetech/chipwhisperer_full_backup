@@ -25,6 +25,7 @@
 
 from ._base import SimpleSerialTemplate
 import time
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
@@ -50,11 +51,13 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
     def systemClk(self):
         return 30E6
 
+    @setupSetParam("TX Baud")
     def setTxBaud(self, baud):
         breg = (baud * 4096 + self.systemClk() / 32) / (self.systemClk() / 16)
         breg = int(round(breg))
         self.setTxBaudReg(breg)
 
+    @setupSetParam("RX Baud")
     def setRxBaud(self, baud):
         breg = (baud * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
         breg = int(round(breg))
@@ -116,6 +119,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
             return 1
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
 
+    @setupSetParam("Stop-Bits")
     def setStopBits(self, stopbits):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         if stopbits == 1:
@@ -131,6 +135,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         else:
             return 'n'
 
+    @setupSetParam("Parity")
     def setParity(self, par):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         if par == 'e':

@@ -27,7 +27,7 @@
 
 import zipfile
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 glitchaddr = 51
 glitchoffsetaddr = 25
@@ -173,6 +173,7 @@ class ChipWhispererGlitch(Parameterized):
                 self.resetDCMs(keepPhase=True)
                 # print "Partial: %d %d" % (widthint, offsetint)
 
+    @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):
         """Set offset between trigger event and glitch in clock cycles"""
         cmd = bytearray(4)
@@ -191,6 +192,7 @@ class ChipWhispererGlitch(Parameterized):
         offset |= cmd[3] << 24
         return offset
 
+    @setupSetParam("Glitch Offset (fine adjust)")
     def setGlitchOffsetFine(self, fine):
         """Set the fine glitch offset adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -215,6 +217,7 @@ class ChipWhispererGlitch(Parameterized):
     def getGlitchWidthFine(self):
         return self.getDCMStatus()[0]
 
+    @setupSetParam("Glitch Width (fine adjust)")
     def setGlitchWidthFine(self, fine):
         """Set the fine glitch width adjust, range -255 to 255"""
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -284,6 +287,7 @@ class ChipWhispererGlitch(Parameterized):
         print "DCM1: Phase %d, Locked %r" % (stat[0], stat[2])
         print "DCM2: Phase %d, Locked %r" % (stat[1], stat[3])
 
+    @setupSetParam("Repeat")
     def setNumGlitches(self, num):
         """Set number of glitches to occur after a trigger"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -302,6 +306,7 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return resp[6]+1
 
+    @setupSetParam("Glitch Trigger")
     def setGlitchTrigger(self, trigger):
         """Set glitch trigger type (manual, continous, adc-trigger)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -313,6 +318,7 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[5] & 0x0C) >> 2
 
+    @setupSetParam("Output Mode")
     def setGlitchType(self, t):
         """Set glitch output type (ORd with clock, XORd with clock, clock only, glitch only)"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
@@ -338,6 +344,7 @@ class ChipWhispererGlitch(Parameterized):
         """If trigger is set to single-shot mode, this must be called before the selected trigger occurs"""
         self.glitchManual()
 
+    @setupSetParam("Clock Source")
     def setGlitchClkSource(self, source):
         """Set the source of the glitched clock, either the HS1-In or the CLKGEN Module"""
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)

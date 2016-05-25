@@ -130,6 +130,7 @@ class PassiveTraceObserver(Parameterized):
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """
 
+    @setupSetParam('Input')
     def setTraceSource(self, traceSource):
         if self._traceSource:
             self._traceSource.sigTracesChanged.disconnect(self.processTraces)

@@ -28,7 +28,7 @@
 import time
 from functools import partial
 import ChipWhispererGlitch
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -149,7 +149,6 @@ class CWExtraSettings(Parameterized):
              'set':self.setModule, 'get':self.getModule}
         ])
 
-
         # Generate list of clock sources present in the hardware
         if self.hasFPAFPB:
             ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'set':self.setTrigOut})
@@ -161,7 +160,18 @@ class CWExtraSettings(Parameterized):
             clksrc["PLL Input"] = self.CLOCK_PLL
 
         clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
-        # clksrc["Fake"] = 0
+
+        #Added July 6/2015, Release 0.11RC1
+        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
+        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
+        if self.hasFPAFPB==False and self.hasPLL==False:
+            self.forceclkin = True
+        else:
+            self.forceclkin = False
+        # TEMPORARY PATCH: REMOVE ONCE FPGA FIXED
+        #Over-ride default for CW-Lite
+        if self.forceclkin:
+            self.setClockSource(self.CLOCK_RTIOIN, blockSignal=True)
 
         ret.extend([
             {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
@@ -209,19 +219,6 @@ class CWExtraSettings(Parameterized):
                 {'name':'Target Power State', 'type':'bool', 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
             ])
 
-        #Added July 6/2015, Release 0.11RC1
-        #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
-        #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
-        if self.hasFPAFPB==False and self.hasPLL==False:
-            self.forceclkin = True
-        else:
-            self.forceclkin = False
-
-        # TEMPORARY PATCH: REMOVE ONCE FPGA FIXED
-        #Over-ride default for CW-Lite
-        if self.forceclkin:
-            self.setClockSource(self.CLOCK_RTIOIN)
-
         self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
 
     def con(self, oa):
@@ -232,6 +229,7 @@ class CWExtraSettings(Parameterized):
         if self.forceclkin:
             self.setClockSource(self.CLOCK_RTIOIN)
 
+    @setupSetParam("")
     def setGPIOState(self, state, IONumber):
         if state is not None:
             data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
@@ -255,6 +253,7 @@ class CWExtraSettings(Parameterized):
         else:
             return False
 
+    @setupSetParam("")
     def setTargetIOMode(self, setting, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         data[IONumber] = setting
@@ -264,6 +263,7 @@ class CWExtraSettings(Parameterized):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         return data[IONumber]
 
+    @setupSetParam("Clock Source")
     def setClockSource(self, source):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~0x07) | source
@@ -273,6 +273,7 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return resp[0] & 0x07
 
+    @setupSetParam("Target HS IO-Out")
     def setTargetCLKOut(self, clkout):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
@@ -282,6 +283,7 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return ((resp[0] & (3<<5)) >> 5)
 
+    @setupSetParam("")
     def setTargetGlitchOut(self, out='A', enabled=False):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
 
@@ -317,6 +319,7 @@ class CWExtraSettings(Parameterized):
 
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
+    @setupSetParam("Target Power State")
     def setTargetPowerState(self, enabled):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         if enabled:
@@ -342,6 +345,7 @@ class CWExtraSettings(Parameterized):
         else:
             return True
 
+    @setupSetParam("")
     def setPin(self, enabled, pin):
         current = self.getPins()
 
@@ -359,6 +363,7 @@ class CWExtraSettings(Parameterized):
         else:
             return True
 
+    @setupSetParam("Collection Mode")
     def setPinMode(self, mode):
         current = self.getPins()
         self.setPins(current[0], mode)
@@ -378,6 +383,7 @@ class CWExtraSettings(Parameterized):
         mode = resp[0] >> 6
         return(pins, mode)
 
+    @setupSetParam("Trigger Module")
     def setModule(self, module):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] = resp[0] & 0xF8
@@ -388,6 +394,7 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
 
+    @setupSetParam("Trigger Out on FPA")
     def setTrigOut(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] = resp[0] & 0xE7

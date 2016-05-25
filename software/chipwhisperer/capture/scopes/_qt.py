@@ -39,7 +39,11 @@ class OpenADCQt(Parameterized):
         self.offset = 0.5
         self.ser = None
         self.sc = None
-
+        self.parm_hwinfo = None
+        self.parm_gain = None
+        self.parm_trigger = None
+        self.parm_clock = None
+        
         self.datapoints = []
 
         self.timerStatusRefresh = timer.Timer()
@@ -50,11 +54,6 @@ class OpenADCQt(Parameterized):
 
     def statusRefresh(self):
         pass
-
-    # def reloadParameterTree(self):
-    #     self.adc_settings.setInterface(self.sc)
-        # self.params.refreshAllParameters()
-        # self.params.unblockTreeChangeSignal()
 
     def processData(self, data):
         fpData = []
@@ -89,14 +88,14 @@ class OpenADCQt(Parameterized):
 
     def read(self, update=True, NumberPoints=None):
         if NumberPoints == None:
-            NumberPoints = self.adc_settings.parm_trigger.maxSamples()
+            NumberPoints = self.parm_trigger.maxSamples()
 
         try:
             self.datapoints = self.sc.readData(NumberPoints)
         except IndexError, e:
             raise IOError("Error reading data: %s"%str(e))
 
-        self.dataUpdated.emit(self.datapoints, -self.adc_settings.parm_trigger.presamples(True))
+        self.dataUpdated.emit(self.datapoints, -self.parm_trigger.presamples(True))
 
     def capture(self, update=True, NumberPoints=None):
         timeout = self.sc.capture()
@@ -114,9 +113,26 @@ class OpenADCQt(Parameterized):
         self.ser = ser
         #See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
-        self.adc_settings = openadc.OpenADCSettings()
-        self.adc_settings.setInterface(self.sc)
-        self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
+
+        if self.parm_hwinfo is None:
+            self.parm_hwinfo = openadc.HWInformation(self.sc)
+            self.params.append(self.parm_hwinfo.getParams())
+        self.parm_hwinfo.setInterface(self.sc)
+
+        if self.parm_gain is None:
+            self.parm_gain = openadc.GainSettings(self.sc)
+            self.params.append(self.parm_gain.getParams())
+        self.parm_gain.setInterface(self.sc)
+
+        if self.parm_trigger is None:
+            self.parm_trigger = openadc.TriggerSettings(self.sc)
+            self.params.append(self.parm_trigger.getParams())
+        self.parm_trigger.setInterface(self.sc)
+
+        if self.parm_clock is None:
+            self.parm_clock = openadc.ClockSettings(self.sc, hwinfo=self.parm_hwinfo)
+            self.params.append(self.parm_clock.getParams())
+        self.parm_clock.setInterface(self.sc)
 
         deviceFound = False
         numTries = 0

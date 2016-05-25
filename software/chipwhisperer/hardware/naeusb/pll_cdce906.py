@@ -32,6 +32,7 @@ class PLLCDCE906(object):
         self.reffreq = ref_freq
         self.parent = parent
 
+    @setupSetParam("")
     def pll_outfreq_set(self, freq, outnum):
         """
         Set the PLL Output Frequency
@@ -83,6 +84,7 @@ class PLLCDCE906(object):
         freq = ((self.reffreq * float(settings[0])) / float(settings[1])) / float(settings[2])
         return freq
 
+    @setupSetParam("")
     def pll_outenable_set(self, enabled, outnum):
         """Enable or disable one of the PLLs"""
         self.outputUpdateOutputs(outnum)
@@ -93,6 +95,7 @@ class PLLCDCE906(object):
         data = self.cdce906read(19 + outpin)
         return bool(data & (1 << 3))
 
+    @setupSetParam("")
     def pll_outslew_set(self, enabled, outnum):
         """Updates slew rates from GUI settings"""
         self.outputUpdateOutputs(outnum)
@@ -112,6 +115,7 @@ class PLLCDCE906(object):
         else:
             return "+0nS"
 
+    @setupSetParam("")
     def pll_outsource_set(self, source, outnum):
         """Updates sources from GUI settings"""
         self.outputUpdateOutputs(outnum)
@@ -200,6 +204,7 @@ class PLLCDCE906(object):
             data |= 1 << 6
         self.cdce906write(19 + outpin, data)
 
+    @setupSetParam("")
     def pll_enable_set(self, enabled):
         """Enable or disable the PLL chip"""
         base = self.cdce906read(12)

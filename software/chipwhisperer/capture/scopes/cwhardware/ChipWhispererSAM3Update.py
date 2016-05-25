@@ -25,10 +25,8 @@
 
 
 import os.path
-
 from PySide.QtCore import *
 from PySide.QtGui import *
-
 import chipwhisperer.common.utils.serialport as scan
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils import util

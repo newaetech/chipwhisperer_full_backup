@@ -24,8 +24,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import time
 
+import time
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
 
@@ -59,7 +59,7 @@ class CWUniversalSerialProcessor(object):
             start = gnum * 8
             byte = 0
             for b in range(0,8):
-                byte |= txpattern[start+b] << b;
+                byte |= txpattern[start+b] << b
                 
             blist.append(byte)
             
@@ -105,10 +105,8 @@ class CWUniversalSerialProcessor(object):
         
         #print samplesperbit
         bits[0] = 0
-        
-        
+
         while bindex < len(bits):
-            
             if self.averageBits(bits[bindex:(bindex+samplesperbit)]) == 0:
             #if self.numOnes(bits[bindex:(bindex+samplesperbit)]) <= 3:
             #if bits[bindex:(bindex+samplesperbit)] == [0]*samplesperbit:                
@@ -124,7 +122,6 @@ class CWUniversalSerialProcessor(object):
                     bindex += samplesperbit
                 
                 byte = 0
-                
                 onecnt = 0
         
                 for b in range(0,8):
@@ -171,7 +168,8 @@ class CWUniversalSerialProcessor(object):
                 
         s = "".join([chr(b) for b in bytelist])    
         return s
-        
+
+
 class CWUniversalSerial(object):
     
     ADDR_USICLKDIV = 44
@@ -245,16 +243,16 @@ class CWUniversalSerial(object):
         
     def setMaxTx(self, maxStates):
         resp = self.oa.sendMessage(CODE_READ, self.ADDR_USISTATUS, Validate=False, maxResp=4)
-        resp[1] &= 0x0f;
-        resp[1] |= (maxStates >> 4) & 0xf0;
-        resp[3] = maxStates & 0xff;
+        resp[1] &= 0x0f
+        resp[1] |= (maxStates >> 4) & 0xf0
+        resp[3] = maxStates & 0xff
         self.oa.sendMessage(CODE_WRITE, self.ADDR_USISTATUS, resp, Validate=False)
         
     def setMaxRx(self, maxStates):
         resp = self.oa.sendMessage(CODE_READ, self.ADDR_USISTATUS, Validate=False, maxResp=4)
-        resp[1] &= 0xf0;
-        resp[1] |= (maxStates >> 8) & 0x0f;
-        resp[2] = maxStates & 0xff;
+        resp[1] &= 0xf0
+        resp[1] |= (maxStates >> 8) & 0x0f
+        resp[2] = maxStates & 0xff
         self.oa.sendMessage(CODE_WRITE, self.ADDR_USISTATUS, resp, Validate=False)
         
     def writeClockDiv(self, clkdiv):
@@ -272,7 +270,7 @@ class CWUniversalSerial(object):
         self.oa.sendMessage(CODE_WRITE, self.ADDR_USICLKDIV, resp)
 
         #Deassert Reset
-        resp[2] = resp[2] & 0x7F;
+        resp[2] = resp[2] & 0x7F
         self.oa.sendMessage(CODE_WRITE, self.ADDR_USICLKDIV, resp)          
 
     def writeSequence(self, addr, data):
@@ -319,8 +317,7 @@ class CWUniversalSerial(object):
         #print ""
             
         print self.proc.rxPatternToString(result, 4)
-        
-        
+
     def setBaud(self, baud=9600, oversamplerate=None):        
         if oversamplerate:
             self.oversamplerate = oversamplerate
@@ -364,8 +361,7 @@ class CWUniversalSerial(object):
         
         if startonly:
             return
-        
-        
+
         while(self.doneRx() == False):
             time.sleep(0.01)
             timeout -= 0.01
@@ -378,7 +374,7 @@ class CWUniversalSerial(object):
             
         self.setRunRx(False)
 
-        return self.proc.rxPatternToString(result, self.oversamplerate, startbits=self.startbits, stopbits=1, parity=self.parity) #self.stopbits
+        return self.proc.rxPatternToString(result, self.oversamplerate, startbits=self.startbits, stopbits=1, parity=self.parity)
         
         
     def write(self, string, wait=True):
@@ -465,14 +461,14 @@ class CWSCardIntegrated(object):
         #Toggle Reset
         cmd = bytearray(1)
         #Reset active, pass-through on
-        cmd[0] = FLAG_PASSTHRU | FLAG_RESET;        
+        cmd[0] = FLAG_PASSTHRU | FLAG_RESET
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)
         time.sleep(0.2)
 
         self.oa.flushInput()
         
         #Reset inactive, pass-through on
-        cmd[0] = FLAG_PASSTHRU;
+        cmd[0] = FLAG_PASSTHRU
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)
 
         #Wait for card to settle
@@ -485,7 +481,7 @@ class CWSCardIntegrated(object):
             stratr = stratr + "%2X "%p
 
         #Disable pass-through
-        cmd[0] = 0x00;
+        cmd[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)            
 
         print stratr
@@ -549,7 +545,7 @@ class CWSCardIntegrated(object):
             payload = bytearray(payload)
             payload = payload + bytearray(range(16-len(payload)))
         else:
-            payload = bytearray(range(16));
+            payload = bytearray(range(16))
 
         #Padding
         payload += bytearray([0, 0])        
@@ -623,4 +619,3 @@ class CWSCardIntegrated(object):
             print "WARNING in go: SCard returned 0x%x"%resp
             return False
         return True   
-

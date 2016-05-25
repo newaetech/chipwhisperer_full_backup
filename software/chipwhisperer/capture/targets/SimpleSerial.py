@@ -26,6 +26,7 @@
 from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
 from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SimpleSerial(TargetTemplate):
@@ -56,6 +57,7 @@ class SimpleSerial(TargetTemplate):
 
         self.setConnection(self.ser)
 
+    @setupSetParam("Key Length")
     def setKeyLen(self, klen):
         """ Set key length in BITS """
         self.keylength = klen / 8
@@ -67,6 +69,7 @@ class SimpleSerial(TargetTemplate):
     def getConnection(self):
         return self.ser
 
+    @setupSetParam("Connection")
     def setConnection(self, con):
         self.ser = con
         self.params.append(self.ser.getParams())

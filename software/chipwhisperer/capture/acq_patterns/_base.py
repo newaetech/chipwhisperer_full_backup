@@ -31,7 +31,6 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
 
     def __init__(self, parentParam, target=None):
         self.params = Parameter(name=self.getName(), type='group')
-        self.setTarget(target)
 
     def setTarget(self, target):
         self._target = target

@@ -73,6 +73,7 @@ class Parameter(object):
         self.sigChildAdded = util.Signal()
         self.sigChildRemoved = util.Signal()
 
+        self.previousValue = None
         self.parent = parent
         self.opts = {}
         self.opts.update(opts)
@@ -105,9 +106,9 @@ class Parameter(object):
                 # self.opts['set'] = setupSetParam(self)(self.opts['set'])
                 self.sigValueChanged.connect(self.opts['set'])
 
-        if "default" not in self.opts:
-            self.opts["default"] = self.getValue()
-            self.setValue(self.getValue(), init=True)
+            if "default" not in self.opts:
+                self.opts["default"] = self.getValue()
+                self.setValue(self.getValue(), init=True)
 
         self.children = util.DictType()
         tmp = self.opts.pop("children", [])
@@ -147,12 +148,13 @@ class Parameter(object):
             return val()
 
     def setValue(self, value,  blockSignal=None, init=False, echo=True):
-        previousValue = self.getValue()
-        if not init and previousValue!=value and self.readonly():
+        if not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
         limits = self.opts.get("limits", None)
+        type = self.opts["type"]
+        if type == "group":
+            return
         if limits is not None:
-            type = self.opts.get("type", None)
             if      (type == "list" and
                         ((isinstance(limits, dict) and value not in limits.values()) or\
                         (not isinstance(limits, dict) and value not in limits))
@@ -168,17 +170,19 @@ class Parameter(object):
 
             if "value" in self.opts:
                 self.opts["value"] = value
-            self.sigValueChanged.emit(value, self.setValue)
+            self.sigValueChanged.emit(value, blockSignal=self.setValue)
 
         finally:
             if blockSignal is not None:
                 self.sigValueChanged.connect(blockSignal)
 
-        if previousValue is not None and isinstance(previousValue, Parameterized):
-            previousValue.getParams().hide()
+        if self.previousValue is not None and isinstance(self.previousValue, Parameterized):
+            self.previousValue.getParams().hide()
 
         if isinstance(value, Parameterized):
             value.getParams().show()
+
+        self.previousValue = value
 
         if not init:
             self.callAction()
@@ -194,7 +198,7 @@ class Parameter(object):
         for name in self.opts.get("linked", []):
             linked = self.parent.getChild(name)
             if linked is not None:
-                linked.sigValueChanged.emit(linked.getValue(), None)
+                linked.sigValueChanged.emit(linked.getValue(), blockSignal=None)
 
     def callAction(self):
         act = self.opts.get("action", None)
@@ -275,7 +279,7 @@ class Parameter(object):
         self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
         updateParamValue = lambda _, v: self.setValue(v, guiCallback)
-        guiCallback = lambda v, _: self._PyQtGraphParameter.setValue(v, updateParamValue)
+        guiCallback = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, updateParamValue)
         self._PyQtGraphParameter.sigValueChanged.connect(updateParamValue)
         self.sigValueChanged.connect(guiCallback)
         self.sigLimitsChanged.connect(lambda v: self._PyQtGraphParameter.setLimits(v))
@@ -360,10 +364,15 @@ class Parameter(object):
 
 def setupSetParam(parameter):
     def func_decorator(func):
-        def func_wrapper(_, v, blockSignal=None):
+        def func_wrapper(*args, **kargs):
+            blockSignal = kargs.get("blockSignal", None)
             if blockSignal is None:
-                parameter.setValue(v, parameter.opts["set"])
-            func(v)
+                if parameter!="":
+                    tmp = args[0].findParam(parameter)
+                    tmp.setValue(args[1], tmp.opts["set"])
+            if "blockSignal" in kargs:
+                del kargs["blockSignal"]
+            func(*args, **kargs)
         return func_wrapper
     return func_decorator
 
@@ -406,10 +415,11 @@ if __name__ == '__main__':
         def getSubmodule(self):
             return self.sm
 
+        @setupSetParam("SubModule")
         def setSubmodule(self, sm):
             self.sm = sm
 
-    class maintest(object):
+    class maintest(Parameterized):
         def __init__(self):
             super(maintest, self).__init__()
             self.values = {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)}

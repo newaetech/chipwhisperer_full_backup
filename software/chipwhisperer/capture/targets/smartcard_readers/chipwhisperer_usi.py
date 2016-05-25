@@ -114,7 +114,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
 
         return status
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         self.usi.con(scope.qtadc.ser)
         self.usi.setIdle(1)

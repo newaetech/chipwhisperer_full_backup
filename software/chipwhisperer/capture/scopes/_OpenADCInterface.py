@@ -10,8 +10,8 @@
 import sys
 import time
 import datetime
-from functools import partial
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -60,69 +60,19 @@ def SIGNEXT(x, b):
     return (x ^ m) - m
 
 
-class OpenADCSettings(object):
+class HWInformation(Parameterized):
+    _name = 'HW Information'
 
-    def __init__(self, oaiface=None):
-        self.parm_hwinfo = HWInformation()
-        self.parm_gain = GainSettings()
-        self.parm_trigger = TriggerSettings()
-        self.parm_clock = ClockSettings(hwinfo=self.parm_hwinfo)
-
-        self.params = [
-            self.parm_hwinfo,
-            self.parm_gain,
-            self.parm_trigger,
-            self.parm_clock
-            ]
-
-        if oaiface is not None:
-            self.setInterface(oaiface)
-
-    def setInterface(self, oaiface):
+    def __init__(self, oaiface):
         self.oa = oaiface
-        for p in self.params:
-            p.setInterface(oaiface)
-
-    def parameters(self,  doUpdate=True):
-        """Return a dict of all parameter/settings. Useful for saving."""
-        paramdict = []
-        for p in self.params:
-            paramref = p.param
-            paramdict.append(paramref)
-
-        if doUpdate:
-            for p in paramdict:
-                for pset in p['children']:
-                    try:
-                        if 'children' in pset:
-                            for subset in pset['children']:
-                                if pset['type'] != 'action':
-                                    subset['value']=subset['get']()
-                        else:
-                            if pset['type'] != 'action':
-                                pset['value'] = pset['get']()
-                    except KeyError:
-                        print "Error in %s.%s - no 'get'"%(p['name'], pset['name'])
-
-        return paramdict
-
-    def setParameters(self, paramdict):
-        """Set all parameters/settings from a dict. Can pass only part of the dictionary too for changes."""
-        return
-
-
-class HWInformation(object):
-
-    def __init__(self):
-        self.name = "Hardware Information"
-        self.oa = None
         self.sysFreq = 0
-        self.param = {'name': 'HW Information', 'type': 'group', 'children': [
-                {'name': 'Version', 'type': 'str', 'get':self.versions, 'readonly':True},
-                {'name': 'Synth Date', 'type': 'str', 'get':self.synthDate, 'readonly':True},
-                {'name': 'System Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'get':self.sysFrequency, 'readonly':True},
-                {'name': 'Max Samples', 'type': 'int', 'get':self.maxSamples, 'readonly':True}
-                ]}
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.addChildren([
+            {'name': 'Version', 'type': 'str', 'get':self.versions, 'readonly':True},
+            {'name': 'Synth Date', 'type': 'str', 'get':self.synthDate, 'readonly':True},
+            {'name': 'System Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'get':self.sysFrequency, 'readonly':True},
+            {'name': 'Max Samples', 'type': 'int', 'get':self.maxSamples, 'readonly':True}
+        ])
 
         self.vers = None
 
@@ -131,8 +81,6 @@ class HWInformation(object):
         oa.hwInfo = self
 
     def versions(self):
-        if self.oa is None:
-            return "unknown"
         result = self.oa.sendMessage(CODE_READ, ADDR_VERSIONS, maxResp=6)
 
         regver = result[0] & 0xff
@@ -158,13 +106,9 @@ class HWInformation(object):
         return "unknown"
 
     def maxSamples(self):
-        if self.oa is None:
-            return 0
         return self.oa.hwMaxSamples
 
     def sysFrequency(self, force=False):
-        if self.oa is None:
-            return 0
         if (self.sysFreq > 0) & (force == False):
             return self.sysFreq
 
@@ -178,35 +122,36 @@ class HWInformation(object):
         freq = freq | (temp[3] << 24)
 
         self.sysFreq = long(freq)
-
         return self.sysFreq
 
 
-class GainSettings(object):
+class GainSettings(Parameterized):
+    _name = 'Gain Setting'
 
-    def __init__(self):
-        self.name = "Gain Setting"
+    def __init__(self, oaiface):
+        self.oa = oaiface
         self.gainlow_cached = False
         self.gain_cached = 0
-        self.oa = None
-        self.param = {'name': 'Gain Setting', 'type': 'group', 'children': [
-                {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.mode,
-                         'help': '%namehdr%'+
-                                 'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
-                                 '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
-                                 'using the "High" gain mode typically.'},
-                {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'default': 0, 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
-                         'help':'%namehdr%'+
-                                'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
-                                ' The resulting gain in dB is given in the "calculated" output.'},
-                {'name': 'Result', 'type': 'float', 'suffix':'dB', 'readonly':True, 'get':self.gainDB,
-                         'help':'%namehdr%'+
-                                'Gives the gain the AD8331 should have, based on the "High/Low" setting and the "gain setting".'},
-                ]}
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.addChildren([
+            {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.mode,
+                     'help': '%namehdr%'+
+                             'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
+                             '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
+                             'using the "High" gain mode typically.'},
+            {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'default': 0, 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
+                     'help':'%namehdr%'+
+                            'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
+                            ' The resulting gain in dB is given in the "calculated" output.'},
+            {'name': 'Result', 'type': 'float', 'suffix':'dB', 'readonly':True, 'get':self.gainDB,
+                     'help':'%namehdr%'+
+                            'Gives the gain the AD8331 should have, based on the "High/Low" setting and the "gain setting".'},
+        ])
 
     def setInterface(self, oa):
         self.oa = oa
 
+    @setupSetParam("Mode")
     def setMode(self, gainmode):
         '''Set the gain Mode'''
         if gainmode == "high":
@@ -219,8 +164,9 @@ class GainSettings(object):
             raise ValueError, "Invalid Gain Mode, only 'low' or 'high' allowed"
 
     def mode(self):
-        return "low"
+        return "low" #TODO: Read it from hardware!
 
+    @setupSetParam("Setting")
     def setGain(self, gain):
         '''Set the Gain range 0-78'''
         if (gain < 0) | (gain > 78):
@@ -252,17 +198,19 @@ class GainSettings(object):
         return gaindb
 
 
-class TriggerSettings(object):
-    def __init__(self):
-        self.name = "Trigger Settings"
+class TriggerSettings(Parameterized):
+    _name = 'Trigger Setup'
+
+    def __init__(self, oaiface):
+        self.oa = oaiface
         self.maxsamples = 0
         self.presamples_desired = 0
         self.presamples_actual = 0
         self.presampleTempMargin = 24
         self._timeout = 2
-        self.oa = None
 
-        self.param = {'name': 'Trigger Setup', 'type':'group', 'children': [
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.addChildren([
             {'name': 'Refresh Status', 'type':'action', 'linked':['Digital Pin State'], 'visible':False,
                      'help':'%namehdr%'+
                             'Refreshes the "Digital Pin State" status.'},
@@ -285,7 +233,7 @@ class TriggerSettings(object):
                             '  High            Trigger when line is "high".\n' +
                             '  =============== ==============================\n\n' +
                             'Note the "Trigger Mode" should be set to "Rising Edge" if using either the "SAD Trigger" or "IO Trigger" modes.'
-                            },
+            },
             {'name': 'Timeout (secs)', 'type':'float', 'step':1, 'limits':(0, 1E99), 'set':self.setTimeout, 'get':self.timeout,
                      'help':'%namehdr%'+
                             'If no trigger occurs in this many seconds, force the trigger.'},
@@ -301,7 +249,7 @@ class TriggerSettings(object):
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the api system has an upper limit, and may have a practical lower limit (i.e.,' +
                             ' if this value is set too low the system may not api samples. Suggest to always set > 256 samples.'},
-        ]}
+        ])
 
     def setInterface(self, oa):
         self.oa = oa
@@ -309,6 +257,7 @@ class TriggerSettings(object):
         if self.oa and hasattr(self.oa, 'setTimeout'):
             self.oa.setTimeout(self._timeout)
 
+    @setupSetParam("Total Samples")
     def setMaxSamples(self, samples):
         self.maxsamples = samples
         self.oa.setMaxSamples(samples)
@@ -322,6 +271,7 @@ class TriggerSettings(object):
         else:
             return self.oa.maxSamples()
 
+    @setupSetParam("Timeout (secs)")
     def setTimeout(self, timeout):
         self._timeout = timeout
         if self.oa:
@@ -330,6 +280,7 @@ class TriggerSettings(object):
     def timeout(self):
         return self._timeout
 
+    @setupSetParam("Offset")
     def setOffset(self,  offset):
         cmd = bytearray(4)
         cmd[0] = ((offset >> 0) & 0xFF)
@@ -349,6 +300,7 @@ class TriggerSettings(object):
         offset |= cmd[3] << 24
         return offset
 
+    @setupSetParam("Pre-Trigger Samples")
     def setPresamples(self, samples):
         #enforce samples is multiple of 3
         samplesact = int(samples / 3)
@@ -393,12 +345,14 @@ class TriggerSettings(object):
 
         return samples*3
 
+    @setupSetParam("Source")
     def setSource(self,  src):
         return
 
     def source(self):
         return "digital"
 
+    @setupSetParam("Mode")
     def setMode(self,  mode):
         """ Input to trigger module options: 'rising edge', 'falling edge', 'high', 'low' """
         if mode == 'rising edge':
@@ -444,14 +398,15 @@ class TriggerSettings(object):
             return False
 
 
-class ClockSettings(object):
-
+class ClockSettings(Parameterized):
+    _name = 'Clock Setup'
     readMask = [0x1f, 0xff, 0xff, 0xfd]
 
-    def __init__(self, hwinfo=None):
-        self.name = "Clock Setup"
-        self.oa = None
-        self.param = {'name': 'Clock Setup', 'type':'group', 'children': [
+    def __init__(self, oaiface, hwinfo=None):
+        self.oa = oaiface
+        self._hwinfo = hwinfo
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.addChildren([
             {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
                      'help':'%namehdr%' +
                             'Update if the Digital Clock Manager (DCM) are "locked" and their operating frequency.'},
@@ -493,7 +448,7 @@ class ClockSettings(object):
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
-                {'name':'Multiply', 'type':'int', 'limits':(2, 256), 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
+                {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
                 {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
@@ -501,14 +456,14 @@ class ClockSettings(object):
                                             'get':lambda: str(self.getClkgen()) + " Hz"},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
-            ]},
-        ]}
-
-        self._hwinfo = hwinfo
+            ]}
+        ])
+        self.params.refreshAllParameters()
 
     def setInterface(self, oa):
         self.oa = oa
 
+    @setupSetParam("Freq Counter Src")
     def setFreqSrc(self, src):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         result[3] = result[3] & ~(0x08)
@@ -525,6 +480,7 @@ class ClockSettings(object):
     def getClkgen(self):
         return (self._hwinfo.sysFrequency() * self.clkgenMul()) / self.clkgenDiv()
 
+    @setupSetParam(['CLKGEN Settings', 'Desired Frequency'])
     def autoMulDiv(self, freq):
         inpfreq = self._hwinfo.sysFrequency()
         sets = self.calculateClkGenMulDiv(freq, inpfreq)
@@ -557,10 +513,13 @@ class ClockSettings(object):
 
         return best
 
+    @setupSetParam(['CLKGEN Settings', 'Multiply'])
     def setClkgenMul(self, mul):
         if mul < 2:
             mul = 2
+        self._setClkgenMul(mul)
 
+    def _setClkgenMul(self, mul):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         mul -= 1
         result[1] = mul
@@ -570,16 +529,13 @@ class ClockSettings(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
 
     def clkgenMul(self):
-        if self.oa is None:
-            return 2
-
         timeout = 2
         while timeout > 0:
             result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
             val =  result[1]
             if val==0:
                 val = 1  # Fix incorrect initialization on FPGA
-                self.setClkgenMul(2)
+                self._setClkgenMul(2)
             val += 1
 
             if (result[3] & 0x02):
@@ -592,6 +548,7 @@ class ClockSettings(object):
         # raise IOError("clkgen never loaded value?")
         return 0
 
+    @setupSetParam(['CLKGEN Settings', 'Divide'])
     def setClkgenDiv(self, div):
         if div < 1:
             div = 1
@@ -655,6 +612,7 @@ class ClockSettings(object):
 
         return (source, dcmout, dcminput)
 
+    @setupSetParam(['ADC Clock', 'Source'])
     def setAdcSource(self, source="dcm", dcmout=4, dcminput="clkgen"):
 
         #Deal with being passed tuple with all 3 arguments
@@ -690,6 +648,7 @@ class ClockSettings(object):
 
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result)
 
+    @setupSetParam(['CLKGEN Settings', 'Input Source'])
     def setClkgenSrc(self, source="system"):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
 
@@ -710,6 +669,7 @@ class ClockSettings(object):
         else:
             return "system"
 
+    @setupSetParam(['ADC Clock', 'Phase Adjust'])
     def setPhase(self, phase):
         '''Set the phase adjust, range -255 to 255'''
 
@@ -843,8 +803,6 @@ class OpenADCInterface(object):
         self.sysFreq = 0
 
         self.settings()
-
-        #self.params = OpenADCSettings(self)
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -1118,15 +1076,15 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_WRITE, ADDR_DDR4, cmd)
 
     def getDDRAddress(self):
-        addr = 0x00000000;
+        addr = 0x00000000
         temp = self.sendMessage(CODE_READ, ADDR_DDR1)
-        addr = addr | (temp[0] << 0);
+        addr = addr | (temp[0] << 0)
         temp = self.sendMessage(CODE_READ, ADDR_DDR2)
-        addr = addr | (temp[0] << 8);
+        addr = addr | (temp[0] << 8)
         temp = self.sendMessage(CODE_READ, ADDR_DDR3)
-        addr = addr | (temp[0] << 16);
+        addr = addr | (temp[0] << 16)
         temp = self.sendMessage(CODE_READ, ADDR_DDR4)
-        addr = addr | (temp[0] << 24);
+        addr = addr | (temp[0] << 24)
         return addr
 
     def arm(self):
@@ -1321,10 +1279,10 @@ if __name__ == "__main__":
 
     try:
         ser.open()
-    except serial.SerialException, e:
-        print "Could not open %s"%ser.name
+    except serial.SerialException as e:
+        print "Could not open %s" % ser.name
         sys.exit()
-    except ValueError, s:
+    except ValueError as s:
         print "Invalid settings for serial port"
         ser.close()
         ser = None

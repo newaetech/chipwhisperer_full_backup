@@ -25,6 +25,7 @@
 
 from _base import ReaderTemplate
 from chipwhisperer.common.utils import timer
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 try:
     from smartcard.CardType import AnyCardType
@@ -48,6 +49,7 @@ class ReaderPCSC(ReaderTemplate):
             {'name':'Keep-Alive Interval (off=0)', 'type':'int', 'value':2, 'set':self.setKeepalive}
         ])
 
+    @setupSetParam("Keep-Alive Interval (off=0)")
     def setKeepalive(self, kinterval):
         self.timeoutTimer.setInterval(kinterval*1000)
 
@@ -84,7 +86,7 @@ class ReaderPCSC(ReaderTemplate):
 
         return status
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         try:
             self.sccard = AnyCardType()

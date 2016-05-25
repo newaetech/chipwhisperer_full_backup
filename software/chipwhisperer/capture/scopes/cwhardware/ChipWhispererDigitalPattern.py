@@ -27,7 +27,7 @@
 
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -119,7 +119,7 @@ class CWAdvTrigger(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
 
         # Deassert Reset
-        resp[2] = resp[2] & 0x7F;
+        resp[2] = resp[2] & 0x7F
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
 
     def writeOnePattern(self, addr, state, low, high):
@@ -172,45 +172,44 @@ class CWAdvTrigger(object):
         return self.bitsToPattern(totalpat)
 
 
-class ChipWhispererDigitalPattern(object):
+class ChipWhispererDigitalPattern(Parameterized):
     """
     Communicates and drives with the Digital Pattern Match module inside the FPGA. 
     """
-
-    paramListUpdated = util.Signal()
-
+    _name = 'Digital Pattern Trigger Module'
     def __init__(self):
         self.cwAdv = CWAdvTrigger()   
+        self.oa = None
 
-        paramSS = [
-                 {'name':'Serial Settings', 'type':'group', 'children':[
-                      {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(100, 500000), 'value':38400, 'step':100, 'set':self.updateSampleRate},
-                      {'name':'Start Bits', 'key':'startbits', 'type':'int', 'limits':(1, 10), 'value':1},
-                      {'name':'Stop Bits', 'key':'stopbits', 'type':'int', 'limits':(1, 10), 'value':1},
-                      {'name':'Parity', 'key':'parity', 'type':'list', 'values':['none', 'even'], 'value':'none'},
-                    ]},
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.addChildren([
+             {'name':'Serial Settings', 'type':'group', 'children':[
+                 {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(100, 500000), 'value':38400, 'step':100, 'set':self.updateSampleRate},
+                 {'name':'Start Bits', 'key':'startbits', 'type':'int', 'limits':(1, 10), 'value':1},
+                 {'name':'Stop Bits', 'key':'stopbits', 'type':'int', 'limits':(1, 10), 'value':1},
+                 {'name':'Parity', 'key':'parity', 'type':'list', 'values':['none', 'even'], 'value':'none'},
+             ]},
 
-                 # TODO: Need to confirm oversample rate stuff
-                 {'name':'Oversample Rate', 'key':'osrate', 'type':'int', 'limits':(2, 5), 'value':3, 'set':self.updateSampleRate},
-                 {'name':'Calculated Clkdiv', 'key':'calcclkdiv', 'type':'int', 'readonly':True},
-                 {'name':'Calculated Error', 'key':'calcerror', 'type':'int', 'suffix':'%', 'readonly':True},
-                 {'name':'Trigger Character', 'key':'trigpatt', 'type':'str', 'value':'""', 'set':self.setPattern},
-                 {'name':'Binary Pattern', 'key':'binarypatt', 'type':'str', 'value':''},
-                 {'name':'Reset Module', 'type':'action', 'action':self.reset},
-                 
-                {'name':'Advanced Settings', 'type':'group', 'children':[
+             # TODO: Need to confirm oversample rate stuff
+             {'name':'Oversample Rate', 'key':'osrate', 'type':'int', 'limits':(2, 5), 'value':3, 'set':self.updateSampleRate},
+             {'name':'Calculated Clkdiv', 'key':'calcclkdiv', 'type':'int', 'readonly':True},
+             {'name':'Calculated Error', 'key':'calcerror', 'type':'int', 'suffix':'%', 'readonly':True},
+             {'name':'Trigger Character', 'key':'trigpatt', 'type':'str', 'value':'""', 'set':self.setPattern},
+             {'name':'Binary Pattern', 'key':'binarypatt', 'type':'str', 'value':''},
+             {'name':'Reset Module', 'type':'action', 'action':self.reset},
+
+             {'name':'Advanced Settings', 'type':'group', 'children':[
                  {'name':'Threshold', 'key':'threshold', 'type':'int', 'value':1, 'limits':(1, 10), 'set':self.reset},
                  {'name':'Initial Bit Correction', 'key':'initialcorrect', 'type':'int', 'value':3, 'limits':(0, 10), 'set':self.reset},
-                 ]}
-                ]
-            
-        self.oa = None
-        self.params = ConfigParameter.create_extended(self, name='Digital Pattern Trigger Module', type='group', children=paramSS)
+             ]}
+        ])
 
+    @setupSetParam("")
     def reset(self, ignored=None):
         # Reload pattern
         self.setPattern(self.findParam('trigpatt').getValue())
 
+    @setupSetParam("")
     def updateSampleRate(self, ignored=None):
         res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam('baud').getValue() * self.findParam('osrate').getValue())
         self.findParam('calcclkdiv').setValue(res[0])
@@ -218,6 +217,7 @@ class ChipWhispererDigitalPattern(object):
         self.clkdiv = res[0]
         self.reset()
 
+    @setupSetParam("Trigger Character")
     def setPattern(self, patt):
         patt = eval(patt, {}, {})
 

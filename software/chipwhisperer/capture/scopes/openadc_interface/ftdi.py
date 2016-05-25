@@ -22,7 +22,7 @@
 import sys
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 try:
     import ftd2xx as ft
 except:
@@ -38,7 +38,7 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Device Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSerialNumber},
+            {'name':'Device Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSelectedDevice},
         ])
         self.ser = None
 
@@ -50,7 +50,8 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     def getSerialNumber(self):
         return self.serialNumber
 
-    def setSerialNumber(self, snum):
+    @setupSetParam("Device Serial Number")
+    def setSelectedDevice(self, snum):
         self.serialNumber = snum
 
     def __del__(self):

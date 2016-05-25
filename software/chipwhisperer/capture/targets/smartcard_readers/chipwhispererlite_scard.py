@@ -127,7 +127,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
 
             return status
 
-    def con(self, scope):
+    def con(self, scope=None):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         self.usbcon = scope.qtadc.ser
         self.reset()

@@ -31,7 +31,7 @@ from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.utils import util, pluginmanager
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils.tracesource import TraceSource
 
 
@@ -67,7 +67,7 @@ class CWCoreAPI(Parameterized):
         # Initialize default values
         self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
         self._attack = self.valid_attacks.get("CPA", None)
-        self._acqPattern = self.valid_acqPatterns.get("Basic", None)
+        self._acqPattern = self.valid_acqPatterns["Basic"]
         self._auxList = [None]  # TODO: implement it as a list in the whole class
         self._numTraces = 50
         self._numTraceSets = 1
@@ -122,6 +122,7 @@ class CWCoreAPI(Parameterized):
     def getScope(self):
         return self._scope
 
+    @setupSetParam("Scope Module")
     def setScope(self, driver):
         if self.getScope():
             self.getScope().dis()
@@ -133,6 +134,7 @@ class CWCoreAPI(Parameterized):
     def getTarget(self):
         return self._target
 
+    @setupSetParam("Target Module")
     def setTarget(self, driver):
         if self.getTarget(): self.getTarget().dis()
         self._target = driver
@@ -143,18 +145,21 @@ class CWCoreAPI(Parameterized):
     def getAuxList(self):
         return self._auxList
 
+    @setupSetParam("Auxiliary Module")
     def setAux(self, aux):
         self._auxList = [aux]
 
     def getAcqPattern(self):
         return self._acqPattern
 
+    @setupSetParam("Key/Text Pattern")
     def setAcqPattern(self, pat):
         self._acqPattern = pat
 
     def getTraceFormat(self):
         return self._traceManager
 
+    @setupSetParam("Trace Format")
     def setTraceFormat(self, format):
         self._traceManager = format
 
@@ -233,12 +238,14 @@ class CWCoreAPI(Parameterized):
     def getNumTraces(self):
         return self._numTraces
 
+    @setupSetParam("Number of Traces")
     def setNumTraces(self, t):
         self._numTraces = t
 
     def getNumTraceSets(self):
         return self._numTraceSets
 
+    @setupSetParam("Number of Sets")
     def setNumTraceSets(self, s):
         self._numTraceSets = s
 

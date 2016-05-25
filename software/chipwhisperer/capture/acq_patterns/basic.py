@@ -26,6 +26,7 @@
 import random
 from chipwhisperer.common.utils import util
 from _base import AcqKeyTextPattern_Base
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
@@ -37,6 +38,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self.initkey = ""
         self._fixedKey = True
         self.initkey = ""
+        self.inittext = ""
 
         self.params.addChildren([
             {'name':'Key', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getKeyType, 'set':self.setKeyType},
@@ -44,16 +46,19 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             {'name':'Plaintext', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getPlainType, 'set':self.setPlainType},
             {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText},
         ])
+        self.setTarget(target)
 
     def getKeyType(self):
         return self._fixedKey
 
+    @setupSetParam("Key")
     def setKeyType(self, t):
         self._fixedKey = t
 
     def getPlainType(self):
         return self._fixedPlain
 
+    @setupSetParam("Plaintext")
     def setPlainType(self, t):
         self._fixedPlain = t
 
@@ -64,6 +69,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def getInitialKey(self):
         return self.initkey
 
+    @setupSetParam("Fixed Encryption Key")
     def setInitialKey(self, initialKey, binaryKey=False):
         if initialKey:
             if binaryKey:
@@ -80,6 +86,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def getInitialText(self):
         return self.inittext
 
+    @setupSetParam("Fixed Plaintext Key")
     def setInitialText(self, initialText, binaryText=False):
         if initialText:
             if binaryText:

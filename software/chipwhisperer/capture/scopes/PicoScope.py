@@ -37,6 +37,7 @@ from chipwhisperer.common.utils import util, timer
 from picoscope import ps2000
 from picoscope import ps5000a
 from picoscope import ps6000
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
@@ -77,6 +78,7 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
             {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.updateSampleRateFreq},
         ])
             
+    @setupSetParam("")
     def updateSampleRateFreq(self, ignored=None):
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
@@ -106,6 +108,7 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
     def dis(self):
         self.ps.close()
     
+    @setupSetParam("")
     def updateCurrentSettings(self, ignored=False):
         if self.ps.handle is None: return
 

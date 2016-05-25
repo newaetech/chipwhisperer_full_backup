@@ -20,10 +20,9 @@
 #=================================================
 
 import sys
-
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 try:
     import serial
@@ -53,6 +52,7 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
     def getPortName(self):
         return self.portName
 
+    @setupSetParam("Selected Port")
     def setPortName(self, snum):
         self.portName = snum
 

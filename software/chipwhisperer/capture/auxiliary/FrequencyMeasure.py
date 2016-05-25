@@ -27,6 +27,7 @@ import time
 import numpy as np
 from matplotlib.mlab import find
 from _base import AuxiliaryTemplate
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 try:
@@ -110,6 +111,7 @@ class FrequencyMeasure(AuxiliaryTemplate):
     def getConnection(self):
         return self.fm
 
+    @setupSetParam("Device")
     def setConnection(self, con):
         self.fm = FreqMeasure(con)
 

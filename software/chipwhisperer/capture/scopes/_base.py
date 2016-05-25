@@ -46,7 +46,7 @@ class ScopeTemplate(Parameterized, Plugin):
     def setAutorefreshDCM(self, enabled):
         pass
 
-    def setCurrentScope(self, scope, update=True):
+    def setCurrentScope(self, scope):
         pass
 
     def getStatus(self):

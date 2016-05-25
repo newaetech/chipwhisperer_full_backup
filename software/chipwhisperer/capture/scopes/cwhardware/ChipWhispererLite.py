@@ -31,7 +31,6 @@ from chipwhisperer.hardware.naeusb.serial import USART
 class CWLiteUSB(object):
 
     def __init__(self):
-
         self._cwusb = NAEUSB()
 
         # Connect required modules up here

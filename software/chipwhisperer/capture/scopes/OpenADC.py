@@ -32,7 +32,8 @@ import _qt as openadc_qt
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util, timer, pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
+
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
 class OpenADCInterface(ScopeTemplate):
@@ -58,9 +59,6 @@ class OpenADCInterface(ScopeTemplate):
         self.params.init()
         self.params.append(self.qtadc.getParams())
 
-        # self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
-        #                         lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
-        #                         lambda: self.lazy(self.digitalPattern)])
     def dcmTimeout(self):
         try:
             self.qtadc.sc.getStatus()
@@ -72,7 +70,7 @@ class OpenADCInterface(ScopeTemplate):
             self.dis()
             raise e
 
-    def updateAutorefreshDCM(self, parameter):
+    def setAutorefreshDCM(self, parameter):
         if parameter.getValue():
             self.refreshTimer.start()
         else:
@@ -81,6 +79,7 @@ class OpenADCInterface(ScopeTemplate):
     def getCurrentScope(self):
         return self.scopetype
 
+    @setupSetParam("Connection")
     def setCurrentScope(self, scope):
         self.scopetype = scope
 
@@ -128,6 +127,7 @@ class OpenADCInterface(ScopeTemplate):
         if self.scopetype is not None:
             self.refreshTimer.stop()
             self.scopetype.dis()
+
         return True
 
     def doDataUpdated(self, l, offset=0):

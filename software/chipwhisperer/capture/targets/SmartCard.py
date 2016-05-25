@@ -26,6 +26,7 @@
 from _smartcard_gui import SmartCardGUICard
 from _base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SmartCard(TargetTemplate):
@@ -55,6 +56,7 @@ class SmartCard(TargetTemplate):
     def getConnection(self):
         return self.driver
 
+    @setupSetParam("Reader Hardware")
     def setConnection(self, con):
         self.driver = con        
         if self.driver is not None:
@@ -63,6 +65,7 @@ class SmartCard(TargetTemplate):
     def getProtocol(self):
         return self.protocol
 
+    @setupSetParam("SmartCard Protocol")
     def setProtocol(self, con):
         self.protocol = con
         if self.protocol is not None:

@@ -54,9 +54,6 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         self.setDefaultYRange(-0.5, 0.5)
         self.YDefault()
 
-    def _setTraceSource(self, newTraceSource):
-        ActiveTraceObserver._setTraceSource(self, newTraceSource)
-
     def resetTraceLimits(self):
         if self._traceSource:
             lastTrace = self._traceSource.numTraces()-1
