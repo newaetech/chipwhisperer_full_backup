@@ -11,7 +11,6 @@ from pyqtgraph.parametertree.ParameterItem import ParameterItem
 from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem
 from pyqtgraph.widgets.SpinBox import SpinBox
 
-
 helpwnd = None
 
 def showHelpWindow(curParam):
@@ -602,6 +601,7 @@ class SpinBoxWithSetItem(WidgetParameterItem):
     def __init__(self, *args, **kwargs):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
         drawHelpIcon(self)
+        self.widget.show()
     
     def makeWidget(self):
         """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
@@ -615,7 +615,7 @@ class SpinBoxWithSetItem(WidgetParameterItem):
         defs.update(opts)
         if 'limits' in opts:
             defs['bounds'] = opts['limits']
-        w = SpinBox()
+        w = SpinBox(self.parent())
 
         # This hack ensures compatibility between 0.9.10 and later
         for k in opts:
@@ -737,3 +737,39 @@ def optsChanged_Fix(self, param, opts):
         self.updateAddList()
 
 GroupParameterItem.optsChanged = optsChanged_Fix
+
+
+def takeChild_fix(self, i):
+    super(ParameterItem, self).takeChild(i)
+    # self.c = self.child(i)
+    # self.removeChild(self.c)
+
+ParameterItem.takeChild = takeChild_fix
+
+
+def valueChanged_test(self, param, val, force=False):
+    ## called when the parameter's value has changed
+    ParameterItem.valueChanged(self, param, val)
+    self.widget.show()
+    self.widget.sigChanged.disconnect(self.widgetValueChanged)
+    try:
+        if force or val != self.widget.value():
+            self.widget.setValue(val)
+        self.updateDisplayLabel(val)  ## always make sure label is updated, even if values match!
+    finally:
+        self.widget.sigChanged.connect(self.widgetValueChanged)
+    self.updateDefaultBtn()
+
+
+WidgetParameterItem.valueChanged = valueChanged_test
+
+
+def childAdded_test(self, param, child, pos):
+    item = child.makeTreeItem(depth=self.depth+1)
+    self.insertChild(pos, item)
+    item.treeWidgetChanged()
+
+    for i, ch in enumerate(child):
+        item.childAdded(child, ch, i)
+
+ParameterItem.childAdded = childAdded_test

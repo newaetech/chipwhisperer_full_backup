@@ -65,6 +65,7 @@ class HWInformation(Parameterized):
 
     def __init__(self, oaiface):
         self.oa = oaiface
+        self.oa.hwInfo = self
         self.sysFreq = 0
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
@@ -75,10 +76,6 @@ class HWInformation(Parameterized):
         ])
 
         self.vers = None
-
-    def setInterface(self, oa):
-        self.oa = oa
-        oa.hwInfo = self
 
     def versions(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_VERSIONS, maxResp=6)
@@ -124,6 +121,9 @@ class HWInformation(Parameterized):
         self.sysFreq = long(freq)
         return self.sysFreq
 
+    def __del__(self):
+        self.oa.hwInfo = None
+
 
 class GainSettings(Parameterized):
     _name = 'Gain Setting'
@@ -147,9 +147,6 @@ class GainSettings(Parameterized):
                      'help':'%namehdr%'+
                             'Gives the gain the AD8331 should have, based on the "High/Low" setting and the "gain setting".'},
         ])
-
-    def setInterface(self, oa):
-        self.oa = oa
 
     @setupSetParam("Mode")
     def setMode(self, gainmode):
@@ -250,12 +247,6 @@ class TriggerSettings(Parameterized):
                             'Total number of samples to record. Note the api system has an upper limit, and may have a practical lower limit (i.e.,' +
                             ' if this value is set too low the system may not api samples. Suggest to always set > 256 samples.'},
         ])
-
-    def setInterface(self, oa):
-        self.oa = oa
-        self.oa.presamples_desired = self.presamples_desired
-        if self.oa and hasattr(self.oa, 'setTimeout'):
-            self.oa.setTimeout(self._timeout)
 
     @setupSetParam("Total Samples")
     def setMaxSamples(self, samples):
@@ -459,9 +450,6 @@ class ClockSettings(Parameterized):
             ]}
         ])
         self.params.refreshAllParameters()
-
-    def setInterface(self, oa):
-        self.oa = oa
 
     @setupSetParam("Freq Counter Src")
     def setFreqSrc(self, src):
@@ -796,7 +784,7 @@ class ClockSettings(Parameterized):
 
 class OpenADCInterface(object):
 
-    def __init__(self, serial_instance, debug=None):
+    def __init__(self, serial_instance):
         self.serial = serial_instance
         self.offset = 0.5
         self.ddrMode = False
@@ -982,10 +970,10 @@ class OpenADCInterface(object):
 
     def setReset(self, value):
         if value:
-            self.setSettings(self.settings() | SETTINGS_RESET, validate=False);
+            self.setSettings(self.settings() | SETTINGS_RESET, validate=False)
             self.hwMaxSamples = self.maxSamples()
         else:
-            self.setSettings(self.settings() & ~SETTINGS_RESET);
+            self.setSettings(self.settings() & ~SETTINGS_RESET)
 
     def triggerNow(self):
         initial = self.settings()

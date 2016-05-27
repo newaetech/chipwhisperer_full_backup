@@ -43,7 +43,7 @@ class OpenADCQt(Parameterized):
         self.parm_gain = None
         self.parm_trigger = None
         self.parm_clock = None
-        
+
         self.datapoints = []
 
         self.timerStatusRefresh = timer.Timer()
@@ -114,25 +114,17 @@ class OpenADCQt(Parameterized):
         #See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
 
-        if self.parm_hwinfo is None:
-            self.parm_hwinfo = openadc.HWInformation(self.sc)
-            self.params.append(self.parm_hwinfo.getParams())
-        self.parm_hwinfo.setInterface(self.sc)
+        self.parm_hwinfo = openadc.HWInformation(self.sc)
+        self.params.append(self.parm_hwinfo.getParams())
 
-        if self.parm_gain is None:
-            self.parm_gain = openadc.GainSettings(self.sc)
-            self.params.append(self.parm_gain.getParams())
-        self.parm_gain.setInterface(self.sc)
+        self.parm_gain = openadc.GainSettings(self.sc)
+        self.params.append(self.parm_gain.getParams())
 
-        if self.parm_trigger is None:
-            self.parm_trigger = openadc.TriggerSettings(self.sc)
-            self.params.append(self.parm_trigger.getParams())
-        self.parm_trigger.setInterface(self.sc)
+        self.parm_trigger = openadc.TriggerSettings(self.sc)
+        self.params.append(self.parm_trigger.getParams())
 
-        if self.parm_clock is None:
-            self.parm_clock = openadc.ClockSettings(self.sc, hwinfo=self.parm_hwinfo)
-            self.params.append(self.parm_clock.getParams())
-        self.parm_clock.setInterface(self.sc)
+        self.parm_clock = openadc.ClockSettings(self.sc, hwinfo=self.parm_hwinfo)
+        self.params.append(self.parm_clock.getParams())
 
         deviceFound = False
         numTries = 0
@@ -151,8 +143,8 @@ class OpenADCQt(Parameterized):
                     portname = self.ser.name
                 except:
                     portname = "UNKNOWN"
-                self.ser.close()
-                self.ser = None
+                # self.ser.close()
+                self.close()
 
                 raise IOError("Opened port %s but failed to find OpenADC" % portname)
 
@@ -161,8 +153,18 @@ class OpenADCQt(Parameterized):
 
     def close(self):
         if self.ser:
-            self.ser.close()
             self.ser = None
+            if self.parm_hwinfo is not None:
+                self.parm_hwinfo.getParams().remove()
+
+            if self.parm_gain is not None:
+                self.parm_gain.getParams().remove()
+
+            if self.parm_trigger is not None:
+                self.parm_trigger.getParams().remove()
+
+            if self.parm_clock is not None:
+                self.parm_clock.getParams().remove()
 
     def __del__(self):
         self.close()

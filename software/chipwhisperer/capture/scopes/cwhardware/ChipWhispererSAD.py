@@ -45,14 +45,13 @@ class ChipWhispererSAD(Parameterized):
     STATUS_RESET_MASK = 1 << 0
     STATUS_START_MASK = 1 << 1
              
-    def __init__(self):
-
+    def __init__(self, oa):
         #TODO: connect the waveform widget signal with the dataChanged function
         # self.waveformDock = CWMainWindow.waveformDock
         # self.waveformDock.widget().dataChanged.connect(self.dataChanged)
         self.oldlow = None
         self.oldhigh = None
-        self.oa = None
+        self.oa = oa
         self.sadref = [0]
 
         self.params = Parameter(name=self.getName(), type='group')
@@ -181,16 +180,3 @@ class ChipWhispererSAD(Parameterized):
         self.oa.sendMessage(CODE_WRITE, saddataaddr, wavedata, Validate=False)
         self.start()
 
-    def setOpenADC(self, oa):
-        """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
-        self.oa = oa.sc
-        try:
-            self.params.refreshAllParameters()
-        except TypeError:
-            return
-        
-    def paramList(self):
-        p = []
-        p.append(self.params)            
-        return p
-    

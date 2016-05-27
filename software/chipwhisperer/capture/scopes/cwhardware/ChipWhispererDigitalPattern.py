@@ -37,11 +37,8 @@ ADDR_TRIGIOPROG = 37
 
 
 class CWAdvTrigger(object):
-    def __init__(self):
+    def __init__(self, oa):
         super(CWAdvTrigger, self).__init__()
-        self.oa = None
-
-    def con(self, oa):
         self.oa = oa
 
     def setExtPin(self, line):
@@ -177,9 +174,10 @@ class ChipWhispererDigitalPattern(Parameterized):
     Communicates and drives with the Digital Pattern Match module inside the FPGA. 
     """
     _name = 'Digital Pattern Trigger Module'
-    def __init__(self):
-        self.cwAdv = CWAdvTrigger()   
-        self.oa = None
+    def __init__(self, oa):
+        self.cwAdv = CWAdvTrigger(oa)
+        self.oa = oa
+        self.updateSampleRate()
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
@@ -244,17 +242,3 @@ class ChipWhispererDigitalPattern(Parameterized):
             bitstr = "Error: %s" % s
 
         self.findParam('binarypatt').setValue(bitstr)
-
-
-    def setOpenADC(self, oa):
-        """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
-        self.oa = oa.sc
-        self.cwAdv.con(oa.sc)
-        self.params.refreshAllParameters()
-        self.updateSampleRate()
-
-    def paramList(self):
-        p = []
-        p.append(self.params)            
-        return p
-    

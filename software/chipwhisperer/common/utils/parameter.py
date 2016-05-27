@@ -128,12 +128,13 @@ class Parameter(object):
     def append(self, child):
         if child is None:
             return
+        if child.getName() in self.children:
+            self.children[child.getName()].remove()
+
         self.keys[child.getName()] = child
         if 'key' in child.getOpts():
             self.keys[child.getOpts()["key"]] = child
         child.setParent(self)
-        if child.getName() in self.children:
-            self.sigChildRemoved.emit(self.children[child.getName()])
         self.children[child.getName()] = child
         self.sigChildAdded.emit(child)
 
@@ -232,7 +233,6 @@ class Parameter(object):
         if self.parent is None:
             return
         self.parent.removeChild(self)
-        self.parent = None
 
     def clearChildren(self):
         for ch in self.children.itervalues():
@@ -249,7 +249,7 @@ class Parameter(object):
             pass
 
         self.sigChildRemoved.emit(child)
-        del self.children[child.child.getName()]
+        del self.children[child.getName()]
 
     def getChild(self, path):
         if isinstance(path, list) or isinstance(path, tuple):
@@ -440,6 +440,15 @@ if __name__ == '__main__':
             self.t = ParameterTree()
             self.t.addParameters(self.params.getPyQtGraphParameter())
 
+            self.test = Parameter(name='Test', type='group')
+            self.test.addChildren([
+                {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'value':38400}
+            ])
+
+            self.params._PyQtGraphParameter.addChild(self.test._PyQtGraphParameter)
+            self.test._PyQtGraphParameter.remove()
+            self.params._PyQtGraphParameter.addChild(self.test._PyQtGraphParameter)
+
             self.t2 = ParameterTree()
             self.params2 = Parameter(name='Root', type='group')
             self.params.getChild("Module").stealDynamicParameters(self.params2)
@@ -462,17 +471,31 @@ if __name__ == '__main__':
             except:
                 return 0
 
-    m = maintest()
+    # m = maintest()
+    #
+    # t = m.t
+    # t.show()
+    # t.setWindowTitle('pyqtgraph example: Parameter Tree')
+    # t.resize(400, 800)
+    # t2 = m.t2
+    # t2.show()
+    # t2.setWindowTitle('pyqtgraph example: Parameter Tree')
+    # t2.resize(400, 800)
+    # # Parameter.setParameter(['Root', 'Module', 'module 3'])
+    # # m.setmodule(m.values['module 1'])
+    #
+    # QtGui.QApplication.instance().exec_()
 
-    t = m.t
-    t.show()
-    t.setWindowTitle('pyqtgraph example: Parameter Tree')
-    t.resize(400, 800)
-    t2 = m.t2
+    t2 = ParameterTree()
     t2.show()
-    t2.setWindowTitle('pyqtgraph example: Parameter Tree')
-    t2.resize(400, 800)
-    Parameter.setParameter(['Root', 'Module', 'module 3'])
-    m.setmodule(m.values['module 1'])
+    root = pyqtgraphParameter.create(name='Root', type='group')
+    t2.addParameters(root)
+    par = pyqtgraphParameter.create(name='Par1', type='group')
+    par.addChildren([
+        {'name':'test', 'type':'int', 'limits':(500, 2000000), 'value':38400}
+    ])
+    root.addChild(par)
+    par.remove()
+    root.addChild(par)
 
     QtGui.QApplication.instance().exec_()

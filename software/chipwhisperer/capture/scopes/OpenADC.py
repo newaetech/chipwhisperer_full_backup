@@ -85,7 +85,6 @@ class OpenADCInterface(ScopeTemplate):
 
     def _con(self):
         if self.scopetype is not None:
-            
             self.scopetype.con()
             self.refreshTimer.start()
 
@@ -105,19 +104,17 @@ class OpenADCInterface(ScopeTemplate):
                 #             use self.api.setParameter(...) with CWExtra-specific settings. The OpenADC
                 #             settings will work, but not CWExtra ones? For now this works, but doesn't let
                 #             you change the OpenADC type.
-                if not self.advancedSettings:
+                if self.advancedSettings is None:
                     self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype, self.qtadc.sc)
+                    self.params.append(self.advancedSettings.getParams())
 
                 util.chipwhisperer_extra = self.advancedSettings
-                self.params.append(self.advancedSettings.getParams())
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
-                    self.advancedSAD.setOpenADC(self.qtadc)
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
                     self.params.append(self.advancedSAD.getParams())
 
-                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()
-                    self.digitalPattern.setOpenADC(self.qtadc)
+                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
                     self.params.append(self.digitalPattern.getParams())
 
             return True
@@ -127,6 +124,17 @@ class OpenADCInterface(ScopeTemplate):
         if self.scopetype is not None:
             self.refreshTimer.stop()
             self.scopetype.dis()
+            if self.advancedSettings is not None:
+                self.advancedSettings.getParams().remove()
+                self.advancedSettings = None
+
+            if self.advancedSAD is not None:
+                self.advancedSAD.getParams().remove()
+                self.advancedSAD = None
+
+            if self.digitalPattern is not None:
+                self.digitalPattern.getParams().remove()
+                self.digitalPattern = None
 
         return True
 
@@ -139,7 +147,6 @@ class OpenADCInterface(ScopeTemplate):
     def arm(self):
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
-        # self.advancedSettings.glitch.resetDCMs()
         if self.advancedSettings:
             self.advancedSettings.armPreScope()
 

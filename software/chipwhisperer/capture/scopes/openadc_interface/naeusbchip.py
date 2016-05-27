@@ -46,6 +46,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
     def __init__(self, parentParam, oadcInstance):
         self.ser = None
+        self.scope = None
         self._toolActs = []
 
         self.params = Parameter(name=self.getName(), type='group')
@@ -95,6 +96,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
     def dis(self):
         if self.ser != None:
+            self.scope.close()
             self.ser.close()
             self.ser = None
 
