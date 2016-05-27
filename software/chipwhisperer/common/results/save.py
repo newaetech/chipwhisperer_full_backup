@@ -30,6 +30,7 @@ import numpy as np
 from chipwhisperer.analyzer.attacks._base import AttackObserver
 from .base import ResultsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ResultsSave(ResultsBase, AttackObserver, Plugin):
@@ -37,14 +38,13 @@ class ResultsSave(ResultsBase, AttackObserver, Plugin):
     _description = "Save correlation output to files."
 
     def __init__(self, parentParam=None, name=None):
-        ResultsBase.__init__(self, parentParam, name)
         AttackObserver.__init__(self)
         self._filename = None
         self._enabled = False
         self.dataarray = None
 
-        self.params.addChildren([
-            {'name':'Save Raw Results', 'type':'bool', 'value':False, 'set':self.setEnabled}
+        self.getParams().addChildren([
+            {'name':'Save Raw Results', 'type':'bool', 'get':self.getEnabled, 'set':self.setEnabled}
         ])
 
     def analysisUpdated(self):
@@ -86,5 +86,9 @@ class ResultsSave(ResultsBase, AttackObserver, Plugin):
         self._filename = None
         self.dataarray = None
 
+    def getEnabled(self):
+        return self._enabled
+
+    @setupSetParam("Save Raw Results")
     def setEnabled(self, enabled):
         self._enabled = enabled

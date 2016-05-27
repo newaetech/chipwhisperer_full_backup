@@ -42,9 +42,8 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
 
     def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsBase.__init__(self, parentParam, name)
 
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal',
                                  'help':'%namehdr%'+
                                         "Draw types:\n"

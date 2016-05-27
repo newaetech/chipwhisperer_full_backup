@@ -31,25 +31,24 @@ from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
-class TextDisplay(AutoScript, QObject):
+class TextDisplay(AutoScript):
 
     def __init__(self, parent):
-        QObject.__init__(self, parent)
         AutoScript.__init__(self)
         self.parent = parent
         self.defineName()
-        self.addDock()
-        self.dock.hide()
+        # self.addDock()
+        # self.dock.hide()
 
     def defineName(self):
         self.name = 'Text Display'
 
         self.params = [
              {'name':'Update/Display Table', 'type':'action', 'action':self.updateTable},
-             ]
+        ]
 
     def updateTable(self):
-        self.dock.show()
+        # self.dock.show()
         tm = CWCoreAPI.getInstance().project().traceManager()
         tend = tm.numTraces()
         self.tablewid.setRowCount(tend)
@@ -70,5 +69,4 @@ class TextDisplay(AutoScript, QObject):
         #self.tablewid.verticalHeader().hide()
         #self.tablewid.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
-        self.dock = self.parent.addDock(self.tablewid, "Trace Data")
-
+        # self.dock = self.parent.addDock(self.tablewid, "Trace Data")

@@ -27,7 +27,7 @@
 
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 
 
@@ -44,7 +44,6 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
     def __init__(self):
         self.maxSubKeys = 32
-        Parameterized.__init__(self)
         AutoScript.__init__(self)
         self.useAbs = True
 
@@ -60,25 +59,33 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
         self.setupTraceParam()
         self.setupPointsParam()
+        self.params = self.getParams()
         self.params.addChildren([
             {'name':'Hardware Model', 'type':'group', 'children':[
-                {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':'AES-128', 'set':self.updateScript},
-                {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':1, 'set':self.updateScript},
+                {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':models_AES128_8bit, 'action':lambda _:self.updateScript()},
+                {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':'LEAK_HW_SBOXOUT_FIRSTROUND', 'action':lambda _:self.updateScript()},
             ]},
-            {'name':'Take Absolute', 'type':'bool', 'value':True, 'set':self.setAbsoluteMode},
+            {'name':'Take Absolute', 'type':'bool', 'get':self.getAbsoluteMode, 'set':self.setAbsoluteMode},
            #TODO: Should be called from the AES module to figure out # of bytes
             {'name':'Attacked Bytes', 'type':'group', 'children': self.getByteList()},
         ])
+        self.params.append(self.pointsParams)
+        self.params.append(self.traceParams)
+
         self.updateBytesVisible()
+
+    def updateScript(self):
+        pass
 
     def getAbsoluteMode(self):
         return self.useAbs
 
+    @setupSetParam("Take Absolute")
     def setAbsoluteMode(self, mode):
         self.useAbs = mode
 
     def getByteList(self):
-        init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, set=self.updateScriptBytesEnabled) for bnum in range(0, self.maxSubKeys)]
+        init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, action=lambda _:self.updateScript()) for bnum in range(0, self.maxSubKeys)]
         init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
         init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
         return init
@@ -117,57 +124,51 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
 ############ Trace-Specific
     def setupTraceParam(self):
-        self.traceParams = ConfigParameter.create_extended(self, name='Trace Setup', type='group', children=[
-            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'set':self.updateGenericScript},
-            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
-            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'set':self.updateGenericScript},
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'set':self.updateGenericScript},
-            ])
+        self.traceParams = Parameter(self, name='Trace Setup', type='group', children=[
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'value':0, 'action':lambda _:self.updateGenericScript()},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'action':lambda _:self.updateGenericScript()},
+            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'action':lambda _:self.updateGenericScript()},
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'action':lambda _:self.updateGenericScript()},
+        ])
 
         self.addFunction("init", "setTraceStart", "0")
         self.addFunction("init", "setTracesPerAttack", "1")
         self.addFunction("init", "setIterations", "1")
         self.addFunction("init", "setReportingInterval", "10")
 
-        self.singleEmit = True
-
     def updateGenericScript(self, ignored=None):
-        runs = self.findParam('runs', self.traceParams)
-        atraces = self.findParam('atraces', self.traceParams)
-        strace = self.findParam('strace', self.traceParams)
-        ri = self.findParam('reportinterval', self.traceParams)
+        runs = self.traceParams.getChild('runs')
+        atraces = self.traceParams.getChild('atraces')
+        strace = self.traceParams.getChild('strace')
+        ri = self.traceParams.getChild('reportinterval')
 
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
 
-        if (runs.value() * atraces.value() + strace.value()) > (self.traceMax):
-            solv = (self.traceMax - strace.value()) / runs.value()
+        if (runs.getValue() * atraces.getValue() + strace.getValue()) > (self.traceMax):
+            solv = (self.traceMax - strace.getValue()) / runs.getValue()
             solv = int(solv)
+            atraces.setLimits((min(solv, 1), solv))
             atraces.setValue(solv)
-            atraces.setLimits((1, solv))
-            self.singleEmit = True
         else:
-            lim = (1, self.traceMax)
-            #WORK-AROUND: need to emit an extra sigLimitsChanged???
-            if atraces.setLimits(lim) is None and self.singleEmit:
-                self.singleEmit = False
-                atraces.sigLimitsChanged.emit(atraces, lim)
+            atraces.setLimits((1, self.traceMax))
+            #There was a WORK-AROUND: need to emit an extra sigLimitsChanged??? Check if it is still needed.
 
-        pointrng = (self.findParam('startpoint', self.pointsParams).getValue(), self.findParam('endpoint', self.pointsParams).getValue())
+        pointrng = (self.pointsParams.getChild('startpoint').getValue(), self.pointsParams.getChild('endpoint').getValue())
 
-        self.addFunction("init", "setTraceStart", "%d" % strace.value())
-        self.addFunction("init", "setTracesPerAttack", "%d" % atraces.value())
-        self.addFunction("init", "setIterations", "%d" % runs.value())
-        self.addFunction("init", "setReportingInterval", "%d" % ri.value())
+        self.addFunction("init", "setTraceStart", "%d" % strace.getValue())
+        self.addFunction("init", "setTracesPerAttack", "%d" % atraces.getValue())
+        self.addFunction("init", "setIterations", "%d" % runs.getValue())
+        self.addFunction("init", "setReportingInterval", "%d" % ri.getValue())
         self.addFunction("init", "setPointRange", "(%d,%d)" % (pointrng[0], pointrng[1]))
 
 ############# Points-Specific
     def setupPointsParam(self):
-        self.pointsParams = ConfigParameter.create_extended(self, name='Point Setup', type='group', children=self.getPointList())
+        self.pointsParams = Parameter(self, name='Point Setup', type='group', children=self.getPointList())
 
     def getPointList(self):
     #   init = [{'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'value':(0,0), 'limits':(self.startPoint[0], self.endPoint[0]), 'default':(0, 0), 'set':self.updateGenericScript, 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"]},
-        init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
-                    {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'set':self.updateGenericScript},
+        init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'action':lambda _:self.updateGenericScript()},
+                    {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'action':lambda _:self.updateGenericScript()},
                     ]
     #
     #    #NOT ACTUALLY SUPPORTED
@@ -200,18 +201,13 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
         self.addFunction("init", "setPointRange", "(%d,%d)" % (0, points))
 
-        # self.addFunction("init", "setTraceStart", "%d" % 0)
-        # self.addFunction("init", "setTracesPerAttack", "%d" % traces)
-        # self.addFunction("init", "setIterations", "%d" % 1)
+        strace =  self.traceParams.getChild('strace')
+        self.traceParams.getChild('runs').setValue(1)
+        atrace = self.traceParams.getChild('atraces')
 
-        strace = self.findParam('strace', self.traceParams)
-        self.findParam('runs', self.traceParams).setValue(1)
-        atrace = self.findParam('atraces', self.traceParams)
-
-        strace.setValue(0)
         strace.setLimits((0, traces))
-        atrace.setValue(1) #Avoid bug in pyqtgraph with  limits
-        atrace.setLimits((1, traces))
+        strace.setValue(0)
+        atrace.setLimits((min(traces, 1), traces))
         atrace.setValue(traces)
 
         self.traceLimitsChanged.emit(traces, points)
@@ -220,8 +216,8 @@ class AttackGenericParameters(Parameterized, AutoScript):
         start = int(start)
         end = int(end)
 
-        startparam = self.findParam('startpoint', self.pointsParams)
-        endparam = self.findParam('endpoint', self.pointsParams)
+        startparam = self.pointsParams.getChild('startpoint')
+        endparam = self.pointsParams.getChild('endpoint')
 
         if startparam:
             if setlimits:
@@ -246,11 +242,3 @@ class AttackGenericParameters(Parameterized, AutoScript):
         else:
             self.startPoint[bnum] = start
             self.endPoint[bnum] = end
-
-    # def setAllPointsSame(self, val):
-    #    self.allPointsSame = val
-    #    self.setupPointsParam()
-    #    self.paramListUpdated.emit(None)
-
-    def paramList(self):
-        return [self.params, self.pointsParams, self.traceParams]

@@ -29,6 +29,7 @@ from PySide.QtGui import *
 from chipwhisperer.analyzer.attacks._base import AttackObserver
 from .base import ResultsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
@@ -37,16 +38,16 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
     def __init__(self, parentParam=None, name=None):
         QTableWidget.__init__(self)
-        ResultsBase.__init__(self, parentParam, name)
 
         self.colorGradient = True
-        self.params.addChildren([
+        self.updateMode = 'all'
+        useAbsValueList = {"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":lambda: True, "False":lambda: False}
+        self.getParams().addChildren([
             {'name':'Use Absolute Value for Rank', 'key':'useAbs', 'type':'list',
-            'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":lambda: True, "False":lambda: False},
-            'value':"Default"},
+            'values':useAbsValueList, 'value':useAbsValueList["Default"]},
             {'name':'Use single point for rank', 'key':'singlepoint', 'type':'bool', 'value':False},
-            {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
-            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
+            {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'get':self.getUpdateMode, 'set':self.setUpdateMode},
+            {'name':'Color Gradient', 'type':'bool', 'get':self.getColorGradient, 'set':self.setColorGradient},
         ])
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -87,14 +88,13 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                 self.item(y, x).setText(" \n ")
                 self.item(y, x).setBackground(Qt.white)
 
+    def getUpdateMode(self):
+        return self.updateMode
+
+    @setupSetParam("Update Mode")
     def setUpdateMode(self, mode):
         """Set if we update entire table or just PGE on every statistics update"""
         self.updateMode = mode
-
-    def setAbsoluteMode(self, enabled):
-        """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
-        self.useAbs = enabled
-        self.update()
 
     def updateTable(self, everything=False):
         """Re-sort data and redraw the table. If update-mode is 'pge' we only redraw entire table
@@ -149,6 +149,10 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     def getWidget(self):
         return self
 
+    def getColorGradient(self):
+        return self.colorGradient
+
+    @setupSetParam("Color Gradient")
     def setColorGradient(self, value):
         self.colorGradient = value
 

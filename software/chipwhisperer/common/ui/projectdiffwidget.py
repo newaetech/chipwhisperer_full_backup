@@ -30,7 +30,8 @@ class ProjectDiffWidget(QWidget):
         for k in changelist:
             paramlist.append({'name':k})
         params = Parameter.create(name=name, type='group', children=paramlist)
-        ExtendedParameter.reloadParams([params], paramTree)
+        paramTree.clear()
+        paramTree.addParameters(params)
 
     def checkDiff(self, ignored=None, updateGUI=False):
         """

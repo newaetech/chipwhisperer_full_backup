@@ -3,12 +3,14 @@
 #
 # This file based on PyQtGraph parameterTypes.py
 #=================================================
+import os
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
 from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem
+from pyqtgraph import pixmaps
 from pyqtgraph.widgets.SpinBox import SpinBox
 
 helpwnd = None
@@ -56,8 +58,68 @@ def drawHelpIcon(curParam):
         layout.addWidget(buthelp)
 
 
-# This class adds some  hacks that allow us to have 'get', 'set', and 'linked' methods in the Parameter specification.
-# They are especially helpful for the work done here
+def disconnectSignalsWhenDestroyed(self, widget, param):
+    widget.destroyed.connect(lambda: param.sigValueChanged.disconnect(self.valueChanged))
+    widget.destroyed.connect(lambda: param.sigChildAdded.disconnect(self.childAdded))
+    widget.destroyed.connect(lambda: param.sigChildRemoved.disconnect(self.childRemoved))
+    widget.destroyed.connect(lambda: param.sigNameChanged.disconnect(self.nameChanged))
+    widget.destroyed.connect(lambda: param.sigLimitsChanged.disconnect(self.limitsChanged))
+    widget.destroyed.connect(lambda: param.sigDefaultChanged.disconnect(self.defaultChanged))
+    widget.destroyed.connect(lambda: param.sigOptionsChanged.disconnect(self.optsChanged))
+    widget.destroyed.connect(lambda: param.sigParentChanged.disconnect(self.parentChanged))
+
+def __init___fix(self, param, depth):
+    ParameterItem.__init__(self, param, depth)
+
+    self.hideWidget = True  ## hide edit widget, replace with label when not selected
+                            ## set this to False to keep the editor widget always visible
+
+
+    ## build widget into column 1 with a display label and default button.
+    w = self.makeWidget()
+    self.widget = w
+    disconnectSignalsWhenDestroyed(self, self.widget, self.param)
+    self.eventProxy = EventProxy(w, self.widgetEventFilter)
+
+    opts = self.param.opts
+    if 'tip' in opts:
+        w.setToolTip(opts['tip'])
+
+    self.defaultBtn = QtGui.QPushButton()
+    self.defaultBtn.setFixedWidth(20)
+    self.defaultBtn.setFixedHeight(20)
+    modDir = os.path.dirname(__file__)
+    self.defaultBtn.setIcon(QtGui.QIcon(pixmaps.getPixmap('default')))
+    self.defaultBtn.clicked.connect(self.defaultClicked)
+
+    self.displayLabel = QtGui.QLabel()
+
+    layout = QtGui.QHBoxLayout()
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(2)
+    layout.addWidget(w)
+    layout.addWidget(self.displayLabel)
+    layout.addWidget(self.defaultBtn)
+    self.layoutWidget = QtGui.QWidget()
+    self.layoutWidget.setLayout(layout)
+
+    if w.sigChanged is not None:
+        w.sigChanged.connect(self.widgetValueChanged)
+
+    if hasattr(w, 'sigChanging'):
+        w.sigChanging.connect(self.widgetValueChanging)
+
+    ## update value shown in widget.
+    if opts.get('value', None) is not None:
+        self.valueChanged(self, opts['value'], force=True)
+    else:
+        ## no starting value was given; use whatever the widget has
+        self.widgetValueChanged()
+
+    self.updateDefaultBtn()
+
+WidgetParameterItem.__init__ = __init___fix
+
 
 class WidgetParameterItemHelp(WidgetParameterItem):
     def __init__(self, *args, **kwargs):
@@ -72,7 +134,7 @@ class ListParameterItemHelp(ListParameterItem):
     def __init__(self, *args, **kwargs):
         super(ListParameterItemHelp, self).__init__(*args, **kwargs)
         drawHelpIcon(self)
-
+        disconnectSignalsWhenDestroyed(self.widget, self.param)
     def updateDefaultBtn(self):
         pass
 
@@ -615,7 +677,6 @@ class SpinBoxWithSetItem(WidgetParameterItem):
         if 'limits' in opts:
             defs['bounds'] = opts['limits']
         w = SpinBox()
-        w.destroyed.connect(lambda: self.param.sigValueChanged.disconnect(self.valueChanged))
         # This hack ensures compatibility between 0.9.10 and later
         for k in opts:
             w.opts[k] = opts[k]

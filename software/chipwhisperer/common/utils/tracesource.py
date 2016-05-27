@@ -103,10 +103,9 @@ class PassiveTraceObserver(Parameterized):
     """ It processes data from a TraceSource when requested """
 
     def __init__(self, parentParam=None):
-        Parameterized.__init__(self, parentParam)
         self._traceSource = None
 
-        self.params = Parameter(name=self.getName(), type='group')
+        self.params = self.getParams()
         self.params.addChildren([
             {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'default':None, 'get':self.getTraceSource, 'set':self.setTraceSource}
         ])

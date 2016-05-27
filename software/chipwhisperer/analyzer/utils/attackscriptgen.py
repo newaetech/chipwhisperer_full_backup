@@ -27,7 +27,7 @@
 from datetime import *
 from PySide.QtCore import *
 
-from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from chipwhisperer.common.results.base import ResultsBase
 from functools import partial
@@ -37,12 +37,7 @@ class AttackScriptGen(Parameterized):
     _name = "Attack Script Generator"
 
     def __init__(self, parentParam, cwGUI):
-        Parameterized.__init__(self, parentParam)
         self.cwGUI = cwGUI
-
-        self.preprocessingParamTree = CWParameterTree("Preprocessing")
-        self.attackParamTree = CWParameterTree("Attack", )
-        self.postprocessingParamTree = CWParameterTree("Postprocessing")
 
         self.utilList = []
         self.scriptList = []
@@ -52,21 +47,26 @@ class AttackScriptGen(Parameterized):
         self.defaultEditor = self.scriptList[0]
         autogen = (self.defaultEditor['dockname'], self.defaultEditor['filename'])
         self.preprocessingListGUI = [None, None, None, None]
-        self.setAttack(self.cwGUI.api.valid_attacks.get("CPA", None))
+        self.setAttack(self.cwGUI.api.valid_attacks.get("CPA", None), blockSignal=True)
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Attack Script', 'type':'group', 'children':[
                 {'name':'Filename', 'key':'attackfilelist', 'type':'filelist', 'values':{autogen:0}, 'value':0, 'editor':self.editorControl,},
-                                                                 ]},
+            ]},
             {'name':'Pre-Processing', 'type':'group', 'children':[
-                {'name':'Module #%d' % step, 'type':'list', 'values':self.cwGUI.api.valid_preprocessingModules, 'value':self.preprocessingListGUI[step], 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))
-                                                                  ]},
+                {'name':'Module #%d' % step, 'type':'list', 'values':self.cwGUI.api.valid_preprocessingModules, 'get':partial(self.getPreprocessing, step), 'set':partial(self.setPreprocessing, step)} for step in range(0, len(self.preprocessingListGUI))
+            ]},
             {'name':'Attack', 'type':'group', 'children':[
-                {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_attacks, 'value':self.attack, 'set':self.setAttack},
-                                                          ]},
-            {'name':'Post-Processing', 'type':'group'}
-                                                                 ])
-        self.scriptParamTree = CWParameterTree("Script", [self])
+                {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_attacks, 'get':self.getAttack, 'set':self.setAttack},
+            ]},
+        ])
+        self.preprocessingParams = Parameter(name="Preprocessing", type='group')
+        self.params.getChild('Pre-Processing').stealDynamicParameters(self.preprocessingParams)
+
+        self.attackParams = Parameter(name="Attack", type='group')
+        self.params.getChild('Attack').stealDynamicParameters(self.attackParams)
+
         self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
 
     def updateAttackTraceLimits(self):
@@ -113,6 +113,10 @@ class AttackScriptGen(Parameterized):
 
             script['dock'].setWindowTitle(dockname)
 
+    def getPreprocessing(self, num):
+        return self.preprocessingListGUI[num]
+
+    @setupSetParam("")
     def setPreprocessing(self, num, module):
         """Insert the preprocessing module selected from the GUI into the list of active modules.
 
@@ -124,14 +128,15 @@ class AttackScriptGen(Parameterized):
             self.preprocessingListGUI[num].scriptsUpdated.connect(self.reloadScripts)
         else:
             self.preprocessingListGUI[num] = None
-
-        self.preprocessingParamTree.replace(self.preprocessingListGUI)
         self.reloadScripts()
 
+    def getAttack(self):
+        return self.attack
+
+    @setupSetParam(["Attack","Module"])
     def setAttack(self, module):
         self.attack = module
         if module:
-            self.attackParamTree.replace([self.attack])
             self.updateAttackTraceLimits()
             self.reloadScripts()
             self.attack.scriptsUpdated.connect(self.reloadScripts)
@@ -184,9 +189,9 @@ class AttackScriptGen(Parameterized):
 
         # Some other imports
         mse.append("# Imports from utilList", 0)
-        for index, util in enumerate(self.utilList):
-            if hasattr(util, '_smartstatements') and util.isVisible():
-                for i in util.getImportStatements(): mse.append(i, 0)
+        # for index, util in enumerate(self.utilList):
+        #     if hasattr(util, '_smartstatements') and util.isVisible():
+        #         for i in util.getImportStatements(): mse.append(i, 0)
 
         mse.append("", 0)
 
@@ -256,18 +261,18 @@ class AttackScriptGen(Parameterized):
                         mse.append(s.replace("self.", "self.api.getAttack().").replace("UserScript.", "self."))
 
         # Get other commands from other utilities
-        for index, util in enumerate(self.utilList):
-            if hasattr(util, '_smartstatements') and util.isVisible():
-                for k in util._smartstatements:
-                    util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
-                    util._smartstatements[k].addSelfReplacement("cwagui.attackScriptGen.") #TODO-temp hack
-                    statements = util.getStatements(k)
-
-                    if len(statements) > 0:
-                        mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
-                        mse.append("self.cwagui = CWAnalyzerGUI.getInstance()") #TODO - temp hack
-                        for s in statements:
-                            mse.append(s.replace("UserScript.", "self."))
+        # for index, util in enumerate(self.utilList):
+        #     if hasattr(util, '_smartstatements') and util.isVisible():
+        #         for k in util._smartstatements:
+        #             util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
+        #             util._smartstatements[k].addSelfReplacement("cwagui.attackScriptGen.") #TODO-temp hack
+        #             statements = util.getStatements(k)
+        #
+        #             if len(statements) > 0:
+        #                 mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
+        #                 mse.append("self.cwagui = CWAnalyzerGUI.getInstance()") #TODO - temp hack
+        #                 for s in statements:
+        #                     mse.append(s.replace("UserScript.", "self."))
 
         mse.restoreSliderPosition()
         self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)

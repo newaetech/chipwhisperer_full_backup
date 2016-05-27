@@ -41,8 +41,9 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         AttackBaseClass.__init__(self)
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
+        self.params = self.getParams()
         self.params.addChildren([
-            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'action':lambda _:self.updateAlgorithm()}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
         self.setAnalysisAlgorithm(self.findParam('CPA_algo').getValue(), None, None)
         self.updateBytesVisible()
@@ -66,8 +67,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         except:
             self.attackParams = None
 
-        self.paramListUpdated.emit()
-
         if hasattr(self.attack, 'scriptsUpdated'):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
@@ -75,8 +74,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
         analysAlgoStr = self.attack.__class__.__name__
-        hardwareStr = self.findParam('hw_algo').getValue().__name__
-        leakModelStr = hardwareStr + "." + self.findParam('hw_leak').getValue()
+        hardwareStr = self.findParam(['Hardware Model','hw_algo']).getValue().__name__
+        leakModelStr = hardwareStr + "." + self.findParam(['Hardware Model','hw_leak']).getValue()
 
         self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
@@ -110,7 +109,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
                 endingTrace = startingTrace + self.getTracesPerAttack() - 1
                 #TODO:  pointRange=self.TraceRangeList[1:17]
-                self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
+                self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
                 if progressBar and progressBar.wasAborted():
                     return
 

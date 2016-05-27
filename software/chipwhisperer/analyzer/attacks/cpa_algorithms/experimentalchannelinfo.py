@@ -31,7 +31,7 @@ from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import pyximport
@@ -266,12 +266,12 @@ class TemplateOneSubkey(object):
 
                 # Generate the output of the SBOX
                 if modeltype == "Hamming Weight":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                 elif modeltype == "Hamming Weight (inverse)":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                     hypint = 8 - hypint
                 elif modeltype == "Hamming Distance":
-                    hypint = model.HypHD(pt, ct, key, bnum);
+                    hypint = model.HypHD(pt, ct, key, bnum)
                 else:
                     raise ValueError("modeltype invalid")
 
@@ -291,8 +291,8 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
     _name = "CPA Experimental Channel Info"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
-        Parameterized.__init__(self, parentParam)
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},

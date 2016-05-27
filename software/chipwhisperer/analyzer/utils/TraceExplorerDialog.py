@@ -25,28 +25,21 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from PySide.QtCore import *
-from PySide.QtGui import *
-from pyqtgraph.parametertree import ParameterTree
-from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import PartitionDisplay
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.results.base import ResultsBase
 
 
-class TraceExplorerDialog(QMainWindow, AutoScript):
+class TraceExplorerDialog(AutoScript, Parameterized):
     """Open dialog to explore trace properties, data graphs, etc"""
-
+    _name = "Trace Explorer"
     def __init__(self, parent):
-        QMainWindow.__init__(self, parent)
         AutoScript.__init__(self)
 
         self.autoScriptInit()
-        self.setWindowTitle("Trace Explorer")
-        self.setObjectName("Trace Explorer")
-
-        self.setCentralWidget(None)
 
         # Add example scripts to this list
         self.exampleScripts = [PartitionDisplay(self), TextDisplay(self)]
@@ -54,15 +47,13 @@ class TraceExplorerDialog(QMainWindow, AutoScript):
         # Add Scripts
         self.setupCommonScripts()
 
-        self.graphDockList = []
-        self.getGraphWidgets(["Basic Plot"])
+        ResultsBase.createNew("Trace Output Plot", "Basic Plot")
 
         self.progressBar = ProgressBar(show=False)
-        #self.progressBar.setWindowModality(Qt.WindowModal)
 
-    def showEvent(self, event):
-        QMainWindow.showEvent(self, event)
-        self.updateChildren()
+    # def showEvent(self, event):
+    #     QMainWindow.showEvent(self, event)
+    #     self.updateChildren()
 
     def setupCommonScripts(self):
         # Setup parameer tree
@@ -74,55 +65,14 @@ class TraceExplorerDialog(QMainWindow, AutoScript):
             example.scriptsUpdated.connect(self.updateScripts)
             example.runScriptFunction.connect(self.runScriptFunction.emit)
 
-        self.paramCommonScripts = ConfigParameter.create_extended(self, name='Common Scripts', type='group', children=self.commonScriptParams)
-        self.params = self.paramCommonScripts
-        self.paramTreeCommonScripts = ParameterTree()
-        self.paramTreeCommonScripts.setParameters(self.paramCommonScripts, showTop=False)
-
-        self.commonScriptsDock = self.addDock(self.paramTreeCommonScripts, "Common Scipts", area=Qt.LeftDockWidgetArea)
+        self.paramCommonScripts = Parameter(name='Common Scripts', type='group', children=self.commonScriptParams)
+        self.params = self.getParams()
+        self.params.append(self.paramCommonScripts)
 
         self.updateScripts()
 
-    def addDock(self, dockWidget, name="Settings", area=Qt.LeftDockWidgetArea, allowedAreas=Qt.AllDockWidgetAreas):
-        # Configure dock
-        dock = QDockWidget(name)
-        dock.setAllowedAreas(allowedAreas)
-        dock.setWidget(dockWidget)
-        dock.setObjectName(name)
-        self.addDockWidget(area, dock)
-        return dock
-
-    def addTraceDock(self, name):
-        """Add a new GraphWidget in a dock, you can get the GW with .widget() property of returned QDockWidget"""
-        return self.addDock(GraphWidget(), name=name, area=Qt.RightDockWidgetArea)
 
 ####COMMON SCRIPTING STUFF
-
-    def getGraphWidgets(self, nameList=["Unknown"]):
-        """Setup graph widgets (e.g. graphs) in the Window, and return a reference to them"""
-
-        # Close/Clear all widgets
-        for gd in self.graphDockList:
-            gd.close()
-            gd.widget().clearPushed()
-            gd.widget().clearCustomWidgets()
-            gd.widget().setDefaults()
-
-        for i in range(0, min(len(self.graphDockList), len(nameList))):
-            self.graphDockList[i].show()
-
-        while len(self.graphDockList) < len(nameList):
-            self.graphDockList.append(self.addTraceDock("TempName"))
-
-        for i, name in enumerate(nameList):
-            self.graphDockList[i].setObjectName(name)
-            self.graphDockList[i].setWindowTitle(name)
-
-        widgetList = []
-        for gd in self.graphDockList:
-            widgetList.append(gd.widget())
-
-        return widgetList
 
     def getProgressIndicator(self):
         return self.progressBar
@@ -147,10 +97,3 @@ class TraceExplorerDialog(QMainWindow, AutoScript):
                     self.importsAppend(k)
 
         self.scriptsUpdated.emit()
-
-
-
-
-
-
-

@@ -28,6 +28,7 @@ from chipwhisperer.analyzer.attacks._base import AttackObserver
 from .base import ResultsBase
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class AttackSettings(ResultsBase, AttackObserver, Plugin):
@@ -35,26 +36,26 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
     _description = "General settings for all the attack widgets"
 
     def __init__(self, parentParam=None, name=None):
-        ResultsBase.__init__(self, parentParam, name)
         AttackObserver.__init__(self)
-        self._knowKey = []
-
+        self._knownKey = []
+        self.params = self.getParams()
         self.params.addChildren([
             {'name':'Highlighted key', 'type':'list', 'values':{'Know key from attack':'attack', 'Override':'override'},
-             'value':'attack', 'set':self.setKnownKeySrc},
-            {'name':'Override with', 'type':'str', 'key':'knownkey', 'set':self.setKnownKey},
-            {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'set':self.setHighlightedKeyColor},
-            {'name':'Trace color', 'type':'color', 'value':"0F0", 'set':self.setTraceColor},
+             'value': 'attack', 'action':lambda p: self.setKnownKeySrc(p.getValue())},
+            {'name':'Override with', 'type':'str', 'key':'knownkey', 'get':self.getKnownKey, 'set':self.setKnownKey},
+            {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'action':lambda p: self.setHighlightedKeyColor(p.getValue())},
+            {'name':'Trace color', 'type':'color', 'value':"0F0", 'action':lambda p: self.setTraceColor(p.getValue())},
             {'name':'Redraw Widgets',  'type':'action', 'action':self.updateAll},
         ])
-        self.findParam('knownkey').setValue('00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00')
         self.findParam('knownkey').hide()
-
 
     def updateAll(self):
         for i in self.registeredObjects.itervalues():
             if isinstance(i, AttackObserver):
                 i.processAnalysis()
+
+    def getKnownKeySrc(self):
+        return self.findParam('Highlighted key')
 
     def setKnownKeySrc(self, keysrc):
         """Set key as 'attack' or 'override'"""
@@ -63,17 +64,18 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
             AttackObserver._highlightedKeys = self._analysisSource.knownKey
         elif keysrc == 'override':
             self.findParam('knownkey').show()
-            AttackObserver._highlightedKeys = self.knowKey
+            AttackObserver._highlightedKeys = self.getKnownKey
         else:
             raise ValueError("Key Source Error")
 
-    def knowKey(self):
-        return self._knowKey
+    def getKnownKey(self):
+        return self._knownKey
 
+    @setupSetParam("Override with")
     def setKnownKey(self, strkey):
         """Override known key by user selection"""
         try:
-            self._knowKey = util.hexstr2list(strkey)
+            self._knownKey = util.hexstr2list(strkey)
         except ValueError:
             raise Warning("Key Selection - Could not convert '%s' to hex, key unchanged!" % strkey)
 

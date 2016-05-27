@@ -25,8 +25,6 @@
 
 import sys
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
-import pyqtgraph as pg
-
 from chipwhisperer.common.utils import util
 import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 
@@ -37,6 +35,8 @@ class Parameterized(object):
 
     def getParams(self):
         assert not hasattr(self, "param") and self.getParams is not None
+        if not hasattr(self, "params"):
+            self.params = Parameter(name=self.getName(), type='group')
         return self.params
 
     def findParam(self, name):
@@ -64,7 +64,7 @@ class Parameterized(object):
 class Parameter(object):
     registeredParameters = {}
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", "range"]
+    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color"]
     # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
     #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
 
@@ -104,8 +104,6 @@ class Parameter(object):
                 self.opts['limits'] = opts['values']
 
             if 'set' in self.opts:
-                # MAGIC: Injects the decorator inside the set method to syncronize the parameters when the set method is called directly
-                # self.opts['set'] = setupSetParam(self)(self.opts['set'])
                 self.sigValueChanged.connect(self.opts['set'])
 
             if "default" not in self.opts:
@@ -209,6 +207,10 @@ class Parameter(object):
             act(self)
             print >> Parameter.scriptingOutput, (str(self.getPath()))
         self.callLinked()
+
+    def setDefault(self, default):
+        self.opts['default'] = default
+        self.sigOptionsChanged.emit(default=default)
 
     def setLimits(self, limits):
         self.opts['limits'] = limits

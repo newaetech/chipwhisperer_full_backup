@@ -61,9 +61,9 @@ class CWAnalyzerGUI(CWMainGUI):
         toolbar.addAction(attack)
 
     def addToolMenuItems(self):
-        self.traceExplorerAct = QAction('Trace Explorer', self, statusTip='Get information on traces',
-                                        triggered=self.traceExplorerDialog.show)
-        self.toolMenu.addAction(self.traceExplorerAct)
+        # self.traceExplorerAct = QAction('Trace Explorer', self, statusTip='Get information on traces',
+        #                                 triggered=self.traceExplorerDialog.show)
+        # self.toolMenu.addAction(self.traceExplorerAct)
         self.aesScheduleAct = QAction('AES Key Schedule', self, statusTip='Show AES Key Schedule calculator',
                                       triggered=self.keyScheduleDialog.show)
         self.toolMenu.addAction(self.aesScheduleAct)
@@ -80,11 +80,11 @@ class CWAnalyzerGUI(CWMainGUI):
         self.updateStatusBar("Analysis completed")
 
     def addSettingsDocks(self):
-        self.settingsScriptDock = self.addSettings(self.attackScriptGen.scriptParamTree, "Script")
-        self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParamTree, "Preprocessing")
-        self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParamTree, "Attack")
-        self.settingsPostProcessingDock = self.addSettings(self.attackScriptGen.postprocessingParamTree, "Postprocessing")
-        self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
+        self.settingsScriptDock = self.addSettings(self.attackScriptGen.params)
+        self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParams)
+        self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParams)
+        self.settingsTraceExplorer = self.addSettings(self.traceExplorerDialog.params)
+        self.settingsResultsDock = self.addSettings(ResultsBase.getClassParameter())
 
         # Load all ActiveTraceObservers
         self.windowMenu.addSeparator()
@@ -93,7 +93,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.tabifyDocks(self.resultDocks)
 
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
-                          self.settingsPostProcessingDock, self.settingsResultsDock])
+                          self.settingsTraceExplorer, self.settingsResultsDock])
         self.attackScriptGen.editorDocks()
 
     def tracesChanged(self):

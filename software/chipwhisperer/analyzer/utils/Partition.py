@@ -35,7 +35,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized
 
 
 class PartitionHDLastRound(object):
@@ -152,7 +152,7 @@ class PartitionDialog(QtFixes.QDialog):
         self.part.runPartitions(report=pb.updateStatus)
 
 
-class Partition(QObject, Parameterized):
+class Partition(Parameterized):
     """
     Base Class for all partioning modules
     """
@@ -173,8 +173,6 @@ class Partition(QObject, Parameterized):
     supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
     def __init__(self, parent):
-        QObject.__init__(self, parent)
-        Parameterized.__init__(self)
         self.setPartMethod(PartitionRandvsFixed)
         self.partDataCache = None
 

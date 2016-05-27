@@ -30,7 +30,7 @@ import math
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class CPAProgressiveOneSubkey(object):
@@ -158,9 +158,9 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
     _name = "Progressive"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
-        Parameterized.__init__(self, parentParam)
         AutoScript.__init__(self)
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
@@ -183,7 +183,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
         self._reportingInterval = ri
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
-        brange=self.brange
+        brange = self.brange
         self.all_diffs = range(0,16)
         numtraces = tracerange[1] - tracerange[0] + 1
 
