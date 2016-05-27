@@ -25,6 +25,8 @@
 
 import sys
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
+import pyqtgraph as pg
+
 from chipwhisperer.common.utils import util
 import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 
@@ -445,9 +447,10 @@ if __name__ == '__main__':
                 {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'value':38400}
             ])
 
-            self.params._PyQtGraphParameter.addChild(self.test._PyQtGraphParameter)
-            self.test._PyQtGraphParameter.remove()
-            self.params._PyQtGraphParameter.addChild(self.test._PyQtGraphParameter)
+            self.params.append(self.test)
+            self.test.remove()
+            self.test.getChild("baud").setValue(500)
+            self.params.append(self.test)
 
             self.t2 = ParameterTree()
             self.params2 = Parameter(name='Root', type='group')
@@ -471,31 +474,31 @@ if __name__ == '__main__':
             except:
                 return 0
 
-    # m = maintest()
-    #
-    # t = m.t
-    # t.show()
-    # t.setWindowTitle('pyqtgraph example: Parameter Tree')
-    # t.resize(400, 800)
-    # t2 = m.t2
-    # t2.show()
-    # t2.setWindowTitle('pyqtgraph example: Parameter Tree')
-    # t2.resize(400, 800)
-    # # Parameter.setParameter(['Root', 'Module', 'module 3'])
-    # # m.setmodule(m.values['module 1'])
-    #
-    # QtGui.QApplication.instance().exec_()
+    m = maintest()
 
-    t2 = ParameterTree()
+    t = m.t
+    t.show()
+    t.setWindowTitle('pyqtgraph example: Parameter Tree')
+    t.resize(400, 800)
+    t2 = m.t2
     t2.show()
-    root = pyqtgraphParameter.create(name='Root', type='group')
-    t2.addParameters(root)
-    par = pyqtgraphParameter.create(name='Par1', type='group')
-    par.addChildren([
-        {'name':'test', 'type':'int', 'limits':(500, 2000000), 'value':38400}
-    ])
-    root.addChild(par)
-    par.remove()
-    root.addChild(par)
+    t2.setWindowTitle('pyqtgraph example: Parameter Tree')
+    t2.resize(400, 800)
+    # Parameter.setParameter(['Root', 'Module', 'module 3'])
+    # m.setmodule(m.values['module 1'])
 
     QtGui.QApplication.instance().exec_()
+    # pg.systemInfo()
+    # t2 = ParameterTree()
+    # t2.show()
+    # root = pyqtgraphParameter.create(name='Root', type='group')
+    # t2.addParameters(root)
+    # par = pyqtgraphParameter.create(name='Par1', type='group')
+    # par.addChildren([
+    #     {'name':'test', 'type':'int', 'limits':(500, 2000000), 'value':38400}
+    # ])
+    # root.addChild(par)
+    # root.removeChild(par)
+    # root.addChild(par)
+    #
+    # QtGui.QApplication.instance().exec_()
