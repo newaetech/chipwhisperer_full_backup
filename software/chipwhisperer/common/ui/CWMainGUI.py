@@ -152,7 +152,7 @@ class CWMainGUI(QMainWindow):
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
-        console.write = console.append
+        console.write = console.insertPlainText
         if redirectStdOut:
             self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)

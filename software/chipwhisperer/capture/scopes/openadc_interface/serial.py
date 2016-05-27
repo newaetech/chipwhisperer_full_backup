@@ -40,7 +40,7 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
+            {'name':'Refresh List', 'type':'action', 'action':lambda _: self.serialRefresh()},
             {'name':'Selected Port', 'type':'list', 'values':[''], 'get':self.getPortName, 'set':self.setPortName},
         ])
 
@@ -92,13 +92,12 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
 
     def serialRefresh(self):
         serialnames = scan.scan()
-        if serialnames == None:
+        if serialnames == None or len(serialnames) == 0:
             serialnames = [" "]
 
-        for p in self.params.children():
-            if p.name() == 'Port':
-                p.setLimits(serialnames)
-                p.setValue(serialnames[0])
+        p = self.params.getChild('Selected Port')
+        p.setLimits(serialnames)
+        p.setValue(serialnames[0])
 
     def getTextName(self):
         try:

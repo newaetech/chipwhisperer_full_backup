@@ -62,7 +62,7 @@ class Parameterized(object):
 
 
 class Parameter(object):
-    registeredParameters = []
+    registeredParameters = {}
     scriptingOutput = sys.stdout
     supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", "range"]
     # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
@@ -253,6 +253,7 @@ class Parameter(object):
         self.sigChildRemoved.emit(child)
         del self.children[child.getName()]
 
+
     def getChild(self, path):
         if isinstance(path, list) or isinstance(path, tuple):
             item = self.keys.get(path[0], None)
@@ -330,8 +331,12 @@ class Parameter(object):
         self.refreshAllParameters()
 
     def register(self):
-        self.registeredParameters.append(self)
+        self.registeredParameters[self.getName()] = self
         return self
+
+    # def deregister(self):
+    #     self.registeredParameters.remove(self)
+    #     return self
 
     @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
@@ -340,14 +345,14 @@ class Parameter(object):
         value = parameter[-1]
 
         child = None
-        for p in cls.registeredParameters:
-            if p.getOpts()["name"] == path[0]:
-                child = p.getChild(path[1:])
-                if child is not None:
+        p = cls.registeredParameters.get(path[0], None)
+        if p is not None:
+            child = p.getChild(path[1:])
+            if child is not None:
 
-                    if isinstance(child.getOpts().get("values", None), dict):
-                        value = child.getOpts()["values"][value]
-                    child.setValue(value, echo=echo)
+                if isinstance(child.getOpts().get("values", None), dict):
+                    value = child.getOpts()["values"][value]
+                child.setValue(value, echo=echo)
 
         if child is None:
             raise KeyError("Parameter not found: %s" % str(parameter))

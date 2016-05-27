@@ -127,6 +127,7 @@ class OpenADCInterface(ScopeTemplate):
             if self.advancedSettings is not None:
                 self.advancedSettings.getParams().remove()
                 self.advancedSettings = None
+                util.chipwhisperer_extra = None
 
             if self.advancedSAD is not None:
                 self.advancedSAD.getParams().remove()

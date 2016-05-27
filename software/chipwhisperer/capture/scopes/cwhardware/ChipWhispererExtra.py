@@ -65,12 +65,6 @@ class ChipWhispererExtra(Parameterized):
         self.params.append(self.cwEXTRA.getParams())
         self.params.append(self.glitch.getParams())
 
-    def setOpenADC(self, oa):
-        #self.cwADV.setOpenADC(oa)
-        if self.enableGlitch:
-            self.glitch.setOpenADC(oa.sc)
-        self.cwEXTRA.con(oa.sc)
-
     def armPreScope(self):
         if self.enableGlitch:
             self.glitch.armPreScope()
@@ -220,14 +214,6 @@ class CWExtraSettings(Parameterized):
             ])
 
         self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
-
-    def con(self, oa):
-        self.oa = oa
-        
-        # TEMPORARY PATCH: REMOVE ONCE FPGA FIXED
-        #Over-ride default for CW-Lite
-        if self.forceclkin:
-            self.setClockSource(self.CLOCK_RTIOIN)
 
     @setupSetParam("")
     def setGPIOState(self, state, IONumber):
