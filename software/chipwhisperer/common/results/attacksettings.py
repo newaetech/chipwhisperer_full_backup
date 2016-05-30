@@ -45,7 +45,7 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
             {'name':'Override with', 'type':'str', 'key':'knownkey', 'get':self.getKnownKey, 'set':self.setKnownKey},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'action':lambda p: self.setHighlightedKeyColor(p.getValue())},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'action':lambda p: self.setTraceColor(p.getValue())},
-            {'name':'Redraw Widgets',  'type':'action', 'action':self.updateAll},
+            {'name':'Redraw Widgets',  'type':'action', 'action':lambda _:self.updateAll()},
         ])
         self.findParam('knownkey').hide()
 

@@ -283,7 +283,7 @@ class PartitionDisplay(AutoScript):
               ]},
              ]
 
-        self.updateScript()
+        # self.updateScript()
 
     def guiActions(self):
         self.poi = POI(self)

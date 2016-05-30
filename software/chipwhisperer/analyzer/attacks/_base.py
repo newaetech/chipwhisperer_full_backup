@@ -87,7 +87,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
     def knownKey(self):
         """Get the known key via attack"""
         try:
-            return self.processKnownKey(self.traceSource().getKnownKey(self.getTraceStart()))
+            return self.processKnownKey(self.getTraceSource().getKnownKey(self.getTraceStart()))
         except Exception as e:
             print "WARNING: Failed to find KnownKey, error = %s" % str(e)
             return None

@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 
 
 class TraceSource(object):
@@ -35,11 +35,13 @@ class TraceSource(object):
     Keeps a dictionary with all the registered objets and emits a signal when a new one is added
     """
     registeredObjects = util.DictType()
+    registeredObjects["None"] = None
     sigRegisteredObjectsChanged = util.Signal()
 
     def __init__(self, name="Unknown"):
         self.sigTracesChanged = util.Signal()
         self.name = name
+        self.register()
 
     def getTrace(self, n):
         return None
@@ -105,8 +107,7 @@ class PassiveTraceObserver(Parameterized):
     def __init__(self, parentParam=None):
         self._traceSource = None
 
-        self.params = self.getParams()
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'default':None, 'get':self.getTraceSource, 'set':self.setTraceSource}
         ])
 

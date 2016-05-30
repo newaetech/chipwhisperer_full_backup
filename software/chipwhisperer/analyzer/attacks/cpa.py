@@ -85,7 +85,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceSource", "UserScript.traces")
+        self.addFunction("init", "setTraceSource", "UserScript.traces, blockSignal=True")
 
     def processKnownKey(self, inpkey):
         if inpkey is None:

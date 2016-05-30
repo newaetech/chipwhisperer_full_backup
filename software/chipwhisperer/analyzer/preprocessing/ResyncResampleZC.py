@@ -44,9 +44,9 @@ class ResyncResampleZC(PreprocessingBase):
         self.debugReturnSad = False
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
-            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript}
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':lambda _:self.updateScript()},
+            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'action':lambda _:self.updateScript()},
+            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'action':lambda _:self.updateScript()},
         ])
         self.updateScript()
 

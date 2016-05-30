@@ -94,7 +94,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
         blist = []
         for i,t in enumerate(self.bytesParameters()):
             if i < self.numsubkeys:
-                if t.value() == True:
+                if t.getValue() == True:
                     blist.append(t.opts['bytenum'])
         self.addFunction("init", "setTargetBytes", str(blist))
 
@@ -117,7 +117,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
     def bytesParameters(self):
         blist = []
         for i in range(0, 64):
-            p = self.findParam('bnumenabled%d' % i)
+            p = self.findParam(['Attacked Bytes','bnumenabled%d' % i])
             if p:
                 blist.append(p)
         return blist

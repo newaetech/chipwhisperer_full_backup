@@ -265,8 +265,10 @@ class Parameter(object):
             else:
                 return item.getChild(path[1:])
         else:
-            return self.keys.get(path, None)
-
+            try:
+                return self.keys[path]
+            except:
+                raise KeyError("Could not find parameter with key %s. Options are: %s" % (path, str(self.keys)))
 
     def getPyQtGraphParameter(self):
         if hasattr(self,"_PyQtGraphParameter"):
@@ -309,7 +311,8 @@ class Parameter(object):
             for value in self.opts["values"].itervalues():
                 if isinstance(value, Parameterized):
                         parent.append(value.getParams())
-                        value.getParams().hide()
+                        value.getParams().show(self.getValue()==value)
+
 
     def refreshAllParameters(self):
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):

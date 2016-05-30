@@ -58,16 +58,7 @@ def drawHelpIcon(curParam):
         layout.addWidget(buthelp)
 
 
-def disconnectSignalsWhenDestroyed(self, widget, param):
-    widget.destroyed.connect(lambda: param.sigValueChanged.disconnect(self.valueChanged))
-    widget.destroyed.connect(lambda: param.sigChildAdded.disconnect(self.childAdded))
-    widget.destroyed.connect(lambda: param.sigChildRemoved.disconnect(self.childRemoved))
-    widget.destroyed.connect(lambda: param.sigNameChanged.disconnect(self.nameChanged))
-    widget.destroyed.connect(lambda: param.sigLimitsChanged.disconnect(self.limitsChanged))
-    widget.destroyed.connect(lambda: param.sigDefaultChanged.disconnect(self.defaultChanged))
-    widget.destroyed.connect(lambda: param.sigOptionsChanged.disconnect(self.optsChanged))
-    widget.destroyed.connect(lambda: param.sigParentChanged.disconnect(self.parentChanged))
-
+# Disconnect the signals when the widget is gone
 def __init___fix(self, param, depth):
     ParameterItem.__init__(self, param, depth)
 
@@ -78,7 +69,16 @@ def __init___fix(self, param, depth):
     ## build widget into column 1 with a display label and default button.
     w = self.makeWidget()
     self.widget = w
-    disconnectSignalsWhenDestroyed(self, self.widget, self.param)
+
+    self.widget.destroyed.connect(lambda: self.param.sigValueChanged.disconnect(self.valueChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigChildAdded.disconnect(self.childAdded))
+    self.widget.destroyed.connect(lambda: self.param.sigChildRemoved.disconnect(self.childRemoved))
+    self.widget.destroyed.connect(lambda: self.param.sigNameChanged.disconnect(self.nameChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigLimitsChanged.disconnect(self.limitsChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigDefaultChanged.disconnect(self.defaultChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigOptionsChanged.disconnect(self.optsChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigParentChanged.disconnect(self.parentChanged))
+
     self.eventProxy = EventProxy(w, self.widgetEventFilter)
 
     opts = self.param.opts

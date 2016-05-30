@@ -28,6 +28,7 @@
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
@@ -43,19 +44,24 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def __init__(self, parentParam=None, traceSource=None):
         self.enabled = True
         ActiveTraceObserver.__init__(self, parentParam=parentParam)
-        TraceSource.__init__(self)
+        TraceSource.__init__(self, self.getName())
         AutoScript.__init__(self)
-        self.setTraceSource(traceSource)
+        self.setTraceSource(traceSource, blockSignal=True)
         if traceSource:
             traceSource.sigTracesChanged.connect(self.sigTracesChanged.emit)  # Forwards the traceChanged signal to the next observer in the chain
-        self.params.addChildren([
-                 {'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':self.enabled, 'set':self.setEnabled}
+        self.getParams().addChildren([
+                 {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
         ])
         self.findParam('input').hide()
 
     def updateScript(self, ignored=None):
         pass
 
+    def getEnabled(self):
+        """Turn on/off this preprocessing"""
+        return self.enabled
+
+    @setupSetParam("Enabled")
     def setEnabled(self, enabled):
         """Turn on/off this preprocessing"""
         self.enabled = enabled

@@ -47,7 +47,7 @@ class TraceExplorerDialog(AutoScript, Parameterized):
         # Add Scripts
         self.setupCommonScripts()
 
-        ResultsBase.createNew("Trace Output Plot", "Basic Plot")
+        # ResultsBase.createNew("Trace Output Plot", "Basic Plot")
 
         self.progressBar = ProgressBar(show=False)
 

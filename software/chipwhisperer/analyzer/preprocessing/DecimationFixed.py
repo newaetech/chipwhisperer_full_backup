@@ -37,7 +37,7 @@ class DecimationFixed(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self.setDecimationFactor(2)
         self.params.addChildren([
-            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript}
+            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'default':self._decfactor, 'value':self._decfactor, 'limit':(1, 1000), 'action':lambda _:self.updateScript()}
         ])
         self.updateScript()
 

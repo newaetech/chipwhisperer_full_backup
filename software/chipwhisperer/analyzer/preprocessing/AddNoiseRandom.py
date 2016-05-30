@@ -37,7 +37,7 @@ class AddNoiseRandom(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self._maxNoise = 0
         self.params.addChildren([
-            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'set':self.updateScript}
+            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'action':lambda _: self.updateScript()}
         ])
         self.updateScript()
 

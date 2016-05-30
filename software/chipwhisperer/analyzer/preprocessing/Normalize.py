@@ -132,11 +132,11 @@ class Normalize(PreprocessingBase):
         self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
 
         self.params.addChildren([
-            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'set':self.updateNormClass},
-            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
-            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
-            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
-            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript}
+            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'value':NormMean, 'action':lambda _:self.updateNormClass()},
+            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'action':lambda _:self.updateScript()},
+            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'action':lambda _:self.updateScript()},
+            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'action':lambda _:self.updateScript()},
+            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript()},
         ])
         self.updateScript()
 

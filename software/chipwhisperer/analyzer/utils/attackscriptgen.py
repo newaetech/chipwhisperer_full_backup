@@ -61,11 +61,11 @@ class AttackScriptGen(Parameterized):
                 {'name':'Module', 'type':'list', 'values':self.cwGUI.api.valid_attacks, 'get':self.getAttack, 'set':self.setAttack},
             ]},
         ])
+        self.params.init()
         self.preprocessingParams = Parameter(name="Preprocessing", type='group')
-        self.params.getChild('Pre-Processing').stealDynamicParameters(self.preprocessingParams)
 
         self.attackParams = Parameter(name="Attack", type='group')
-        self.params.getChild('Attack').stealDynamicParameters(self.attackParams)
+        self.params.getChild(['Attack','Module']).stealDynamicParameters(self.attackParams)
 
         self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
 
@@ -123,11 +123,18 @@ class AttackScriptGen(Parameterized):
         This ensures that the options for that module are then displayed in the GUI, along with
         writing the auto-generated script.
         """
+        if self.preprocessingListGUI[num] is not None:
+            self.preprocessingParams.getChild('Pre-Processing Mod. #%d'% num).remove()
         if module:
             self.preprocessingListGUI[num] = module()
             self.preprocessingListGUI[num].scriptsUpdated.connect(self.reloadScripts)
+            par = Parameter(name = 'Pre-Processing Mod. #%d'% num, type = "group")
+            par.append(self.preprocessingListGUI[num].getParams())
+            self.preprocessingParams.append(par)
+
         else:
             self.preprocessingListGUI[num] = None
+
         self.reloadScripts()
 
     def getAttack(self):

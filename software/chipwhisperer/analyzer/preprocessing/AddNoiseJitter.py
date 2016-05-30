@@ -42,7 +42,7 @@ class AddNoiseJitter(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self.maxJitter = 0
         self.params.addChildren([
-            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'set':self.updateScript}
+            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'action':lambda _: self.updateScript()}
         ])
         self.updateScript()
 
