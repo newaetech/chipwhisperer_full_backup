@@ -38,9 +38,11 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
     _name = "OpenADC-ZTEX"
 
     def __init__(self, parentParam, oadcInstance):
-        self.params = Parameter(name=self.getName(), type='group')
+        self.getParams().addChildren([
+            {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"action", "action":lambda _:self.getFwLoaderConfigGUI.show()},
+            {'name':'Download CW Firmware','tip':'Download Firmware+FPGA To Hardware', 'type':"action", "action":lambda _:self.getCwFirmwareConfig.loadRequired()},
+        ])
         self.ser = None
-        self._toolActs = []
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -123,8 +125,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
         except:
             return "None?"
 
-    def setupGuiActions(self, mainWindow):
+    def getFwLoaderConfigGUI(self):
         if not hasattr(self, 'fwLoaderConfigGUI'):
-            self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
-               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
+            self.fwLoaderConfigGUI = FWLoaderConfigGUI(self.cwFirmwareConfig)
+        return self.fwLoaderConfigGUI

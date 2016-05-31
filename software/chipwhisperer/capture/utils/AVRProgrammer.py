@@ -32,11 +32,12 @@ from PySide.QtGui import *
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
 
 class AVRProgrammerDialog(QtFixes.QDialog):
-    def __init__(self, parent=None):
-        super(AVRProgrammerDialog, self).__init__(parent)
+    def __init__(self):
+        super(AVRProgrammerDialog, self).__init__(CWMainGUI.getInstance())
         # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
 
         self.avr = AVRProgrammer()
@@ -243,6 +244,7 @@ class AVRProgrammer(object):
         self.supported_chips = []
         self._logging = None
         self._foundchip = False
+        self.avr = None
 
     def setUSBInterface(self, iface):
         self.avr = iface
@@ -304,7 +306,8 @@ class AVRProgrammer(object):
 
     
     def close(self):
-        self.avr.enableISP(False)
+        if self.avr is not None:
+            self.avr.enableISP(False)
 
     def log(self, text):
         if self._logging is None:

@@ -33,6 +33,7 @@ from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -98,6 +99,12 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitorAct = QAction('Open Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
                                         triggered=self.glitchMonitor.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
+
+        self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
+        self.api.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
+        self.encryptionStatusMonitorAct = QAction('Encryption Status Monitor', self, statusTip='Encryption Status Monitor',
+                                        triggered=self.encryptionStatusMonitor.show)
+        self.toolMenu.addAction(self.encryptionStatusMonitorAct)
 
     def addToolbarItems(self, toolbar):
         # Capture

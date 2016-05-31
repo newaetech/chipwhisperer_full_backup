@@ -26,7 +26,6 @@ import copy
 import traceback
 import sys
 from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
-from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
@@ -112,15 +111,6 @@ class CWCoreAPI(Parameterized):
 
     def getGraphWidget(self):
         return self.graphWidget
-
-    def allGuiActions(self, mainWindow):
-        ret = self.guiActions(mainWindow)
-        if self.getScope(): ret.extend(self.getScope().guiActions(mainWindow))
-        if self.getTarget(): ret.extend(self.getTarget().guiActions(mainWindow))
-        if self.getTraceFormat(): ret.extend(self.getTraceFormat().guiActions(mainWindow))
-        if self.getAuxList()[0]: ret.extend(self.getAuxList()[0].guiActions(mainWindow))
-        if self.getAttack(): ret.extend(self.getAttack().guiActions(mainWindow))
-        return ret
 
     def getScope(self):
         return self._scope
@@ -340,12 +330,6 @@ class CWCoreAPI(Parameterized):
                 if funcName == 'TraceExplorerDialog_PartitionDisplay_findPOI':
                     return
                 sys.excepthook(Warning, "Could not execute method %s in script class %s: %s" % (funcName, scriptClass.__name__, e.message), sys.exc_info()[2])
-
-    def setupGuiActions(self, mainWindow):
-        if not hasattr(self, 'encryptionStatusMonitor'):
-            self.encryptionStatusMonitor = EncryptionStatusMonitor(mainWindow)
-            self.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
-        return [['Encryption Status Monitor','', self.encryptionStatusMonitor.show]]
 
     def setParameter(self, pathAndValue):
         Parameter.setParameter(pathAndValue)

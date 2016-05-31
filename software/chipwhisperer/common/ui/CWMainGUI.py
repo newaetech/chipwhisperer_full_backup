@@ -89,7 +89,6 @@ class CWMainGUI(QMainWindow):
         self.projectChanged()
         self.api.sigNewProject.connect(self.projectChanged)
         self.api.sigTracesChanged.connect(self.tracesChanged)
-        # CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
 
     def newResultWidget(self, resultWidget):
         # Remove all old actions that don't apply for new selection
@@ -167,20 +166,6 @@ class CWMainGUI(QMainWindow):
         # wid = pyqtgraph.console.ConsoleWidget(namespace=tmp, text="")
         wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
         return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
-
-    def reloadGuiActions(self):
-        # Remove all old actions that don't apply for new selection
-        if hasattr(self,"_ToolMenuItems"):
-            for act in self._ToolMenuItems:
-                self.toolMenu.removeAction(act)
-
-        self._ToolMenuItems = []
-        self._ToolMenuItems.append(self.toolMenu.addSeparator())
-        # for act in CWParameterTree.getAllGuiActions(self):
-        #     self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
-
-        for act in self._ToolMenuItems:
-            self.toolMenu.addAction(act)
 
     def reset(self):
         """Clear all saved QSettings(), such as window location etc and exit"""

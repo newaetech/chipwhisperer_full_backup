@@ -33,11 +33,12 @@ from PySide.QtGui import *
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
 from chipwhisperer.capture.utils.IntelHex import IntelHex
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
 
 class XMEGAProgrammerDialog(QtFixes.QDialog):
-    def __init__(self, parent=None):
-        super(XMEGAProgrammerDialog, self).__init__(parent)
+    def __init__(self):
+        super(XMEGAProgrammerDialog, self).__init__(CWMainGUI.getInstance())
         # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
         self.xmega = XMEGAProgrammer()
 

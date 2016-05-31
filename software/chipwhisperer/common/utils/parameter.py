@@ -42,13 +42,6 @@ class Parameterized(object):
     def findParam(self, name):
         return self.getParams().getChild(name)
 
-    def setupGuiActions(self, mainWindow):
-        """You should overload this. Copy/Paste into your class."""
-        # self.window = Window(mainWindow, parameters)
-        # return [['Name of the menu item','Description', self.window.show],...]
-#         return []
-        pass
-
     def getName(self):
         return self._name
 
@@ -233,6 +226,9 @@ class Parameter(object):
         self.opts['visible'] = s
         self.sigOptionsChanged.emit(visible=s)
 
+    def isVisible(self):
+        return self.opts['visible']
+
     def remove(self):
         if self.parent is None:
             return
@@ -361,18 +357,6 @@ class Parameter(object):
 
         if child is None:
             raise KeyError("Parameter not found: %s" % str(parameter))
-
-    # def getGuiActions(self, mainWindow):
-    #     # Returns a list with all the gui actions in the active parameter tree.
-    #     ret = []
-    #     for p in cls.registeredParameters:
-    #         if self.getParams().getOpts()["visible"]:
-    #             ret.extend(self.setupGuiActions(mainWindow))
-    #             for e in self.getParams().getOpts()["visible"]__activeParams:
-    #                 currentParams = e()
-    #                 if currentParams:
-    #                     ret.extend(currentParams.guiActions(mainWindow))
-    #     return ret
 
 def setupSetParam(parameter):
     def func_decorator(func):

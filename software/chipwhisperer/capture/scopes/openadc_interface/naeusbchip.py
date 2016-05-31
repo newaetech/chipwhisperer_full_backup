@@ -49,7 +49,12 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         self.scope = None
         self._toolActs = []
 
-        self.params = Parameter(name=self.getName(), type='group')
+        self.getParams().addChildren([
+            {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"action", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
+            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"action", "action":lambda _:self.cwFirmwareConfig.loadRequired()},
+            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"action", "action":lambda _:self.getCwliteXMEGA().show()},
+            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"action", "action":lambda _:self.getCwliteAVR().show()}
+        ])
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -106,13 +111,18 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         except:
             return "None?"
 
-    def setupGuiActions(self, mainWindow):
+    def getCwliteXMEGA(self):
         if not hasattr(self, 'cwliteXMEGA'):
-            self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
+            self.cwliteXMEGA = XMEGAProgrammerDialog()
+        return self.cwliteXMEGA
+
+    def getCwliteAVR(self):
         if not hasattr(self, 'cwliteAVR'):
-            self.cwliteAVR = AVRProgrammerDialog(mainWindow)
-        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show], # Can' use Config... name with MacOS
-                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired],
-                ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
-                ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
+            self.cwliteAVR = AVRProgrammerDialog()
+        return self.cwliteAVR
+
+    def getFwLoaderConfigGUI(self):
+        if not hasattr(self, 'fwLoaderConfigGUI'):
+            self.fwLoaderConfigGUI = FWLoaderConfigGUI(self.cwFirmwareConfig)
+        return self.fwLoaderConfigGUI
+
