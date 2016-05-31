@@ -66,6 +66,7 @@ class CWMainGUI(QMainWindow):
 
     def __init__(self, api, name="Demo", icon="cwicon"):
         QMainWindow.__init__(self)
+        CWMainGUI.instance = self
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
         util.setUIupdateFunction(QCoreApplication.processEvents)
@@ -89,7 +90,6 @@ class CWMainGUI(QMainWindow):
         self.api.sigNewProject.connect(self.projectChanged)
         self.api.sigTracesChanged.connect(self.tracesChanged)
         # CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
-        CWMainGUI.instance = self
 
     def newResultWidget(self, resultWidget):
         # Remove all old actions that don't apply for new selection

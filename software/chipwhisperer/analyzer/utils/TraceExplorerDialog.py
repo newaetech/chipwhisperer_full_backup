@@ -29,8 +29,7 @@ from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import P
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.TextDisplay import TextDisplay
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
-from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 
 class TraceExplorerDialog(AutoScript, Parameterized):
@@ -38,7 +37,7 @@ class TraceExplorerDialog(AutoScript, Parameterized):
     _name = "Trace Explorer"
     def __init__(self, parent):
         AutoScript.__init__(self)
-
+        self.enabled = False
         self.autoScriptInit()
 
         # Add example scripts to this list
@@ -47,30 +46,33 @@ class TraceExplorerDialog(AutoScript, Parameterized):
         # Add Scripts
         self.setupCommonScripts()
 
-        # ResultsBase.createNew("Trace Output Plot", "Basic Plot")
-
         self.progressBar = ProgressBar(show=False)
-
-    # def showEvent(self, event):
-    #     QMainWindow.showEvent(self, event)
-    #     self.updateChildren()
 
     def setupCommonScripts(self):
         # Setup parameer tree
 
+        self.getParams().addChildren([
+                 {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
+        ])
         self.commonScriptParams = []
-
+        self.paramCommonScripts = Parameter(name='Common Scripts', type='group', children=self.commonScriptParams)
         for example in self.exampleScripts:
-            self.commonScriptParams.append({'name':example.name, 'type':'group', 'children':example.params})
+            self.paramCommonScripts.append(example.getParams())
             example.scriptsUpdated.connect(self.updateScripts)
             example.runScriptFunction.connect(self.runScriptFunction.emit)
-
-        self.paramCommonScripts = Parameter(name='Common Scripts', type='group', children=self.commonScriptParams)
-        self.params = self.getParams()
-        self.params.append(self.paramCommonScripts)
+        self.getParams().append(self.paramCommonScripts)
+        self.paramCommonScripts.hide()
 
         self.updateScripts()
 
+    def getEnabled(self):
+        return self.enabled
+
+    @setupSetParam("Enabled")
+    def setEnabled(self, enabled):
+        self.enabled = enabled
+        self.paramCommonScripts.show(enabled)
+        self.updateChildren()
 
 ####COMMON SCRIPTING STUFF
 

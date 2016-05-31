@@ -37,6 +37,8 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
 
 class DifferenceModeTTest(object):
@@ -187,7 +189,7 @@ class POI(QWidget):
 
     def setDifferences(self, diffs):
         self.diffs = diffs
-        self.parent.parent.findParam('poi-pointrng').setValue((0, len(self.parent.SADList[0])))
+        self.parent.findParam(["Points of Interest",'poi-pointrng']).setValue((0, len(self.parent.SADList[0])))
 
     def savePOI(self):
         poiDict = {"poi":self.poiArray}
@@ -238,18 +240,21 @@ class POI(QWidget):
         return {"poi":self.poiArray}
 
 
-class PartitionDisplay(AutoScript):
+class PartitionDisplay(Parameterized, AutoScript):
+    _name = "Partition Comparison"
 
     def __init__(self, parent):
         AutoScript.__init__(self)
         self.parent = parent
+        self.poi = POI(self)
+        self.dock = CWMainGUI.getInstance().addDock(self.poi, "Trace Data", area=Qt.TopDockWidgetArea)
+        self.dock.hide()
         self.defineName()
         self._traces = None
+
         self.api = CWCoreAPI.getInstance()
 
     def defineName(self):
-        self.name = 'Partition Comparison'
-
         self.partObject = Partition(self)
         partModeList = {}
         for a in self.partObject.supportedMethods:
@@ -265,30 +270,23 @@ class PartitionDisplay(AutoScript):
         self.addGroup("generatePartitionDiffs")
         self.addGroup("displayPartitionDiffs")
 
-        self.params = [
-              {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'action':lambda _: self.updateScript},
-              {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'action':lambda _: self.updateScript},
-              {'name':'Display', 'type':'action', 'action':self.runAction},
+        self.getParams().addChildren([
+              {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'action':lambda _: self.updateScript()},
+              {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'action':lambda _: self.updateScript()},
+              {'name':'Display', 'type':'action', 'action':lambda _:self.runAction()},
 
-              {'name':'Auto-Save Data to Project', 'key':'part-saveints', 'type':'bool', 'value':False, 'action':lambda _: self.updateScript},
-              {'name':'Auto-Load Data from Project', 'key':'part-loadints', 'type':'bool', 'value':False, 'action':lambda _: self.updateScript},
+              {'name':'Auto-Save Data to Project', 'key':'part-saveints', 'type':'bool', 'value':False, 'action':lambda _: self.updateScript()},
+              {'name':'Auto-Load Data from Project', 'key':'part-loadints', 'type':'bool', 'value':False, 'action':lambda _: self.updateScript()},
 
               {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
                  {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
-                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'action':lambda _: self.updatePOI},
-                 {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'action':lambda _: self.updatePOI},
-                 {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'action':lambda _: self.updatePOI},
+                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'value':(0, 0), 'action':lambda _: self.updatePOI()},
+                 {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'action':lambda _: self.updatePOI()},
+                 {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'action':lambda _: self.updatePOI()},
                  # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
-                 {'name':'Open POI Table', 'type':'action', 'action':lambda _: self.poidock.show()},
+                 {'name':'Open POI Table', 'type':'action', 'action':lambda _: self.poi.show()},
               ]},
-             ]
-
-        # self.updateScript()
-
-    def guiActions(self):
-        self.poi = POI(self)
-        self.poidock = self.parent.addDock(self.poi, "Points of Interest", area=Qt.RightDockWidgetArea)
-        self.poidock.hide()
+        ])
 
     def updatePOI(self, ignored=None):
         self.updateScript()
@@ -320,8 +318,8 @@ class PartitionDisplay(AutoScript):
     def updateScript(self, ignored=None):
         ##Partitioning & Differences
         try:
-            diffMethodStr = self.parent.findParam('diffmode').getValue().__name__
-            partMethodStr = self.parent.findParam('partmode').getValue().__name__
+            diffMethodStr = self.findParam('diffmode').getValue().__name__
+            partMethodStr = self.findParam('partmode').getValue().__name__
         except AttributeError as e:
             return
 
@@ -346,13 +344,13 @@ class PartitionDisplay(AutoScript):
         self.addFunction('displayPartitionStats', 'poi.setDifferences', 'partDiffs', obj='ted')
 
         ##Points of Interest
-        ptrng = self.parent.findParam('poi-pointrng').getValue()
+        ptrng = self.findParam(["Points of Interest",'poi-pointrng']).getValue()
         self.addGroup("findPOI")
         self.addVariable('findPOI', 'ted', 'self.')
         self.addFunction('findPOI', 'poi.calcPOI', 'numMax=%d, pointRange=(%d, %d), minSpace=%d' % (
-                            self.parent.findParam('poi-nummax').getValue(),
+                            self.findParam(["Points of Interest",'poi-nummax']).getValue(),
                             ptrng[0], ptrng[1],
-                            self.parent.findParam('poi-minspace').getValue()),
+                            self.findParam(["Points of Interest",'poi-minspace']).getValue()),
                           obj='ted')
 
     def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False,  tRange=(0, -1), progressBar=None):
@@ -558,7 +556,7 @@ class PartitionDisplay(AutoScript):
             ql.setText('%d' % i)
             color = pg.intColor(i, self.numKeys)
             ql.setStyleSheet("color: rgb(%d, %d, %d)" % (color.red(), color.green(), color.blue()))
-            qa = QWidgetAction(self)
+            qa = QWidgetAction(self.graph)
             qa.setDefaultWidget(ql)
             qa.setStatusTip('%d' % i)
             ql.setCheckable(True)
@@ -566,8 +564,8 @@ class PartitionDisplay(AutoScript):
             ql.clicked[bool].connect(partial(self.setBytePlot, i))
             self.byteNumAct.append(qa)
 
-        byteNumAllOn = QAction('All On', self)
-        byteNumAllOff = QAction('All Off', self)
+        byteNumAllOn = QAction('All On', self.graph)
+        byteNumAllOff = QAction('All Off', self.graph)
         byteNumAllOn.triggered.connect(partial(self.setByteAll, True))
         byteNumAllOff.triggered.connect(partial(self.setByteAll, False))
 
@@ -583,8 +581,8 @@ class PartitionDisplay(AutoScript):
 
         # self.poi.setDifferences(SADList)
 
-        # self.parent.findParam('poi-pointrng').setLimits((0, len(SADList[0])))
-        # self.parent.findParam('poi-pointrng').setValue((0, len(SADList[0])))
+        # self.findPa["Points of Interest",'poi-pointrng']rng').setLimits((0, len(SADList[0])))
+        # self.findPa["Points of Interest",'poi-pointrng']rng').setValue((0, len(SADList[0])))
         self.redrawPlot()
 
     def runAction(self):

@@ -196,9 +196,9 @@ class AttackScriptGen(Parameterized):
 
         # Some other imports
         mse.append("# Imports from utilList", 0)
-        # for index, util in enumerate(self.utilList):
-        #     if hasattr(util, '_smartstatements') and util.isVisible():
-        #         for i in util.getImportStatements(): mse.append(i, 0)
+        for index, util in enumerate(self.utilList):
+            if util.findParam("enabled").getValue():
+                for i in util.getImportStatements(): mse.append(i, 0)
 
         mse.append("", 0)
 
@@ -268,18 +268,18 @@ class AttackScriptGen(Parameterized):
                         mse.append(s.replace("self.", "self.api.getAttack().").replace("UserScript.", "self."))
 
         # Get other commands from other utilities
-        # for index, util in enumerate(self.utilList):
-        #     if hasattr(util, '_smartstatements') and util.isVisible():
-        #         for k in util._smartstatements:
-        #             util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
-        #             util._smartstatements[k].addSelfReplacement("cwagui.attackScriptGen.") #TODO-temp hack
-        #             statements = util.getStatements(k)
-        #
-        #             if len(statements) > 0:
-        #                 mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
-        #                 mse.append("self.cwagui = CWAnalyzerGUI.getInstance()") #TODO - temp hack
-        #                 for s in statements:
-        #                     mse.append(s.replace("UserScript.", "self."))
+        for index, util in enumerate(self.utilList):
+            if util.findParam("enabled").getValue():
+                for k in util._smartstatements:
+                    util._smartstatements[k].addSelfReplacement("utilList[%d]." % index)
+                    util._smartstatements[k].addSelfReplacement("cwagui.attackScriptGen.") #TODO-temp hack
+                    statements = util.getStatements(k)
+
+                    if len(statements) > 0:
+                        mse.append("def %s_%s(self):" % (util.__class__.__name__, k), 1)
+                        mse.append("self.cwagui = CWAnalyzerGUI.getInstance()") #TODO - temp hack
+                        for s in statements:
+                            mse.append(s.replace("UserScript.", "self."))
 
         mse.restoreSliderPosition()
         self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)
