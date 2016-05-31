@@ -85,9 +85,9 @@ class AttackGenericParameters(Parameterized, AutoScript):
         self.useAbs = mode
 
     def getByteList(self):
-        init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, action=lambda _:self.updateScript()) for bnum in range(0, self.maxSubKeys)]
-        init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
-        init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
+        init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, action=lambda _:self.updateScriptBytesEnabled()) for bnum in range(0, self.maxSubKeys)]
+        init.insert(0,{'name':'All On', 'type':'action', 'action':lambda _:self.allBytesOn()})
+        init.insert(0,{'name':'All Off', 'type':'action', 'action':lambda _:self.allBytesOff()})
         return init
 
     def updateScriptBytesEnabled(self, ignored=None):
