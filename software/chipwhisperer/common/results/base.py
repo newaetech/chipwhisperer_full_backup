@@ -66,7 +66,7 @@ class ResultsBase(Parameterized):
         # ResultsBase.createNew("Trace Output Plot", "Channel 2")
 
         if instanceName in cls.registeredObjects:
-            raise Warning("Result widget %s already exists, choose a different name" % instanceName)
+            raise Warning("Result widget \"%s\" already exists, choose a different name" % instanceName)
 
         obj = cls.getClasses()[className](None, instanceName)
         cls.registeredObjects[obj.getName()] = obj

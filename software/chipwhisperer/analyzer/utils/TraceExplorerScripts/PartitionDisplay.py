@@ -36,7 +36,7 @@ from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.results.base import ResultsBase
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
@@ -253,6 +253,11 @@ class PartitionDisplay(Parameterized, AutoScript):
         self._traces = None
 
         self.api = CWCoreAPI.getInstance()
+        self.graph = GraphWidget()
+        self.bselection = QToolBar()
+        self.graph.addWidget(self.bselection)
+        self.dock = CWMainGUI.getInstance().addDock(self.graph, "Trace Data", area=Qt.TopDockWidgetArea)
+        self.dock.hide()
 
     def defineName(self):
         self.partObject = Partition(self)
@@ -530,17 +535,15 @@ class PartitionDisplay(Parameterized, AutoScript):
         return SADList
 
     def displayPartitions(self, differences={"partclass":None, "diffs":None}, tRange=(0, -1)):
+        self.dock.show()
         traces = self._traces
 
         if tRange[1] < 0:
             tRange = (tRange[0], traces.numTraces() + 1 + tRange[1])
 
         self.partObject.setPartMethod(differences["partclass"])
-
         self.numKeys = len(self.partObject.partMethod.getPartitionNum(traces, 0))
         self.SADList = differences["diffs"]
-
-        self.graph = ResultsBase.createNew("Trace Output Plot", "Partition Differences")
 
         # Place byte selection option on graph
         if hasattr(self, 'enabledbytes') and len(self.enabledbytes) == self.numKeys:
@@ -569,14 +572,11 @@ class PartitionDisplay(Parameterized, AutoScript):
         byteNumAllOn.triggered.connect(partial(self.setByteAll, True))
         byteNumAllOff.triggered.connect(partial(self.setByteAll, False))
 
-        bselection = QToolBar()
-
+        self.bselection.clear()
         for i in range(0, self.numKeys):
-            bselection.addAction(self.byteNumAct[i])
-        bselection.addAction(byteNumAllOn)
-        bselection.addAction(byteNumAllOff)
-        self.graph.addWidget(bselection)
-
+            self.bselection.addAction(self.byteNumAct[i])
+        self.bselection.addAction(byteNumAllOn)
+        self.bselection.addAction(byteNumAllOff)
         self.graph.setPersistance(True)
 
         # self.poi.setDifferences(SADList)

@@ -37,7 +37,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
     def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsBase.__init__(self, parentParam, name)
+        if name is not None:
+            self._name = name
         ActiveTraceObserver.__init__(self)
 
         self.params.addChildren([
