@@ -45,7 +45,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
         self.getParams().addChildren([
             {'name':'Use Absolute Value for Rank', 'key':'useAbs', 'type':'list',
             'values':useAbsValueList, 'value':useAbsValueList["Default"]},
-            {'name':'Use single point for rank', 'key':'singlepoint', 'type':'bool', 'value':False},
+            # {'name':'Use single point for rank', 'key':'singlepoint', 'type':'bool', 'value':False}, #TODO: Fix later
             {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'get':self.getUpdateMode, 'set':self.setUpdateMode},
             {'name':'Color Gradient', 'type':'bool', 'get':self.getColorGradient, 'set':self.setColorGradient},
         ])
@@ -127,7 +127,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                         else:
                             cell.setForeground(QBrush(Qt.black))
 
-                        if self.colorGradient:
+                        if self.colorGradient :
                             cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
                         else:
                             cell.setBackground(QBrush(Qt.white))
