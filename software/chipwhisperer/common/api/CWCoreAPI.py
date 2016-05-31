@@ -107,6 +107,9 @@ class CWCoreAPI(Parameterized):
 
         self.newProject()
 
+    def getResults(self, name):
+        return ResultsBase.registeredObjects[name]
+
     def getGraphWidget(self):
         return self.graphWidget
 
