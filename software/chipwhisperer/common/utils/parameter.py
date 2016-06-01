@@ -250,7 +250,7 @@ class Parameter(object):
 
         self.sigChildRemoved.emit(child)
         del self.children[child.getName()]
-
+        child.parent = None
 
     def getChild(self, path):
         if isinstance(path, list) or isinstance(path, tuple):
