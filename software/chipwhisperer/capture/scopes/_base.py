@@ -66,7 +66,7 @@ class ScopeTemplate(Parameterized, Plugin):
             self.connectStatus.setValue(False)
 
     def _dis(self):
-        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
 
     def doDataUpdated(self,  l, offset=0):
         self.dataUpdated.emit(l, offset)
@@ -78,5 +78,13 @@ class ScopeTemplate(Parameterized, Plugin):
         #    raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
         #raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
 
-    def capture(self, update=True, NumberPoints=None, waitingCallback=None):
+    def capture(self, update=True, NumberPoints=None):
+
+        #NOTE: If you have a waiting loop (waiting for arm), call the function util.updateUI() inside that loop to keep
+        #      the UI responsive:
+        #
+        # while self.done() == False:
+        #     time.sleep(0.05)
+        #     util.updateUI()
+        
         pass
