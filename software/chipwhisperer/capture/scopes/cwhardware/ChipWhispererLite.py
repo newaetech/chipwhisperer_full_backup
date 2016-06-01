@@ -27,8 +27,13 @@ from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.serial import USART
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
+from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 
-class CWLiteUSB(object):
+
+class CWLiteUSB(Parameterized):
+    _name = "ChipWisperer-Lite USB"
 
     def __init__(self):
         self._cwusb = NAEUSB()
@@ -39,8 +44,25 @@ class CWLiteUSB(object):
         self.avr = AVRISP(self._cwusb)
         self.usart = USART(self._cwusb)
 
+        self.getParams().addChildren([
+            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"action", "action":lambda _:self.getCwliteXMEGA().show()},
+            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"action", "action":lambda _:self.getCwliteAVR().show()}
+        ])
+
     def con(self):
         self._cwusb.con()
 
     def usbdev(self):
         return self._cwusb
+
+    def getCwliteXMEGA(self):
+        if not hasattr(self, 'cwliteXMEGA'):
+            self.cwliteXMEGA = XMEGAProgrammerDialog()
+            self.cwliteXMEGA.setUSBInterface(self.xmega)
+        return self.cwliteXMEGA
+
+    def getCwliteAVR(self):
+        if not hasattr(self, 'cwliteAVR'):
+            self.cwliteAVR = AVRProgrammerDialog()
+            self.cwliteAVR.setUSBInterface(self.avr)
+        return self.cwliteAVR
