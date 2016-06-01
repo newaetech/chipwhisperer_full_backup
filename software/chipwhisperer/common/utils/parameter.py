@@ -53,11 +53,16 @@ class Parameterized(object):
     def getDescription(cls):
         return cls._description
 
+    def __del__(self):
+        self.getParams().remove()
+        self.params = None
+
 
 class Parameter(object):
+    sigParametersChanged = util.Signal()
     registeredParameters = {}
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color"]
+    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color", "menu"]
     # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
     #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
 
@@ -70,7 +75,7 @@ class Parameter(object):
 
         self.previousValue = None
         self.parent = parent
-        self.opts = {}
+        self.opts = {"visible":True}
         self.opts.update(opts)
 
         if 'name' not in self.opts or not isinstance(self.opts['name'], basestring):
@@ -106,13 +111,19 @@ class Parameter(object):
         self.children = util.DictType()
         tmp = self.opts.pop("children", [])
         self.setupPyQtGraph = setupPyQtGraph
-        if self.setupPyQtGraph:
+        if self.setupPyQtGraph and self.opts["type"] != "menu":
             self.setupPyQtGraphParameter()
         self.keys = {}
         self.addChildren(tmp)
 
     def getName(self):
         return self.opts["name"]
+
+    def getTip(self):
+        return self.opts["tip"]
+
+    def getAction(self):
+        return self.opts["action"]
 
     def addChildren(self, children):
         for child in children:
@@ -121,6 +132,7 @@ class Parameter(object):
     def append(self, child):
         if child is None:
             return
+
         if child.getName() in self.children:
             self.children[child.getName()].remove()
 
@@ -129,7 +141,9 @@ class Parameter(object):
             self.keys[child.getOpts()["key"]] = child
         child.setParent(self)
         self.children[child.getName()] = child
-        self.sigChildAdded.emit(child)
+        if child.opts["type"] != "menu":
+            self.sigChildAdded.emit(child)
+        self.sigParametersChanged.emit()
 
     def getOpts(self):
         return self.opts
@@ -225,6 +239,7 @@ class Parameter(object):
     def show(self, s=True):
         self.opts['visible'] = s
         self.sigOptionsChanged.emit(visible=s)
+        self.sigParametersChanged.emit()
 
     def isVisible(self):
         return self.opts['visible']
@@ -233,6 +248,21 @@ class Parameter(object):
         if self.parent is None:
             return
         self.parent.removeChild(self)
+
+    def delete(self):
+        self.remove()
+        for c in self.children.itervalues():
+            c.delete()
+        self.sigValueChanged.disconnectAll()
+        self.sigLimitsChanged.disconnectAll()
+        self.sigOptionsChanged.disconnectAll()
+        self.sigChildAdded.disconnectAll()
+        self.sigChildRemoved.disconnectAll()
+        if self.setupPyQtGraph:
+            # if hasattr(self._PyQtGraphParameter, "sigActivated"):
+            #     self._PyQtGraphParameter.sigActivated.disconnect()
+            # self._PyQtGraphParameter.sigValueChanged.disconnect()
+            self._PyQtGraphParameter = None
 
     def clearChildren(self):
         for ch in self.children.itervalues():
@@ -251,6 +281,7 @@ class Parameter(object):
         self.sigChildRemoved.emit(child)
         del self.children[child.getName()]
         child.parent = None
+        self.sigParametersChanged.emit()
 
     def getChild(self, path):
         if isinstance(path, list) or isinstance(path, tuple):
@@ -309,7 +340,6 @@ class Parameter(object):
                         parent.append(value.getParams())
                         value.getParams().show(self.getValue()==value)
 
-
     def refreshAllParameters(self):
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
             for value in self.opts["values"].itervalues():
@@ -328,6 +358,22 @@ class Parameter(object):
         for child in self.children.itervalues():
             child.refreshAllParameters()
 
+    def _getAllParameters(self, type=None):
+        ret = []
+        if self.isVisible():
+            if self.opts.get("type", None) == type or type == None:
+                ret.append(self)
+            for child in self.children.itervalues():
+                ret.extend(child._getAllParameters(type))
+        return ret
+
+    @classmethod
+    def getAllParameters(cls, type=None):
+        ret = []
+        for p in cls.registeredParameters.itervalues():
+            ret.extend(p._getAllParameters(type))
+        return ret
+
     def init(self):
         self.refreshAllParameters()
 
@@ -335,9 +381,8 @@ class Parameter(object):
         self.registeredParameters[self.getName()] = self
         return self
 
-    # def deregister(self):
-    #     self.registeredParameters.remove(self)
-    #     return self
+    def deregister(self):
+        del self.registeredParameters[self.getName()]
 
     @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
@@ -357,6 +402,9 @@ class Parameter(object):
 
         if child is None:
             raise KeyError("Parameter not found: %s" % str(parameter))
+
+    def __del__(self):
+        self.remove()
 
 def setupSetParam(parameter):
     def func_decorator(func):

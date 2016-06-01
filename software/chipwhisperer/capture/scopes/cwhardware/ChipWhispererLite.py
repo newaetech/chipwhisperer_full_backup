@@ -30,7 +30,7 @@ from chipwhisperer.hardware.naeusb.serial import USART
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-
+import sys, gc
 
 class CWLiteUSB(Parameterized):
     _name = "ChipWisperer-Lite USB"
@@ -45,12 +45,22 @@ class CWLiteUSB(Parameterized):
         self.usart = USART(self._cwusb)
 
         self.getParams().addChildren([
-            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"action", "action":lambda _:self.getCwliteXMEGA().show()},
-            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"action", "action":lambda _:self.getCwliteAVR().show()}
+            {'name':"CW-Lite XMEGA Programmer", 'tip':"Open XMEGA Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteXMEGA().show()},
+            {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteAVR().show()}
         ])
 
     def con(self):
         self._cwusb.con()
+
+    def __del__(self):
+        print "here"
+
+    def dis(self):
+        self.getParams().delete()
+        self.params = None
+        gc.collect()
+        print sys.getrefcount(self)
+        print gc.get_referrers(self)
 
     def usbdev(self):
         return self._cwusb

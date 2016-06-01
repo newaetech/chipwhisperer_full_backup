@@ -34,7 +34,7 @@ class OpenADCQt(Parameterized):
     def __init__(self, parentParam=None):
         self.dataUpdated = util.Signal()
 
-        self.params = Parameter(name=self.getName(), type='group').register()
+        self.params = Parameter(name=self.getName(), type='group')
 
         self.offset = 0.5
         self.ser = None
@@ -110,8 +110,9 @@ class OpenADCQt(Parameterized):
         self.sc.testAndTime()
 
     def con(self, ser):
+        self.getParams().register()
         self.ser = ser
-        #See if device seems to be attached
+        # See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
 
         self.parm_hwinfo = openadc.HWInformation(self.sc)
@@ -129,7 +130,7 @@ class OpenADCQt(Parameterized):
         deviceFound = False
         numTries = 0
 
-        #Try a few times
+        # Try a few times
         while(deviceFound == False):
 
             if self.sc.devicePresent():
@@ -137,13 +138,11 @@ class OpenADCQt(Parameterized):
                 break
 
             numTries += 1
-
-            if (numTries == 5):
+            if numTries == 5:
                 try:
                     portname = self.ser.name
                 except:
                     portname = "UNKNOWN"
-                # self.ser.close()
                 self.close()
 
                 raise IOError("Opened port %s but failed to find OpenADC" % portname)
@@ -152,19 +151,24 @@ class OpenADCQt(Parameterized):
         self.setEnabled(True)
 
     def close(self):
-        if self.ser:
-            self.ser = None
-            if self.parm_hwinfo is not None:
-                self.parm_hwinfo.getParams().remove()
+        self.params.deregister()
+        self.ser = None
+        if self.parm_hwinfo is not None:
+            self.parm_hwinfo.getParams().delete()
+        self.parm_hwinfo = None
 
-            if self.parm_gain is not None:
-                self.parm_gain.getParams().remove()
+        if self.parm_gain is not None:
+            self.parm_gain.getParams().delete()
+        self.parm_gain = None
 
-            if self.parm_trigger is not None:
-                self.parm_trigger.getParams().remove()
+        if self.parm_trigger is not None:
+            self.parm_trigger.getParams().delete()
+        self.parm_trigger = None
 
-            if self.parm_clock is not None:
-                self.parm_clock.getParams().remove()
+        if self.parm_clock is not None:
+            self.parm_clock.getParams().delete()
+        self.parm_clock = None
+        self.sc = None
 
     def __del__(self):
         self.close()

@@ -39,8 +39,8 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
     def __init__(self, parentParam, oadcInstance):
         self.getParams().addChildren([
-            {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"action", "action":lambda _:self.getFwLoaderConfigGUI.show()},
-            {'name':'Download CW Firmware','tip':'Download Firmware+FPGA To Hardware', 'type':"action", "action":lambda _:self.getCwFirmwareConfig.loadRequired()},
+            {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI.show()},
+            {'name':'Download CW Firmware','tip':'Download Firmware+FPGA To Hardware', 'type':"menu", "action":lambda _:self.getCwFirmwareConfig.loadRequired()},
         ])
         self.ser = None
 

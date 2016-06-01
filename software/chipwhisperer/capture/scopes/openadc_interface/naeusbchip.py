@@ -46,11 +46,10 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         self.ser = None
         self.dev = None
         self.scope = None
-        self._toolActs = []
 
         self.getParams().addChildren([
-            {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"action", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
-            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"action", "action":lambda _:self.cwFirmwareConfig.loadRequired()},
+            {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
+            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"menu", "action":lambda _:self.cwFirmwareConfig.loadRequired()},
         ])
 
         if (openadc_qt is None) or (usb is None):
@@ -92,11 +91,13 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
     def dis(self):
         if self.ser != None:
+            self.cwFirmwareConfig.setInterface(None)
             self.scope.close()
             self.ser.close()
             self.ser = None
         if self.dev is not None:
-            self.dev.getParams().remove()
+            self.dev.dis()
+            self.dev = None
 
     def getTextName(self):
         try:

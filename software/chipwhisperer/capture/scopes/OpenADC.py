@@ -137,6 +137,9 @@ class OpenADCInterface(ScopeTemplate):
                 self.digitalPattern.getParams().remove()
                 self.digitalPattern = None
 
+        # TODO Fix this hack
+        if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
+            self.qtadc.sc.usbcon = None
         return True
 
     def doDataUpdated(self, l, offset=0):
