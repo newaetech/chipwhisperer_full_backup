@@ -134,7 +134,7 @@ class ListParameterItemHelp(ListParameterItem):
     def __init__(self, *args, **kwargs):
         super(ListParameterItemHelp, self).__init__(*args, **kwargs)
         drawHelpIcon(self)
-        disconnectSignalsWhenDestroyed(self.widget, self.param)
+
     def updateDefaultBtn(self):
         pass
 
@@ -198,7 +198,7 @@ classmapping = {
 }
 
 
-class SigStuff(QtGui.QWidget):
+class QWidgetWSignals(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)
     sigValueChanging = QtCore.Signal(object, object)  # (self, value)  sent immediately; no delay.
 
@@ -214,10 +214,10 @@ class RangeParameterItem(WidgetParameterItem):
 
     def svChangedEmit(self):
         if self.validateLimits():
-            self.sigs.sigValueChanged.emit(self)
+            self.widget.sigValueChanged.emit(self)
 
     def svChangingEmit(self, val):
-        self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
+        self.widget.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
 
     def svLowChanging(self):
         if self.validateLimits("high"):
@@ -277,7 +277,6 @@ class RangeParameterItem(WidgetParameterItem):
             return True
 
     def makeLayout(self):
-        self.sigs = SigStuff()
         opts = self.param.opts
         defs = {
                 'value': 0, 'min': None, 'max': None, 'int': True,
@@ -302,7 +301,9 @@ class RangeParameterItem(WidgetParameterItem):
         if 'limits' in opts:
             defs['bounds'] = opts['limits']
 
+        defs["value"] = self.param.opts["value"][0]
         wlow.setOpts(**defs)
+        defs["value"] = self.param.opts["value"][1]
         whigh.setOpts(**defs)
 
         whigh.sigValueChanged.connect(self.svChangedEmit)
@@ -327,11 +328,11 @@ class RangeParameterItem(WidgetParameterItem):
     def makeWidget(self):
         l = self.makeLayout()
 
-        w = QtGui.QWidget()
+        w = QWidgetWSignals()
         w.setLayout(l)
 
-        w.sigChanged = self.sigs.sigValueChanged
-        w.sigChanging = self.sigs.sigValueChanging
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
         w.value = self.value
         w.setValue = self.setValue
         return w
@@ -377,10 +378,11 @@ class RangeParameterGraphItem(RangeParameterItem):
         l.addWidget(self.graphBtn)
         l.addWidget(QtGui.QLabel("  "))
 
-        w = QtGui.QWidget()
+        w = QWidgetWSignals()
         w.setLayout(l)
-        w.sigChanged = self.sigs.sigValueChanged
-        w.sigChanging = self.sigs.sigValueChanging
+
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
         w.value = self.value
         w.setValue = self.setValue
 
@@ -447,10 +449,10 @@ class FilelistItem(WidgetParameterItem):
 
     def svChangedEmit(self):
         if self.validateLimits():
-            self.sigs.sigValueChanged.emit(self)
+            self.widget.sigValueChanged.emit(self)
 
     def svChangingEmit(self, val):
-        self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()))
+        self.widget.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()))
 
     def setRows(self, rows):
         self.table.setRowCount(rows)
@@ -561,7 +563,6 @@ class FilelistItem(WidgetParameterItem):
                 self.editor(filename=fname, filedesc=desc, default=True)
 
     def makeLayout(self):
-        self.sigs = SigStuff()
         opts = self.param.opts
 
         if 'editor' in opts.keys():
@@ -610,11 +611,12 @@ class FilelistItem(WidgetParameterItem):
     def makeWidget(self):
         l = self.makeLayout()
 
-        w = QtGui.QWidget()
+        w = QWidgetWSignals()
         w.setLayout(l)
 
-        w.sigChanged = self.sigs.sigValueChanged
-        w.sigChanging = self.sigs.sigValueChanging
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
+
         w.value = self.value
         w.setValue = self.setValue
 
