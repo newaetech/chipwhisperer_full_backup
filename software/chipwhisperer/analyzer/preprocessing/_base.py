@@ -42,7 +42,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     _name = "None"
 
     def __init__(self, parentParam=None, traceSource=None):
-        self.enabled = True
+        self.enabled = False
         ActiveTraceObserver.__init__(self, parentParam=parentParam)
         TraceSource.__init__(self, self.getName())
         AutoScript.__init__(self)

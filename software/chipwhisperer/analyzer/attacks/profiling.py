@@ -46,7 +46,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
         self.params.addChildren([
-            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':algos['Template Attack'], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
 
         # Do not use absolute

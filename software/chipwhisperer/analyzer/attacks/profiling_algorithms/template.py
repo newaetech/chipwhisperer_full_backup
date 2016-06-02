@@ -34,9 +34,10 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class ProfilingTemplate(AutoScript, PassiveTraceObserver):
+class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """

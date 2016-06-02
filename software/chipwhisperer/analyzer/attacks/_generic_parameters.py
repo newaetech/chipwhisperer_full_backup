@@ -90,7 +90,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
         init.insert(0,{'name':'All Off', 'type':'action', 'action':lambda _:self.allBytesOff()})
         return init
 
-    def updateScriptBytesEnabled(self, ignored=None):
+    def updateScriptBytesEnabled(self):
         blist = []
         for i,t in enumerate(self.bytesParameters()):
             if i < self.numsubkeys:

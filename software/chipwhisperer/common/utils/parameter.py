@@ -63,8 +63,7 @@ class Parameter(object):
     registeredParameters = {}
     scriptingOutput = sys.stdout
     supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color", "menu"]
-    # attributes = {"name":0, "key":1, "type":2, "values":3, "value":4,
-    #               "set":5, "get":6, "limits":7, "step":8, "linked":9, "default":10}
+    suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked", "default", "tip", "action", "visible", "children", "readonly"}
 
     def __init__(self, parent=None, setupPyQtGraph=True, **opts):
         self.sigValueChanged = util.Signal()
@@ -84,6 +83,10 @@ class Parameter(object):
         name = self.opts["name"]
         if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts['type'] not in Parameter.supportedTypes:
             raise Exception("Parameter \"%s\" must have a valid string type." % name)
+
+        # for opt in opts:
+        #     if opt not in Parameter.suppertedAttributes:
+        #         raise Exception("Parameter \"%s\" has unknown attribute type: %s." % (name, opt))
 
         if self.opts['type'] != 'group':
             if (('set' in self.opts) or ('get' in self.opts)) and ('value' in self.opts):
@@ -245,11 +248,13 @@ class Parameter(object):
         return self.opts['visible']
 
     def remove(self):
+        """Detaches the parameter from its parent"""
         if self.parent is None:
             return
         self.parent.removeChild(self)
 
     def delete(self):
+        """Deletes itself (makes the GC job easier removing cicles). WARNING: Can't be used again!!!"""
         self.remove()
         for c in self.children.itervalues():
             c.delete()
@@ -258,11 +263,17 @@ class Parameter(object):
         self.sigOptionsChanged.disconnectAll()
         self.sigChildAdded.disconnectAll()
         self.sigChildRemoved.disconnectAll()
-        if self.setupPyQtGraph:
+        if self.setupPyQtGraph is not None:
             # if hasattr(self._PyQtGraphParameter, "sigActivated"):
             #     self._PyQtGraphParameter.sigActivated.disconnect()
             # self._PyQtGraphParameter.sigValueChanged.disconnect()
             self._PyQtGraphParameter = None
+        try:
+            self.deregister()
+        except KeyError:
+            pass
+        self.previousValue = None
+        self.opts.clear()
 
     def clearChildren(self):
         for ch in self.children.itervalues():
@@ -303,6 +314,7 @@ class Parameter(object):
         return False
 
     def setupPyQtGraphParameter(self):
+        """Creates a PyQtGraph Parameter and keeps it synchronized"""
         opts = {}
         opts.update(self.getOpts())
         if "default" in self.opts:
@@ -378,6 +390,7 @@ class Parameter(object):
         self.refreshAllParameters()
 
     def register(self):
+        """Makes it accessible from the root when calling setParameter()"""
         self.registeredParameters[self.getName()] = self
         return self
 
@@ -386,7 +399,7 @@ class Parameter(object):
 
     @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
-        """Sets a parameter based on a list, used for scripting in combination with showScriptParameter"""
+        """Sets a parameter based on a list, used for scripting"""
         path = parameter[:-1]
         value = parameter[-1]
 
@@ -404,9 +417,13 @@ class Parameter(object):
             raise KeyError("Parameter not found: %s" % str(parameter))
 
     def __del__(self):
-        self.remove()
+        self.delete()
 
 def setupSetParam(parameter):
+    """Decorator that should be used in the set methods specified in the parameter declaration."
+    It synchronizes the parameter value when the set method is called directly
+    The blockSignal argument can be used to avoid this behavior when, for instance, you can't do that because the
+    parameter wasn't created yet"""
     def func_decorator(func):
         def func_wrapper(*args, **kargs):
             blockSignal = kargs.get("blockSignal", None)
@@ -419,6 +436,7 @@ def setupSetParam(parameter):
             func(*args, **kargs)
         return func_wrapper
     return func_decorator
+
 
 if __name__ == '__main__':
     from pyqtgraph.Qt import QtGui
@@ -452,7 +470,6 @@ if __name__ == '__main__':
                  'values': values, 'set': self.setSubmodule, 'get': self.getSubmodule,
                  'childmode': "child",
                  },
-                # {'name':"something", 'type':"placeholder"}
             ]
             self.params = Parameter(name='Module %d' % d, type='group', children=moreparams)
 
