@@ -147,7 +147,7 @@ class PartitionDialog(QtFixes.QDialog):
 
         # TODO: Partition generation doesn't work
         pb.setMinimum(0)
-        pb.setMaximum(self.part.traceSource.numTraces())
+        pb.setMaximum(self.part.getTraceSource.numTraces())
 
         self.part.runPartitions(report=pb.updateStatus)
 

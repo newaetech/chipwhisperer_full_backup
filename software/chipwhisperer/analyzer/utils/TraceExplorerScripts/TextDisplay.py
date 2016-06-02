@@ -32,6 +32,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
+
 class TextDisplay(Parameterized, AutoScript):
     _name = 'Text Display'
 
@@ -50,7 +51,7 @@ class TextDisplay(Parameterized, AutoScript):
         #self.tablewid.verticalHeader().hide()
         #self.tablewid.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
-        self.dock = CWMainGUI.getInstance().addDock(self.tablewid, "Trace Data", area=Qt.TopDockWidgetArea)
+        self.dock = CWMainGUI.getInstance().addDock(self.tablewid, "Text Display Table", area=Qt.TopDockWidgetArea)
         self.dock.hide()
 
     def updateTable(self):

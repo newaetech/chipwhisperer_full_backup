@@ -77,9 +77,9 @@ class TemplateBasic(AutoScript, PassiveTraceObserver):
             progressBar.setMaximum(tend - tstart + subkeys)
 
         for tnum in range(tstart, tend):
-            # partData = self.traceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
-            pnum = partMethod.getPartitionNum(self.traceSource(), tnum)
-            t = self.traceSource().getTrace(tnum)
+            # partData = self.getTraceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+            pnum = partMethod.getPartitionNum(self.getTraceSource(), tnum)
+            t = self.getTraceSource().getTrace(tnum)
             for bnum in range(0, subkeys):
                 templateTraces[bnum][pnum[bnum]].append(t[poiList[bnum]])
 

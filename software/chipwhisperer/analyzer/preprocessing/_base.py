@@ -37,7 +37,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     Derivate Classes work like this:
         - updateScript is used by the GUI to create the parameters list and generate the API scripts
         - the other methods are used by the API to apply the preprocessing filtering
-          You need to pass the traceSource reference in the constructor in order to apply the preprocessing step
+          You need to pass the getTraceSource reference in the constructor in order to apply the preprocessing step
     """
     _name = "None"
 

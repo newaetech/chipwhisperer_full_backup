@@ -35,6 +35,7 @@ from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
@@ -52,11 +53,11 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         self.params.addChildren([
             {'name':'Load Template', 'type':'group', 'children':[]},
             {'name':'Generate New Template', 'type':'group', 'children':[
-                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'set':self.updateScript},
-                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
-                {'name':'Read POI', 'type':'action', 'action':self.updateScript},
-                {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
+                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'action':lambda _:self.updateScript()},
+                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'action':lambda _:self.updateScript()},
+                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'action':lambda _:self.updateScript()},
+                {'name':'Read POI', 'type':'action', 'action':lambda _:self.updateScript()},
+                {'name':'Generate Templates', 'type':'action', 'action': lambda _:self.runScriptFunction.emit("generateTemplates")}
             ]},
         ])
 
@@ -100,8 +101,8 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
        #  self.scriptsUpdated.emit()
 
     def traceLimitsChanged(self, traces, points):
-        tstart = self.findParam('tgenstart')
-        tend = self.findParam('tgenstop')
+        tstart = self.findParam(["Generate New Template",'tgenstart'])
+        tend = self.findParam(["Generate New Template",'tgenstop'])
         tstart.setLimits((0, traces))
         tend.setValue(traces)
         tend.setLimits((1, traces))
@@ -115,6 +116,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     def setReportingInterval(self, intv):
         self._reportinginterval = intv
 
+    @setupSetParam('Input')
     def setTraceSource(self, traceSource):
         PassiveTraceObserver.setTraceSource(self, traceSource)
         # Set for children

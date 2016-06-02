@@ -247,7 +247,7 @@ class PartitionDisplay(Parameterized, AutoScript):
         AutoScript.__init__(self)
         self.parent = parent
         self.poi = POI(self)
-        self.dock = CWMainGUI.getInstance().addDock(self.poi, "Trace Data", area=Qt.TopDockWidgetArea)
+        self.dock = CWMainGUI.getInstance().addDock(self.poi, "Partition Comparison POI Table", area=Qt.TopDockWidgetArea)
         self.dock.hide()
         self.defineName()
         self._traces = None
@@ -256,7 +256,7 @@ class PartitionDisplay(Parameterized, AutoScript):
         self.graph = GraphWidget()
         self.bselection = QToolBar()
         self.graph.addWidget(self.bselection)
-        self.dock = CWMainGUI.getInstance().addDock(self.graph, "Trace Data", area=Qt.TopDockWidgetArea)
+        self.dock = CWMainGUI.getInstance().addDock(self.graph, "Partition Comparison Graph", area=Qt.TopDockWidgetArea)
         self.dock.hide()
 
     def defineName(self):

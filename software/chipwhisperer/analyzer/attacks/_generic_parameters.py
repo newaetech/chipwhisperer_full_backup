@@ -59,8 +59,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
         self.setupTraceParam()
         self.setupPointsParam()
-        self.params = self.getParams()
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Hardware Model', 'type':'group', 'children':[
                 {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':models_AES128_8bit, 'action':lambda _:self.updateScript()},
                 {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':'LEAK_HW_SBOXOUT_FIRSTROUND', 'action':lambda _:self.updateScript()},
@@ -147,8 +146,9 @@ class AttackGenericParameters(Parameterized, AutoScript):
         if (runs.getValue() * atraces.getValue() + strace.getValue()) > (self.traceMax):
             solv = (self.traceMax - strace.getValue()) / runs.getValue()
             solv = int(solv)
-            atraces.setLimits((min(solv, 1), solv))
-            atraces.setValue(solv)
+            atraces.setValue(1, blockAction = True)
+            atraces.setLimits((1, solv))
+            atraces.setValue(solv, blockAction = True)
         else:
             atraces.setLimits((1, self.traceMax))
             #There was a WORK-AROUND: need to emit an extra sigLimitsChanged??? Check if it is still needed.
@@ -206,9 +206,9 @@ class AttackGenericParameters(Parameterized, AutoScript):
         atrace = self.traceParams.getChild('atraces')
 
         strace.setLimits((0, traces))
-        strace.setValue(0)
-        atrace.setLimits((min(traces, 1), traces))
-        atrace.setValue(traces)
+        atrace.setValue(1, blockAction = True) #Avoid bug in pyqtgraph with  limits
+        atrace.setLimits((1, traces))
+        atrace.setValue(traces, blockAction = True)
 
         self.traceLimitsChanged.emit(traces, points)
 

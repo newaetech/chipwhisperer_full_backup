@@ -158,14 +158,14 @@ class Parameter(object):
         else:
             return val()
 
-    def setValue(self, value,  blockSignal=None, init=False, echo=True):
+    def setValue(self, value,  blockSignal=None,  blockAction=False, init=False, echo=True):
         if not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
         limits = self.opts.get("limits", None)
         type = self.opts["type"]
         if type == "group":
             return
-        if limits is not None:
+        if limits is not None and self.isVisible():
             if      (type == "list" and
                         ((isinstance(limits, dict) and value not in limits.values()) or\
                         (not isinstance(limits, dict) and value not in limits))
@@ -196,7 +196,8 @@ class Parameter(object):
         self.previousValue = value
 
         if not init:
-            self.callAction()
+            if not blockAction:
+                self.callAction()
             if isinstance(limits, dict):
                 for k,v in limits.iteritems():
                     if v == value:
@@ -224,7 +225,8 @@ class Parameter(object):
 
     def setLimits(self, limits):
         self.opts['limits'] = limits
-        if self.opts['type'] =="rangegraph" and limits[0] > limits[1]:
+        type = self.opts["type"]
+        if ((type == "int" or type =="float" or type =="rangegraph" or type =="range") and limits[0] > limits[1]):
             self.hide()
         else:
             self.show()

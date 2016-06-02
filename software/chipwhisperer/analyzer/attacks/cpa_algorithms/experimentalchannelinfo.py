@@ -292,8 +292,7 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
 
     def __init__(self, parentParam, targetModel, leakageFunction):
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
@@ -457,7 +456,7 @@ class TemplateCSI(object):
         self._traceSource = None
         self.partObject = Partition(self)
 
-    def traceSource(self):
+    def getTraceSource(self):
         return self._traceSource
 
     def setTraceSource(self, trace):
@@ -488,13 +487,13 @@ class TemplateCSI(object):
         templateCovs = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
 
         for tnum in range(tstart, tend):
-            partData = self.traceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+            partData = self.getTraceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
 
             for bnum in range(0, subkeys):
                 for i in range(0, numPartitions):
 
                     if tnum in partData[bnum][i]:
-                        trace = self.traceSource().getTrace(tnum)
+                        trace = self.getTraceSource().getTrace(tnum)
                         trace_fixed = np.dot(trace - trace.mean(), H[bnum]) + 4
                         templateTraces[bnum][i].append(trace_fixed)
 

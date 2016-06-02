@@ -37,14 +37,14 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     _name = "CPA"
 
     def __init__(self):
-        AttackGenericParameters.__init__(self)
         AttackBaseClass.__init__(self)
+        self.attack = None
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
-        self.params = self.getParams()
-        self.params.addChildren([
-            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
+        self.getParams().addChildren([
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':algos, 'value':algos["Progressive"], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
+        AttackGenericParameters.__init__(self)
         self.setAnalysisAlgorithm(self.findParam('CPA_algo').getValue(), None, None)
         self.updateBytesVisible()
         self.updateScript()
@@ -60,6 +60,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
+        if self.attack is not None:
+            self.attack.getParams().remove()
         self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
 
         try:
@@ -69,6 +71,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         if hasattr(self.attack, 'scriptsUpdated'):
             self.attack.scriptsUpdated.connect(self.updateScript)
+
+        self.getParams().append(self.attack.getParams())
 
     def updateScript(self):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")

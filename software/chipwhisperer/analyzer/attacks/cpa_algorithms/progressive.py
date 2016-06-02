@@ -160,8 +160,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
     def __init__(self, parentParam, targetModel, leakageFunction):
         AutoScript.__init__(self)
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
