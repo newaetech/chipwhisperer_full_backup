@@ -206,9 +206,9 @@ class AttackGenericParameters(Parameterized, AutoScript):
         atrace = self.traceParams.getChild('atraces')
 
         strace.setLimits((0, traces))
-        atrace.setValue(1, blockAction = True) #Avoid bug in pyqtgraph with  limits
+        atrace.setValue(1, blockAction=True) #Avoid bug in pyqtgraph with  limits
         atrace.setLimits((1, traces))
-        atrace.setValue(traces, blockAction = True)
+        atrace.setValue(traces, blockAction=True)
 
         self.traceLimitsChanged.emit(traces, points)
 

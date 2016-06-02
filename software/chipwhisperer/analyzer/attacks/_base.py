@@ -35,6 +35,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
     def __init__(self):
         AnalysisSource.__init__(self)
         PassiveTraceObserver.__init__(self)
+        self.getParams().getChild("Input").hide()
 
     def processKnownKey(self, inpkey):
         """

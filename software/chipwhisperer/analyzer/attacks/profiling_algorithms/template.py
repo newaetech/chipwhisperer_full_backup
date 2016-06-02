@@ -31,12 +31,12 @@ from ._base import TemplateBasic, multivariate_normal
 from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as AESModel
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 
 
 class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
@@ -49,14 +49,13 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     def __init__(self, parent):
         AutoScript.__init__(self)
         PassiveTraceObserver.__init__(self)
-        self._parent = parent
         self._project = None
 
         self.params.addChildren([
             {'name':'Load Template', 'type':'group', 'children':[]},
             {'name':'Generate New Template', 'type':'group', 'children':[
                 {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'action':lambda _:self.updateScript()},
-                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent.traceMax, 'type':'int', 'action':lambda _:self.updateScript()},
+                {'name':'Trace End', 'key':'tgenstop', 'value':parent.traceMax, 'type':'int', 'action':lambda _:self.updateScript()},
                 {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'action':lambda _:self.updateScript()},
                 {'name':'Read POI', 'type':'action', 'action':lambda _:self.updateScript()},
                 {'name':'Generate Templates', 'type':'action', 'action': lambda _:self.runScriptFunction.emit("generateTemplates")}
@@ -77,7 +76,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        #self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+        #self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
 
         try:
             ted = CWAnalyzerGUI.getInstance().traceExplorerDialog.exampleScripts[0]
@@ -87,9 +86,9 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
 
         self.addFunction('generateTemplates', 'initPreprocessing', '', obj='UserScript')
         self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
-        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam(["Generate New Template",'tgenstart']).getValue(), self.findParam(["Generate New Template",'tgenstop']).getValue()))
 
-        if self.findParam('poimode').value() == 0:
+        if self.findParam(["Generate New Template",'poimode']).getValue() == 0:
             self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
             self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
             self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
@@ -133,13 +132,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         # Set for children
         self.profiling.setProject(proj)
 
-    def parent(self):
-        return self._parent
-
     def project(self):
-        if self._project is None:
-            temp_project = CWCoreAPI.getInstance().project()
-            self.setProject(temp_project)
         return self._project
 
     def saveTemplatesToProject(self, trange, templatedata):
