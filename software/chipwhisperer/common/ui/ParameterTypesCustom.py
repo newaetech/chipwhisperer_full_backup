@@ -100,8 +100,10 @@ def __init___fix(self, param, depth):
     layout.addWidget(w)
     layout.addWidget(self.displayLabel)
     layout.addWidget(self.defaultBtn)
+
     self.layoutWidget = QtGui.QWidget()
     self.layoutWidget.setLayout(layout)
+    self.layoutWidget.setMinimumHeight(w.minimumHeight())
 
     if w.sigChanged is not None:
         w.sigChanged.connect(self.widgetValueChanged)
@@ -287,10 +289,12 @@ class RangeParameterItem(WidgetParameterItem):
 
         wlow = SpinBox()
         wlow.setMaximumWidth(80)
+        wlow.setContentsMargins(0,0,0,0)
         wlow.setAlignment(QtCore.Qt.AlignRight)
         whigh = SpinBox()
         whigh.setMaximumWidth(80)
         whigh.setAlignment(QtCore.Qt.AlignRight)
+        whigh.setContentsMargins(0,0,0,0)
 
         # The following required for pyqtgraph > 0.9.10
         for k in defs:
@@ -362,6 +366,8 @@ registerParameterType('range', RangeParameter, override=True)
 class RangeParameterGraphItem(RangeParameterItem):
     def makeWidget(self):
 
+        l = self.makeLayout()
+
         graphIcon = QtGui.QIcon()
         graphIcon.addFile(':/images/wavelimits.png', state=QtGui.QIcon.On)
         graphIcon.addFile(':/images/wavelimitsoff.png', state=QtGui.QIcon.Off)
@@ -372,14 +378,14 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.graphBtn.setFixedHeight(20)
         self.graphBtn.setIcon(graphIcon)
         self.graphBtn.setCheckable(True)
-        self.graphBtn.clicked[bool].connect(self.buttonPressed)
 
-        l = self.makeLayout()
+        l.addWidget(QtGui.QLabel("  "))
         l.addWidget(self.graphBtn)
         l.addWidget(QtGui.QLabel("  "))
 
         w = QWidgetWSignals()
         w.setLayout(l)
+        w.setMinimumHeight(33)
 
         w.sigChanged = w.sigValueChanged
         w.sigChanging = w.sigValueChanging
@@ -396,9 +402,6 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.lri.setVisible(False)
         self.lri.sigRegionChanged.connect(self.lriChanged)
         return w
-
-    def buttonPressed(self, status):
-        self.lri.setVisible(status)
 
     def lriChanged(self):
         new = self.lri.getRegion()
