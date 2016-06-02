@@ -22,14 +22,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
 import pickle
-
-import sys
-
 import numpy as np
-import TraceContainer
-from pyqtgraph.parametertree import Parameter
+from _base import TraceContainer
+from _cfgfile import makeAttrDict
+from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 
 try:
     import umysql as sql
@@ -38,12 +35,18 @@ except ImportError, e:
     # print "umysql required: https://pypi.python.org/pypi/umysql"
     raise ImportError(e)
 
-from openadc.ExtendedParameter import ExtendedParameter
-from TraceContainerConfig import makeAttrDict
 
-class parameters(object):
-    def __init__(self, openMode=False):
+class TraceContainerMySQL(TraceContainer):
+    _name = "MySQL"
+
+    def __init__(self, openMode = False):
+        super(TraceContainerMySQL, self).__init__()
+        self.db = None
+        self.idOffset = 0
+        self.lastId = 0
+        self.openMode = openMode
         self.fmt = None
+
         traceParams = [{'name':'MySQL Configuration', 'type':'group', 'children':[
                         {'name':'Server Address', 'key':'addr', 'type':'str', 'value':'127.0.0.1'},
                         {'name':'Server Port', 'key':'port', 'type':'int', 'value':'3306'},
@@ -53,43 +56,14 @@ class parameters(object):
                         {'name':'Table Name', 'key':'tableName', 'type':'str', 'value':'', 'readonly':True}
                       ]}]
 
-        if openMode == False:
+        if self.openMode == False:
             traceParams[0]['children'].append({'name':'Table Naming', 'key':'tableNameType', 'type':'list', 'values':{'Auto-Prefix':'prefix'}, 'value':'prefix'})
         else:
             traceParams[0]['children'].append({'name':'Relist Tables', 'key':'tableListAct', 'type':'action'})
             traceParams[0]['children'].append({'name':'Table List', 'key':'tableNameList', 'type':'list', 'values':[], 'value':'', 'linked':['Table Name']})
 
         traceParams[0]['children'].append({'name':'Trace Format', 'key':'traceFormat', 'type':'list', 'values':['NumPy Pickle'], 'value':'NumPy Pickle', 'set':self.setFormat})
-
-        self.traceParams = traceParams
-
-        self.params = Parameter.create(name='MySQL Settings', type='group', children=traceParams)
-        ExtendedParameter.setupExtended(self.params, self)
-
-    def setFormat(self, fmt):
-        self.fmt = fmt
-
-    def format(self):
-        if self.fmt is None:
-            self.fmt = self.findParam('traceFormat').value()
-
-        return self.fmt
-
-    def paramList(self):
-        return [self.params]
-
-class TraceContainerMySQL(TraceContainer.TraceContainer):
-    getParamsClass = parameters
-    getParams = parameters()
-
-    def __init__(self, params=None):
-        super(TraceContainerMySQL, self).__init__()
-        self.db = None
-        self.idOffset = 0
-        self.lastId = 0
-
-        if params is not None:
-            self.getParams = params
+        self.params.addChildren(traceParams)
 
         #Connect actions if applicable
         try:
@@ -105,6 +79,15 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
 
         #Format name must agree with names from TraceContainerFormatList
         self.config.setAttr("format", "mysql")
+
+    def setFormat(self, fmt):
+        self.fmt = fmt
+
+    def format(self):
+        if self.fmt is None:
+            self.fmt = self.findParam('traceFormat').value()
+
+        return self.fmt
 
     def makePrefix(self, mode='prefix'):
         if mode == 'prefix':
@@ -192,7 +175,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             self.updateConfigData()
         return self._numTraces
 
-
     def numPoints(self, update=False):
         if update:
             self.updateConfigData()
@@ -237,7 +219,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
 
         self.db.query("INSERT INTO %s(Textin, Textout, EncKey, Wave) VALUES('%s', '%s', '%s', "%(self.tableName, strTextin, strTextout,
                                                                                                 strKey) + "%s)", (self.formatWave(trace),))
-
     def saveAll(self):
         #Save attributes from config settings
         for t in self.getParams.traceParams[0]['children']:
@@ -266,7 +247,6 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             self.db.close()
         self.db = None
 
-
     def getTrace(self, n):
         wv = self.db.query("SELECT Wave FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.formatWave(wv, read=True)
@@ -290,6 +270,3 @@ class TraceContainerMySQL(TraceContainer.TraceContainer):
             n = 0
         asc = self.db.query("SELECT EncKey FROM %s LIMIT 1 OFFSET %d"%(self.tableName, n)).rows[0][0]
         return self.asc2list(asc)
-
-
-

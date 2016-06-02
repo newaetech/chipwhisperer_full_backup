@@ -22,34 +22,22 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
-
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
-
 from subprocess import call
+from _base import AuxiliaryTemplate
+
 
 class ResetAVR(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    _name = 'Reset AVR via STK500'
 
-    def setupParameters(self):
-        ssParams = [{'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
-                    {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
-                    {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-                    ]
-        self.params = Parameter.create(name='Reset AVR via STK500', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+    def __init__(self, parentParam=None):
+        AuxiliaryTemplate.__init__(self, parentParam)
+        self.params.addChildren([
+            {'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
+            {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
+            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+        ])
 
     def captureInit(self):
         pass
@@ -58,7 +46,6 @@ class ResetAVR(AuxiliaryTemplate):
         pass
 
     def traceArm(self):
-
         # If using STK500
         stk500 = self.findParam('stk500path').value()
         ret = call([stk500, "-d%s" % self.findParam('part').value(), "-s", "-cUSB"])
@@ -68,16 +55,11 @@ class ResetAVR(AuxiliaryTemplate):
 
         time.sleep(1)
 
-
         # If using AVRDude
         # call(["avrdude"])
 
     def traceDone(self):
         pass
 
-
     def testReset(self):
         self.traceArm()
-
-
-

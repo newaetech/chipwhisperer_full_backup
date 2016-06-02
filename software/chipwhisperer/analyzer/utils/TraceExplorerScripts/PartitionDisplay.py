@@ -28,13 +28,13 @@
 from functools import partial
 import numpy as np
 import copy
-
 from PySide.QtCore import *
 from PySide.QtGui import *
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import pyqtgraph as pg
-
 from chipwhisperer.analyzer.utils.Partition import Partition
-from chipwhisperer.common.autoscript import AutoScript
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 class DifferenceModeTTest(QObject):
     sectionName = "Difference of Partitions using Welch's T-Test"
@@ -42,11 +42,9 @@ class DifferenceModeTTest(QObject):
     differenceType = "Welch's T-Test"
 
     def difference(self, numkeys, numparts, trace, numpoints, stats, pbDialog=None):
-
         means = stats["mean"]
         var = stats["variance"]
         num = stats["number"]
-
 
         if pbDialog:
             pbDialog.setMinimum(0)
@@ -62,9 +60,9 @@ class DifferenceModeTTest(QObject):
         for bnum in range(0, numkeys):
             for i in range(0, numparts):
                 if pbDialog:
-                    pbDialog.setValue(numparts * bnum + i)
+                    pbDialog.updateStatus(numparts * bnum + i)
                     QApplication.processEvents()
-                    if pbDialog.wasCanceled():
+                    if pbDialog.wasAborted():
                         return SADSeg
                 for j in range(0, numparts):
                     if means[bnum][i] is not None and means[bnum][j] is not None:
@@ -78,9 +76,10 @@ class DifferenceModeTTest(QObject):
                         SADSeg[bnum] = np.add(SADSeg[bnum], np.abs(ttest) * scalingFactor)
 
         if pbDialog:
-            pbDialog.setValue(numkeys * numparts)
+            pbDialog.updateStatus(numkeys * numparts)
 
         return SADSeg
+
 
 class DifferenceModeSAD(QObject):
     sectionName = "Difference of Partitions using SAD"
@@ -99,9 +98,9 @@ class DifferenceModeSAD(QObject):
         for bnum in range(0, numkeys):
             for i in range(0, numparts):
                 if pbDialog:
-                    pbDialog.setValue(numparts * bnum + i)
+                    pbDialog.updateStatus(numparts * bnum + i)
                     QApplication.processEvents()
-                    if pbDialog.wasCanceled():
+                    if pbDialog.wasAborted():
                         return SADSeg
                 for j in range(0, numparts):
                     if averageData[bnum][i] is not None and averageData[bnum][j] is not None:
@@ -151,6 +150,7 @@ class DifferenceMode(QObject):
             return None
         return trace.loadAuxData(cfg["filename"])
 
+
 class POI(QWidget):
     def __init__(self, parent):
         super(POI, self).__init__()
@@ -187,8 +187,8 @@ class POI(QWidget):
         self.parent.parent.findParam('poi-pointrng').setValue((0, len(self.parent.SADList[0])))
 
     def savePOI(self):
-        poiDict = {"poi":self.poiArray}
-        self.parent.parent.parent.project().addDataConfig(poiDict, "Template Data", "Points of Interest")
+        poiDict = {"poi":self.poiArray, "partitiontype":self.parent.partObject.partMethod.__class__.__name__}
+        CWCoreAPI.getInstance().project().addDataConfig(poiDict, "Template Data", "Points of Interest")
 
     def calcPOI(self, numMax, pointRange, minSpace, diffs=None):
         if diffs:
@@ -207,7 +207,6 @@ class POI(QWidget):
 
         if startPoint == endPoint:
             endPoint += 1
-
 
         for bnum in range(0, len(self.diffs)):
 
@@ -232,15 +231,20 @@ class POI(QWidget):
             self.poiArray.append(maxarray)
 
             self.mainTable.setItem(bnum, 0, QTableWidgetItem("%d" % bnum))
-            self.mainTable.setCellWidget(bnum, 1, QLineEdit(str(maxarray)))
+            self.mainTable.setCellWidget(bnum, 1, QtFixes.QLineEdit(str(maxarray)))
         return {"poi":self.poiArray}
+
 
 class PartitionDisplay(AutoScript, QObject):
 
     def __init__(self, parent):
-        super(PartitionDisplay, self).__init__(parent)
+        QObject.__init__(self, parent)
+        AutoScript.__init__(self)
+        self._autoscript_init = False
         self.parent = parent
         self.defineName()
+        self._traces = None
+        self.api = CWCoreAPI.getInstance()
 
     def defineName(self):
         self.name = 'Partition Comparison'
@@ -274,7 +278,7 @@ class PartitionDisplay(AutoScript, QObject):
 
               {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
                  {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
-                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'set':self.updatePOI},
+                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'set':self.updatePOI},
                  {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'set':self.updatePOI},
                  {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'set':self.updatePOI},
                  # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
@@ -286,9 +290,13 @@ class PartitionDisplay(AutoScript, QObject):
 
     def updatePOI(self, ignored=None):
         self.updateScript()
+
+        if self._autoscript_init == False:
+            return
+
         # Some sort of race condition - applying Therac-25 type engineering and just
         # randomly hope this is enough delay
-        QTimer.singleShot(250, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
+        QTimer.singleShot(500, lambda:self.runScriptFunction.emit("TraceExplorerDialog_PartitionDisplay_findPOI"))
 
     def setBytePlot(self, num, sel):
         self.enabledbytes[num] = sel
@@ -311,14 +319,8 @@ class PartitionDisplay(AutoScript, QObject):
                 self.graph.setColorInt(bnum, self.numKeys)
                 self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)))
 
-    def traceManager(self):
-        return self.parent.traceManager()
-    #    if self._tmanager is None and self.parent is not None:
-    #        self._tmanager = self.parent.traceManager()
-#        return self._tmanager
-
-
     def updateScript(self, ignored=None):
+
         ##Partitioning & Differences
         try:
             diffMethodStr = self.parent.findParam('diffmode').value().__name__
@@ -328,9 +330,11 @@ class PartitionDisplay(AutoScript, QObject):
 
         self.importsAppend('from chipwhisperer.analyzer.utils.Partition import PartitionRandDebug, PartitionRandvsFixed, PartitionEncKey, PartitionHWIntermediate, PartitionHDLastRound')
         self.importsAppend('from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD')
+        self.importsAppend('from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI')
 
         self.addGroup("displayPartitionStats")
         self.addVariable('displayPartitionStats', 'ted', 'self.')
+        self.addFunction('displayPartitionStats', 'setTraceSource', 'UserScript.traces', obj='ted')
         self.addFunction('displayPartitionStats', 'parent.getProgressIndicator', '', 'progressBar', obj='ted')
         self.addFunction('displayPartitionStats', 'partObject.setPartMethod', partMethodStr, obj='ted')
         self.addFunction('displayPartitionStats', 'partObject.generatePartitions', 'saveFile=True, loadFile=False', 'partData', obj='ted')
@@ -354,29 +358,32 @@ class PartitionDisplay(AutoScript, QObject):
                             self.parent.findParam('poi-minspace').value()),
                           obj='ted')
 
-    def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False, traces=None, tRange=(0, -1), progressBar=None):
+        #Check if this updateScript was called as a result of showing the TraceExplorer window
+        if ignored == "traceexplorer_show":
+            self._autoscript_init = True
 
-        if traces is None:
-            traces = self.traceManager()
+    def generatePartitionStats(self, partitionData={"partclass":None, "partdata":None}, saveFile=False, loadFile=False,  tRange=(0, -1), progressBar=None):
+
+        traces = self._traces
 
         if tRange[1] < 0:
-            tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
+            tRange = (tRange[0], traces.numTraces() + 1 + tRange[1])
 
         self.partObject.setPartMethod(partitionData["partclass"])
 
         self.numKeys = len(self.partObject.partMethod.getPartitionNum(traces, 0))
 
-        numPoints = traces.numPoint()
+        numPoints = traces.numPoints()
 
         if loadFile:
-            cfgsecs = self.parent.project().getDataConfig(sectionName="Trace Statistics", subsectionName="Total Trace Statistics")
+            cfgsecs = self.api.project().getDataConfig(sectionName="Trace Statistics", subsectionName="Total Trace Statistics")
             foundsecs = []
             for cfg in cfgsecs:
                 desiredsettings = {}
                 desiredsettings["tracestart"] = tRange[0]
                 desiredsettings["traceend"] = tRange[1]
                 desiredsettings["partitiontype"] = self.partObject.partMethod.__class__.__name__
-                if self.parent.project().checkDataConfig(cfg, desiredsettings):
+                if self.api.project().checkDataConfig(cfg, desiredsettings):
                     foundsecs.append(cfg)
         else:
             foundsecs = []
@@ -384,7 +391,7 @@ class PartitionDisplay(AutoScript, QObject):
         if len(foundsecs) > 1:
             IOError("Too many sections!!!")
         elif len(foundsecs) == 1:
-            fname = self.parent.project().convertDataFilepathAbs(foundsecs[0]["filename"])
+            fname = self.api.project().convertDataFilepathAbs(foundsecs[0]["filename"])
             stats = np.load(fname)
         else:
             # Array to hold average + stddev of all traces/partitions
@@ -413,7 +420,7 @@ class PartitionDisplay(AutoScript, QObject):
             # TODO: Double-check this fix
             # for tsegn, segtrace in enumerate(segList['offsetList']):
             tsegn = 0
-            if progressBar: progressBar.setLabelText("Segment %d" % tsegn)
+            if progressBar: progressBar.setText("Segment %d" % tsegn)
 
             # Average data needs to be calculated
             # Require partition list
@@ -427,8 +434,8 @@ class PartitionDisplay(AutoScript, QObject):
             # Q[0] = 0
             # Q[k] = Q[k-1] + (x[k] - A[k-1])(x[k] - A[k])
             for bnum in range(0, self.numKeys):
-                progressBar.setValue(tsegn * self.numKeys + bnum)
-                if progressBar.wasCanceled():
+                progressBar.updateStatus(tsegn * self.numKeys + bnum)
+                if progressBar.wasAborted():
                     break
                 for i in range(0, self.partObject.partMethod.getNumPartitions()):
                     QApplication.processEvents()
@@ -442,7 +449,7 @@ class PartitionDisplay(AutoScript, QObject):
                                 Q_k[bnum][i] = Q_k[bnum][i] + ((t - A_j[bnum][i]) * (t - A_k[bnum][i]))
                                 A_j[bnum][i] = A_k[bnum][i]
 
-            if progressBar.wasCanceled():
+            if progressBar.wasAborted():
                 progressBar.hide()
                 return
 
@@ -459,12 +466,12 @@ class PartitionDisplay(AutoScript, QObject):
 
             # Wasn't cancelled - save this to project file for future use if requested
             if saveFile:
-                progressBar.setLabelText("Saving Mean/Variance Partitions")
-                cfgsec = self.parent.project().addDataConfig(sectionName="Trace Statistics", subsectionName="Total Trace Statistics")
+                progressBar.setText("Saving Mean/Variance Partitions")
+                cfgsec = self.api.project().addDataConfig(sectionName="Trace Statistics", subsectionName="Total Trace Statistics")
                 cfgsec["tracestart"] = tRange[0]
                 cfgsec["traceend"] = tRange[1]
                 cfgsec["partitiontype"] = self.partObject.partMethod.__class__.__name__
-                fname = self.parent.project().getDataFilepath('tracestats-%s-%d-%s.npz' % (cfgsec["partitiontype"], tRange[0], tRange[1]), 'analysis')
+                fname = self.api.project().getDataFilepath('tracestats-%s-%d-%s.npz' % (cfgsec["partitiontype"], tRange[0], tRange[1]), 'analysis')
 
                 # Save mean/variance for trace
                 np.savez(fname["abs"], mean=A_k, variance=Q_k, number=ACnt)
@@ -473,31 +480,30 @@ class PartitionDisplay(AutoScript, QObject):
         progressBar.hide()
         return stats
 
-    def generatePartitionDiffs(self, diffModule, statsInfo={"partclass":None, "stats":None}, saveFile=False, loadFile=False, traces=None, tRange=(0, -1), progressBar=None):
+    def generatePartitionDiffs(self, diffModule, statsInfo={"partclass":None, "stats":None}, saveFile=False, loadFile=False, tRange=(0, -1), progressBar=None):
 
-        if traces is None:
-            traces = self.traceManager()
+        traces = self._traces
 
         if tRange[1] < 0:
-            tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
+            tRange = (tRange[0], traces.numTraces() + 1 + tRange[1])
 
         self.partObject.setPartMethod(statsInfo["partclass"])
         self.diffObject.setDiffMethod(diffModule)
 
         self.numKeys = len(self.partObject.partMethod.getPartitionNum(traces, 0))
 
-        numPoints = traces.numPoint()
+        numPoints = traces.numPoints()
 
         foundsecs = []
         if loadFile:
-            cfgsecs = self.parent.project().getDataConfig(sectionName="Trace Statistics", subsectionName="Partition Differences")
+            cfgsecs = self.api.project().getDataConfig(sectionName="Trace Statistics", subsectionName="Partition Differences")
             for cfg in cfgsecs:
                 desiredsettings = {}
                 desiredsettings["tracestart"] = tRange[0]
                 desiredsettings["traceend"] = tRange[1]
                 desiredsettings["partitiontype"] = self.partObject.partMethod.__class__.__name__
                 desiredsettings["comparetype"] = self.diffObject.mode.moduleName
-                if self.parent.project().checkDataConfig(cfg, desiredsettings):
+                if self.api.project().checkDataConfig(cfg, desiredsettings):
                     foundsecs.append(cfg)
         else:
             cfgsecs = []
@@ -505,39 +511,38 @@ class PartitionDisplay(AutoScript, QObject):
         if len(foundsecs) > 1:
             IOError("Too many sections!!!")
         elif len(foundsecs) == 1:
-            fname = self.parent.project().convertDataFilepathAbs(foundsecs[0]["filename"])
+            fname = self.api.project().convertDataFilepathAbs(foundsecs[0]["filename"])
             SADList = np.load(fname)
         else:
             progressBar.setWindowTitle("Phase 2: Calculating Partition Differences")
-            progressBar.setLabelText("Calculating all Differences based on " + self.diffObject.mode.differenceType)
+            progressBar.setText("Calculating all Differences based on " + self.diffObject.mode.differenceType)
             SADList = self.diffObject.difference(self.numKeys, self.partObject.partMethod.getNumPartitions(), None, numPoints, statsInfo["stats"], progressBar)
 
             if saveFile:
-                cfgsec = self.parent.project().addDataConfig(sectionName="Trace Statistics", subsectionName="Partition Differences")
+                cfgsec = self.api.project().addDataConfig(sectionName="Trace Statistics", subsectionName="Partition Differences")
                 cfgsec["tracestart"] = tRange[0]
                 cfgsec["traceend"] = tRange[1]
                 cfgsec["partitiontype"] = self.partObject.partMethod.__class__.__name__
                 cfgsec["comparetype"] = self.diffObject.mode.moduleName
-                fname = self.parent.project().getDataFilepath('partdiffs-%s-%s-%d-%s.npy' % (cfgsec["partitiontype"], cfgsec["comparetype"], tRange[0], tRange[1]), 'analysis')
+                fname = self.api.project().getDataFilepath('partdiffs-%s-%s-%d-%s.npy' % (cfgsec["partitiontype"], cfgsec["comparetype"], tRange[0], tRange[1]), 'analysis')
                 np.save(fname["abs"], SADList)
                 cfgsec["filename"] = fname["rel"]
 
-        progressBar.setValue(progressBar.maximum())
+        progressBar.updateStatus(progressBar.maximum)
         progressBar.setWindowTitle('Debug Fail')
-        progressBar.setLabelText('You should never see this text')
-        if progressBar.wasCanceled():
+        progressBar.setText('You should never see this text')
+        if progressBar.wasAborted():
             return
 
         self.SADList = SADList
 
         return SADList
 
-    def displayPartitions(self, differences={"partclass":None, "diffs":None}, traces=None, tRange=(0, -1)):
-        if traces is None:
-            traces = self.traceManager()
+    def displayPartitions(self, differences={"partclass":None, "diffs":None}, tRange=(0, -1)):
+        traces = self._traces
 
         if tRange[1] < 0:
-            tRange = (tRange[0], traces.numTrace() + 1 + tRange[1])
+            tRange = (tRange[0], traces.numTraces() + 1 + tRange[1])
 
         self.partObject.setPartMethod(differences["partclass"])
 
@@ -583,16 +588,15 @@ class PartitionDisplay(AutoScript, QObject):
 
         self.graph.setPersistance(True)
 
-        # self.poi.setDifferences(SADList)
+        self.poi.setDifferences(self.SADList)
 
-        # self.parent.findParam('poi-pointrng').setLimits((0, len(SADList[0])))
-        # self.parent.findParam('poi-pointrng').setValue((0, len(SADList[0])))
+        self.parent.findParam('poi-pointrng').setLimits((0, len(self.SADList[0])))
+        self.parent.findParam('poi-pointrng').setValue((0, len(self.SADList[0])))
         self.redrawPlot()
-
 
     def runAction(self):
         self.runScriptFunction.emit('TraceExplorerDialog_PartitionDisplay_displayPartitionStats')
 
-
-
-
+    def setTraceSource(self, traces):
+        self._traces = traces
+        self.partObject.setTraceSource(self._traces)

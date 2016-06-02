@@ -22,27 +22,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
-from PySide.QtCore import *
-from PySide.QtGui import *
+from _base import TargetTemplate
 
 try:
     import ftd2xx as ft
 except OSError:  # also catches WindowsError
     raise ImportError
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-    
-from openadc.ExtendedParameter import ExtendedParameter
-
-import ChipWhispererTargets
-from TargetTemplate import TargetTemplate
 
 class SaseboGIIDPAContest(object):
     def init(self):
@@ -196,25 +183,12 @@ class SaseboGIIAESRev1(object):
     
                
 class SaseboGII(TargetTemplate):
-    paramListUpdated = Signal(list) 
-     
-    def setupParameters(self):
-        """Parameter Definition."""
-        ssParams = []
-        self.params = Parameter.create(name='SASEBO-GII Parameters', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
-            
-    def setOpenADC(self, oadc):
-        pass
-        
-    def paramList(self):
-        p = [self.params]
-        return p
-    
-    def dis(self):
-        self.close()
+    _name = "SASEBO GII"
 
-    def con(self):   
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
+
+    def con(self, scope = None):
         try:
             self.sasebo = ft.openEx("FTSZ1IONB")
 #            self.sasebo = ft.openEx("FTWQ8BMIA")
@@ -226,7 +200,8 @@ class SaseboGII(TargetTemplate):
         
         #Init
         self.init()
-        
+        self.connectStatus.setValue(True)
+
         return True
 
     def disconnect(self):
@@ -238,6 +213,9 @@ class SaseboGII(TargetTemplate):
             self.sasebo.read(num)
 
     def write(self, address, MSB, LSB):
+        if self.connectStatus.value()==False:
+            raise Exception("Can't write to the target while disconected. Connect to it first.")
+
         msg = bytearray(5)
 
         msg[0] = 0x01;
@@ -251,7 +229,11 @@ class SaseboGII(TargetTemplate):
         #msg = bytearray(strmsg)
         #print "Write: %x %x %x %x %x"%(msg[0],msg[1],msg[2],msg[3],msg[4])
 
-        self.sasebo.write(strmsg)
+        try:
+            self.sasebo.write(strmsg)
+        except Exception:
+            self.dis()
+            raise
 
     def read(self, address):
         self.flush()
@@ -319,7 +301,6 @@ class SaseboGII(TargetTemplate):
             tm += 1
             if tm > timeout:
                 raise IOError("Timeout")
-        
 
     def loadEncryptionKey(self, key):
         """Encryption key is bytearray"""

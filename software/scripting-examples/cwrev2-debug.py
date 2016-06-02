@@ -27,7 +27,7 @@
 #
 #
 #
-# This example captures data using the ChipWhisperer Rev2 capture hardware. The target is a SimpleSerial board attached
+# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
 # to the ChipWhisperer.
 #
 # Data is saved into both a project file and a MATLAB array
@@ -35,7 +35,6 @@
 
 #Setup path
 import sys
-import time
 
 #Check for PySide
 try:
@@ -47,8 +46,6 @@ except ImportError:
 
 #Import the ChipWhispererCapture module
 import chipwhisperer.capture.ChipWhispererCapture as cwc
-import chipwhisperer.capture.scopes.ChipWhispererExtra as cwe
-
 
 exitWhenDone=False
 

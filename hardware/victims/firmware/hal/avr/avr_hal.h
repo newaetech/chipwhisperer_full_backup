@@ -22,7 +22,8 @@
 //Generic Platform
 #include "uart.h"
 
-//We want to use the AVR ADC-pins, since they have a seperate power rail
+//For most platforms we want to use the AVR ADC-pins, since they have a seperate power rail
+//This can be overridden elsewhere
 #define trigger_setup() DDRC |= 0x01
 #define trigger_high()  PORTC |= 0x01
 #define trigger_low()   PORTC &= ~(0x01)

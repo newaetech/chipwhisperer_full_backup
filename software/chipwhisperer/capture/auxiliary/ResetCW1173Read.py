@@ -22,32 +22,46 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
+from chipwhisperer.capture.auxiliary._base import AuxiliaryTemplate
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import util, timer
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
 
 class ResetCW1173Read(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    '''
+    This auxiliary module can do two things:
+      1. Reset the target before arming the scope:
+             ^ reset     ^ arm       ^ trigger
+             |<-- d_1 -->|<-- d_2 -->|
+             |           |           |
+      -----------------------------------------------> (time)
+      
+      2. Reset the target after arming the scope:
+                         ^ arm       ^ reset ^ trigger
+              <-- d_1 -->|<-- d_2 -->|       |
+                         |           |       |
+      -----------------------------------------------> (time)
+      
+    Method 1 is more consistent (resetting the device can accidentally cause
+    a trigger event) but method 2 allows for a shorter delay between the reset
+    and the scope measurement. 
+    
+    In the ChipWhisperer software, method 1 is called "pre-arm reset" and 
+    method 2 is called "post-arm reset".
+    '''
+    _name = "Reset AVR/XMEGA via CW-Lite"
 
-    def setupParameters(self):
-        ssParams = [{'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
-                    {'name':'Post-Reset Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':0, 'suffix':'mS'},
-                    {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-                    ]
-        self.params = Parameter.create(name='Reset AVR/XMEGA via CW-Lite', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+    def __init__(self, parentParam=None):
+        AuxiliaryTemplate.__init__(self, parentParam)
+        self.params.addChildren([
+            {'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
+            {'name':'Delay (Pre-Arm)' , 'type':'int',  'key':'predelay',  'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
+			{'name':'Delay (Post-Arm)', 'type':'int',  'key':'postdelay', 'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
+            {'name':'Reset Timing'  , 'type':'list', 'key':'resettiming', 'values':['Pre-Arm', 'Post-Arm'], 'value':'Pre-Arm'},
+            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+        ])
 
     def captureInit(self):
         pass
@@ -55,31 +69,47 @@ class ResetCW1173Read(AuxiliaryTemplate):
     def captureComplete(self):
         pass
 
-    def traceArmPost(self):
-        target = self.findParam('target').value()
-        if target == 'xmega (PDI)':
-            self.parent().scope.scopetype.cwliteXMEGA.readSignature()
-        else:
-            self.parent().scope.scopetype.cwliteAVR.readSignature()
+    def traceArm(self):
+        # Before we arm the scope, possibly reset the device and wait for a bit
+        resettiming = self.findParam('resettiming').value()
+        if resettiming == 'Pre-Arm':
+            self.resetDevice()
 
-        dly = self.findParam('toggledelay').value()
+        dly = self.findParam('predelay').value()
         if dly > 0:
             self.nonblockingSleep(dly / 1000.0)
-
+			
+    def traceArmPost(self):
+        # After we arm the scope, wait for a bit, then possibly reset the target            
+        dly = self.findParam('postdelay').value()
+        if dly > 0:
+            self.nonblockingSleep(dly / 1000.0)
+            
+        resettiming = self.findParam('resettiming').value()
+        if resettiming == 'Post-Arm':
+            self.resetDevice()
+			
     def traceDone(self):
         pass
 
+    def resetDevice(self):
+        # Reset the target by reading its signature
+        target = self.findParam('target').value()
+        if target == 'xmega (PDI)':
+            CWCoreAPI.getInstance().getScope().scopetype.cwliteXMEGA.readSignature()
+        else:
+            CWCoreAPI.getInstance().getScope().scopetype.cwliteAVR.readSignature()
+        
     def testReset(self):
-        self.traceArmPost()
-
+        self.resetDevice()
 
     def nonblockingSleep_done(self):
         self._sleeping = False
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        QTimer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
-            QApplication.processEvents()
+            util.updateUI()

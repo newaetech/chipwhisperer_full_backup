@@ -27,7 +27,7 @@
 #
 #
 #
-# This example captures data using the ChipWhisperer Rev2 capture hardware. The target is a SimpleSerial board attached
+# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
 # to the ChipWhisperer.
 #
 # Data is saved into both a project file and a MATLAB array
@@ -38,7 +38,7 @@ import sys
 
 #Import the ChipWhispererCapture module
 import chipwhisperer.capture.ChipWhispererCapture as cwc
-from chipwhisperer.capture.scopes.ChipWhispererExtra import CWAdvTrigger
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra import CWAdvTrigger
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 
 #Check for PySide
@@ -48,8 +48,6 @@ try:
 except ImportError:
     print "ERROR: PySide is required for this program"
     sys.exit()
-
-import thread
 
 exitWhenDone=False
 

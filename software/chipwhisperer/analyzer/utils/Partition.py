@@ -25,25 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
 import copy
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
+from PySide.QtCore import *
+from PySide.QtGui import *
 import numpy as np
 import random
-
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
+import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from chipwhisperer.common.utils.parameters import Parameterized
+
 
 class PartitionHDLastRound(object):
 
@@ -72,6 +65,7 @@ class PartitionHDLastRound(object):
             guess[i] = getHW(st9 ^ st10)
         return guess
 
+
 class PartitionHWIntermediate(object):
 
     sectionName = "Partition Based on HW of Intermediate"
@@ -90,6 +84,7 @@ class PartitionHWIntermediate(object):
 
         return guess
 
+
 class PartitionEncKey(object):
 
     sectionName = "Partition Based on Key Value"
@@ -102,6 +97,7 @@ class PartitionEncKey(object):
         key = trace.getKnownKey(tnum)
         return key
 
+
 class PartitionRandvsFixed(object):
 
     sectionName = "Partition Based on Rand vs Fixed "
@@ -112,6 +108,7 @@ class PartitionRandvsFixed(object):
 
     def getPartitionNum(self, trace, tnum):
         return [tnum % 2]
+
 
 class PartitionRandDebug(object):
 
@@ -126,7 +123,8 @@ class PartitionRandDebug(object):
     def getPartitionNum(self, trace, tnum):
         return [random.randint(0, self.numRand - 1)]
 
-class PartitionDialog(QDialog):
+
+class PartitionDialog(QtFixes.QDialog):
     """Open dialog to run partioning"""
 
     def __init__(self, parent, partInst):
@@ -149,18 +147,18 @@ class PartitionDialog(QDialog):
 
         # TODO: Partition generation doesn't work
         pb.setMinimum(0)
-        pb.setMinimum(self.part.trace.numTrace())
+        pb.setMaximum(self.part.traceSource.numTraces())
 
-        self.part.runPartitions(report=pb.setValue)
+        self.part.runPartitions(report=pb.updateStatus)
 
-class Partition(QObject):
+
+class Partition(QObject, Parameterized):
     """
     Base Class for all partioning modules
     """
-    paramListUpdated = Signal(list)
     # traceDone = Signal(int)
 
-    descrString = "Partition traces based on some method"
+    _description = "Partition traces based on some method."
 
     attrDictPartition = {
                 "sectionName":"Partition Based on XXXX",
@@ -174,27 +172,11 @@ class Partition(QObject):
 
     supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
-    def __init__(self, parent, console=None, showScriptParameter=None):
-        """Pass None/None if you don't have/want console/showScriptParameter"""
-        super(Partition, self).__init__()
-        self.console = console
-        self.showScriptParameter = showScriptParameter
-        self.parent = parent
-        self._tmanager = None
-        if parent is not None:
-            self.setTraceManager(parent.traceManager())
-        self.setupParameters()
-        self.partDataCache = None
-
-    def setupParameters(self):
-        """Setup parameters specific to preprocessing module"""
-        # ssParams = [{'name':'Enabled', 'type':'bool', 'value':True, 'set':self.setEnabled},
-        #            # PUT YOUR PARAMETERS HERE
-        #            {'name':'Desc', 'type':'text', 'value':self.descrString}]
-        # self.params = Parameter.create(name='Name of Module', type='group', children=ssParams)
-        # ExtendedParameter.setupExtended(self.params, self)
-
+    def __init__(self, parent):
+        QObject.__init__(self, parent)
+        Parameterized.__init__(self)
         self.setPartMethod(PartitionRandvsFixed)
+        self.partDataCache = None
 
     def setPartMethod(self, method):
         self.partMethodClass = method
@@ -202,22 +184,9 @@ class Partition(QObject):
         self.attrDictPartition["sectionName"] = self.partMethod.sectionName
         self.attrDictPartition["moduleName"] = self.partMethod.__class__.__name__
 
-    def paramList(self):
-        """Returns the parameter list"""
-        return [self.params]
-
     def init(self):
         """Do any initilization required once all traces are loaded"""
         pass
-
-    def setTraceManager(self, tmanager):
-        """Set the input trace source"""
-        self._tmanager = tmanager
-
-    def traceManager(self):
-        if self._tmanager is None and self.parent is not None:
-            self._tmanager = self.parent.traceManager()
-        return self._tmanager
 
     def createBlankTable(self, t):
         # Create storage for partition information
@@ -232,20 +201,19 @@ class Partition(QObject):
 
     def loadPartitions(self, tRange=(0, -1)):
         """Load partitions from trace files, convert to mapped range"""
-
         start = tRange[0]
         end = tRange[1]
 
         if end == -1:
-            end = self.traceManager().numTrace()
+            end = self._traces.numTraces()
 
         # Generate blank partition table
-        partitionTable = self.createBlankTable(self.traceManager().findMappedTrace(start))
+        partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
         print np.shape(partitionTable)
 
         tnum = start
         while tnum < end:
-            t = self.traceManager().findMappedTrace(tnum)
+            t = self._traces.findMappedTrace(tnum)
             # Discover where this trace starts & ends
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
@@ -271,15 +239,11 @@ class Partition(QObject):
     def getPartitionData(self):
         return self.partDataCache
 
-    def generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, traces=None, tRange=(0, -1)):
+    def generatePartitions(self, partitionClass=None, saveFile=False, loadFile=False, tRange=(0, -1)):
         """
         Generate partitions, using previously setup setTraceManager & partition class, or if they are passed as
         arguments will update the class data
         """
-
-        if traces:
-            self.setTraceManager(traces)
-
         if partitionClass:
             self.setPartMethod(partitionClass)
 
@@ -293,19 +257,19 @@ class Partition(QObject):
         end = tRange[1]
 
         if partitionTable is None:
-            partitionTable = self.createBlankTable(self.traceManager().findMappedTrace(start))
+            partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
 
             if end == -1:
-                end = self.traceManager().numTrace()
+                end = self._traces.numTraces()
 
             tnum = start
             while tnum < end:
-                t = self.traceManager().findMappedTrace(tnum)
+                t = self._traces.findMappedTrace(tnum)
                 # Discover where this trace starts & ends
                 tmapstart = t.mappedRange[0]
                 tmapend = t.mappedRange[1]
                 
-                partitionTableTemp = self.createBlankTable(self.traceManager().findMappedTrace(start))
+                partitionTableTemp = self.createBlankTable(self._traces.findMappedTrace(start))
 
                 for tnum in range(tmapstart, tmapend + 1):
                     # Check each trace, write partition number
@@ -332,3 +296,6 @@ class Partition(QObject):
 
         self.partDataCache = partitionTable
         return partitionTable
+
+    def setTraceSource(self, traces):
+        self._traces = traces

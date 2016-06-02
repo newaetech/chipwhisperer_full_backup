@@ -24,40 +24,29 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-
-from PySide.QtCore import *
-from PySide.QtGui import *
 
 import time
+from _base import AuxiliaryTemplate
+from chipwhisperer.common.utils import timer
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils import util
 
-try:
-    from pyqtgraph.parametertree import Parameter
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
-from openadc.ExtendedParameter import ExtendedParameter
 
 class GPIOToggle(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
+    _name = 'GPIO Toggle'
 
-    def setupParameters(self):
-        ssParams = [
-                    {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
-                    {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},
-                    {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
-                    {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
-                    {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
-                    {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
-                    ]
-        self.params = Parameter.create(name='GPIO Toggle', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
-
+    def __init__(self, parentParam=None):
+        AuxiliaryTemplate.__init__(self, parentParam)
         self.pin = None
         self.lastPin = None
-
+        self.params.addChildren([
+                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
+                 {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},
+                 {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
+                 {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
+                 {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
+                 {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
+        ])
         self.settingsChanged()
 
     def settingsChanged(self, ignored=None):
@@ -67,9 +56,8 @@ class GPIOToggle(AuxiliaryTemplate):
         self.postdelay = self.findParam('toggledelay').value() / 1000.0
         self.triglocation = self.findParam('triggerloc').value()
 
-
     def checkMode(self):
-        cwa = self.parent().scope.advancedSettings.cwEXTRA
+        cwa = CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA
 
         if self.pin != self.lastPin:
             # Turn off last used pin
@@ -87,25 +75,23 @@ class GPIOToggle(AuxiliaryTemplate):
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        QTimer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
-            QApplication.processEvents()
-
+            util.updateUI()
 
     def trigger(self):
         print "AUXIO: Trigger pin %d" % self.pin
         self.checkMode()
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
         self.nonblockingSleep(self.triglength)
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
         self.nonblockingSleep(self.postdelay)
-
 
     def captureInit(self):
         self.checkMode()
-        self.parent().scope.advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
 
         if self.triglocation == 0:
             self.trigger()
@@ -124,6 +110,3 @@ class GPIOToggle(AuxiliaryTemplate):
 
     def testToggle(self):
         pass
-
-
-

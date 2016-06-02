@@ -25,49 +25,35 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
-        
+
+from chipwhisperer.common.results.base import ResultsBase
+from ._base import PreprocessingBase
+
+
 class ResyncSAD(PreprocessingBase):
-    """
-    Resync by minimizing the SAD.
-    """
-    descrString = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
+    _name = "Resync: Sum-of-Difference"
+    _description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
                   "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."
 
-    def setupParameters(self):
-
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript},
-                         # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
-                         # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
-                      ]
-        
-        self.params = Parameter.create(name='Minimize Sum of Absolute Difference', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
         self.ccStart = 0
         self.ccEnd = 1
         self.wdStart = 0
         self.wdEnd = 1
 
+        self.params.addChildren([
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
+            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
+            # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
+            # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}
+        ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -79,11 +65,8 @@ class ResyncSAD(PreprocessingBase):
         if refpt is None: refpt = (0, 0)
         if windowpt is None: windowpt = (0, 0)
 
-        self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" % (
-                            self.findParam('reftrace').value(),
-                            refpt[0], refpt[1],
-                            windowpt[0], windowpt[1]
-                            ))
+        self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" %
+                         (self.findParam('reftrace').value(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
 
     def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
         self.rtrace = rtraceno
@@ -98,7 +81,7 @@ class ResyncSAD(PreprocessingBase):
    
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             sad = self.findSAD(trace)
@@ -123,9 +106,8 @@ class ResyncSAD(PreprocessingBase):
             elif diff > 0:
                 trace = np.append(trace[diff:], np.zeros(diff))
             return trace
-            
         else:
-            return self.trace.getTrace(n)       
+            return self._traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -138,7 +120,6 @@ class ResyncSAD(PreprocessingBase):
     def findSAD(self, inputtrace):
         reflen = self.ccEnd-self.ccStart
         sadlen = self.wdEnd-self.wdStart
-        
         sadarray = np.empty(sadlen)
         
         for ptstart in range(self.wdStart, self.wdEnd):    
@@ -148,13 +129,12 @@ class ResyncSAD(PreprocessingBase):
         return sadarray
         
     def calcRefTrace(self, tnum):
-        
         #If not enabled stop
         if self.enabled == False:
             return
         
-        self.reftrace = self.trace.getTrace(tnum)[self.ccStart:self.ccEnd]
-        sad = self.findSAD(self.trace.getTrace(tnum))
+        self.reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
+        sad = self.findSAD(self._traceSource.getTrace(tnum))
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)

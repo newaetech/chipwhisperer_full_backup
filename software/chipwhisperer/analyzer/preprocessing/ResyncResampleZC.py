@@ -25,42 +25,29 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
-
 import numpy as np
-from chipwhisperer.analyzer.preprocessing.PreprocessingBase import PreprocessingBase
-from openadc.ExtendedParameter import ExtendedParameter
-from pyqtgraph.parametertree import Parameter
+from ._base import PreprocessingBase
 from matplotlib.mlab import find
 import scipy.signal as sig
-        
+
+
 class ResyncResampleZC(PreprocessingBase):
     """
     Resync using Resampling based on Zero-Crossing Bins.
     """
-    descrString = "Deals with resampling 'bins' based on zero-crossing detection"
+    _name = "Resync: Resample based on Zero-Crossing"
+    _description = "Deals with resampling 'bins' based on zero-crossing detection"
 
-    def setupParameters(self):
-
+    def __init__(self, parentParam=None, traceSource=None):
+        PreprocessingBase.__init__(self, parentParam, traceSource)
         self.rtrace = 0
         self.debugReturnSad = False
-        resultsParams = [{'name':'Enabled', 'key':'enabled', 'type':'bool', 'value':True, 'set':self.updateScript},
-                         {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-                         {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
-                         {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript},
-                         {'name':'Desc', 'type':'text', 'value':self.descrString}
-                      ]
-        
-        self.params = Parameter.create(name='Resample Bins', type='group', children=resultsParams)
-        ExtendedParameter.setupExtended(self.params, self)
 
+        self.params.addChildren([
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
+            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
+            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript}
+        ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
@@ -76,7 +63,6 @@ class ResyncResampleZC(PreprocessingBase):
                             binlength
                             ))
 
-
     def setReference(self, rtraceno=0, zcoffset=0.0, binlength=0):
         self.rtrace = rtraceno
         self.zcoffset = zcoffset
@@ -85,19 +71,16 @@ class ResyncResampleZC(PreprocessingBase):
 
     def getTrace(self, n):
         if self.enabled:
-            trace = self.trace.getTrace(n)
+            trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
             
             trace = trace - self.zcoffset
     
             ind = self.findZerocrossing(trace)
-            newtrace = self.resampleResize(trace, ind, self.binlen)
-            
-            return newtrace
-            
+            return self.resampleResize(trace, ind, self.binlen)
         else:
-            return self.trace.getTrace(n)       
+            return self._traceSource.getTrace(n)
    
     def init(self):
         try:
@@ -107,15 +90,13 @@ class ResyncResampleZC(PreprocessingBase):
         except ValueError:
             pass
 
-        
     def calcRefTrace(self, tnum):
-        
         #If not enabled stop
         if self.enabled == False:
             return
         
         if self.binlen == 0:
-            self.reftrace = self.trace.getTrace(tnum) - self.zcoffset
+            self.reftrace = self._traceSource.getTrace(tnum) - self.zcoffset
             ind = self.findZerocrossing(self.reftrace)
             self.binlen = self.findAvgLength(ind)
 
@@ -131,9 +112,7 @@ class ResyncResampleZC(PreprocessingBase):
             diff += indices[i] - indices[i - 1]
             num += 1
 
-        avglen = diff / num
-
-        return avglen
+        return diff / num
 
     def resampleResize(self, data, indices, targlen):
         targdata = np.zeros(targlen * len(indices))

@@ -22,31 +22,20 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from chipwhisperer.capture.auxiliary.AuxiliaryTemplate import AuxiliaryTemplate
 import time
-from matplotlib.mlab import find
 import numpy as np
+from matplotlib.mlab import find
+from _base import AuxiliaryTemplate
+
 
 try:
     from picoscope import ps5000a
 except ImportError:
     ps5000a = None
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
 
-from openadc.ExtendedParameter import ExtendedParameter
-
-class freqMeasure():
+class FreqMeasure():
     
     def __init__(self, ps):
         self.ps = ps
@@ -96,7 +85,6 @@ class freqMeasure():
         # print "Sampling Done"
 
         data = self.ps.getDataV("A", 50000)
-
         data = data - np.mean(data)
         freq = self.freq_from_crossings(data)
 
@@ -104,21 +92,22 @@ class freqMeasure():
 
         return freq
 
-class FrequencyMeasure(AuxiliaryTemplate):
-    paramListUpdated = Signal(list)
 
-    def setupParameters(self):
+class FrequencyMeasure(AuxiliaryTemplate):
+    _name = "Frequency Counter"
+
+    def __init__(self, parentParam=None):
+        AuxiliaryTemplate.__init__(self, parentParam)
         scopes = {"None":None}
         if ps5000a is not None:
             scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
 
-
-        ssParams = [{'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}]
-        self.params = Parameter.create(name='Frequency Measurement', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
+        self.params.addChildren([
+            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}
+        ])
 
     def setConnection(self, con):
-        self.fm = freqMeasure(con)
+        self.fm = FreqMeasure(con)
 
     def captureInit(self):
         self.fm.openScope()
@@ -136,4 +125,3 @@ class FrequencyMeasure(AuxiliaryTemplate):
 
     def captureComplete(self):
         np.save("frequency-%s.npy" % self.prefix, self.data)
-

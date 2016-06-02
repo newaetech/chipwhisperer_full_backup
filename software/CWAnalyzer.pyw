@@ -1,7 +1,9 @@
 # Calls ChipWhisperer w/o the annoying window
-from chipwhisperer.analyzer.ChipWhispererAnalyzer import main
 import ctypes
 import os
+from chipwhisperer.analyzer.ui.CWAnalyzerGUI import main
+import cProfile
+
 if __name__ == '__main__':
 
     # Windows work-around
@@ -9,4 +11,5 @@ if __name__ == '__main__':
         myappid = u'newaetech.chipwhisperer.analyzer.git'  # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
+    # cProfile.run('main()')
     main()

@@ -143,7 +143,7 @@ subkey. Do this by changing the line ``for bnum in range(0, 16):`` to ``for bnum
 later to breaking the whole thing. That part of the file now looks like::
 
     #Set 16 to something lower (like 1) to only go through a single subkey
-    for bnum in range(0, 16):
+    for bnum in range(0, 1):
         for tnum in range(0, numtraces):
             print "Subkey %d, trace %d"%(bnum, tnum)
 

@@ -168,14 +168,18 @@ _gal14=(
 _galI=_gal14,_gal11,_gal13,_gal9
 _galNI=_gal2,_gal3,_gal1,_gal1
 
+
 def sbox(inp):
     return _sbox[inp]
+
 
 def inv_sbox(inp):
     return _i_sbox[inp]
 
+
 def subbytes(inp):
     return [sbox(i) for i in inp]
+
 
 def inv_subbytes(inp):
     return [inv_sbox(i) for i in inp]
@@ -187,11 +191,13 @@ def _shiftrow (row, shift):
     del row[:shift]
     return row
 
+
 def _inv_shiftrow (row, shift):
     #Circular shift row left by shift amount
     row+=row[:shift]
     del row[:4+shift]
     return row
+
 
 def shiftrows (state):
     #Extract rows as every 4th item starting at [1..3]
@@ -200,12 +206,14 @@ def shiftrows (state):
         state[i::4] = _shiftrow(state[i::4],i)
     return state
 
+
 def inv_shiftrows (state):
     #Extract rows as every 4th item starting at [1..3]
     #Replace row with inverse shift_row operation
     for i in 1,2,3:
         state[i::4] = _inv_shiftrow(state[i::4],-i)
     return state
+
 
 def _mixcolumn (column, inverse):
     #Use galois lookup tables instead of performing complicated operations
@@ -218,14 +226,17 @@ def _mixcolumn (column, inverse):
             g2[c0]^g3[c1]^g0[c2]^g1[c3],
             g1[c0]^g2[c1]^g3[c2]^g0[c3])
 
+
 def _mixcolumns (state, inverse):
     # Perform mix_column for each column in the state
     for i, j in (0, 4), (4, 8), (8, 12), (12, 16):
         state[i:j] = _mixcolumn(state[i:j], inverse)
     return state
 
+
 def mixcolumns(state):
     return _mixcolumns(state, False)
+
 
 def inv_mixcolumns(state):
     return _mixcolumns(state, True)

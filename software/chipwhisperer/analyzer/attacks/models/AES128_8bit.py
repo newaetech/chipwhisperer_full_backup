@@ -26,12 +26,7 @@
 
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-try:
-    # OrderedDict is new in 2.7
-    from collections import OrderedDict
-    dicttype = OrderedDict
-except ImportError:
-    dicttype = dict
+from chipwhisperer.common.utils import util
 
 LEAK_HW_SBOXOUT_FIRSTROUND = 1
 LEAK_HD_LASTROUND_STATE = 2
@@ -40,7 +35,7 @@ LEAK_HD_SBOX_IN_SUCCESSIVE = 4
 LEAK_HD_SBOX_OUT_SUCCESSIVE = 5
 LEAK_HW_INVSBOXOUT_FIRSTROUND = 6
 
-leakagemodels = dicttype()
+leakagemodels = util.DictType()
 leakagemodels['HW: AES SBox Output, First Round (Enc)'] = 'LEAK_HW_SBOXOUT_FIRSTROUND'
 leakagemodels['HW: AES Inv SBox Output, First Round (Dec)'] = 'LEAK_HW_INVSBOXOUT_FIRSTROUND'
 leakagemodels['HD: AES Last-Round State'] = 'LEAK_HD_LASTROUND_STATE'
@@ -49,6 +44,7 @@ leakagemodels['HD: AES SBox Input i to i+1'] = 'LEAK_HD_SBOX_IN_SUCCESSIVE'
 leakagemodels['HD: AES SBox Output i to i+1'] = 'LEAK_HD_SBOX_OUT_SUCCESSIVE'
 
 numSubKeys = 16
+permPerSubkey = 256
 
 ##Generate this table with:
 #HW = []
@@ -78,6 +74,7 @@ def processKnownKey(setting, inpkey):
         return keyScheduleRounds(inpkey, 0, 10)
 
     return inpkey
+
 
 def leakage(pt, ct, guess, bnum, setting, state):
 
@@ -111,13 +108,16 @@ def leakage(pt, ct, guess, bnum, setting, state):
     else:
         raise ValueError("Invalid setting: %s" % str(setting))
 
+
 def getHW(var):
     """Given a variable, return the hamming weight (number of 1's)"""
     return HW8Bit[var]
 
+
 def VccToGnd(var):
     """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
     return 8 - var
+
 
 # TODO: Use this
 def xtime(a):

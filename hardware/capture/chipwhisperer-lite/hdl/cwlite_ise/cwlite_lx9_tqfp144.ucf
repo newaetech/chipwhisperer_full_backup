@@ -87,6 +87,21 @@ NET target_hs2			LOC=P95       |IOSTANDARD = LVCMOS33 | SLEW=FAST;
 NET glitchout_highpwr LOC=P66       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=24;
 NET glitchout_lowpwr LOC=P67       |IOSTANDARD = LVCMOS33 | SLEW=FAST | DRIVE=12;
 
+NET target_npower    LOC=P121      |IOSTANDARD = LVCMOS33;
+
+NET USB_spi2_txd2			LOC=P133			|IOSTANDARD = LVCMOS33;
+NET USB_spi2_rxd2			LOC=P132			|IOSTANDARD = LVCMOS33;
+NET USB_sc_aux1			LOC=P124			|IOSTANDARD = LVCMOS33;
+NET USB_sc_aux2			LOC=P123			|IOSTANDARD = LVCMOS33;
+NET USB_sc_clk				LOC=P131			|IOSTANDARD = LVCMOS33;
+NET USB_sc_rst				LOC=P126			|IOSTANDARD = LVCMOS33;
+
+NET sc_rst				LOC=P102		  |IOSTANDARD = LVCMOS33;
+NET sc_clk				LOC=P100		  |IOSTANDARD = LVCMOS33;
+NET sc_io				LOC=P99		  |IOSTANDARD = LVCMOS33;
+NET sc_aux1				LOC=P98		  |IOSTANDARD = LVCMOS33;
+NET sc_aux2				LOC=P97		  |IOSTANDARD = LVCMOS33;
+
 #Inputs
 NET USB_spi0_cs0		LOC=P139      |IOSTANDARD = LVCMOS33 | PULLUP;
 NET USB_spare1       LOC=P26       |IOSTANDARD = LVCMOS33 | PULLUP; //AVR CS Pin
@@ -136,8 +151,8 @@ PIN "reg_chipwhisperer/clkgenfx_mux.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #INST "reg_clockglitch/gc/dcm1_clk_out_BUFG" LOC="BUFGMUX_X2Y3";
 #INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X3Y16";
 #INST "oadc/genclocks/clkdcm_mux" LOC="BUFGMUX_X3Y14";
-#INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
-#INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
+INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y0";
+INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y1";
 #INST "oadc/genclocks/DCM_extclock_gen" LOC="DCM_X0Y2";
 #INST "oadc/genclocks/DCM_CLKGEN_inst" LOC="DCM_X0Y3";
 

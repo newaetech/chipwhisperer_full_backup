@@ -1,4 +1,4 @@
-//`include "includes.v"
+`include "includes.v"
 `default_nettype none
 
 module cwlite_interface(  
@@ -46,9 +46,17 @@ module cwlite_interface(
 	 inout wire			target_io1, // Normally TXD / SmartCard Reset
 	 inout wire			target_hs1, // Clock from victim device
 	 inout wire			target_hs2, // Clock to victim device
+	 
+	 inout wire			sc_rst,
+	 inout wire			sc_clk,
+	 inout wire			sc_io,
+	 inout wire			sc_aux1,
+	 inout wire			sc_aux2,
 
 	 output wire		glitchout_highpwr, // high-speed glitch output
 	 output wire		glitchout_lowpwr, // high-speed glitch output 
+	 
+	 output wire		target_npower,
 	 
 	 /* Various connections to USB Chip */
 	 input wire			USB_ser0_tx_i,
@@ -60,8 +68,15 @@ module cwlite_interface(
 	 input wire			USB_spi0_cs0,
 	 input wire			USB_treset_i,
 	 
+	 input wire			USB_sc_rst,
+	 input wire 		USB_sc_clk,
+	 input wire			USB_sc_aux1,
+	 input wire			USB_sc_aux2,
+	 input wire 		USB_spi2_txd2,
+	 output wire		USB_spi2_rxd2,
+	 
 	 input wire       USB_spare1, //CS pin from SAM3U
-	 input wire			USB_spare2, //LCD_D/C Pin (Data/Command)
+	 input wire			USB_spare2, //LCD_D/C Pin (Data/Command) or CS pin TO SAM3U
 	 
 	 output wire		ext_mosi, //Pin 4 of external header
 	 input wire			ext_miso, //Pin 3 of external header
@@ -153,7 +168,7 @@ module cwlite_interface(
 		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig)
 		
 	);	
-	
+		
 		reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),
@@ -201,6 +216,7 @@ module cwlite_interface(
 		.uart_rx_o(USB_ser0_rx_o),
 		.usi_out_i(1'b0),
 		.usi_in_o(),
+		.targetpower_off(target_npower),
 				
 		.trigger_o(ext_trigger)
 	);
@@ -250,6 +266,15 @@ module cwlite_interface(
 	 assign target_MOSI = (enable_avrprog) ? USB_spi0_mosi_i : 1'bZ;
 	 assign target_SCK = (enable_avrprog) ? USB_spi0_sck_i : 1'bZ;
 	 assign USB_spi0_miso_o = (enable_avrprog) ? target_MISO : ext_miso;	
+	 
+	 wire sc_enable = 1'b1;
+	 
+	 assign sc_rst = (sc_enable) ? USB_sc_rst : 1'bZ;
+	 assign sc_clk = (sc_enable) ? USB_sc_clk : 1'bZ;
+	 assign sc_aux1 = (sc_enable) ? USB_sc_aux1 : 1'bZ;
+	 assign sc_aux2 = (sc_enable) ? USB_sc_aux2 : 1'bZ;
+	 assign sc_io = (sc_enable) ? ((USB_spi2_txd2) ? 0 : 1'bZ) : 1'bZ;
+	 assign USB_spi2_rxd2 = (sc_enable) ? sc_io : 1'bZ;
 	 
 	 assign ext_sck = USB_spi0_sck_i;
 	 assign ext_mosi = USB_spi0_mosi_i;

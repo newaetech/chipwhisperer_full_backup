@@ -24,6 +24,7 @@
 #define CW301_XMEGA 2
 #define CW303 3
 #define CW304 4
+#define CW308_MEGARF  8
 
 //HAL_TYPE Define Types
 #define HAL_avr 1
@@ -42,10 +43,43 @@
     #error "Unsupported HAL Type"
 #endif
 
+/*
 #if PLATFORM == CW301_XMEGA
     #define HW_CRYPTO 1
 #else
     #define HW_CRYPTO 0
+#endif
+*/
+
+#if PLATFORM == CW308_MEGARF
+    #undef trigger_setup
+    #undef trigger_high
+    #undef trigger_low
+    #define trigger_setup() DDRD |= 0x02
+    #define trigger_high()  PORTD |= 0x02
+    #define trigger_low()   PORTD &= ~(0x02)
+    
+    #define HW_AES128_Init();      AES_CTRL = 0x00;
+
+    #define HW_AES128_LoadKey(key);  for (uint8_t i = 0; i < 16; i++){ \
+                                     AES_KEY = *(key+i); \
+                                  }
+
+    #define HW_AES128_Enc(pt);  for (uint8_t i = 0; i < 16; i++){ \
+                                    AES_STATE = *(pt+i); \
+                                } \
+                                  \
+                                AES_CTRL |= 1<<AES_REQUEST; \
+                                  \
+                                //Wait for done \
+                                while ((AES_STATUS & (1<<AES_DONE)) == 0){ \
+                                    ; \
+                                } \
+                                  \
+                                for (uint8_t i = 0; i < 16; i++){ \
+                                    *(pt+i) = AES_STATE; \
+                                }
+    
 #endif
 
 

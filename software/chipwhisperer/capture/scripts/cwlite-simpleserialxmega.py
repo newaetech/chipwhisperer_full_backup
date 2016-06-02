@@ -27,83 +27,47 @@
 #
 #
 #
-# This example captures data using the ChipWhisperer Rev2 capture hardware. The target is a SimpleSerial board attached
+# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
 # to the ChipWhisperer.
 #
 # Data is saved into both a project file and a MATLAB array
 #
 
-#Setup path
 import sys
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
+from chipwhisperer.common.scripts.base import UserScriptBase
 
-#Import the ChipWhispererCapture module
-import chipwhisperer.capture.ChipWhispererCapture as cwc
 
-#Check for PySide
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+class UserScript(UserScriptBase):
+    _name = "ChipWhisperer-Lite: AES SimpleSerial on XMEGA"
+    _description = "SimpleSerial with Standard Target for AES (XMEGA)"
 
-import thread
-
-import scipy.io as sio
-
-exitWhenDone=False
-
-def name():
-    return "ChipWhisperer-Lite: AES SimpleSerial on XMEGA"
-
-def tip():
-    return "SimpleSerial with Standard Target for AES (XMEGA)"
-
-def pe():
-    QCoreApplication.processEvents()
-
-class userScript(QObject):
-
-    def __init__(self, capture):
-        super(userScript, self).__init__()
-        self.capture = capture
-                
+    def __init__(self, api):
+        super(UserScript, self).__init__(api)
 
     def run(self):
-        cap = self.capture
-        
         #User commands here
-        print "***** Starting User Script *****"
-       
-        cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
-        cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        cap.setParameter(['Target Connection', 'connection', 'ChipWhisperer-Lite'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'ChipWhisperer Lite'])
+        self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
+        self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
+        self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
+        self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
 
         #Load FW (must be configured in GUI first)
-        # cap.FWLoaderGo()
+        # self.api.FWLoaderGo()
                 
-        #NOTE: You MUST add this call to pe() to process events. This is done automatically
-        #for setParameter() calls, but everything else REQUIRES this
-        pe()
-
-        cap.doConDis()
-        
-        pe()
-        pe()
-        pe()
-        pe()
+        self.api.connect()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra', 'CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
-                      ['CW Extra', 'CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
+        lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
                       ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
-                      ['CW Extra', 'CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
+                      ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
-                      ['OpenADC', 'Trigger Setup', 'Offset', 1500],
+                      ['OpenADC', 'Trigger Setup', 'Offset', 1250],
                       ['OpenADC', 'Gain Setting', 'Setting', 45],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
                       #Final step: make DCMs relock in case they are lost
@@ -111,56 +75,29 @@ class userScript(QObject):
                       ]
         
         #Download all hardware setup parameters
-        for cmd in lstexample: cap.setParameter(cmd)
+        for cmd in lstexample: self.api.setParameter(cmd)
         
         #Let's only do a few traces
-        cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
+        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
                       
         #Throw away first few
-        cap.capture1()
-        pe()
-        cap.capture1()
-        pe()
-        
-        #Start capture process
-        #writer = cap.captureM()
-        #
-        #pe()
-        #
-        #cap.proj.setFilename("../capturev2/test_live.cwp")
-        #
-        #pe()
-        #
-        #cap.saveProject()
-        
-        pe()
+        self.api.capture1()
+        self.api.capture1()
 
-        print "***** Ending User Script *****"
-        
+        #Start api process
+        #writer = self.api.captureM()
+        #self.api.proj.setFilename("../capturev2/test_live.cwp")
+        #self.api.saveProject()
+
 
 if __name__ == '__main__':
-    #Make the application
-    app = cwc.makeApplication()
-    
-    #If you DO NOT want to overwrite/use settings from the GUI version including
-    #the recent files list, uncomment the following:
-    #app.setApplicationName("Capture V2 Scripted")
-    
-    #Get main module
-    capture = cwc.ChipWhispererCapture()
-    
-    #Show window - even if not used
-    capture.show()
-    
-    #NB: Must call processEvents since we aren't using proper event loop
-    pe()
-    #Call user-specific commands 
-    usercommands = userScript(capture)
-    
-    usercommands.run()
-    
-    app.exec_()
-    
-    sys.exit()
+    api = CWCoreAPI()                               # Instantiate the API
+    app = cwc.makeApplication()                     # Make the GUI application (optional)
+    #app.setApplicationName("Capture V2 Scripted")  # If you DO NOT want to overwrite settings from the GUI
+    gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
+    gui.show()
+    usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
+    usercommands.run()                              # Run the User Script
 
-    
+    app.exec_()
+    sys.exit()

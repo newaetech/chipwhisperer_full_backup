@@ -27,67 +27,34 @@
 #
 #
 #
-# This example captures data using the ChipWhisperer Rev2 capture hardware. The target is a SimpleSerial board attached
+# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
 # to the ChipWhisperer.
 #
 # Data is saved into both a project file and a MATLAB array
 #
 
-#Setup path
 import sys
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
+import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
+from chipwhisperer.common.scripts.base import UserScriptBase
 
-#Import the ChipWhispererCapture module
-import chipwhisperer.capture.ChipWhispererCapture as cwc
 
-#Check for PySide
-try:
-    from PySide.QtCore import *
-    from PySide.QtGui import *
-except ImportError:
-    print "ERROR: PySide is required for this program"
-    sys.exit()
+class UserScript(UserScriptBase):
+    _name = "SAKURA-G: AES-128 FPGA Target"
+    _description = "SAKURA-G Loaded with ChipWhisperer"
 
-import thread
-
-import scipy.io as sio
-
-exitWhenDone=False
-
-def name():
-    return "SAKURA-G: AES-128 FPGA Target"
-
-def tip():
-    return "SAKURA-G Loaded with ChipWhisperer"
-
-def pe():
-    QCoreApplication.processEvents()
-
-class userScript(QObject):
-
-    def __init__(self, capture):
-        super(userScript, self).__init__()
-        self.capture = capture
-                
+    def __init__(self, api):
+        super(UserScript, self).__init__(api)
 
     def run(self):
-        cap = self.capture
-        
         #User commands here
-        print "***** Starting User Script *****"
-       
-        cap.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        cap.setParameter(['OpenADC Interface', 'connection', 'FTDI (SASEBO-W/SAKURA-G)'])
-        cap.setParameter(['OpenADC-FTDI', 'Refresh Device List', None])
-        cap.setParameter(['Generic Settings', 'Target Module', 'SAKURA G'])
-        cap.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-                
-        #NOTE: You MUST add this call to pe() to process events. This is done automatically
-        #for setParameter() calls, but everything else REQUIRES this
-        pe()
+        self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
+        self.api.setParameter(['FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
+        self.api.setParameter(['Generic Settings', 'Target Module', 'SAKURA G'])
+        self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
 
-        cap.doConDis()
-        
-        pe()
+        self.api.connect()
         
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x4 via DCM'],
@@ -101,56 +68,29 @@ class userScript(QObject):
                       ]
         
         #Download all hardware setup parameters
-        for cmd in lstexample: cap.setParameter(cmd)
+        for cmd in lstexample: self.api.setParameter(cmd)
         
         #Let's only do a few traces
-        cap.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
+        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
                       
         #Throw away first few
-        cap.capture1()
-        pe()
-        cap.capture1()
-        pe()
-        
-        #Start capture process
-        #writer = cap.captureM()
-        #
-        #pe()
-        #
-        #cap.proj.setFilename("../capturev2/test_live.cwp")
-        #
-        #pe()
-        #
-        #cap.saveProject()
-        
-        pe()
+        self.api.capture1()
+        self.api.capture1()
 
-        print "***** Ending User Script *****"
-        
+        #Start api process
+        #writer = self.api.captureM()
+        #self.api.proj.setFilename("../capturev2/test_live.cwp")
+        #self.api.saveProject()
+
 
 if __name__ == '__main__':
-    #Make the application
-    app = cwc.makeApplication()
-    
-    #If you DO NOT want to overwrite/use settings from the GUI version including
-    #the recent files list, uncomment the following:
-    #app.setApplicationName("Capture V2 Scripted")
-    
-    #Get main module
-    capture = cwc.ChipWhispererCapture()
-    
-    #Show window - even if not used
-    capture.show()
-    
-    #NB: Must call processEvents since we aren't using proper event loop
-    pe()
-    #Call user-specific commands 
-    usercommands = userScript(capture)
-    
-    usercommands.run()
-    
-    app.exec_()
-    
-    sys.exit()
+    api = CWCoreAPI()                               # Instantiate the API
+    app = cwc.makeApplication()                     # Make the GUI application (optional)
+    #app.setApplicationName("Capture V2 Scripted")  # If you DO NOT want to overwrite settings from the GUI
+    gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
+    gui.show()
+    usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
+    usercommands.run()                              # Run the User Script
 
-    
+    app.exec_()
+    sys.exit()

@@ -22,19 +22,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-import sys
-import serial
 
-from PySide.QtCore import *
-from PySide.QtGui import *
-
-from TargetTemplate import TargetTemplate
 import hid
+from _base import TargetTemplate
+
 
 class HIDSPI(object):
     CMDSPI = 0x01
     CMDBOOT = 0xFE
-
 
     def findCWSPI(self, VID=0x03EB, PID=0xBAED):
         print "Detecting HID device..."
@@ -89,25 +84,17 @@ class HIDSPI(object):
     def jumpBootloader(self):
         self.sendHID(self.CMDBOOT)
 
-try:
-    from pyqtgraph.parametertree import Parameter, ParameterTree, ParameterItem, registerParameterType
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
-    sys.exit()
-
-from openadc.ExtendedParameter import ExtendedParameter
 
 class ChipWhispererSPI(TargetTemplate):
-    paramListUpdated = Signal(list)
+    _name = "ChipWhisperer SPI"
 
-    def setupParameters(self):
+    def __init__(self, parentParam=None):
+        TargetTemplate.__init__(self, parentParam)
         self.hdev = HIDSPI()
-        ssParams = [{'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
-                    ]
-        self.params = Parameter.create(name='Target Connection', type='group', children=ssParams)
-        ExtendedParameter.setupExtended(self.params, self)
         self.keylength = 16
-
+        self.params.addChildren([
+            {'name':'Jump to Bootloader', 'type':'action', 'action':self.hdev.jumpBootloader}
+        ])
 
     def setKeyLen(self, klen):
         """ Set key length in BITS """
@@ -117,18 +104,9 @@ class ChipWhispererSPI(TargetTemplate):
         """ Return key length in BYTES """
         return self.keylength
 
-    def paramList(self):
-        p = [self.params]
-        return p
-
-    def con(self):  
+    def con(self, scope = None):
         self.hdev.findCWSPI()
-
-    def dis(self):
-        self.close()
-
-    def close(self):
-        return
+        self.connectStatus.setValue(True)
 
     def init(self):
         return

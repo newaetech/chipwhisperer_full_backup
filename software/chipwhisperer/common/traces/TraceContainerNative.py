@@ -24,23 +24,24 @@
 
 import os
 import numpy as np
-import TraceContainer
+from _base import TraceContainer
 
-class TraceContainerNative(TraceContainer.TraceContainer):
+
+class TraceContainerNative(TraceContainer):
+    _name = "ChipWhisperer/Native"
 
     def copyTo(self, srcTraces=None):
-        self.NumTrace = srcTraces.NumTrace
-        self.NumPoint = srcTraces.NumPoint
+        self.numTrace = srcTraces.numTraces()
+        self.numPoint = srcTraces.numPoints()
         self.knownkey = srcTraces.knownkey
 
-        self.textins = np.zeros([self.NumTrace, 16], dtype=np.uint8)
-        for n in range(0, self.NumTrace):
+        self.textins = np.zeros([self.numTrace, 16], dtype=np.uint8)
+        for n in range(0, self.numTrace):
             tin = srcTraces.textins[n]
             self.textins[n] = map(int, tin, [16] * len(tin))
 
-
-        self.textouts = np.zeros([self.NumTrace, 16], dtype=np.uint8)
-        for n in range(0, self.NumTrace):
+        self.textouts = np.zeros([self.numTrace, 16], dtype=np.uint8)
+        for n in range(0, self.numTrace):
             tout = srcTraces.textouts[n]
             self.textouts[n] = map(int, tout, [16] * len(tout))
 
@@ -54,15 +55,14 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         # Traces copied in means not saved
         self.setDirty(True)
 
-
     def loadAllTraces(self, directory=None, prefix=""):
         """Load all traces into memory"""
 
-        if directory is None:
-            directory = self.directory
-
-        if prefix is None:
-            prefix = self.prefix
+        if self.config.configFilename():
+            if directory is None:
+                directory = os.path.split(self.config.configFilename())[0]
+            if prefix is None:
+                prefix = self.config.attr("prefix")
 
         self.traces = np.load(directory + "/%straces.npy" % prefix, mmap_mode='r')
         self.textins = np.load(directory + "/%stextin.npy" % prefix)
@@ -135,4 +135,3 @@ class TraceContainerNative(TraceContainer.TraceContainer):
         if clearKeys:
             self.keylist = None
             self.knownkey = None
-
