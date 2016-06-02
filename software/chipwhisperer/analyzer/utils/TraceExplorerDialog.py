@@ -82,7 +82,7 @@ class TraceExplorerDialog(AutoScript, Parameterized):
     def updateChildren(self):
         for example in self.exampleScripts:
             if hasattr(example, 'updateScript'):
-                example.updateScript()
+                example.updateScript("traceexplorer_show")
         self.updateScripts()
 
     def updateScripts(self):

@@ -122,6 +122,14 @@ class TraceContainer(Parameterized, Plugin):
                     # Do a resize now to allocate more memory
                     self.traces.resize((self.tracehint, self.traces.shape[1]))
 
+                #Validate traces fit - if too short warn & pad (prevents aborting long captures)
+                pad = self.traces.shape[1] - len(trace)
+                if pad > 0:
+                    print "WARNING: Trace too short - length = %d"%len(trace)
+                    print "         Padding with %d zero points"%pad
+                    print " ***** This MAY SUGGEST DATA CORRUPTION *****"
+                    trace.extend([0]*pad)
+
                 self.traces[self._numTraces][:] = trace
         except MemoryError:
             raise MemoryError("Failed to allocate/resize array for %d x %d, if you have sufficient memory it may be fragmented. Use smaller segments and retry." % (self.tracehint, self.traces.shape[1]))

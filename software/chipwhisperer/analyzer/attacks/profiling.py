@@ -27,12 +27,12 @@
 # ChipWhisperer is a trademark of NewAE Technology Inc.
 #===========================================================
 
-import sys
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.utils import pluginmanager
 import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
 import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
 from chipwhisperer.analyzer.attacks._base import AttackBaseClass
+from chipwhisperer.analyzer.attacks.profiling_algorithms.template import ProfilingTemplate
 from _generic_parameters import AttackGenericParameters
 
 
@@ -42,16 +42,16 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
     def __init__(self):
         AttackBaseClass.__init__(self)
-        self.attack = None
-
-        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
-        self.getParams().addChildren([
-            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':algos['Template Attack'], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
-        ])
         AttackGenericParameters.__init__(self)
 
+        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
+        self.params.addChildren([
+            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':ProfilingTemplate, 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+        ])
+
+        # Do not use absolute
         self.useAbs = False
-        self.updateAlgorithm(self.findParam('Prof_algo').getValue())
+        self.updateAlgorithm(self.findParam('Prof_algo').value())
         self.updateBytesVisible()
         self.setAbsoluteMode(False)
 
@@ -61,7 +61,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
+        self.importsAppend("from chipwhisperer.analyzer.attacks.Profiling import Profiling")
 
         analysAlgoStr = self.attack.__class__.__name__
         self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
@@ -78,7 +78,15 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                 self.importsAppend(k)
 
         self.addFunction("init", "setTraceSource", "UserScript.traces")
-        self.addFunction("init", "setProject", "UserScript.project()")
+        self.addFunction("init", "attack.setTraceSource", "UserScript.traces")
+        self.addFunction("init", "setProject", "UserScript.api.project()")
+
+    def setProject(self, project):
+        self._project = project
+
+    def project(self):
+        if self._project is None:
+            C
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         if self.attack is not None:
@@ -121,7 +129,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         return self._keyround
 
     def processTraces(self):
-        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
+        progressBar = ProgressBar("Analysis in Progress", "Attaking with Profiling:")
         with progressBar:
             self.attack.setReportingInterval(self.getReportingInterval())
 
@@ -162,3 +170,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
     def getStatistics(self):
         return self.attack.getStatistics()
+
+    def paramList(self):
+        l = [self.params, self.pointsParams, self.traceParams]
+        if self.attackParams is not None:
+            l.append(self.attackParams)
+        return l

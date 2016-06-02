@@ -264,7 +264,7 @@ class AttackScriptGen(Parameterized):
                 else:
                     mse.append("def %s(self):" % k, 1)
                     for s in self.attack.getStatements(k):
-                        mse.append(s.replace("self.", "self.api.getAttack().").replace("UserScript.", "self."))
+                        mse.append(s.replace("self.", "self.attack.").replace("UserScript.", "self."))
 
         # Get other commands from other utilities
         for index, util in enumerate(self.utilList):
