@@ -34,6 +34,7 @@ from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.common.utils.parameter import Parameter
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -248,6 +249,7 @@ def makeApplication():
 def main():
     # Create the Qt Application
     app = makeApplication()
+    Parameter.usePyQtGraph = True
     # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
     window.show()

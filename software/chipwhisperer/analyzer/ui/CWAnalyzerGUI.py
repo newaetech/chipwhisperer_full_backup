@@ -33,6 +33,7 @@ from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.parameter import Parameter
 
 
 class CWAnalyzerGUI(CWMainGUI):
@@ -117,6 +118,8 @@ def main():
     # Create the Qt Application
     app = makeApplication()
     # Create and show the GUI
+
+    Parameter.usePyQtGraph = True
     window = CWAnalyzerGUI(CWCoreAPI())
     window.show()
 

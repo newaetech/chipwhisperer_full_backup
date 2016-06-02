@@ -94,8 +94,8 @@ if __name__ == '__main__':
     api = CWCoreAPI()                               # Instantiate the API
     app = cwc.makeApplication()                     # Make the GUI application (optional)
     #app.setApplicationName("Capture V2 Scripted")  # If you DO NOT want to overwrite settings from the GUI
-    gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
-    gui.show()
+    # gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
+    # gui.show()
     usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
     usercommands.run()                              # Run the User Script
 

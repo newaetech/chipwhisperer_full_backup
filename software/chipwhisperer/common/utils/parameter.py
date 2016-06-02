@@ -64,8 +64,9 @@ class Parameter(object):
     scriptingOutput = sys.stdout
     supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color", "menu"]
     suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked", "default", "tip", "action", "visible", "children", "readonly"}
+    usePyQtGraph = False
 
-    def __init__(self, parent=None, setupPyQtGraph=True, **opts):
+    def __init__(self, parent=None, **opts):
         self.sigValueChanged = util.Signal()
         self.sigLimitsChanged = util.Signal()
         self.sigOptionsChanged = util.Signal()
@@ -113,8 +114,7 @@ class Parameter(object):
 
         self.children = util.DictType()
         tmp = self.opts.pop("children", [])
-        self.setupPyQtGraph = setupPyQtGraph
-        if self.setupPyQtGraph and self.opts["type"] != "menu":
+        if Parameter.usePyQtGraph and self.opts["type"] != "menu":
             self.setupPyQtGraphParameter()
         self.keys = {}
         self.addChildren(tmp)
@@ -265,7 +265,7 @@ class Parameter(object):
         self.sigOptionsChanged.disconnectAll()
         self.sigChildAdded.disconnectAll()
         self.sigChildRemoved.disconnectAll()
-        if self.setupPyQtGraph is not None:
+        if Parameter.usePyQtGraph:
             # if hasattr(self._PyQtGraphParameter, "sigActivated"):
             #     self._PyQtGraphParameter.sigActivated.disconnect()
             # self._PyQtGraphParameter.sigValueChanged.disconnect()

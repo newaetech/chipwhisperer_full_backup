@@ -46,6 +46,7 @@ class TemplateBasic(AutoScript, PassiveTraceObserver):
     def __init__(self):
         AutoScript.__init__(self)
         PassiveTraceObserver.__init__(self)
+        self.getParams().getChild("Input").hide()
 
     def setProject(self, proj):
         self._project = proj

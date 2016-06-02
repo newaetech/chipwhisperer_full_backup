@@ -49,6 +49,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     def __init__(self, parent):
         AutoScript.__init__(self)
         PassiveTraceObserver.__init__(self)
+        self.getParams().getChild("Input").hide()
         self._project = None
 
         self.params.addChildren([

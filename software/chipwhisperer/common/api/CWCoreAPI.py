@@ -194,8 +194,12 @@ class CWCoreAPI(Parameterized):
             if self.getScope():
                 self.getScope().con()
                 # Sets the Plot Widget to the last added TraceSource
-                ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
-                    TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
+                try:
+                    ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
+                        TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
+                except KeyError:
+                    pass
+
         except Warning:
             sys.excepthook(*sys.exc_info())
             return False
