@@ -36,12 +36,18 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._fixedPlain = False
         self._fixedKey = True
 
+        init_key = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
+        init_text = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
+
         self.params.addChildren([
             {'name':'Key', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Fixed', 'set':self.setKeyType},
-            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'set':self.setInitialKey},
+            {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'value':init_key, 'set':self.setInitialKey},
             {'name':'Plaintext', 'type':'list', 'values':['Random', 'Fixed'], 'value':'Random', 'set':self.setPlainType},
-            {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'set':self.setInitialText},
+            {'name':'Fixed Plaintext', 'key':'inittext', 'type':'str', 'value':init_text, 'set':self.setInitialText},
         ])
+
+        self.setInitialKey(init_key)
+        self.setInitialText(init_text)
 
     def setKeyType(self, t):
         if t == 'Fixed':
@@ -58,10 +64,6 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             self._fixedPlain = False
         else:
             raise ValueError("Invalid value for Text Type: %s" % t)
-
-    def _initPattern(self):
-        self.setInitialKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
-        self.setInitialText('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
 
     def setInitialKey(self, initialKey, binaryKey=False):
         if initialKey:
@@ -90,7 +92,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             self.inittext = textStr
 
     def initPair(self):
-        self._initPattern()
+        pass
 
     def newPair(self):
         if self._fixedKey is False:
