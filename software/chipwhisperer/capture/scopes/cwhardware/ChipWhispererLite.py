@@ -52,15 +52,15 @@ class CWLiteUSB(Parameterized):
     def con(self):
         self._cwusb.con()
 
-    def __del__(self):
-        print "here"
+    # def __del__(self):
+    #     print "here"
 
     def dis(self):
         self.getParams().delete()
         self.params = None
-        gc.collect()
-        print sys.getrefcount(self)
-        print gc.get_referrers(self)
+        # gc.collect()
+        # print sys.getrefcount(self)
+        # print gc.get_referrers(self)
 
     def usbdev(self):
         return self._cwusb

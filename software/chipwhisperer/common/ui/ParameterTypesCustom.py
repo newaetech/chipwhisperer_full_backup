@@ -802,3 +802,15 @@ def optsChanged_Fix(self, param, opts):
         self.updateAddList()
 
 GroupParameterItem.optsChanged = optsChanged_Fix
+
+
+def treeWidgetChanged_test(self):
+    ParameterItem.treeWidgetChanged(self)
+    if self.treeWidget() is None:
+        print "here"
+    self.treeWidget().setFirstItemColumnSpanned(self, True)
+    if self.addItem is not None:
+        self.treeWidget().setItemWidget(self.addItem, 0, self.addWidgetBox)
+        self.treeWidget().setFirstItemColumnSpanned(self.addItem, True)
+
+GroupParameterItem.treeWidgetChanged=treeWidgetChanged_test

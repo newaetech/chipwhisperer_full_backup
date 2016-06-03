@@ -86,7 +86,6 @@ class CWCoreAPI(Parameterized):
                     {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
                     ]},
             ])
-
         self.graphWidget = None
 
         self.scopeParam = Parameter(name="Scope Settings", type='group')
@@ -148,6 +147,9 @@ class CWCoreAPI(Parameterized):
     @setupSetParam("Key/Text Pattern")
     def setAcqPattern(self, pat):
         self._acqPattern = pat
+        if self._acqPattern is not None:
+            self._acqPattern.getParams().remove()
+        self.getParams().append(self._acqPattern.getParams())
 
     def getTraceFormat(self):
         return self._traceManager

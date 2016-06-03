@@ -21,7 +21,7 @@
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU Lesser General Public License for more details.
 #
-#    You should have received a copy of the GNU General Public License
+#    You should have received a copy of the GNU General Public LicsetTracesPerAttackense
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
@@ -53,7 +53,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
         self.allPointsSame = True
         self.startPoint = [0]*self.numsubkeys
         self.endPoint = [0]*self.numsubkeys
-        self.traceMax = 1
+        self.traceMax = 0
 
         self.traceLimitsChanged = util.Signal()
 
@@ -143,7 +143,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
         #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
 
-        if (runs.getValue() * atraces.getValue() + strace.getValue()) > (self.traceMax):
+        if (runs.getValue() * atraces.getValue() + strace.getValue()) > (self.traceMax) or atraces.getValue()<=0:
             solv = (self.traceMax - strace.getValue()) / runs.getValue()
             solv = int(solv)
             atraces.setValue(1, blockAction = True)
@@ -151,7 +151,6 @@ class AttackGenericParameters(Parameterized, AutoScript):
             atraces.setValue(solv, blockAction = True)
         else:
             atraces.setLimits((1, self.traceMax))
-            #There was a WORK-AROUND: need to emit an extra sigLimitsChanged??? Check if it is still needed.
 
         pointrng = (self.pointsParams.getChild('startpoint').getValue(), self.pointsParams.getChild('endpoint').getValue())
 
@@ -205,8 +204,8 @@ class AttackGenericParameters(Parameterized, AutoScript):
         self.traceParams.getChild('runs').setValue(1)
         atrace = self.traceParams.getChild('atraces')
 
-        strace.setLimits((0, traces))
-        atrace.setValue(1, blockAction=True) #Avoid bug in pyqtgraph with  limits
+        strace.setLimits((0, self.traceMax-1))
+        atrace.setValue(1, blockAction=True)
         atrace.setLimits((1, traces))
         atrace.setValue(traces, blockAction=True)
 
@@ -214,7 +213,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
     def setGenericPointRange(self, start, end, bnum=None, setlimits=False):
         start = int(start)
-        end = int(end)
+        end = int(end)-1
 
         startparam = self.pointsParams.getChild('startpoint')
         endparam = self.pointsParams.getChild('endpoint')

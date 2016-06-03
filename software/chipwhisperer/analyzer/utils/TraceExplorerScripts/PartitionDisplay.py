@@ -248,8 +248,8 @@ class PartitionDisplay(Parameterized, AutoScript):
         self._autoscript_init = False
         self.parent = parent
         self.poi = POI(self)
-        self.dock = CWMainGUI.getInstance().addDock(self.poi, "Partition Comparison POI Table", area=Qt.TopDockWidgetArea)
-        self.dock.hide()
+        self.poiDock = CWMainGUI.getInstance().addDock(self.poi, "Partition Comparison POI Table", area=Qt.TopDockWidgetArea)
+        self.poiDock.hide()
         self.defineName()
         self._traces = None
 
@@ -257,8 +257,8 @@ class PartitionDisplay(Parameterized, AutoScript):
         self.graph = GraphWidget()
         self.bselection = QToolBar()
         self.graph.addWidget(self.bselection)
-        self.dock = CWMainGUI.getInstance().addDock(self.graph, "Partition Comparison Graph", area=Qt.TopDockWidgetArea)
-        self.dock.hide()
+        self.graphDock = CWMainGUI.getInstance().addDock(self.graph, "Partition Comparison Graph", area=Qt.TopDockWidgetArea)
+        self.graphDock.hide()
 
     def defineName(self):
         self.partObject = Partition(self)
@@ -290,7 +290,7 @@ class PartitionDisplay(Parameterized, AutoScript):
                  {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'action':lambda _: self.updatePOI()},
                  {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'action':lambda _: self.updatePOI()},
                  # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
-                 {'name':'Open POI Table', 'type':'action', 'action':lambda _: self.poi.show()},
+                 {'name':'Open POI Table', 'type':'action', 'action':lambda _: self.poiDock.show()},
               ]},
         ])
 
@@ -544,7 +544,7 @@ class PartitionDisplay(Parameterized, AutoScript):
         return SADList
 
     def displayPartitions(self, differences={"partclass":None, "diffs":None}, tRange=(0, -1)):
-        self.dock.show()
+        self.graphDock.show()
         traces = self._traces
 
         if tRange[1] < 0:
@@ -590,8 +590,8 @@ class PartitionDisplay(Parameterized, AutoScript):
 
         self.poi.setDifferences(self.SADList)
 
-        self.parent.findParam('poi-pointrng').setLimits((0, len(self.SADList[0])))
-        self.parent.findParam('poi-pointrng').setValue((0, len(self.SADList[0])))
+        self.findParam(["Points of Interest",'poi-pointrng']).setLimits((0, len(self.SADList[0])))
+        self.findParam(["Points of Interest",'poi-pointrng']).setValue((0, len(self.SADList[0])))
         self.redrawPlot()
 
     def runAction(self):

@@ -42,6 +42,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
     def __init__(self):
         AttackBaseClass.__init__(self)
+        self._project = None
         self.attack = None
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
@@ -67,7 +68,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         analysAlgoStr = self.attack.__class__.__name__
         self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
 
-        self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
         # self.addFunction("init", "setKeyround", "0")
 
         # Add attack 'other' functions such as template generators etc
@@ -79,8 +79,8 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                 self.importsAppend(k)
 
         self.addFunction("init", "setTraceSource", "UserScript.traces")
-        self.addFunction("init", "attack.setTraceSource", "UserScript.traces")
         self.addFunction("init", "setProject", "UserScript.api.project()")
+        self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr))
 
     def setProject(self, project):
         self._project = project
@@ -94,6 +94,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
         self.attack = analysisAlgorithm(self)
         self.attack.setTraceSource(self.getTraceSource())
+        self.attack.setProject(self.project())
         self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
         self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
 

@@ -109,9 +109,9 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     def traceLimitsChanged(self, traces, points):
         tstart = self.findParam(["Generate New Template",'tgenstart'])
         tend = self.findParam(["Generate New Template",'tgenstop'])
-        tstart.setLimits((0, traces))
-        tend.setValue(traces)
-        tend.setLimits((1, traces))
+        tstart.setLimits((0, traces-1))
+        tend.setLimits((0, traces-1))
+        tend.setValue(traces-1)
 
     def setByteList(self, brange):
         self.brange = brange

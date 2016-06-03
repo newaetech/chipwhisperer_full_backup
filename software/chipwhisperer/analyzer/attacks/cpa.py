@@ -84,12 +84,11 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
-        self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
-
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
         self.addFunction("init", "setTraceSource", "UserScript.traces, blockSignal=True")
+        self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr))
 
     def processKnownKey(self, inpkey):
         if inpkey is None:
