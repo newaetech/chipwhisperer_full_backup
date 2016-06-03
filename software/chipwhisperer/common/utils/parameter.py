@@ -150,7 +150,7 @@ class Parameter(object):
             child.addChildren(child.ignoredChildren)
             child.ignoredChildren = []
 
-    def append(self, child, pos=None):
+    def append(self, child):
         if child is None:
             return
 
@@ -158,9 +158,7 @@ class Parameter(object):
             self.keys[child.getName()].remove()
 
         self.keys[child.getName()] = child
-        if pos is None:
-            pos = len(self.childs)
-            self.childs.insert(pos, child)
+        self.childs.append(child)
 
         if 'key' in child.getOpts():
             self.keys[child.getOpts()["key"]] = child
