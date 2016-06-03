@@ -37,6 +37,8 @@ class Parameterized(object):
         assert not hasattr(self, "param") and self.getParams is not None
         if not hasattr(self, "params"):
             self.params = Parameter(name=self.getName(), type='group')
+            if self._description != "":
+                self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])
         return self.params
 
     def findParam(self, name):
@@ -62,7 +64,7 @@ class Parameter(object):
     sigParametersChanged = util.Signal()
     registeredParameters = {}
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color", "menu"]
+    supportedTypes = ["group", "list", "label", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color", "menu"]
     suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked", "default", "tip", "action", "visible", "children", "readonly"}
     usePyQtGraph = False
 
@@ -128,6 +130,16 @@ class Parameter(object):
     def getAction(self):
         return self.opts["action"]
 
+    def getOpts(self):
+        return self.opts
+
+    def getValue(self, default=None):
+        val = self.opts.get("get", None)
+        if val is None:
+            return self.opts.get("value", default)
+        else:
+            return val()
+
     def addChildren(self, children):
         for child in children:
             self.append(Parameter(self, **child))
@@ -147,16 +159,6 @@ class Parameter(object):
         if child.opts["type"] != "menu":
             self.sigChildAdded.emit(child)
         self.sigParametersChanged.emit()
-
-    def getOpts(self):
-        return self.opts
-
-    def getValue(self, default=None):
-        val = self.opts.get("get", None)
-        if val is None:
-            return self.opts.get("value", default)
-        else:
-            return val()
 
     def setValue(self, value,  blockSignal=None,  blockAction=False, init=False, echo=True):
         if not init and self.readonly():
