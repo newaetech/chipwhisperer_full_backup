@@ -78,9 +78,9 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             for k in self.attack.getImportStatements():
                 self.importsAppend(k)
 
-        self.addFunction("init", "setTraceSource", "UserScript.traces")
-        self.addFunction("init", "setProject", "UserScript.api.project()")
-        self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr))
+        self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
+        self.addFunction("init", "setTraceSource", "UserScript.traces", loc=0)
+        self.addFunction("init", "setProject", "UserScript.api.project()", loc=0)
 
     def setProject(self, project):
         self._project = project

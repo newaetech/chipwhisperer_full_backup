@@ -213,7 +213,7 @@ class Parameter(object):
                         value = k
 
             if echo and not self.opts.get("echooff", False):
-                print >> Parameter.scriptingOutput, (str(self.getPath() + [value]))
+                print >> Parameter.scriptingOutput, str(self.getPath() + [value])
 
     def callLinked(self):
         for name in self.opts.get("linked", []):
