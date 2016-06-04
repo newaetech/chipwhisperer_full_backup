@@ -56,7 +56,7 @@ class ResultsBase(Parameterized):
     @classmethod
     def getClassParameter(cls):
         if not cls.__classParameter:
-            cls.__classParameter = Parameter(name="Results", type='group')
+            cls.__classParameter = Parameter(name="Results", type='group').register()
         return cls.__classParameter
 
     @classmethod

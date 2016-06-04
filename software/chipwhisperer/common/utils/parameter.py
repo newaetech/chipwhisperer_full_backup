@@ -225,7 +225,7 @@ class Parameter(object):
         act = self.opts.get("action", None)
         if act is not None:
             act(self)
-            print >> Parameter.scriptingOutput, (str(self.getPath()))
+            print >> Parameter.scriptingOutput, (str(self.getPath() + [None]))
         self.callLinked()
 
     def setDefault(self, default):
