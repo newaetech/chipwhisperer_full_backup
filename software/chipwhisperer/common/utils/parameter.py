@@ -167,8 +167,8 @@ class Parameter(object):
             self.sigChildAdded.emit(child)
         self.sigParametersChanged.emit()
 
-    def setValue(self, value,  blockSignal=None,  blockAction=False, init=False, echo=True):
-        if not init and self.readonly():
+    def setValue(self, value,  ignoreReadonly = False, blockSignal=None,  blockAction=False, init=False, echo=True):
+        if not ignoreReadonly and not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
         limits = self.opts.get("limits", None)
         type = self.opts["type"]
@@ -246,13 +246,14 @@ class Parameter(object):
 
     def setReadonly(self, readonly=True):
         self.opts["readonly"] = readonly
+        self.sigOptionsChanged.emit(readonly=readonly)
 
     def hide(self):
         self.show(False)
 
-    def show(self, s=True):
-        self.opts['visible'] = s
-        self.sigOptionsChanged.emit(visible=s)
+    def show(self, show=True):
+        self.opts['visible'] = show
+        self.sigOptionsChanged.emit(visible=show)
         self.sigParametersChanged.emit()
 
     def isVisible(self):
