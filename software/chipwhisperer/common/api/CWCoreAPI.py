@@ -269,6 +269,8 @@ class CWCoreAPI(Parameterized):
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
             progressBar.setMaximum(self._numTraces - 1)
 
+            if self.getTraceFormat() is None:
+                raise Warning("No trace format selected.")
             waveBuffer = None
             tcnt = 0
             setSize = self.tracesPerSet()
@@ -284,11 +286,11 @@ class CWCoreAPI(Parameterized):
                 currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
                 currentTrace.config.setAttr("prefix", prefix)
                 currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
-                currentTrace.config.setAttr("targetHW", self.getTarget().getName())
+                currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
                 currentTrace.config.setAttr("targetSW", "unknown")
-                currentTrace.config.setAttr("scopeName", self.getScope().getName())
+                currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
                 currentTrace.config.setAttr("scopeSampleRate", 0)
-                # currentTrace.config.setAttr("notes", "Aux: " + ', '.join(str(self._auxList)))
+                currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
                 currentTrace.setTraceHint(setSize)
 
                 if waveBuffer is not None:

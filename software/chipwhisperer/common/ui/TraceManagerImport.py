@@ -86,7 +86,8 @@ class TraceManagerImport(QtFixes.QDialog):
         newTT = self.modName.itemData(newindx)        
         self.tmanagerParams = newTT.getParamsClass(openMode=True)   
         self.tmanager = newTT(self.tmanagerParams)
-        ExtendedParameter.reloadParams(self.tmanagerParams.paramList(), self.paramTree)
+        self.paramTree.clear()
+        self.paramTree.addParameters(self.tmanagerParams.getParams()._PyQtGraphParameter)
         
     def getTrace(self):
         return self.tmanager
@@ -114,4 +115,5 @@ class TraceManagerImport(QtFixes.QDialog):
             self.tmanager = fmtclass()
             self.tmanager.config.loadTrace(fname)
             self.tmanager.loadAllConfig()
-            ExtendedParameter.reloadParams(self.tmanager.getParams.paramList(), self.paramTree)
+            self.paramTree.clear()
+            self.paramTree.addParameters(self.tmanager.getParams()._PyQtGraphParameter)

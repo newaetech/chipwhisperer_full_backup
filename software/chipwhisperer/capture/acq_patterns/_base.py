@@ -66,3 +66,6 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
     def newPair(self):
         """Called when a new encryption pair is requested"""
         raise AttributeError("This needs to be reimplemented")
+
+    def __str__(self):
+        return self.getName()
