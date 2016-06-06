@@ -96,9 +96,9 @@ class ResetCW1173Read(AuxiliaryTemplate):
         # Reset the target by reading its signature
         target = self.findParam('target').getValue()
         if target == 'xmega (PDI)':
-            CWCoreAPI.getInstance().getScope().scopetype.cwliteXMEGA.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteXMEGA().readSignature()
         else:
-            CWCoreAPI.getInstance().getScope().scopetype.cwliteAVR.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteAVR().readSignature()
         
     def testReset(self):
         self.resetDevice()
