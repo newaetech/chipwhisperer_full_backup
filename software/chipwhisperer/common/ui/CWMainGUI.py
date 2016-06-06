@@ -177,7 +177,7 @@ class CWMainGUI(QMainWindow):
         self._ToolMenuItems = []
         self._ToolMenuItems.append(self.toolMenu.addSeparator())
         for act in Parameter.getAllParameters("menu"):
-            self._ToolMenuItems.append(QAction(act.getName(), self, statusTip=act.getTip(), triggered=act.getAction()))
+            self._ToolMenuItems.append(QAction(act.getName(), self, statusTip=act.getTip(), triggered=act.callAction))
 
         for act in self._ToolMenuItems:
             self.toolMenu.addAction(act)

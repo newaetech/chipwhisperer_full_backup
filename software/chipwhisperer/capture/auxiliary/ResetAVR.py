@@ -36,7 +36,7 @@ class ResetAVR(AuxiliaryTemplate):
         self.params.addChildren([
             {'name':'STK500.exe Path', 'type':'file', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
             {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
-            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+            {'name':'Test Reset', 'type':'action', 'action':lambda _:self.testReset()}
         ])
 
     def captureInit(self):

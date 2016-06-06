@@ -60,7 +60,7 @@ class ResetCW1173Read(AuxiliaryTemplate):
             {'name':'Delay (Pre-Arm)' , 'type':'int',  'key':'predelay',  'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
 			{'name':'Delay (Post-Arm)', 'type':'int',  'key':'postdelay', 'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
             {'name':'Reset Timing'  , 'type':'list', 'key':'resettiming', 'values':['Pre-Arm', 'Post-Arm'], 'value':'Pre-Arm'},
-            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+            {'name':'Test Reset', 'type':'action', 'action':lambda _:self.testReset()}
         ])
 
     def captureInit(self):
