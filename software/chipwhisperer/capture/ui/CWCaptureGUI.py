@@ -109,40 +109,25 @@ class CWCaptureGUI(CWMainGUI):
 
     def addToolbarItems(self, toolbar):
         # Capture
-        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
-        self.capture1Act.triggered.connect(lambda: self.doCapture(self.capture1))
-        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self)
-        self.captureMAct.triggered.connect(lambda: self.doCapture(self.captureM))
-
         self.captureStatus = QToolButton()
-        self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
-        self.captureStatusActionDis.triggered.connect(self.doConDis)
-        self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self)
-        self.captureStatusActionCon.triggered.connect(self.doConDis)
+        self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self, triggered=self.doConDis)
+        self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self, triggered=self.doConDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         # Scope
         self.scopeStatus = QToolButton()
-        self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self)
-        self.scopeStatusActionDis.triggered.connect(self.doConDisScope)
-        self.scopeStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Scope: Connected', self)
-        self.scopeStatusActionCon.triggered.connect(self.doConDisScope)
+        self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self, triggered=self.doConDisScope)
+        self.scopeStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Scope: Connected', self, triggered=self.doConDisScope)
         self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
 
         # Target
         self.targetStatus = QToolButton()
-        self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self)
-        self.targetStatusActionDis.triggered.connect(self.doConDisTarget)
-        self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self)
-        self.targetStatusActionCon.triggered.connect(self.doConDisTarget)
+        self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self, triggered=self.doConDisTarget)
+        self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self, triggered=self.doConDisTarget)
         self.targetStatus.setDefaultAction(self.targetStatusActionDis)
 
-        # Other Stuff
-        self.miscValidateAction = QAction(QIcon(':/images/validate.png'), 'Validate', self)
-        self.miscValidateAction.triggered.connect(self.validateSettings)
-
-        toolbar.addAction(self.capture1Act)
-        toolbar.addAction(self.captureMAct)
+        toolbar.addAction(QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1)))
+        toolbar.addAction(QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM)))
         toolbar.addSeparator()
         toolbar.addWidget(QLabel('Master:'))
         toolbar.addWidget(self.captureStatus)
@@ -151,7 +136,7 @@ class CWCaptureGUI(CWMainGUI):
         toolbar.addWidget(QLabel('Target:'))
         toolbar.addWidget(self.targetStatus)
         toolbar.addSeparator()
-        toolbar.addAction(self.miscValidateAction)
+        toolbar.addAction(QAction(QIcon(':/images/validate.png'), 'Validate', self, triggered=self.validateSettings))
 
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:

@@ -319,14 +319,11 @@ class CWMainGUI(QMainWindow):
     def setupToolBar(self):
         self.toolbar = self.addToolBar('Tools')
         self.toolbar.setObjectName('Tools')
-        openAction = QAction(QIcon(":/images/open.png"), 'Open', self)
-        openAction.triggered.connect(self.openProject)
-        self.toolbar.addAction(openAction)
-
-        saveAction = QAction(QIcon(":/images/save.png"), 'Save', self)
-        saveAction.triggered.connect(self.saveProject)
-        self.toolbar.addAction(saveAction)
+        self.toolbar.addAction(QAction(QIcon(":/images/open.png"), 'Open', self, triggered=self.openProject))
+        self.toolbar.addAction(QAction(QIcon(":/images/save.png"), 'Save', self, triggered=self.saveProject))
         self.toolbar.addSeparator()
+        self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'Save', self, triggered=self.traceManagerDialog.show))
+
         self.addToolbarItems(self.toolbar)
         self.toolbar.show()
 

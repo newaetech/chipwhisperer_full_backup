@@ -57,9 +57,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self.attackScriptGen.utilList = [self.traceExplorerDialog]
 
     def addToolbarItems(self, toolbar):
-        attack = QAction(QIcon(':/images/attack.png'), 'Start Attack', self)
-        attack.triggered.connect(self.doAnalysis)
-        toolbar.addAction(attack)
+        toolbar.addAction(QAction(QIcon(':/images/attack.png'), 'Start Attack', self, triggered=self.doAnalysis))
 
     def addToolMenuItems(self):
         # self.traceExplorerAct = QAction('Trace Explorer', self, statusTip='Get information on traces',
