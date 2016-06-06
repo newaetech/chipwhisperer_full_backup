@@ -31,15 +31,9 @@
 #include "fpga_xmem.h"
 #include <string.h>
 
-#ifdef PLATFORMCW1180
-  #include "lcd.h"
-#endif
-
 #define FW_VER_MAJOR 0
 #define FW_VER_MINOR 11
 #define FW_VER_DEBUG 0
-
-volatile bool g_captureinprogress = true;
 
 static volatile bool main_b_vendor_enable = true;
 
@@ -99,10 +93,10 @@ void main_vendor_disable(void)
 #define REQ_SCARD_DATA 0x1C
 #define REQ_SCARD_CONFIG 0x1D
 #define REQ_SCARD_AUX 0x1E
+#define REQ_USART2DUMP_ENABLE 0x1F
 #define REQ_XMEGA_PROGRAM 0x20
 #define REQ_AVR_PROGRAM 0x21
 #define REQ_SAM3U_CFG 0x22
-
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -125,6 +119,56 @@ void ctrl_progfpga_bulk(void);
 bool ctrl_xmega_program(void);
 void ctrl_xmega_program_void(void);
 void ctrl_avr_program_void(void);
+
+#ifdef USART2_SPIDUMP
+/* USART2 ISR for random dumping - debug! Need to use DMA for real system... */
+uint8_t usartbuffer[4][140];
+
+static unsigned int bufnum = 0;
+static unsigned int bufidx = 0;
+
+void USART2_Handler(void)
+{
+	uint32_t ul_status;
+
+	/* Read USART Status. */
+	ul_status = usart_get_status(USART2);
+
+	/* Receive buffer is full. */
+	if (ul_status & US_CSR_RXRDY) {
+		/* Check if we had a toggle since last read */
+		if (ul_status & US_CSR_CTSIC){			
+			usartbuffer[bufnum][bufidx] = 0xFF;
+			bufidx++;
+
+			usartbuffer[bufnum][bufidx] = 0x00;			
+			bufidx++;
+		}		
+		
+		usartbuffer[bufnum][bufidx] = USART2->US_RHR & US_RHR_RXCHR_Msk;
+		
+		if (usartbuffer[bufnum][bufidx] == 0xFF){
+			bufidx++;
+			usartbuffer[bufnum][bufidx] = 0xFF;
+		}
+				
+		bufidx++;
+		if (bufidx >= 128){
+			udi_vendor_bulk_in_run(
+				usartbuffer[bufnum],
+				bufidx,
+				main_vendor_bulk_in_received);
+			
+			bufidx = 0;
+			bufnum++;
+			
+			if(bufnum == 4){
+				bufnum = 0;
+			}
+		}
+	}
+}
+#endif
 
 void ctrl_readmem_bulk(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);	
@@ -206,6 +250,43 @@ void ctrl_avr_program_void(void)
 	V2Protocol_ProcessCommand();
 }
 
+static void ctrl_usart2_enabledump(void)
+{
+	switch(udd_g_ctrlreq.req.wValue & 0xFF){
+		case 0x00:
+			usart_disable_rx(USART2);
+			usart_disable_tx(USART2);
+			usart_enable_interrupt(USART2, 0);
+			NVIC_DisableIRQ(USART2_IRQn);
+			break;
+		
+		case 0x01:
+			/****** USART SPI */
+			pmc_enable_periph_clk(ID_USART2);
+			usart_spi_opt_t opts;
+			opts.channel_mode = US_MR_CHMODE_NORMAL;
+			opts.spi_mode = SPI_MODE_0;
+			opts.char_length = US_MR_CHRL_8_BIT;
+			usart_init_spi_slave(USART2, &opts);
+			usart_enable_rx(USART2);
+
+			NVIC_EnableIRQ(USART2_IRQn);
+			usart_enable_interrupt(USART2, US_IER_RXRDY);
+			
+			//RX = DI (PA22/A)
+			//TX = DO (NOT USED)
+			//CS = CTS (PB22/B)
+			//CLK =   (PA25/B)
+			gpio_configure_pin(PIO_PA23_IDX, (PIO_PERIPH_A | PIO_DEFAULT));
+			gpio_configure_pin(PIO_PB22_IDX, (PIO_PERIPH_B | PIO_DEFAULT));
+			gpio_configure_pin(PIO_PA25_IDX, (PIO_PERIPH_B | PIO_DEFAULT));
+			break;
+			
+		default:
+			break;
+	}
+
+}
 
 static void ctrl_sam3ucfg_cb(void)
 {
@@ -239,15 +320,7 @@ static void ctrl_sam3ucfg_cb(void)
 			RSTC->RSTC_CR |= RSTC_CR_KEY(0xA5) | RSTC_CR_PERRST | RSTC_CR_PROCRST;				
 			while(1);
 			break;
-			
-#ifdef PLATFORMCW1180
-		/* 0xA0 starts CW1180 Specific Commands */
-		case 0xA0:
-			enable_lcd();
-			redraw_background();
-			break;	
-			
-#endif
+
 		/* Oh well, sucks to be you */
 		default:
 			break;
@@ -320,6 +393,11 @@ bool main_setup_out_received(void)
 		/* Smartcard 'aux' stuff, used for special modes, power, etc. */
 		case REQ_SCARD_AUX:
 			udd_g_ctrlreq.callback = ctrl_scardaux_cb;
+			return true;
+			
+		/* Enable special streaming mode */
+		case REQ_USART2DUMP_ENABLE:
+			udd_g_ctrlreq.callback = ctrl_usart2_enabledump;
 			return true;
 			
 		/* Send bitstream to FPGA */
@@ -478,14 +556,7 @@ void main_vendor_bulk_in_received(udd_ep_status_t status,
 		return; // Transfer aborted/error
 	}	
 	
-	if (FPGA_lockstatus() == fpga_blockin){
-		
-		//TODO FIX THIS HACK
-		/*Should detect actual capture, for now hack onto USB traffic. This variable is
-		  used to flash LED indicating status of capture process on CW1180 hardware, and
-		  is unused for CW1173 hardware. */
-		g_captureinprogress = true;
-		
+	if (FPGA_lockstatus() == fpga_blockin){		
 		FPGA_setlock(fpga_unlocked);
 	}
 }
@@ -520,8 +591,9 @@ void main_vendor_bulk_out_received(udd_ep_status_t status,
 		for(unsigned int i = 0; i < nb_transfered; i++){
 			fpga_program_sendbyte(main_buf_loopback[i]);
 		}
-		
+#if FPGA_USE_BITBANG
 		FPGA_CCLK_LOW();
+#endif
 	}
 	
 	//printf("BULKOUT: %d bytes\n", (int)nb_transfered);
