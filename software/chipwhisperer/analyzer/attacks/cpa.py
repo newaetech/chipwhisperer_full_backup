@@ -50,14 +50,6 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateBytesVisible()
         self.updateScript()
 
-    @setupSetParam('Input')
-    def setTraceSource(self, traceSource):
-        if self._traceSource:
-            self._traceSource.sigTracesChanged.disconnect(self.updateScript())
-        if traceSource:
-            traceSource.sigTracesChanged.connect(self.updateScript)
-        self._traceSource = traceSource
-
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo, None, None)
         self.updateBytesVisible()
