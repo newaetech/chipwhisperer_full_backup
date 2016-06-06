@@ -141,7 +141,6 @@ class AVRProgrammerDialog(QtFixes.QDialog):
 
         QDialog.reject(self)
 
-
     def findFlash(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("avr-flash-location"), '*.hex')
         if fname:
@@ -221,7 +220,7 @@ class AVRProgrammerDialog(QtFixes.QDialog):
 
                 status = "SUCCEEDED"
 
-            except IOError, e:
+            except IOError as e:
                 self.statusLine.append("FAILED: %s" % str(e))
                 try:
                     self.avr.close()
@@ -275,7 +274,6 @@ class AVRProgrammer(object):
         if self._foundchip == False:
             self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
 
-
     def erase(self):
         self.avr.eraseChip()
 
@@ -303,7 +301,6 @@ class AVRProgrammer(object):
                 raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
 
         self.log("Verified %s OK, %d bytes" % (memtype, fsize))
-
     
     def close(self):
         if self.avr is not None:

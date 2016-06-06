@@ -79,13 +79,13 @@ class CWCoreAPI(Parameterized):
             {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':lambda: self.getAuxList()[0], 'set':self.setAux},
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
-                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break api into N set, '
+                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
                      'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
-                     'as each segment is buffered into RAM before being written to disk.'}, #TODO: tip is not working
+                     'as each segment is buffered into RAM before being written to disk.'},
                     {'name':'Traces per Set', 'type':'int', 'readonly':True, 'get':self.tracesPerSet},
                     {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
-                    ]},
-            ])
+            ]},
+        ])
         self.graphWidget = None
 
         self.scopeParam = Parameter(name="Scope Settings", type='group')

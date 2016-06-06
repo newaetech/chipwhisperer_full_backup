@@ -37,7 +37,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._fixedKey = True
         self._fixedPlain = False
         self.initkey = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
-        self.inittext = '2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c'
+        self.inittext = '2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'
         self.types = {'Random': False, 'Fixed': True}
 
         self.params.addChildren([
@@ -63,7 +63,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._fixedPlain = t
 
     def _initPattern(self):
-        self.setInitialKey('2b 7e 15 16 28 ae d2 a6 ab f7 15 88 09 cf 4f 3c')
+        self.setInitialKey('2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C')
         self.setInitialText('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
 
     def getInitialKey(self):

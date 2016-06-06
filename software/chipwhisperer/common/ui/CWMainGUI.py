@@ -245,7 +245,7 @@ class CWMainGUI(QMainWindow):
                                          '<h4>Trademark Information</h4>'
                                          'ChipWhisperer is a Trademark of NewAE Technology Inc.'
                                          ''
-                                         )
+        )
 
     def pluginDialog(self):
         self.dialog = pluginmanager.PluginStatusDialog(self)
@@ -306,10 +306,7 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.toolbar = self.addToolBar('Tools')
-        self.toolbar.setObjectName('Tools')
-        self.addToolbarItems(self.toolbar)
-        self.toolbar.show()
+        self.setupToolBar()
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False, redirectStdOut=False)
@@ -318,6 +315,20 @@ class CWMainGUI(QMainWindow):
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
         self.setBaseSize(800,600)
+
+    def setupToolBar(self):
+        self.toolbar = self.addToolBar('Tools')
+        self.toolbar.setObjectName('Tools')
+        loadAction = QAction(QIcon(), 'Open', self)
+        loadAction.triggered.connect(self.openProject)
+        self.toolbar.addAction(loadAction)
+
+        saveAction = QAction(QIcon(), 'Save', self)
+        saveAction.triggered.connect(self.saveProject)
+        self.toolbar.addAction(saveAction)
+        self.toolbar.addSeparator()
+        self.addToolbarItems(self.toolbar)
+        self.toolbar.show()
 
     def addToolbarItems(self, toolbar):
         pass
