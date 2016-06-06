@@ -91,7 +91,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
     def project(self):
         if self._project is None:
-            C
+            raise ReferenceError("Need to call setProject() before this point!")
 
     def setAnalysisAlgorithm(self, analysisAlgorithm):
         self.attack = analysisAlgorithm(self)
