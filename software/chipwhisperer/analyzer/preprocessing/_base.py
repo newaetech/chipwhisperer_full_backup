@@ -103,3 +103,6 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def numTraces(self):
         return self._traceSource.numTraces()
+
+    def numPoints(self):
+        return self._traceSource.numPoints()
