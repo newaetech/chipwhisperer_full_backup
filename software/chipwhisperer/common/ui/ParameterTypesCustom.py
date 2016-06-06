@@ -9,7 +9,7 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem, ListParameter
 from pyqtgraph import pixmaps
 from pyqtgraph.widgets.SpinBox import SpinBox
 
@@ -233,6 +233,12 @@ class RangeParameterItem(WidgetParameterItem):
         try:
             fixedsize = self.param.opts['fixedsize']
         except KeyError:
+            low = self.wlow.value()
+            high = self.whigh.value()
+            if high < low and change == "high":
+                self.whigh.setValue(low, update=True, delaySignal=True)
+            elif low > high and change == "low":
+                self.wlow.setValue(high, update=True, delaySignal=True)
             return True
 
         if fixedsize == 0:
@@ -803,14 +809,9 @@ def optsChanged_Fix(self, param, opts):
 
 GroupParameterItem.optsChanged = optsChanged_Fix
 
+def setLimits_fix(self, limits):
+    self.forward, self.reverse = self.mapping(limits)
 
-def treeWidgetChanged_test(self):
-    ParameterItem.treeWidgetChanged(self)
-    if self.treeWidget() is None:
-        print "here"
-    self.treeWidget().setFirstItemColumnSpanned(self, True)
-    if self.addItem is not None:
-        self.treeWidget().setItemWidget(self.addItem, 0, self.addWidgetBox)
-        self.treeWidget().setFirstItemColumnSpanned(self.addItem, True)
+    Parameter.setLimits(self, limits)
 
-GroupParameterItem.treeWidgetChanged=treeWidgetChanged_test
+ListParameter.setLimits = setLimits_fix

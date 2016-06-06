@@ -124,7 +124,8 @@ class AttackScriptGen(Parameterized):
         writing the auto-generated script.
         """
         if self.preprocessingListGUI[num] is not None:
-            self.preprocessingParams.getChild('Pre-Processing Mod. #%d'% num).remove()
+            self.preprocessingListGUI[num].deregister()
+            self.preprocessingParams.getChild('Pre-Processing Mod. #%d'% num).delete()
         if module:
             self.preprocessingListGUI[num] = module()
             self.preprocessingListGUI[num].scriptsUpdated.connect(self.reloadScripts)

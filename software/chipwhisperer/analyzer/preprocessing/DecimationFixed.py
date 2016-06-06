@@ -54,14 +54,14 @@ class DecimationFixed(PreprocessingBase):
             if trace is None:
                 return None
 
-            decfactor = self._decfactor
+            outtrace = np.zeros(len(range(0, len(trace), self._decfactor)))
 
-            # outtrace = np.zeros(len(trace))
-            outtrace = np.zeros(len(range(0, len(trace), decfactor)))
-
-            for idx, val in enumerate(range(0, len(trace), decfactor)):
+            for idx, val in enumerate(range(0, len(trace), self._decfactor)):
                 outtrace[idx] = trace[val]
 
             return outtrace
         else:
             return self._traceSource.getTrace(n)
+
+    def numPoints(self):
+        return len(range(0, self._traceSource.numPoints(), self._decfactor))

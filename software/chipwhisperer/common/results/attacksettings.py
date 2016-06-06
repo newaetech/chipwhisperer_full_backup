@@ -42,7 +42,7 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
         self.params.addChildren([
             {'name':'Highlighted key', 'type':'list', 'values':{'Know key from attack':'attack', 'Override':'override'},
              'value': 'attack', 'action':lambda p: self.setKnownKeySrc(p.getValue())},
-            {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", 'action':lambda p:self.setKnownKey(p.getValue)},
+            {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", 'action':lambda p:self.setKnownKey(p.getValue())},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'action':lambda p: self.setHighlightedKeyColor(p.getValue())},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'action':lambda p: self.setTraceColor(p.getValue())},
             {'name':'Redraw Widgets',  'type':'action', 'action':lambda _:self.updateAll()},
@@ -71,7 +71,6 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
     def getKnownKey(self):
         return self._knownKey
 
-    @setupSetParam("Override with")
     def setKnownKey(self, strkey):
         """Override known key by user selection"""
         try:

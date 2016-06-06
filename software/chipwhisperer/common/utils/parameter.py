@@ -235,7 +235,7 @@ class Parameter(object):
     def setLimits(self, limits):
         self.opts['limits'] = limits
         type = self.opts["type"]
-        if ((type == "int" or type =="float" or type =="rangegraph" or type =="range") and limits[0] > limits[1]):
+        if (type == "int" or type =="float" or type =="rangegraph" or type =="range") and limits[0] > limits[1]:
             self.hide()
         else:
             self.show()

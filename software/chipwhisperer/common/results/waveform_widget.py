@@ -62,8 +62,10 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         else:
             lastTrace = -1
             lastPoint = -1
+
+        traceRange = self.findParam('tracerng').getValue()
         self.findParam('tracerng').setLimits((0, lastTrace))
-        self.findParam('tracerng').setValue((0, min(lastTrace, 0)))
+        self.findParam('tracerng').setValue((max(0, traceRange[0]), min(lastTrace, traceRange[1] if traceRange[1] >= 0 else 0)))
         self.findParam('pointrng').setLimits((0, lastPoint))
         self.findParam('pointrng').setValue((0, lastPoint))
 
