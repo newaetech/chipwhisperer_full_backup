@@ -400,3 +400,22 @@ div.section > h5 ~ *:not(h5) {
 div.section > h6 ~ *:not(h6) {
     margin-left: 100px;
 }
+
+/*** NEWAE STUFF FOR WARNING MESSAGE ***/
+
+#fixedBox {
+   position: fixed;
+   z-index: 10000;
+   top: 10px;
+   width: 500px;
+   background: #FFF;
+   border: 2px solid #F00;
+   padding: 10px;
+}
+
+#close {
+    float:right;
+    display:inline-block;
+    padding:2px 5px;
+    background:#ccc;
+}
