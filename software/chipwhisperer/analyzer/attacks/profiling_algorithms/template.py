@@ -124,7 +124,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
 
     @setupSetParam('Input')
     def setTraceSource(self, traceSource):
-        PassiveTraceObserver.setTraceSource(self, traceSource)
+        self._traceSource = traceSource
         # Set for children
         self.profiling.setTraceSource(traceSource)
 
