@@ -64,4 +64,7 @@ class DecimationFixed(PreprocessingBase):
             return self._traceSource.getTrace(n)
 
     def numPoints(self):
-        return len(range(0, self._traceSource.numPoints(), self._decfactor))
+        if self.enabled:
+            return len(range(0, self._traceSource.numPoints(), self._decfactor))
+        else:
+            return self._traceSource.numPoints()

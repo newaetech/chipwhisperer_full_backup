@@ -30,6 +30,7 @@ from chipwhisperer.common.utils import pluginmanager
 from ._base import AttackBaseClass
 from ._generic_parameters import AttackGenericParameters
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class CPA(AttackBaseClass, AttackGenericParameters):
@@ -48,6 +49,14 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.setAnalysisAlgorithm(self.findParam('CPA_algo').getValue(), None, None)
         self.updateBytesVisible()
         self.updateScript()
+
+    @setupSetParam('Input')
+    def setTraceSource(self, traceSource):
+        if self._traceSource:
+            self._traceSource.sigTracesChanged.disconnect(self.updateScript())
+        if traceSource:
+            traceSource.sigTracesChanged.connect(self.updateScript)
+        self._traceSource = traceSource
 
     def updateAlgorithm(self, algo):
         self.setAnalysisAlgorithm(algo, None, None)
