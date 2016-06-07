@@ -61,7 +61,7 @@ class PLLCDCE906(object):
         # Map to output pins on CDCE906 Chip
         if outnum == 0:
             outpin = 0
-            src = self.parent.findParam('pll0source').getValue()
+            src = self.parent.findParam(['pll', 'pll0', 'pll0source']).getValue()
             if src == 'PLL0':
                 divsrc = 0
             elif src == 'PLL1':
@@ -74,8 +74,8 @@ class PLLCDCE906(object):
         elif outnum == 2:
             outpin = 4
             divsrc = 2
-        self.cdce906setoutput(outpin, divsrc, slewrate=self.parent.findParam('pll%dslew' % outnum).getValue(),
-                              enabled=self.parent.findParam('pll%denabled' % outnum).getValue())
+        self.cdce906setoutput(outpin, divsrc, slewrate=self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%dslew' % outnum]).getValue(),
+                              enabled=self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%denabled' % outnum]).getValue())
 
     def pll_outfreq_get(self, outnum):
         """Read the programmed output frequency from a PLL"""
