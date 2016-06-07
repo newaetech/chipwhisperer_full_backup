@@ -59,11 +59,11 @@ class ChipWhispererSAD(Parameterized):
             # {'name':'Open SAD Viewer', 'type':'action'},
             {'name':'SAD Ref From Captured', 'type':'group', 'children':[
                 {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
-                                       'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateSADTraceRef, 'fixedsize':128},
+                                       'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateSADTraceRef, 'fixedsize':128},
                 {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
-                {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'limits':(-1, 100E6), 'readonly':True},
+                {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'value':0, 'limits':(-1, 100E6), 'readonly':True},
             ]},
-            {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'value':0, 'set':self.setThreshold, 'get':self.getThreshold}
+            {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'default':0, 'set':self.setThreshold, 'get':self.getThreshold}
         ])
 
     def dataChanged(self, data, offset):

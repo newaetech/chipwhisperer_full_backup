@@ -35,7 +35,7 @@ except ImportError:
 
 
 class OpenADCInterface_ZTEX(Parameterized, Plugin):
-    _name = "OpenADC-ZTEX"
+    _name = "ChipWhisperer Rev2"
 
     def __init__(self, parentParam, oadcInstance):
         self.getParams().addChildren([

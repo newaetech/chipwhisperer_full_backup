@@ -145,7 +145,7 @@ class CWExtraSettings(Parameterized):
 
         # Generate list of clock sources present in the hardware
         if self.hasFPAFPB:
-            ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'set':self.setTrigOut})
+            ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'set':self.setTrigOut, 'get':self.getTrigOut})
             clksrc = {'Front Panel A':self.CLOCK_FPA, 'Front Panel B':self.CLOCK_FPB}
         else:
             clksrc = {}
@@ -387,6 +387,13 @@ class CWExtraSettings(Parameterized):
         if enabled:
             resp[0] = resp[0] | 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
+    def getTrigOut(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        if resp[0] & 0x08:
+            return True
+        else:
+            return False
 
 
 class CWPLLDriver(object):
