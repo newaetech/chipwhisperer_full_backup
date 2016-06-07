@@ -84,8 +84,8 @@ class UserScript(UserScriptBase):
         self.api.capture1()
 
         #Capture a set of traces and save the project
-        self.api.captureM()
-        self.api.saveProject("../../../projects/test.cwp")
+        # self.api.captureM()
+        # self.api.saveProject("../../../projects/test.cwp")
 
 
 if __name__ == '__main__':
