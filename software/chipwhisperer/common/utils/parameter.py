@@ -423,7 +423,12 @@ class Parameter(object):
             if child is not None:
 
                 if isinstance(child.getOpts().get("values", None), dict):
-                    value = child.getOpts()["values"][value]
+                    try:
+                        value = child.getOpts()["values"][value]
+                    except KeyError:
+                        raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s"%(value,
+                                                                                    str(parameter),
+                                                                                    child.getOpts()["values"].keys()))
                 child.setValue(value, echo=echo)
 
         if child is None:
