@@ -56,6 +56,7 @@ from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.utils.parameter import Parameter
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
+import urllib
 
 class CWMainGUI(QMainWindow):
     """
@@ -293,8 +294,32 @@ class CWMainGUI(QMainWindow):
         self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
-        self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
+        # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
+        self.helpMenu.addAction(QAction('&Check for Updates', self, statusTip='Check for new versions', triggered=self.checkForUpdates))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
+
+    def checkForUpdates(self):
+        try:
+            updateSource = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/software/chipwhisperer/common/api/CWCoreAPI.py?_format=raw")
+            updateContents = updateSource.read()
+
+            version = None
+            for line in updateContents.split("\n"):
+                if "__version__" in line:
+                    version = line.split('=')[1]
+                    break
+            if version is not None:
+                version = version.lstrip(' "').rstrip(' "')
+                if self.api.__version__ == version:
+                    message = "Your version is updated."
+                else:
+                    message = "There is a new version available: " + version
+            else:
+                message = "Could not check for the most recent version."
+        except IOError:
+            message = "Could not retrieve the needed information. Check your internet connection."
+
+        QMessageBox.information(self, "Checking for updates", message)
 
     def addToolMenuItems(self):
         pass
