@@ -38,6 +38,7 @@ import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
 from chipwhisperer.common.scripts.base import UserScriptBase
+from chipwhisperer.common.utils.parameter import Parameter
 
 
 class UserScript(UserScriptBase):
@@ -100,7 +101,6 @@ class UserScript(UserScriptBase):
         data = self.api.getScope().datapoints
         print data
         
-        
         # Crack the first letter
         password = ''
         trylist = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -126,16 +126,13 @@ class UserScript(UserScriptBase):
 
 
 if __name__ == '__main__':
-    # Startup code: this is only executed if we run our script from the command line
-    # Probably doesn't need to be changed
-    app = cwc.makeApplication()     # Make the GUI application (even if we don't use it)
-    api = CWCoreAPI()               # Make the API 
-    gui = cwc.CWCaptureGUI(api)     # Make a GUI (even if we don't use it)
-    gui.show()                      # Optional: show the GUI
-    
-    # Run our script
+    # app = cwc.makeApplication()                     # Uncomment this line if you want to use the GUI
+    # Parameter.usePyQtGraph = True                   # Uncomment this line if you want to use the GUI
+    api = CWCoreAPI()                               # Instantiate the API
+    # app.setApplicationName("Capture V2 Scripted")   # If you DO NOT want to overwrite settings from the GUI
+    # gui = cwc.CWCaptureGUI(api)                     # Uncomment this line if you want to use the GUI
+    # gui.show()                                      # Uncomment this line if you want to use the GUI
     usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
     usercommands.run()                              # Run the User Script
 
-    # Let the program continue running
-    sys.exit(app.exec_())
+    # sys.exit(app.exec_())                           # Uncomment this line if you want to use the GUI
