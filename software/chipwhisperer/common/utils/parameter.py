@@ -26,6 +26,7 @@
 import sys
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
 from chipwhisperer.common.utils import util
+import functools
 import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 
 
