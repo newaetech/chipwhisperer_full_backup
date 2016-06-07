@@ -64,6 +64,11 @@ class TraceSource(object):
         if TraceSource.registeredObjects.pop(self.name, None):
             TraceSource.sigRegisteredObjectsChanged.emit()
 
+    @classmethod
+    def deregister(cls, name):
+        if cls.registeredObjects.pop(name, None):
+            cls.sigRegisteredObjectsChanged.emit()
+
 
 class LiveTraceSource(TraceSource):
     """ It has live traces as output """
