@@ -81,7 +81,7 @@ class GPIOToggle(AuxiliaryTemplate):
             time.sleep(0.01)
             util.updateUI()
 
-    def trigger(self):
+    def trigger(self, _=None):
         print "AUXIO: Trigger pin %d" % self.pin
         self.checkMode()
         CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
