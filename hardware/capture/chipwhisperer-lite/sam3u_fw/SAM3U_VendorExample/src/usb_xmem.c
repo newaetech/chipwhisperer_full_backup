@@ -51,8 +51,29 @@ uint32_t unsafe_readuint32(uint16_t fpgaaddr)
 	
 	FPGA_setaddr(fpgaaddr);
 	data = *xram;
-	data |= *(xram+0) << 8;
-	data |= *(xram+1) << 16;
-	data |= *(xram+2) << 24;
+	data |= *(xram+1) << 8;
+	data |= *(xram+2) << 16;
+	data |= *(xram+3) << 24;
 	return data;
 }
+
+// Read 4 bytes from memory
+void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data)
+{
+	FPGA_setaddr(fpgaaddr);
+	data[0] = *(xram+0);
+	data[1] = *(xram+1);
+	data[2] = *(xram+2);
+	data[3] = *(xram+3);
+}
+
+// Write 4 bytes to memory
+void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data)
+{
+	FPGA_setaddr(fpgaaddr);
+	*(xram+0) = data[0];
+	*(xram+1) = data[1];
+	*(xram+2) = data[2];
+	*(xram+3) = data[3];
+}
+

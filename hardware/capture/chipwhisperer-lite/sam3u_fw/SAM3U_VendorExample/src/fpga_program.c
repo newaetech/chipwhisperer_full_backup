@@ -41,7 +41,7 @@ void fpga_program_setup1(void)
 	
 #elif FPGA_USE_USART
 	usart_spi_opt_t spiopts;
-	spiopts.baudrate = 20000000UL;
+	spiopts.baudrate = 10000000UL;
 	spiopts.char_length = US_MR_CHRL_8_BIT;
 	spiopts.channel_mode = US_MR_CHMODE_NORMAL;
 	spiopts.spi_mode = SPI_MODE_0;
