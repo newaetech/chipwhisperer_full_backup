@@ -114,7 +114,7 @@ class CW305(TargetTemplate):
         return data
 
     def usb_clk_setenabled_action(self, p):
-        self.usb_clk_setenabled(p.value())
+        self.usb_clk_setenabled(p.getValue())
 
     def usb_clk_setenabled(self, status):
         """ Turn on or off the Data Clock to the FPGA """
