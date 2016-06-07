@@ -300,26 +300,25 @@ class CWMainGUI(QMainWindow):
 
     def checkForUpdates(self):
         try:
-            updateSource = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/software/chipwhisperer/common/api/CWCoreAPI.py?_format=raw")
-            updateContents = updateSource.read()
+            source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/software/chipwhisperer/common/api/CWCoreAPI.py?_format=raw")
+            content = source.read()
 
             version = None
-            for line in updateContents.split("\n"):
+            for line in content.split("\n"):
                 if "__version__" in line:
                     version = line.split('=')[1]
                     break
             if version is not None:
                 version = version.lstrip(' "').rstrip(' "')
                 if self.api.__version__ == version:
-                    message = "Your version is updated."
+                    message = "Your current version is already the most recent one."
                 else:
                     message = "There is a new version available: " + version
             else:
                 message = "Could not check for the most recent version. Try visiting the project webpage."
         except IOError:
-            message = "Could not retrieve the needed information. Check your internet connection."
-
-        QMessageBox.information(self, "Checking for updates", message)
+            message = "Could not retrieve the information. Check your internet connection."
+        QMessageBox.information(self, "Checking for updates...", message)
 
     def addToolMenuItems(self):
         pass
