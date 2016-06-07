@@ -315,7 +315,7 @@ class CWMainGUI(QMainWindow):
                 else:
                     message = "There is a new version available: " + version
             else:
-                message = "Could not check for the most recent version."
+                message = "Could not check for the most recent version. Try visiting the project webpage."
         except IOError:
             message = "Could not retrieve the needed information. Check your internet connection."
 
