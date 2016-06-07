@@ -61,12 +61,11 @@ class ResyncSAD(PreprocessingBase):
 
         refpt = self.findParam('refpts').getValue()
         windowpt = self.findParam('windowpt').getValue()
-        self.findParam('windowpt').setValue((min(windowpt[0],refpt[0]), max(windowpt[1],refpt[1])), blockAction=True)
-        windowpt = self.findParam('windowpt').getValue()
+        windowpt = (min(windowpt[0],refpt[0]), max(windowpt[1],refpt[1]))
+        self.findParam('windowpt').setValue(windowpt, blockAction=True)
 
         self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" %
                          (self.findParam('reftrace').getValue(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
-
 
     def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
         self.rtrace = rtraceno
@@ -120,16 +119,15 @@ class ResyncSAD(PreprocessingBase):
     def findSAD(self, inputtrace):
         reflen = self.ccEnd-self.ccStart
         sadlen = self.wdEnd-self.wdStart
-        sadarray = np.empty(sadlen)
+        sadarray = np.empty(sadlen-reflen+1)
         
-        for ptstart in range(self.wdStart, self.wdEnd):    
+        for ptstart in range(self.wdStart, self.wdEnd-reflen+1):
             #Find SAD        
             sadarray[ptstart-self.wdStart] = np.sum(np.abs(inputtrace[ptstart:(ptstart+reflen)] - self.reftrace))
             
         return sadarray
         
     def calcRefTrace(self, tnum):
-        #If not enabled stop
         if self.enabled == False:
             return
         

@@ -56,12 +56,10 @@ class ResyncResampleZC(PreprocessingBase):
         zclevel = self.findParam('zclevel').getValue()
         binlength = self.findParam('binlen').getValue()
 
-
         self.addFunction("init", "setReference", "rtraceno=%d, zcoffset=%f, binlength=%d" % (
                             self.findParam('reftrace').getValue(),
                             zclevel,
-                            binlength
-                            ))
+                            binlength))
 
     def setReference(self, rtraceno=0, zcoffset=0.0, binlength=0):
         self.rtrace = rtraceno

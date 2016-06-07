@@ -293,7 +293,7 @@ class CWMainGUI(QMainWindow):
         self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
-        self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
+        # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
 
     def addToolMenuItems(self):

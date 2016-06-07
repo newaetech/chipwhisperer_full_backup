@@ -58,7 +58,7 @@ class CWCaptureGUI(CWMainGUI):
         self.settingsResultsDock = self.addSettings(ResultsBase.getClassParameter())
         self.settingsScopeDock = self.addSettings(self.api.scopeParam)
         self.settingsTargetDock = self.addSettings(self.api.targetParam)
-        self.settingsTraceDock = self.addSettings(self.api.traceParam)
+        # self.settingsTraceDock = self.addSettings(self.api.traceParam)
         self.settingsAuxDock = self.addSettings(self.api.auxParam)
 
         # Load all ActiveTraceObservers
@@ -68,7 +68,8 @@ class CWCaptureGUI(CWMainGUI):
                 ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
-                          self.settingsTraceDock, self.settingsAuxDock])
+                          # self.settingsTraceDock,
+                          self.settingsAuxDock])
 
     def connectStatusChanged(self):
         """Callback when scope/target status change"""

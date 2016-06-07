@@ -195,8 +195,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 else:
                     tlist_fixed = xdataptr
                 for i in range(0, self._numPerms(bnum)):
-
-                    if self.highlightTop and i in self._highlightedKeys():
+                    if self.highlightTop and i == self._highlightedKeys()[bnum]:
                         continue
 
                     tlisttst.extend(tlist_fixed)
