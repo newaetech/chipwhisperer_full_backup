@@ -65,7 +65,7 @@ class TraceSource(object):
             TraceSource.sigRegisteredObjectsChanged.emit()
 
     @classmethod
-    def deregister(cls, name):
+    def deregisterObject(cls, name):
         if cls.registeredObjects.pop(name, None):
             cls.sigRegisteredObjectsChanged.emit()
 

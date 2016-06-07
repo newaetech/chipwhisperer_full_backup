@@ -283,10 +283,7 @@ class Parameter(object):
             #     self._PyQtGraphParameter.sigActivated.disconnect()
             # self._PyQtGraphParameter.sigValueChanged.disconnect()
             self._PyQtGraphParameter = None
-        try:
-            self.deregister()
-        except KeyError:
-            pass
+        self.deregister()
         self.previousValue = None
         self.opts.clear()
 
@@ -407,11 +404,11 @@ class Parameter(object):
 
     def register(self):
         """Makes it accessible from the root when calling setParameter()"""
-        self.registeredParameters[self.getName()] = self
+        Parameter.registeredParameters[self.getName()] = self
         return self
 
     def deregister(self):
-        del self.registeredParameters[self.getName()]
+        Parameter.registeredParameters.pop(self.getName(), None)
 
     @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
