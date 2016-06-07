@@ -27,6 +27,7 @@
 
 import pickle
 
+
 class PartialReconfigData(object):
     """ Handles a single partial reconfiguration file. """
     def load(self, fname):
@@ -49,6 +50,7 @@ class PartialReconfigData(object):
         for diff in diffs:
             data[diff[0]] = diff[1]
         return data
+
 
 class PartialReconfigDataMulti(object):
     """
@@ -85,6 +87,7 @@ class PartialReconfigDataMulti(object):
 
         return data
 
+
 class PartialReconfigDataOffsetWidth(object):
     """ Handles a special file with two changes blended into one file. """
 
@@ -114,6 +117,7 @@ class PartialReconfigDataOffsetWidth(object):
             data[d[0]] = d[1]
 
         return data
+
 
 class PartialReconfigConnection(object):
     reconfig = 52

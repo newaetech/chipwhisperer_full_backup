@@ -40,21 +40,21 @@ class GPIOToggle(AuxiliaryTemplate):
         self.pin = None
         self.lastPin = None
         self.params.addChildren([
-                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'set':self.settingsChanged},
-                 {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'set':self.settingsChanged},
-                 {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
-                 {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'set':self.settingsChanged},
-                 {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'set':self.settingsChanged},
+                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'action':self.settingsChanged},
+                 {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'action':self.settingsChanged},
+                 {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
+                 {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
+                 {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'action':self.settingsChanged},
                  {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
         ])
         self.settingsChanged()
 
     def settingsChanged(self, ignored=None):
-        self.pin = self.findParam('gpiopin').value()
-        self.standby = self.findParam('inactive').value()
-        self.triglength = self.findParam('togglelength').value() / 1000.0
-        self.postdelay = self.findParam('toggledelay').value() / 1000.0
-        self.triglocation = self.findParam('triggerloc').value()
+        self.pin = self.findParam('gpiopin').getValue()
+        self.standby = self.findParam('inactive').getValue()
+        self.triglength = self.findParam('togglelength').getValue() / 1000.0
+        self.postdelay = self.findParam('toggledelay').getValue() / 1000.0
+        self.triglocation = self.findParam('triggerloc').getValue()
 
     def checkMode(self):
         cwa = CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA
@@ -81,7 +81,7 @@ class GPIOToggle(AuxiliaryTemplate):
             time.sleep(0.01)
             util.updateUI()
 
-    def trigger(self):
+    def trigger(self, _=None):
         print "AUXIO: Trigger pin %d" % self.pin
         self.checkMode()
         CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)

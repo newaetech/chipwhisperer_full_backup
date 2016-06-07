@@ -79,7 +79,17 @@
 #define FPGA_DO_HIGH()			gpio_set_pin_high(PIN_FPGA_DO_GPIO)
 #define FPGA_DO_SETUP()			gpio_configure_pin(PIN_FPGA_DO_GPIO, PIN_FPGA_DO_FLAGS)
 
+#ifndef FPGA_USE_BITBANG
 #define FPGA_USE_BITBANG 0
+#endif
+
+#if FPGA_USE_BITBANG
+#error "Bit-Bang mode might be broken currently"
+#endif
+
+#ifndef FPGA_USE_USART
+#define FPGA_USE_USART 0
+#endif
 
 /**
  * \brief Send a byte to FPGA using CCLK/DO, FPGA must be in programming mode

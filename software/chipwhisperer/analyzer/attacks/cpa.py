@@ -30,6 +30,7 @@ from chipwhisperer.common.utils import pluginmanager
 from ._base import AttackBaseClass
 from ._generic_parameters import AttackGenericParameters
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class CPA(AttackBaseClass, AttackGenericParameters):
@@ -37,14 +38,15 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     _name = "CPA"
 
     def __init__(self):
-        AttackGenericParameters.__init__(self)
         AttackBaseClass.__init__(self)
+        self.attack = None
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
-        self.params.addChildren([
-            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list', 'values':algos, 'value':algos["Progressive"], 'set':self.updateAlgorithm},            #TODO: Should be called from the AES module to figure out # of bytes
+        self.getParams().addChildren([
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':algos, 'value':algos["Progressive"], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
-        self.setAnalysisAlgorithm(self.findParam('CPA_algo').value(), None, None)
+        AttackGenericParameters.__init__(self)
+        self.setAnalysisAlgorithm(self.findParam('CPA_algo').getValue(), None, None)
         self.updateBytesVisible()
         self.updateScript()
 
@@ -59,6 +61,8 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         self.updateScript()
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
+        if self.attack is not None:
+            self.attack.getParams().remove()
         self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
 
         try:
@@ -66,27 +70,26 @@ class CPA(AttackBaseClass, AttackGenericParameters):
         except:
             self.attackParams = None
 
-        self.paramListUpdated.emit()
-
         if hasattr(self.attack, 'scriptsUpdated'):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
-    def updateScript(self, ignored=None):
+        self.getParams().append(self.attack.getParams())
+
+    def updateScript(self):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
         analysAlgoStr = self.attack.__class__.__name__
-        hardwareStr = self.findParam('hw_algo').value().__name__
-        leakModelStr = hardwareStr + "." + self.findParam('hw_leak').value()
+        hardwareStr = self.findParam(['Hardware Model','hw_algo']).getValue().__name__
+        leakModelStr = hardwareStr + "." + self.findParam(['Hardware Model','hw_leak']).getValue()
 
         self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
         self.importsAppend("import %s" % hardwareStr)
 
-        self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
-
         if hasattr(self.attack, '_smartstatements'):
             self.mergeGroups('init', self.attack, prefix='attack')
 
-        self.addFunction("init", "setTraceSource", "UserScript.traces")
+        self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, hardwareStr, leakModelStr), loc=0)
+        self.addFunction("init", "setTraceSource", "UserScript.traces, blockSignal=True", loc=0)
 
     def processKnownKey(self, inpkey):
         if inpkey is None:
@@ -110,7 +113,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
                 startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
                 endingTrace = startingTrace + self.getTracesPerAttack() - 1
                 #TODO:  pointRange=self.TraceRangeList[1:17]
-                self.attack.addTraces(self.traceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
+                self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
                 if progressBar and progressBar.wasAborted():
                     return
 

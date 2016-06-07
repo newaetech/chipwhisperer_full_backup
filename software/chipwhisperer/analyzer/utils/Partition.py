@@ -35,7 +35,7 @@ from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized
 
 
 class PartitionHDLastRound(object):
@@ -147,12 +147,12 @@ class PartitionDialog(QtFixes.QDialog):
 
         # TODO: Partition generation doesn't work
         pb.setMinimum(0)
-        pb.setMaximum(self.part.traceSource.numTraces())
+        pb.setMaximum(self.part.getTraceSource.numTraces())
 
         self.part.runPartitions(report=pb.updateStatus)
 
 
-class Partition(QObject, Parameterized):
+class Partition(Parameterized):
     """
     Base Class for all partioning modules
     """
@@ -173,8 +173,6 @@ class Partition(QObject, Parameterized):
     supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
     def __init__(self, parent):
-        QObject.__init__(self, parent)
-        Parameterized.__init__(self)
         self.setPartMethod(PartitionRandvsFixed)
         self.partDataCache = None
 
@@ -188,13 +186,13 @@ class Partition(QObject, Parameterized):
         """Do any initilization required once all traces are loaded"""
         pass
 
-    def createBlankTable(self, t):
+    def createBlankTable(self, num_keys, num_parts):
         # Create storage for partition information
         partitionTable = []
         #for j in range(0, len(t.getKnownKey())):
-        for j in range(0, len(self.partMethod.getPartitionNum(t, 0))):
+        for j in range(0, num_keys):
             partitionTable.append([])
-            for i in range(0, self.partMethod.getNumPartitions()):
+            for i in range(0, num_parts):
                 partitionTable[j].append([])
 
         return partitionTable
@@ -256,8 +254,11 @@ class Partition(QObject, Parameterized):
         start = tRange[0]
         end = tRange[1]
 
+        num_keys=len(self.partMethod.getPartitionNum(self._traces.findMappedTrace(start), 0))
+        num_parts=self.partMethod.getNumPartitions()
+
         if partitionTable is None:
-            partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
+            partitionTable = self.createBlankTable(num_keys, num_parts)
 
             if end == -1:
                 end = self._traces.numTraces()
@@ -269,7 +270,7 @@ class Partition(QObject, Parameterized):
                 tmapstart = t.mappedRange[0]
                 tmapend = t.mappedRange[1]
                 
-                partitionTableTemp = self.createBlankTable(self._traces.findMappedTrace(start))
+                partitionTableTemp = self.createBlankTable(num_keys, num_parts)
 
                 for tnum in range(tmapstart, tmapend + 1):
                     # Check each trace, write partition number

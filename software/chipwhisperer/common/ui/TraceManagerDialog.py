@@ -104,7 +104,7 @@ class TraceManagerDialog(QtFixes.QDialog):
                 cb.clicked.connect(partial(self.changeTraceStatus, p))
                 cb.setToolTip("Enable/disable trace set")
                 tb = QPushButton("x")
-                tb.setFixedSize(14,14)
+                tb.setFixedSize(14, 14)
                 tb.setToolTip("Remove trace set")
                 tb.clicked.connect(partial(self.removeTrace, p))
                 tmp = QWidget()
@@ -112,7 +112,7 @@ class TraceManagerDialog(QtFixes.QDialog):
                 pLayout.addWidget(cb)
                 pLayout.addWidget(tb)
                 pLayout.setAlignment(Qt.AlignHCenter)
-                pLayout.setContentsMargins(0,0,0,0)
+                pLayout.setContentsMargins(0, 0, 0, 0)
                 self.table.setCellWidget(p, self.findCol("Options"), tmp)
             if t:
                 rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if (t.enabled and t.numTraces()>0) else "")

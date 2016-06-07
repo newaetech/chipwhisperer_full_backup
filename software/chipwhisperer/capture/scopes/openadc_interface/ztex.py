@@ -26,7 +26,7 @@ from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import usb
@@ -35,12 +35,14 @@ except ImportError:
 
 
 class OpenADCInterface_ZTEX(Parameterized, Plugin):
-    _name = "OpenADC-ZTEX"
+    _name = "ChipWhisperer Rev2"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
+        self.getParams().addChildren([
+            {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI.show()},
+            {'name':'Download CW Firmware','tip':'Download Firmware+FPGA To Hardware', 'type':"menu", "action":lambda _:self.getCwFirmwareConfig.loadRequired()},
+        ])
         self.ser = None
-        self._toolActs = []
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -52,11 +54,6 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
         else:
             self.scope = oadcInstance
             self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
-
-        #if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        #else:
-        #    self.cwAdvancedSettings = None
 
     def __del__(self):
         if self.ser != None:
@@ -94,7 +91,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
     def dis(self):
         if self.ser != None:
-            self.ser.close()
+            #self.ser.close()
             self.ser = None
 
     def read(self, N=0, debug=False):
@@ -128,8 +125,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
         except:
             return "None?"
 
-    def setupGuiActions(self, mainWindow):
+    def getFwLoaderConfigGUI(self):
         if not hasattr(self, 'fwLoaderConfigGUI'):
-            self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show],  # Can' use Config/Setup... name with MacOS
-               ['Download CW Firmware','Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired]]
+            self.fwLoaderConfigGUI = FWLoaderConfigGUI(self.cwFirmwareConfig)
+        return self.fwLoaderConfigGUI

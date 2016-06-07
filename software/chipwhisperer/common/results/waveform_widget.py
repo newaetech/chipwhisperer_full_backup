@@ -37,15 +37,15 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
     def __init__(self, parentParam=None, name=None):
         GraphWidget.__init__(self)
-        ResultsBase.__init__(self, parentParam, name)
+        if name is not None:
+            self._name = name
         ActiveTraceObserver.__init__(self)
 
-        self.redrawAfterEach = False
         self.params.addChildren([
-            {'name':'Redraw after Each', 'type':'bool', 'value':self.redrawAfterEach, 'set':self.setRedrawAfterEach},
-            {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'default':(0, 0)},
-            {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'default':(0, 0), 'graphwidget':self},
-            {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
+            {'name':'Redraw after Each', 'type':'bool', 'value':False},
+            {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
+            {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
+            {'name':'Redraw', 'type':'action', 'action':lambda _: self.plotInputTrace()},
         ])
 
         self.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
@@ -55,9 +55,6 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         self.setDefaultYRange(-0.5, 0.5)
         self.YDefault()
 
-    def _setTraceSource(self, newTraceSource):
-        ActiveTraceObserver._setTraceSource(self, newTraceSource)
-
     def resetTraceLimits(self):
         if self._traceSource:
             lastTrace = self._traceSource.numTraces()-1
@@ -65,13 +62,12 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         else:
             lastTrace = -1
             lastPoint = -1
-        self.findParam('tracerng').setLimits((0 if lastTrace>-1 else -1, lastTrace))
-        self.findParam('tracerng').setValue((0, min(lastTrace, 0)))
-        self.findParam('pointrng').setLimits((0 if lastPoint>-1 else -1, lastPoint))
-        self.findParam('pointrng').setValue((0, lastPoint))
 
-    def setRedrawAfterEach(self, enabled):
-        self.redrawAfterEach = enabled
+        traceRange = self.findParam('tracerng').getValue()
+        self.findParam('tracerng').setLimits((0, lastTrace))
+        self.findParam('tracerng').setValue((max(0, traceRange[0]), min(lastTrace, traceRange[1] if traceRange[1] >= 0 else 0)))
+        self.findParam('pointrng').setLimits((0, lastPoint))
+        self.findParam('pointrng').setValue((0, lastPoint))
 
     def plotInputTrace(self):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
@@ -79,10 +75,10 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         if not self.persistant:
             self.clearPushed()
 
-        tstart = self.findParam('tracerng').value()[0]
-        tend = self.findParam('tracerng').value()[1]
-        pstart = self.findParam('pointrng').value()[0]
-        pend = self.findParam('pointrng').value()[1]
+        tstart = self.findParam('tracerng').getValue()[0]
+        tend = self.findParam('tracerng').getValue()[1]
+        pstart = self.findParam('pointrng').getValue()[0]
+        pend = self.findParam('pointrng').getValue()[1]
         ttotal = 0
 
         if tend - tstart + 1 > 1:
@@ -92,9 +88,10 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             trace = self._traceSource.getTrace(tnum)
             if trace is not None:
                 ttotal += 1
-                self.passTrace(trace[pstart:pend+1], pstart, self._traceSource.offset(), idString = str(tnum))
+                #TODO - Not sure if should add _traceSource.offset() or not?
+                self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum))
 
-                if self.redrawAfterEach:
+                if self.findParam('Redraw after Each').getValue():
                     util.updateUI()
 
         self.setPersistance(initialPersist)

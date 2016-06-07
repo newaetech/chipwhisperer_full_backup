@@ -37,6 +37,7 @@ import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
 from chipwhisperer.common.scripts.base import UserScriptBase
+from chipwhisperer.common.utils.parameter import Parameter
 
 
 class UserScript(UserScriptBase):
@@ -77,20 +78,19 @@ class UserScript(UserScriptBase):
         self.api.capture1()
         self.api.capture1()
 
-        #Start api process
-        #writer = self.api.captureM()
-        #self.api.proj.setFilename("../capturev2/test_live.cwp")
-        #self.api.saveProject()
+        #Capture a set of traces and save the project
+        # self.api.captureM()
+        # self.api.saveProject("../../../projects/test.cwp")
 
 
 if __name__ == '__main__':
+    app = cwc.makeApplication()                     # Comment this line if you don't want to use the GUI
+    Parameter.usePyQtGraph = True                   # Comment this line if you don't want to use the GUI
     api = CWCoreAPI()                               # Instantiate the API
-    app = cwc.makeApplication()                     # Make the GUI application (optional)
-    #app.setApplicationName("Capture V2 Scripted")  # If you DO NOT want to overwrite settings from the GUI
-    gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
-    gui.show()
+    # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
+    gui = cwc.CWCaptureGUI(api)                     # Comment this line if you don't want to use the GUI
+    gui.show()                                      # Comment this line if you don't want to use the GUI
     usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
     usercommands.run()                              # Run the User Script
 
-    app.exec_()
-    sys.exit()
+    sys.exit(app.exec_())                           # Comment this line if you don't want to use the GUI

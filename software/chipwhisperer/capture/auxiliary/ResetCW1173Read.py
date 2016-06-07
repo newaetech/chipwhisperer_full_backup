@@ -60,7 +60,7 @@ class ResetCW1173Read(AuxiliaryTemplate):
             {'name':'Delay (Pre-Arm)' , 'type':'int',  'key':'predelay',  'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
 			{'name':'Delay (Post-Arm)', 'type':'int',  'key':'postdelay', 'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
             {'name':'Reset Timing'  , 'type':'list', 'key':'resettiming', 'values':['Pre-Arm', 'Post-Arm'], 'value':'Pre-Arm'},
-            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+            {'name':'Test Reset', 'type':'action', 'action':lambda _:self.testReset()}
         ])
 
     def captureInit(self):
@@ -71,21 +71,21 @@ class ResetCW1173Read(AuxiliaryTemplate):
 
     def traceArm(self):
         # Before we arm the scope, possibly reset the device and wait for a bit
-        resettiming = self.findParam('resettiming').value()
+        resettiming = self.findParam('resettiming').getValue()
         if resettiming == 'Pre-Arm':
             self.resetDevice()
 
-        dly = self.findParam('predelay').value()
+        dly = self.findParam('predelay').getValue()
         if dly > 0:
             self.nonblockingSleep(dly / 1000.0)
 			
     def traceArmPost(self):
         # After we arm the scope, wait for a bit, then possibly reset the target            
-        dly = self.findParam('postdelay').value()
+        dly = self.findParam('postdelay').getValue()
         if dly > 0:
             self.nonblockingSleep(dly / 1000.0)
             
-        resettiming = self.findParam('resettiming').value()
+        resettiming = self.findParam('resettiming').getValue()
         if resettiming == 'Post-Arm':
             self.resetDevice()
 			
@@ -94,11 +94,11 @@ class ResetCW1173Read(AuxiliaryTemplate):
 
     def resetDevice(self):
         # Reset the target by reading its signature
-        target = self.findParam('target').value()
+        target = self.findParam('target').getValue()
         if target == 'xmega (PDI)':
-            CWCoreAPI.getInstance().getScope().scopetype.cwliteXMEGA.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteXMEGA().readSignature()
         else:
-            CWCoreAPI.getInstance().getScope().scopetype.cwliteAVR.readSignature()
+            CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteAVR().readSignature()
         
     def testReset(self):
         self.resetDevice()

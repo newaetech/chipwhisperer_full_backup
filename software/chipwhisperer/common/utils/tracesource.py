@@ -26,7 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 
 
 class TraceSource(object):
@@ -35,11 +35,13 @@ class TraceSource(object):
     Keeps a dictionary with all the registered objets and emits a signal when a new one is added
     """
     registeredObjects = util.DictType()
+    registeredObjects["None"] = None
     sigRegisteredObjectsChanged = util.Signal()
 
     def __init__(self, name="Unknown"):
         self.sigTracesChanged = util.Signal()
         self.name = name
+        self.register()
 
     def getTrace(self, n):
         return None
@@ -58,8 +60,12 @@ class TraceSource(object):
         self.sigRegisteredObjectsChanged.emit()
         return self
 
+    def deregister(self):
+        if TraceSource.registeredObjects.pop(self.name, None):
+            TraceSource.sigRegisteredObjectsChanged.emit()
+
     @classmethod
-    def deregister(cls, name):
+    def deregisterObject(cls, name):
         if cls.registeredObjects.pop(name, None):
             cls.sigRegisteredObjectsChanged.emit()
 
@@ -103,21 +109,17 @@ class PassiveTraceObserver(Parameterized):
     """ It processes data from a TraceSource when requested """
 
     def __init__(self, parentParam=None):
-        Parameterized.__init__(self, parentParam)
         self._traceSource = None
-        self.params.addChildren([
-            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'set':self._setTraceSource}
+
+        self.getParams().addChildren([
+            {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'default':None, 'get':self.getTraceSource, 'set':self.setTraceSource}
         ])
 
+    @setupSetParam('Input')
     def setTraceSource(self, traceSource):
-        par = self.findParam('input')
-        par.setValue(traceSource)
-        assert self._traceSource == traceSource
-
-    def _setTraceSource(self, traceSource):
         self._traceSource = traceSource
 
-    def traceSource(self):
+    def getTraceSource(self):
         return self._traceSource
 
     def processTraces(self):
@@ -132,10 +134,11 @@ class PassiveTraceObserver(Parameterized):
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """
 
-    def _setTraceSource(self, newTraceSource):
+    @setupSetParam('Input')
+    def setTraceSource(self, traceSource):
         if self._traceSource:
             self._traceSource.sigTracesChanged.disconnect(self.processTraces)
-        if newTraceSource:
-            newTraceSource.sigTracesChanged.connect(self.processTraces)
-        self._traceSource = newTraceSource
+        if traceSource:
+            traceSource.sigTracesChanged.connect(self.processTraces)
+        self._traceSource = traceSource
         self.processTraces()

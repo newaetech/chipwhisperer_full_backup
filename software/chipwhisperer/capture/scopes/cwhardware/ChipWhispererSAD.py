@@ -25,53 +25,47 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
 import numpy as np
-from PySide.QtCore import *
+from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
+from chipwhisperer.common.results.base import ResultsBase
 
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
-
-sadcfgaddr = 53
+sadcfgaddr  = 53
 saddataaddr = 54
-CODE_READ       = 0x80
-CODE_WRITE      = 0xC0
+CODE_READ   = 0x80
+CODE_WRITE  = 0xC0
 
 
-class ChipWhispererSAD(object):
+class ChipWhispererSAD(Parameterized):
     """
     Communicates and drives with the Sum of Absolute Differences (SAD) Module inside the ChipWhisperer System. You
     need to configure the trigger module as active & set the trigger polarity to "high" for this to work.    
     """
-
-    paramListUpdated = Signal(list)
-             
-    STATUS_RUNNING_MASK = 1<<3
-    STATUS_RESET_MASK = 1<<0
+    _name = 'SAD Trigger Module'
+    STATUS_RUNNING_MASK = 1 << 3
+    STATUS_RESET_MASK = 1 << 0
     STATUS_START_MASK = 1 << 1
              
-    def __init__(self):
+    def __init__(self, oa):
 
-        #TODO: connect the waveform widget signal with the dataChanged function
-        # self.waveformDock = CWMainWindow.waveformDock
-        # self.waveformDock.widget().dataChanged.connect(self.dataChanged)
+        #Update SAD calculation when data changes
+        ResultsBase.registeredObjects["Trace Output Plot"].dataChanged.connect(self.dataChanged)
 
-        paramSS = [
-                # {'name':'Open SAD Viewer', 'type':'action'},
-                 {'name':'SAD Ref From Captured', 'type':'group', 'children':[
-                    {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
-                                           'graphwidget':self.waveformDock.widget(), 'set':self.updateSADTraceRef, 'fixedsize':128},
-                    {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
-                    {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'limits':(-1, 100E6), 'readonly':True},
-                    ]},
-                {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'value':0, 'set':self.setThreshold, 'get':self.getThreshold}
-                ]
-            
         self.oldlow = None
         self.oldhigh = None
-        self.oa = None
+        self.oa = oa
         self.sadref = [0]
-        self.params = ConfigParameter.create_extended(self, name='SAD Trigger Module', type='group', children=paramSS)
+
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.addChildren([
+            # {'name':'Open SAD Viewer', 'type':'action'},
+            {'name':'SAD Ref From Captured', 'key':'sad', 'type':'group', 'children':[
+                {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
+                                       'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateSADTraceRef, 'fixedsize':128},
+                {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
+                {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'value':0, 'limits':(-1, 100E6), 'readonly':True},
+            ]},
+            {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'default':0, 'set':self.setThreshold, 'get':self.getThreshold}
+        ])
 
     def dataChanged(self, data, offset):
         """ Called when data in the trace window has changed. Used to update the limits for the point selection dialog. """
@@ -82,28 +76,29 @@ class ChipWhispererSAD(object):
         if self.oldlow != low or self.oldup != up:
             self.oldlow = low
             self.oldup = up
-            self.findParam('pointrng').setLimits((low, up))
-            self.findParam('pointrng').setValue((low, min(up, low + 128)))
+            self.findParam(['sad', 'pointrng']).setLimits((low, up))
+            self.findParam(['sad', 'pointrng']).setValue((low, min(up, low + 128)))
 
         self.updateSADTraceRef()
 
     def getCaptueTraceRef(self):
         """ Get the reference data for SAD algorithm from the api trace window """
 
-        pstart = self.findParam('pointrng').value()[0] - self.waveformDock.widget().lastStartOffset
-        pend = self.findParam('pointrng').value()[1] - self.waveformDock.widget().lastStartOffset
-        data = self.waveformDock.widget().lastTraceData[pstart:pend]
+        waveformWidget = ResultsBase.registeredObjects["Trace Output Plot"]
+        pstart = self.findParam(['sad', 'pointrng']).getValue()[0] - waveformWidget.lastStartOffset
+        pend = self.findParam(['sad', 'pointrng']).getValue()[1] - waveformWidget.lastStartOffset
+        data = waveformWidget.lastTraceData[pstart:pend]
         data = np.array(data)
         data = (data + 0.5) * 1024
         return data
 
-    def copyFromCaptureTrace(self):
+    def copyFromCaptureTrace(self, _=None):
         """ Send reference data to hardware from the trace window """
 
         data = self.getCaptueTraceRef()
 
         if len(data) != 128:
-            print "WARNING: Reference IS NOT 128 samples long"
+            print "WARNING: Reference IS NOT 128 samples long, got %d"%len(data)
 
         self.sadref = data.copy()
         self.setRefWaveform(data)
@@ -114,7 +109,7 @@ class ChipWhispererSAD(object):
         data = self.getCaptueTraceRef()
         diff = data - self.sadref
         diff = sum(abs(diff))
-        self.findParam('sadrefcur').setValue(diff)
+        self.findParam(['sad','sadrefcur']).setValue(diff, ignoreReadonly=True)
 
     def reset(self):
         """ Reset the SAD hardware block. The ADC clock must be running! """
@@ -156,6 +151,7 @@ class ChipWhispererSAD(object):
         threshold |= data[3] << 16
         return threshold
 
+    @setupSetParam("SAD Threshold")
     def setThreshold(self, threshold):
         """ Set the threshold. When the SAD output falls below this threshold the system triggers """
 
@@ -186,18 +182,3 @@ class ChipWhispererSAD(object):
         self.oa.sendMessage(CODE_WRITE, saddataaddr, wavedata, Validate=False)
         self.start()
 
-    def setOpenADC(self, oa):
-        """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
-
-        self.oa = oa.sc
-            
-        try:
-            self.params.getAllParameters()
-        except TypeError:
-            return
-        
-    def paramList(self):
-        p = []
-        p.append(self.params)            
-        return p
-    

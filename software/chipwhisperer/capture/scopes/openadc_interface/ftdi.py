@@ -22,7 +22,7 @@
 import sys
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 try:
     import ftd2xx as ft
 except:
@@ -33,14 +33,13 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
+        self.serialNumber = ''
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Serial Number', 'type':'list', 'values':[''], 'value':None, 'set':self.setSerialNumber},
+            {'name':'Device Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSelectedDevice},
         ])
-
-        self.serialNumber = None
         self.ser = None
 
         if (openadc_qt is None) or (ft is None):
@@ -48,12 +47,11 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         else:
             self.scope = oadcInstance
 
-        #if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        #else:
-        #    self.cwAdvancedSettings = None
+    def getSerialNumber(self):
+        return self.serialNumber
 
-    def setSerialNumber(self, snum):
+    @setupSetParam("Device Serial Number")
+    def setSelectedDevice(self, snum):
         self.serialNumber = snum
 
     def __del__(self):
@@ -70,7 +68,7 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
                 self.ser = self
             except ft.ftd2xx.DeviceError, e:
                 self.ser = None
-                raise IOError("Could not open %s: %s"%(self.serialNumber,e))
+                raise IOError("Could not open %s: %s" % (self.serialNumber, e))
 
         try:
             self.scope.con(self.ser)
@@ -90,14 +88,11 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     def serialRefresh(self):
         serialnames = ft.listDevices()
         if serialnames == None:
-            serialnames = [" "]
+            serialnames = [""]
 
-        for p in self.params.children():
-            if p.name() == 'Serial Number':
-                p.setLimits(serialnames)
-                p.setValue(serialnames[0])
-
-        self.paramListUpdated.emit()
+        p = self.params.getChild('Serial Number')
+        p.setLimits(serialnames)
+        p.setValue(serialnames[0])
 
     def read(self, N=0, debug=False):
         return bytearray(self.dev.read(N))

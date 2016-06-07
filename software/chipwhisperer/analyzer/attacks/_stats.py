@@ -114,15 +114,15 @@ class DataTypeDiffs(object):
                 #TODO: workaround for PGE, as NaN's get ranked first
                 numnans = np.isnan(self.maxes[i]['value']).sum()
 
-                self.maxes[i][::-1].sort(order='value') # sorts nunpy array in place and in reverse order
-                self.maxValid[i] = True
-
                 if useSingle:
                     #All table values are taken from same point MAX is taken from
                     where = self.maxes[i][0]['point']
                     for j in range(0,256):
                         self.maxes[i][j]['point'] = where
                         self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where]
+
+                self.maxes[i][::-1].sort(order='value') # sorts nunpy array in place and in reverse order
+                self.maxValid[i] = True
 
                 if self.knownkey is not None:
                     try:

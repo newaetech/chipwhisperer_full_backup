@@ -24,14 +24,13 @@
 #=================================================
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 class AcqKeyTextPattern_Base(Parameterized, Plugin):
     _name = "Key/Text Pattern"
 
     def __init__(self, parentParam, target=None):
-        Parameterized.__init__(self, parentParam)
-        self.setTarget(target)
+        self.params = Parameter(name=self.getName(), type='group')
 
     def setTarget(self, target):
         self._target = target
@@ -67,3 +66,6 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
     def newPair(self):
         """Called when a new encryption pair is requested"""
         raise AttributeError("This needs to be reimplemented")
+
+    def __str__(self):
+        return self.getName()

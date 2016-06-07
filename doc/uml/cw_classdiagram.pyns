@@ -6,7 +6,7 @@
 {'type':'umlshape', 'id':'Parameterized', 'x':304, 'y':12, 'width':142, 'height':267, 'attrs':'name|description|newName|paramListUpdated|__activeParams|params', 'meths':'__init__|paramList|getName|getDescription|setupActiveParams|addActiveParams|guiActions|getAllActiveParameters|setupGuiActions|lazy'}
 {'type':'umlshape', 'id':'ActiveTraceObserver', 'x':290, 'y':499, 'width':170, 'height':62, 'attrs':'', 'meths':'_setTraceSource'}
 {'type':'umlshape', 'id':'LiveTraceSource', 'x':2, 'y':566, 'width':136, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'PassiveTraceObserver', 'x':286, 'y':315, 'width':178, 'height':150, 'attrs':'_traceSource', 'meths':'__init__|setTraceSource|_setTraceSource|traceSource|processTraces|traceSourcesChanged'}
+{'type':'umlshape', 'id':'PassiveTraceObserver', 'x':286, 'y':315, 'width':178, 'height':150, 'attrs':'_traceSource', 'meths':'__init__|setTraceSource|_setTraceSource|getTraceSource|processTraces|traceSourcesChanged'}
 {'type':'umlshape', 'id':'TraceSource', 'x':79, 'y':301, 'width':172, 'height':189, 'attrs':'registeredObjects|sigRegisteredObjectsChanged|sigTracesChanged', 'meths':'__init__|getTrace|numPoints|numTraces|offset|deregister|registerAs'}
 {'type':'umlshape', 'id':'ResultsBase', 'x':744, 'y':215, 'width':172, 'height':150, 'attrs':'registeredObjects|sigRegisteredObjectsChanged', 'meths':'__init__|getWidget|getClasses|getParamTree|createNew'}
 {'type':'umlshape', 'id':'AttackResultPlot', 'x':733, 'y':546, 'width':144, 'height':29, 'attrs':'', 'meths':''}

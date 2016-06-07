@@ -37,13 +37,13 @@ class AddNoiseRandom(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self._maxNoise = 0
         self.params.addChildren([
-            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'set':self.updateScript}
+            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'action':lambda _: self.updateScript()}
         ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        self.addFunction("init", "setMaxNoise", '%f' % self.findParam('noisestddev').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        self.addFunction("init", "setMaxNoise", '%f' % self.findParam('noisestddev').getValue())
 
     def setMaxNoise(self, maxNoise):
         self._maxNoise = maxNoise

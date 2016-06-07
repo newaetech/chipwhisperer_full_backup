@@ -37,7 +37,7 @@ class SimpleSerial_serial(SimpleSerialTemplate):
         self.params.addChildren([
             {'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
             {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-            {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
+            {'name':'Refresh', 'type':'action', 'action': lambda _ : self.updateSerial()}
         ])
 
     def updateSerial(self):
@@ -73,7 +73,7 @@ class SimpleSerial_serial(SimpleSerialTemplate):
         if self.ser == None:
             # Open serial port if not already
             self.ser = serial.Serial()
-            self.ser.port     = self.findParam('port').value()
-            self.ser.baudrate = self.findParam('baud').value()
+            self.ser.port     = self.findParam('port').getValue()
+            self.ser.baudrate = self.findParam('baud').getValue()
             self.ser.timeout  = 2     # 2 second timeout
             self.ser.open()

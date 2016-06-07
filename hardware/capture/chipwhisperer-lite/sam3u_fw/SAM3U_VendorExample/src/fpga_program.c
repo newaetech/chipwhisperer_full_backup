@@ -36,10 +36,21 @@ void fpga_program_setup1(void)
 	FPGA_NPROG_LOW();
 				
 #if FPGA_USE_BITBANG
-
 	FPGA_CCLK_SETUP();
 	FPGA_DO_SETUP();
 	
+#elif FPGA_USE_USART
+	usart_spi_opt_t spiopts;
+	spiopts.baudrate = 10000000UL;
+	spiopts.char_length = US_MR_CHRL_8_BIT;
+	spiopts.channel_mode = US_MR_CHMODE_NORMAL;
+	spiopts.spi_mode = SPI_MODE_0;
+	
+	sysclk_enable_peripheral_clock(FPGA_PROG_USART_ID);
+	usart_init_spi_master(FPGA_PROG_USART, &spiopts, sysclk_get_cpu_hz());
+	gpio_configure_pin(PIN_FPGA_CCLK_GPIO, PIN_FPGA_CCLK_USART_FLAGS);
+	gpio_configure_pin(PIN_FPGA_DO_GPIO, PIN_FPGA_DO_USART_FLAGS);	
+	usart_enable_tx(FPGA_PROG_USART);
 #else
 				
 	spi_enable_clock(SPI);
@@ -50,13 +61,12 @@ void fpga_program_setup1(void)
 				
 	spi_set_clock_polarity(SPI, 0, 0);
 	spi_set_clock_phase(SPI, 0, 1);
-	spi_set_baudrate_div(SPI, 0, spi_calc_baudrate_div(10000000, sysclk_get_cpu_hz()));
+	spi_set_baudrate_div(SPI, 0, spi_calc_baudrate_div(1000000, sysclk_get_cpu_hz()));
 				
 	spi_enable(SPI);
 				
 	gpio_configure_pin(SPI_MOSI_GPIO, SPI_MOSI_FLAGS);
-	gpio_configure_pin(SPI_SPCK_GPIO, SPI_SPCK_FLAGS);
-					
+	gpio_configure_pin(SPI_SPCK_GPIO, SPI_SPCK_FLAGS);			
 #endif
 }
 
@@ -66,9 +76,15 @@ void fpga_program_setup2(void)
 	FPGA_NPROG_HIGH();	
 }
 
+//For debug only
+//uint32_t fpga_total_bs_len;
+
 /* FPGA Programming Step 3: Send data until done */
 void fpga_program_sendbyte(uint8_t databyte)
 {
+	//For debug only
+	//fpga_total_bs_len++;
+	
 	#if FPGA_USE_BITBANG
 	for(unsigned int i=0; i < 8; i++){
 		FPGA_CCLK_LOW();
@@ -82,6 +98,8 @@ void fpga_program_sendbyte(uint8_t databyte)
 		FPGA_CCLK_HIGH();
 		databyte = databyte >> 1;
 	}
+	#elif FPGA_USE_USART
+	usart_putchar(FPGA_PROG_USART, databyte);
 	#else
 	spi_write(SPI, databyte, 0, 0);
 	#endif

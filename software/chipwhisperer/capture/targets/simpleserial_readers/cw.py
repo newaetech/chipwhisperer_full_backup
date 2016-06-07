@@ -25,6 +25,7 @@
 
 from ._base import SimpleSerialTemplate
 import time
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
@@ -39,22 +40,24 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         SimpleSerialTemplate.__init__(self, parentParam)
         self._regVer = 0
         self.params.addChildren([
-            {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.txBaud, 'set':self.setTxBaud},
-            {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'value':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
-            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'value':0, 'get':self.stopBits,
+            {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.txBaud, 'set':self.setTxBaud},
+            {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
+            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'default':0, 'get':self.stopBits,
                             'set':self.setStopBits, 'readonly':True},
-            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'value':0, 'get':self.parity,
+            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'default':0, 'get':self.parity,
                             'set':self.setParity, 'readonly':True},
         ])
 
     def systemClk(self):
         return 30E6
 
+    @setupSetParam("TX Baud")
     def setTxBaud(self, baud):
         breg = (baud * 4096 + self.systemClk() / 32) / (self.systemClk() / 16)
         breg = int(round(breg))
         self.setTxBaudReg(breg)
 
+    @setupSetParam("RX Baud")
     def setRxBaud(self, baud):
         breg = (baud * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
         breg = int(round(breg))
@@ -116,6 +119,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
             return 1
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_BAUD, data)
 
+    @setupSetParam("Stop-Bits")
     def setStopBits(self, stopbits):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         if stopbits == 1:
@@ -131,6 +135,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         else:
             return 'n'
 
+    @setupSetParam("Parity")
     def setParity(self, par):
         data = self.oa.sendMessage(self.CODE_READ, self.ADDR_BAUD, maxResp=4)
         if par == 'e':
@@ -197,12 +202,12 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
     def flushInput(self):
         self.flush()
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
-        self.oa = scope.qtadc.ser
+        self.oa = scope.qtadc.sc
         scope.connectStatus.connect(self.dis())
         # Check first!
         self.checkVersion()
-        self.params.getAllParameters()
+        self.params.refreshAllParameters()
         self.connectStatus.setValue(True)
