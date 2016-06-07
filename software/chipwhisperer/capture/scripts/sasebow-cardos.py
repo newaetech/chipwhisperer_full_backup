@@ -88,7 +88,7 @@ if __name__ == '__main__':
     app = cwc.makeApplication()                     # Comment this line if you don't want to use the GUI
     Parameter.usePyQtGraph = True                   # Comment this line if you don't want to use the GUI
     api = CWCoreAPI()                               # Instantiate the API
-    app.setApplicationName("Capture V2 Scripted")   # If you DO NOT want to overwrite settings from the GUI
+    # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
     gui = cwc.CWCaptureGUI(api)                     # Comment this line if you don't want to use the GUI
     gui.show()                                      # Comment this line if you don't want to use the GUI
     usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
