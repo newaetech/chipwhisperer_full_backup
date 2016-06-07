@@ -26,6 +26,7 @@
 import sys
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
 from chipwhisperer.common.utils import util
+import functools
 import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 
 
@@ -107,7 +108,10 @@ class Parameter(object):
                 self.opts['limits'] = opts['values']
 
             if 'set' in self.opts:
-                self.sigValueChanged.connect(self.opts['set'])
+                if 'psync' in self.opts and self.opts['psync'] == False:
+                    self.sigValueChanged.connect(lambda v, blockSignal : self.opts['set'](v))
+                else:
+                    self.sigValueChanged.connect(self.opts['set'])
 
             if "default" not in self.opts:
                 self.opts["default"] = self.getValue()
@@ -439,6 +443,7 @@ def setupSetParam(parameter):
     The blockSignal argument can be used to avoid this behavior when, for instance, you can't do that because the
     parameter wasn't created yet"""
     def func_decorator(func):
+        @functools.wraps(func)
         def func_wrapper(*args, **kargs):
             blockSignal = kargs.get("blockSignal", None)
             if blockSignal is None:
@@ -449,6 +454,7 @@ def setupSetParam(parameter):
                 del kargs["blockSignal"]
             func(*args, **kargs)
         return func_wrapper
+        func_wrapper.__wrapped__ = func
     return func_decorator
 
 
