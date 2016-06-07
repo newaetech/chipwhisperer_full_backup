@@ -91,7 +91,7 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
     def dis(self):
         if self.ser != None:
-            self.ser.close()
+            #self.ser.close()
             self.ser = None
 
     def read(self, N=0, debug=False):

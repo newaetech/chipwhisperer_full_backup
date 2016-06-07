@@ -59,23 +59,23 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
             chRange[ key['rangeStr'] ] = key['rangeV']
 
         self.params.addChildren([
-            {'name':'Trace Measurement', 'type':'group', 'children':[
-                {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'set':self.updateCurrentSettings},
-                {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'set':self.updateCurrentSettings},
-                {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'set':self.updateCurrentSettings},
-                {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'set':self.updateCurrentSettings},
+            {'name':'Trace Measurement', 'key':'trace', 'type':'group', 'children':[
+                {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'action':self.updateCurrentSettings},
+                {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'action':self.updateCurrentSettings},
+                {'name':'Coupling', 'key':'tracecouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':0, 'action':self.updateCurrentSettings},
+                {'name':'Y-Range', 'key':'traceyrange', 'type':'list', 'values':chRange, 'value':1.0, 'action':self.updateCurrentSettings},
             ]},
-            {'name':'Trigger', 'type':'group', 'children':[
-                {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'set':self.updateCurrentSettings},
-                {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'set':self.updateCurrentSettings},
-                {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'set':self.updateCurrentSettings},
-                {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'set':self.updateCurrentSettings},
-                {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':2, 'set':self.updateCurrentSettings},
-                {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'set':self.updateCurrentSettings},
+            {'name':'Trigger', 'key':'trig', 'type':'group', 'children':[
+                {'name':'Source', 'key':'trigsource', 'type':'list', 'values':chlist, 'value':1, 'action':self.updateCurrentSettings},
+                {'name':'Probe Att.', 'key':'trigprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':10, 'action':self.updateCurrentSettings},
+                {'name':'Coupling', 'key':'trigcouple', 'type':'list', 'values':self.ps.CHANNEL_COUPLINGS, 'value':1, 'action':self.updateCurrentSettings},
+                {'name':'Y-Range', 'key':'trigrange', 'type':'list', 'values':chRange, 'value':5.0, 'action':self.updateCurrentSettings},
+                {'name':'Trigger Direction', 'key':'trigtype', 'type':'list', 'values':self.ps.THRESHOLD_TYPE, 'value':self.ps.THRESHOLD_TYPE["Rising"], 'action':self.updateCurrentSettings},
+                {'name':'Trigger Level', 'key':'triglevel', 'type':'float', 'step':1E-2, 'siPrefix':True, 'suffix':'V', 'limits':(-5, 5), 'value':0.5, 'action':self.updateCurrentSettings},
             ]},
-            {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'set':self.updateSampleRateFreq, 'siPrefix':True, 'suffix': 'S/s'},
-            {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':5000, 'limits':(1, 500E6), 'value':5000, 'set':self.updateSampleRateFreq},
-            {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'set':self.updateSampleRateFreq},
+            {'name':'Sample Rate', 'key':'samplerate', 'type':'int', 'step':1E6, 'limits':(10000, 5E9), 'value':100E6, 'action':self.updateSampleRateFreq, 'siPrefix':True, 'suffix': 'S/s'},
+            {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':250, 'limits':(1, 500E6), 'value':500, 'action':self.updateSampleRateFreq},
+            {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'action':self.updateSampleRateFreq},
         ])
             
     @setupSetParam("")
@@ -83,7 +83,12 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
-            self.ps.setSamplingFrequency(paramSR.getValue(), paramSL.getValue() + self.findParam('sampleoffset').getValue(), 1)
+
+
+            try:
+                self.ps.setSamplingFrequency(paramSR.getValue(), paramSL.getValue() + self.findParam('sampleoffset').getValue(), 1)
+            except IOError:
+                raise Warning("Invalid combination of sample rate, sample length, and/or sample offset!")
 
             #Need this callback as otherwise the setValue() is overwritten when the user toggles off, might be fixed
             #with Adriel's new parameterTypes, will have to test again
@@ -93,11 +98,11 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
         paramSR = self.findParam('samplerate')
         paramSL = self.findParam('samplelength')
 
-        if self.ps.sampleRate != paramSR.value():
+        if self.ps.sampleRate != paramSR.getValue():
             paramSR.setValue(self.ps.sampleRate)
 
-        newSL = min(self.ps.maxSamples, paramSL.value())
-        if newSL != paramSL.value():
+        newSL = min(self.ps.maxSamples, paramSL.getValue())
+        if newSL != paramSL.getValue():
             paramSL.setValue(newSL)
 
 
@@ -121,21 +126,21 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
 
         try:
             # Trace Channel
-            TraceCh = self.findParam('tracesource').getValue()
-            TraceCo = self.findParam('tracecouple').getValue()
-            TraceY = self.findParam('traceyrange').getValue()
-            TraceP = self.findParam('traceprobe').getValue()
+            TraceCh = self.findParam(['trace', 'tracesource']).getValue()
+            TraceCo = self.findParam(['trace', 'tracecouple']).getValue()
+            TraceY = self.findParam(['trace', 'traceyrange']).getValue()
+            TraceP = self.findParam(['trace', 'traceprobe']).getValue()
             self.ps.setChannel(channel=TraceCh, coupling=TraceCo, VRange=TraceY, probeAttenuation=TraceP, enabled=True)
 
             # Trigger Channel
-            TrigCh = self.findParam('trigsource').getValue()
-            TrigCo = self.findParam('trigcouple').getValue()
-            TrigY = self.findParam('trigrange').getValue()
-            TrigP = self.findParam('trigprobe').getValue()
+            TrigCh = self.findParam(['trig', 'trigsource']).getValue()
+            TrigCo = self.findParam(['trig', 'trigcouple']).getValue()
+            TrigY = self.findParam(['trig', 'trigrange']).getValue()
+            TrigP = self.findParam(['trig', 'trigprobe']).getValue()
             self.ps.setChannel(channel=TrigCh, coupling=TrigCo, VRange=TrigY, probeAttenuation=TrigP, enabled=True)
 
             # Trigger
-            self.ps.setSimpleTrigger(TrigCh, self.findParam('triglevel').getValue(), direction=self.findParam('trigtype').getValue(), timeout_ms=1000)
+            self.ps.setSimpleTrigger(TrigCh, self.findParam(['trig', 'triglevel']).getValue(), direction=self.findParam(['trig', 'trigtype']).getValue(), timeout_ms=1000)
 
             self.updateSampleRateFreq()
         except IOError, e:
@@ -144,9 +149,9 @@ class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
     def arm(self):       
         self.ps.runBlock()
         
-    def capture(self):
+    def capture(self, update=True, NumberPoints=None):
         while(self.ps.isReady() == False): time.sleep(0.01)
-        data = self.ps.getDataV(self.findParam('tracesource').getValue(), self.findParam('samplelength').getValue(), startIndex=self.findParam('sampleoffset').getValue(), returnOverflow=True)
+        data = self.ps.getDataV(self.findParam(['trace', 'tracesource']).getValue(), self.findParam('samplelength').getValue(), startIndex=self.findParam('sampleoffset').getValue(), returnOverflow=True)
         if data[1] is True:
             print "WARNING: OVERFLOW IN DATA"
         self.datapoints = data[0]
@@ -166,10 +171,9 @@ class PicoScopeInterface(ScopeTemplate):
                   "PS2000": ps2000.PS2000(connect=False)}
         # self.connectChildParamsSignals(scopes) #TODO: Fix
 
-        self.params.addChildren([
-            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'set':self.setCurrentScope}
+        self.getParams().addChildren([
+            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'action':lambda p : self.setCurrentScope(p.getValue())}
         ])
-        self.setupActiveParams([lambda: self.lazy(self.scopetype)])
 
         self.scopetype = None
         self.advancedSettings = None
@@ -180,15 +184,17 @@ class PicoScopeInterface(ScopeTemplate):
         self.offset = offset
         self.dataUpdated.emit(lst, offset)
 
-    def setCurrentScope(self, scope, update=True):
+    def setCurrentScope(self, scope):
         if scope is not None:
             self.scopetype = PicoScope(self, scope)
+
+            #TODO - remove old first?
+            self.params.append(self.scopetype.getParams())
+
             self.scopetype.dataUpdated.connect(self.passUpdated)
         else:
             self.scopetype = scope
 
-        if update:
-            self.paramListUpdated.emit()
    
     def _con(self):
         if self.scopetype is not None:
