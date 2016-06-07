@@ -314,10 +314,12 @@ ISR(USART1_Handler)
 	generic_isr(USART1, &rx1buf, &tx1buf);
 }
 
+#ifndef USART2_SPIDUMP
 ISR(USART2_Handler)
 {
 	generic_isr(USART2, &rx2buf, &tx2buf);
 }
+#endif
 
 
 

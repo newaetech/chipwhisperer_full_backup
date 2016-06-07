@@ -23,7 +23,15 @@
 typedef enum fpga_lockstatus_e {fpga_unlocked = 0, fpga_generic, fpga_blockin, fpga_blockout, fpga_ctrlmem} fpga_lockstatus_t;
 void FPGA_setlock(fpga_lockstatus_t lockstatus);
 fpga_lockstatus_t FPGA_lockstatus(void);
+
+// Read 4 bytes into a single uint32_t
 uint32_t unsafe_readuint32(uint16_t fpgaaddr);
+
+// Read 4 bytes into a 4 byte array
+void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data);
+
+// Write 4 bytes to the FPGA
+void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data);
 
 void FPGA_setaddr(uint32_t addr);
 
