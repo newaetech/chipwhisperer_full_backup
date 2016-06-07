@@ -98,6 +98,10 @@ class GraphWidget(QWidget):
         self.selectedTrace = None
         self.selectedTraceId = None
 
+        #Ghost trace items
+        self.lastStartOffset = 0
+        self.lastTraceData = []
+
         self.persistantItems = []
         self._customWidgets = []
 

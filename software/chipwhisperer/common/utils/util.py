@@ -158,6 +158,10 @@ class Signal(object):
             try:
                 observer(*arg, **args)
             except Exception as e:
+
+                #TODO - catch exception like TypeError("setThreshold() got an unexpected keyword argument 'blockSignal'")
+                #       and print a better message
+
                 etype, value, trace = sys.exc_info()
                 value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s with arguments: %s, %s" % \
                         (type(e).__name__, e, observer, str(arg), str(args))
