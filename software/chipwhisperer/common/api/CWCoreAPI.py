@@ -312,6 +312,10 @@ class CWCoreAPI(Parameterized):
                 if progressBar.wasAborted():
                     break
 
+            # Required in order to make the GC work properly :(
+            currentTrace.unloadAllTraces()
+            self._traceFormat.unloadAllTraces()
+
     def runScriptModule(self, mod, funcName="run"):
         try:
             classes = pluginmanager.getPluginClassesFromModules([mod])
