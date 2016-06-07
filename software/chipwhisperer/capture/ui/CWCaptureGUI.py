@@ -68,7 +68,7 @@ class CWCaptureGUI(CWMainGUI):
                 ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
-                          # self.settingsTraceDock,
+                          self.settingsTraceDock,
                           self.settingsAuxDock])
 
     def connectStatusChanged(self):
@@ -110,6 +110,10 @@ class CWCaptureGUI(CWMainGUI):
 
     def addToolbarItems(self, toolbar):
         # Capture
+        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1))
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM))
+
+        # Master
         self.captureStatus = QToolButton()
         self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self, triggered=self.doConDis)
         self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self, triggered=self.doConDis)
@@ -127,8 +131,8 @@ class CWCaptureGUI(CWMainGUI):
         self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self, triggered=self.doConDisTarget)
         self.targetStatus.setDefaultAction(self.targetStatusActionDis)
 
-        toolbar.addAction(QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1)))
-        toolbar.addAction(QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM)))
+        toolbar.addAction(self.capture1Act)
+        toolbar.addAction(self.captureMAct)
         toolbar.addSeparator()
         toolbar.addWidget(QLabel('Master:'))
         toolbar.addWidget(self.captureStatus)
