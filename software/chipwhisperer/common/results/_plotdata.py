@@ -57,7 +57,6 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         self.setObjectName(self.getName())
         self.bselection = QToolBar()
         self.layout().addWidget(self.bselection)
-        self.highlightTop = True
         self.doRedraw = True
         self.enabledbytes = []
         AttackObserver.__init__(self)
@@ -150,6 +149,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         top = bottom = None
         xdataptr = None
 
+        highlightedKeys = self._highlightedKeys()
         for bnum in enabledBytes:
             if not xdatalst[bnum] or len(xdatalst[bnum])==0:
                 break
@@ -172,12 +172,9 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 pointargsg = {'symbol':'t', 'symbolPen':'b', 'symbolBrush':'g'}
 
             if drawtype.startswith('fast'):
-                if self.highlightTop:
-                    newdiff = np.array(ydataptr)
-                    if bnum < len(self._highlightedKeys()):
-                        newdiff = np.delete(newdiff, self._highlightedKeys()[bnum], 0)
-                else:
-                    newdiff = ydataptr
+                newdiff = np.array(ydataptr)
+                if bnum < len(highlightedKeys):
+                    newdiff = np.delete(newdiff, highlightedKeys[bnum], 0)
 
                 if top is not None:
                     top = np.maximum.reduce([top, np.amax(newdiff, 0)])
@@ -195,7 +192,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 else:
                     tlist_fixed = xdataptr
                 for i in range(0, self._numPerms(bnum)):
-                    if self.highlightTop and i == self._highlightedKeys()[bnum]:
+                    if bnum < len(highlightedKeys) and i == highlightedKeys[bnum]:
                         continue
 
                     tlisttst.extend(tlist_fixed)
@@ -211,17 +208,16 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
                 for i in range(0, self._numPerms(bnum)):
                     self.setupPlot(self.pw.plot(xdataptr, ydataptr[i], pen=QColor(*self.traceColor), **pointargsg), 0, True, str(bnum) + ":%02X" % i)
 
-            if self.highlightTop:
                 # Plot the highlighted byte(s) on top
-                pointargsr = {}
-                if not hasattr(ydataptr[0], '__iter__'):
-                    ydataptr = [[t] for t in ydataptr]
-                    pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
+            pointargsr = {}
+            if not hasattr(ydataptr[0], '__iter__'):
+                ydataptr = [[t] for t in ydataptr]
+                pointargsr = {'symbol':'o', 'symbolPen':'b', 'symbolBrush':'r'}
 
-                if bnum < len(self._highlightedKeys()):
-                    b = self._highlightedKeys()[bnum]
-                    if b >=0 and b < len(ydataptr):
-                        self.setupPlot(self.pw.plot(xdataptr, ydataptr[b], pen=QColor(*self.highlightedKeyColor), **pointargsr), 1, True, str(bnum) + ":%02X" % b)
+            if bnum < len(highlightedKeys):
+                b = highlightedKeys[bnum]
+                if b >=0 and b < len(ydataptr):
+                    self.setupPlot(self.pw.plot(xdataptr, ydataptr[b], pen=QColor(*self.highlightedKeyColor), **pointargsr), 1, True, str(bnum) + ":%02X" % b)
             pvalue += 1
             progress.updateStatus(pvalue)
             if progress.wasAborted():

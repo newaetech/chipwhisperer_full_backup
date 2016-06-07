@@ -37,11 +37,11 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
 
     def __init__(self, parentParam=None, name=None):
         AttackObserver.__init__(self)
-        self._knownKey = [00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00]
+        self._overridedKey = [00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
         self.params = self.getParams()
         self.params.addChildren([
-            {'name':'Highlighted key', 'type':'list', 'values':{'Know key from attack':'attack', 'Override':'override'},
-             'value': 'attack', 'action':lambda p: self.setKnownKeySrc(p.getValue())},
+            {'name':'Highlighted key', 'type':'list', 'values':['Known key from attack', 'Override', 'Rank 0 key', 'None'],
+             'value': 'Known key from attack', 'action':lambda p: self.setKnownKeySrc(p.getValue())},
             {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", 'action':lambda p:self.setKnownKey(p.getValue())},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'action':lambda p: self.setHighlightedKeyColor(p.getValue())},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'action':lambda p: self.setTraceColor(p.getValue())},
@@ -59,22 +59,32 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
 
     def setKnownKeySrc(self, keysrc):
         """Set key as 'attack' or 'override'"""
-        if keysrc == 'attack':
-            self.findParam('knownkey').hide()
+        self.findParam('knownkey').hide()
+        if keysrc == 'Known key from attack':
             AttackObserver._highlightedKeys = self._analysisSource.knownKey
-        elif keysrc == 'override':
+        elif keysrc == 'Override':
             self.findParam('knownkey').show()
-            AttackObserver._highlightedKeys = self.getKnownKey
+            AttackObserver._highlightedKeys = self.getOverridedKey
+        elif keysrc == 'Rank 0 key':
+            AttackObserver._highlightedKeys = self.getRank0Key
+        elif keysrc == 'None':
+            AttackObserver._highlightedKeys = self.getNoneKey
         else:
             raise ValueError("Key Source Error")
 
-    def getKnownKey(self):
-        return self._knownKey
+    def getOverridedKey(self):
+        return self._overridedKey
+
+    def getRank0Key(self):
+        return [self._analysisSource.getStatistics().maxes[bnum][0]['hyp'] for bnum in range(0, self._numKeys())]
+
+    def getNoneKey(self):
+        return [None] * self._numKeys()
 
     def setKnownKey(self, strkey):
         """Override known key by user selection"""
         try:
-            self._knownKey = util.hexstr2list(strkey)
+            self._overridedKey = util.hexstr2list(strkey)
         except ValueError:
             raise Warning("Key Selection - Could not convert '%s' to hex, key unchanged!" % strkey)
 

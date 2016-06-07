@@ -87,11 +87,10 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
 
     def knownKey(self):
         """Get the known key via attack"""
-        try:
-            return self.processKnownKey(self.getTraceSource().getKnownKey(self.getTraceStart()))
-        except Exception as e:
-            print "WARNING: Failed to find KnownKey, error = %s" % str(e)
-            return None
+        key = self.processKnownKey(self.getTraceSource().getKnownKey(self.getTraceStart()))
+        if key is None:
+            key = [None] * len(self.getStatistics().diffs)
+        return key
 
     def setTargetBytes(self, blist):
         self._targetbytes = blist
