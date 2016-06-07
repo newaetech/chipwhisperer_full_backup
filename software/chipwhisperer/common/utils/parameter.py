@@ -34,7 +34,6 @@ class Parameterized(object):
     _description = ""
 
     def getParams(self):
-        assert not hasattr(self, "param") and self.getParams is not None
         if not hasattr(self, "params"):
             self.params = Parameter(name=self.getName(), type='group')
             if self._description != "":
@@ -55,9 +54,9 @@ class Parameterized(object):
     def getDescription(cls):
         return cls._description
 
-    def __del__(self):
+    def deleteParams(self):
         self.getParams().remove()
-        self.params = None
+        del self.params
 
 
 class Parameter(object):

@@ -62,7 +62,9 @@ class ScopeTemplate(Parameterized, Plugin):
 
     def dis(self):
         if self._dis():
-            TraceSource.registeredObjects[self.getName() + " - Channel 1"].deregister()
+            tmp = TraceSource.registeredObjects.get(self.getName() + " - Channel 1", None)
+            if tmp is not None:
+                tmp.deregister()
             self.connectStatus.setValue(False)
 
     def _dis(self):

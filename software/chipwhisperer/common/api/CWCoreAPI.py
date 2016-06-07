@@ -37,11 +37,12 @@ from chipwhisperer.common.utils.tracesource import TraceSource
 class CWCoreAPI(Parameterized):
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
-    __version__ = "V3.0"
+    __version__ = "V3.1"
     _name = 'Generic Settings'
     instance = None
 
     def __init__(self):
+        CWCoreAPI.instance = self
         self.sigNewProject = util.Signal()
         self.sigNewScopeData = util.Signal()
         self.sigConnectStatus = util.Signal()
@@ -53,8 +54,6 @@ class CWCoreAPI(Parameterized):
         self.sigCampaignDone = util.Signal()
         self.sigTracesChanged = util.Signal()
 
-        CWCoreAPI.instance = self
-
         self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
         self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
@@ -64,7 +63,7 @@ class CWCoreAPI(Parameterized):
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
 
         # Initialize default values
-        self._project = self._scope = self._target = self._attack =  self._traceManager = self._acqPattern = None
+        self._project = self._scope = self._target = self._attack =  self._traceFormat = self._acqPattern = None
         self._attack = self.valid_attacks.get("CPA", None)
         self._acqPattern = self.valid_acqPatterns["Basic"]
         self._auxList = [None]  # TODO: implement it as a list in the whole class
@@ -86,8 +85,6 @@ class CWCoreAPI(Parameterized):
                     {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
             ]},
         ])
-        self.graphWidget = None
-
         self.scopeParam = Parameter(name="Scope Settings", type='group')
         self.params.getChild('Scope Module').stealDynamicParameters(self.scopeParam)
 
@@ -107,9 +104,6 @@ class CWCoreAPI(Parameterized):
 
     def getResults(self, name):
         return ResultsBase.registeredObjects[name]
-
-    def getGraphWidget(self):
-        return self.graphWidget
 
     def getScope(self):
         return self._scope
@@ -152,11 +146,11 @@ class CWCoreAPI(Parameterized):
         self.getParams().append(self._acqPattern.getParams())
 
     def getTraceFormat(self):
-        return self._traceManager
+        return self._traceFormat
 
     @setupSetParam("Trace Format")
     def setTraceFormat(self, format):
-        self._traceManager = format
+        self._traceFormat = format
 
     def getAttack(self):
         return self._attack
@@ -276,7 +270,7 @@ class CWCoreAPI(Parameterized):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                currentTrace = copy.copy(self._traceManager)
+                currentTrace = copy.copy(self._traceFormat)
                 currentTrace.clear()
 
                 # Load trace writer information
