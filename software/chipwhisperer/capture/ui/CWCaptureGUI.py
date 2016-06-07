@@ -68,7 +68,7 @@ class CWCaptureGUI(CWMainGUI):
                 ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
-                          self.settingsTraceDock,
+                          # self.settingsTraceDock,
                           self.settingsAuxDock])
 
     def connectStatusChanged(self):
