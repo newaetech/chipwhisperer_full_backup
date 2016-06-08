@@ -216,11 +216,10 @@ class SaseboGII(TargetTemplate):
             raise Warning("Failed to connect to FTDI device. Specificed serial number is '%s'. Check 'Target' tab to ensure correct serial-number selected."%self._sn)
         
         self.sasebo.setTimeouts(1000, 1000)
-        
-        #Init
-        self.init()
         self.connectStatus.setValue(True)
 
+        #Init
+        self.init()
         return True
 
     def disconnect(self):
@@ -231,7 +230,7 @@ class SaseboGII(TargetTemplate):
         if num > 0:
             self.sasebo.read(num)
 
-    def write(self, address, MSB, LSB):
+    def write(self, address, MSB):
         if self.connectStatus.value()==False:
             raise Exception("Can't write to the target while disconected. Connect to it first.")
 
