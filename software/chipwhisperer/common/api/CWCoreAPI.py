@@ -145,6 +145,18 @@ class CWCoreAPI(Parameterized):
             self._acqPattern.getParams().remove()
         self.getParams().append(self._acqPattern.getParams())
 
+    def getNewTrace(self, format):
+        if format is None:
+            raise Warning("No trace format selected.")
+        tmp = copy.copy(format)
+        tmp.clear()
+        starttime = datetime.now()
+        prefix = starttime.strftime('%Y.%m.%d-%H.%M.%S') + "_"
+        tmp.config.setConfigFilename(CWCoreAPI.getInstance().project().datadirectory + "traces/config_" + prefix + ".cfg")
+        tmp.config.setAttr("prefix", prefix)
+        tmp.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+        return tmp
+
     def getTraceFormat(self):
         return self._traceFormat
 
@@ -263,23 +275,15 @@ class CWCoreAPI(Parameterized):
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
             progressBar.setMaximum(self._numTraces - 1)
 
-            if self.getTraceFormat() is None:
-                raise Warning("No trace format selected.")
             waveBuffer = None
             tcnt = 0
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                currentTrace = copy.copy(self._traceFormat)
-                currentTrace.clear()
+                currentTrace = self.getNewTrace(self.getTraceFormat())
 
                 # Load trace writer information
-                starttime = datetime.now()
-                baseprefix = starttime.strftime('%Y.%m.%d-%H.%M.%S')
-                prefix = baseprefix + "_"
-                currentTrace.config.setConfigFilename(self.project().datadirectory + "traces/config_" + prefix + ".cfg")
-                currentTrace.config.setAttr("prefix", prefix)
-                currentTrace.config.setAttr("date", starttime.strftime('%Y-%m-%d %H:%M:%S'))
+                prefix = currentTrace.config.attr("prefix")
                 currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
                 currentTrace.config.setAttr("targetSW", "unknown")
                 currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
@@ -290,10 +294,9 @@ class CWCoreAPI(Parameterized):
                 if waveBuffer is not None:
                     currentTrace.setTraceBuffer(waveBuffer)
 
-                if self._auxList:
-                    for aux in self._auxList:
-                        if aux:
-                            aux.setPrefix(baseprefix)
+                for aux in self._auxList:
+                    if aux:
+                        aux.setPrefix(prefix[:-1])
 
                 ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
@@ -302,7 +305,7 @@ class CWCoreAPI(Parameterized):
                 ac.sigTraceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
                 ac.sigTraceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
 
-                self.sigCampaignStart.emit(baseprefix)
+                self.sigCampaignStart.emit(prefix[:-1])
                 ac.doReadings(tracesDestination=self.project().traceManager())
                 self.sigCampaignDone.emit()
                 tcnt += setSize

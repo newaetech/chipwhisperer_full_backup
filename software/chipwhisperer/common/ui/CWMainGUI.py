@@ -370,15 +370,6 @@ class CWMainGUI(QMainWindow):
         fname = os.path.basename(self.api.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(True)
-        
-    # def listModulesShow(self):
-    #     """Opens the Dialog which shows loaded/unloaded modules"""
-    #     ml = ModuleListDialog(self.listModules)
-    #     ml.exec_()
-    #
-    # def listModules(self):
-    #     """Should return a list of all possible imports, used to test which modules are missing"""
-    #     return [["MainChip", True, ""]]
 
     def projectStatusChanged(self):
         """Add File to recent file list"""

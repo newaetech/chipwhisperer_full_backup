@@ -144,6 +144,16 @@ class Parameter(object):
         else:
             return val()
 
+    def getKey(self):
+        if self.opts["type"] == "list":
+            limits = self.opts["limits"]
+            if isinstance(limits, dict):
+                return limits.keys()[limits.values().index(self.getValue())]
+            else:
+                return self.getValue()
+        else:
+            raise Exception("Only parameter type \"list\" support keys")
+
     def addChildren(self, children):
         addedChildren = []
         for child in children:
