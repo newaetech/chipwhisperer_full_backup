@@ -188,13 +188,30 @@ class SaseboGII(TargetTemplate):
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
 
+        self.getParams().addChildren([
+        {'name': 'USB Serial #:', 'key': 'serno', 'type': 'list', 'values': ['Press Refresh'], 'value': 'Press Refresh'},
+        {'name': 'Enumerate Attached Devices', 'key': 'pushsno', 'type': 'action', 'action': lambda _: self.refreshSerial()},
+    ])
+
+    def refreshSerial(self):
+        serialnames = ft.listDevices()
+        if serialnames == None:
+            serialnames = [" No Connected Devices "]
+
+        self.findParam('serno').setLimits(serialnames)
+        if len(serialnames) > 1:
+            i = 1
+        else:
+            i = 0
+        self.findParam('serno').setValue(serialnames[i])
+
     def con(self, scope = None):
+        self._sn = self.findParam('serno').getValue()
         try:
-            self.sasebo = ft.openEx("FTSZ1IONB")
-#            self.sasebo = ft.openEx("FTWQ8BMIA")
+            self.sasebo = ft.openEx(self._sn)
         except ft.ftd2xx.DeviceError, e:
             self.sasebo = None
-            return False
+            raise Warning("Failed to connect to FTDI device. Specificed serial number is '%s'. Check 'Target' tab to ensure correct serial-number selected."%self._sn)
         
         self.sasebo.setTimeouts(1000, 1000)
         
