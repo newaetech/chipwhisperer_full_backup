@@ -24,6 +24,7 @@
 #=================================================
 
 from _base import TargetTemplate
+import unicodedata
 
 try:
     import ftd2xx as ft
@@ -200,6 +201,10 @@ class SaseboGII(TargetTemplate):
         if serialnames == None:
             serialnames = [" No Connected Devices "]
 
+        for i,s in enumerate(serialnames):
+            if isinstance(s, unicode):
+                serialnames[i] = unicodedata.normalize('NFC', s)
+
         self.findParam('serno').setLimits(serialnames)
         if len(serialnames) > 1:
             i = 1
@@ -230,7 +235,7 @@ class SaseboGII(TargetTemplate):
         if num > 0:
             self.sasebo.read(num)
 
-    def write(self, address, MSB):
+    def write(self, address, MSB, LSB):
         if self.connectStatus.value()==False:
             raise Exception("Can't write to the target while disconected. Connect to it first.")
 
