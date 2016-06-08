@@ -256,7 +256,7 @@ class SakuraG(TargetTemplate):
         self.fixedStart = True
         self.hw = None
         self.getParams().addChildren([
-            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'get':self.getConn, 'default':conntypes[0]},
+            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'get':self.getConn, 'default':None},
             {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':lambda _ : self.reset(), 'visible':False},
             {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'value':'Press Refresh', 'visible':False},
             {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':lambda _ :self.refreshSerial(), 'visible':False},
