@@ -29,7 +29,7 @@ import chipwhisperer.capture.scopes._qt as openadc_qt
 from _base import TargetTemplate
 from chipwhisperer.capture.scopes.openadc_interface import ftdi
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 try:
     import ftd2xx as ft
@@ -67,13 +67,15 @@ class ChipWhispererComm(Parameterized):
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
 
     def con(self, scope = None):
-        self.oa = scope.qtadc.ser
-        if self.oa is None:
+        if scope and scope.qtadc and scope.qtadc.ser:
+            self.oa = scope.qtadc.ser
+        else:
             if self.serialnum is not None:
                 self.qtadc = openadc_qt.OpenADCQt()
                 self.params.append(self.qtadc.getParams())
                 self.oaiface = ftdi.OpenADCInterface_FTDI(None, self.qtadc)
                 self.params.append(self.oaiface.getParams())
+                self.oaiface.setSerialNumberLimits([self.serialnum])
                 self.oaiface.setSelectedDevice(self.serialnum)
                 self.oaiface.con()
                 self.oa = self.qtadc.sc
@@ -251,16 +253,19 @@ class SakuraG(TargetTemplate):
         conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)
         conntypes['Original Bitstream'] = FTDIComm()
 
-        self.oa = None
         self.fixedStart = True
         self.hw = None
-        self.params.addChildren([
-            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'value':self.hw},
-            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':self.reset, 'visible':False},
-            {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
-            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
+        self.getParams().addChildren([
+            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'get':self.getConn},
+            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':lambda _ : self.reset(), 'visible':False},
+            {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'value':'Press Refresh', 'visible':False},
+            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':lambda _ :self.refreshSerial(), 'visible':False},
         ])
-        
+
+    def getConn(self):
+        return self.hw
+
+    @setupSetParam("Connection via")
     def setConn(self, con):
         self.hw = con
         if hasattr(self.hw, 'setSerial'):
@@ -280,7 +285,7 @@ class SakuraG(TargetTemplate):
 #        self.paramListUpdated.emit(self.paramList())
 
     def con(self, scope = None):
-        self.oa = scope.qtadc.ser
+
         self.hw = self.findParam('conn').getValue()
 
         if hasattr(self.hw, 'setSerial'):
