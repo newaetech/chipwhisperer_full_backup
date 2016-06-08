@@ -68,7 +68,7 @@ class ChipWhispererGlitch(Parameterized):
             {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
             {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
             {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
-            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action':self.glitchManual},
+            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': lambda _ : self.glitchManual()},
             {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
             {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
             {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
