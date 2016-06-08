@@ -48,7 +48,7 @@ class PGEVsTrace(AttackResultPlot, Plugin):
         allpge = self.calculatePGE()
         cb = QClipboard()
 
-        fmt = self.findParam('fmt').value()
+        fmt = self.findParam('fmt').getValue()
 
         if fmt == 'CSV':
             spge = "Trace Number, "

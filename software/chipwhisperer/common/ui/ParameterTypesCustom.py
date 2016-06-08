@@ -3,17 +3,204 @@
 #
 # This file based on PyQtGraph parameterTypes.py
 #=================================================
+import os
 
 import pyqtgraph as pg
 from pyqtgraph.Qt import QtCore, QtGui
 from pyqtgraph.parametertree.Parameter import registerParameterType
 from pyqtgraph.parametertree.ParameterItem import ParameterItem
-from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, GroupParameterItem
+from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventProxy, ListParameterItem, Parameter, ActionParameterItem, TextParameterItem, GroupParameterItem, ListParameter
+from pyqtgraph import pixmaps
 from pyqtgraph.widgets.SpinBox import SpinBox
-from  chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
+
+helpwnd = None
+
+def showHelpWindow(curParam):
+    """
+    Helper to show the help text. If class defines a 'helpwnd' it uses that function, otherwise
+    a simple message box is called upon.
+    """
+
+    nametext = curParam.param.opts['name']
+    helptext = curParam.param.opts['help']
+    hdrtext = '-' * len(nametext)
+    helptext = helptext.replace('%namehdr%', '%s\n%s\n\n' % (nametext, hdrtext))
+
+    if helpwnd:
+        helpwnd(helptext, curParam)
+    else:
+        # Shitty default window
+        if hasattr(curParam, 'widget'):
+            wdgt = curParam.widget
+        else:
+            wdgt = None
+        QtGui.QMessageBox.information(wdgt, 'Help: %s' % nametext, helptext, QtGui.QMessageBox.Cancel,
+                                      QtGui.QMessageBox.Cancel)
+
+def drawHelpIcon(curParam):
+    """Add a single help icons to a Parameter Item. Also removes the "default" button which isn't really used in our applications"""
+    layout = curParam.layoutWidget.layout()
+
+    # Bonus: We don't want the default button so delete it here
+    numitems = layout.count()
+    lastitem = layout.itemAt(numitems - 1)
+
+    if (type(lastitem.widget()) == QtGui.QPushButton) and lastitem.widget().width() == 20:
+        lastitem.widget().deleteLater()
+
+    # If help option add the button
+    if 'help' in curParam.param.opts:
+        buthelp = QtGui.QPushButton()
+        buthelp.setFixedWidth(20)
+        buthelp.setFixedHeight(20)
+        buthelp.setIcon(curParam.layoutWidget.style().standardIcon(QtGui.QStyle.SP_TitleBarContextHelpButton))
+        buthelp.clicked[bool].connect(lambda ignored: showHelpWindow(curParam))
+        layout.addWidget(buthelp)
 
 
-class SigStuff(QtGui.QWidget):
+# Disconnect the signals when the widget is gone
+def __init___fix(self, param, depth):
+    ParameterItem.__init__(self, param, depth)
+
+    self.hideWidget = True  ## hide edit widget, replace with label when not selected
+                            ## set this to False to keep the editor widget always visible
+
+
+    ## build widget into column 1 with a display label and default button.
+    w = self.makeWidget()
+    self.widget = w
+
+    self.widget.destroyed.connect(lambda: self.param.sigValueChanged.disconnect(self.valueChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigChildAdded.disconnect(self.childAdded))
+    self.widget.destroyed.connect(lambda: self.param.sigChildRemoved.disconnect(self.childRemoved))
+    self.widget.destroyed.connect(lambda: self.param.sigNameChanged.disconnect(self.nameChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigLimitsChanged.disconnect(self.limitsChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigDefaultChanged.disconnect(self.defaultChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigOptionsChanged.disconnect(self.optsChanged))
+    self.widget.destroyed.connect(lambda: self.param.sigParentChanged.disconnect(self.parentChanged))
+
+    self.eventProxy = EventProxy(w, self.widgetEventFilter)
+
+    opts = self.param.opts
+    if 'tip' in opts:
+        w.setToolTip(opts['tip'])
+
+    self.defaultBtn = QtGui.QPushButton()
+    self.defaultBtn.setFixedWidth(20)
+    self.defaultBtn.setFixedHeight(20)
+    modDir = os.path.dirname(__file__)
+    self.defaultBtn.setIcon(QtGui.QIcon(pixmaps.getPixmap('default')))
+    self.defaultBtn.clicked.connect(self.defaultClicked)
+
+    self.displayLabel = QtGui.QLabel()
+
+    layout = QtGui.QHBoxLayout()
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(2)
+    layout.addWidget(w)
+    layout.addWidget(self.displayLabel)
+    layout.addWidget(self.defaultBtn)
+
+    self.layoutWidget = QtGui.QWidget()
+    self.layoutWidget.setLayout(layout)
+    self.layoutWidget.setMinimumHeight(w.minimumHeight())
+
+    if w.sigChanged is not None:
+        w.sigChanged.connect(self.widgetValueChanged)
+
+    if hasattr(w, 'sigChanging'):
+        w.sigChanging.connect(self.widgetValueChanging)
+
+    ## update value shown in widget.
+    if opts.get('value', None) is not None:
+        self.valueChanged(self, opts['value'], force=True)
+    else:
+        ## no starting value was given; use whatever the widget has
+        self.widgetValueChanged()
+
+    self.updateDefaultBtn()
+
+WidgetParameterItem.__init__ = __init___fix
+
+
+class WidgetParameterItemHelp(WidgetParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(WidgetParameterItemHelp, self).__init__(*args, **kwargs)
+        drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+class ListParameterItemHelp(ListParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(ListParameterItemHelp, self).__init__(*args, **kwargs)
+        drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+class ActionParameterItemHelp(ActionParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(ActionParameterItemHelp, self).__init__(*args, **kwargs)
+        drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+
+class TextParameterItemHelp(TextParameterItem):
+    def __init__(self, *args, **kwargs):
+        super(TextParameterItemHelp, self).__init__(*args, **kwargs)
+        drawHelpIcon(self)
+
+    def updateDefaultBtn(self):
+        pass
+
+class FileParameterItemHelp(WidgetParameterItemHelp):
+    def __init__(self, *args, **kwargs):
+        super(FileParameterItemHelp, self).__init__(*args, **kwargs)
+
+        fileButton = QtGui.QPushButton()
+        fileButton.setFixedWidth(20)
+        fileButton.setFixedHeight(20)
+        fileButton.setIcon(self.layoutWidget.style().standardIcon(QtGui.QStyle.SP_FileDialogContentsView))
+        fileButton.clicked[bool].connect(self.openFile)
+        self.layoutWidget.layout().addWidget(fileButton)
+        fname = QtCore.QSettings().value(self.param.opts["name"])
+        if fname:
+            self.param.setValue(fname)
+
+    def makeWidget(self):
+        w = QtGui.QLineEdit()
+        w.sigChanged = w.editingFinished
+        w.value = w.text
+        w.setValue = w.setText
+        w.sigChanging = w.textChanged
+        return w
+
+    def openFile(self):
+        fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Get file path', QtCore.QSettings().value(self.param.opts["name"]), self.param.opts["filter"])
+        if fname:
+            self.param.setValue(fname)
+            QtCore.QSettings().setValue(self.param.opts["name"], fname)
+
+
+class FileParameter(Parameter):
+    itemClass = FileParameterItemHelp
+
+registerParameterType('file', FileParameter, override=True)
+
+classmapping = {
+    "<class 'pyqtgraph.parametertree.parameterTypes.WidgetParameterItem'>": WidgetParameterItemHelp,
+    "<class 'pyqtgraph.parametertree.parameterTypes.ListParameterItem'>": ListParameterItemHelp,
+    "<class 'pyqtgraph.parametertree.parameterTypes.ActionParameterItem'>": ActionParameterItemHelp,
+    "<class 'pyqtgraph.parametertree.parameterTypes.TextParameterItem'>": TextParameterItemHelp
+}
+
+
+class QWidgetWSignals(QtGui.QWidget):
     sigValueChanged = QtCore.Signal(object)  # (self)
     sigValueChanging = QtCore.Signal(object, object)  # (self, value)  sent immediately; no delay.
 
@@ -29,10 +216,10 @@ class RangeParameterItem(WidgetParameterItem):
 
     def svChangedEmit(self):
         if self.validateLimits():
-            self.sigs.sigValueChanged.emit(self)
+            self.widget.sigValueChanged.emit(self)
 
     def svChangingEmit(self, val):
-        self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
+        self.widget.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()) )
 
     def svLowChanging(self):
         if self.validateLimits("high"):
@@ -46,6 +233,12 @@ class RangeParameterItem(WidgetParameterItem):
         try:
             fixedsize = self.param.opts['fixedsize']
         except KeyError:
+            low = self.wlow.value()
+            high = self.whigh.value()
+            if high < low and change == "high":
+                self.whigh.setValue(low, update=True, delaySignal=True)
+            elif low > high and change == "low":
+                self.wlow.setValue(high, update=True, delaySignal=True)
             return True
 
         if fixedsize == 0:
@@ -92,7 +285,6 @@ class RangeParameterItem(WidgetParameterItem):
             return True
 
     def makeLayout(self):
-        self.sigs = SigStuff()
         opts = self.param.opts
         defs = {
                 'value': 0, 'min': None, 'max': None, 'int': True,
@@ -103,10 +295,12 @@ class RangeParameterItem(WidgetParameterItem):
 
         wlow = SpinBox()
         wlow.setMaximumWidth(80)
+        wlow.setContentsMargins(0,0,0,0)
         wlow.setAlignment(QtCore.Qt.AlignRight)
         whigh = SpinBox()
         whigh.setMaximumWidth(80)
         whigh.setAlignment(QtCore.Qt.AlignRight)
+        whigh.setContentsMargins(0,0,0,0)
 
         # The following required for pyqtgraph > 0.9.10
         for k in defs:
@@ -117,7 +311,9 @@ class RangeParameterItem(WidgetParameterItem):
         if 'limits' in opts:
             defs['bounds'] = opts['limits']
 
+        defs["value"] = self.param.opts["value"][0]
         wlow.setOpts(**defs)
+        defs["value"] = self.param.opts["value"][1]
         whigh.setOpts(**defs)
 
         whigh.sigValueChanged.connect(self.svChangedEmit)
@@ -142,11 +338,11 @@ class RangeParameterItem(WidgetParameterItem):
     def makeWidget(self):
         l = self.makeLayout()
 
-        w = QtGui.QWidget()
+        w = QWidgetWSignals()
         w.setLayout(l)
 
-        w.sigChanged = self.sigs.sigValueChanged
-        w.sigChanging = self.sigs.sigValueChanging
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
         w.value = self.value
         w.setValue = self.setValue
         return w
@@ -176,6 +372,8 @@ registerParameterType('range', RangeParameter, override=True)
 class RangeParameterGraphItem(RangeParameterItem):
     def makeWidget(self):
 
+        l = self.makeLayout()
+
         graphIcon = QtGui.QIcon()
         graphIcon.addFile(':/images/wavelimits.png', state=QtGui.QIcon.On)
         graphIcon.addFile(':/images/wavelimitsoff.png', state=QtGui.QIcon.Off)
@@ -186,16 +384,17 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.graphBtn.setFixedHeight(20)
         self.graphBtn.setIcon(graphIcon)
         self.graphBtn.setCheckable(True)
-        self.graphBtn.clicked[bool].connect(self.buttonPressed)
 
-        l = self.makeLayout()
+        l.addWidget(QtGui.QLabel("  "))
         l.addWidget(self.graphBtn)
         l.addWidget(QtGui.QLabel("  "))
 
-        w = QtGui.QWidget()
+        w = QWidgetWSignals()
         w.setLayout(l)
-        w.sigChanged = self.sigs.sigValueChanged
-        w.sigChanging = self.sigs.sigValueChanging
+        w.setMinimumHeight(33)
+
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
         w.value = self.value
         w.setValue = self.setValue
 
@@ -209,9 +408,6 @@ class RangeParameterGraphItem(RangeParameterItem):
         self.lri.setVisible(False)
         self.lri.sigRegionChanged.connect(self.lriChanged)
         return w
-
-    def buttonPressed(self, status):
-        self.lri.setVisible(status)
 
     def lriChanged(self):
         new = self.lri.getRegion()
@@ -247,6 +443,7 @@ class RangeParameterGraph(Parameter):
 
 registerParameterType('rangegraph', RangeParameterGraph, override=True)
 
+
 class FilelistItem(WidgetParameterItem):
     """
     WidgetParameterItem subclass providing list of files with copy/add/remove
@@ -261,10 +458,10 @@ class FilelistItem(WidgetParameterItem):
 
     def svChangedEmit(self):
         if self.validateLimits():
-            self.sigs.sigValueChanged.emit(self)
+            self.widget.sigValueChanged.emit(self)
 
     def svChangingEmit(self, val):
-        self.sigs.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()))
+        self.widget.sigValueChanging.emit(self, (self.wlow.value(), self.whigh.value()))
 
     def setRows(self, rows):
         self.table.setRowCount(rows)
@@ -375,7 +572,6 @@ class FilelistItem(WidgetParameterItem):
                 self.editor(filename=fname, filedesc=desc, default=True)
 
     def makeLayout(self):
-        self.sigs = SigStuff()
         opts = self.param.opts
 
         if 'editor' in opts.keys():
@@ -424,11 +620,12 @@ class FilelistItem(WidgetParameterItem):
     def makeWidget(self):
         l = self.makeLayout()
 
-        w = QtGui.QWidget()
+        w = QWidgetWSignals()
         w.setLayout(l)
 
-        w.sigChanged = self.sigs.sigValueChanged
-        w.sigChanging = self.sigs.sigValueChanging
+        w.sigChanged = w.sigValueChanged
+        w.sigChanging = w.sigValueChanging
+
         w.value = self.value
         w.setValue = self.setValue
 
@@ -476,8 +673,8 @@ class SpinBoxWithSetItem(WidgetParameterItem):
     
     def __init__(self, *args, **kwargs):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
-        ExtendedParameter.drawHelpIcon(self)
-    
+        drawHelpIcon(self)
+
     def makeWidget(self):
         """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
         opts = self.param.opts
@@ -491,7 +688,6 @@ class SpinBoxWithSetItem(WidgetParameterItem):
         if 'limits' in opts:
             defs['bounds'] = opts['limits']
         w = SpinBox()
-
         # This hack ensures compatibility between 0.9.10 and later
         for k in opts:
             w.opts[k] = opts[k]
@@ -588,14 +784,9 @@ class LabelParameter(Parameter):
 registerParameterType('label', LabelParameter, override=True)
 
 
-def listParameterItem_Fix(self, param, depth):
-    # Fixes a bug where the list would appear blank instead of showing the default value
-    self.targetValue = None
-    WidgetParameterItem.__init__(self, param, depth)
-    self.updateDisplayLabel(self.value())
-
-ListParameterItem.__init__ = listParameterItem_Fix
-
+#TODO: Fix parameter's to not skip setting same value, requires more effort than this.
+#      Useful when hardware reality is != software settings, and need to re-download
+#      things.
 def setValue_Fix(self, value, blockSignal=None):
     # Fixes the CW requirement to not skip the setValue call when the previous value is the same
     try:
@@ -607,7 +798,20 @@ def setValue_Fix(self, value, blockSignal=None):
         if blockSignal is not None:
             self.sigValueChanged.connect(blockSignal)
 
-#TODO: Fix parameter's to not skip setting same value, requires more effort than this.
-#      Useful when hardware reality is != software settings, and need to re-download
-#      things.
 Parameter.setValue = setValue_Fix
+
+
+#Call base class to hide/show group-type parameter item
+def optsChanged_Fix(self, param, opts):
+    ParameterItem.optsChanged(self, param, opts)
+    if 'addList' in opts:
+        self.updateAddList()
+
+GroupParameterItem.optsChanged = optsChanged_Fix
+
+def setLimits_fix(self, limits):
+    self.forward, self.reverse = self.mapping(limits)
+
+    Parameter.setLimits(self, limits)
+
+ListParameter.setLimits = setLimits_fix

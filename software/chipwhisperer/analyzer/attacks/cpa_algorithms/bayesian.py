@@ -27,7 +27,7 @@
 
 import numpy as np
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized
 
 
 class AttackCPA_Bayesian(Parameterized, Plugin):
@@ -37,7 +37,6 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
     _name = "Bayesian CPA"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
-        Parameterized.__init__(self, parentParam)
         self.model = targetModel
 
     def setByteList(self, brange):

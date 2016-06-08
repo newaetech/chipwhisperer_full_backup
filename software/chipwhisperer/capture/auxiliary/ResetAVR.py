@@ -34,9 +34,9 @@ class ResetAVR(AuxiliaryTemplate):
     def __init__(self, parentParam=None):
         AuxiliaryTemplate.__init__(self, parentParam)
         self.params.addChildren([
-            {'name':'STK500.exe Path', 'type':'str', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
+            {'name':'STK500.exe Path', 'type':'file', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
             {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
-            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
+            {'name':'Test Reset', 'type':'action', 'action':lambda _:self.testReset()}
         ])
 
     def captureInit(self):
@@ -47,8 +47,8 @@ class ResetAVR(AuxiliaryTemplate):
 
     def traceArm(self):
         # If using STK500
-        stk500 = self.findParam('stk500path').value()
-        ret = call([stk500, "-d%s" % self.findParam('part').value(), "-s", "-cUSB"])
+        stk500 = self.findParam('stk500path').getValue()
+        ret = call([stk500, "-d%s" % self.findParam('part').getValue(), "-s", "-cUSB"])
 
         if int(ret) != 0:
             raise IOError("Error Calling Stk500.exe")

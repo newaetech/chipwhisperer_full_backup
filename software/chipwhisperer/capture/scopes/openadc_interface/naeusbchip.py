@@ -25,10 +25,8 @@ import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
-from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
@@ -45,9 +43,14 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
     _name = "ChipWhisperer-Lite"
 
     def __init__(self, parentParam, oadcInstance):
-        Parameterized.__init__(self, parentParam)
         self.ser = None
-        self._toolActs = []
+        self.dev = None
+        self.scope = None
+
+        self.getParams().addChildren([
+            {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
+            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"menu", "action":lambda _:self.cwFirmwareConfig.loadRequired()},
+        ])
 
         if (openadc_qt is None) or (usb is None):
             missingInfo = ""
@@ -60,35 +63,24 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
             self.scope = oadcInstance
 
-        # if target_chipwhisperer_extra is not None:
-        #    self.cwAdvancedSettings = target_chipwhisperer_extra.QtInterface()
-        # else:
-        #    self.cwAdvancedSettings = None
-
     def __del__(self):
         if self.ser:
             self.ser.close()
 
     def con(self):
         if self.ser == None:
-            dev = CWL.CWLiteUSB()
+            self.dev = CWL.CWLiteUSB()
+            self.getParams().append(self.dev.getParams())
 
             try:
-                dev.con()
+                self.dev.con()
             except IOError as e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
 
-            self.cwFirmwareConfig.setInterface(dev.fpga)
+            self.cwFirmwareConfig.setInterface(self.dev.fpga)
             self.cwFirmwareConfig.loadRequired()
-
-            if hasattr(self, 'cwliteXMEGA'):
-                self.cwliteXMEGA.setUSBInterface(dev.xmega)
-
-            if hasattr(self, 'cwliteAVR'):
-                self.cwliteAVR.setUSBInterface(dev.avr)
-
-            self.ser = dev.usbdev()
+            self.ser = self.dev.usbdev()
 
         try:
             self.scope.con(self.ser)
@@ -99,8 +91,13 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
     def dis(self):
         if self.ser != None:
+            self.cwFirmwareConfig.setInterface(None)
+            self.scope.close()
             self.ser.close()
             self.ser = None
+        if self.dev is not None:
+            self.dev.dis()
+            self.dev = None
 
     def getTextName(self):
         try:
@@ -108,13 +105,8 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         except:
             return "None?"
 
-    def setupGuiActions(self, mainWindow):
-        if not hasattr(self, 'cwliteXMEGA'):
-            self.cwliteXMEGA = XMEGAProgrammerDialog(mainWindow)
-        if not hasattr(self, 'cwliteAVR'):
-            self.cwliteAVR = AVRProgrammerDialog(mainWindow)
-        self.fwLoaderConfigGUI = FWLoaderConfigGUI(mainWindow, self.cwFirmwareConfig)
-        return [['CW Firmware Preferences','Configure ChipWhisperer FW Paths', self.fwLoaderConfigGUI.show], # Can' use Config... name with MacOS
-                ['Download CW Firmware', 'Download Firmware+FPGA To Hardware', self.cwFirmwareConfig.loadRequired],
-                ['CW-Lite XMEGA Programmer', 'Open XMEGA Programmer (ChipWhisperer-Lite Only)',self.cwliteXMEGA.show],
-                ['CW-Lite AVR Programmer', 'Open AVR Programmer (ChipWhisperer-Lite Only)',self.cwliteAVR.show]]
+    def getFwLoaderConfigGUI(self):
+        if not hasattr(self, 'fwLoaderConfigGUI'):
+            self.fwLoaderConfigGUI = FWLoaderConfigGUI(self.cwFirmwareConfig)
+        return self.fwLoaderConfigGUI
+

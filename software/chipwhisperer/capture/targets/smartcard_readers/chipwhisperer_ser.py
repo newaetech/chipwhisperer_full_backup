@@ -35,13 +35,12 @@ class ReaderChipWhispererSER(ReaderTemplate):
         ReaderTemplate.__init__(self, parentParam)
 
         self.ser = SimpleSerial_ChipWhisperer(self)
-        self.setupActiveParams([lambda: self.lazy(self.ser)])
-
         self.params.addChildren([
-            {'name':'Reset Pin', 'type':'list', 'values':['GPIO1']},
+            {'name':'Reset Pin', 'type':'list', 'values':['GPIO1'], 'value':'GPIO1'},
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
-            {'name':'ATR', 'key':'atr', 'type':'str'}
+            {'name':'ATR', 'key':'atr', 'type':'str', 'value':""}
         ])
+        self.params.append(self.ser.getParams())
 
     def waitEcho(self, data):
         rxdata = []

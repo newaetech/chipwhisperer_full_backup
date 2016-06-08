@@ -33,7 +33,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)
         self.params.addChildren([
-            {'name':'Baud', 'type':'int', 'value':9600, 'set':self.setBaud}
+            {'name':'Baud', 'type':'int', 'value':9600, 'action':lambda p: self.setBaud(p.getValue())}
         ])
         self.usi = ChipWhispererTargets.CWUniversalSerial()
 
@@ -114,7 +114,7 @@ class ReaderChipWhispererUSI(ReaderTemplate):
 
         return status
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         """Connect to reader. scope parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         self.usi.con(scope.qtadc.ser)
         self.usi.setIdle(1)

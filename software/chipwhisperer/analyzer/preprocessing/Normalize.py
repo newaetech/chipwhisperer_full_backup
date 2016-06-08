@@ -132,34 +132,34 @@ class Normalize(PreprocessingBase):
         self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
 
         self.params.addChildren([
-            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'set':self.updateNormClass},
-            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'set':self.updateScript},
-            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'set':self.updateScript},
-            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'set':self.updateScript},
-            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':self.parent.waveformDock.widget(), 'set':self.updateScript}
+            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'value':NormMean, 'action':lambda _:self.updateNormClass()},
+            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'action':lambda _:self.updateScript()},
+            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'action':lambda _:self.updateScript()},
+            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'action':lambda _:self.updateScript()},
+            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript()},
         ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').value().__name__)
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').getValue().__name__)
         
-        f1src = self.findParam('f1coeff').value()
+        f1src = self.findParam('f1coeff').getValue()
         if f1src is not None:
             if f1src == 5: f1src = None
             self.addFunction("init", "norm.loadF1File", "%s" % str(f1src))
 
-        f2src = self.findParam('f2coeff').value()
+        f2src = self.findParam('f2coeff').getValue()
         if f2src is not None:
             if f2src == 5: f2src = None
             self.addFunction("init", "norm.loadF2File", "%s" % str(f2src))
 
-        zsrc = self.findParam('zsource').value()
+        zsrc = self.findParam('zsource').getValue()
         if zsrc is not None:
             if zsrc == 5: zsrc = None
             self.addFunction("init", "norm.loadZFile", "%s" % str(zsrc))
 
-    #    rng = self.findParam('ptrange').value()
+    #    rng = self.findParam('ptrange').getValue()
     #    if rng:
     #        self.addFunction("init", "setPointRange", " (%d, %d) " % (rng[0], rng[1]))
 

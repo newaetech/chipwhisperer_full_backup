@@ -10,7 +10,11 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from PySide import QtWebKit
-from docutils import core, io
+try:
+    from docutils import core, io
+except ImportError:
+    print "ERROR: Should install 'docutils' package, help functions not parsing text properly"
+    core = None
 import sys
 
 
@@ -71,18 +75,30 @@ def html_body(input_string, source_path=None, destination_path=None,
         fragment = fragment.encode(output_encoding)
     return fragment
 
+if core is None:
+    class HelpBrowser(QMessageBox):
+        def __init__(self, parent=None):
+            super(HelpBrowser, self).__init__(parent)
+            self.setWindowTitle('Help Browser')
+            self.setWindowFlags(Qt.Window)
+            self.setModal(False)
 
-class HelpBrowser(QtWebKit.QWebView):
+        def showHelp(self, rstinput, curParam):
+            self.setText(rstinput)
+            self.raise_()
+            self.show()
+else:
+    class HelpBrowser(QtWebKit.QWebView):
 
-    def __init__(self, parent=None):
-        super(HelpBrowser, self).__init__(parent)
-        self.setWindowTitle('Help Browser')
-        self.setWindowFlags(Qt.Window)
+        def __init__(self, parent=None):
+            super(HelpBrowser, self).__init__(parent)
+            self.setWindowTitle('Help Browser')
+            self.setWindowFlags(Qt.Window)
 
-    def showHelp(self, rstinput, curParam):
-        self.setHtml(html_body(unicode(rstinput)))
-        self.raise_()
-        self.show()
+        def showHelp(self, rstinput, curParam):
+            self.setHtml(html_body(unicode(rstinput)))
+            self.raise_()
+            self.show()
 
 
 if __name__ == '__main__':

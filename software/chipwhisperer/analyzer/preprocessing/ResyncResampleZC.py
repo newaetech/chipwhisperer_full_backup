@@ -44,24 +44,22 @@ class ResyncResampleZC(PreprocessingBase):
         self.debugReturnSad = False
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'set':self.updateScript},
-            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'set':self.updateScript}
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':lambda _:self.updateScript()},
+            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'action':lambda _:self.updateScript()},
+            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'action':lambda _:self.updateScript()},
         ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
-        zclevel = self.findParam('zclevel').value()
-        binlength = self.findParam('binlen').value()
-
+        zclevel = self.findParam('zclevel').getValue()
+        binlength = self.findParam('binlen').getValue()
 
         self.addFunction("init", "setReference", "rtraceno=%d, zcoffset=%f, binlength=%d" % (
-                            self.findParam('reftrace').value(),
+                            self.findParam('reftrace').getValue(),
                             zclevel,
-                            binlength
-                            ))
+                            binlength))
 
     def setReference(self, rtraceno=0, zcoffset=0.0, binlength=0):
         self.rtrace = rtraceno

@@ -21,7 +21,7 @@
 
 import time
 from visa import *
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util
 
 
@@ -38,10 +38,10 @@ class VisaScope(Parameterized):
     header = ":SYSTem:HEADer OFF\n"
 
     def __init__(self, parentParam):
-        Parameterized.__init__(self, parentParam)
         self.visaInst = None
         self.dataUpdated = util.Signal()
 
+        self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'X-Scale', 'key':'xscale', 'type':'list', 'values':self.xScales},
             {'name':'Y-Scale', 'key':'yscale', 'type':'list', 'values':self.yScales},
@@ -80,4 +80,3 @@ class VisaScope(Parameterized):
     def capture(self, update=True, NumberPoints=None):
         """You MUST implement this"""
         self.dataUpdated.emit(self.datapoints, 0)
-        pass

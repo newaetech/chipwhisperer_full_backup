@@ -237,7 +237,7 @@ class ProjectFormat(object):
 
         added = diff.added()
         removed = diff.removed()
-        changed = diff.changed()
+        changed = diff.changed() #TODO: bug when comparing projects with template sections. It is returning changes when there is not.
 
         return added, removed, changed
 

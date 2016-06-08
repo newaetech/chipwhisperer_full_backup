@@ -33,10 +33,15 @@ from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import pyqtgraph as pg
 from chipwhisperer.analyzer.utils.Partition import Partition
+from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.ui.GraphWidget import GraphWidget
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
-class DifferenceModeTTest(QObject):
+
+class DifferenceModeTTest(object):
     sectionName = "Difference of Partitions using Welch's T-Test"
     moduleName = "PartitionDifferencesWelchTTest"
     differenceType = "Welch's T-Test"
@@ -61,7 +66,7 @@ class DifferenceModeTTest(QObject):
             for i in range(0, numparts):
                 if pbDialog:
                     pbDialog.updateStatus(numparts * bnum + i)
-                    QApplication.processEvents()
+                    util.updateUI()
                     if pbDialog.wasAborted():
                         return SADSeg
                 for j in range(0, numparts):
@@ -81,7 +86,7 @@ class DifferenceModeTTest(QObject):
         return SADSeg
 
 
-class DifferenceModeSAD(QObject):
+class DifferenceModeSAD(object):
     sectionName = "Difference of Partitions using SAD"
     moduleName = "PartitionDifferencesSAD"
     differenceType = "Sum of Absolute Difference"
@@ -99,7 +104,7 @@ class DifferenceModeSAD(QObject):
             for i in range(0, numparts):
                 if pbDialog:
                     pbDialog.updateStatus(numparts * bnum + i)
-                    QApplication.processEvents()
+                    util.updateUI()
                     if pbDialog.wasAborted():
                         return SADSeg
                 for j in range(0, numparts):
@@ -108,7 +113,7 @@ class DifferenceModeSAD(QObject):
         return SADSeg
 
 
-class DifferenceMode(QObject):
+class DifferenceMode(object):
     attrDictCombination = {
                 "sectionName":"Difference Based on XXXX",
                 "moduleName":"PartitionDifferences",
@@ -184,7 +189,7 @@ class POI(QWidget):
 
     def setDifferences(self, diffs):
         self.diffs = diffs
-        self.parent.parent.findParam('poi-pointrng').setValue((0, len(self.parent.SADList[0])))
+        self.parent.findParam(["Points of Interest",'poi-pointrng']).setValue((0, len(self.parent.SADList[0])))
 
     def savePOI(self):
         poiDict = {"poi":self.poiArray, "partitiontype":self.parent.partObject.partMethod.__class__.__name__}
@@ -235,20 +240,27 @@ class POI(QWidget):
         return {"poi":self.poiArray}
 
 
-class PartitionDisplay(AutoScript, QObject):
+class PartitionDisplay(Parameterized, AutoScript):
+    _name = "Partition Comparison"
 
     def __init__(self, parent):
-        QObject.__init__(self, parent)
         AutoScript.__init__(self)
         self._autoscript_init = False
         self.parent = parent
+        self.poi = POI(self)
+        self.poiDock = CWMainGUI.getInstance().addDock(self.poi, "Partition Comparison POI Table", area=Qt.TopDockWidgetArea)
+        self.poiDock.hide()
         self.defineName()
         self._traces = None
+
         self.api = CWCoreAPI.getInstance()
+        self.graph = GraphWidget()
+        self.bselection = QToolBar()
+        self.graph.addWidget(self.bselection)
+        self.graphDock = CWMainGUI.getInstance().addDock(self.graph, "Partition Comparison Graph", area=Qt.TopDockWidgetArea)
+        self.graphDock.hide()
 
     def defineName(self):
-        self.name = 'Partition Comparison'
-
         self.partObject = Partition(self)
         partModeList = {}
         for a in self.partObject.supportedMethods:
@@ -264,29 +276,23 @@ class PartitionDisplay(AutoScript, QObject):
         self.addGroup("generatePartitionDiffs")
         self.addGroup("displayPartitionDiffs")
 
-        self.poi = POI(self)
-        self.poidock = self.parent.addDock(self.poi, "Points of Interest", area=Qt.RightDockWidgetArea)
-        self.poidock.hide()
+        self.getParams().addChildren([
+              {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'action':lambda _: self.updateScript()},
+              {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'action':lambda _: self.updateScript()},
+              {'name':'Display', 'type':'action', 'action':lambda _:self.runAction()},
 
-        self.params = [
-              {'name':'Comparison Mode', 'key':'diffmode', 'type':'list', 'values':diffModeList, 'value':self.diffObject.diffMethodClass, 'set':self.updateScript},
-              {'name':'Partition Mode', 'key':'partmode', 'type':'list', 'values':partModeList, 'value':self.partObject.partMethodClass, 'set':self.updateScript},
-              {'name':'Display', 'type':'action', 'action':self.runAction},
-
-              {'name':'Auto-Save Data to Project', 'key':'part-saveints', 'type':'bool', 'value':False, 'set':self.updateScript},
-              {'name':'Auto-Load Data from Project', 'key':'part-loadints', 'type':'bool', 'value':False, 'set':self.updateScript},
+              {'name':'Auto-Save Data to Project', 'key':'part-saveints', 'type':'bool', 'value':False, 'action':lambda _: self.updateScript()},
+              {'name':'Auto-Load Data from Project', 'key':'part-loadints', 'type':'bool', 'value':False, 'action':lambda _: self.updateScript()},
 
               {'name':'Points of Interest', 'key':'poi', 'type':'group', 'children':[
                  {'name':'Selection Mode', 'type':'list', 'values':{'Max N Points/Subkey':'maxn'}, 'value':'maxn'},
-                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'set':self.updatePOI},
-                 {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'set':self.updatePOI},
-                 {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'set':self.updatePOI},
+                 {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'value':(0, 0), 'action':lambda _: self.updatePOI()},
+                 {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'action':lambda _: self.updatePOI()},
+                 {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'action':lambda _: self.updatePOI()},
                  # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
-                 {'name':'Open POI Table', 'type':'action', 'action':self.poidock.show},
+                 {'name':'Open POI Table', 'type':'action', 'action':lambda _: self.poiDock.show()},
               ]},
-             ]
-
-        self.updateScript()
+        ])
 
     def updatePOI(self, ignored=None):
         self.updateScript()
@@ -320,11 +326,10 @@ class PartitionDisplay(AutoScript, QObject):
                 self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)))
 
     def updateScript(self, ignored=None):
-
         ##Partitioning & Differences
         try:
-            diffMethodStr = self.parent.findParam('diffmode').value().__name__
-            partMethodStr = self.parent.findParam('partmode').value().__name__
+            diffMethodStr = self.findParam('diffmode').getValue().__name__
+            partMethodStr = self.findParam('partmode').getValue().__name__
         except AttributeError as e:
             return
 
@@ -349,13 +354,13 @@ class PartitionDisplay(AutoScript, QObject):
         self.addFunction('displayPartitionStats', 'poi.setDifferences', 'partDiffs', obj='ted')
 
         ##Points of Interest
-        ptrng = self.parent.findParam('poi-pointrng').value()
+        ptrng = self.findParam(["Points of Interest",'poi-pointrng']).getValue()
         self.addGroup("findPOI")
         self.addVariable('findPOI', 'ted', 'self.')
         self.addFunction('findPOI', 'poi.calcPOI', 'numMax=%d, pointRange=(%d, %d), minSpace=%d' % (
-                            self.parent.findParam('poi-nummax').value(),
+                            self.findParam(["Points of Interest",'poi-nummax']).getValue(),
                             ptrng[0], ptrng[1],
-                            self.parent.findParam('poi-minspace').value()),
+                            self.findParam(["Points of Interest",'poi-minspace']).getValue()),
                           obj='ted')
 
         #Check if this updateScript was called as a result of showing the TraceExplorer window
@@ -438,7 +443,7 @@ class PartitionDisplay(AutoScript, QObject):
                 if progressBar.wasAborted():
                     break
                 for i in range(0, self.partObject.partMethod.getNumPartitions()):
-                    QApplication.processEvents()
+                    util.updateUI()
                     tlist = partData[bnum][i]
                     if len(tlist) > 0:
                         for tnum in tlist:
@@ -539,17 +544,15 @@ class PartitionDisplay(AutoScript, QObject):
         return SADList
 
     def displayPartitions(self, differences={"partclass":None, "diffs":None}, tRange=(0, -1)):
+        self.graphDock.show()
         traces = self._traces
 
         if tRange[1] < 0:
             tRange = (tRange[0], traces.numTraces() + 1 + tRange[1])
 
         self.partObject.setPartMethod(differences["partclass"])
-
         self.numKeys = len(self.partObject.partMethod.getPartitionNum(traces, 0))
         self.SADList = differences["diffs"]
-
-        self.graph = self.parent.getGraphWidgets(["Partition Differences"])[0]
 
         # Place byte selection option on graph
         if hasattr(self, 'enabledbytes') and len(self.enabledbytes) == self.numKeys:
@@ -565,7 +568,7 @@ class PartitionDisplay(AutoScript, QObject):
             ql.setText('%d' % i)
             color = pg.intColor(i, self.numKeys)
             ql.setStyleSheet("color: rgb(%d, %d, %d)" % (color.red(), color.green(), color.blue()))
-            qa = QWidgetAction(self)
+            qa = QWidgetAction(self.graph)
             qa.setDefaultWidget(ql)
             qa.setStatusTip('%d' % i)
             ql.setCheckable(True)
@@ -573,25 +576,22 @@ class PartitionDisplay(AutoScript, QObject):
             ql.clicked[bool].connect(partial(self.setBytePlot, i))
             self.byteNumAct.append(qa)
 
-        byteNumAllOn = QAction('All On', self)
-        byteNumAllOff = QAction('All Off', self)
+        byteNumAllOn = QAction('All On', self.graph)
+        byteNumAllOff = QAction('All Off', self.graph)
         byteNumAllOn.triggered.connect(partial(self.setByteAll, True))
         byteNumAllOff.triggered.connect(partial(self.setByteAll, False))
 
-        bselection = QToolBar()
-
+        self.bselection.clear()
         for i in range(0, self.numKeys):
-            bselection.addAction(self.byteNumAct[i])
-        bselection.addAction(byteNumAllOn)
-        bselection.addAction(byteNumAllOff)
-        self.graph.addWidget(bselection)
-
+            self.bselection.addAction(self.byteNumAct[i])
+        self.bselection.addAction(byteNumAllOn)
+        self.bselection.addAction(byteNumAllOff)
         self.graph.setPersistance(True)
 
         self.poi.setDifferences(self.SADList)
 
-        self.parent.findParam('poi-pointrng').setLimits((0, len(self.SADList[0])))
-        self.parent.findParam('poi-pointrng').setValue((0, len(self.SADList[0])))
+        self.findParam(["Points of Interest",'poi-pointrng']).setLimits((0, len(self.SADList[0])))
+        self.findParam(["Points of Interest",'poi-pointrng']).setValue((0, len(self.SADList[0])))
         self.redrawPlot()
 
     def runAction(self):

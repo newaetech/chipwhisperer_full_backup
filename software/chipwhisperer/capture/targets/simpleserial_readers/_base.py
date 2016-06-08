@@ -25,15 +25,15 @@
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class SimpleSerialTemplate(Parameterized, Plugin):
     _name= 'Simple Serial Reader'
 
     def __init__(self, parentParam):
-        Parameterized.__init__(self, parentParam)
         self.connectStatus = util.Observable(False)
+        self.params = Parameter(name=self.getName(), type='group')
 
     def selectionChanged(self):
         pass
@@ -47,7 +47,7 @@ class SimpleSerialTemplate(Parameterized, Plugin):
     def close(self):
         pass
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         """Connect to target"""
         self.connectStatus.setValue(True)
 

@@ -31,7 +31,7 @@ from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 try:
     import pyximport
@@ -266,12 +266,12 @@ class TemplateOneSubkey(object):
 
                 # Generate the output of the SBOX
                 if modeltype == "Hamming Weight":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                 elif modeltype == "Hamming Weight (inverse)":
-                    hypint = model.HypHW(pt, ct, key, bnum);
+                    hypint = model.HypHW(pt, ct, key, bnum)
                     hypint = 8 - hypint
                 elif modeltype == "Hamming Distance":
-                    hypint = model.HypHD(pt, ct, key, bnum);
+                    hypint = model.HypHD(pt, ct, key, bnum)
                 else:
                     raise ValueError("modeltype invalid")
 
@@ -291,9 +291,8 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
     _name = "CPA Experimental Channel Info"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
-        Parameterized.__init__(self, parentParam)
 
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
@@ -315,7 +314,7 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
 
         self.all_diffs = range(0,16)
 
-        tdiff = self.findParam('reportinterval').value()
+        tdiff = self.findParam('reportinterval').getValue()
 
         numtraces = tracerange[1] - tracerange[0]
 
@@ -337,8 +336,8 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
             brangeMap[bnum] = i
             i += 1
 
-        skipPGE = self.findParam('checkpge').value()
-        bf = self.findParam('itmode').value() == 'bf'
+        skipPGE = self.findParam('checkpge').getValue()
+        bf = self.findParam('itmode').getValue() == 'bf'
 
         #bf specifies a 'breadth-first' search. bf means we search across each
         #subkey by only the amount of traces specified. Depth-First means we
@@ -457,7 +456,7 @@ class TemplateCSI(object):
         self._traceSource = None
         self.partObject = Partition(self)
 
-    def traceSource(self):
+    def getTraceSource(self):
         return self._traceSource
 
     def setTraceSource(self, trace):
@@ -488,13 +487,13 @@ class TemplateCSI(object):
         templateCovs = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
 
         for tnum in range(tstart, tend):
-            partData = self.traceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
+            partData = self.getTraceSource().getAuxData(tnum, self.partObject.attrDictPartition)["filedata"]
 
             for bnum in range(0, subkeys):
                 for i in range(0, numPartitions):
 
                     if tnum in partData[bnum][i]:
-                        trace = self.traceSource().getTrace(tnum)
+                        trace = self.getTraceSource().getTrace(tnum)
                         trace_fixed = np.dot(trace - trace.mean(), H[bnum]) + 4
                         templateTraces[bnum][i].append(trace_fixed)
 

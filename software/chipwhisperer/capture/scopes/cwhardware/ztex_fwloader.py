@@ -262,7 +262,6 @@ class Ztex1v1(object):
     def getFpgaState(self):
         """ generated source for method getFpgaState """
         self.checkCapability(self.CAPABILITY_FPGA)
-        self.vendorRequest2
         buffer_ = self.vendorRequest2(0x30, "getFpgaState", maxlen=9)
         self.fpgaConfigured = buffer_[0] == 0
         self.fpgaChecksum = buffer_[1] & 0xff
@@ -453,10 +452,3 @@ if __name__ == '__main__':
 
     else:
         print "FPGA Configuration skipped"
-
-
-
-
-
-
-

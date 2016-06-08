@@ -29,6 +29,7 @@ from PySide.QtGui import *
 from chipwhisperer.analyzer.attacks._base import AttackObserver
 from .base import ResultsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
@@ -37,23 +38,23 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
     def __init__(self, parentParam=None, name=None):
         QTableWidget.__init__(self)
-        ResultsBase.__init__(self, parentParam, name)
 
         self.colorGradient = True
-        self.params.addChildren([
+        self.updateMode = 'all'
+        useAbsValueList = {"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":lambda: True, "False":lambda: False}
+        self.getParams().addChildren([
             {'name':'Use Absolute Value for Rank', 'key':'useAbs', 'type':'list',
-            'values':{"Default":lambda: self._analysisSource.getAbsoluteMode(), "True":lambda: True, "False":lambda: False},
-            'value':"Default"},
-            {'name':'Use single point for rank', 'key':'singlepoint', 'type':'bool', 'value':False},
-            {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'set':self.setUpdateMode},
-            {'name':'Color Gradient', 'type':'bool', 'value':self.colorGradient, 'set':self.setColorGradient},
+            'values':useAbsValueList, 'value':useAbsValueList["Default"]},
+            # {'name':'Use single point for rank', 'key':'singlepoint', 'type':'bool', 'value':False}, #TODO: Fix later
+            {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all', 'PGE Only (faster)':'pge'}, 'get':self.getUpdateMode, 'set':self.setUpdateMode},
+            {'name':'Color Gradient', 'type':'bool', 'get':self.getColorGradient, 'set':self.setColorGradient},
         ])
 
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
         self.horizontalHeader().setMinimumSectionSize(51)
         self.horizontalHeader().setResizeMode(QHeaderView.Stretch)
         self.useSingle = False
-        self.updateMode = self.findParam('updateMode').value()
+        self.updateMode = self.findParam('updateMode').getValue()
         AttackObserver.__init__(self)
         self.initUI(True)
 
@@ -87,14 +88,13 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                 self.item(y, x).setText(" \n ")
                 self.item(y, x).setBackground(Qt.white)
 
+    def getUpdateMode(self):
+        return self.updateMode
+
+    @setupSetParam("Update Mode")
     def setUpdateMode(self, mode):
         """Set if we update entire table or just PGE on every statistics update"""
         self.updateMode = mode
-
-    def setAbsoluteMode(self, enabled):
-        """If absolute mode is enabled, table is sorted based on absolute value of statistic"""
-        self.useAbs = enabled
-        self.update()
 
     def updateTable(self, everything=False):
         """Re-sort data and redraw the table. If update-mode is 'pge' we only redraw entire table
@@ -104,7 +104,8 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
 
         attackStats = self._analysisSource.getStatistics()
         attackStats.setKnownkey(self._highlightedKeys())
-        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').value()(), useSingle=self.findParam('singlepoint').value())
+        attackStats.findMaximums(useAbsolute=self.findParam('useAbs').getValue()(), useSingle=False)
+        # attackStats.findMaximums(useAbsolute=self.findParam('useAbs').getValue()(), useSingle=self.findParam('singlepoint').getValue())
         highlights = self._highlightedKeys()
 
         for bnum in range(0, self._numKeys()):
@@ -128,10 +129,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                             cell.setForeground(QBrush(Qt.black))
 
                         if self.colorGradient:
-                            if maxes[0]['value'] == maxes[-1]['value']:
-                                cell.setBackground(QBrush(Qt.white))
-                            else:
-                                cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
+                            cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
                         else:
                             cell.setBackground(QBrush(Qt.white))
             else:
@@ -152,6 +150,10 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     def getWidget(self):
         return self
 
+    def getColorGradient(self):
+        return self.colorGradient
+
+    @setupSetParam("Color Gradient")
     def setColorGradient(self, value):
         self.colorGradient = value
 

@@ -28,7 +28,6 @@ from PySide.QtGui import *
 from PySide.QtCore import *
 from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.traces.TraceContainerTypes
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
 from chipwhisperer.common.traces._cfgfile import TraceContainerConfig
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
@@ -67,7 +66,7 @@ class TraceManagerImport(QtFixes.QDialog):
         layout.addWidget(self.paramTree)
 
         buts = QHBoxLayout()
-        cancel = QPushButton("Screw This")
+        cancel = QPushButton("Close")
         cancel.clicked.connect(self.abort)
         ok = QPushButton("Import")
         ok.clicked.connect(self.accept)
@@ -87,7 +86,8 @@ class TraceManagerImport(QtFixes.QDialog):
         newTT = self.modName.itemData(newindx)        
         self.tmanagerParams = newTT.getParamsClass(openMode=True)   
         self.tmanager = newTT(self.tmanagerParams)
-        ExtendedParameter.reloadParams(self.tmanagerParams.paramList(), self.paramTree)
+        self.paramTree.clear()
+        self.paramTree.addParameters(self.tmanagerParams.getParams()._PyQtGraphParameter)
         
     def getTrace(self):
         return self.tmanager
@@ -115,4 +115,5 @@ class TraceManagerImport(QtFixes.QDialog):
             self.tmanager = fmtclass()
             self.tmanager.config.loadTrace(fname)
             self.tmanager.loadAllConfig()
-            ExtendedParameter.reloadParams(self.tmanager.getParams.paramList(), self.paramTree)
+            self.paramTree.clear()
+            self.paramTree.addParameters(self.tmanager.getParams()._PyQtGraphParameter)

@@ -24,6 +24,7 @@
 #=================================================
 
 from _base import TargetTemplate
+import unicodedata
 
 try:
     import ftd2xx as ft
@@ -188,20 +189,42 @@ class SaseboGII(TargetTemplate):
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
 
+        self.getParams().addChildren([
+        {'name': 'USB Serial #:', 'key': 'serno', 'type': 'list', 'values': ['Press Refresh'], 'value': 'Press Refresh'},
+        {'name': 'Enumerate Attached Devices', 'key': 'pushsno', 'type': 'action', 'action': lambda _: self.refreshSerial()},
+        ])
+
+        self.sasebo = None
+
+    def refreshSerial(self):
+        serialnames = ft.listDevices()
+        if serialnames == None:
+            serialnames = [" No Connected Devices "]
+
+        for i,s in enumerate(serialnames):
+            if isinstance(s, unicode):
+                serialnames[i] = unicodedata.normalize('NFC', s)
+
+        self.findParam('serno').setLimits(serialnames)
+        if len(serialnames) > 1:
+            i = 1
+        else:
+            i = 0
+        self.findParam('serno').setValue(serialnames[i])
+
     def con(self, scope = None):
+        self._sn = self.findParam('serno').getValue()
         try:
-            self.sasebo = ft.openEx("FTSZ1IONB")
-#            self.sasebo = ft.openEx("FTWQ8BMIA")
+            self.sasebo = ft.openEx(self._sn)
         except ft.ftd2xx.DeviceError, e:
             self.sasebo = None
-            return False
+            raise Warning("Failed to connect to FTDI device. Specificed serial number is '%s'. Check 'Target' tab to ensure correct serial-number selected."%self._sn)
         
         self.sasebo.setTimeouts(1000, 1000)
-        
-        #Init
-        self.init()
         self.connectStatus.setValue(True)
 
+        #Init
+        self.init()
         return True
 
     def disconnect(self):
@@ -218,13 +241,13 @@ class SaseboGII(TargetTemplate):
 
         msg = bytearray(5)
 
-        msg[0] = 0x01;
-        msg[1] = (address >> 8) & 0xFF; #MSB
-        msg[2] = address & 0xFF; #LSB
-        msg[3] = MSB;
-        msg[4] = LSB;
+        msg[0] = 0x01
+        msg[1] = (address >> 8) & 0xFF #MSB
+        msg[2] = address & 0xFF #LSB
+        msg[3] = MSB
+        msg[4] = LSB
 
-        strmsg = str(msg);
+        strmsg = str(msg)
 
         #msg = bytearray(strmsg)
         #print "Write: %x %x %x %x %x"%(msg[0],msg[1],msg[2],msg[3],msg[4])
@@ -238,9 +261,9 @@ class SaseboGII(TargetTemplate):
     def read(self, address):
         self.flush()
         msg = bytearray(3)
-        msg[0] = 0x00;
-        msg[1] = (address >> 8) & 0xFF; #MSB
-        msg[2] = address & 0xFF; #LSB
+        msg[0] = 0x00
+        msg[1] = (address >> 8) & 0xFF #MSB
+        msg[2] = address & 0xFF #LSB
         self.sasebo.write(str(msg))
         #print "Write: %x %x %x"%(msg[0],msg[1],msg[2]),
         msg = self.sasebo.read(2)
@@ -255,15 +278,16 @@ class SaseboGII(TargetTemplate):
         self.flush()
         msg = bytearray(3*8)
         for i in range(0, 8):
-            msg[i*3] = 0x00;
-            msg[i*3+1] = (address >> 8) & 0xFF;
-            msg[i*3+2] = (address & 0xFF) + (i*2);
+            msg[i*3] = 0x00
+            msg[i*3+1] = (address >> 8) & 0xFF
+            msg[i*3+2] = (address & 0xFF) + (i*2)
         self.sasebo.write(str(msg))
         msg = self.sasebo.read(16)        
         return bytearray(msg)
 
     def close(self):
-        self.sasebo.close()
+        if self.sasebo:
+            self.sasebo.close()
         
     def reinit(self):
         self.init()

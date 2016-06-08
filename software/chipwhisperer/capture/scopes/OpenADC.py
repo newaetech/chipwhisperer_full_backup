@@ -31,8 +31,8 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhisperer
 import _qt as openadc_qt
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils import util, timer, pluginmanager
+from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 
 
 #TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
@@ -42,51 +42,49 @@ class OpenADCInterface(ScopeTemplate):
     def __init__(self, parentParam=None):
         ScopeTemplate.__init__(self, parentParam)
 
-        self.scopetype = None
         self.qtadc = openadc_qt.OpenADCQt()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
-
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
-        self.params.addChildren([
-            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'value':scopes[OpenADCInterface_NAEUSBChip._name], 'set':self.setCurrentScope},
-            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'set':self.setAutorefreshDCM}
-        ])
-        self.setupActiveParams([lambda: self.lazy(self.scopetype), lambda: self.lazy(self.qtadc),
-                                lambda: self.lazy(self.advancedSettings), lambda: self.lazy(self.advancedSAD),
-                                lambda: self.lazy(self.digitalPattern)])
-
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
-        self.setCurrentScope(self.findParam('con').value())
+
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
+        self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
+        self.params.addChildren([
+            {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'parent'},
+            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM}
+        ])
+        self.params.init()
+        self.params.append(self.qtadc.getParams())
 
     def dcmTimeout(self):
         try:
             self.qtadc.sc.getStatus()
             # The following happen with signals, so a failure will likely occur outside of the try...except
             # For this reason we do the call to .getStatus() to verify USB connection first
-            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
-            CWCoreAPI.getInstance().setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
-        except Exception:
+            Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
+            Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
+        except Exception as e:
             self.dis()
-            raise
+            raise e
 
-    def setAutorefreshDCM(self, enabled):
-        if enabled:
+    def setAutorefreshDCM(self, parameter):
+        if parameter.getValue():
             self.refreshTimer.start()
         else:
             self.refreshTimer.stop()
 
-    def setCurrentScope(self, scope, update=True):
+    def getCurrentScope(self):
+        return self.scopetype
+
+    @setupSetParam("Connection")
+    def setCurrentScope(self, scope):
         self.scopetype = scope
-        if update:
-            self.paramListUpdated.emit()
 
     def _con(self):
         if self.scopetype is not None:
-            
             self.scopetype.con()
             self.refreshTimer.start()
 
@@ -106,20 +104,18 @@ class OpenADCInterface(ScopeTemplate):
                 #             use self.api.setParameter(...) with CWExtra-specific settings. The OpenADC
                 #             settings will work, but not CWExtra ones? For now this works, but doesn't let
                 #             you change the OpenADC type.
-                if not self.advancedSettings:
-                    self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype)
-                self.advancedSettings.setOpenADC(self.qtadc)
+                #if self.advancedSettings is None:
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype, self.qtadc.sc)
+                self.params.append(self.advancedSettings.getParams())
 
                 util.chipwhisperer_extra = self.advancedSettings
 
                 if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
-                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD()
-                    self.advancedSAD.setOpenADC(self.qtadc)
+                    self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
+                    self.params.append(self.advancedSAD.getParams())
 
-                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern()
-                    self.digitalPattern.setOpenADC(self.qtadc)
-
-                self.paramListUpdated.emit()
+                    self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
+                    self.params.append(self.digitalPattern.getParams())
 
             return True
         return False
@@ -128,6 +124,22 @@ class OpenADCInterface(ScopeTemplate):
         if self.scopetype is not None:
             self.refreshTimer.stop()
             self.scopetype.dis()
+            if self.advancedSettings is not None:
+                self.advancedSettings.getParams().remove()
+                self.advancedSettings = None
+                util.chipwhisperer_extra = None
+
+            if self.advancedSAD is not None:
+                self.advancedSAD.getParams().remove()
+                self.advancedSAD = None
+
+            if self.digitalPattern is not None:
+                self.digitalPattern.getParams().remove()
+                self.digitalPattern = None
+
+        # TODO Fix this hack
+        if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
+            self.qtadc.sc.usbcon = None
         return True
 
     def doDataUpdated(self, l, offset=0):
@@ -139,7 +151,6 @@ class OpenADCInterface(ScopeTemplate):
     def arm(self):
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
-        # self.advancedSettings.glitch.resetDCMs()
         if self.advancedSettings:
             self.advancedSettings.armPreScope()
 

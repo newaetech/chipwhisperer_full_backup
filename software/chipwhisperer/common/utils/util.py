@@ -153,14 +153,18 @@ class Signal(object):
     def disconnect(self, observer):
         self.observers.remove(observer)
 
-    def emit(self, *arg):
+    def emit(self, *arg, **args):
         for observer in self.observers:
             try:
-                observer(*arg)
+                observer(*arg, **args)
             except Exception as e:
+
+                #TODO - catch exception like TypeError("setThreshold() got an unexpected keyword argument 'blockSignal'")
+                #       and print a better message
+
                 etype, value, trace = sys.exc_info()
-                value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s." % \
-                        (type(e).__name__, e, observer)
+                value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s with arguments: %s, %s" % \
+                        (type(e).__name__, e, observer, str(arg), str(args))
                 sys.excepthook(etype, value, trace)
 
     def disconnectAll(self):

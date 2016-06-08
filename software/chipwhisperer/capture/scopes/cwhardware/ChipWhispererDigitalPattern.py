@@ -27,8 +27,7 @@
 
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
-from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -38,11 +37,8 @@ ADDR_TRIGIOPROG = 37
 
 
 class CWAdvTrigger(object):
-    def __init__(self):
+    def __init__(self, oa):
         super(CWAdvTrigger, self).__init__()
-        self.oa = None
-
-    def con(self, oa):
         self.oa = oa
 
     def setExtPin(self, line):
@@ -120,7 +116,7 @@ class CWAdvTrigger(object):
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
 
         # Deassert Reset
-        resp[2] = resp[2] & 0x7F;
+        resp[2] = resp[2] & 0x7F
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGCLKDIV, resp)
 
     def writeOnePattern(self, addr, state, low, high):
@@ -173,49 +169,47 @@ class CWAdvTrigger(object):
         return self.bitsToPattern(totalpat)
 
 
-class ChipWhispererDigitalPattern(object):
+class ChipWhispererDigitalPattern(Parameterized):
     """
     Communicates and drives with the Digital Pattern Match module inside the FPGA. 
     """
+    _name = 'Digital Pattern Trigger Module'
+    def __init__(self, oa):
+        self.cwAdv = CWAdvTrigger(oa)
+        self.oa = oa
 
-    paramListUpdated = util.Signal()
+        self.getParams().addChildren([
+             {'name':'Serial Settings', 'key':'ser', 'type':'group', 'children':[
+                 {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(100, 500000), 'value':38400, 'step':100, 'action':self.updateSampleRate},
+                 {'name':'Start Bits', 'key':'startbits', 'type':'int', 'limits':(1, 10), 'value':1},
+                 {'name':'Stop Bits', 'key':'stopbits', 'type':'int', 'limits':(1, 10), 'value':1},
+                 {'name':'Parity', 'key':'parity', 'type':'list', 'values':['none', 'even'], 'value':'none'},
+             ]},
 
-    def __init__(self):
-        self.cwAdv = CWAdvTrigger()   
+             # TODO: Need to confirm oversample rate stuff
+             {'name':'Oversample Rate', 'key':'osrate', 'type':'int', 'limits':(2, 5), 'value':3, 'action':self.updateSampleRate},
+             {'name':'Calculated Clkdiv', 'key':'calcclkdiv', 'type':'int', 'value':0, 'readonly':True},
+             {'name':'Calculated Error', 'key':'calcerror', 'type':'int', 'value':100, 'suffix':'%', 'readonly':True},
+             {'name':'Trigger Character', 'key':'trigpatt', 'type':'str', 'value':'""', 'action': lambda p : self.setPattern(p.getValue())},
+             {'name':'Binary Pattern', 'key':'binarypatt', 'type':'str', 'value':''},
+             {'name':'Reset Module', 'type':'action', 'action':self.reset},
 
-        paramSS = [
-                 {'name':'Serial Settings', 'type':'group', 'children':[
-                      {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(100, 500000), 'value':38400, 'step':100, 'set':self.updateSampleRate},
-                      {'name':'Start Bits', 'key':'startbits', 'type':'int', 'limits':(1, 10), 'value':1},
-                      {'name':'Stop Bits', 'key':'stopbits', 'type':'int', 'limits':(1, 10), 'value':1},
-                      {'name':'Parity', 'key':'parity', 'type':'list', 'values':['none', 'even'], 'value':'none'},
-                    ]},
+             {'name':'Advanced Settings', 'key':'adv', 'type':'group', 'children':[
+                 {'name':'Threshold', 'key':'threshold', 'type':'int', 'value':1, 'limits':(1, 10), 'action':self.reset},
+                 {'name':'Initial Bit Correction', 'key':'initialcorrect', 'type':'int', 'value':3, 'limits':(0, 10), 'action':self.reset},
+             ]}
+        ])
 
-                 # TODO: Need to confirm oversample rate stuff
-                 {'name':'Oversample Rate', 'key':'osrate', 'type':'int', 'limits':(2, 5), 'value':3, 'set':self.updateSampleRate},
-                 {'name':'Calculated Clkdiv', 'key':'calcclkdiv', 'type':'int', 'readonly':True},
-                 {'name':'Calculated Error', 'key':'calcerror', 'type':'int', 'suffix':'%', 'readonly':True},
-                 {'name':'Trigger Character', 'key':'trigpatt', 'type':'str', 'value':'""', 'set':self.setPattern},
-                 {'name':'Binary Pattern', 'key':'binarypatt', 'type':'str', 'value':''},
-                 {'name':'Reset Module', 'type':'action', 'action':self.reset},
-                 
-                {'name':'Advanced Settings', 'type':'group', 'children':[
-                 {'name':'Threshold', 'key':'threshold', 'type':'int', 'value':1, 'limits':(1, 10), 'set':self.reset},
-                 {'name':'Initial Bit Correction', 'key':'initialcorrect', 'type':'int', 'value':3, 'limits':(0, 10), 'set':self.reset},
-                 ]}
-                ]
-            
-        self.oa = None
-        self.params = ConfigParameter.create_extended(self, name='Digital Pattern Trigger Module', type='group', children=paramSS)
+        self.updateSampleRate()
 
     def reset(self, ignored=None):
         # Reload pattern
-        self.setPattern(self.findParam('trigpatt').value())
+        self.setPattern(self.findParam('trigpatt').getValue())
 
     def updateSampleRate(self, ignored=None):
-        res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam('baud').value() * self.findParam('osrate').value())
-        self.findParam('calcclkdiv').setValue(res[0])
-        self.findParam('calcerror').setValue(res[1] * 100)
+        res = CalcClkDiv(self.oa.hwInfo.sysFrequency(), self.findParam(['ser', 'baud']).getValue() * self.findParam('osrate').getValue())
+        self.findParam('calcclkdiv').setValue(res[0], ignoreReadonly=True)
+        self.findParam('calcerror').setValue(res[1] * 100, ignoreReadonly=True)
         self.clkdiv = res[0]
         self.reset()
 
@@ -228,15 +222,15 @@ class ChipWhispererDigitalPattern(object):
             return
 
         # Convert to bits
-        bitpattern = strToBits(patt, startbits=self.findParam('startbits').value(),
-                               stopbits=self.findParam('stopbits').value(),
-                               parity=self.findParam('parity').value())
+        bitpattern = strToBits(patt, startbits=self.findParam(['ser', 'startbits']).getValue(),
+                               stopbits=self.findParam(['ser', 'stopbits']).getValue(),
+                               parity=self.findParam(['ser', 'parity']).getValue())
 
         # Convert to pattern & Download
         try:
-            pat = self.cwAdv.bitsToPattern(bitpattern, osRate=self.findParam('osrate').value(),
-                                                       threshold=self.findParam('threshold').value())
-            self.cwAdv.setIOPattern(pat, clkdiv=self.clkdiv, hackit=self.findParam('initialcorrect').value())
+            pat = self.cwAdv.bitsToPattern(bitpattern, osRate=self.findParam('osrate').getValue(),
+                                                       threshold=self.findParam(['adv', 'threshold']).getValue())
+            self.cwAdv.setIOPattern(pat, clkdiv=self.clkdiv, hackit=self.findParam(['adv', 'initialcorrect']).getValue())
 
             bitstr = ""
             for t in bitpattern: bitstr += "%d" % t
@@ -245,19 +239,3 @@ class ChipWhispererDigitalPattern(object):
             bitstr = "Error: %s" % s
 
         self.findParam('binarypatt').setValue(bitstr)
-
-
-    def setOpenADC(self, oa):
-        """ Pass a reference to OpenADC, used for communication with ChipWhisperer """
-
-        self.oa = oa.sc
-
-        self.cwAdv.con(oa.sc)
-        self.params.getAllParameters()
-        self.updateSampleRate()
-
-    def paramList(self):
-        p = []
-        p.append(self.params)            
-        return p
-    

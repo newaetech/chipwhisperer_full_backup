@@ -25,7 +25,7 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.parameters import Parameterized, CWParameterTree
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils.pluginmanager import getPluginsInDictFromPackage
 
 
@@ -36,7 +36,7 @@ class ResultsBase(Parameterized):
     """
     registeredObjects = util.DictType()
     sigRegisteredObjectsChanged = util.Signal()
-    __paramTree = None
+    __classParameter = None
     __classes = None
 
     def getWidget(self):
@@ -54,10 +54,10 @@ class ResultsBase(Parameterized):
         return cls.__classes
 
     @classmethod
-    def getParamTree(cls):
-        if not cls.__paramTree:
-            cls.__paramTree = CWParameterTree("Results")
-        return cls.__paramTree
+    def getClassParameter(cls):
+        if not cls.__classParameter:
+            cls.__classParameter = Parameter(name="Results", type='group').register()
+        return cls.__classParameter
 
     @classmethod
     def createNew(cls, className, instanceName = None):
@@ -66,10 +66,10 @@ class ResultsBase(Parameterized):
         # ResultsBase.createNew("Trace Output Plot", "Channel 2")
 
         if instanceName in cls.registeredObjects:
-            raise Warning("Result widget %s already exists, choose a different name" % instanceName)
+            raise Warning("Result widget \"%s\" already exists, choose a different name" % instanceName)
 
         obj = cls.getClasses()[className](None, instanceName)
         cls.registeredObjects[obj.getName()] = obj
         cls.sigRegisteredObjectsChanged.emit(obj)
-        cls.getParamTree().extend([obj])
+        cls.getClassParameter().append(obj.getParams())
         return obj

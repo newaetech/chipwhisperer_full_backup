@@ -51,25 +51,24 @@ class ResyncPeakDetect(PreprocessingBase):
         self.type = max
 
         self.params.addChildren([
-            {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'set':self.updateScript},
-            {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'set':self.updateScript},
-            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'set':self.updateScript, 'default':(0, 0)},
-            {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'set':self.updateScript}
+            {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'action':lambda _:self.updateScript()},
+            {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'action':lambda _:self.updateScript()},
+            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript(), 'value':(0, 0)},
+            {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'action':lambda _:self.updateScript()},
         ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
-        pt = self.findParam('ptrange').value()
-        if pt is None: pt = (0, 0)
+        pt = self.findParam('ptrange').getValue()
 
         self.addFunction("init", "setReference", "rtraceno=%d, peaktype='%s', refrange=(%d, %d), validlimit=%f" % (
-                            self.findParam('reftrace').value(),
-                            self.findParam('peaktype').value(),
+                            self.findParam('reftrace').getValue(),
+                            self.findParam('peaktype').getValue(),
                             pt[0], pt[1],
-                            self.findParam('vlimit').value()
-                            ))
+                            self.findParam('vlimit').getValue()
+        ))
 
     def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):
         self.rtrace = rtraceno

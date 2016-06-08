@@ -31,17 +31,15 @@ from ._base import TemplateBasic, multivariate_normal
 from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
 from chipwhisperer.analyzer.attacks.models import AES128_8bit as AESModel
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.common.api.ExtendedParameter import ConfigParameter
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
-class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin):
+class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     """
     Template Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
@@ -49,20 +47,19 @@ class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin)
     path = 'profiling_algorithms.template'
 
     def __init__(self, parent):
-        Parameterized.__init__(self)
         AutoScript.__init__(self)
         PassiveTraceObserver.__init__(self)
-        self._parent = parent
+        self.getParams().getChild("Input").hide()
         self._project = None
 
         self.params.addChildren([
             {'name':'Load Template', 'type':'group', 'children':[]},
             {'name':'Generate New Template', 'type':'group', 'children':[
-                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'set':self.updateScript},
-                {'name':'Trace End', 'key':'tgenstop', 'value':self.parent().traceMax, 'type':'int', 'set':self.updateScript},
-                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'set':self.updateScript},
-                {'name':'Read POI', 'type':'action', 'action':self.updateScript},
-                {'name':'Generate Templates', 'type':'action', 'action': lambda:self.runScriptFunction.emit("generateTemplates")}
+                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'action':lambda _:self.updateScript()},
+                {'name':'Trace End', 'key':'tgenstop', 'value':parent.traceMax, 'type':'int', 'action':lambda _:self.updateScript()},
+                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'action':lambda _:self.updateScript()},
+                {'name':'Read POI', 'type':'action', 'action':lambda _:self.updateScript()},
+                {'name':'Generate Templates', 'type':'action', 'action': lambda _:self.runScriptFunction.emit("generateTemplates")}
             ]},
         ])
 
@@ -80,7 +77,7 @@ class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin)
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        #self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').value())
+        #self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
 
         try:
             ted = CWAnalyzerGUI.getInstance().traceExplorerDialog.exampleScripts[0]
@@ -90,9 +87,9 @@ class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin)
 
         self.addFunction('generateTemplates', 'initPreprocessing', '', obj='UserScript')
         self.addFunction('generateTemplates', 'initAnalysis', '', obj='UserScript')
-        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam('tgenstart').value(), self.findParam('tgenstop').value()))
+        self.addVariable('generateTemplates', 'tRange', '(%d, %d)' % (self.findParam(["Generate New Template",'tgenstart']).getValue(), self.findParam(["Generate New Template",'tgenstop']).getValue()))
 
-        if self.findParam('poimode').value() == 0:
+        if self.findParam(["Generate New Template",'poimode']).getValue() == 0:
             self.addVariable('generateTemplates', 'poiList', '%s' % ted.poi.poiArray)
             self.addVariable('generateTemplates', 'partMethod', '%s()' % ted.partObject.partMethod.__class__.__name__)
             self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % ted.partObject.partMethod.__class__.__name__)
@@ -110,11 +107,11 @@ class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin)
         self.scriptsUpdated.emit()
 
     def traceLimitsChanged(self, traces, points):
-        tstart = self.findParam('tgenstart')
-        tend = self.findParam('tgenstop')
-        tstart.setLimits((0, traces))
-        tend.setValue(traces)
-        tend.setLimits((1, traces))
+        tstart = self.findParam(["Generate New Template",'tgenstart'])
+        tend = self.findParam(["Generate New Template",'tgenstop'])
+        tstart.setLimits((0, traces-1))
+        tend.setLimits((0, traces-1))
+        tend.setValue(traces-1)
 
     def setByteList(self, brange):
         self.brange = brange
@@ -125,8 +122,9 @@ class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin)
     def setReportingInterval(self, intv):
         self._reportinginterval = intv
 
+    @setupSetParam('Input')
     def setTraceSource(self, traceSource):
-        PassiveTraceObserver.setTraceSource(self, traceSource)
+        PassiveTraceObserver.setTraceSource(self, traceSource, blockSignal=True)
         # Set for children
         self.profiling.setTraceSource(traceSource)
 
@@ -135,13 +133,7 @@ class ProfilingTemplate(PassiveTraceObserver, Parameterized, AutoScript, Plugin)
         # Set for children
         self.profiling.setProject(proj)
 
-    def parent(self):
-        return self._parent
-
     def project(self):
-        if self._project is None:
-            temp_project = CWCoreAPI.getInstance().project()
-            self.setProject(temp_project)
         return self._project
 
     def saveTemplatesToProject(self, trange, templatedata):

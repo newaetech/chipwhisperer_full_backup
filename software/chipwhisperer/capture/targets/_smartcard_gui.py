@@ -107,10 +107,10 @@ class APDUFilter(QObject):
 
 
 class SmartCardGUICard(QtFixes.QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent, smartCardAPI):
         super(SmartCardGUICard, self).__init__(parent)
         self.setWindowTitle("Smartcard Explorer")
-        
+        self.smartCardAPI = smartCardAPI
         self.mainLayout = QVBoxLayout()
         self.butLayout = QHBoxLayout()
         
@@ -235,9 +235,6 @@ class SmartCardGUICard(QtFixes.QDialog):
         for rownum in range(0, rows):
             self.table.cellWidget(rownum, 2).setText("")
         
-    def setConnection(self, iface):
-        self.driver = iface
-        
     def executeAPDUs(self):
         """Execute APDUs and save results in table"""
         rows = self.table.rowCount()
@@ -261,7 +258,7 @@ class SmartCardGUICard(QtFixes.QDialog):
                     else:
                         rxdatalen = apdu[5+txdatalen+1]
                                                                                             
-                resp = self.driver.sendAPDU(apdu[0], apdu[1], apdu[2], apdu[3], txdata, rxdatalen)
+                resp = self.smartCardAPI.getConnection().sendAPDU(apdu[0], apdu[1], apdu[2], apdu[3], txdata, rxdatalen)
                 
                 if type(resp) == int:
                     self.table.cellWidget(rownum, 2).setText("%04x"%resp)
