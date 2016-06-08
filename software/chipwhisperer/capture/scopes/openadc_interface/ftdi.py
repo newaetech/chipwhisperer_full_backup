@@ -34,11 +34,12 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
 
     def __init__(self, parentParam, oadcInstance):
         self.serialNumber = ''
+        self._serialnumbers = ['']
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
-            {'name':'Device Serial Number', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSelectedDevice},
+            {'name':'Refresh Device List', 'type':'action', 'action':lambda _ : self.serialRefresh()},
+            {'name':'Device Serial Number', 'key':'snum', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSelectedDevice},
         ])
         self.ser = None
 
@@ -89,10 +90,16 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         serialnames = ft.listDevices()
         if serialnames == None:
             serialnames = [""]
+        self.setSerialNumberLimits(serialnames)
+        self.findParam('snum').setValue(serialnames[0])
 
-        p = self.params.getChild('Serial Number')
-        p.setLimits(serialnames)
-        p.setValue(serialnames[0])
+    def setSerialNumberLimits(self, newitems):
+
+        for s in newitems:
+            if s not in self._serialnumbers:
+                self._serialnumbers.append(s)
+
+        self.findParam('snum').setLimits(self._serialnumbers)
 
     def read(self, N=0, debug=False):
         return bytearray(self.dev.read(N))
