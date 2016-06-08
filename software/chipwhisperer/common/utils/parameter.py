@@ -31,41 +31,116 @@ import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
 
 
 class Parameterized(object):
+    """
+    Abstract class that implements basic functionality required by parameterized objects.
+    All parameterized objects should have _name overriden in the class. The objects can also override this attribute
+     with different names in the case of having two or more instances. The _description is optional.
+    """
     _name = "None"
     _description = ""
 
     def getParams(self):
+        """Return a parameter for the object. Creates it in the first time it is executed."""
         if not hasattr(self, "params"):
             self.params = Parameter(name=self.getName(), type='group')
             if self._description != "":
                 self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])
         return self.params
 
-    def findParam(self, name):
-        return self.getParams().getChild(name)
+    def findParam(self, nameOrPath):
+        """Return the paramenter child with the given name/path."""
+        return self.getParams().getChild(nameOrPath)
 
     def getName(self):
+        """Return the final name (instance name)."""
         return self._name
 
     @classmethod
     def getClassName(cls):
+        """Return the original name (class name)."""
         return cls._name
 
     @classmethod
     def getDescription(cls):
+        """Return the description of the parameterized class."""
         return cls._description
 
     def deleteParams(self):
-        self.getParams().remove()
+        """Delete its parameters. Helps the GC in doing its work."""
+        self.getParams().delete()
         del self.params
 
 
 class Parameter(object):
+    """
+    Basic unity of data (like an attribute of a class) that can accessed in a more uniform way (using search) and
+    displayed in the screen with advanced widgets if QT+PyQtGraph is supported.
+    Each parameter has a name, a type, a value, and several other properties that modify the behavior. The value can
+    be saved internally to the Parameter or externally, using get/set methods. An action function is called every time
+    the value of the parameter changes.
+
+    Supported types:
+    "group"               - A label with children
+    "list"                - A value to be selected between a set of allowed values
+    "label"               - Used in the description of Parameterized objects
+    "str", "text"         - A smaller and a larger textbox
+    "bool"                - A checkbox
+    "action"              - A button
+    "int", "float"        - A value to be selected between a min and max limit
+    "range", "rangegraph" - An interval and an interval that can be selected using a graph widget (graphwidget option)
+    "file"                - A string type with a file dialog button
+    "filelist"            - Complex widged with a file list and mangement buttons to add/remove/edit/copy/set active.
+     "color"              - Opens a color seletion dialog
+     "menu"               - Hiden widget that inserts a new menu option
+
+    Supported Attributes:
+    "name", "type"        - Mandatory attributes
+    "key"                 - A nickname to make search easier
+    "values"              - Allowed set of values (list or dictionary type)
+    "value"               - Value saved internally
+    "set", "get"          - Value save externally
+    "limits"              - Range of allowed values
+    "step"                - Increment in SpinBoxes
+    "linked"              - Refreshes (calls set(get)) the values in the given list with other parameters
+    "default"             - Set the initial value (skips initialization when using set/get)
+    "tip"                 - Description of the parameter
+    "action"              - Calls the provided method with the current paramenter as argument when the value is changed
+    "visible"             - Show/hides the parameter
+    "children"            - Insert other parameters to be accessed within the current parameter hierarchy
+    "readonly"            - Prevents the user of changing its value (it can be forced though)
+    "help"                - Text displayed when clicking the help button
+    "graphwidget"         - Reference to the graph widget when using parameters with type "rangegraph"
+    ...
+
+    Examples:
+        self.getParams().addChildren([
+            {'name':'Redraw after Each', 'type':'bool', 'value':False},
+            {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
+            {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
+            {'name':'Redraw', 'type':'action', 'action':lambda _: self.plotInputTrace()},
+            {'name':'Y-Offset', 'key':'yoffset', 'type':'float', 'step':1E-3, 'siPrefix': True, 'suffix': 'V'},
+            {'name':'Update Mode', 'key':'updateMode', 'type':'list', 'values':{'Entire Table (Slow)':'all',
+             'PGE Only (faster)':'pge'}, 'get':self.getUpdateMode, 'set':self.setUpdateMode},
+            {'name':'Trace color', 'type':'color', 'value':"0F0", 'action':lambda p: self.setTraceColor(p.getValue())},
+            {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal',
+                                 'help':"Draw Type Help"},
+            {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu",
+             "action":lambda _:self.getFwLoaderConfigGUI.show()},
+            {'name':'Acquisition Settings', 'type':'group', 'children':[
+                    {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
+                    {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
+                     'which may cause data to be saved more frequently. The default capture driver requires that NTraces/NSets is small enough to avoid running out of system memory '
+                     'as each segment is buffered into RAM before being written to disk.'},
+                    {'name':'Traces per Set', 'type':'int', 'readonly':True, 'get':self.tracesPerSet},
+            ]}
+        ])
+    """
+
     sigParametersChanged = util.Signal()
     registeredParameters = {}
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "label", "str", 'text', "bool", "action", "int", "float", "rangegraph", "graphwidget", "file", 'filelist', "range", "color", "menu"]
-    suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked", "default", "tip", "action", "visible", "children", "readonly"}
+    supportedTypes = ["group", "list", "label", "str", 'text', "bool", "action", "int", "float", "rangegraph", "file", 'filelist', "range", "color", "menu"]
+    suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked", "default", "tip", "action", "visible", "children", "readonly", "graphwidget"}
     usePyQtGraph = False
 
     def __init__(self, parent=None, ignoreChildren=False, **opts):
@@ -138,6 +213,7 @@ class Parameter(object):
         return self.opts
 
     def getValue(self, default=None):
+        """Return the internal or external value of the parameter"""
         val = self.opts.get("get", None)
         if val is None:
             return self.opts.get("value", default)
@@ -145,6 +221,7 @@ class Parameter(object):
             return val()
 
     def getKey(self):
+        """Return the key used to set list type parameters"""
         if self.opts["type"] == "list":
             limits = self.opts["limits"]
             if isinstance(limits, dict):
@@ -155,15 +232,17 @@ class Parameter(object):
             raise Exception("Only parameter type \"list\" support keys")
 
     def addChildren(self, children):
+        """Add a list of children to the current paramenter"""
         addedChildren = []
         for child in children:
             addedChildren.append(Parameter(self, ignoreChildren=True, **child))
             self.append(addedChildren[-1])
-        for child in addedChildren:
+        for child in addedChildren:  # Prevent children being added out of order
             child.addChildren(child.ignoredChildren)
             child.ignoredChildren = []
 
     def append(self, child):
+        """Add one child"""
         if child is None:
             return
 
@@ -181,6 +260,16 @@ class Parameter(object):
         self.sigParametersChanged.emit()
 
     def setValue(self, value,  ignoreReadonly = False, blockSignal=None,  blockAction=False, init=False, echo=True):
+        """
+        Set the parameter value. External values are updated using signals.
+
+        Arguments:
+        ignoreReadonly - force readonly parameter to be updated.
+        blockSignal    - used to prevent already changed valued of being set again, causing infinite loops.
+        blockAction    - prevents action callback of being called.
+        init           - used internally to initialize the parameter.
+        echo           - enables/disables broadcasting the changes.
+        """
         if not ignoreReadonly and not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
         limits = self.opts.get("limits", None)
@@ -242,10 +331,12 @@ class Parameter(object):
         self.callLinked()
 
     def setDefault(self, default):
+        """Set the default value"""
         self.opts['default'] = default
         self.sigOptionsChanged.emit(default=default)
 
     def setLimits(self, limits):
+        """Change the limits. Invalid interval limits are hidden."""
         self.opts['limits'] = limits
         type = self.opts["type"]
         if (type == "int" or type =="float" or type =="rangegraph" or type =="range") and limits[0] > limits[1]:
@@ -279,7 +370,7 @@ class Parameter(object):
         self.parent.removeChild(self)
 
     def delete(self):
-        """Deletes itself (makes the GC job easier removing cicles). WARNING: Can't be used again!!!"""
+        """Deletes itself (makes the GC job easier removing cicles). WARNING: Can't be called again!!!"""
         self.remove()
         for c in self.childs:
             c.delete()
@@ -298,10 +389,12 @@ class Parameter(object):
         self.opts.clear()
 
     def clearChildren(self):
+        """Remove all children."""
         for ch in self.childs:
             self.removeChild(ch)
 
     def removeChild(self, child):
+        """Remove the specified child."""
         if child is None:
             return
 
@@ -317,21 +410,23 @@ class Parameter(object):
         child.parent = None
         self.sigParametersChanged.emit()
 
-    def getChild(self, path):
-        if isinstance(path, list) or isinstance(path, tuple):
-            item = self.keys.get(path[0], None)
+    def getChild(self, nameOrPath):
+        """Return the paramenter child with the given name/path."""
+        if isinstance(nameOrPath, list) or isinstance(nameOrPath, tuple):
+            item = self.keys.get(nameOrPath[0], None)
 
-            if len(path) == 1 or item is None:
+            if len(nameOrPath) == 1 or item is None:
                 return item
             else:
-                return item.getChild(path[1:])
+                return item.getChild(nameOrPath[1:])
         else:
             try:
-                return self.keys[path]
+                return self.keys[nameOrPath]
             except:
-                raise KeyError("Could not find parameter with key %s. Options are: %s" % (path, str(self.keys)))
+                raise KeyError("Could not find parameter with key %s. Options are: %s" % (nameOrPath, str(self.keys)))
 
     def getPyQtGraphParameter(self):
+        """Return the PyQtGraph Parameter if it exists."""
         if hasattr(self,"_PyQtGraphParameter"):
             return self._PyQtGraphParameter
         return None
@@ -358,9 +453,11 @@ class Parameter(object):
         self.parent = parent
 
     def getRoot(self):
+        """Return the root Parameter."""
         return self if self.parent is None else self.parent.getRoot()
 
     def getPath(self):
+        """Return the path to the root."""
         if self.parent is None:
             path = []
         else:
@@ -369,13 +466,18 @@ class Parameter(object):
         return path
 
     def stealDynamicParameters(self, parent):
-         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
+        """In list type parameters, append each of the Parameterized objects to the parent argument."""
+        if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
             for value in self.opts["values"].itervalues():
                 if isinstance(value, Parameterized):
                         parent.append(value.getParams())
                         value.getParams().show(self.getValue()==value)
 
     def refreshAllParameters(self):
+        """
+        Refreshes (calls set(get()) ) all the parameters in the hierarchy.
+        In list type parameters, append each of the Parameterized objects to the parent, root or child hierarchy.
+        """
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
             for value in self.opts["values"].itervalues():
                 if isinstance(value, Parameterized):
@@ -393,6 +495,9 @@ class Parameter(object):
         for child in self.childs:
             child.refreshAllParameters()
 
+    def init(self):
+        self.refreshAllParameters()
+
     def _getAllParameters(self, type=None):
         ret = []
         if self.isVisible():
@@ -404,13 +509,11 @@ class Parameter(object):
 
     @classmethod
     def getAllParameters(cls, type=None):
+        """Return a list with all parameters with a given type in the hierarchy."""
         ret = []
         for p in cls.registeredParameters.itervalues():
             ret.extend(p._getAllParameters(type))
         return ret
-
-    def init(self):
-        self.refreshAllParameters()
 
     def register(self):
         """Makes it accessible from the root when calling setParameter()"""
@@ -418,11 +521,15 @@ class Parameter(object):
         return self
 
     def deregister(self):
+        """Deregister a registered parameter. Ignores if it is already deregistered."""
         Parameter.registeredParameters.pop(self.getName(), None)
 
     @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
-        """Sets a parameter based on a list, used for scripting"""
+        """
+        Sets a parameter based on a list (used for scripting).
+        The first elements are the path and the last is the value.
+        """
         path = parameter[:-1]
         value = parameter[-1]
 
@@ -448,10 +555,12 @@ class Parameter(object):
         self.delete()
 
 def setupSetParam(parameter):
-    """Decorator that should be used in the set methods specified in the parameter declaration."
-    It synchronizes the parameter value when the set method is called directly
+    """
+    Decorator that should be used in the set methods specified in the parameter declaration.
+    It synchronizes the parameter value when the set method is called directly.
     The blockSignal argument can be used to avoid this behavior when, for instance, you can't do that because the
-    parameter wasn't created yet"""
+    parameter wasn't created yet
+    """
     def func_decorator(func):
         @functools.wraps(func)
         def func_wrapper(*args, **kargs):
