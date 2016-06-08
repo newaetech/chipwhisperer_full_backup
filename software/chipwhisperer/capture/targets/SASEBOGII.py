@@ -191,7 +191,9 @@ class SaseboGII(TargetTemplate):
         self.getParams().addChildren([
         {'name': 'USB Serial #:', 'key': 'serno', 'type': 'list', 'values': ['Press Refresh'], 'value': 'Press Refresh'},
         {'name': 'Enumerate Attached Devices', 'key': 'pushsno', 'type': 'action', 'action': lambda _: self.refreshSerial()},
-    ])
+        ])
+
+        self.sasebo = None
 
     def refreshSerial(self):
         serialnames = ft.listDevices()
@@ -280,7 +282,8 @@ class SaseboGII(TargetTemplate):
         return bytearray(msg)
 
     def close(self):
-        self.sasebo.close()
+        if self.sasebo:
+            self.sasebo.close()
         
     def reinit(self):
         self.init()
