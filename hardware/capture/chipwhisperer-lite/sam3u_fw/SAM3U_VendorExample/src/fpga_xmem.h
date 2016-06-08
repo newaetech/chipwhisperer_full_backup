@@ -27,11 +27,11 @@ fpga_lockstatus_t FPGA_lockstatus(void);
 // Read 4 bytes into a single uint32_t
 uint32_t unsafe_readuint32(uint16_t fpgaaddr);
 
-// Read 4 bytes into a 4 byte array
-void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data);
+// Read a number of bytes into a byte array
+void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);
 
-// Write 4 bytes to the FPGA
-void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data);
+// Write a number of bytes to the FPGA
+void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);
 
 void FPGA_setaddr(uint32_t addr);
 
