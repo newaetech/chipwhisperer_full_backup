@@ -5,7 +5,7 @@
 This file is part of the ChipWhisperer Project. See www.newae.com for more
 details, or the codebase at http://www.chipwhisperer.com
 
-Copyright (c) 2014, NewAE Technology Inc. All rights reserved.
+Copyright (c) 2014-2016, NewAE Technology Inc. All rights reserved.
 Author: Colin O'Flynn <coflynn@newae.com>
 
   chipwhisperer is free software: you can redistribute it and/or modify
@@ -97,7 +97,7 @@ module reg_chipwhisperer(
 	 
 	   [  X RO RO FA FA S  S  S ]
 	     
-		  S S S = 000 Front Panel Channel A
+		  S S S = 000 Front Panel Channel A / Aux SMA
 					 001 Front Panel Channel B
 					 010 Front Panel PLL Input
 		          011 Rear TargetIO - High Speed Input
@@ -120,7 +120,7 @@ module reg_chipwhisperer(
 		  trigger signal, which can then be passed into one
 		  of the enabled 'trigger modules'
 		  
-		  FA = Front Panel Channel A
+		  FA = Front Panel Channel A / Aux SMA
 		  FB = Front Panel Channel B
 		  R1 = Rear TargetIO - Line 1
 		  R2 = Rear TargetIO - Line 2
@@ -135,9 +135,9 @@ module reg_chipwhisperer(
 	   [ X  X  X  FB FA M  M  M ]
 		  M M M = 000 Normal Edge-Mode Trigger
 		          001 Advanced IO Pattern Trigger
-					 010 Advanced SAD Trigger						
+					 010 Advanced SAD Trigger	
 					 
-		  FA = Output trigger to Front Panel A
+		  FA = Output trigger to Front Panel A / Aux SMA
 		  FB = Output trigger to Front Panel B
 		  
 	  0xXX - GPIO Pin Routing [8 bytes]
@@ -177,7 +177,7 @@ module reg_chipwhisperer(
 				  1  : Glitch Module
 		
 		EXTRA:
-		  [ X X   X     X    X    X  P   A ]
+		  [ X X   SC    SC    X    S  P   A ]
 		  
 		  A = (Bit 0) AVR Programming Enable
 				  0  : Disabled (High-Z)
@@ -186,6 +186,17 @@ module reg_chipwhisperer(
 		  P = (Bit 1) Target Power Disable
 		        0  : Power On
 				  1  : Power Off
+				  
+		  S = (Bit 2) Target Power Switch Type
+		        0  : Slow-Start (safer)
+				  1  : Fast-Start
+				  
+		  SC = (Bit 5 - 4) Smart-Card Interface Setup (CW1200 Only)
+		  
+		       00  : High-Z (Not Used)
+				 01  : 
+				 10  :
+				 11  :
 		  
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
@@ -304,7 +315,53 @@ module reg_chipwhisperer(
 	
 	
 	 assign enable_avrprog = registers_iorouting[40];
-	 assign targetpower_off = registers_iorouting[41];
+
+	 /* Target Power */
+	 
+	 reg reg_targetpower_off;
+	 reg reg_targetpower_off_prev;	
+	 always @(posedge clk) begin
+	    reg_targetpower_off <= registers_iorouting[41];
+		 reg_targetpower_off_prev <= reg_targetpower_off;
+	 end
+	 
+	 /* Target power switched ON from OFF state using PWM for programmable soft-start.
+       Only in CW1200 currently. */
+`ifdef SUPPORT_SOFTPOWER
+	 reg targetpower_soft_on;
+	 always @(posedge clk) begin
+		if ((reg_targetpower_off == 1'b0) && (reg_targetpower_off_prev == 1'b1)) begin
+			targetpower_soft_on <= 1'b1;
+		end else if (reg_targetpower_off == 1'b1) begin
+			targetpower_soft_on <= 1'b0;
+		end
+	 end
+	 
+	 reg [10:0] soft_start_pwm;	 
+	 always @(posedge clk) begin
+		soft_start_pwm <= soft_start_pwm + 11'd1;
+	 end
+	 
+	 reg output_src_pwm;
+	 reg [13:0] soft_start_cnt;
+	 always @(posedge clk) begin
+		if (targetpower_soft_on == 1'b0) begin
+			soft_start_cnt <= 0;
+			output_src_pwm <= 1'b0;
+		end else if (soft_start_cnt == 14'd16383) begin
+			output_src_pwm <= 1'b0;
+		end else if (soft_start_pwm == 0) begin
+			soft_start_cnt <= soft_start_cnt + 14'd1;
+			output_src_pwm <= 1'b1;
+		end
+	 end
+	 
+	 wire targetpower_slow = ~registers_iorouting[42];
+	 assign targetpower_off_pwm = (soft_start_pwm < 1400) ? 1'b1 : 1'b0;	 
+	 assign targetpower_off = (output_src_pwm & targetpower_slow) ? targetpower_off_pwm : reg_targetpower_off;
+`else
+	 assign targetpower_off = reg_targetpower_off;
+`endif
 	
 	 //TODO: Should use a mux?
 	 /*
@@ -460,7 +517,7 @@ module reg_chipwhisperer(
 
 	 always @(posedge clk) begin
 		if (reset) begin
-			registers_cwextclk <= 0;
+			registers_cwextclk <= 8'b00000011;
 `ifdef DISABLE_FPA_IN
 			registers_cwtrigsrc <= 8'b00100000;
 `else
