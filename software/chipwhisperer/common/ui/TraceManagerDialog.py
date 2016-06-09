@@ -86,6 +86,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         """Defines the current observed TraceManager."""
         self._traceManager = traceManager
         self._traceManager.sigTracesChanged.connect(self.refresh)
+        self.refresh()
 
     def checkProject(self, ask=True):
         """Checks trace attributes."""
