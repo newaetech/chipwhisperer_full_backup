@@ -68,7 +68,7 @@ class OutputVsTime(AttackResultPlot, Plugin):
             for bnum in enabledlist:
                 diffs = data[bnum]
 
-                if diffs:
+                if diffs is not None:
                     if not hasattr(diffs[0], '__iter__'):
                         diffs = [[t] for t in diffs]
 
