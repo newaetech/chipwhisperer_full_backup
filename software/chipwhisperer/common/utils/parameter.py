@@ -126,6 +126,7 @@ class Parameter(object):
                                  'help':"Draw Type Help"},
             {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu",
              "action":lambda _:self.getFwLoaderConfigGUI.show()},
+            #  "default" means set() is NOT called during init, otherwise set WILL be called to set the default value (read from get()). Can be useful when don't want to read hardware at start-up
             {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'default':0, 'set':self.setThreshold, 'get':self.getThreshold}
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
