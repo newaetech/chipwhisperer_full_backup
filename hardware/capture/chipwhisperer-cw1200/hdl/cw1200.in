@@ -69,7 +69,8 @@ fifo_sad_ref.xco = SAD FIFO Setup
 [ADC FIFO CoreGen Setup]
 InputFile = fifoonly_adcfifo.xco.in
 #WARNING: Do not modify this w/o adjusting 'Setup File' Depth
-input_depth = 32768
+input_depth = 8192
+#32768
 output_depth = CALCULATE $input_depth$ / 4
 full_threshold_assert_value = CALCULATE $input_depth$ - 2
 full_threshold_negate_value = CALCULATE $input_depth$ - 1
@@ -90,8 +91,8 @@ NEWAEUSBCHIP
 UART_CLK = 96000000
 UART_BAUD = 512000
 #WARNING: Do not modify this w/o adjusting FIFO Setup
-#24573
-MAX_SAMPLES = 98292
+#98292
+MAX_SAMPLES = 24573
 HW_TYPE = 8
 HW_VER = 0
 SYSTEM_CLK = 96000000
@@ -100,5 +101,6 @@ NOBUFG_ADCCLK
 ADCCLK_FEEDBACK
 ENABLE_RECONFIG
 DISABLE_FPA_IN
-
+SUPPORT_SOFTPOWER
+SUPPORT_GLITCH_READBACK
 
