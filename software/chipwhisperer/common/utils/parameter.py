@@ -73,7 +73,7 @@ class Parameterized(object):
 
 class Parameter(object):
     """
-    Basic unity of data (like an attribute of a class) that can accessed in a more uniform way (like using search) and
+    Basic unity of data (like an attribute of a class) that can accessed in a more uniform way (using search) and
     displayed in the screen with advanced widgets if QT+PyQtGraph is supported.
     Each parameter has a name, a type, a value, and several other properties that modify the behavior. The value can
     be saved internally to the Parameter or externally, using get/set methods. An action function is called every time
@@ -126,7 +126,6 @@ class Parameter(object):
                                  'help':"Draw Type Help"},
             {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu",
              "action":lambda _:self.getFwLoaderConfigGUI.show()},
-            {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'default':0, 'set':self.setThreshold, 'get':self.getThreshold}
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
                     {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
@@ -153,7 +152,6 @@ class Parameter(object):
 
         self.previousValue = None
         self.parent = parent
-        self.invalid = False
         self.opts = {"visible":True}
         self.opts.update(opts)
 
@@ -278,14 +276,14 @@ class Parameter(object):
         type = self.opts["type"]
         if type == "group":
             return
-        if limits is not None and not self.invalid:
-            if (type == "list" and
-                   ((isinstance(limits, dict) and value not in limits.values()) or\
-                   (not isinstance(limits, dict) and value not in limits))
-                ) or\
-               (type == "bool" and value not in [True, False]) or\
-               ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
-               (type =="rangegraph" and (value[1] - value[0] != -1) and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
+        if limits is not None and self.isVisible():
+            if      (type == "list" and
+                        ((isinstance(limits, dict) and value not in limits.values()) or\
+                        (not isinstance(limits, dict) and value not in limits))
+                    ) or\
+                    (type == "bool" and value not in [True, False]) or\
+                    ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
+                    (type =="rangegraph" and (value[1] - value[0] != -1) and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
                 raise ValueError("Value %s out of limits in parameter \"%s\"" % (str(value), self.getName()))
 
         try:
@@ -342,11 +340,9 @@ class Parameter(object):
         self.opts['limits'] = limits
         type = self.opts["type"]
         if (type == "int" or type =="float" or type =="rangegraph" or type =="range") and limits[0] > limits[1]:
-            self.invalid = True
-            self.sigOptionsChanged.emit(visible=False)
+            self.hide()
         else:
-            self.invalid = False
-            self.sigOptionsChanged.emit(visible=self.isVisible())
+            self.show()
             self.sigLimitsChanged.emit(limits)
 
     def readonly(self):
@@ -361,8 +357,7 @@ class Parameter(object):
 
     def show(self, show=True):
         self.opts['visible'] = show
-        if not self.invalid:
-            self.sigOptionsChanged.emit(visible=show)
+        self.sigOptionsChanged.emit(visible=show)
         self.sigParametersChanged.emit()
 
     def isVisible(self):
