@@ -123,16 +123,23 @@ class AttackScriptGen(Parameterized):
         This ensures that the options for that module are then displayed in the GUI, along with
         writing the auto-generated script.
         """
+
+        #Walk backwards to find previous trace source
+        last_trace_src = self.cwGUI.api.project().traceManager()
+        for i in range(num, 0, -1):
+            if self.preprocessingListGUI[i] is not None:
+                last_trace_src = self.preprocessingListGUI[i]
+                break
+
         if self.preprocessingListGUI[num] is not None:
             self.preprocessingListGUI[num].deregister()
             self.preprocessingParams.getChild('Pre-Processing Mod. #%d'% num).delete()
         if module:
-            self.preprocessingListGUI[num] = module()
+            self.preprocessingListGUI[num] = module(traceSource=last_trace_src)
             self.preprocessingListGUI[num].scriptsUpdated.connect(self.reloadScripts)
             par = Parameter(name = 'Pre-Processing Mod. #%d'% num, type = "group")
             par.append(self.preprocessingListGUI[num].getParams())
             self.preprocessingParams.append(par)
-
         else:
             self.preprocessingListGUI[num] = None
 
