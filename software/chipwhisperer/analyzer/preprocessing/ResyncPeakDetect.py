@@ -57,6 +57,12 @@ class ResyncPeakDetect(PreprocessingBase):
             {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'action':lambda _:self.updateScript()},
         ])
         self.updateScript()
+        self.updateLimits()
+        self.sigTracesChanged.connect(self.updateLimits)
+
+    def updateLimits(self):
+        if self._traceSource:
+            self.findParam('ptrange').setLimits((0, self._traceSource.numPoints()))
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
@@ -69,6 +75,7 @@ class ResyncPeakDetect(PreprocessingBase):
                             pt[0], pt[1],
                             self.findParam('vlimit').getValue()
         ))
+        self.updateLimits()
 
     def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):
         self.rtrace = rtraceno
