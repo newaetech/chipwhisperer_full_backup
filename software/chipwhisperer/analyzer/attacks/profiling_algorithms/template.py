@@ -256,11 +256,11 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
                 results[bnum] += newresults
                 self.stats.updateSubkey(bnum, results[bnum], tnum=(tnum + 1))
 
+                pcnt += 1
                 if progressBar:
                     progressBar.updateStatus(pcnt, (tnum, len(traces)-1, bnum))
                     if progressBar.wasAborted():
                         return
-                pcnt += 1
 
             # Do plotting if required
             if (tnum % tdiff) == 0 and self.sr:
