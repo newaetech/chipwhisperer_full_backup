@@ -25,6 +25,8 @@
 #include "pdi\XPROGTimeout.h"
 #include "pdi\XPROGTarget.h"
 #include "isp\V2Protocol.h"
+#include "ccdebug\chipcon.h"
+
 #include "usart_driver.h"
 #include "usb.h"
 #include "scard_usb.h"
@@ -97,6 +99,7 @@ void main_vendor_disable(void)
 #define REQ_XMEGA_PROGRAM 0x20
 #define REQ_AVR_PROGRAM 0x21
 #define REQ_SAM3U_CFG 0x22
+#define REQ_CC_PROGRAM 0x23
 
 COMPILER_WORD_ALIGNED static uint8_t ctrlbuffer[64];
 #define CTRLBUFFER_WORDPTR ((uint32_t *) ((void *)ctrlbuffer))
@@ -119,6 +122,7 @@ void ctrl_progfpga_bulk(void);
 bool ctrl_xmega_program(void);
 void ctrl_xmega_program_void(void);
 void ctrl_avr_program_void(void);
+void ctrl_cc_program_void(void);
 
 #ifdef USART2_SPIDUMP
 /* USART2 ISR for random dumping - debug! Need to use DMA for real system... */
@@ -248,6 +252,11 @@ void ctrl_xmega_program_void(void)
 void ctrl_avr_program_void(void)
 {
 	V2Protocol_ProcessCommand();
+}
+
+void ctrl_cc_program_void(void)
+{
+	CCProtocol_ProcessCommand();
 }
 
 static void ctrl_usart2_enabledump(void)
@@ -424,6 +433,11 @@ bool main_setup_out_received(void)
 			udd_g_ctrlreq.callback = ctrl_sam3ucfg_cb;
 			return true;
 			
+		/* ChipCon (TI) Programming */
+		case REQ_CC_PROGRAM:
+			udd_g_ctrlreq.callback = ctrl_cc_program_void;
+			return true;
+			
 		default:
 			return false;
 	}					
@@ -502,6 +516,10 @@ bool main_setup_in_received(void)
 			
 		case REQ_AVR_PROGRAM:
 			return V2Protocol_ProcessCommand();
+			break;
+			
+		case REQ_CC_PROGRAM:
+			return CCProtocol_ProcessCommand();
 			break;
 			
 		case REQ_USART0_CONFIG:

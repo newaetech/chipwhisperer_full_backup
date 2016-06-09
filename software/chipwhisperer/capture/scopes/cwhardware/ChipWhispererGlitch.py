@@ -31,6 +31,7 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setup
 
 glitchaddr = 51
 glitchoffsetaddr = 25
+glitchreadbackaddr = 56
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -68,7 +69,7 @@ class ChipWhispererGlitch(Parameterized):
             {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
             {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
             {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
-            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action':self.glitchManual},
+            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': lambda _ : self.glitchManual()},
             {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
             {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
             {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
@@ -127,6 +128,7 @@ class ChipWhispererGlitch(Parameterized):
 
         self.setOpenADC(oa)
 
+
     def setOpenADC(self, oa):
         self.oa = None
         if self.prEnabled:
@@ -172,6 +174,38 @@ class ChipWhispererGlitch(Parameterized):
             if self.oa is not None:
                 self.resetDCMs(keepPhase=True)
                 # print "Partial: %d %d" % (widthint, offsetint)
+
+            self.updateGlitchReadBack()
+
+    def updateGlitchReadBack(self, test=False):
+        """Updates the readback register in the FPGA with glitch information, used for LCD update on CW1200 hardware."""
+
+        width = float(self.findParam('width').getValue())
+        offset = float(self.findParam('offset').getValue())
+
+        #Don't write if PR disable by accident
+        if self.oa is None:
+            return
+
+        widthint = int(round((width / 100) * 256))
+        offsetint = int(round((offset / 100) * 256))
+
+        cmd = bytearray(8)
+
+        #Integer downloads
+        cmd[0] = offsetint & 0xff
+        cmd[1] = (offsetint >> 8) & 0xff
+        cmd[2] = widthint & 0xff
+        cmd[3] = (widthint >> 8) & 0xff
+
+        #Floating point info
+        cmd[4] = int(offset) & 0xff
+        cmd[5] = int(("%f"%offset).split(".")[1][0:2]) & 0xff
+
+        cmd[6] = int(width) & 0xff
+        cmd[7] = int(("%f"%width).split(".")[1][0:2]) & 0xff
+
+        self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
 
     @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):

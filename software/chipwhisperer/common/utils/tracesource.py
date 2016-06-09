@@ -55,6 +55,18 @@ class TraceSource(object):
     def offset(self):
         return 0
 
+    def getTextin(self, n):
+        """Get text-in number n"""
+        raise NotImplementedError
+
+    def getTextout(self, n):
+        """Get text-out number n"""
+        raise NotImplementedError
+
+    def getKnownKey(self, n=None):
+        """Get known-key number n"""
+        raise NotImplementedError
+
     def register(self):
         self.registeredObjects[self.name] = self
         self.sigRegisteredObjectsChanged.emit()

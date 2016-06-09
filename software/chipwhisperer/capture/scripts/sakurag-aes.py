@@ -51,8 +51,9 @@ class UserScript(UserScriptBase):
         #User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
-        self.api.setParameter(['FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
         self.api.setParameter(['Generic Settings', 'Target Module', 'SAKURA G'])
+        self.api.setParameter(['SAKURA G', 'Connection via:', 'CW Bitstream, with OpenADC'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
 
         self.api.connect()

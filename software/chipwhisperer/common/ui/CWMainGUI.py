@@ -56,6 +56,7 @@ from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.utils.parameter import Parameter
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
+import urllib
 
 class CWMainGUI(QMainWindow):
     """
@@ -208,43 +209,44 @@ class CWMainGUI(QMainWindow):
 
     def helpdialog(self):
         """Helps the User"""
-        QMessageBox.about(self, 'Link to Documentation', 'See <a href="http://www.newae.com/sidechannel/cwdocs">newae.com/sidechannel/cwdocs</a> for Tutorials and '
-                                                            'Documentation. If you are using an official release, this documentation should have also been present with '
-                                                            'your release.<br><br>'
-                                                            'See <a href="http://www.chipwhisperer.com">chipwhisperer.com</a> for Wiki, GIT Code, community information.'
-                                                            '<br><br>See the About dialog for Copyright, Trademark, and Authorship information'
-                                                            )
+        QMessageBox.about(self, 'Link to Documentation',
+            'See <a href="http://www.newae.com/sidechannel/cwdocs">newae.com/sidechannel/cwdocs</a> for Tutorials and '
+            'Documentation. If you are using an official release, this documentation should have also been present with'
+            ' your release.<br><br>'
+            'See <a href="http://www.chipwhisperer.com">chipwhisperer.com</a> for Wiki, GIT Code, community information.'
+            '<br><br>See the About dialog for Copyright, Trademark, and Authorship information'
+        )
 
     def aboutdialog(self):
         """Tells the User"""
-        QMessageBox.about(self, 'About', '<h3>ChipWhisperer' + u'\u2122' + '</h3>'
-                                         '<h4>Copyright Information</h4>'
-                                         'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2016. <br>'
-                                         'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2016.'
-                                         '<h4>License Information</h4>'
-                                         'Released under the GPLv3 License, see <a href="http://www.gnu.org/copyleft/gpl.html">License Details</a>.<br>'
-                                         'Various parts of this project may be released under additional open-source licenses such as the BSD License '
-                                         'or LGPL license. See source code for details of specific licenses.'
-                                         '<h4>Projects used in ChipWhisperer</h4>'
-                                         'ChipWhisperer is built on or otherwise uses a number of open-source projects. Many thanks are given to the following '
-                                         'projects, which may also have additional license restrictions or information: '
-                                         '<ul>'
-                                         '<li><a href="https://www.python.org/">Python</a></li>'
-                                         '<li><a href="http://qt-project.org/">Qt</a></li>'
-                                         '<li><a href="http://qt-project.org/wiki/pyside">PySide</a></li>'
-                                         '<li><a href="http://www.pyqtgraph.org/">PyQtGraph</a></li>'
-                                         '<li><a href="http://www.numpy.org/">NumPy</a></li>'
-                                         '<li><a href="http://www.scipy.org/">SciPy</a></li>'
-                                         '<li><a href="http://sourceforge.net/apps/trac/pyusb/">PyUSB</a></li>'
-                                         '<li><a href="http://www.fourwalledcubicle.com/LUFA.php">LUFA USB Library</a></li>'
-                                         '<li><a href="http://www.ztex.de/downloads/#firmware_kit">ZTEX EZ-USB SDK</a></li>'
-                                         '<li><a href="http://www.libusb.org/wiki/libusb-1.0">libusb-1.0</a></li>'
-                                         '<li><a href="http://winavr.sourceforge.net/">WinAVR</a></li>'
-                                         '</ul>'
-                                         'Some projects may be missing from the above list - please let us know, any omission is a mistake!'
-                                         '<h4>Trademark Information</h4>'
-                                         'ChipWhisperer is a Trademark of NewAE Technology Inc.'
-                                         ''
+        QMessageBox.about(self, 'About',
+            '<h3>ChipWhisperer' + u'\u2122' + '</h3>'
+            '<h4>Copyright Information</h4>'
+            'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2016. <br>'
+            'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2016.'
+            '<h4>License Information</h4>'
+            'Released under the GPLv3 License, see <a href="http://www.gnu.org/copyleft/gpl.html">License Details</a>.<br>'
+            'Various parts of this project may be released under additional open-source licenses such as the BSD License '
+            'or LGPL license. See source code for details of specific licenses.'
+            '<h4>Projects used in ChipWhisperer</h4>'
+            'ChipWhisperer is built on or otherwise uses a number of open-source projects. Many thanks are given to the following '
+            'projects, which may also have additional license restrictions or information: '
+            '<ul>'
+            '<li><a href="https://www.python.org/">Python</a></li>'
+            '<li><a href="http://qt-project.org/">Qt</a></li>'
+            '<li><a href="http://qt-project.org/wiki/pyside">PySide</a></li>'
+            '<li><a href="http://www.pyqtgraph.org/">PyQtGraph</a></li>'
+            '<li><a href="http://www.numpy.org/">NumPy</a></li>'
+            '<li><a href="http://www.scipy.org/">SciPy</a></li>'
+            '<li><a href="http://sourceforge.net/apps/trac/pyusb/">PyUSB</a></li>'
+            '<li><a href="http://www.fourwalledcubicle.com/LUFA.php">LUFA USB Library</a></li>'
+            '<li><a href="http://www.ztex.de/downloads/#firmware_kit">ZTEX EZ-USB SDK</a></li>'
+            '<li><a href="http://www.libusb.org/wiki/libusb-1.0">libusb-1.0</a></li>'
+            '<li><a href="http://winavr.sourceforge.net/">WinAVR</a></li>'
+            '</ul>'
+            'Some projects may be missing from the above list - please let us know, any omission is a mistake!'
+            '<h4>Trademark Information</h4>'
+            'ChipWhisperer is a Trademark of NewAE Technology Inc.'
         )
 
     def pluginDialog(self):
@@ -293,8 +295,37 @@ class CWMainGUI(QMainWindow):
         self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
-        self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
+        # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
+        self.helpMenu.addAction(QAction('&Check for Updates', self, statusTip='Check for new versions', triggered=self.checkForUpdates))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
+
+    def checkForUpdates(self):
+        try:
+            source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/software/chipwhisperer/common/api/CWCoreAPI.py?_format=raw")
+            content = source.read()
+
+            version = None
+            for line in content.split("\n"):
+                if "__version__" in line:
+                    version = line.split('=')[1]
+                    break
+            if version is not None:
+                version = version.lstrip(' "').rstrip(' "')
+                if self.api.__version__ == version:
+                    message = "Your current version is already the most recent one."
+                else:
+                    message = "There is an updated version available:\n"
+                    source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/CHANGES.txt?_format=raw")
+                    content = source.read()
+                    for line in content.split("\n"):
+                        if self.api.__version__+":" in line:
+                            break
+                        message += line + "\n"
+            else:
+                message = "Could not check for the most recent version. Try visiting the project webpage."
+        except IOError:
+            message = "Could not retrieve the information. Check your internet connection."
+        QMessageBox.information(self, "Checking for updates...", message)
 
     def addToolMenuItems(self):
         pass
@@ -346,15 +377,6 @@ class CWMainGUI(QMainWindow):
         fname = os.path.basename(self.api.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(True)
-        
-    # def listModulesShow(self):
-    #     """Opens the Dialog which shows loaded/unloaded modules"""
-    #     ml = ModuleListDialog(self.listModules)
-    #     ml.exec_()
-    #
-    # def listModules(self):
-    #     """Should return a list of all possible imports, used to test which modules are missing"""
-    #     return [["MainChip", True, ""]]
 
     def projectStatusChanged(self):
         """Add File to recent file list"""
@@ -477,7 +499,6 @@ class CWMainGUI(QMainWindow):
             return
 
         details = "".join(traceback.format_exception(etype, value, trace))
-        print details
 
         if issubclass(etype, Warning):
             print "WARNING: " + str(value)
@@ -486,6 +507,7 @@ class CWMainGUI(QMainWindow):
             dialog.exec_()
             return
 
+        print details
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
                     "If the error occurs again, please create a new ticket <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>here</a> informing the details bellow." % value, QMessageBox.Close, self)

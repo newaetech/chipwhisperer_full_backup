@@ -4,6 +4,8 @@
 
 src\ASF\sam\drivers\chipid\chipid.c
 
+src\ccdebug\chipcon.c
+
 src\scard\at88sc102_highlevel.c
 
 src\scard\at88sc102_lowlevel.c

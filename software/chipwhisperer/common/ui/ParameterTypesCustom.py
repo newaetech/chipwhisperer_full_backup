@@ -1,8 +1,34 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# This file based on PyQtGraph parameterTypes.py
+# Copyright (c) 2016, NewAE Technology Inc
+# All rights reserved.
+#
+# Find this and more at newae.com - this file is part of the chipwhisperer
+# project, http://www.assembla.com/spaces/chipwhisperer
+#
+#    This file is part of chipwhisperer.
+#
+#    chipwhisperer is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    chipwhisperer is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Lesser General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+#
 #=================================================
+
+"""
+    This file based on PyQtGraph parameterTypes.py
+    It implements new Parameter types needed by CW and fixes some issues in the original PyQtGraph classes
+"""
+
 import os
 
 import pyqtgraph as pg
@@ -13,7 +39,10 @@ from pyqtgraph.parametertree.parameterTypes import WidgetParameterItem, EventPro
 from pyqtgraph import pixmaps
 from pyqtgraph.widgets.SpinBox import SpinBox
 
+
+# User defined Help Window used in the parameters
 helpwnd = None
+
 
 def showHelpWindow(curParam):
     """
@@ -37,6 +66,7 @@ def showHelpWindow(curParam):
         QtGui.QMessageBox.information(wdgt, 'Help: %s' % nametext, helptext, QtGui.QMessageBox.Cancel,
                                       QtGui.QMessageBox.Cancel)
 
+
 def drawHelpIcon(curParam):
     """Add a single help icons to a Parameter Item. Also removes the "default" button which isn't really used in our applications"""
     layout = curParam.layoutWidget.layout()
@@ -58,8 +88,13 @@ def drawHelpIcon(curParam):
         layout.addWidget(buthelp)
 
 
-# Disconnect the signals when the widget is gone
 def __init___fix(self, param, depth):
+    """
+    Fixes some bug with PyQtGraph:
+    - Disconnect the signals when the widget is gone.
+    - Adjusts the parameter height to also take into account the edit widget
+    """
+
     ParameterItem.__init__(self, param, depth)
 
     self.hideWidget = True  ## hide edit widget, replace with label when not selected
@@ -701,13 +736,6 @@ class SpinBoxWithSetItem(WidgetParameterItem):
     def updateDefaultBtn(self):
         pass
 
- #   def delayedChange(self):
- #       #Modified to always emit change
- #       try:
- #           #if self.val != self.lastValEmitted:
- #           self.emitChanged()
- #       except RuntimeError:
- #           pass  ## This can happen if we try to handle a delayed signal after someone else has already deleted the underlying C++ object.
 
 class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
@@ -716,7 +744,6 @@ registerParameterType('int', SpinBoxWithSet, override=True)
 
 
 class LabelParameterItem(WidgetParameterItem):
-
     """ Class used for description of an item. Spans both columns. """
 
     def __init__(self, param, depth):
@@ -785,10 +812,11 @@ registerParameterType('label', LabelParameter, override=True)
 
 
 #TODO: Fix parameter's to not skip setting same value, requires more effort than this.
-#      Useful when hardware reality is != software settings, and need to re-download
-#      things.
 def setValue_Fix(self, value, blockSignal=None):
-    # Fixes the CW requirement to not skip the setValue call when the previous value is the same
+    """
+    Fixes the CW requirement to not skip the setValue call when the previous value is the same
+    Useful when hardware reality is != software settings, and need to re-download things.
+    """
     try:
         if blockSignal is not None:
             self.sigValueChanged.disconnect(blockSignal)
@@ -801,17 +829,21 @@ def setValue_Fix(self, value, blockSignal=None):
 Parameter.setValue = setValue_Fix
 
 
-#Call base class to hide/show group-type parameter item
 def optsChanged_Fix(self, param, opts):
+    """Fixes a PyQtGraph bug. Call base class to hide/show group-type parameter item"""
     ParameterItem.optsChanged(self, param, opts)
     if 'addList' in opts:
         self.updateAddList()
 
 GroupParameterItem.optsChanged = optsChanged_Fix
 
-def setLimits_fix(self, limits):
-    self.forward, self.reverse = self.mapping(limits)
 
+def setLimits_fix(self, limits):
+    """
+    Fixes an incompatibility bug between CW and PyQtGraph Parameter classes.
+    Prevents setValue being called when the current value is not within the new limits.
+    """
+    self.forward, self.reverse = self.mapping(limits)
     Parameter.setLimits(self, limits)
 
 ListParameter.setLimits = setLimits_fix

@@ -66,7 +66,7 @@ class TraceManagerImport(QtFixes.QDialog):
         layout.addWidget(self.paramTree)
 
         buts = QHBoxLayout()
-        cancel = QPushButton("Screw This")
+        cancel = QPushButton("Close")
         cancel.clicked.connect(self.abort)
         ok = QPushButton("Import")
         ok.clicked.connect(self.accept)

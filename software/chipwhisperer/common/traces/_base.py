@@ -117,8 +117,6 @@ class TraceContainer(Parameterized, Plugin):
                         # Tracehint wrong - increase by 25
                         self.tracehint += 25
 
-                    print self.tracehint
-
                     # Do a resize now to allocate more memory
                     self.traces.resize((self.tracehint, self.traces.shape[1]))
 

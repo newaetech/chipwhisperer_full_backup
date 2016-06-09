@@ -23,37 +23,37 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from datetime import datetime
 
 from .base import ResultsBase
-from chipwhisperer.common.ui.GraphWidget import GraphWidget
-from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils.tracesource import TraceSource, PassiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
-class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
-    _name = 'Trace Output Plot'
-    _description = 'Plots the waveform for a given trace source'
+class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
+    _name = 'Trace Recorder'
+    _description = 'Saves the traces for a given input.'
 
     def __init__(self, parentParam=None, name=None):
-        GraphWidget.__init__(self)
-        if name is not None:
-            self._name = name
-        ActiveTraceObserver.__init__(self)
+        PassiveTraceObserver.__init__(self)
 
-        self.params.addChildren([
-            {'name':'Redraw after Each', 'type':'bool', 'value':False},
+        self.getParams().addChildren([
+            {'name':'Trace Format', 'key':'tracefmt', 'type':'list', 'values':CWCoreAPI.getInstance().valid_traces, 'value':None},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
-            {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
-            {'name':'Redraw', 'type':'action', 'action':lambda _: self.plotInputTrace()},
+            {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"]},
+            {'name':'Save', 'type':'action', 'action':lambda _: self.processTraces()},
         ])
 
         self.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
         TraceSource.sigRegisteredObjectsChanged.connect(self.traceSourcesChanged)
+        TraceSource.sigRegisteredObjectsChanged.connect(self.resetTraceLimits)
 
+    @setupSetParam('Input')
+    def setTraceSource(self, traceSource):
+        self._traceSource = traceSource
         self.resetTraceLimits()
-        self.setDefaultYRange(-0.5, 0.5)
-        self.YDefault()
 
     def resetTraceLimits(self):
         if self._traceSource:
@@ -64,41 +64,21 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             lastPoint = -1
 
         traceRange = self.findParam('tracerng').getValue()
+        pointRange = self.findParam('pointrng').getValue()
         self.findParam('tracerng').setLimits((0, lastTrace))
-        self.findParam('tracerng').setValue((max(0, traceRange[0]), min(lastTrace, traceRange[1] if traceRange[1] >= 0 else 7)))
+        self.findParam('tracerng').setValue((max(0, traceRange[0]), min(lastTrace, traceRange[1] if traceRange[1] >= 0 else lastTrace)))
         self.findParam('pointrng').setLimits((0, lastPoint))
-        self.findParam('pointrng').setValue((0, lastPoint))
+        self.findParam('pointrng').setValue((max(0, pointRange[0]), min(lastPoint,  pointRange[1] if pointRange[1] >= 0 else pointRange)))
 
-    def plotInputTrace(self):
-        #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
-        initialPersist = self.persistant
-        if not self.persistant:
-            self.clearPushed()
-
+    def processTraces(self):
         tstart = self.findParam('tracerng').getValue()[0]
         tend = self.findParam('tracerng').getValue()[1]
         pstart = self.findParam('pointrng').getValue()[0]
         pend = self.findParam('pointrng').getValue()[1]
-        ttotal = 0
 
-        if tend - tstart + 1 > 1:
-            self.setPersistance(True)
-
+        trace = CWCoreAPI.getInstance().getNewTrace(self.findParam('tracefmt').getValue())
+        trace.config.setAttr("notes", "Recorded from \"%s\" output: Traces (%s,%s). Points (%s,%s)" % (self.findParam('Input').getKey(), tstart, tend, pstart, pend))
         for tnum in range(tstart, tend+1):
-            trace = self._traceSource.getTrace(tnum)
-            if trace is not None:
-                ttotal += 1
-                #TODO - Not sure if should add _traceSource.offset() or not?
-                self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum))
-
-                if self.findParam('Redraw after Each').getValue():
-                    util.updateUI()
-
-        self.setPersistance(initialPersist)
-
-    def processTraces(self):
-        self.resetTraceLimits()
-        self.plotInputTrace()
-
-    def getWidget(self):
-        return self
+            trace.addTrace(self.getTraceSource().getTrace(tnum)[pstart:pend+1], self.getTraceSource().getTextin(tnum), self.getTraceSource().getTextout(tnum), self.getTraceSource().getKnownKey(tnum))
+        trace.closeAll()
+        CWCoreAPI.getInstance().project().traceManager().appendTraceSet(trace, enabled=False)

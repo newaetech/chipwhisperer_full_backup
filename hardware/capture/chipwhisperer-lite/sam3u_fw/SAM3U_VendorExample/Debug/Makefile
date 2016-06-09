@@ -102,6 +102,7 @@ SUBDIRS :=  \
 ../src/ASF/thirdparty/CMSIS/Lib/GCC/ \
 ../src/config/ \
 ../src/isp \
+../src/ccdebug \
 ../src/scard \
 ../src/pdi
 
@@ -109,6 +110,7 @@ SUBDIRS :=  \
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS +=  \
 ../src/ASF/sam/drivers/chipid/chipid.c \
+../src/ccdebug/chipcon.c \
 ../src/scard/at88sc102_highlevel.c \
 ../src/scard/at88sc102_lowlevel.c \
 ../src/scard/iso7816.c \
@@ -165,6 +167,7 @@ ASM_SRCS +=
 
 OBJS +=  \
 src/ASF/sam/drivers/chipid/chipid.o \
+src/ccdebug/chipcon.o \
 src/scard/at88sc102_highlevel.o \
 src/scard/at88sc102_lowlevel.o \
 src/scard/iso7816.o \
@@ -214,6 +217,7 @@ src/main.o
 
 OBJS_AS_ARGS +=  \
 src/ASF/sam/drivers/chipid/chipid.o \
+src/ccdebug/chipcon.o \
 src/scard/at88sc102_highlevel.o \
 src/scard/at88sc102_lowlevel.o \
 src/scard/iso7816.o \
@@ -263,6 +267,7 @@ src/main.o
 
 C_DEPS +=  \
 src/ASF/sam/drivers/chipid/chipid.d \
+src/ccdebug/chipcon.d \
 src/scard/at88sc102_highlevel.d \
 src/scard/at88sc102_lowlevel.d \
 src/scard/iso7816.d \
@@ -312,6 +317,7 @@ src/main.d
 
 C_DEPS_AS_ARGS +=  \
 src/ASF/sam/drivers/chipid/chipid.d \
+src/ccdebug/chipcon.d \
 src/scard/at88sc102_highlevel.d \
 src/scard/at88sc102_lowlevel.d \
 src/scard/iso7816.d \
@@ -469,7 +475,16 @@ LINKER_SCRIPT_DEP+=  \
 
 
 
+
+
 src/ASF/sam/drivers/chipid/%.o: ../src/ASF/sam/drivers/chipid/%.c
+	@echo Building file: $<
+	@echo Invoking: ARM/GNU C Compiler : 4.9.3
+	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAM3U2C__ -DDEBUG -D__SAM3U2C__ -DARM_MATH_CM3=true -Dprintf=iprintf -DUDD_ENABLE -DBOARD=CWLITE -Dscanf=iscanf -DSMART_CARD_USING_GPIO  -I"../common/services/usb/class/vendor/device/example" -I"../common/services/usb/class/vendor/device/example/sam3u4e_sam3u_ek" -I"../src/ASF/common/services/usb/udc" -I"../src/ASF/common/utils" -I"../src/ASF/common/services/sleepmgr" -I"../src/ASF/sam/utils/cmsis/sam3u/source/templates" -I"../src/ASF/sam/drivers/pmc" -I"../src/ASF/common/services/gpio" -I"../src/ASF/sam/boards" -I"../src/ASF/sam/drivers/pio" -I"../src/ASF/common/boards" -I"../src/ASF/sam/utils/header_files" -I"../src/ASF/common/services/ioport" -I"../src/ASF/common/services/usb/class/vendor" -I"../src/ASF/common/services/usb/class/vendor/device" -I"../src/ASF/thirdparty/CMSIS/Include" -I"../src/ASF/common/services/usb" -I"../src/ASF/sam/drivers/udphs" -I"../src/ASF/sam/utils/cmsis/sam3u/include" -I"../src/ASF/thirdparty/CMSIS/Lib/GCC" -I"../src/config" -I"../src" -I"../src/ASF/common/services/clock" -I"../src/ASF/sam/utils" -I"../src/ASF/sam/utils/preprocessor" -I"../src/ASF/sam/boards/sam3u_ek" -I"../src/ASF/common/utils/stdio/stdio_serial" -I"../src/ASF/common/services/serial" -I"../src/ASF/sam/drivers/uart" -I"../src/ASF/sam/drivers/usart" -I"../src/ASF/sam/drivers/ebi/smc" -I"../src/ASF/sam/drivers/spi" -I"../src/ASF/common/services/delay" -I"../src/ASF/sam/drivers/tc" -I"../src/ASF/sam/drivers/chipid" -I"../src/ASF/sam/drivers/efc" -I"../src/ASF/sam/services/flash_efc" -I"../src/ASF/sam/services/smart_card"  -O1 -fdata-sections -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m3 -c -pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
+	@echo Finished building: $<
+	
+
+src/ccdebug/%.o: ../src/ccdebug/%.c
 	@echo Building file: $<
 	@echo Invoking: ARM/GNU C Compiler : 4.9.3
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAM3U2C__ -DDEBUG -D__SAM3U2C__ -DARM_MATH_CM3=true -Dprintf=iprintf -DUDD_ENABLE -DBOARD=CWLITE -Dscanf=iscanf -DSMART_CARD_USING_GPIO  -I"../common/services/usb/class/vendor/device/example" -I"../common/services/usb/class/vendor/device/example/sam3u4e_sam3u_ek" -I"../src/ASF/common/services/usb/udc" -I"../src/ASF/common/utils" -I"../src/ASF/common/services/sleepmgr" -I"../src/ASF/sam/utils/cmsis/sam3u/source/templates" -I"../src/ASF/sam/drivers/pmc" -I"../src/ASF/common/services/gpio" -I"../src/ASF/sam/boards" -I"../src/ASF/sam/drivers/pio" -I"../src/ASF/common/boards" -I"../src/ASF/sam/utils/header_files" -I"../src/ASF/common/services/ioport" -I"../src/ASF/common/services/usb/class/vendor" -I"../src/ASF/common/services/usb/class/vendor/device" -I"../src/ASF/thirdparty/CMSIS/Include" -I"../src/ASF/common/services/usb" -I"../src/ASF/sam/drivers/udphs" -I"../src/ASF/sam/utils/cmsis/sam3u/include" -I"../src/ASF/thirdparty/CMSIS/Lib/GCC" -I"../src/config" -I"../src" -I"../src/ASF/common/services/clock" -I"../src/ASF/sam/utils" -I"../src/ASF/sam/utils/preprocessor" -I"../src/ASF/sam/boards/sam3u_ek" -I"../src/ASF/common/utils/stdio/stdio_serial" -I"../src/ASF/common/services/serial" -I"../src/ASF/sam/drivers/uart" -I"../src/ASF/sam/drivers/usart" -I"../src/ASF/sam/drivers/ebi/smc" -I"../src/ASF/sam/drivers/spi" -I"../src/ASF/common/services/delay" -I"../src/ASF/sam/drivers/tc" -I"../src/ASF/sam/drivers/chipid" -I"../src/ASF/sam/drivers/efc" -I"../src/ASF/sam/services/flash_efc" -I"../src/ASF/sam/services/smart_card"  -O1 -fdata-sections -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m3 -c -pipe -fno-strict-aliasing -Wall -Wstrict-prototypes -Wmissing-prototypes -Werror-implicit-function-declaration -Wpointer-arith -std=gnu99 -ffunction-sections -fdata-sections -Wchar-subscripts -Wcomment -Wformat=2 -Wimplicit-int -Wmain -Wparentheses -Wsequence-point -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wuninitialized -Wunknown-pragmas -Wfloat-equal -Wundef -Wshadow -Wbad-function-cast -Wwrite-strings -Wsign-compare -Waggregate-return  -Wmissing-declarations -Wformat -Wmissing-format-attribute -Wno-deprecated-declarations -Wpacked -Wredundant-decls -Wnested-externs -Wlong-long -Wunreachable-code -Wcast-align --param max-inline-insns-single=500 -Wno-attributes -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
