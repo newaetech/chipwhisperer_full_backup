@@ -49,12 +49,22 @@ class ResyncSAD(PreprocessingBase):
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':lambda _:self.updateScript()},
-            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript(), 'value':(0, 0), 'default':(0, 0)},
-            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript(), 'value':(0, 0), 'default':(0, 0)},
+            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"],
+                                                                     'action':lambda _:self.updateScript(), 'value':(0, 0), 'default':(0, 0)},
+
+            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"],
+                                                                     'action':lambda _:self.updateScript(), 'value':(0, 0), 'default':(0, 0)},
             # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
             # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}
         ])
         self.updateScript()
+        self.updateLimits()
+        self.sigTracesChanged.connect(self.updateLimits)
+
+    def updateLimits(self):
+        if self._traceSource:
+            self.findParam('refpts').setLimits((0,self._traceSource.numPoints()))
+            self.findParam('windowpt').setLimits((0, self._traceSource.numPoints()))
 
     def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
@@ -66,6 +76,8 @@ class ResyncSAD(PreprocessingBase):
 
         self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" %
                          (self.findParam('reftrace').getValue(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
+
+        self.updateLimits()
 
     def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
         self.rtrace = rtraceno
@@ -119,9 +131,9 @@ class ResyncSAD(PreprocessingBase):
     def findSAD(self, inputtrace):
         reflen = self.ccEnd-self.ccStart
         sadlen = self.wdEnd-self.wdStart
-        sadarray = np.empty(sadlen-reflen+1)
+        sadarray = np.empty(sadlen-reflen)
         
-        for ptstart in range(self.wdStart, self.wdEnd-reflen+1):
+        for ptstart in range(self.wdStart, self.wdEnd-reflen):
             #Find SAD        
             sadarray[ptstart-self.wdStart] = np.sum(np.abs(inputtrace[ptstart:(ptstart+reflen)] - self.reftrace))
             
