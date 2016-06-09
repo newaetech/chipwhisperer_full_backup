@@ -217,9 +217,10 @@ class CWCoreAPI(Parameterized):
         self.newProject()
         self.project().load(fname)
 
-    def saveProject(self, fname):
+    def saveProject(self, fname=None):
         """Save the current opened project to file"""
-        self.project().setFilename(fname)
+        if fname is not None:
+            self.project().setFilename(fname)
         self.project().save()
 
     def connectScope(self):
