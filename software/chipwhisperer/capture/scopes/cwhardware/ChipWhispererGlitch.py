@@ -128,10 +128,6 @@ class ChipWhispererGlitch(Parameterized):
 
         self.setOpenADC(oa)
 
-        #TODO - REMOVE ONCE TESTING DONE
-        self.prCon.con(oa)
-        self.oa = oa
-        self.updateGlitchReadBack(True)
 
     def setOpenADC(self, oa):
         self.oa = None
@@ -187,13 +183,9 @@ class ChipWhispererGlitch(Parameterized):
         width = float(self.findParam('width').getValue())
         offset = float(self.findParam('offset').getValue())
 
-        #TODO - remove once testing done
+        #Don't write if PR disable by accident
         if self.oa is None:
             return
-
-        if test:
-            width = 98.4
-            offset = -2.12
 
         widthint = int(round((width / 100) * 256))
         offsetint = int(round((offset / 100) * 256))
@@ -213,7 +205,7 @@ class ChipWhispererGlitch(Parameterized):
         cmd[6] = int(width) & 0xff
         cmd[7] = int(("%f"%width).split(".")[1][0:2]) & 0xff
 
-        self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd)
+        self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
 
     @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):
