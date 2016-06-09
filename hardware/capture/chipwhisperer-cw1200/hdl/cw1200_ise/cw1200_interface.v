@@ -55,6 +55,14 @@ module cw1200_interface(
 	 
 	 output wire      target_npower,
 	 
+	 /* Smart Card Connections */
+	 inout wire       sc_rst,
+	 inout wire       sc_aux1,
+	 inout wire       sc_aux2,
+	 inout wire       sc_clk,	 
+	 inout wire       sc_io,
+	 input wire       sc_present,	 
+	 
 	 /* Various connections to USB Chip */
 	 input wire			USB_TXD3,
 	 output wire		USB_RXD3,
@@ -64,7 +72,10 @@ module cw1200_interface(
 	 inout wire			USB_SCK2,
 	 
 	 input wire       USB_TXD0,
+	 output wire      USB_RXD0,
 	 input wire       USB_SCK0,
+	 input wire       USB_RTS0,
+	 input wire       USB_CTS0,
 	 
 	 input wire       USB_spare0,
 	 input wire       USB_spare1,
@@ -88,6 +99,15 @@ module cw1200_interface(
 	wire clk_usb_buf0, clk_usb_buf1;
 	assign clk_usb_buf = clk_usb_buf0;
 	
+	// Temp
+	 wire sc_enable = 1'b1;
+	 
+	 assign sc_rst = (sc_enable) ? USB_spare2 : 1'bZ;
+	 assign sc_clk = (sc_enable) ? USB_SCK0 : 1'bZ;
+	 assign sc_aux1 = (sc_enable) ? USB_RTS0 : 1'bZ;
+	 assign sc_aux2 = (sc_enable) ? USB_CTS0 : 1'bZ;
+	 assign sc_io = (sc_enable) ? ((USB_TXD0) ? 0 : 1'bZ) : 1'bZ;
+	 assign USB_RXD0 = (sc_enable) ? sc_io : 1'bZ;
 
    // Clocking primitive
    //------------------------------------
