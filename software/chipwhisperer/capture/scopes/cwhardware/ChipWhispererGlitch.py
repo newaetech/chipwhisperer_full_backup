@@ -31,6 +31,7 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setup
 
 glitchaddr = 51
 glitchoffsetaddr = 25
+glitchreadbackaddr = 56
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
 
@@ -127,6 +128,11 @@ class ChipWhispererGlitch(Parameterized):
 
         self.setOpenADC(oa)
 
+        #TODO - REMOVE ONCE TESTING DONE
+        self.prCon.con(oa)
+        self.oa = oa
+        self.updateGlitchReadBack(True)
+
     def setOpenADC(self, oa):
         self.oa = None
         if self.prEnabled:
@@ -172,6 +178,42 @@ class ChipWhispererGlitch(Parameterized):
             if self.oa is not None:
                 self.resetDCMs(keepPhase=True)
                 # print "Partial: %d %d" % (widthint, offsetint)
+
+            self.updateGlitchReadBack()
+
+    def updateGlitchReadBack(self, test=False):
+        """Updates the readback register in the FPGA with glitch information, used for LCD update on CW1200 hardware."""
+
+        width = float(self.findParam('width').getValue())
+        offset = float(self.findParam('offset').getValue())
+
+        #TODO - remove once testing done
+        if self.oa is None:
+            return
+
+        if test:
+            width = 98.4
+            offset = -2.12
+
+        widthint = int(round((width / 100) * 256))
+        offsetint = int(round((offset / 100) * 256))
+
+        cmd = bytearray(8)
+
+        #Integer downloads
+        cmd[0] = offsetint & 0xff
+        cmd[1] = (offsetint >> 8) & 0xff
+        cmd[2] = widthint & 0xff
+        cmd[3] = (widthint >> 8) & 0xff
+
+        #Floating point info
+        cmd[4] = int(offset) & 0xff
+        cmd[5] = int(("%f"%offset).split(".")[1][0:2]) & 0xff
+
+        cmd[6] = int(width) & 0xff
+        cmd[7] = int(("%f"%width).split(".")[1][0:2]) & 0xff
+
+        self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd)
 
     @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):
