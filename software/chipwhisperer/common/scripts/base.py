@@ -33,5 +33,5 @@ class UserScriptBase(Parameterized, Plugin):
     def __init__(self, api):
         self.api = api
 
-    def run(self, progressBar = None):
+    def run(self):
         pass
