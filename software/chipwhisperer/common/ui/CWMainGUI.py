@@ -313,7 +313,13 @@ class CWMainGUI(QMainWindow):
                 if self.api.__version__ == version:
                     message = "Your current version is already the most recent one."
                 else:
-                    message = "There is a new version available: " + version
+                    message = "There is an updated version available:\n"
+                    source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/CHANGES.txt?_format=raw")
+                    content = source.read()
+                    for line in content.split("\n"):
+                        if self.api.__version__+":" in line:
+                            break
+                        message += line + "\n"
             else:
                 message = "Could not check for the most recent version. Try visiting the project webpage."
         except IOError:
