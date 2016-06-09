@@ -25,15 +25,6 @@
 #include "at88sc102_highlevel.h"
 #include "at88sc102_lowlevel.h"
 
-#define SCARD_SCK_IDX PIO_PA25_IDX
-#define SCARD_IOTX_IDX PIO_PA22_IDX
-#define SCARD_IORX_IDX PIO_PA23_IDX
-#define SCARD_RST_IDX PIO_PA3_IDX
-#define SCARD_AUX1_IDX PIO_PA4_IDX
-#define SCARD_AUX2_IDX PIO_PA5_IDX
-#define SCARD_PGM_IDX SCARD_AUX2_IDX
-#define SCARD_PRESENT_IDX PIO_PA2_IDX
-
 #define scard_sck_low() ioport_set_pin_level(SCARD_SCK_IDX, false)
 #define scard_sck_high() ioport_set_pin_level(SCARD_SCK_IDX, true)
 
@@ -55,8 +46,6 @@
 #define scard_pgm_high scard_aux2_high
 #define scard_fus_low scard_aux1_low
 #define scard_fus_high scard_aux1_high
-
-#define SCARD_USART USART2
 
 /** Counter for successive card detects **/
 volatile uint8_t card_detect_counter = 0;
@@ -187,14 +176,14 @@ void setSPIModeSMC(void)
 	opts.channel_mode = US_MR_CHMODE_NORMAL;
 	opts.spi_mode = SPI_MODE_0;
 	
-	sysclk_enable_peripheral_clock(ID_USART2);
-	usart_init_spi_master(USART2, &opts ,sysclk_get_cpu_hz());
+	sysclk_enable_peripheral_clock(SCARD_USART_ID);
+	usart_init_spi_master(SCARD_USART, &opts ,sysclk_get_cpu_hz());
 	gpio_configure_pin(SCARD_IOTX_IDX, PIO_PERIPH_A);
 	gpio_configure_pin(SCARD_IORX_IDX, PIO_PERIPH_A);
-	gpio_configure_pin(SCARD_SCK_IDX, PIO_PERIPH_B);
+	gpio_configure_pin(SCARD_SCK_IDX, SCK_PERIPH);
 	
-	usart_enable_rx(USART2);
-	usart_enable_tx(USART2);
+	usart_enable_rx(SCARD_USART);
+	usart_enable_tx(SCARD_USART);
 	
 }
 
@@ -204,8 +193,8 @@ void setSPIModeSMC(void)
 void setBBModeAndPgmRstSMC(void)
 {
     /* Deactivate SPI port */
-    usart_disable_rx(USART2);
-	usart_disable_tx(USART2);
+    usart_disable_rx(SCARD_USART);
+	usart_disable_tx(SCARD_USART);
 
     /* Clock & data low */
 	gpio_configure_pin(SCARD_IOTX_IDX, (PIO_TYPE_PIO_OUTPUT_0 | PIO_DEFAULT));
@@ -625,11 +614,11 @@ uint8_t* readSMC(uint8_t nb_bytes_total_read, uint8_t start_record_index, uint8_
     for(i = 0; i < nb_bytes_total_read; i++)
     {
         /* Start transmission */
-		usart_putchar(USART2, 0x00);
+		usart_putchar(SCARD_USART, 0x00);
         /* Store data in buffer or discard it*/
 		while (!(SCARD_USART->US_CSR & US_CSR_TXRDY));
 				
-		usart_getchar(USART2, &temp);
+		usart_getchar(SCARD_USART, &temp);
 		
         if (i >= start_record_index)
         {			
@@ -710,9 +699,9 @@ void removeFunctionSMC(void)
 	gpio_configure_pin(SCARD_IORX_IDX, (PIO_TYPE_PIO_INPUT | PIO_DEFAULT));
 	gpio_configure_pin(SCARD_SCK_IDX, (PIO_TYPE_PIO_INPUT | PIO_DEFAULT));
 	
-    /* Deactivate SPI port */
-	usart_disable_rx(USART2);
-	usart_disable_tx(USART2);
+    /* Deactivate port */
+	usart_disable_rx(SCARD_USART);
+	usart_disable_tx(SCARD_USART);
 }
 
 /*! \fn     initPortSMC(void)

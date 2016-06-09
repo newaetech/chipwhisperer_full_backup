@@ -27,7 +27,7 @@ import re
 import numpy as np
 import _cfgfile
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class TraceContainer(Parameterized, Plugin):
@@ -41,14 +41,12 @@ class TraceContainer(Parameterized, Plugin):
     _name = "Trace Configuration"
     
     def __init__(self, parentParam=None, configfile=None):
-        Parameterized.__init__(self, parentParam)
         self.configfile = configfile
         self.fmt = None
+        self.params = Parameter(name=self._name, type='group').register()
         self.params.addChildren([
-            {'name':'Trace Configuration', 'type':'group', 'children':[
                 {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
                 {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
-            ]}
         ])
         self.clear()
 
@@ -118,8 +116,6 @@ class TraceContainer(Parameterized, Plugin):
                     if self._numTraces >= self.tracehint:
                         # Tracehint wrong - increase by 25
                         self.tracehint += 25
-
-                    print self.tracehint
 
                     # Do a resize now to allocate more memory
                     self.traces.resize((self.tracehint, self.traces.shape[1]))

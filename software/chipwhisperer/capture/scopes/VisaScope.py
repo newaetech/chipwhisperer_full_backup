@@ -28,6 +28,7 @@
 from _base import ScopeTemplate
 from chipwhisperer.capture.scopes.visascope_interface.mso54831D import VisaScopeInterface_MSO54831D
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 
 
 class VisaScopeInterface(ScopeTemplate):
@@ -36,20 +37,20 @@ class VisaScopeInterface(ScopeTemplate):
     def __init__(self, parentParam=None):
         ScopeTemplate.__init__(self, parentParam)
 
-        self.setupActiveParams([lambda: self.lazy(self.scopetype)])
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
         for scope in scopes.itervalues():
             scope.dataUpdated.connect(self.passUpdated)
 
         self.params.addChildren([
-            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes[VisaScopeInterface_MSO54831D._name], 'set':self.setCurrentScope},
+            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes[VisaScopeInterface_MSO54831D._name], 'set':self.setCurrentScope, 'childmode':'parent'},
             {'name':'Connect String', 'key':'connStr', 'type':'str', 'value':''},
             {'name':'Example Strings', 'type':'list', 'values':['', 'TCPIP0::192.168.2.100::inst0::INSTR'], 'value':'', 'set':self.exampleString},
         ])
-
+        self.params.init()
         self.scopetype = None
-        self.setCurrentScope(self.findParam('type').value(type))
+        self.setCurrentScope(self.findParam('type').getValue(type))
 
+    @setupSetParam("Example Strings")
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
 
@@ -58,14 +59,13 @@ class VisaScopeInterface(ScopeTemplate):
         self.offset = offset
         self.dataUpdated.emit(lst, offset)
 
+    @setupSetParam("Scope Type")
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
-        if update:
-            self.paramListUpdated.emit()
 
     def _con(self):
         if self.scopetype is not None:
-            self.scopetype.con(self.findParam('connStr').value())
+            self.scopetype.con(self.findParam('connStr').getValue())
             return True
         return False
 

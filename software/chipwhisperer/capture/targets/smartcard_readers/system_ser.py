@@ -40,7 +40,7 @@ class ReaderSystemSER(ReaderTemplate):
             {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
             {'name':'Refresh', 'type':'action', 'action':self.updateSerial},
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
-            {'name':'ATR', 'key':'atr', 'type':'str'}
+            {'name':'ATR', 'key':'atr', 'type':'str', 'value':""}
         ])
 
     def updateSerial(self):
@@ -138,7 +138,7 @@ class ReaderSystemSER(ReaderTemplate):
         if self.ser == None:
             # Open serial port if not already
             self.ser = serial.Serial()
-            self.ser.port = self.findParam('port').value()
+            self.ser.port = self.findParam('port').getValue()
             self.ser.baudrate = 9600
             self.ser.stopbits = serial.STOPBITS_TWO
             self.ser.parity = serial.PARITY_EVEN

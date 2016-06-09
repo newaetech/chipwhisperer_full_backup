@@ -47,15 +47,16 @@ from datetime import datetime
 from PythonConsole import QPythonConsole
 from saveproject import SaveProjectDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.api.ExtendedParameter import ExtendedParameter
-from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui.TraceManagerDialog import TraceManagerDialog
 from chipwhisperer.common.ui.ProjectTextEditor import ProjectTextEditor
 from chipwhisperer.common.utils import pluginmanager, util
 from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
-from chipwhisperer.common.utils.parameters import CWParameterTree
-
+from pyqtgraph.parametertree import ParameterTree
+from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.ui.HelpWindow import HelpBrowser
+from chipwhisperer.common.ui import ParameterTypesCustom
+import urllib
 
 class CWMainGUI(QMainWindow):
     """
@@ -66,12 +67,13 @@ class CWMainGUI(QMainWindow):
 
     def __init__(self, api, name="Demo", icon="cwicon"):
         QMainWindow.__init__(self)
+        CWMainGUI.instance = self
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
-        CWParameterTree.setHelpWidget(HelpBrowser(self).showHelp)
         self.setCentralWidget(None)
+        ParameterTypesCustom.helpwnd = HelpBrowser(self).showHelp
         self.setDockNestingEnabled(True)
         self.traceManagerDialog = TraceManagerDialog(self)
         self.projEditWidget = ProjectTextEditor(self)
@@ -88,8 +90,7 @@ class CWMainGUI(QMainWindow):
         self.projectChanged()
         self.api.sigNewProject.connect(self.projectChanged)
         self.api.sigTracesChanged.connect(self.tracesChanged)
-        CWParameterTree.paramTreeUpdated.connect(self.reloadGuiActions)
-        CWMainGUI.instance = self
+        Parameter.sigParametersChanged.connect(self.reloadGuiActions)
 
     def newResultWidget(self, resultWidget):
         # Remove all old actions that don't apply for new selection
@@ -131,9 +132,11 @@ class CWMainGUI(QMainWindow):
 
         return dock
     
-    def addSettings(self, tree, name):
+    def addSettings(self, param):
         """Adds a dockwidget designed to store a ParameterTree, also adds to 'Windows' menu"""
-        dock = self.addDock(tree, name=name, area=Qt.TopDockWidgetArea)
+        parameterTree = ParameterTree()
+        parameterTree.addParameters(param._PyQtGraphParameter)
+        dock = self.addDock(parameterTree, name=param.getName(), area=Qt.TopDockWidgetArea)
         dock.setMaximumWidth(560)
         return dock
 
@@ -150,6 +153,7 @@ class CWMainGUI(QMainWindow):
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = QTextBrowser()
+        console.write = console.insertPlainText
         if redirectStdOut:
             self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
@@ -173,8 +177,8 @@ class CWMainGUI(QMainWindow):
 
         self._ToolMenuItems = []
         self._ToolMenuItems.append(self.toolMenu.addSeparator())
-        for act in CWParameterTree.getAllGuiActions(self):
-            self._ToolMenuItems.append(QAction(act[0], self, statusTip=act[1], triggered=act[2]))
+        for act in Parameter.getAllParameters("menu"):
+            self._ToolMenuItems.append(QAction(act.getName(), self, statusTip=act.getTip(), triggered=act.callAction))
 
         for act in self._ToolMenuItems:
             self.toolMenu.addAction(act)
@@ -242,7 +246,7 @@ class CWMainGUI(QMainWindow):
                                          '<h4>Trademark Information</h4>'
                                          'ChipWhisperer is a Trademark of NewAE Technology Inc.'
                                          ''
-                                         )
+        )
 
     def pluginDialog(self):
         self.dialog = pluginmanager.PluginStatusDialog(self)
@@ -290,7 +294,31 @@ class CWMainGUI(QMainWindow):
         self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
+        # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
+        self.helpMenu.addAction(QAction('&Check for Updates', self, statusTip='Check for new versions', triggered=self.checkForUpdates))
         self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
+
+    def checkForUpdates(self):
+        try:
+            source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/software/chipwhisperer/common/api/CWCoreAPI.py?_format=raw")
+            content = source.read()
+
+            version = None
+            for line in content.split("\n"):
+                if "__version__" in line:
+                    version = line.split('=')[1]
+                    break
+            if version is not None:
+                version = version.lstrip(' "').rstrip(' "')
+                if self.api.__version__ == version:
+                    message = "Your current version is already the most recent one."
+                else:
+                    message = "There is a new version available: " + version
+            else:
+                message = "Could not check for the most recent version. Try visiting the project webpage."
+        except IOError:
+            message = "Could not retrieve the information. Check your internet connection."
+        QMessageBox.information(self, "Checking for updates...", message)
 
     def addToolMenuItems(self):
         pass
@@ -302,18 +330,26 @@ class CWMainGUI(QMainWindow):
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
-        self.toolbar = self.addToolBar('Tools')
-        self.toolbar.setObjectName('Tools')
-        self.addToolbarItems(self.toolbar)
-        self.toolbar.show()
+        self.setupToolBar()
 
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False, redirectStdOut=False)
-        ExtendedParameter.paramScriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
+        Parameter.scriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
         self.consoleDock = self.addConsole()
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
         self.setBaseSize(800,600)
+
+    def setupToolBar(self):
+        self.toolbar = self.addToolBar('Tools')
+        self.toolbar.setObjectName('Tools')
+        self.toolbar.addAction(QAction(QIcon(":/images/open.png"), 'Open', self, triggered=self.openProject))
+        self.toolbar.addAction(QAction(QIcon(":/images/save.png"), 'Save', self, triggered=self.saveProject))
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'Trace Manager', self, triggered=self.traceManagerDialog.show))
+
+        self.addToolbarItems(self.toolbar)
+        self.toolbar.show()
 
     def addToolbarItems(self, toolbar):
         pass
@@ -334,15 +370,6 @@ class CWMainGUI(QMainWindow):
         fname = os.path.basename(self.api.project().getFilename())
         self.setWindowTitle("%s - %s[*]" %(self.name, fname))
         self.setWindowModified(True)
-        
-    # def listModulesShow(self):
-    #     """Opens the Dialog which shows loaded/unloaded modules"""
-    #     ml = ModuleListDialog(self.listModules)
-    #     ml.exec_()
-    #
-    # def listModules(self):
-    #     """Should return a list of all possible imports, used to test which modules are missing"""
-    #     return [["MainChip", True, ""]]
 
     def projectStatusChanged(self):
         """Add File to recent file list"""
@@ -465,7 +492,6 @@ class CWMainGUI(QMainWindow):
             return
 
         details = "".join(traceback.format_exception(etype, value, trace))
-        print details
 
         if issubclass(etype, Warning):
             print "WARNING: " + str(value)
@@ -474,6 +500,7 @@ class CWMainGUI(QMainWindow):
             dialog.exec_()
             return
 
+        print details
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
                     "If the error occurs again, please create a new ticket <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>here</a> informing the details bellow." % value, QMessageBox.Close, self)

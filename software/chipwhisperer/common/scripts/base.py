@@ -25,13 +25,12 @@
 #=================================================
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized
 
 
 class UserScriptBase(Parameterized, Plugin):
 
     def __init__(self, api):
-        Parameterized.__init__(self)
         self.api = api
 
     def run(self, progressBar = None):

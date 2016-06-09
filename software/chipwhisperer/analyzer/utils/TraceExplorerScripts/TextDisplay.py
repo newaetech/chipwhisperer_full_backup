@@ -29,28 +29,34 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
-class TextDisplay(AutoScript, QObject):
+
+class TextDisplay(Parameterized, AutoScript):
+    _name = 'Text Display'
 
     def __init__(self, parent):
-        QObject.__init__(self, parent)
         AutoScript.__init__(self)
         self.parent = parent
-        self.defineName()
-        self.addDock()
+        self.getParams().addChildren([
+             {'name':'Update/Display Table', 'type':'action', 'action':lambda _:self.updateTable()},
+        ])
+
+
+        self.tablewid = QTableWidget()
+        self.tablewid.setRowCount(0)
+        self.tablewid.setColumnCount(4)
+        self.tablewid.setHorizontalHeaderLabels(["Text In", "Text Out", "Key", "Trace Data"])
+        #self.tablewid.verticalHeader().hide()
+        #self.tablewid.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+
+        self.dock = CWMainGUI.getInstance().addDock(self.tablewid, "Text Display Table", area=Qt.TopDockWidgetArea)
         self.dock.hide()
-
-    def defineName(self):
-        self.name = 'Text Display'
-
-        self.params = [
-             {'name':'Update/Display Table', 'type':'action', 'action':self.updateTable},
-             ]
 
     def updateTable(self):
         self.dock.show()
-        tm = CWCoreAPI.getInstance().project().traceManager()
+        tm = CWMainGUI.getInstance().api.getInstance().project().traceManager()
         tend = tm.numTraces()
         self.tablewid.setRowCount(tend)
         for tnum in range(0,tend):
@@ -61,14 +67,3 @@ class TextDisplay(AutoScript, QObject):
             self.tablewid.setItem(tnum, 0, QTableWidgetItem(util.list2hexstr(tin)))
             self.tablewid.setItem(tnum, 1, QTableWidgetItem(util.list2hexstr(tout)))
             self.tablewid.setItem(tnum, 2, QTableWidgetItem(util.list2hexstr(k)))
-
-    def addDock(self):
-        self.tablewid = QTableWidget()
-        self.tablewid.setRowCount(0)
-        self.tablewid.setColumnCount(4)
-        self.tablewid.setHorizontalHeaderLabels(["Text In", "Text Out", "Key", "Trace Data"])
-        #self.tablewid.verticalHeader().hide()
-        #self.tablewid.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-
-        self.dock = self.parent.addDock(self.tablewid, "Trace Data")
-

@@ -33,6 +33,8 @@ from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.common.utils.parameter import Parameter
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -52,12 +54,12 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitor = GlitchExplorerDialog(self)
 
     def addSettingsDocks(self):
-        self.settingsGeneralDock = self.addSettings(self.api.generalParamTree, "General Settings")
-        self.settingsResultsDock = self.addSettings(ResultsBase.getParamTree(), "Results")
-        self.settingsScopeDock = self.addSettings(self.api.scopeParamTree, "Scope Settings")
-        self.settingsTargetDock = self.addSettings(self.api.targetParamTree, "Target Settings")
-        self.settingsTraceDock = self.addSettings(self.api.traceParamTree, "Trace Settings")
-        self.settingsAuxDock = self.addSettings(self.api.auxParamTree, "Aux Settings")
+        self.settingsGeneralDock = self.addSettings(self.api.params)
+        self.settingsResultsDock = self.addSettings(ResultsBase.getClassParameter())
+        self.settingsScopeDock = self.addSettings(self.api.scopeParam)
+        self.settingsTargetDock = self.addSettings(self.api.targetParam)
+        # self.settingsTraceDock = self.addSettings(self.api.traceParam)
+        self.settingsAuxDock = self.addSettings(self.api.auxParam)
 
         # Load all ActiveTraceObservers
         self.windowMenu.addSeparator()
@@ -66,7 +68,8 @@ class CWCaptureGUI(CWMainGUI):
                 ResultsBase.createNew(k)
 
         self.tabifyDocks([self.settingsGeneralDock, self.settingsResultsDock, self.settingsScopeDock, self.settingsTargetDock,
-                          self.settingsTraceDock, self.settingsAuxDock])
+                          # self.settingsTraceDock,
+                          self.settingsAuxDock])
 
     def connectStatusChanged(self):
         """Callback when scope/target status change"""
@@ -99,39 +102,34 @@ class CWCaptureGUI(CWMainGUI):
                                         triggered=self.glitchMonitor.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
 
+        self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
+        self.api.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
+        self.encryptionStatusMonitorAct = QAction('Encryption Status Monitor', self, statusTip='Encryption Status Monitor',
+                                        triggered=self.encryptionStatusMonitor.show)
+        self.toolMenu.addAction(self.encryptionStatusMonitorAct)
+
     def addToolbarItems(self, toolbar):
         # Capture
-        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self)
-        self.capture1Act.triggered.connect(lambda: self.doCapture(self.capture1))
-        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self)
-        self.captureMAct.triggered.connect(lambda: self.doCapture(self.captureM))
+        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1))
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM))
 
+        # Master
         self.captureStatus = QToolButton()
-        self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self)
-        self.captureStatusActionDis.triggered.connect(self.doConDis)
-        self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self)
-        self.captureStatusActionCon.triggered.connect(self.doConDis)
+        self.captureStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Master: Disconnected', self, triggered=self.doConDis)
+        self.captureStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Master: Connected', self, triggered=self.doConDis)
         self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
         # Scope
         self.scopeStatus = QToolButton()
-        self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self)
-        self.scopeStatusActionDis.triggered.connect(self.doConDisScope)
-        self.scopeStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Scope: Connected', self)
-        self.scopeStatusActionCon.triggered.connect(self.doConDisScope)
+        self.scopeStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Scope: Disconnected', self, triggered=self.doConDisScope)
+        self.scopeStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Scope: Connected', self, triggered=self.doConDisScope)
         self.scopeStatus.setDefaultAction(self.scopeStatusActionDis)
 
         # Target
         self.targetStatus = QToolButton()
-        self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self)
-        self.targetStatusActionDis.triggered.connect(self.doConDisTarget)
-        self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self)
-        self.targetStatusActionCon.triggered.connect(self.doConDisTarget)
+        self.targetStatusActionDis = QAction(QIcon(':/images/status_disconnected.png'), 'Target: Disconnected', self, triggered=self.doConDisTarget)
+        self.targetStatusActionCon = QAction(QIcon(':/images/status_connected.png'), 'Target: Connected', self, triggered=self.doConDisTarget)
         self.targetStatus.setDefaultAction(self.targetStatusActionDis)
-
-        # Other Stuff
-        self.miscValidateAction = QAction(QIcon(':/images/validate.png'), 'Validate', self)
-        self.miscValidateAction.triggered.connect(self.validateSettings)
 
         toolbar.addAction(self.capture1Act)
         toolbar.addAction(self.captureMAct)
@@ -143,7 +141,7 @@ class CWCaptureGUI(CWMainGUI):
         toolbar.addWidget(QLabel('Target:'))
         toolbar.addWidget(self.targetStatus)
         toolbar.addSeparator()
-        toolbar.addAction(self.miscValidateAction)
+        toolbar.addAction(QAction(QIcon(':/images/validate.png'), 'Validate', self, triggered=self.validateSettings))
 
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
@@ -241,6 +239,7 @@ def makeApplication():
 def main():
     # Create the Qt Application
     app = makeApplication()
+    Parameter.usePyQtGraph = True
     # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
     window.show()

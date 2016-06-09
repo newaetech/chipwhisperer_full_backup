@@ -85,8 +85,8 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         self.visaInst.write(":DIGitize")
 
     def capture(self, Update=False, N=None):
-        xdstart = self.findParam("xdisporigin").value()
-        xdrange = self.findParam("xdisprange").value()
+        xdstart = self.findParam("xdisporigin").getValue()
+        xdrange = self.findParam("xdisprange").getValue()
 
         command = ":WAVeform:DATA?"
 

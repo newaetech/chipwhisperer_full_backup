@@ -26,6 +26,7 @@
 from _smartcard_gui import SmartCardGUICard
 from _base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SmartCard(TargetTemplate):
@@ -33,20 +34,16 @@ class SmartCard(TargetTemplate):
 
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
+
+        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, True, self)
+        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, True, self)
         self.driver = None
-        self.window = None
+        self.protocol = None
 
-        self.setupActiveParams([lambda: self.lazy(self.driver)])
-        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, False, self)
-
-        self.setupActiveParams([lambda: self.lazy(self.protocol)])
-        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, False, self)
-
-        from chipwhisperer.capture.targets.smartcard_readers.chipwhisperer_ser import ReaderChipWhispererSER
         self.params.addChildren([
-            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'value':readers[ReaderChipWhispererSER._name], 'set':self.setConnection},
-            {'name':'SmartCard Protocol', 'type':'list', 'values':protocols , 'value':None, 'set':self.setProtocol},
-            {'name':'SmartCard Explorer', 'type':'action', 'action':lambda: self.scgui.show()}
+            {'name':'Reader Hardware', 'type':'list', 'values':readers, 'get':self.getConnection, 'set':self.setConnection},
+            {'name':'SmartCard Protocol', 'type':'list', 'values':protocols, 'get':self.getProtocol, 'set':self.setProtocol},
+            {'name':'SmartCard Explorer', 'type':'action', 'action':lambda _: self.getScgui().show()}
         ])
 
     def __del__(self):
@@ -56,15 +53,24 @@ class SmartCard(TargetTemplate):
         """ Return key length in BYTES """
         return 16
 
+    def getConnection(self):
+        return self.driver
+
+    @setupSetParam("Reader Hardware")
     def setConnection(self, con):
         self.driver = con        
-        self.paramListUpdated.emit()
-        self.scgui.setConnection(con)
-        
+        if self.driver is not None:
+            self.params.append(self.driver.getParams())
+
+    def getProtocol(self):
+        return self.protocol
+
+    @setupSetParam("SmartCard Protocol")
     def setProtocol(self, con):
         self.protocol = con
-        self.paramListUpdated.emit()
-        self.protocol.setReaderHardware(self.driver)
+        if self.protocol is not None:
+            self.params.append(self.protocol.getParams())
+            self.protocol.setReaderHardware(self.driver)
 
     def con(self, scope = None):
         self.driver.con(scope)
@@ -109,7 +115,7 @@ class SmartCard(TargetTemplate):
     def checkEncryptionKey(self, key):
         return key
 
-    def setupGuiActions(self, mainWindow):
+    def getScgui(self):
         if not hasattr(self, 'scgui'):
-            self.scgui = SmartCardGUICard(mainWindow)
-        return [['SmartCard Explorer','', self.scgui.show],]
+            self.scgui = SmartCardGUICard(mainWindow, self)
+        return self.scgui

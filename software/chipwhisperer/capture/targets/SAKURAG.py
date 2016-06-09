@@ -29,6 +29,7 @@ import chipwhisperer.capture.scopes._qt as openadc_qt
 from _base import TargetTemplate
 from chipwhisperer.capture.scopes.openadc_interface import ftdi
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 try:
     import ftd2xx as ft
@@ -36,7 +37,8 @@ except OSError:  # Also catches WindowsError
     raise ImportError
 
 
-class ChipWhispererComm(object):
+class ChipWhispererComm(Parameterized):
+    _name = "Sakurag"
     CODE_READ = 0x80
     CODE_WRITE = 0xC0
 
@@ -51,6 +53,8 @@ class ChipWhispererComm(object):
         self.standalone = standalone
         self.serialnum = None
 
+        self.params = Parameter(name=self.getName(), type='group')
+
         if standalone:
             self.setSerial = self._setSerial
 
@@ -63,18 +67,20 @@ class ChipWhispererComm(object):
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
 
     def con(self, scope = None):
-        self.oa = scope.qtadc.ser
-        if self.oa is None:
+        if scope and scope.qtadc and scope.qtadc.sc:
+            self.oa = scope.qtadc.sc
+        else:
             if self.serialnum is not None:
-                self.qtadc = openadc_qt.OpenADCQt(includePreview=False, setupLayout=False)
-                self.qtadc.setupParameterTree()
-                self.oaiface = ftdi.OpenADCInterface_FTDI(self.qtadc)
-                self.oaiface.setSerialNumber(self.serialnum)
+                self.qtadc = openadc_qt.OpenADCQt()
+                self.params.append(self.qtadc.getParams())
+                self.oaiface = ftdi.OpenADCInterface_FTDI(None, self.qtadc)
+                self.params.append(self.oaiface.getParams())
+                self.oaiface.setSerialNumberLimits([self.serialnum])
+                self.oaiface.setSelectedDevice(self.serialnum)
                 self.oaiface.con()
                 self.oa = self.qtadc.sc
             else:
-                print "No OpenADC - did you connect in scope module already and/or set serial number (hit 'REFRESH')?"
-                return
+                raise Warning("No OpenADC detected  - did you connect in scope module already and/or set serial number (hit 'REFRESH')?")
 
         # Reset AES Core
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
@@ -115,11 +121,11 @@ class ChipWhispererComm(object):
     def write(self, address, MSB, LSB):
         msg = bytearray(5)
 
-        msg[0] = 0x01;
-        msg[1] = (address >> 8) & 0xFF;  # MSB
-        msg[2] = address & 0xFF;  # LSB
-        msg[3] = MSB;
-        msg[4] = LSB;
+        msg[0] = 0x01
+        msg[1] = (address >> 8) & 0xFF  # MSB
+        msg[2] = address & 0xFF  # LSB
+        msg[3] = MSB
+        msg[4] = LSB
 
         # msg = bytearray(strmsg)
         # print "Write: %x %x %x %x %x"%(msg[0],msg[1],msg[2],msg[3],msg[4])
@@ -129,9 +135,9 @@ class ChipWhispererComm(object):
     def read(self, address):
         self.flush()
         msg = bytearray(3)
-        msg[0] = 0x00;
-        msg[1] = (address >> 8) & 0xFF;  # MSB
-        msg[2] = address & 0xFF;  # LSB
+        msg[0] = 0x00
+        msg[1] = (address >> 8) & 0xFF  # MSB
+        msg[2] = address & 0xFF  # LSB
         self.writeMsg(msg)
         # print "Write: %x %x %x"%(msg[0],msg[1],msg[2]),
 
@@ -146,9 +152,9 @@ class ChipWhispererComm(object):
         self.flush()
         msg = bytearray(3 * 8)
         for i in range(0, 8):
-            msg[i * 3] = 0x00;
-            msg[i * 3 + 1] = (address >> 8) & 0xFF;
-            msg[i * 3 + 2] = (address & 0xFF) + (i * 2);
+            msg[i * 3] = 0x00
+            msg[i * 3 + 1] = (address >> 8) & 0xFF
+            msg[i * 3 + 2] = (address & 0xFF) + (i * 2)
         self.writeMsg(str(msg))
         msg = self.readMsg(16)
         return bytearray(msg)
@@ -171,13 +177,13 @@ class FTDIComm(object):
     def write(self, address, MSB, LSB):
         msg = bytearray(5)
 
-        msg[0] = 0x01;
-        msg[1] = (address >> 8) & 0xFF;  # MSB
-        msg[2] = address & 0xFF;  # LSB
-        msg[3] = MSB;
-        msg[4] = LSB;
+        msg[0] = 0x01
+        msg[1] = (address >> 8) & 0xFF  # MSB
+        msg[2] = address & 0xFF  # LSB
+        msg[3] = MSB
+        msg[4] = LSB
 
-        strmsg = str(msg);
+        strmsg = str(msg)
 
         # msg = bytearray(strmsg)
         # print "Write: %x %x %x %x %x"%(msg[0],msg[1],msg[2],msg[3],msg[4])
@@ -187,9 +193,9 @@ class FTDIComm(object):
     def read(self, address):
         self.flush()
         msg = bytearray(3)
-        msg[0] = 0x00;
-        msg[1] = (address >> 8) & 0xFF;  # MSB
-        msg[2] = address & 0xFF;  # LSB
+        msg[0] = 0x00
+        msg[1] = (address >> 8) & 0xFF  # MSB
+        msg[2] = address & 0xFF  # LSB
         self.sasebo.write(str(msg))
         # print "Write: %x %x %x"%(msg[0],msg[1],msg[2]),
         msg = self.sasebo.read(2)
@@ -204,9 +210,9 @@ class FTDIComm(object):
         self.flush()
         msg = bytearray(3 * 8)
         for i in range(0, 8):
-            msg[i * 3] = 0x00;
-            msg[i * 3 + 1] = (address >> 8) & 0xFF;
-            msg[i * 3 + 2] = (address & 0xFF) + (i * 2);
+            msg[i * 3] = 0x00
+            msg[i * 3 + 1] = (address >> 8) & 0xFF
+            msg[i * 3 + 2] = (address & 0xFF) + (i * 2)
         self.sasebo.write(str(msg))
         msg = self.sasebo.read(16)
         return bytearray(msg)
@@ -246,16 +252,19 @@ class SakuraG(TargetTemplate):
         conntypes['CW Bitstream, no OpenADC'] = ChipWhispererComm(standalone=True)
         conntypes['Original Bitstream'] = FTDIComm()
 
-        self.oa = None
         self.fixedStart = True
         self.hw = None
-        self.params.addChildren([
-            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'value':self.hw},
-            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':self.reset, 'visible':False},
-            {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'visible':False},
-            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':self.refreshSerial, 'visible':False},
+        self.getParams().addChildren([
+            {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'get':self.getConn, 'default':None},
+            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':lambda _ : self.reset(), 'visible':False},
+            {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'value':'Press Refresh', 'visible':False},
+            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':lambda _ :self.refreshSerial(), 'visible':False},
         ])
-        
+
+    def getConn(self):
+        return self.hw
+
+    @setupSetParam("Connection via")
     def setConn(self, con):
         self.hw = con
         if hasattr(self.hw, 'setSerial'):
@@ -275,12 +284,12 @@ class SakuraG(TargetTemplate):
 #        self.paramListUpdated.emit(self.paramList())
 
     def con(self, scope = None):
-        self.oa = scope.qtadc.ser
-        self.hw = self.findParam('conn').value()
+
+        self.hw = self.findParam('conn').getValue()
 
         if hasattr(self.hw, 'setSerial'):
             # For SAKURA-G normally we use 'A' channel
-            ser = self.findParam('serno').value()
+            ser = self.findParam('serno').getValue()
             if ser.endswith('A') is False:
                 print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
             self.hw.setSerial(ser)

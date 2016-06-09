@@ -28,7 +28,7 @@
 import time
 from functools import partial
 import ChipWhispererGlitch
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -46,30 +46,24 @@ ADDR_IOROUTE = 55
 class ChipWhispererExtra(Parameterized):
     _name = 'CW Extra'
 
-    def __init__(self, parentParam, cwtype, scope):
-        Parameterized.__init__(self, parentParam)
+    def __init__(self, parentParam, cwtype, scope, oa):
         #self.cwADV = CWAdvTrigger()
 
         if cwtype == "cwrev2":
-            self.cwEXTRA = CWExtraSettings(self)
+            self.cwEXTRA = CWExtraSettings(self, oa)
         elif cwtype == "cwlite":
-            self.cwEXTRA = CWExtraSettings(self, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
+            self.cwEXTRA = CWExtraSettings(self, oa, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 
         self.enableGlitch = True
 
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope)
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope, oa)
 
-        self.setupActiveParams([lambda: self.lazy(self.cwEXTRA), lambda: self.lazy(self.glitch)])
-
-    def setOpenADC(self, oa):
-        #self.cwADV.setOpenADC(oa)
-        if self.enableGlitch:
-            self.glitch.setOpenADC(oa.sc)
-        self.cwEXTRA.con(oa.sc)
-        self.getAllActiveParameters()
+        self.params = Parameter(name=self.getName(), type='group')
+        self.params.append(self.cwEXTRA.getParams())
+        self.params.append(self.glitch.getParams())
 
     def armPreScope(self):
         if self.enableGlitch:
@@ -118,9 +112,8 @@ class CWExtraSettings(Parameterized):
 
     _name = "CW Extra Settings"
 
-    def __init__(self, parentParam, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
-        Parameterized.__init__(self, parentParam)
-        self.oa = None
+    def __init__(self, parentParam, oa, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
+        self.oa = oa
         self.hasFPAFPB = hasFPAFPB
         self.hasGlitchOut = hasGlitchOut
         self.hasPLL = hasPLL
@@ -129,31 +122,30 @@ class CWExtraSettings(Parameterized):
         # Generate list of input pins present on the hardware
         if self.hasFPAFPB:
             tpins = [
-                {'name': 'Front Panel A', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
-                {'name': 'Front Panel B', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)}
+                {'name': 'Front Panel A', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)},
+                {'name': 'Front Panel B', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_FPB), 'set':partial(self.setPin, pin=self.PIN_FPB)}
             ]
         else:
             tpins = []
 
         tpins.extend([
-            {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
-            {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
-            {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
-            {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'value':True, 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
-            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'value':"OR", 'get':self.getPinMode, 'set':self.setPinMode }
+            {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
+            {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
+            {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
+            {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
+            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'get':self.getPinMode, 'set':self.setPinMode }
         ])
 
         # Add trigger pins & modules
         ret.extend([
             {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
             {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
-             'value':self.MODULE_BASIC, 'set':self.setModule, 'get':self.getModule}
+             'set':self.setModule, 'get':self.getModule}
         ])
-
 
         # Generate list of clock sources present in the hardware
         if self.hasFPAFPB:
-            ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'value':False, 'set':self.setTrigOut})
+            ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'set':self.setTrigOut, 'get':self.getTrigOut})
             clksrc = {'Front Panel A':self.CLOCK_FPA, 'Front Panel B':self.CLOCK_FPB}
         else:
             clksrc = {}
@@ -162,54 +154,6 @@ class CWExtraSettings(Parameterized):
             clksrc["PLL Input"] = self.CLOCK_PLL
 
         clksrc["Target IO-IN"] = self.CLOCK_RTIOIN
-        # clksrc["Fake"] = 0
-
-        ret.extend([
-            {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
-            {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'value':0, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
-        ])
-
-        if self.hasGlitchOut:
-            ret.extend([
-                {'name':'HS-Glitch Out Enable (High Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'A'), 'get':partial(self.targetGlitchOut, 'A')},
-                {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'value':False, 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}
-            ])
-
-        ret.extend([
-            {'name':'Target IOn Pins', 'type':'group', 'children':[
-                {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'value':self.IOROUTE_STX, 'set':partial(self.setTargetIOMode, IONumber=0), 'get':partial(self.getTargetIOMode, IONumber=0)},
-                {'name': 'Target IO2', 'key':'gpio2mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
-                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'value':self.IOROUTE_SRX, 'set':partial(self.setTargetIOMode, IONumber=1), 'get':partial(self.getTargetIOMode, IONumber=1)},
-                {'name': 'Target IO3', 'key':'gpio3mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
-                                                                'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
-                                                                'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
-                {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'value':self.IOROUTE_HIGHZ, 'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
-
-            ]},
-
-            {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
-                {'name':'Target IO1: GPIO', 'key':'gpiostate1', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                       'get':partial(self.getGPIOState, IONumber=0), 'set':partial(self.setGPIOState, IONumber=0)},
-                {'name':'Target IO2: GPIO', 'key':'gpiostate2', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                       'get':partial(self.getGPIOState, IONumber=1), 'set':partial(self.setGPIOState, IONumber=1)},
-                {'name':'Target IO3: GPIO', 'key':'gpiostate3', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                       'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
-                {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None}, 'value':None,
-                                       'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
-            ]},
-        ])
-
-        #Catch for CW-Lite Specific Stuff
-        if self.hasFPAFPB==False and self.hasPLL==False:
-            ret.extend([
-                {'name':'Target Power State', 'type':'bool', 'value':True, 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
-            ])
-        self.params.addChildren(ret)
 
         #Added July 6/2015, Release 0.11RC1
         #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
@@ -218,15 +162,60 @@ class CWExtraSettings(Parameterized):
             self.forceclkin = True
         else:
             self.forceclkin = False
-
-    def con(self, oa):
-        self.oa = oa
-        
         # TEMPORARY PATCH: REMOVE ONCE FPGA FIXED
         #Over-ride default for CW-Lite
         if self.forceclkin:
-            self.setClockSource(self.CLOCK_RTIOIN)
+            self.setClockSource(self.CLOCK_RTIOIN, blockSignal=True)
 
+        ret.extend([
+            {'name':'Clock Source', 'type':'list', 'values':clksrc, 'set':self.setClockSource, 'get':self.clockSource},
+            {'name':'Target HS IO-Out', 'type':'list', 'values':{'Disabled':0, 'CLKGEN':2, 'Glitch Module':3}, 'set':self.setTargetCLKOut, 'get':self.targetClkOut},
+        ])
+
+        if self.hasGlitchOut:
+            ret.extend([
+                {'name':'HS-Glitch Out Enable (High Power)', 'type':'bool', 'set':partial(self.setTargetGlitchOut, 'A'), 'get':partial(self.targetGlitchOut, 'A')},
+                {'name':'HS-Glitch Out Enable (Low Power)', 'type':'bool', 'set':partial(self.setTargetGlitchOut, 'B'), 'get':partial(self.targetGlitchOut, 'B')}
+            ])
+
+        ret.extend([
+            {'name':'Target IOn Pins', 'type':'group', 'children':[
+                {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
+                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'set':partial(self.setTargetIOMode, IONumber=0), 'get':partial(self.getTargetIOMode, IONumber=0)},
+                {'name': 'Target IO2', 'key':'gpio2mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
+                                                                'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'set':partial(self.setTargetIOMode, IONumber=1), 'get':partial(self.getTargetIOMode, IONumber=1)},
+                {'name': 'Target IO3', 'key':'gpio3mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
+                                                                'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
+                                                                'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
+                {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
+                                       'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
+
+            ]},
+
+            {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
+                {'name':'Target IO1: GPIO', 'key':'gpiostate1', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
+                                       'get':partial(self.getGPIOState, IONumber=0), 'set':partial(self.setGPIOState, IONumber=0)},
+                {'name':'Target IO2: GPIO', 'key':'gpiostate2', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
+                                       'get':partial(self.getGPIOState, IONumber=1), 'set':partial(self.setGPIOState, IONumber=1)},
+                {'name':'Target IO3: GPIO', 'key':'gpiostate3', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
+                                       'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
+                {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
+                                       'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
+            ]},
+        ])
+
+        #Catch for CW-Lite Specific Stuff
+        if self.hasFPAFPB==False and self.hasPLL==False:
+            ret.extend([
+                {'name':'Target Power State', 'type':'bool', 'set':self.setTargetPowerState, 'get':self.getTargetPowerState}
+            ])
+
+        self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
+
+    @setupSetParam("")
     def setGPIOState(self, state, IONumber):
         if state is not None:
             data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
@@ -250,6 +239,7 @@ class CWExtraSettings(Parameterized):
         else:
             return False
 
+    @setupSetParam("")
     def setTargetIOMode(self, setting, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         data[IONumber] = setting
@@ -259,6 +249,7 @@ class CWExtraSettings(Parameterized):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         return data[IONumber]
 
+    @setupSetParam("Clock Source")
     def setClockSource(self, source):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~0x07) | source
@@ -268,6 +259,7 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return resp[0] & 0x07
 
+    @setupSetParam("Target HS IO-Out")
     def setTargetCLKOut(self, clkout):
         data = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         data[0] = (data[0] & ~(3<<5)) | (clkout << 5)
@@ -277,6 +269,7 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_EXTCLK, Validate=False, maxResp=1)
         return ((resp[0] & (3<<5)) >> 5)
 
+    @setupSetParam("")
     def setTargetGlitchOut(self, out='A', enabled=False):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
 
@@ -312,6 +305,7 @@ class CWExtraSettings(Parameterized):
 
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
+    @setupSetParam("Target Power State")
     def setTargetPowerState(self, enabled):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         if enabled:
@@ -337,6 +331,7 @@ class CWExtraSettings(Parameterized):
         else:
             return True
 
+    @setupSetParam("")
     def setPin(self, enabled, pin):
         current = self.getPins()
 
@@ -354,6 +349,7 @@ class CWExtraSettings(Parameterized):
         else:
             return True
 
+    @setupSetParam("Collection Mode")
     def setPinMode(self, mode):
         current = self.getPins()
         self.setPins(current[0], mode)
@@ -373,6 +369,7 @@ class CWExtraSettings(Parameterized):
         mode = resp[0] >> 6
         return(pins, mode)
 
+    @setupSetParam("Trigger Module")
     def setModule(self, module):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] = resp[0] & 0xF8
@@ -383,12 +380,20 @@ class CWExtraSettings(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
 
+    @setupSetParam("Trigger Out on FPA")
     def setTrigOut(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] = resp[0] & 0xE7
         if enabled:
             resp[0] = resp[0] | 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
+
+    def getTrigOut(self):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        if resp[0] & 0x08:
+            return True
+        else:
+            return False
 
 
 class CWPLLDriver(object):

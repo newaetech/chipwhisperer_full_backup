@@ -30,11 +30,11 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader as ChipWhis
 from PySide.QtGui import *
 from PySide.QtCore import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
 class FWLoaderConfigGUI(QtFixes.QDialog):
-    def __init__(self, parent, fwLoaderConfig):
-        super(FWLoaderConfigGUI, self).__init__(parent)
+    def __init__(self, fwLoaderConfig):
+        super(FWLoaderConfigGUI, self).__init__(CWMainGUI.getInstance())
         self.fwLoaderConfig = fwLoaderConfig
         self.setWindowTitle("ChipWhisperer (%s) Firmware Loader Configuration " % self.fwLoaderConfig.loader.name)
         layout = QVBoxLayout()

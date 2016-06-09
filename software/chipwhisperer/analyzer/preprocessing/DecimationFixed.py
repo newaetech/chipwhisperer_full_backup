@@ -37,13 +37,13 @@ class DecimationFixed(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self.setDecimationFactor(2)
         self.params.addChildren([
-            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'value':self._decfactor, 'limit':(1, 1000), 'set':self.updateScript}
+            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'default':self._decfactor, 'value':self._decfactor, 'limit':(1, 1000), 'action':lambda _:self.updateScript()}
         ])
         self.updateScript()
 
     def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').value())
-        self.addFunction("init", "setDecimationFactor", self.findParam('decfactor').value())
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        self.addFunction("init", "setDecimationFactor", self.findParam('decfactor').getValue())
 
     def setDecimationFactor(self, decfactor=1):
         self._decfactor = decfactor
@@ -54,14 +54,17 @@ class DecimationFixed(PreprocessingBase):
             if trace is None:
                 return None
 
-            decfactor = self._decfactor
+            outtrace = np.zeros(len(range(0, len(trace), self._decfactor)))
 
-            # outtrace = np.zeros(len(trace))
-            outtrace = np.zeros(len(range(0, len(trace), decfactor)))
-
-            for idx, val in enumerate(range(0, len(trace), decfactor)):
+            for idx, val in enumerate(range(0, len(trace), self._decfactor)):
                 outtrace[idx] = trace[val]
 
             return outtrace
         else:
             return self._traceSource.getTrace(n)
+
+    def numPoints(self):
+        if self.enabled:
+            return len(range(0, self._traceSource.numPoints(), self._decfactor))
+        else:
+            return self._traceSource.numPoints()

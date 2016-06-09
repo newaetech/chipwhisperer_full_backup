@@ -24,7 +24,7 @@
 #=================================================
 
 import _OpenADCInterface as openadc
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util, timer
 
 
@@ -32,33 +32,28 @@ class OpenADCQt(Parameterized):
     _name= 'OpenADC'
 
     def __init__(self, parentParam=None):
-        Parameterized.__init__(self, parentParam)
-
         self.dataUpdated = util.Signal()
-        self.adc_settings = openadc.OpenADCSettings()
-        self.params.addChildren(self.adc_settings.parameters(doUpdate=False))
+
+        self.params = Parameter(name=self.getName(), type='group')
 
         self.offset = 0.5
         self.ser = None
         self.sc = None
+        self.parm_hwinfo = None
+        self.parm_gain = None
+        self.parm_trigger = None
+        self.parm_clock = None
 
         self.datapoints = []
 
         self.timerStatusRefresh = timer.Timer()
         self.timerStatusRefresh.timeout.connect(self.statusRefresh)
-        self.adc_settings.setFindParam(self.findParam) #todo: this is a somewhat insane way to cut through the layers
 
     def setEnabled(self, enabled):
         pass
 
     def statusRefresh(self):
         pass
-
-    def reloadParameterTree(self):
-        self.adc_settings.setInterface(self.sc)
-        self.params.blockTreeChangeSignal()
-        self.params.getAllParameters()
-        self.params.unblockTreeChangeSignal()
 
     def processData(self, data):
         fpData = []
@@ -93,14 +88,14 @@ class OpenADCQt(Parameterized):
 
     def read(self, update=True, NumberPoints=None):
         if NumberPoints == None:
-            NumberPoints = self.adc_settings.parm_trigger.maxSamples()
+            NumberPoints = self.parm_trigger.maxSamples()
 
         try:
             self.datapoints = self.sc.readData(NumberPoints)
         except IndexError, e:
             raise IOError("Error reading data: %s"%str(e))
 
-        self.dataUpdated.emit(self.datapoints, -self.adc_settings.parm_trigger.presamples(True))
+        self.dataUpdated.emit(self.datapoints, -self.parm_trigger.presamples(True))
 
     def capture(self, update=True, NumberPoints=None):
         timeout = self.sc.capture()
@@ -109,20 +104,33 @@ class OpenADCQt(Parameterized):
 
     def reset(self):
         self.sc.setReset(True)
-        self.reloadParameterTree()
+        self.params.refreshAllParameters()
 
     def test(self):
         self.sc.testAndTime()
 
     def con(self, ser):
+        self.getParams().register()
         self.ser = ser
-        #See if device seems to be attached
+        # See if device seems to be attached
         self.sc = openadc.OpenADCInterface(self.ser)
+
+        self.parm_hwinfo = openadc.HWInformation(self.sc)
+        self.params.append(self.parm_hwinfo.getParams())
+
+        self.parm_gain = openadc.GainSettings(self.sc)
+        self.params.append(self.parm_gain.getParams())
+
+        self.parm_trigger = openadc.TriggerSettings(self.sc)
+        self.params.append(self.parm_trigger.getParams())
+
+        self.parm_clock = openadc.ClockSettings(self.sc, hwinfo=self.parm_hwinfo)
+        self.params.append(self.parm_clock.getParams())
 
         deviceFound = False
         numTries = 0
 
-        #Try a few times
+        # Try a few times
         while(deviceFound == False):
 
             if self.sc.devicePresent():
@@ -130,24 +138,37 @@ class OpenADCQt(Parameterized):
                 break
 
             numTries += 1
-
-            if (numTries == 5):
+            if numTries == 5:
                 try:
                     portname = self.ser.name
                 except:
                     portname = "UNKNOWN"
-                self.ser.close()
-                self.ser = None
+                self.close()
 
                 raise IOError("Opened port %s but failed to find OpenADC" % portname)
 
-        self.reloadParameterTree()
+        self.params.refreshAllParameters()
         self.setEnabled(True)
 
     def close(self):
-        if self.ser:
-            self.ser.close()
-            self.ser = None
+        self.params.deregister()
+        self.ser = None
+        if self.parm_hwinfo is not None:
+            self.parm_hwinfo.getParams().delete()
+        self.parm_hwinfo = None
+
+        if self.parm_gain is not None:
+            self.parm_gain.getParams().delete()
+        self.parm_gain = None
+
+        if self.parm_trigger is not None:
+            self.parm_trigger.getParams().delete()
+        self.parm_trigger = None
+
+        if self.parm_clock is not None:
+            self.parm_clock.getParams().delete()
+        self.parm_clock = None
+        self.sc = None
 
     def __del__(self):
         self.close()

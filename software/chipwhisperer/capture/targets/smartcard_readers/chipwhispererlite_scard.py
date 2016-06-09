@@ -31,7 +31,6 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     REQ_DATA = 0x1C
     REQ_CFG = 0x1D
     REQ_AUX = 0x1E
-
     REQ_CFG_ATR = 0x01
     REQ_CFG_PROTOCOL = 0x02
     REQ_CFG_TXRX = 0x05
@@ -42,7 +41,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
         self.protocol = 0
         self.params.addChildren([
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
-            {'name':'ATR', 'key':'atr', 'type':'str'},
+            {'name':'ATR', 'key':'atr', 'type':'str', 'value':""},
         ])
 
     def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
@@ -128,7 +127,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
 
             return status
 
-    def con(self, scope):
+    def con(self, scope=None):
         """Connect to reader. oa parameter is OpenADC/ChipWhisperer hardware, only used to integrated readers"""
         self.usbcon = scope.qtadc.ser
         self.reset()

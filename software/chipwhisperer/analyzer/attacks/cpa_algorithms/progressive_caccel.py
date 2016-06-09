@@ -32,7 +32,7 @@ from ctypes import *
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class aesmodel_setup_t(Structure):
@@ -175,10 +175,9 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
     _name = "Progressive-C Accel"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
-        Parameterized.__init__(self, parentParam)
         AutoScript.__init__(self)
 
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
@@ -225,8 +224,8 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
             brangeMap[bnum] = i
             i += 1
 
-        skipPGE = False  # self.findParam('checkpge').value()
-        bf = True  # self.findParam('itmode').value() == 'bf'
+        skipPGE = False  # self.findParam('checkpge').getValue()
+        bf = True  # self.findParam('itmode').getValue() == 'bf'
 
         #bf specifies a 'breadth-first' search. bf means we search across each
         #subkey by only the amount of traces specified. Depth-First means we

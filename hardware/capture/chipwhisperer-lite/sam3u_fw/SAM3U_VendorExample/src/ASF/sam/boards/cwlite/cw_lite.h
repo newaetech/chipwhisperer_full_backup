@@ -41,8 +41,8 @@
  *
  */
 
-#ifndef _SAM3U_EK_H_
-#define _SAM3U_EK_H_
+#ifndef _CW1173_H
+#define _CW1173_H
 
 #include "compiler.h"
 #include "system_sam3u.h"

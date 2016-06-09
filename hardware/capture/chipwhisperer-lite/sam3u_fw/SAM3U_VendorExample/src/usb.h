@@ -19,12 +19,7 @@
 #ifndef USB_H_
 #define USB_H_
 
-
 /* Size of loopback */
 #define  MAIN_LOOPBACK_SIZE    1024
-
-extern volatile bool g_captureinprogress;
-
-
 
 #endif /* USB_H_ */

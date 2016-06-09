@@ -165,7 +165,7 @@ class AcquisitionController():
                 try:
                     if self.writer:
                         self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
-                except ValueError, e:
+                except ValueError as e:
                     print "WARNING: Exception caught in adding trace %d, trace skipped."%self.currentTrace
                     print "         Exception info: %s"%str(e)
                 self.sigTraceDone.emit()

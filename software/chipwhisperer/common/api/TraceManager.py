@@ -178,8 +178,8 @@ class TraceManager(TraceSource):
     def numTraces(self):
         return self._numTraces
 
-    def appendTraceSet(self, ti):
-        ti.enabled = True
+    def appendTraceSet(self, ti, enabled=True):
+        ti.enabled = enabled
         self.traceSets.append(ti)
         self.setModified()
 

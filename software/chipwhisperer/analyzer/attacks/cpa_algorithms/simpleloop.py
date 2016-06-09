@@ -28,7 +28,7 @@
 import numpy as np
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameters import Parameterized
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class CPASimpleLoop(Parameterized, Plugin):
@@ -40,7 +40,6 @@ class CPASimpleLoop(Parameterized, Plugin):
     _name = "Simple"
 
     def __init__(self, parentParam, targetModel, leakageFunction):
-        Parameterized.__init__(self, parentParam)
         self.model = targetModel
         self.leakage = leakageFunction
         self.stats = DataTypeDiffs()

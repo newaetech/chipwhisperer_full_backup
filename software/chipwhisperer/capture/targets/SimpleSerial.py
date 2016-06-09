@@ -26,6 +26,7 @@
 from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
 from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SimpleSerial(TargetTemplate):
@@ -34,15 +35,14 @@ class SimpleSerial(TargetTemplate):
     def __init__(self, parentParam=None):
         TargetTemplate.__init__(self, parentParam)
 
-        self.ser = None
-        self.setupActiveParams([lambda: self.lazy(self.ser)])
         ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
+        self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
 
-        self.keylength = 16
+        self.keylength = 128
         self.input = ""
         self.params.addChildren([
-            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons,'value':ser_cons[SimpleSerial_ChipWhispererLite._name], 'set':self.setConnection},
-            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'value':128, 'set':self.setKeyLen},
+            {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
+            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'get':self.keyLen, 'set':self.setKeyLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -55,8 +55,9 @@ class SimpleSerial(TargetTemplate):
             #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
         ])
 
-        self.setConnection(self.findParam('con').value())
+        self.setConnection(self.ser)
 
+    @setupSetParam("Key Length")
     def setKeyLen(self, klen):
         """ Set key length in BITS """
         self.keylength = klen / 8
@@ -65,10 +66,14 @@ class SimpleSerial(TargetTemplate):
         """ Return key length in BYTES """
         return self.keylength
 
+    def getConnection(self):
+        return self.ser
+
+    @setupSetParam("Connection")
     def setConnection(self, con):
         self.ser = con
+        self.params.append(self.ser.getParams())
         self.ser.connectStatus.connect(self.connectStatus.emit)
-        self.paramListUpdated.emit()
         self.ser.selectionChanged()
 
     def con(self, scope = None):
@@ -85,7 +90,7 @@ class SimpleSerial(TargetTemplate):
             self.ser.close()
 
     def init(self):
-        self.runCommand(self.findParam('cmdinit').value())
+        self.runCommand(self.findParam('cmdinit').getValue())
 
     def setModeEncrypt(self):
         pass
@@ -133,11 +138,11 @@ class SimpleSerial(TargetTemplate):
     def loadEncryptionKey(self, key):
         self.key = key
         if self.key:
-            self.runCommand(self.findParam('cmdkey').value())
+            self.runCommand(self.findParam('cmdkey').getValue())
 
     def loadInput(self, inputtext):
         self.input = inputtext
-        self.runCommand(self.findParam('cmdinput').value())
+        self.runCommand(self.findParam('cmdinput').getValue())
 
     def isDone(self):
         return True
@@ -145,7 +150,7 @@ class SimpleSerial(TargetTemplate):
     def readOutput(self):
         dataLen= 32
 
-        fmt = self.findParam('cmdout').value()
+        fmt = self.findParam('cmdout').getValue()
         #This is dumb
         fmt = fmt.replace("\\n", "\n")
         fmt = fmt.replace("\\r", "\r")
@@ -203,7 +208,7 @@ class SimpleSerial(TargetTemplate):
         return data
 
     def go(self):
-        self.runCommand(self.findParam('cmdgo').value())
+        self.runCommand(self.findParam('cmdgo').getValue())
 
     def checkEncryptionKey(self, kin):
         blen = self.keyLen()

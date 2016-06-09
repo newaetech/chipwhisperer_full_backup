@@ -27,6 +27,7 @@ import time
 import numpy as np
 from matplotlib.mlab import find
 from _base import AuxiliaryTemplate
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 try:
@@ -102,10 +103,15 @@ class FrequencyMeasure(AuxiliaryTemplate):
         if ps5000a is not None:
             scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
 
+        self.fm = None
         self.params.addChildren([
-            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'value':"None", 'set':self.setConnection}
+            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'get':self.getConnection, 'set':self.setConnection}
         ])
 
+    def getConnection(self):
+        return self.fm
+
+    @setupSetParam("Device")
     def setConnection(self, con):
         self.fm = FreqMeasure(con)
 
