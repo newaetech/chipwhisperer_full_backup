@@ -112,11 +112,10 @@ class Attack(UserScriptBase):
 
     def run(self):
         self.api.openProject("../../../projects/tut_randkey_randplain.cwp")
-        self.generateTemplates()
+        templatedata = self.generateTemplates()
         self.api.saveProject()
-        template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Temples")
         self.api.openProject("../../../projects/tut_fixedkey_randplain.cwp")
-        self.api.project().addDataConfig(settings=template[-1], sectionName="Template Data", subsectionName="Templates")
+        self.api.project().addDataConfig(templatedata, sectionName="Template Data", subsectionName="Templates")
         self.initPreprocessing()
         self.initAnalysis2()
         self.initReporting()
@@ -130,6 +129,7 @@ class Attack(UserScriptBase):
         partMethod = PartitionHWIntermediate()
         templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
+        return templatedata
 
 if __name__ == '__main__':
     import sys
