@@ -7,6 +7,8 @@ from chipwhisperer.analyzer.attacks.profiling import Profiling
 from chipwhisperer.analyzer.attacks.profiling_algorithms.template import ProfilingTemplate
 from chipwhisperer.analyzer.utils.Partition import PartitionHWIntermediate
 # Imports from utilList
+from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD
+from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 
 class Capture(UserScriptBase):
     _name = "Template Attack Script"
@@ -121,11 +123,35 @@ class Attack(UserScriptBase):
         self.initReporting()
         self.attack.processTraces()
 
+    def getPOIs(self):
+        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Comparison Mode', 'Sum of Absolute Difference'])
+        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Partition Mode', 'HW AES Intermediate'])
+        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Points of Interest', 'Num POI/Subkey', 3])
+        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Points of Interest', 'Min Spacing between POI', 5])
+
+    def TraceExplorerDialog_PartitionDisplay_displayPartitionStats(self):
+        self.cwagui = CWAnalyzerGUI.getInstance()
+        ted = self.cwagui.attackScriptGen.utilList[0].exampleScripts[0]
+        ted.setTraceSource(self.traces)
+        progressBar = ted.parent.getProgressIndicator()
+        ted.partObject.setPartMethod(PartitionHWIntermediate)
+        partData = ted.partObject.generatePartitions(saveFile=True, loadFile=False)
+        partStats = ted.generatePartitionStats(partitionData={"partclass":PartitionHWIntermediate, "partdata":partData}, saveFile=True, progressBar=progressBar)
+        partDiffs = ted.generatePartitionDiffs(DifferenceModeSAD, statsInfo={"partclass":PartitionHWIntermediate, "stats":partStats}, saveFile=True, loadFile=False, progressBar=progressBar)
+        ted.displayPartitions(differences={"partclass":PartitionHWIntermediate, "diffs":partDiffs})
+        ted.poi.setDifferences(partDiffs)
+
+    def findPOI(self):
+        self.cwagui = CWAnalyzerGUI.getInstance()
+        ted = self.cwagui.attackScriptGen.utilList[0].exampleScripts[0]
+        return ted.poi.calcPOI(numMax=3, pointRange=(0, 3000), minSpace=5)['poi']
+
     def generateTemplates(self):
         self.initPreprocessing()
         self.initAnalysis()
+        self.TraceExplorerDialog_PartitionDisplay_displayPartitionStats()
         tRange = (0, 1499)
-        poiList = [[147, 95, 114], [2004, 1995, 2009], [2131, 287, 339], [435, 2579, 2587], [531, 95, 2452], [2991, 1835, 627], [2452, 2443, 2457], [819, 2619, 2871], [915, 2900, 882], [1011, 2900, 1883], [1107, 2283, 2004], [2900, 1203, 2905], [2900, 1299, 2452], [1395, 1787, 1975], [2235, 1491, 2331], [2731, 1587, 2723]]
+        poiList = self.findPOI()
         partMethod = PartitionHWIntermediate()
         templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
