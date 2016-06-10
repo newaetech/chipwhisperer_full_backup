@@ -307,7 +307,7 @@ class AttackScriptGen(Parameterized):
                     "    api = CWCoreAPI()               # Instantiate the API\n"
                     "    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI\n"
                     "    gui.show()                      # Comment if you don't need the GUI\n"
-                    "    api.runScriptClass(UserScript)  # Pass API to the UserScript\n"
+                    "    api.runScriptClass(UserScript)  # Run UserScript through the API\n"
                     "\n"
                     "    sys.exit(app.exec_())           # Comment if you don't need the GUI\n", 0)
 
