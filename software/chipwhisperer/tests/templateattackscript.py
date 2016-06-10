@@ -115,21 +115,17 @@ class Attack(UserScriptBase):
     def run(self):
         self.api.openProject("../../projects/tut_randkey_randplain.cwp")
         templatedata = self.generateTemplates()
-        print "here1"
+        print templatedata
         self.api.saveProject()
+        template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
+        print template
         self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
-        self.api.project().addDataConfig(templatedata, sectionName="Template Data", subsectionName="Templates")
+        self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
         self.initPreprocessing()
         self.initAnalysis2()
         self.initReporting()
         print "here2"
         self.attack.processTraces()
-
-    def getPOIs(self):
-        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Comparison Mode', 'Sum of Absolute Difference'])
-        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Partition Mode', 'HW AES Intermediate'])
-        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Points of Interest', 'Num POI/Subkey', 3])
-        self.api.setParameter(['Trace Explorer', 'Common Scripts', 'Partition Comparison', 'Points of Interest', 'Min Spacing between POI', 5])
 
     def TraceExplorerDialog_PartitionDisplay_displayPartitionStats(self):
         self.cwagui = CWAnalyzerGUI.getInstance()
@@ -143,7 +139,7 @@ class Attack(UserScriptBase):
         ted.displayPartitions(differences={"partclass":PartitionHWIntermediate, "diffs":partDiffs})
         ted.poi.setDifferences(partDiffs)
 
-    def findPOI(self):
+    def TraceExplorerDialog_PartitionDisplay_findPOI(self):
         self.cwagui = CWAnalyzerGUI.getInstance()
         ted = self.cwagui.attackScriptGen.utilList[0].exampleScripts[0]
         return ted.poi.calcPOI(numMax=3, pointRange=(0, 3000), minSpace=5)['poi']
@@ -153,7 +149,7 @@ class Attack(UserScriptBase):
         self.initPreprocessing()
         self.initAnalysis()
         tRange = (0, 1499)
-        poiList = self.findPOI()
+        poiList = self.TraceExplorerDialog_PartitionDisplay_findPOI()
         partMethod = PartitionHWIntermediate()
         templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
