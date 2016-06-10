@@ -13,10 +13,6 @@ class UserScript(UserScriptBase):
     _description = "Template Attack Script"
     def __init__(self, api):
         UserScriptBase.__init__(self, api)
-        self.initProject()
-        self.initPreprocessing()
-        self.initAnalysis()
-        self.initReporting()
 
     def initProject(self):
         pass
@@ -72,8 +68,10 @@ class UserScript(UserScriptBase):
         self.attack.processTraces()
 
     def generateTemplates(self):
+        self.initProject()
         self.initPreprocessing()
         self.initAnalysis()
+        self.initReporting()
         tRange = (0, 1499)
         poiList = [[147, 95, 114], [2004, 1995, 2009], [2131, 287, 339], [435, 2579, 2587], [531, 95, 2452], [2991, 1835, 627], [2452, 2443, 2457], [819, 2619, 2871], [915, 2900, 882], [1011, 2900, 1883], [1107, 2283, 2004], [2900, 1203, 2905], [2900, 1299, 2452], [1395, 1787, 1975], [2235, 1491, 2331], [2731, 1587, 2723]]
         partMethod = PartitionHWIntermediate()
@@ -87,9 +85,6 @@ class UserScript(UserScriptBase):
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
         self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
-
-        #Load FW (must be configured in GUI first)
-        # self.api.FWLoaderGo()
 
         self.api.connect()
 
@@ -113,10 +108,6 @@ class UserScript(UserScriptBase):
 
         #Let's only do a few traces
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
-
-        #Throw away first few
-        # self.api.capture1()
-        # self.api.capture1()
 
         #Capture a set of traces and save the project
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Random'])
