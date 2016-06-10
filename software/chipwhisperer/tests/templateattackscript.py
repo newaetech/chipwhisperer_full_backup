@@ -119,8 +119,6 @@ class Attack(UserScriptBase):
         template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
         self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
-        self.api.saveProject()
-        self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.initPreprocessing()
         self.initAnalysis2()
         self.initReporting()
