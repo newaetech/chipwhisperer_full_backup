@@ -151,7 +151,10 @@ class Signal(object):
             self.observers.append(observer)
 
     def disconnect(self, observer):
-        self.observers.remove(observer)
+        try:
+            self.observers.remove(observer)
+        except ValueError:
+            pass
 
     def emit(self, *arg, **args):
         for observer in self.observers:
