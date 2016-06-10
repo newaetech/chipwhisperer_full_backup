@@ -48,11 +48,11 @@ class Capture(UserScriptBase):
         #Capture a set of traces and save the project
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Random'])
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1500])
-        self.api.saveProject("../../../projects/tut_randkey_randplain.cwp")
+        self.api.saveProject("../../projects/tut_randkey_randplain.cwp")
         self.api.captureM()
         self.api.saveProject()
         self.api.newProject()
-        self.api.saveProject("../../../projects/tut_fixedkey_randplain.cwp")
+        self.api.saveProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Fixed'])
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 20])
         self.api.captureM()
@@ -111,10 +111,10 @@ class Attack(UserScriptBase):
         self.api.getResults("Trace Recorder").setTraceSource(self.traces)
 
     def run(self):
-        self.api.openProject("../../../projects/tut_randkey_randplain.cwp")
+        self.api.openProject("../../projects/tut_randkey_randplain.cwp")
         templatedata = self.generateTemplates()
         self.api.saveProject()
-        self.api.openProject("../../../projects/tut_fixedkey_randplain.cwp")
+        self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(templatedata, sectionName="Template Data", subsectionName="Templates")
         self.initPreprocessing()
         self.initAnalysis2()
