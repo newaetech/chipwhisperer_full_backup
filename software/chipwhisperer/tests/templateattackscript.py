@@ -139,10 +139,9 @@ if __name__ == '__main__':
     app = cwa.makeApplication()     # Comment if you don't need the GUI
     Parameter.usePyQtGraph = True   # Comment if you don't need the GUI
     api = CWCoreAPI()               # Instantiate the API
-    usercommands = UserScript(api, "doCapture")
+    api.runScriptClass(UserScript, "doCapture")
     gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI
     gui.show()                      # Comment if you don't need the GUI
-    usercommands = UserScript(api)  # Pass API to the UserScript
-    usercommands.run()              # Run the User Script
+    api.runScriptClass(UserScript)
 
     sys.exit(app.exec_())           # Comment if you don't need the GUI
