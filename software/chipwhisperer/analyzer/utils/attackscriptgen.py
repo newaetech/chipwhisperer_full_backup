@@ -40,7 +40,6 @@ class AttackScriptGen(Parameterized):
         self.cwGUI = cwGUI
 
         self.locked = False
-        self.pending = False
         self.utilList = []
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self.cwGUI)})
@@ -69,11 +68,6 @@ class AttackScriptGen(Parameterized):
         self.params.getChild(['Attack','Module']).stealDynamicParameters(self.attackParams)
 
         self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
-
-    def lock(self, value):
-        self.locked = value
-        if not self.locked and self.pending:
-            self.reloadScripts()
 
     def flushTimer(self):
         """Flush all pending script updates"""
@@ -188,11 +182,12 @@ class AttackScriptGen(Parameterized):
 
     def reloadScripts(self):
         """Rewrite the auto-generated analyzer script, using settings from the GUI"""
-        if self.locked:
-            self.pending = True
+        if self.cwGUI.api.busy.value():
+            self.cwGUI.api.busy.connect(self.reloadScripts)
             return
 
-        self.pending = False
+        self.cwGUI.api.busy.disconnect(self.reloadScripts)
+
         # Auto-Generated is always first
         mse = self.scriptList[0]['widget']
 

@@ -59,6 +59,7 @@ class CWCoreAPI(Parameterized):
         self.sigCampaignStart = util.Signal()
         self.sigCampaignDone = util.Signal()
         self.sigTracesChanged = util.Signal()
+        self.busy = util.Observable(False)
 
         self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
@@ -372,6 +373,7 @@ class CWCoreAPI(Parameterized):
     def runScriptClass(self, scriptClass, funcName="run"):
         """Execute the funcName function in the specified class."""
         try:
+            self.busy.setValue(True)
             m = scriptClass(self)
             if funcName is not None:
                 eval('m.%s()' % funcName)
@@ -381,6 +383,8 @@ class CWCoreAPI(Parameterized):
                                 scriptClass.__name__,
                                 "".join(traceback.format_exception_only(sys.exc_info()[0], e.message)).rstrip("\n ")
                                 ), sys.exc_info()[2])
+        finally:
+            self.busy.setValue(False)
 
     def setParameter(self, pathAndValue):
         """Set the parameter value, given its path. It should be registered in Parameter.registeredParameters"""
