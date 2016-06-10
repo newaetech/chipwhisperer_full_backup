@@ -114,17 +114,14 @@ class Attack(UserScriptBase):
 
     def run(self):
         self.api.openProject("../../projects/tut_randkey_randplain.cwp")
-        templatedata = self.generateTemplates()
-        print templatedata
+        self.generateTemplates()
         self.api.saveProject()
         template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
-        print template
         self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
         self.initPreprocessing()
         self.initAnalysis2()
         self.initReporting()
-        print "here2"
         self.attack.processTraces()
 
     def TraceExplorerDialog_PartitionDisplay_displayPartitionStats(self):
