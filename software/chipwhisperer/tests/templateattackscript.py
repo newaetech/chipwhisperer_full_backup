@@ -115,12 +115,14 @@ class Attack(UserScriptBase):
     def run(self):
         self.api.openProject("../../projects/tut_randkey_randplain.cwp")
         templatedata = self.generateTemplates()
+        print "here1"
         self.api.saveProject()
         self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(templatedata, sectionName="Template Data", subsectionName="Templates")
         self.initPreprocessing()
         self.initAnalysis2()
         self.initReporting()
+        print "here2"
         self.attack.processTraces()
 
     def getPOIs(self):
@@ -147,9 +149,9 @@ class Attack(UserScriptBase):
         return ted.poi.calcPOI(numMax=3, pointRange=(0, 3000), minSpace=5)['poi']
 
     def generateTemplates(self):
+        self.TraceExplorerDialog_PartitionDisplay_displayPartitionStats()
         self.initPreprocessing()
         self.initAnalysis()
-        self.TraceExplorerDialog_PartitionDisplay_displayPartitionStats()
         tRange = (0, 1499)
         poiList = self.findPOI()
         partMethod = PartitionHWIntermediate()
