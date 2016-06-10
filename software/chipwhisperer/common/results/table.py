@@ -76,10 +76,10 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                     cell.setTextAlignment(Qt.AlignCenter)
                     self.setItem(y, x, cell)
 
-            self.resizeRowsToContents()
             self.setVerticalHeaderItem(0, QTableWidgetItem("PGE"))
             for y in range(1, self._maxNumPerms()+1):
                 self.setVerticalHeaderItem(y, QTableWidgetItem("%d" % (y-1)))
+            self.resizeRowsToContents()
 
     def clearTableContents(self):
         for x in range(0, self.columnCount()):
@@ -87,6 +87,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
             for y in range(1, self.rowCount()):
                 self.item(y, x).setText(" \n ")
                 self.item(y, x).setBackground(Qt.white)
+        self.resizeRowsToContents()
 
     def getUpdateMode(self):
         return self.updateMode
@@ -129,7 +130,10 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                             cell.setForeground(QBrush(Qt.black))
 
                         if self.colorGradient:
-                            cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
+                            try:
+                                cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
+                            except OverflowError:
+                                cell.setBackground(QBrush(Qt.white))
                         else:
                             cell.setBackground(QBrush(Qt.white))
             else:

@@ -9,11 +9,12 @@ V3.1:
 - Faster graphs plotting, especially in fast mode.
 - Fixed a bug where highlighted traces for other keys would not show up.
 - Trace Explorer moved to the main window as a settings dock.
-- Bug fixes
+- Bug fixes.
 
 V3.0:
 - Consolidate project (move traces to the project dir).
 - Improved trace manager.
-- Fixed some GUI bugs with Mac OS X
-- New plugin archtiecture (should be much easier to add new modules)
-- Bug fixes
+- Fixed GUI bugs with Mac OS X.
+- New plugin archtiecture (should be much easier to add new modules).
+- Bug fixes.
+- Large code refactoring.

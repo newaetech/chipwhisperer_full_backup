@@ -44,12 +44,22 @@ class FakeQTimer(object):
     def stop(self):
         pass
 
+    def isActive(self):
+        pass
+
+    def flush(self):
+        self._callback()
+
     def setSingleShot(self, single_shot):
         self._single_shot = single_shot
 
 try:
     from PySide.QtCore import QTimer
-    Timer = QTimer
+    class Timer(QTimer):
+        def flush(self):
+            if self.isActive():
+                self.timeout.emit()
+                self.stop()
 
 except ImportError:
     Timer = FakeQTimer
