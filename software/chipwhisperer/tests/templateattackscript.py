@@ -114,17 +114,16 @@ class Attack(UserScriptBase):
 
     def run(self):
         self.api.openProject("../../projects/tut_randkey_randplain.cwp")
-        templatedata = self.generateTemplates()
-        print templatedata
+        self.generateTemplates()
         self.api.saveProject()
         template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
-        print template
         self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
+        self.api.saveProject()
+        self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.initPreprocessing()
         self.initAnalysis2()
         self.initReporting()
-        print "here2"
         self.attack.processTraces()
 
     def TraceExplorerDialog_PartitionDisplay_displayPartitionStats(self):
@@ -153,7 +152,6 @@ class Attack(UserScriptBase):
         partMethod = PartitionHWIntermediate()
         templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
-        return templatedata
 
 if __name__ == '__main__':
     import sys
