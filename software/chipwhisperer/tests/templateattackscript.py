@@ -8,11 +8,66 @@ from chipwhisperer.analyzer.attacks.profiling_algorithms.template import Profili
 from chipwhisperer.analyzer.utils.Partition import PartitionHWIntermediate
 # Imports from utilList
 
-class UserScript(UserScriptBase):
+class Capture(UserScriptBase):
     _name = "Template Attack Script"
     _description = "Template Attack Script"
     def __init__(self, api):
         UserScriptBase.__init__(self, api)
+
+    def run(self):
+        #User commands here
+        self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
+        self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
+        self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
+        self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
+
+        self.api.connect()
+
+        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
+                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
+                      ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
+                      ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
+                      ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
+                      ['OpenADC', 'Trigger Setup', 'Offset', 1250],
+                      ['OpenADC', 'Gain Setting', 'Setting', 45],
+                      ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
+                      #Final step: make DCMs relock in case they are lost
+                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
+                      ]
+
+        #Download all hardware setup parameters
+        for cmd in lstexample: self.api.setParameter(cmd)
+
+        #Let's only do a few traces
+        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
+
+        #Capture a set of traces and save the project
+        self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Random'])
+        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1500])
+        self.api.saveProject("../../../projects/tut_randkey_randplain.cwp")
+        self.api.captureM()
+        self.api.saveProject()
+        self.api.newProject()
+        self.api.saveProject("../../../projects/tut_fixedkey_randplain.cwp")
+        self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Fixed'])
+        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 20])
+        self.api.captureM()
+        self.api.saveProject()
+
+class Attack(UserScriptBase):
+    _name = "Template Attack Script"
+    _description = "Template Attack Script"
+
+    def __init__(self, api):
+        UserScriptBase.__init__(self, api)
+        self.initProject()
+        self.initPreprocessing()
+        self.initAnalysis()
+        self.initReporting()
 
     def initProject(self):
         pass
@@ -68,59 +123,13 @@ class UserScript(UserScriptBase):
         self.attack.processTraces()
 
     def generateTemplates(self):
-        self.initProject()
         self.initPreprocessing()
         self.initAnalysis()
-        self.initReporting()
         tRange = (0, 1499)
         poiList = [[147, 95, 114], [2004, 1995, 2009], [2131, 287, 339], [435, 2579, 2587], [531, 95, 2452], [2991, 1835, 627], [2452, 2443, 2457], [819, 2619, 2871], [915, 2900, 882], [1011, 2900, 1883], [1107, 2283, 2004], [2900, 1203, 2905], [2900, 1299, 2452], [1395, 1787, 1975], [2235, 1491, 2331], [2731, 1587, 2723]]
         partMethod = PartitionHWIntermediate()
         templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
-
-    def doCapture(self):
-        #User commands here
-        self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
-        self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
-        self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
-        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
-
-        self.api.connect()
-
-        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
-        lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
-                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
-                      ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
-                      ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
-                      ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
-                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
-                      ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
-                      ['OpenADC', 'Trigger Setup', 'Offset', 1250],
-                      ['OpenADC', 'Gain Setting', 'Setting', 45],
-                      ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
-                      #Final step: make DCMs relock in case they are lost
-                      ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
-                      ]
-
-        #Download all hardware setup parameters
-        for cmd in lstexample: self.api.setParameter(cmd)
-
-        #Let's only do a few traces
-        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
-
-        #Capture a set of traces and save the project
-        self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Random'])
-        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1500])
-        self.api.saveProject("../../../projects/tut_randkey_randplain.cwp")
-        self.api.captureM()
-        self.api.saveProject()
-        self.api.newProject()
-        self.api.saveProject("../../../projects/tut_fixedkey_randplain.cwp")
-        self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Fixed'])
-        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 20])
-        self.api.captureM()
-        self.api.saveProject()
 
 if __name__ == '__main__':
     import sys
@@ -130,9 +139,9 @@ if __name__ == '__main__':
     app = cwa.makeApplication()     # Comment if you don't need the GUI
     Parameter.usePyQtGraph = True   # Comment if you don't need the GUI
     api = CWCoreAPI()               # Instantiate the API
-    api.runScriptClass(UserScript, "doCapture")
+    api.runScriptClass(Capture)
     gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI
     gui.show()                      # Comment if you don't need the GUI
-    api.runScriptClass(UserScript)
+    api.runScriptClass(Attack)
 
     sys.exit(app.exec_())           # Comment if you don't need the GUI
