@@ -1,4 +1,4 @@
-# Date Auto-Generated: 2016.04.25-16.18.28
+# Date Auto-Generated: 2016.06.09-16.47.02
 from chipwhisperer.common.scripts.base import UserScriptBase
 # Imports from Preprocessing
 import chipwhisperer.analyzer.preprocessing as preprocessing
@@ -52,3 +52,19 @@ class UserScript(UserScriptBase):
 
     def run(self):
         self.attack.processTraces()
+
+if __name__ == '__main__':
+    import sys
+    from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+    import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
+    from chipwhisperer.common.utils.parameter import Parameter
+    app = cwa.makeApplication()                     # Comment this line if you don't want to use the GUI
+    Parameter.usePyQtGraph = True                   # Comment this line if you don't want to use the GUI
+    api = CWCoreAPI()                               # Instantiate the API
+    # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
+    gui = cwa.CWCaptureGUI(api)                     # Comment this line if you don't want to use the GUI
+    gui.show()                                      # Comment this line if you don't want to use the GUI
+    usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
+    usercommands.run()                              # Run the User Script
+
+    sys.exit(app.exec_())                           # Comment this line if you don't want to use the GUI

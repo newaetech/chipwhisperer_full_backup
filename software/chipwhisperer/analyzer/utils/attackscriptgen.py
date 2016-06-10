@@ -39,6 +39,8 @@ class AttackScriptGen(Parameterized):
     def __init__(self, parentParam, cwGUI):
         self.cwGUI = cwGUI
 
+        self.locked = False
+        self.pending = False
         self.utilList = []
         self.scriptList = []
         self.scriptList.append({'widget':MainScriptEditor(self.cwGUI)})
@@ -49,8 +51,7 @@ class AttackScriptGen(Parameterized):
         self.preprocessingListGUI = [None, None, None, None]
         self.setAttack(self.cwGUI.api.valid_attacks.get("CPA", None), blockSignal=True)
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Attack Script', 'type':'group', 'children':[
                 {'name':'Filename', 'key':'attackfilelist', 'type':'filelist', 'values':{autogen:0}, 'value':0, 'editor':self.editorControl,},
             ]},
@@ -68,6 +69,16 @@ class AttackScriptGen(Parameterized):
         self.params.getChild(['Attack','Module']).stealDynamicParameters(self.attackParams)
 
         self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
+
+    def lock(self, value):
+        self.locked = value
+        if not self.locked and self.pending:
+            self.reloadScripts()
+
+    def flushTimer(self):
+        """Flush all pending script updates"""
+        [p.updateDelayTimer.flush() for p in self.preprocessingListGUI if p is not None]
+        self.attack.updateDelayTimer.flush()
 
     def updateAttackTraceLimits(self):
         self.attack.setTraceLimits(self.cwGUI.api.project().traceManager().numTraces(), self.cwGUI.api.project().traceManager().numPoints())
@@ -177,7 +188,11 @@ class AttackScriptGen(Parameterized):
 
     def reloadScripts(self):
         """Rewrite the auto-generated analyzer script, using settings from the GUI"""
+        if self.locked:
+            self.pending = True
+            return
 
+        self.pending = False
         # Auto-Generated is always first
         mse = self.scriptList[0]['widget']
 
@@ -186,7 +201,6 @@ class AttackScriptGen(Parameterized):
 
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
         mse.append("from chipwhisperer.common.scripts.base import UserScriptBase", 0)
-
         # Get imports from preprocessing
         mse.append("# Imports from Preprocessing", 0)
         mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
@@ -287,6 +301,23 @@ class AttackScriptGen(Parameterized):
                         mse.append("self.cwagui = CWAnalyzerGUI.getInstance()") #TODO - temp hack
                         for s in statements:
                             mse.append(s.replace("UserScript.", "self."))
+
+
+
+        mse.append("if __name__ == '__main__':\n"
+                    "    import sys\n"
+                    "    from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI\n"
+                    "    import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa\n"
+                    "    from chipwhisperer.common.utils.parameter import Parameter\n"
+                    "    app = cwa.makeApplication()     # Comment if you don't need the GUI\n"
+                    "    Parameter.usePyQtGraph = True   # Comment if you don't need the GUI\n"
+                    "    api = CWCoreAPI()               # Instantiate the API\n"
+                    "    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI\n"
+                    "    gui.show()                      # Comment if you don't need the GUI\n"
+                    "    usercommands = UserScript(api)  # Pass API to the UserScript\n"
+                    "    usercommands.run()              # Run the User Script\n"
+                    "\n"
+                    "    sys.exit(app.exec_())           # Comment if you don't need the GUI\n", 0)
 
         mse.restoreSliderPosition()
         self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)

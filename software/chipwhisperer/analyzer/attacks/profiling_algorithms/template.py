@@ -188,9 +188,8 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
     def addTraces(self, traces, plaintexts, ciphertexts, knownkeys=None, progressBar=None, pointRange=None):
 
         if multivariate_normal is None:
-            print "ERROR: Version of SciPy too old, require > 0.14, have %s" % (scipy.version.version)
-            print "       Please update your version of SciPy to support this attack"
-            return
+            raise Warning("Version of SciPy too old, require > 0.14, have %s. "
+                          "Update to support this attack" % (scipy.version.version))
 
         # Hack for now - just use last template found
         template = self.loadTemplatesFromProject()[-1]

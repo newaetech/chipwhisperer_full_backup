@@ -74,9 +74,16 @@ class CWAnalyzerGUI(CWMainGUI):
             if ret == QMessageBox.Yes:
                 self.traceManagerDialog.show()
             return
-        self.updateStatusBar("Executing analyzis...")
-        self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
-        self.updateStatusBar("Analysis completed")
+
+        QApplication.focusWidget().clearFocus()  # Force accepting the current parameter edition by removing its focus
+        self.attackScriptGen.flushTimer()
+        try:
+            self.attackScriptGen.lock(True)
+            self.updateStatusBar("Executing analyzis...")
+            self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
+            self.updateStatusBar("Analysis completed")
+        finally:
+            self.attackScriptGen.lock(False)
 
     def addSettingsDocks(self):
         self.settingsScriptDock = self.addSettings(self.attackScriptGen.params)
