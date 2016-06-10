@@ -297,8 +297,6 @@ class AttackScriptGen(Parameterized):
                         for s in statements:
                             mse.append(s.replace("UserScript.", "self."))
 
-
-
         mse.append("if __name__ == '__main__':\n"
                     "    import sys\n"
                     "    from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI\n"
