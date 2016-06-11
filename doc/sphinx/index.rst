@@ -37,13 +37,11 @@ Full Table of Contents:
 
     background
     installing
-    theory
-    newaedocs
-    tutorialsbasic
-    tutorialsadvanced
-    hardware
+
     fpgamain
     chipwhisperer
+
+    oldmaterial
 
 Indices and tables
 ==================
