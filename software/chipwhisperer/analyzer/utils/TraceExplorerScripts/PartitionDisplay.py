@@ -202,7 +202,8 @@ class POI(QWidget):
         # Setup Table for current stuff
         self.mainTable.setRowCount(len(self.diffs))
         self.mainTable.setColumnCount(2)
-        self.mainTable.setHorizontalHeaderLabels(["Subkey Number", "Point List"])
+        self.mainTable.setHorizontalHeaderLabels(["Subkey", "Point List"])
+        self.mainTable.horizontalHeader().setStretchLastSection(True)
         self.mainTable.verticalHeader().hide()
 
         self.poiArray = []
