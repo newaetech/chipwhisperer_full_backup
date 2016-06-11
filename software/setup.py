@@ -10,6 +10,7 @@ setup(
     author_email = 'coflynn@newae.com',
     license = 'GPLv3',
     url = 'www.ChipWhisperer.com',
+    download_url='https://www.newae.com/files/chipwhisperer-3.1rc1.tar.gz',
     packages = ['chipwhisperer',
                 'chipwhisperer.capture.api',
                 'chipwhisperer.capture.scopes',
