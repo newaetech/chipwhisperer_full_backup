@@ -194,7 +194,6 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         # Hack for now - just use last template found
         template = self.loadTemplatesFromProject()[-1]
         pois = template["poi"]
-        print str(pois)
         numparts = len(template['mean'][0])
         results = np.zeros((16, 256))
 
