@@ -96,7 +96,6 @@ if __name__ == '__main__':
     # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
     gui = cwc.CWCaptureGUI(api)                     # Comment this line if you don't want to use the GUI
     gui.show()                                      # Comment this line if you don't want to use the GUI
-    usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
-    usercommands.run()                              # Run the User Script
+    api.runScriptClass(UserScript)                  # Run the User Script
 
     sys.exit(app.exec_())                           # Comment this line if you don't want to use the GUI
