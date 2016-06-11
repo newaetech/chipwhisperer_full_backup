@@ -66,16 +66,6 @@ class Attack(UserScriptBase):
 
     def __init__(self, api):
         UserScriptBase.__init__(self, api)
-        self.initProject()
-        self.initPreprocessing()
-        self.initAnalysis()
-        self.initReporting()
-
-    def initProject(self):
-        pass
-
-    def initPreprocessing(self):
-        self.traces = self.api.project().traceManager()
 
     def initAnalysis(self):
         self.attack = Profiling()
@@ -114,12 +104,15 @@ class Attack(UserScriptBase):
 
     def run(self):
         self.api.openProject("../../projects/tut_randkey_randplain.cwp")
+        self.traces = self.api.project().traceManager()
+        self.initAnalysis()
+        self.initReporting()
         self.generateTemplates()
         self.api.saveProject()
         template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
         self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
-        self.initPreprocessing()
+        self.traces = self.api.project().traceManager()
         self.initAnalysis2()
         self.initReporting()
         self.attack.processTraces()
