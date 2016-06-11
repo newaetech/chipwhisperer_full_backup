@@ -26,6 +26,8 @@
 #=================================================
 
 import zipfile
+import StringIO
+import base64
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
@@ -88,19 +90,28 @@ class ChipWhispererGlitch(Parameterized):
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if scope.cwFirmwareConfig.loader._release_mode:
-                fileloc = scope.cwFirmwareConfig.loader._bsZipLoc
+            if scope.cwFirmwareConfig.loader._release_mode != "debug":
 
-                if fileloc:
-                    #if fileloc.startswith("."):
-                    #    fileloc = os.path.join(CWCoreAPI.getInstance().getRootDir(), fileloc)
-                    zfile = zipfile.ZipFile(fileloc, "r")
+                if scope.cwFirmwareConfig.loader._release_mode == "builtin":
+                    filelike = scope.cwFirmwareConfig.loader._bsBuiltinData
+                    zfile = zipfile.ZipFile(filelike)
+                elif scope.cwFirmwareConfig.loader._release_mode == "zipfile":
+                    fileloc = scope.cwFirmwareConfig.loader._bsZipLoc
+                    if zipfile.is_zipfile(fileloc):
+                        zfile = zipfile.ZipFile(fileloc, "r")
+                    else:
+                        print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
+                        zfile = None
+                else:
+                    print "Partial Reconfiguration DISABLED: no PR data for FPGA"
+                    zfile = None
+                    raise ValueError("Unknown FPGA mode: %s"%scope.cwFirmwareConfig.loader._release_mode)
 
+                if zfile:
                     self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))
                     self.glitchPR.load(zfile.open("%s-glitchoffset.p" % partialbasename))
                     self.prEnabled = True
                 else:
-                    print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
                     self.prEnabled = False
             else:
                 print "Partial Reconfiguration DISABLED: Debug bitstream mode"
