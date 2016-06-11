@@ -151,9 +151,14 @@ class IhxFile(object):
     #      * @throws IOException If an read error occurred.
     #      * @throws IhxFileDamagedException If the ihx file is damaged.
     #
-    def __init__(self, fileName):
+    def __init__(self, fname):
         """ generated source for method __init__ """
-        in_ = open(fileName, "r")
+
+        #Allow usage of both filelike type and filenames
+        if hasattr(fname, "read"):
+            in_ = fname
+        else:
+            in_ = open(fname, "r")
         b = None
         lenfield = int()
         cs = int()

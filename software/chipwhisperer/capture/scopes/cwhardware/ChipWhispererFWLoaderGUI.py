@@ -40,16 +40,19 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         layout = QVBoxLayout()
 
         gbFPGAMode = QGroupBox("FPGA Mode Selection")
-        radioRelease = QRadioButton("Official Release (.zip)")
+        radioBuiltin = QRadioButton("Builtin")
+        radioRelease = QRadioButton("External (.zip)")
         radioDebug = QRadioButton("Debug - no partial reconfig (.bit)")
         layoutGB = QHBoxLayout()
+        layoutGB.addWidget(radioBuiltin)
         layoutGB.addWidget(radioRelease)
         layoutGB.addWidget(radioDebug)
         layoutGB.addStretch(1)
         gbFPGAMode.setLayout(layoutGB)
         layout.addWidget(gbFPGAMode)
-        radioRelease.clicked.connect(lambda: self.setFPGAModeRelease(True))
-        radioDebug.clicked.connect(lambda: self.setFPGAModeRelease(False))
+        radioBuiltin.clicked.connect(lambda: self.setFPGAMode("builtin"))
+        radioRelease.clicked.connect(lambda: self.setFPGAMode("zipfile"))
+        radioDebug.clicked.connect(lambda: self.setFPGAMode("debug"))
 
         layoutFW = QHBoxLayout()
         self.firmwareLocation = QtFixes.QLineEdit()
@@ -101,7 +104,7 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         if isinstance(self.fwLoaderConfig.loader, ChipWhispererFWLoader.CWLite_Loader):
             layout.addWidget(gbSAMFW)
 
-        self.setFPGAModeRelease(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name) != "debug")
+        self.setFPGAMode(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name))
         self.fwLoaderConfig.loader._bsZipLoc = QSettings().value("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._bsZipLoc)
         self.bitZipLocation.setText(self.fwLoaderConfig.loader._bsZipLoc)
         self.fwLoaderConfig.loader._bsLoc = QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._bsLoc)
@@ -109,8 +112,9 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         self.fwLoaderConfig.loader._fwFLoc = QSettings().value("%s-firmware-location" % self.fwLoaderConfig.loader.name, self.fwLoaderConfig.loader._fwFLoc)
         self.firmwareLocation.setText(self.fwLoaderConfig.loader._fwFLoc)
 
-        radioRelease.setChecked(self.fwLoaderConfig.useFPGAZip)
-        radioDebug.setChecked(not self.fwLoaderConfig.useFPGAZip)
+        radioBuiltin.setChecked(self.fwLoaderConfig.firmware_mode == "builtin")
+        radioRelease.setChecked(self.fwLoaderConfig.firmware_mode == "zipfile")
+        radioDebug.setChecked(self.fwLoaderConfig.firmware_mode == "debug")
 
         self.setLayout(layout)
 
@@ -123,11 +127,11 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
     def loadFPGA(self):
         self.fwLoaderConfig.loadFPGA()
 
-    def setFPGAModeRelease(self, mode):
-        self.bitZipLocation.setEnabled(mode)
-        self.bitDebugLocation.setEnabled(not mode)
+    def setFPGAMode(self, mode):
+        self.bitZipLocation.setEnabled(mode == "zipfile")
+        self.bitDebugLocation.setEnabled(mode == "debug")
         self.fwLoaderConfig.setFPGAMode(mode)
-        QSettings().setValue("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name, "zip" if mode==True else "debug")
+        QSettings().setValue("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name, mode)
 
     def findDebugBitstream(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Bitstream', QSettings().value("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name), '*.bit')
