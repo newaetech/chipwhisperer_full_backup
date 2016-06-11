@@ -229,7 +229,11 @@ class POI(QWidget):
 
                 # set to -INF data within +/- the minspace
                 mstart = max(0, mloc - minSpace)
+                while mstart>0 and data[mstart-1] <= data[mstart]:
+                    mstart-=1
                 mend = min(mloc + minSpace, len(data))
+                while mend<len(data)-1 and data[mend+1] <= data[mend]:
+                    mend+=1
                 data[mstart:mend] = -np.inf
 
             # print maxarray

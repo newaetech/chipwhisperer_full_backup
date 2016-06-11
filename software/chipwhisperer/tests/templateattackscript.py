@@ -13,8 +13,6 @@ from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 class Capture(UserScriptBase):
     _name = "Template Attack Script"
     _description = "Template Attack Script"
-    def __init__(self, api):
-        UserScriptBase.__init__(self, api)
 
     def run(self):
         #User commands here
@@ -60,12 +58,10 @@ class Capture(UserScriptBase):
         self.api.captureM()
         self.api.saveProject()
 
+
 class Attack(UserScriptBase):
     _name = "Template Attack Script"
     _description = "Template Attack Script"
-
-    def __init__(self, api):
-        UserScriptBase.__init__(self, api)
 
     def initAnalysis(self):
         self.attack = Profiling()
