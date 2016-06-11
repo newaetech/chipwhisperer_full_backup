@@ -323,7 +323,7 @@ class PartitionDisplay(Parameterized, AutoScript):
         for bnum in range(0, self.numKeys):
             if self.enabledbytes[bnum]:
                 self.graph.setColorInt(bnum, self.numKeys)
-                self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)))
+                self.graph.passTrace(self.SADList[bnum], pen=pg.mkPen(pg.intColor(bnum, 16)), idString = str(bnum))
 
     def updateScript(self, ignored=None):
         ##Partitioning & Differences
