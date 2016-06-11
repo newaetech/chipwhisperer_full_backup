@@ -3,8 +3,6 @@
 Tutorial #A5: Breaking AES-256 Bootloader
 =========================================
 
-***THIS TUTORIAL IS INCOMPLETE AND STILL BEING UPDATED***
-
 This tutorial will take you through a complete attack on an encrypted bootloader using AES-256.
 This demonstrates how to using side-channel power analysis on practical systems, along with
 discussing how to perform custom scripts along with custom analysis scripts.
