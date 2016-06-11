@@ -136,8 +136,6 @@ class Attack(UserScriptBase):
 
     def generateTemplates(self):
         self.TraceExplorerDialog_PartitionDisplay_displayPartitionStats()
-        self.initPreprocessing()
-        self.initAnalysis()
         tRange = (0, 1499)
         poiList = self.TraceExplorerDialog_PartitionDisplay_findPOI()
         partMethod = PartitionHWIntermediate()
