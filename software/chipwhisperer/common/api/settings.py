@@ -24,6 +24,13 @@
 
 import os
 
+#If we have QSettings(), use that to get values from registry
+try:
+    from PySide.QtCore import QSettings
+    settings_backend = QSettings()
+except ImportError:
+    settings_backend = None
+
 class Settings(object):
 
     #Default settings all in one handy location
@@ -31,7 +38,22 @@ class Settings(object):
         "project-home-dir":os.path.join(os.path.expanduser('~'), 'chipwhisperer_projects'),
     }
 
-    _backend = None
+    _backend = settings_backend
+
+    def __init__(self):
+        #Sync local settings to backend (if present)
+        if self._backend:
+            for key in self._settings_dict.keys():
+                #If backend has value, store locally
+                backend_value = self._backend.value(key, None)
+                if backend_value:
+                    self._settings_dict[key] = backend_value
+
+
+                #If value stored locally, store into backend if different
+                dict_value = self._settings_dict[key]
+                if dict_value != backend_value:
+                    self._backend.setValue(key, dict_value)
 
     def value(self, name, default=None):
         """Get the value from the settings, if not present return default"""
