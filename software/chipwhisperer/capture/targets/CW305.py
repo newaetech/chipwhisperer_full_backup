@@ -164,14 +164,15 @@ class CW305(TargetTemplate):
         stoptime = datetime.now()
         print "FPGA Config time: %s" % str(stoptime - starttime)
 
-    def con(self, scope = None, bsfile=None, force = False):
+    def con(self, scope = None, bsfile = None, force = False):
         """Connect to CW305 board, download bitstream"""
 
         self._naeusb.con(idProduct=0xC305)
         if self.fpga.isFPGAProgrammed() == False or force:
-            bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
+            if bsfile is None:
+                bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
             if not os.path.isfile(bsfile):
-                print("FPGA Bitstream not configured or %s not a file." % str(bsfile))
+                print("FPGA Bitstream not configured or '%s' not a file." % str(bsfile))
             else:
                 from datetime import datetime
                 starttime = datetime.now()
