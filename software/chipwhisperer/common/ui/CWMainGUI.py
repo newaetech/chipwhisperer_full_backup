@@ -56,6 +56,7 @@ from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.utils.parameter import Parameter
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
+from chipwhisperer.common.ui.PreferencesDialog import CWPreferencesDialog
 import urllib
 
 class CWMainGUI(QMainWindow):
@@ -69,6 +70,8 @@ class CWMainGUI(QMainWindow):
         QMainWindow.__init__(self)
         CWMainGUI.instance = self
         self.name = name
+        api.settings.setBackend(QSettings())
+        self.cwPrefDialog = CWPreferencesDialog(self, api.settings)
         sys.excepthook = self.exceptionHandlerDialog
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
@@ -272,6 +275,11 @@ class CWMainGUI(QMainWindow):
         self.saveAct = QAction(QIcon('save.png'), '&Save...', self, shortcut=QKeySequence.Save,
                                statusTip='Save current project to Disk', triggered=self.saveProject)
         self.fileMenu.addAction(self.saveAct)
+
+        self.prefAct = QAction("&Preferences", self, statusTip="Set preferences", triggered=self.cwPrefDialog.show)
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.prefAct)
+
         self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
                                statusTip="Exit the application", triggered=self.close)
         self.fileMenu.addSeparator()
@@ -297,6 +305,7 @@ class CWMainGUI(QMainWindow):
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
         # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
         self.helpMenu.addAction(QAction('&Check for Updates', self, statusTip='Check for new versions', triggered=self.checkForUpdates))
+        self.helpMenu.addAction(self.prefAct)
         self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
 
     def checkForUpdates(self):
