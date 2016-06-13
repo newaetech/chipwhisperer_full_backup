@@ -336,7 +336,7 @@ class CWCoreAPI(Parameterized):
                         currentTrace.setTraceBuffer(waveBuffer)
                 else:
                     currentTrace = None
-                    prefix = "None-"
+                    prefix = "None_"
 
                 for aux in self._auxList:
                     if aux:
