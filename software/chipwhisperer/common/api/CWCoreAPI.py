@@ -32,6 +32,7 @@ from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.utils import util, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.common.utils.tracesource import TraceSource
+from chipwhisperer.common.api.settings import Settings
 
 
 class CWCoreAPI(Parameterized):
@@ -68,6 +69,8 @@ class CWCoreAPI(Parameterized):
         self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False, self)
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True, self)
+
+        self.settings = Settings()
 
         # Initialize default values
         self._project = self._scope = self._target = self._attack =  self._traceFormat = self._acqPattern = None
