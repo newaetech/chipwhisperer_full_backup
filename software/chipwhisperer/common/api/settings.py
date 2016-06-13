@@ -27,9 +27,9 @@ import os
 #If we have QSettings(), use that to get values from registry
 try:
     from PySide.QtCore import QSettings
-    settings_backend = QSettings()
+    settings_backendclass = QSettings
 except ImportError:
-    settings_backend = None
+    settings_backendclass = None
 
 class Settings(object):
 
@@ -38,9 +38,15 @@ class Settings(object):
         "project-home-dir":os.path.join(os.path.expanduser('~'), 'chipwhisperer_projects'),
     }
 
-    _backend = settings_backend
+    _backendclass = settings_backendclass
+    _backendclassname = "chipwhisperer"
 
     def __init__(self):
+        if self._backendclass:
+            self._backend = self._backendclass(self._backendclassname)
+        else:
+            self._backend = None
+
         #Sync local settings to backend (if present)
         if self._backend:
             for key in self._settings_dict.keys():
