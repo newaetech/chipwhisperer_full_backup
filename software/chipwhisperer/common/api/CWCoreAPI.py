@@ -321,7 +321,8 @@ class CWCoreAPI(Parameterized):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                currentTrace = self.getNewTrace(self.getTraceFormat())
+                if self.getTraceFormat() is not None:
+                    currentTrace = self.getNewTrace(self.getTraceFormat())
 
                 # Load trace writer information
                 prefix = currentTrace.config.attr("prefix")
