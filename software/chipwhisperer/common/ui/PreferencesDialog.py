@@ -22,12 +22,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-from PySide.QtCore import *
 from PySide.QtGui import *
 from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.api.settings import Settings
 from chipwhisperer.common.utils.parameter import Parameterized
 
 class CWPreferencesDialog(QtFixes.QDialog):
@@ -44,10 +41,9 @@ class CWPreferencesDialog(QtFixes.QDialog):
         tabWidget.addTab(self._generalTab, "General")
         tabWidget.addTab(self._windowsTab, "Window Layout")
 
-        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
 
         buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
 
         mainLayout = QVBoxLayout()
 
@@ -55,19 +51,6 @@ class CWPreferencesDialog(QtFixes.QDialog):
         mainLayout.addWidget(buttonBox)
 
         self.setLayout(mainLayout)
-
-        #Get all settings
-        # self.readSettings()
-
-    # def readSettings(self):
-    #     """Reads all settings, and set unspecified to defaults. Settings are re-saved to disk to sync defaults back."""
-    #     self._generalTab.readSettings()
-    #
-    #     #Resync settings
-    #     self.saveSettings()
-    #
-    # def saveSettings(self):
-    #     self._generalTab.saveSettings()
 
 
 class GeneralTab(QWidget, Parameterized):
@@ -91,18 +74,6 @@ class GeneralTab(QWidget, Parameterized):
         mainLayout.addLayout(defdirLayout)
         mainLayout.addStretch(1)
         self.setLayout(mainLayout)
-
-    # def saveSettings(self):
-    #     """Save settings to 'settings' object"""
-    #
-    #     homedir = self.defaultDir.text()
-    #     if not os.path.isdir(homedir):
-    #         reply = QMessageBox.question(self, "ChipWhisperer Preferences", "Default project directory %s does not exist - should we create it?\n\n"%(homedir) +
-    #                              "If you press `NO' please change default directory in `Preferences'.", QMessageBox.Yes | QMessageBox.No)
-    #         if reply == QMessageBox.Yes:
-    #             os.mkdir(homedir)
-    #     self.settings.setValue("project-home-dir", homedir)
-
 
 class WindowTab(QWidget):
     def __init__(self, parent):
