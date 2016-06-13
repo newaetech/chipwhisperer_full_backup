@@ -214,6 +214,8 @@ class POI(QWidget):
         if startPoint == endPoint:
             endPoint += 1
 
+        extendDownhill = self.parent.findParam(["Points of Interest",'Hill detection']).getValue()
+
         for bnum in range(0, len(self.diffs)):
 
             maxarray = []
@@ -230,10 +232,10 @@ class POI(QWidget):
 
                 # set to -INF data within +/- the minspace
                 mstart = max(0, mloc - minSpace)
-                while mstart>0 and data[mstart-1] <= data[mstart]:
+                while extendDownhill and mstart>0 and data[mstart-1] <= data[mstart]:
                     mstart-=1
                 mend = min(mloc + minSpace, len(data))
-                while mend<len(data)-1 and data[mend+1] <= data[mend]:
+                while extendDownhill and mend<len(data)-1 and data[mend+1] <= data[mend]:
                     mend+=1
                 data[mstart:mend] = -np.inf
 
@@ -294,6 +296,7 @@ class PartitionDisplay(Parameterized, AutoScript):
                  {'name':'Point Range', 'key':'poi-pointrng', 'type':'range', 'limits':(0, 0), 'default':(0, 0), 'value':(0, 0), 'action':lambda _: self.updatePOI()},
                  {'name':'Num POI/Subkey', 'key':'poi-nummax', 'type':'int', 'limits':(1, 200), 'value':1, 'action':lambda _: self.updatePOI()},
                  {'name':'Min Spacing between POI', 'key':'poi-minspace', 'type':'int', 'limits':(1, 100E6), 'value':1, 'step':100, 'action':lambda _: self.updatePOI()},
+                 {'name':'Hill detection', 'key':'poi-hilldet', 'type':'bool', 'value':True, 'tip':"Extend the bounds downhill for each peak", 'action':lambda _: self.updatePOI()},
                  # {'name':'Threshold', 'key':'threshold', 'type':'int', 'visible':False},
                  {'name':'Open POI Table', 'type':'action', 'action':lambda _: self.poiDock.show()},
               ]},
@@ -545,7 +548,6 @@ class PartitionDisplay(Parameterized, AutoScript):
             return
 
         self.SADList = SADList
-
         return SADList
 
     def displayPartitions(self, differences={"partclass":None, "diffs":None}, tRange=(0, -1)):
