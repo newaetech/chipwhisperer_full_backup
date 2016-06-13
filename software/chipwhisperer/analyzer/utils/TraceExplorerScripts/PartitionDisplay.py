@@ -543,7 +543,6 @@ class PartitionDisplay(Parameterized, AutoScript):
 
         progressBar.updateStatus(progressBar.maximum)
         progressBar.setWindowTitle('Debug Fail')
-        progressBar.setText('You should never see this text')
         if progressBar.wasAborted():
             return
 

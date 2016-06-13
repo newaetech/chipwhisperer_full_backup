@@ -4,12 +4,13 @@ from setuptools import setup
 
 setup(
     name = 'chipwhisperer',
-    version = '0.20',
+    version = '3.1rc1',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
     license = 'GPLv3',
     url = 'www.ChipWhisperer.com',
+    download_url='https://www.newae.com/files/chipwhisperer-3.1rc1.tar.gz',
     packages = ['chipwhisperer',
                 'chipwhisperer.capture.api',
                 'chipwhisperer.capture.scopes',
@@ -37,7 +38,16 @@ setup(
                 'chipwhisperer.common.traces',
                 'chipwhisperer.common.ui',
                 'chipwhisperer.common.utils',
-                
+                'chipwhisperer.hardware',
+                'chipwhisperer.hardware.firmware',
+                'chipwhisperer.hardware.naeusb',
                 ],
-    install_requires = []
+    install_requires = [
+        'pyqtgraph',
+        'configobj',
+        #pyusb could be removed from required list, but for most people it's needed
+        'pyusb',
+        'docutils',
+        'numpy'
+    ]
 )
