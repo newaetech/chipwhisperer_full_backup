@@ -24,6 +24,7 @@
 #=================================================
 
 import sys
+import copy
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
 from chipwhisperer.common.utils import util
 import functools
@@ -262,7 +263,7 @@ class Parameter(object):
             self.sigChildAdded.emit(child)
         self.sigParametersChanged.emit()
 
-    def setValue(self, value,  ignoreReadonly = False, blockSignal=None,  blockAction=False, init=False, echo=True):
+    def setValue(self, value, blockSignal=None,  blockAction=False, init=False, ignoreReadonly = False, echo=True, addWithKey=False):
         """
         Set the parameter value. External values are updated using signals.
 
@@ -272,6 +273,7 @@ class Parameter(object):
         blockAction    - prevents action callback of being called.
         init           - used internally to initialize the parameter.
         echo           - enables/disables broadcasting the changes.
+        addWithKey     - add given value to list of valid values if not already present
         """
         if not ignoreReadonly and not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
@@ -279,7 +281,13 @@ class Parameter(object):
         type = self.opts["type"]
         if type == "group":
             return
-        if limits is not None and not self.invalid:
+
+        if addWithKey:
+            newlimits = copy.copy(limits)
+            newlimits[value.getName()] = value
+            self.setLimits(newlimits)
+
+        elif limits is not None and not self.invalid:
             if (type == "list" and
                    ((isinstance(limits, dict) and value not in limits.values()) or\
                    (not isinstance(limits, dict) and value not in limits))
@@ -571,12 +579,15 @@ def setupSetParam(parameter):
         @functools.wraps(func)
         def func_wrapper(*args, **kargs):
             blockSignal = kargs.get("blockSignal", None)
+            if "blockSignal" in kargs:
+                del kargs["blockSignal"]
             if blockSignal is None:
                 if parameter!="":
                     tmp = args[0].findParam(parameter)
-                    tmp.setValue(args[1], tmp.opts["set"])
-            if "blockSignal" in kargs:
-                del kargs["blockSignal"]
+                    tmp.setValue(args[1], blockSignal=tmp.opts["set"], **kargs)
+            #todo - use inspect to remove things from kargs that are handled by setvalue above
+            if "addWithKey" in kargs:
+                del kargs["addWithKey"]
             func(*args, **kargs)
         return func_wrapper
         func_wrapper.__wrapped__ = func
