@@ -321,19 +321,22 @@ class CWCoreAPI(Parameterized):
             setSize = self.tracesPerSet()
             for i in range(0, self._numTraceSets):
                 if progressBar.wasAborted(): break
-                currentTrace = self.getNewTrace(self.getTraceFormat())
+                if self.getTraceFormat() is not None:
+                    currentTrace = self.getNewTrace(self.getTraceFormat())
+                    # Load trace writer information
+                    prefix = currentTrace.config.attr("prefix")
+                    currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
+                    currentTrace.config.setAttr("targetSW", "unknown")
+                    currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
+                    currentTrace.config.setAttr("scopeSampleRate", 0)
+                    currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
+                    currentTrace.setTraceHint(setSize)
 
-                # Load trace writer information
-                prefix = currentTrace.config.attr("prefix")
-                currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
-                currentTrace.config.setAttr("targetSW", "unknown")
-                currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
-                currentTrace.config.setAttr("scopeSampleRate", 0)
-                currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
-                currentTrace.setTraceHint(setSize)
-
-                if waveBuffer is not None:
-                    currentTrace.setTraceBuffer(waveBuffer)
+                    if waveBuffer is not None:
+                        currentTrace.setTraceBuffer(waveBuffer)
+                else:
+                    currentTrace = None
+                    prefix = "None_"
 
                 for aux in self._auxList:
                     if aux:
@@ -351,13 +354,15 @@ class CWCoreAPI(Parameterized):
                 self.sigCampaignDone.emit()
                 tcnt += setSize
 
-                waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
+                if currentTrace is not None:
+                    waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
 
                 if progressBar.wasAborted():
                     break
 
-            currentTrace.unloadAllTraces()  # Required in order to make the GC work properly :(
-            self._traceFormat.unloadAllTraces()
+            if currentTrace is not None:
+                currentTrace.unloadAllTraces()  # Required in order to make the GC work properly :(
+                self._traceFormat.unloadAllTraces()
 
     def runScriptModule(self, mod, funcName="run"):
         """Execute the function in the Plugin classes of the specified module"""

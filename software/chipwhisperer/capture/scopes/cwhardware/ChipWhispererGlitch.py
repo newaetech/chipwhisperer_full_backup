@@ -60,7 +60,7 @@ class ChipWhispererGlitch(Parameterized):
         self.prCon = pr.PartialReconfigConnection()
         self.oa = oa
 
-        self.params = Parameter(name=self.getName(), type='group')
+        self.params = Parameter(name=self.getName(), type='group').register()
         self.params.addChildren([
             {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT},'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
             {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'action':self.updatePartialReconfig},
