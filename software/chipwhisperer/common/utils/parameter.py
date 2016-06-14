@@ -326,7 +326,9 @@ class Parameter(object):
                         value = k
 
             if echo and not self.opts.get("echooff", False):
-                print >> Parameter.scriptingOutput, str(self.getPath() + [value])
+                path = self.getPath()
+                if path is not None:
+                    print >> Parameter.scriptingOutput, str(path + [value])
 
     def callLinked(self):
         for name in self.opts.get("linked", []):
@@ -338,7 +340,9 @@ class Parameter(object):
         act = self.opts.get("action", None)
         if act is not None:
             act(self)
-            print >> Parameter.scriptingOutput, (str(self.getPath() + [None]))
+            path = self.getPath()
+            if path is not None:
+                print >> Parameter.scriptingOutput, (str(path + [None]))
         self.callLinked()
 
     def setDefault(self, default):
@@ -472,11 +476,14 @@ class Parameter(object):
 
     def getPath(self):
         """Return the path to the root."""
-        if self.parent is None:
+        if self in Parameter.registeredParameters.values():
             path = []
+        elif self.parent is None:
+            return None
         else:
             path = self.parent.getPath()
-        path.append(self.opts["name"])
+        if path is not None:
+            path.append(self.opts["name"])
         return path
 
     def stealDynamicParameters(self, parent):

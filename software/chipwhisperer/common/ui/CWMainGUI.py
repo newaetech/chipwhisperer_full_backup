@@ -54,6 +54,7 @@ from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
 from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils import qt_tweaks
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
 from chipwhisperer.common.ui.PreferencesDialog import CWPreferencesDialog
@@ -154,8 +155,7 @@ class CWMainGUI(QMainWindow):
 
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
-        console = QTextBrowser()
-        console.write = console.insertPlainText
+        console = qt_tweaks.QTextBrowser()
         if redirectStdOut:
             self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
@@ -297,9 +297,6 @@ class CWMainGUI(QMainWindow):
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpMenu.addAction(QAction('&Save Settings', self, statusTip='Save all settings', triggered=self.saveSettings))
-        self.helpMenu.addAction(QAction('&Restore Settings', self, statusTip='Restore all settings to previous saved state', triggered=self.restoreSettings))
-        self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
         # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
