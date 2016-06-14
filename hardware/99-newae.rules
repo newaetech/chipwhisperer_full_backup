@@ -1,0 +1,25 @@
+## NewAE .rules file to enable ChipWhisperer to easily take control
+#
+# To use this file
+# 1) Unplug all NewAE hardware
+# 2) Copy to /etc/udev/rules.d/
+# 3) Add your username to the plugdev group:
+#    $ sudo usermod -a -G plugdev YOUR-USERNAME
+# 4) Reset the udev system:
+#    $ sudo udevadm control --reload-rules
+# 5) Log in/out again for changes to take effect
+# 6) Connect hardware
+#
+
+# CW-Lite
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace2", MODE="0664", GROUP="plugdev"
+
+# CW-1200
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="ace3", MODE="0664", GROUP="plugdev"
+
+# CW-305 (Artix Target)
+SUBSYSTEM=="usb", ATTRS{idVendor}=="2b3e", ATTRS{idProduct}=="c305", MODE="0664", GROUP="plugdev"
+
+# CW-CR2
+SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="8613", MODE="0664", GROUP="plugdev"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="221a", ATTRS{idProduct}=="0100", MODE="0664", GROUP="plugdev"
