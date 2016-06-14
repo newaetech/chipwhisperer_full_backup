@@ -321,7 +321,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         respstr = str(bytearray(resp.encode('utf-8')))
         # respstr = ' '.join(["%02x" % t for t in bytearray(resp)])
 
-        settingsList = [ self.tuneParamList[i].paramValueItem.value() for i in range(0, len(self.tuneParamList))]
+        settingsList = [ self.tuneParamList[i].paramValueItem.getValue() for i in range(0, len(self.tuneParamList))]
         newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":settingsList, "date":starttime}
 
         self.tableList.append(newdata)
@@ -332,10 +332,10 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
             if self._autosavef is None:
                 # File previously not open
                 self._autosavef = open(self._autosavefname, "w")
-                self.findParam('savefilename').setValue(self._autosavefname)
+                self.findParam(["Recordings",'savefilename']).setValue(self._autosavefname)
 
                 # Add notes
-                pickle.dump({"notes":self.findParam('savenotes').getValue()}, self._autosavef)
+                pickle.dump({"notes":self.findParam(["Recordings",'savenotes']).getValue()}, self._autosavef)
 
                 # Add headers
                 cmds = [self.tuneParamList[i].findParam('script').getValue() for i in range(0, len(self.tuneParamList))]
