@@ -94,11 +94,11 @@ class CWCaptureGUI(CWMainGUI):
         self.glitchMonitor.addResponse(data)
 
     def addToolMenuItems(self):
-        self.terminalAct = QAction('Open Terminal', self, statusTip='Open Simple Serial Terminal',
+        self.terminalAct = QAction('Terminal', self, statusTip='Open Simple Serial Terminal',
                                    triggered=self.serialTerminal.show)
 
         self.toolMenu.addAction(self.terminalAct)
-        self.glitchMonitorAct = QAction('Open Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
+        self.glitchMonitorAct = QAction('Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
                                         triggered=self.glitchMonitor.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
 
