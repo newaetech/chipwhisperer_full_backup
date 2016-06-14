@@ -143,7 +143,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
             {'name':'Recordings', 'type':'group', 'expanded':False, 'children':[
                 # {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
-                {'name':'Last autosave Filename', 'type':'str', 'key':'savefilename', 'value':''},
+                {'name':'Last autosave Filename', 'type':'file', 'key':'savefilename', 'value':''},
                 {'name':'Notes', 'type':'text', 'key':'savenotes', 'value':""},
             ]},
         ])
@@ -163,9 +163,12 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.hide()
 
         #Do an update
-        self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.table.horizontalHeader().setResizeMode(QHeaderView.Interactive)  # setStretchLastSection(True)
         self.clearTable()
+        self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setSortingEnabled(True)
+        self.table.sortByColumn(2, Qt.DescendingOrder)
 
         self._campaignRunning = False
 
@@ -207,6 +210,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.table.clear()
         self.table.setRowCount(0)
         self.updateTableHeaders()
+        self.table.resizeRowsToContents()
 
     def executeScriptCommand(self, paramNum, script):
         #print script
