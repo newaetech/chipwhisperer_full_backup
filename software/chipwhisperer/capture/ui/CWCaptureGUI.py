@@ -210,6 +210,7 @@ class CWCaptureGUI(CWMainGUI):
             return True
 
     def doCapture(self, callback):
+        self.clearFocus()
         try:
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)

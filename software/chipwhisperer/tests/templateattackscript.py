@@ -1,5 +1,6 @@
 # Date Auto-Generated: 2016.06.09-16.47.02
 from chipwhisperer.common.scripts.base import UserScriptBase
+import shutil, os
 # Imports from Preprocessing
 import chipwhisperer.analyzer.preprocessing as preprocessing
 # Imports from Attack
@@ -9,12 +10,18 @@ from chipwhisperer.analyzer.utils.Partition import PartitionHWIntermediate
 # Imports from utilList
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
+from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammer
 
 class Capture(UserScriptBase):
     _name = "Template Attack Script"
     _description = "Template Attack Script"
 
     def run(self):
+        if os.path.isfile("projects/tut_randkey_randplain.cwp"): os.remove("projects/tut_randkey_randplain.cwp")
+        shutil.rmtree("projects/tut_randkey_randplain_data", ignore_errors=True)
+        if os.path.isfile("projects/tut_fixedkey_randplain.cwp"): os.remove("projects/tut_fixedkey_randplain.cwp")
+        shutil.rmtree("projects/tut_fixedkey_randplain_data", ignore_errors=True)
+
         #User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
@@ -23,6 +30,14 @@ class Capture(UserScriptBase):
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
 
         self.api.connect()
+
+        xmega = XMEGAProgrammer()
+        xmega.setUSBInterface(self.api.getScope().scopetype.dev.xmega)
+        xmega._logging = None
+        xmega.find()
+        xmega.erase()
+        xmega.program(r"simeplserial-aes-xmega.hex", memtype="flash", verify=True)
+        xmega.close()
 
         #Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
@@ -48,11 +63,11 @@ class Capture(UserScriptBase):
         #Capture a set of traces and save the project
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Random'])
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1500])
-        self.api.saveProject("../../projects/tut_randkey_randplain.cwp")
+        self.api.saveProject("projects/tut_randkey_randplain.cwp")
         self.api.captureM()
         self.api.saveProject()
         self.api.newProject()
-        self.api.saveProject("../../projects/tut_fixedkey_randplain.cwp")
+        self.api.saveProject("projects/tut_fixedkey_randplain.cwp")
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Fixed'])
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 20])
         self.api.captureM()
@@ -99,14 +114,14 @@ class Attack(UserScriptBase):
         self.api.getResults("Trace Recorder").setTraceSource(self.traces)
 
     def run(self):
-        self.api.openProject("../../projects/tut_randkey_randplain.cwp")
+        self.api.openProject("projects/tut_randkey_randplain.cwp")
         self.traces = self.api.project().traceManager()
         self.initAnalysis()
         self.initReporting()
         self.generateTemplates()
         self.api.saveProject()
         template = self.api.project().getDataConfig(sectionName="Template Data", subsectionName="Templates")
-        self.api.openProject("../../projects/tut_fixedkey_randplain.cwp")
+        self.api.openProject("projects/tut_fixedkey_randplain.cwp")
         self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
         self.traces = self.api.project().traceManager()
         self.initAnalysis2()

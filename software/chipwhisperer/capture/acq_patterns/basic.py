@@ -120,10 +120,10 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         return (self._key, self._textin)
 
     def __str__(self):
-        key = "Key=" + self.findParam("Key").getKey()
+        key = "Key=" + self.findParam("Key").getValueKey()
         if self._fixedKey:
             key = key + ":" + self.findParam("initkey").getValue()
-        plaintext = "Plaintext=" + self.findParam("Plaintext").getKey()
+        plaintext = "Plaintext=" + self.findParam("Plaintext").getValueKey()
         if self._fixedPlain:
             plaintext = plaintext + ":" + self.findParam("inittext").getValue()
 

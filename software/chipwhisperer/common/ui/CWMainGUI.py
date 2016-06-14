@@ -556,6 +556,10 @@ class OutLog:
         if self.origStdout:
             self.origStdout.write(m)
 
+    def clearFocus(self):
+        """Accept the current parameter edition by removing its focus"""
+        if QApplication.focusWidget() is not None:
+            QApplication.focusWidget().clearFocus()
 
 def main():    
     app = QApplication(sys.argv)

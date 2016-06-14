@@ -24,8 +24,8 @@
 #=================================================
 
 from datetime import *
-from ..utils.timer import Timer
 from ..utils import qt_tweaks
+from ..utils import util
 
 class ProgressBarText(object):
     def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None, show=True):
@@ -81,6 +81,7 @@ class ProgressBarText(object):
                 or self.currentProgress/self.maximum - self.last/self.maximum >= 0.2:
             self.last = currentProgress
             self.printStatus()
+        util.updateUI()
 
     def abort(self, message = None):
         if not message:
@@ -163,7 +164,7 @@ try:
             self.statusLabel.setText(self.getStatusText())
             if self.maximum!=0:
                 self.pbar.setValue((self.currentProgress/self.maximum) * 100)
-            QCoreApplication.processEvents()
+            util.updateUI()
 
         def close(self):
             ProgressBarText.close(self)

@@ -77,7 +77,7 @@ class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
         pend = self.findParam('pointrng').getValue()[1]
 
         trace = CWCoreAPI.getInstance().getNewTrace(self.findParam('tracefmt').getValue())
-        trace.config.setAttr("notes", "Recorded from \"%s\" output: Traces (%s,%s). Points (%s,%s)" % (self.findParam('Input').getKey(), tstart, tend, pstart, pend))
+        trace.config.setAttr("notes", "Recorded from \"%s\" output: Traces (%s,%s). Points (%s,%s)" % (self.findParam('Input').getValueKey(), tstart, tend, pstart, pend))
         for tnum in range(tstart, tend+1):
             trace.addTrace(self.getTraceSource().getTrace(tnum)[pstart:pend+1], self.getTraceSource().getTextin(tnum), self.getTraceSource().getTextout(tnum), self.getTraceSource().getKnownKey(tnum))
         trace.closeAll()
