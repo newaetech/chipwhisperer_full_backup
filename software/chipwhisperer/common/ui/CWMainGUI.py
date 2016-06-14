@@ -54,6 +54,7 @@ from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
 from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils import qt_tweaks
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
 from chipwhisperer.common.ui.PreferencesDialog import CWPreferencesDialog
@@ -154,8 +155,7 @@ class CWMainGUI(QMainWindow):
 
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
-        console = QTextBrowser()
-        console.write = console.insertPlainText
+        console = qt_tweaks.QTextBrowser()
         if redirectStdOut:
             self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)

@@ -35,9 +35,13 @@ class QLineEdit(qtg.QLineEdit):
         super(QLineEdit, self).__init__(*args, **kwargs)
         self.setAttribute(qtc.Qt.WA_MacShowFocusRect, False)
 
-
 class QDialog(qtg.QDialog):
     """Makes it easy to show and raise the window at the same time"""
     def show(self, *args, **kwargs):
         super(QDialog, self).show(*args, **kwargs)
         self.raise_()
+
+class QTextBrowser(qtg.QTextBrowser):
+        def write(self, text):
+            self.moveCursor(qtg.QTextCursor.End)
+            self.insertPlainText(text)
