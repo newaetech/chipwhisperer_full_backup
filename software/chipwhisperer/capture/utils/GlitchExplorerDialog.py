@@ -34,7 +34,6 @@ from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util
-
 class TuningParameter(Parameterized):
 
     def __init__(self, num):
@@ -42,7 +41,6 @@ class TuningParameter(Parameterized):
         self._name = 'Tuning Parameter %d' % num
         self.paramNum = num
         self.rangeComplete = util.Signal()
-        self.newScriptCommand = util.Signal()
         self.nameChanged = util.Signal()
         self.tracesreqChanged = util.Signal()
 
@@ -65,6 +63,9 @@ class TuningParameter(Parameterized):
     def name(self):
         return self.findParam('humanname').getValue()
 
+    def reset(self):
+        self.findParam('curval').setValue(self.findParam('range').getValue()[0])
+
     def updateParams(self, ignored=None):
 
         rng = self.findParam('range').getValue()
@@ -72,11 +73,9 @@ class TuningParameter(Parameterized):
         # Force to be valid values
         curval = self.findParam('curval').getValue()
         curval = max(curval, rng[0])
-        self.findParam('curval').setValue(curval)
-
         curval = min(curval, rng[1])
-        self.findParam('curval').setValue(curval)
         self.findParam('curval').setLimits(rng)
+        self.findParam('curval').setValue(curval)
 
         self.paramRange = rng
         self.paramValueItem = self.findParam('curval')
@@ -109,7 +108,12 @@ class TuningParameter(Parameterized):
                 newval = self.paramType(newval)
 
                 self.paramValueItem.setValue(newval)
-                self.newScriptCommand.emit(self.paramNum, self.paramScript+[newval])
+
+                parameter = self.paramScript+[newval]
+                try:
+                    Parameter.setParameter(parameter)
+                except:
+                    raise StopIteration("Choose a valid Parameter Path/Value combination. Got: " + str(parameter))
         else:
             raise ValueError("Unknown Increment Type %s" % mode)
 
@@ -120,6 +124,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
     def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
         self.setWindowTitle("Glitch Explorer")
+        self.setMinimumWidth(500)
 
         self.mainLayout = QVBoxLayout()
         self.mainSplitter = QSplitter(self)
@@ -136,14 +141,18 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.getParams().register()
         self.getParams().addChildren([
             {'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
+            {'name':'Reset', 'type':'action', 'action':self.reset, 'tip':"Resets all Tuning Parameters to its minimum value."},
             {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'action':self.updateParameters, 'readonly':False},
-            {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True},
+            {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True, 'children':[
+                {'name':'Use this value', 'type':'action', 'action':lambda _: Parameter.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces',self.findParam('tracesreq').getValue()])},
+             ]},
             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
 
             {'name':'Recordings', 'type':'group', 'expanded':False, 'children':[
-                # {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
-                {'name':'Last autosave Filename', 'type':'file', 'key':'savefilename', 'value':''},
+                {'name':'Load existing', 'type':'action', 'key':'open', 'action':lambda _:self.loadRecordings()},
+                {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
+                {'name':'Autosaved filename', 'type':'str', 'key':'savefilename', 'value':'', "readonly":True},
                 {'name':'Notes', 'type':'text', 'key':'savenotes', 'value':""},
             ]},
         ])
@@ -163,13 +172,9 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.hide()
 
         #Do an update
-        self.clearTable()
         self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
-        self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.setSortingEnabled(True)
-        self.table.sortByColumn(2, Qt.DescendingOrder)
-
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Interactive)
+        self.clearTable()
         self._campaignRunning = False
 
     def tuneEnabled(self, status):
@@ -177,13 +182,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
     def campaignStart(self, prefixname):
         """Called when acqusition campaign (multi-api) starts, generates filename"""
-        suffix = "_glitchresults.p"
-        try:
-            fname = self.parent().project().getDataFilepath(prefixname + suffix, subdirectory="glitchresults")
-            self._autosavefname = fname["abs"]
-        except:
-            self._autosavefname = datetime.now().strftime('%Y.%m.%d-%H.%M.%S') + suffix
-
+        self._autosavefname = self.parent().api.project().getDataFilepath(prefixname + "_glitchresults.p", subdirectory="glitchresults")["abs"]
         self._autosavef = None
         self._campaignRunning = True
         self.tuneEnabled(False)
@@ -205,16 +204,22 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         lbl = "Total %d, Glitches Successful %d" % (len(self.tableList), okcnt)
         self.statusLabel.setText(lbl)
 
+    def reset(self, ignored=None):
+        for t in self.tuneParamList:
+            t.reset()
+
     def clearTable(self, ignored=None):
         self.tableList = []
         self.table.clear()
         self.table.setRowCount(0)
+        self.table.setColumnCount(0)
         self.updateTableHeaders()
-        self.table.resizeRowsToContents()
-
-    def executeScriptCommand(self, paramNum, script):
-        #print script
-        self.parent().api.setParameter(script)
+        self.table.resizeColumnsToContents()
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setColumnWidth(0, 80)
+        self.table.setColumnWidth(2, 120)
+        self.table.setColumnWidth(3, 80)
+        self.table.sortByColumn(3, Qt.DescendingOrder)
 
     def updateParameters(self, ignored=None):
         numparams = self.findParam('numtune').getValue()
@@ -234,7 +239,6 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
             # Do stuff
             p.nameChanged.connect(self.updateTableHeaders)
-            p.newScriptCommand.connect(self.executeScriptCommand)
             p.rangeComplete.connect(self.rangeDone)
             p.tracesreqChanged.connect(self.tracesreqChanged)
 
@@ -247,18 +251,21 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 treq *= t.tracesrequired
         self.findParam('tracesreq').setValue(treq, ignoreReadonly=True)
 
-    def updateTableHeaders(self, ignored=None, ignoredmore=None):
+    def updateTableHeaders(self, ignored=None, ignoredmore=None, override=None):
+        headerlist = ["Status", "Sent", "Received", "Date"]
 
-        headerlist = ["Sent", "Received", "Date"]
 
-        for t in self.tuneParamList:
-            headerlist.append(t.name())
+        if override is not None:
+            for c in override:
+                headerlist.append(c)
+        else:
+            for t in self.tuneParamList:
+                headerlist.append(t.name())
 
         self.table.setColumnCount(len(headerlist))
         self.table.setHorizontalHeaderLabels(headerlist)
 
     def rangeDone(self, pnum):
-
         if (pnum + 1) < len(self.tuneParamList):
             self.tuneParamList[pnum + 1].findNewValue()
 
@@ -268,26 +275,39 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         # TODO: Improve how looping is done
         if len(self.tuneParamList) > 0:
             # Always increment lowest, triggers upper values
-            self.tuneParamList[0].findNewValue()
+            # try:
+                self.tuneParamList[0].findNewValue()
+            # except Exception as e:
+            #     raise StopIteration(e)
 
     def appendToTable(self, newdata):
         """ Append a result to the display table """
 
-        self.table.insertRow(0)
+        try:
+            self.table.setSortingEnabled(False)
+            self.table.insertRow(0)
 
-        outdata = QTableWidgetItem(repr(newdata["output"]))
+            outdata = QTableWidgetItem(repr(newdata["output"]))
+            if newdata["success"]:
+                outdata.setBackground(QBrush(QColor(0,255,0)))
+                status = "Success"
+            elif newdata["normal"] == False:
+                outdata.setBackground(QBrush(QColor(255,0,0)))
+                status = "Anormal"
+            else:
+                status = "Normal"
 
-        if newdata["success"]:
-            outdata.setBackground(QBrush(QColor(0,255,0)))
+            self.table.setItem(0, 0, QTableWidgetItem(status))
+            self.table.setItem(0, 1, QTableWidgetItem(""))
+            self.table.setItem(0, 2, outdata)
+            self.table.setItem(0, 3, QTableWidgetItem(newdata["date"].strftime('%H:%M:%S')))
+            for i, v in enumerate(newdata["settings"]):
+                self.table.setItem(0, 4 + i, QTableWidgetItem(str(v)))
 
-        elif newdata["normal"] == False:
-            outdata.setBackground(QBrush(QColor(255,0,0)))
-
-        self.table.setItem(0, 1, outdata)
-        self.table.setItem(0, 2, QTableWidgetItem(newdata["date"].strftime('%H:%M:%S')))
-        for i, v in enumerate(newdata["settings"]):
-            self.table.setItem(0, 3 + i, QTableWidgetItem(str(v)))
-
+            self.table.resizeRowsToContents()
+            self.table.setSortingEnabled(True)
+        except AttributeError:
+            raise StopIteration("Error when adding data to the table. Plese clear it and try again.")
 
     def addResponse(self, resp):
         """ Add a response from the system to glitch table + logs """
@@ -324,18 +344,27 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         respstr = str(bytearray(resp.encode('utf-8')))
         # respstr = ' '.join(["%02x" % t for t in bytearray(resp)])
 
-        settingsList = [Parameter.getParameter(self.tuneParamList[i].paramScript) for i in range(0, len(self.tuneParamList))]
+        settingsList = []
+        for i in range(0, len(self.tuneParamList)):
+            try:
+                settingsList.append(Parameter.getParameter(self.tuneParamList[i].paramScript))
+            except:
+                raise StopIteration("Choose a valid Parameter Path for Tuning Parameter \"%s\" . Got: %s" % (self.tuneParamList[i].name(), self.tuneParamList[i].paramScript))
         newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":settingsList, "date":starttime}
 
         self.tableList.append(newdata)
         self.appendToTable(newdata)
         self.updateStatus()
 
-        if self._campaignRunning:
+        if self._campaignRunning and self.findParam(["Recordings","saveresults"]).getValue():
             if self._autosavef is None:
                 # File previously not open
-                self._autosavef = open(self._autosavefname, "w")
-                self.findParam(["Recordings",'savefilename']).setValue(self._autosavefname)
+                try:
+                    self._autosavef = open(self._autosavefname, "w")
+                except Exception as e:
+                    self.findParam(["Recordings","saveresults"]).setValue(False)
+                    raise Warning("Could not save recordings to file: %s. Reason: %s. Disabling it in order to continue." % (self._autosavefname, str(e)))
+                self.findParam(["Recordings",'savefilename']).setValue(self._autosavefname, ignoreReadonly=True)
 
                 # Add notes
                 pickle.dump({"notes":self.findParam(["Recordings",'savenotes']).getValue()}, self._autosavef)
@@ -347,6 +376,21 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
             # Add data
             pickle.dump({"data":newdata}, self._autosavef)
 
+    def loadRecordings(self, fname=None):
+        if fname == None:
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open file', QSettings().value("open_glitch_file"),'*.p')
+
+        if fname:
+            self.clearTable()
+            file = open(fname, 'r')
+            self.findParam(["Recordings",'savenotes']).setValue(pickle.load(file)['notes'])
+            self.updateTableHeaders(override=pickle.load(file)['commands'])
+            while 1:
+                try:
+                    self.appendToTable(pickle.load(file)['data'])
+                except EOFError:
+                    break
+            file.close()
 
 def main():
     # Create the Qt Application

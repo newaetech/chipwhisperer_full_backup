@@ -24,16 +24,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-#
-#
-#
-# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
-# to the ChipWhisperer.
-#
-# Data is saved into both a project file and a MATLAB array
-#
 
 import sys
+import shutil, os
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
 from chipwhisperer.common.scripts.base import UserScriptBase
@@ -42,13 +35,16 @@ from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammer
 
 
 class UserScript(UserScriptBase):
-    _name = "ChipWhisperer-Lite: AES SimpleSerial on XMEGA"
-    _description = "SimpleSerial with Standard Target for AES (XMEGA)"
+    _name = "Test the Glitch Explorer"
 
     def __init__(self, api):
         super(UserScript, self).__init__(api)
 
     def run(self):
+        if os.path.isfile("projects/glitchtest.cwp"): os.remove("projects/glitchtest.cwp")
+        shutil.rmtree("projects/glitchtest_data", ignore_errors=True)
+
+        self.api.saveProject("projects/glitchtest.cwp")
         #User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
@@ -136,8 +132,8 @@ class UserScript(UserScriptBase):
 
         lstexample = [
             ['Glitch Explorer', 'Tuning Parameters', 1],
-            ['Glitch Explorer', 'Tuning Parameter 0', 'Name', u'Offset\n'],
-            ['Glitch Explorer', 'Tuning Parameter 0', 'Parameter Path', u"['Glitch Module', 'Glitch Offset (as % of period)']\n"],
+            ['Glitch Explorer', 'Tuning Parameter 0', 'Name', u'Offset'],
+            ['Glitch Explorer', 'Tuning Parameter 0', 'Parameter Path', u"['Glitch Module', 'Glitch Offset (as % of period)']"],
             ['Glitch Explorer', 'Tuning Parameter 0', 'Data Format', 'Float'],
             ['Glitch Explorer', 'Tuning Parameter 0', 'Range', (-30, 30)],
             ['Glitch Explorer', 'Tuning Parameter 0', 'Value', -30.0],

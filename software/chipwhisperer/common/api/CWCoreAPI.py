@@ -220,6 +220,10 @@ class CWCoreAPI(Parameterized):
         """Open project file"""
         self.newProject()
         self.project().load(fname)
+        try:
+            ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(TraceSource.registeredObjects["Trace Management"])
+        except KeyError:
+            pass
 
     def saveProject(self, fname=None):
         """Save the current opened project to file"""
@@ -324,7 +328,7 @@ class CWCoreAPI(Parameterized):
                 if self.getTraceFormat() is not None:
                     currentTrace = self.getNewTrace(self.getTraceFormat())
                     # Load trace writer information
-                    prefix = currentTrace.config.attr("prefix")
+                    prefix = currentTrace.config.attr("prefix")[:-1]
                     currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
                     currentTrace.config.setAttr("targetSW", "unknown")
                     currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
@@ -336,11 +340,11 @@ class CWCoreAPI(Parameterized):
                         currentTrace.setTraceBuffer(waveBuffer)
                 else:
                     currentTrace = None
-                    prefix = "None_"
+                    prefix = datetime.now().strftime('%Y.%m.%d-%H.%M.%S')
 
                 for aux in self._auxList:
                     if aux:
-                        aux.setPrefix(prefix[:-1])
+                        aux.setPrefix(prefix)
 
                 ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
@@ -349,7 +353,7 @@ class CWCoreAPI(Parameterized):
                 ac.sigTraceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
                 ac.sigTraceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
 
-                self.sigCampaignStart.emit(prefix[:-1])
+                self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager())
                 self.sigCampaignDone.emit()
                 tcnt += setSize
