@@ -95,16 +95,16 @@ class CWCoreAPI(Parameterized):
                     {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
             ]},
         ])
-        self.scopeParam = Parameter(name="Scope Settings", type='group')
+        self.scopeParam = Parameter(name="Scope Settings", type='group').register()
         self.params.getChild('Scope Module').stealDynamicParameters(self.scopeParam)
 
-        self.targetParam = Parameter(name="Target Settings", type='group')
+        self.targetParam = Parameter(name="Target Settings", type='group').register()
         self.params.getChild('Target Module').stealDynamicParameters(self.targetParam)
 
-        self.traceParam = Parameter(name="Trace Settings", type='group')
+        self.traceParam = Parameter(name="Trace Settings", type='group').register()
         self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
 
-        self.auxParam = Parameter(name="Aux Settings", type='group')
+        self.auxParam = Parameter(name="Aux Settings", type='group').register()
         self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
 
         # self.attackParam = Parameter(name="Attack Settings", type='group')
@@ -393,6 +393,10 @@ class CWCoreAPI(Parameterized):
                                 ), sys.exc_info()[2])
         finally:
             self.busy.setValue(False)
+
+    def getParameter(self, pathAndValue):
+        """Return the value of a registered parameter"""
+        return Parameter.getParameter(pathAndValue)
 
     def setParameter(self, pathAndValue):
         """Set the parameter value, given its path. It should be registered in Parameter.registeredParameters"""

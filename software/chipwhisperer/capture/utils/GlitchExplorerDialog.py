@@ -48,7 +48,7 @@ class TuningParameter(Parameterized):
 
         self.getParams().addChildren([
             {'name':'Name', 'type':'str', 'key':'humanname', 'value':'Param #%d' % num, 'action':lambda p:self.nameChange(p.getValue())},
-            {'name':'Script Command', 'type':'str', 'key':'script', 'value':'[]', 'action':lambda p:self.updateParams()},
+            {'name':'Parameter Path', 'type':'str', 'key':'parampath', 'value':'[]', 'action':lambda p:self.updateParams()},
             {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int},
             {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'default':(0, 10), 'action':lambda p:self.updateParams()},
             {'name':'Value', 'type':'float', 'key':'curval', 'value':1.0},
@@ -84,7 +84,7 @@ class TuningParameter(Parameterized):
         self.paramRepeat = self.findParam('repeat').getValue()
         self.paramType = self.findParam('datatype').getValue()
         try:
-            self.paramScript = eval(self.findParam('script').getValue())
+            self.paramScript = eval(self.findParam('parampath').getValue())
         except SyntaxError, e:
             print "Syntax Error: %s" % str(e)
 
@@ -108,9 +108,8 @@ class TuningParameter(Parameterized):
                 # Cast type to required value
                 newval = self.paramType(newval)
 
-                self.paramScript[-1] = newval
                 self.paramValueItem.setValue(newval)
-                self.newScriptCommand.emit(self.paramNum, self.paramScript)
+                self.newScriptCommand.emit(self.paramNum, self.paramScript+[newval])
         else:
             raise ValueError("Unknown Increment Type %s" % mode)
 
@@ -134,6 +133,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         # self.table.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.mainSplitter.addWidget(self.table)
 
+        self.getParams().register()
         self.getParams().addChildren([
             {'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
             {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'action':self.updateParameters, 'readonly':False},
@@ -143,11 +143,10 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
             {'name':'Recordings', 'type':'group', 'expanded':False, 'children':[
                 # {'name':'Autosave Multi-Capture Results', 'type':'bool', 'key':'saveresults', 'value':True},
-                {'name':'Last autosave Filename', 'type':'str', 'key':'savefilename', 'value':''},
+                {'name':'Last autosave Filename', 'type':'file', 'key':'savefilename', 'value':''},
                 {'name':'Notes', 'type':'text', 'key':'savenotes', 'value':""},
             ]},
         ])
-
 
         self.paramTree = ParameterTree()
         self.paramTree.addParameters(self.getParams()._PyQtGraphParameter)
@@ -164,9 +163,12 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.hide()
 
         #Do an update
-        self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        self.table.horizontalHeader().setResizeMode(QHeaderView.Interactive)  # setStretchLastSection(True)
         self.clearTable()
+        self.table.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.table.horizontalHeader().setResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.setSortingEnabled(True)
+        self.table.sortByColumn(2, Qt.DescendingOrder)
 
         self._campaignRunning = False
 
@@ -208,6 +210,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.table.clear()
         self.table.setRowCount(0)
         self.updateTableHeaders()
+        self.table.resizeRowsToContents()
 
     def executeScriptCommand(self, paramNum, script):
         #print script
@@ -321,7 +324,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         respstr = str(bytearray(resp.encode('utf-8')))
         # respstr = ' '.join(["%02x" % t for t in bytearray(resp)])
 
-        settingsList = [ self.tuneParamList[i].paramValueItem.getValue() for i in range(0, len(self.tuneParamList))]
+        settingsList = [Parameter.getParameter(self.tuneParamList[i].paramScript) for i in range(0, len(self.tuneParamList))]
         newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":settingsList, "date":starttime}
 
         self.tableList.append(newdata)
@@ -338,7 +341,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 pickle.dump({"notes":self.findParam(["Recordings",'savenotes']).getValue()}, self._autosavef)
 
                 # Add headers
-                cmds = [self.tuneParamList[i].findParam('script').getValue() for i in range(0, len(self.tuneParamList))]
+                cmds = [self.tuneParamList[i].findParam('parampath').getValue() for i in range(0, len(self.tuneParamList))]
                 pickle.dump({"commands":cmds}, self._autosavef)
 
             # Add data
