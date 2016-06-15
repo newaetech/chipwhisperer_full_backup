@@ -368,7 +368,7 @@ uint16_t iso7816_xfr_block_apdu_t0(Usart* p_usart, const uint8_t *p_apdu,
 
 	status |= iso7816_get_char(p_usart, &p_message[us_message_index++]); /* SW2 */
 	
-	printf("%x\n", status);
+	printf("%x\n", (unsigned int)status);
 
 	return (us_message_index);
 }
@@ -659,7 +659,7 @@ uint8_t iso7816_decode_atr(Usart* p_usart, uint8_t *p_atr)
 	uint32_t j;
 	uint32_t y;
 	uint8_t uc_offset;
-	uint32_t fidi;
+	uint32_t fidi = 0;
 
 	i = 2;
 	y = p_atr[1] & 0xF0;
@@ -707,8 +707,6 @@ uint8_t iso7816_decode_atr(Usart* p_usart, uint8_t *p_atr)
 	if (td1 & 0xf) {
 		return (td1 & 0xf);
 	}
-
-	uint8_t reinit = 0;
 	
 	// Propose speeds to card
 	iso7816_send_char(p_usart, 0xff);
