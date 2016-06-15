@@ -325,7 +325,7 @@ RET_TYPE cardDetectedRoutine(void)
 {
     RET_TYPE card_detection_result;
     uint8_t temp_buffer[10];
-    RET_TYPE temp_rettype;
+    RET_TYPE temp_rettype = RETURN_NOK;
 
     card_detection_result = firstDetectFunctionSMC();            // Get a first card detection result
 

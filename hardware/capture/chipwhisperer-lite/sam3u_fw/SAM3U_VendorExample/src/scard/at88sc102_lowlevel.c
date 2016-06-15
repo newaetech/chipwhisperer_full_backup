@@ -52,11 +52,16 @@ volatile uint8_t card_detect_counter = 0;
 /** Current detection state, see detect_return_t */
 volatile uint8_t button_return;
 
+/* Local Function prototypes */
 void smartcardHPulseDelay(void);
-void smartcardPowerDelay(void);
 static inline void smartcardTchpDelay(void);
 void clockPulseSMC(void);
 void invertedClockPulseSMC(void);
+void clearPgmRstSignals(void);
+void setPgmRstSignals(void);
+void performLowLevelWriteNErase(uint8_t is_write);
+void setBBModeAndPgmRstSMC(void);
+
 
 
 /*! \fn     smartcardHPulseDelay(void)
