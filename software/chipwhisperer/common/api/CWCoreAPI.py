@@ -317,7 +317,7 @@ class CWCoreAPI(Parameterized):
         if not progressBar: progressBar = ProgressBarText()
 
         with progressBar:
-            progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
+            progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
             progressBar.setMaximum(self._numTraces - 1)
 
             waveBuffer = None
