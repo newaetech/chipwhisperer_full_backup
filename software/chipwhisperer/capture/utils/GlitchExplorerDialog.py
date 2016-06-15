@@ -34,6 +34,8 @@ from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util
+
+
 class TuningParameter(Parameterized):
 
     def __init__(self, num):
@@ -65,6 +67,7 @@ class TuningParameter(Parameterized):
 
     def reset(self):
         self.findParam('curval').setValue(self.findParam('range').getValue()[0])
+        self.updateParams()
 
     def updateParams(self, ignored=None):
 
@@ -87,7 +90,11 @@ class TuningParameter(Parameterized):
         except SyntaxError, e:
             print "Syntax Error: %s" % str(e)
 
-        self.tracesrequired = math.ceil(((self.paramRange[1] - self.paramRange[0]) / self.paramStep) * self.paramRepeat)
+        try:
+            Parameter.setParameter(self.paramScript+[curval])
+        except:
+            pass
+        self.tracesrequired = math.ceil(((self.paramRange[1] - self.paramRange[0]) / self.paramStep) * self.paramRepeat)+1
         self.tracesreqChanged.emit(self.paramNum, self.tracesrequired)
 
     def findNewValue(self, mode="linear"):
