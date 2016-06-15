@@ -300,7 +300,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 status = "Success"
             elif newdata["normal"] == False:
                 outdata.setBackground(QBrush(QColor(255,0,0)))
-                status = "Anormal"
+                status = "Failed"
             else:
                 status = "Normal"
 
