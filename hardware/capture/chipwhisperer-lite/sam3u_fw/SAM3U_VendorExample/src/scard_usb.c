@@ -50,12 +50,15 @@ uint8_t scard_protocol;
 /* AT88SC102 Mode Specific */
 uint8_t at88sc102_status;
 
-#define SCARD_MODE_AT88SC102 0x03
-#define SCARD_MODE_AT88SC102_INIT 0x02
-#define SCARD_MODE_AT88SC102_SENDPIN 0x03
-#define SCARD_MODE_AT88SC102_CHANGEPIN 0x04
+#define SCARD_MODE_AT88SC102_IN  0x02
+#define SCARD_MODE_AT88SC102_OUT 0x03
+#define SCARD_MODE_AT88SC102_INIT       0x02
+#define SCARD_MODE_AT88SC102_SENDPIN    0x03
+#define SCARD_MODE_AT88SC102_CHANGEPIN  0x04
 #define SCARD_MODE_AT88SC102_MOOLTIPASS 0x05
-#define SCARD_MODE_AT88SC102_TESTPIN 0x06
+#define SCARD_MODE_AT88SC102_TESTPIN    0x06
+#define SCARD_MODE_AT88SC102_TRIESLEFT  0x07
+#define SCARD_MODE_AT88SC102_COMPAREBIT 0x08
 
 /* Handle "Smartcard Data" request */
 bool ctrl_scarddata_req(void)
@@ -117,10 +120,13 @@ bool ctrl_scardconfig_req(void)
 /* Handle "Smartcard Auxilary" request */
 bool ctrl_scardaux_req(void)
 {
-	/*TODO: Temp hack for SC102 testing */
-	udd_g_ctrlreq.payload = &at88sc102_status;
-	udd_g_ctrlreq.payload_size = 1;
-	return true;
+	if(udd_g_ctrlreq.req.wValue == SCARD_MODE_AT88SC102_IN)
+	{	
+		udd_g_ctrlreq.payload = &at88sc102_status;
+		udd_g_ctrlreq.payload_size = 1;
+		return true;
+	}
+	return false;
 }
 
 /* Handle "Smartcard Data" Output from Computer */
@@ -164,7 +170,7 @@ void ctrl_scardaux_cb(void)
 {
 	if (udd_g_ctrlreq.req.wLength > udd_g_ctrlreq.payload_size)	return;
 	
-	if((udd_g_ctrlreq.req.wValue & 0xFF) == SCARD_MODE_AT88SC102)
+	if((udd_g_ctrlreq.req.wValue & 0xFF) == SCARD_MODE_AT88SC102_OUT)
 	{
 		at88sc102_status = 0;
 		if (udd_g_ctrlreq.req.wLength < 1) return;
@@ -172,33 +178,44 @@ void ctrl_scardaux_cb(void)
 		udd_g_ctrlreq.req.wLength--;
 		switch(udd_g_ctrlreq.payload[0]) {
 			case SCARD_MODE_AT88SC102_INIT:
-			/* FPGA must have been switched into proper mode as well */
-			initPortSMC();
-			at88sc102_status = firstDetectFunctionSMC();
-			break;
+				/* FPGA must have been switched into proper mode as well */
+				initPortSMC();
+				at88sc102_status = firstDetectFunctionSMC();
+				break;
 			
 			case SCARD_MODE_AT88SC102_SENDPIN:
-			if (udd_g_ctrlreq.req.wLength < 2) return;
-			at88sc102_status = securityValidationSMC(*((uint16_t *)(udd_g_ctrlreq.payload+1)), FALSE);
-			break;
+				if (udd_g_ctrlreq.req.wLength < 2) return;
+				at88sc102_status = securityValidationSMC(*((uint16_t *)(udd_g_ctrlreq.payload+1)), FALSE);
+				break;
 			
 			case SCARD_MODE_AT88SC102_CHANGEPIN:
-			if (udd_g_ctrlreq.req.wLength < 2) return;
-			writeSecurityCode(((uint16_t *)(udd_g_ctrlreq.payload+1)));
-			at88sc102_status = 1;
-			break;
+				if (udd_g_ctrlreq.req.wLength < 2) return;
+				writeSecurityCode(((uint16_t *)(udd_g_ctrlreq.payload+1)));
+				at88sc102_status = 1;
+				break;
 			
 			case SCARD_MODE_AT88SC102_MOOLTIPASS:
-			if (transformBlankCardIntoMooltipass() == RETURN_OK){
-				at88sc102_status = 1;
-			}
-			break;
+				if (transformBlankCardIntoMooltipass() == RETURN_OK){
+					at88sc102_status = 1;
+				}
+				break;
 			
 			case SCARD_MODE_AT88SC102_TESTPIN:
-			if (udd_g_ctrlreq.req.wLength < 3) return;
-			at88sc102_status = securityValidationSMC(*((uint16_t *)(udd_g_ctrlreq.payload+2)), *(udd_g_ctrlreq.payload+1));
-			break;
-			
+				if (udd_g_ctrlreq.req.wLength < 3) return;
+				at88sc102_status = securityValidationSMC(*((uint16_t *)(udd_g_ctrlreq.payload+2)), *(udd_g_ctrlreq.payload+1));
+				break;
+				
+			case SCARD_MODE_AT88SC102_TRIESLEFT:
+				at88sc102_status = getNumberOfSecurityCodeTriesLeft();
+				udd_g_ctrlreq.payload = &at88sc102_status;
+				udd_g_ctrlreq.payload_size = 1;
+				break;
+				
+			case SCARD_MODE_AT88SC102_COMPAREBIT:
+				// TODO: put in args
+				compareBit(15, 1);
+				at88sc102_status = 1; 
+				break;
 		}
 		
 	}
