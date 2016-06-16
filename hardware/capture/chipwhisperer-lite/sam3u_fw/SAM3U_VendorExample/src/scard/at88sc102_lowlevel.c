@@ -331,7 +331,21 @@ void eraseApplicationZone1NZone2SMC(uint8_t zone1_nzone2)
                         performLowLevelWriteNErase(TRUE);
 
                         /* Wait for the smart card to output a 0 */
-                        while(scard_io_read());
+						uint16_t timeout = 0xFF;
+                        while(scard_io_read())
+						{
+							timeout--;
+							if(timeout == 0)
+							{
+								/* Set PGM / RST signals to standby mode */
+								setPgmRstSignals();
+
+								/* Switch to SPI mode */
+								setSPIModeSMC();
+							
+								return;
+							}
+						}
 
                         /* Exit loop */
                         temp_bool = FALSE;
@@ -453,7 +467,23 @@ RET_TYPE securityValidationSMC(uint16_t code, uint8_t reset_after_send)
             performLowLevelWriteNErase(TRUE);
 
             /* Wait for the smart card to output a 0 */
-            while(scard_io_read());
+			uint16_t timeout = 0x20;
+            while(scard_io_read())
+			{
+				timeout--;
+				if(timeout == 0)
+				{
+					scard_aux1_low();
+					
+					/* Set PGM / RST signals to standby mode */
+					setPgmRstSignals();
+
+					/* Switch to SPI mode */
+					setSPIModeSMC();
+					
+					return RETURN_PIN_TIMEOUT;
+				}
+			}
 			
 			/* Reset after end of program command */
 			if (reset_after_send == 3){			
@@ -727,4 +757,59 @@ void initPortSMC(void)
     /* Set all output pins as tri-state */
     removeFunctionSMC();
 	setPgmRstSignals();
+}
+
+
+
+// Greg's function
+// Walk up to the security code register, enter a bit in the right place, then reset.
+void compareBit(uint16_t bit, uint16_t value)
+{
+    uint16_t i;
+
+    /* Switch to bit banging */
+    setBBModeAndPgmRstSMC();
+
+    /* Get to the SC */
+    for(i = 0; i < 80 + bit; i++)
+		invertedClockPulseSMC();
+
+    scard_aux1_high();
+
+    // Clock is at high level now, as input must be switched during this time */
+    // Enter test value
+    smartcardHPulseDelay();
+	if (value)
+	{
+	    scard_io_low();
+    }
+    else
+    {
+	    scard_io_high();
+    }
+    smartcardHPulseDelay();
+    invertedClockPulseSMC();
+	
+	// Bring reset high
+	scard_rst_high();
+
+    /* Bring clock and data low */
+    scard_sck_low();
+    smartcardHPulseDelay();
+    smartcardHPulseDelay();
+    scard_io_low();
+    smartcardHPulseDelay();
+    smartcardHPulseDelay();
+    
+    
+	// Cleanup
+    scard_aux1_low();
+
+    /* Set PGM / RST signals to standby mode */
+    setPgmRstSignals();
+
+    /* Switch to SPI mode */
+    setSPIModeSMC();
+
+    return;	
 }
