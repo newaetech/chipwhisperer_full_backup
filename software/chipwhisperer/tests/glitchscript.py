@@ -143,6 +143,7 @@ class UserScript(UserScriptBase):
         self.api.capture1()
 
         print "Using the Glitch Explorer -  Tune the glitch offset to attempt to get a successful clock glitch"
+        self.api.setParameter(['Glitch Explorer', 'Plot Widget', None])  # Push the button
         lstexample = [
             ['Glitch Explorer', 'Tuning Parameters', 1],
             ['Glitch Explorer', 'Tuning Parameter 0', 'Name', u'Offset'],
