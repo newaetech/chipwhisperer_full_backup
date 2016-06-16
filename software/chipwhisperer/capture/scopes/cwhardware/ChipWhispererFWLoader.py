@@ -33,17 +33,31 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 from chipwhisperer.hardware.firmware.cwcr2 import getsome as cwcr2_getsome
 
+from chipwhisperer.common.api.settings import Settings
+
 
 class CW_Loader(object):
     """ Base class for ChipWhisperer targets that help loading of FPGA data """
 
     def __init__(self):
-        self._release_mode = "builtin"
+        self._release_mode = self.read_setting("fpga-bitstream-mode","builtin")
         self._fwFLoc = ""
         self._bsLoc = " "
         self._bsZipLoc = ""
         self._bsZipLoc_filename = ""
         self._bsBuiltinData = None
+
+    def read_setting(self, settingname, default):
+        """ Returns a setting if saved, otherwise defaults """
+
+        fullsettingname = self.name + "-" + settingname
+        return Settings().value(fullsettingname, default)
+
+    def write_setting(self, settingname, value):
+        """ Saves a setting """
+
+        fullsettingname = self.name + "-" + settingname
+        Settings().setValue(fullsettingname, value)
     
     def fpga_bitstream_date(self):
         """ In 'debug' mode returns date bitstream was modified, returns 'None' in release mode """
@@ -57,15 +71,18 @@ class CW_Loader(object):
     def fpga_bitstream(self):
         """ Returns FPGA bitstream in use (either debug or release) """
         if self._release_mode == "builtin":
+            print "FPGA: Builtin mode"
             filelike = self._bsBuiltinData
             zfile = zipfile.ZipFile(filelike)
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "zipfile":
+            print "FPGA: Zipfile mode"
             if not os.path.isfile(self._bsZipLoc):
                 raise IOError("FPGA Zip-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsZipLoc)
             zfile = zipfile.ZipFile(self._bsZipLoc, "r")
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "debug":
+            print "FPGA: Raw bitstream mode"
             if not os.path.isfile(self._bsLoc):
                 raise IOError("FPGA bit-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsLoc)
             return open(self._bsLoc, "rb")
@@ -84,18 +101,19 @@ class CW_Loader(object):
             print "NOTE: FPGA mode switched to 'builtin' from invalid setting of '%s'"%release_mode
             release_mode = "builtin"
 
+        self.write_setting("fpga-bitstream-mode", release_mode)
         self._release_mode = release_mode
 
 
 class CWCRev2_Loader(CW_Loader):
+    name = "cwcrev2"
     def __init__(self):
         super(CWCRev2_Loader, self).__init__()
-        self.name = "cwcrev2"
         self.driver = Ztex1v1()
-        self._fwFLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx"))
-        self._bsZipLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip"))
+        self._fwFLoc = self.read_setting('firmware-location', os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/ezusb-firmware/ztex-sdk/examples/usb-fpga-1.11/1.11c/openadc/OpenADC.ihx")))
+        self._bsZipLoc = self.read_setting('zipbitstream-location',os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/cwrev2_firmware.zip")))
         self._bsZipLoc_filename = "interface.bit"
-        self._bsLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit"))
+        self._bsLoc = self.read_setting('debugbitstream-location',os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-rev2/hdl/ztex_rev2_1.11c_ise/interface.bit")))
         self._bsBuiltinData = cwcr2_getsome("cwrev2_firmware.zip", filelike=True)
         self._fwBuiltinData = cwcr2_getsome("OpenADC.ihx", filelike=True)
     
@@ -134,16 +152,23 @@ class CWCRev2_Loader(CW_Loader):
         self.driver.probe()
 
     def loadFPGA(self):
+        self.write_setting('debugbitstream-location', self._bsLoc)
+        self.write_setting('zipbitstream-location', self._bsZipLoc)
         self.driver.configureFpgaLS(self.fpga_bitstream())
 
 class CWLite_Loader(CW_Loader):
+    name = "cwlite"
+
     def __init__(self):
         super(CWLite_Loader, self).__init__()
-        self.name = "cwlite"
         self.driver = None
-        self._bsZipLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"))
+
+        def_bsZipLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/cwlite_firmware.zip"))
+        def_bsLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"))
+
+        self._bsZipLoc = self._bsZipLoc = self.read_setting('zipbitstream-location', def_bsZipLoc)
         self._bsZipLoc_filename = "cwlite_interface.bit"
-        self._bsLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-lite/hdl/cwlite_ise/cwlite_interface.bit"))
+        self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
         self._bsBuiltinData = cwlite_getsome("cwlite_firmware.zip", filelike=True)
 
@@ -151,6 +176,9 @@ class CWLite_Loader(CW_Loader):
         callback()
 
     def loadFPGA(self):
+        #Save settings
+        self.write_setting('debugbitstream-location', self._bsLoc)
+        self.write_setting('zipbitstream-location', self._bsZipLoc)
         self.driver.FPGAProgram(self.fpga_bitstream())
 
     def setInterface(self, driver):
