@@ -201,6 +201,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         if self._autosavef:
             self._autosavef.close()
             self._autosavef = None
+        self.table.setSortingEnabled(True)
 
     def updateStatus(self):
         okcnt = 0
@@ -296,10 +297,10 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
             outdata = QTableWidgetItem(repr(newdata["output"]))
             if newdata["success"]:
-                outdata.setBackground(QBrush(QColor(0,255,0)))
+                outdata.setBackground(Qt.green)
                 status = "Success"
             elif newdata["normal"] == False:
-                outdata.setBackground(QBrush(QColor(255,0,0)))
+                outdata.setBackground(Qt.red)
                 status = "Failed"
             else:
                 status = "Normal"
@@ -312,9 +313,8 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 self.table.setItem(0, 4 + i, QTableWidgetItem(str(v)))
 
             self.table.resizeRowsToContents()
-            self.table.setSortingEnabled(True)
-        except AttributeError:
-            raise StopIteration("Error when adding data to the table. Plese clear it and try again.")
+        except AttributeError as e :
+            raise StopIteration("Error when adding data to the table. Plese clear it and try again. Details:" + str(e))
 
     def addResponse(self, resp):
         """ Add a response from the system to glitch table + logs """

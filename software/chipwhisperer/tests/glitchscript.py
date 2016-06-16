@@ -33,6 +33,7 @@ from chipwhisperer.common.scripts.base import UserScriptBase
 from chipwhisperer.common.utils.parameter import Parameter
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammer
 
+# Wiki: https://wiki.newae.com/Tutorial_A2_Introduction_to_Glitch_Attacks_(including_Glitch_Explorer)
 
 class UserScript(UserScriptBase):
     _name = "Test the Glitch Explorer"
@@ -41,26 +42,34 @@ class UserScript(UserScriptBase):
         super(UserScript, self).__init__(api)
 
     def run(self):
+        # Delete previous project files
         if os.path.isfile("projects/glitchtest.cwp"): os.remove("projects/glitchtest.cwp")
         shutil.rmtree("projects/glitchtest_data", ignore_errors=True)
 
+        # Save current open project (default) to a new place
         self.api.saveProject("projects/glitchtest.cwp")
-        #User commands here
+
+        print "Software Setup - 1. Connect to the ChipWhisperer device:"
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'None'])
         self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
-
+        # Connect to both: scope and target
         self.api.connect()
 
-        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        print "Software Setup - 2. Setup the CLKGEN Module to Generate a 7.37 MHz clock and route it through the Glitch Generator"
         lstexample = [
             ['OpenADC', 'Clock Setup', 'Freq Counter Src', 'CLKGEN Output'],
             ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
             ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
             ['Glitch Module', 'Clock Source', 'CLKGEN'],
             ['CW Extra Settings', 'Target HS IO-Out', 'Glitch Module'],
+        ]
+        for cmd in lstexample: self.api.setParameter(cmd)
+
+        # Software Setup - 2. Setup the CLKGEN Module to Generate a 7.37 MHz clock and route it through the Glitch Generator
+        lstexample = [
             ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
             ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD']
         ]
