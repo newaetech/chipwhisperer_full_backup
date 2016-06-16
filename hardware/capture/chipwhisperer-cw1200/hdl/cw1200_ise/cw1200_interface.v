@@ -20,7 +20,6 @@ module cw1200_interface(
 	 input wire			USB_CEn,
 	 input wire			USB_ALEn,
 
-
 	 /* ADC Interface */
 	 input wire [9:0]   ADC_Data,
 	 input wire        ADC_OR,
@@ -77,16 +76,20 @@ module cw1200_interface(
 	 input wire       USB_RTS0,
 	 input wire       USB_CTS0,
 	 
+	 //These control the direction of the PDID/PDIC pins
+	 input wire       USB_PDID_WR, //USB_A18 (PC26)
+	 input wire       USB_PDIC_EN, //USB_A17 (PC25)
+	 
+	 input wire       USB_TXD1,
+	 output wire      USB_RXD1,
+	 inout wire       USB_SCK1,
+	 
 	 input wire       USB_spare0,
 	 input wire       USB_spare1,
 	 input wire			USB_spare2
 	 );
-	
-	/* PDI Programming done from SAM, must float these wires
-	   or programming will fail from weak pull-down on FPGA */
-	//assign XMEGA_PDID = 1'bZ;
-	//assign XMEGA_PDIC = 1'bZ;
-	
+
+
 	//wire [35:0] cs_control0;
 	//wire [63:0] ila_trigbus;
 	
@@ -376,8 +379,12 @@ module cw1200_interface(
 	 assign target_SCK = (enable_avrprog) ? USB_SCK2 : 1'bZ;
 	 assign USB_RXD2 = (enable_avrprog) ? target_MISO : 1'b0;	
 	 
-	 assign target_PDIC = 1'bZ;
-	 assign target_PDIDTX = 1'bZ;
+	 
+	 //XMEGA Programming uses spare pins to select direction
+	 assign target_PDIDTX = (USB_PDID_WR) ? USB_TXD1 : 1'bZ;
+	 assign USB_RXD1 = target_PDIDRX;
+	 assign target_PDIC = (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
+	 
 	
 	/*
 	wire [63:0] ila_trigbus;
