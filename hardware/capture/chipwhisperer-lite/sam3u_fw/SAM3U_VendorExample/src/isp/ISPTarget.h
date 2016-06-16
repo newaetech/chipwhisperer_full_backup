@@ -49,6 +49,14 @@
 		/** Low level device command to issue an extended FLASH address, for devices with over 128KB of FLASH. */
 		#define LOAD_EXTENDED_ADDRESS_CMD     0x4D
 
+		//By default use SPI, can define this to 1 to use the USART module
+		//USART in use is defined by AVRISP_USART
+		#ifndef AVRISP_USEUART
+		#define AVRISP_USEUART 0
+		#define AVRISP_USART USART0
+		#define AVRISP_USART_ID ID_USART0
+		#endif
+
 	/* Function Prototypes: */
 		void    ISPTarget_EnableTargetISP(void);
 		void    ISPTarget_DisableTargetISP(void);	
@@ -69,7 +77,11 @@
 		 */
 		static inline void ISPTarget_SendByte(const uint8_t data)
 		{
+#if AVRISP_USEUART
+		  usart_putchar(AVRISP_USART, data);
+#else
 		  spi_write(SPI, data, 0, 0);
+#endif
 		}
 
 		/** DO NOT USE DIRECTLY - USE ISPTarget_TransferByte() INSTEAD. This will return
@@ -78,11 +90,15 @@
 		 *  \return Received byte of data from the attached target
 		 */
 		static inline uint8_t ISPTarget_ReceiveByte(void)
-		{
+		{			
+#if AVRISP_USEUART
+			uint32_t ReceivedByte;
+			usart_getchar(AVRISP_USART, &ReceivedByte);
+#else
 			uint16_t ReceivedByte;
 			uint8_t _;
 			spi_read(SPI, &ReceivedByte, &_);
-			
+#endif		
 			#if defined(INVERTED_ISP_MISO)
 			return ~ReceivedByte;
 			#else
@@ -100,7 +116,11 @@
 		static inline uint8_t ISPTarget_TransferByte(const uint8_t data)
 		{
 			ISPTarget_SendByte(data);
+#if AVRISP_USEUART
+			while(usart_is_tx_empty(AVRISP_USART) == 0);
+#else
 			while(spi_is_tx_empty(SPI) == 0);
+#endif
 			return ISPTarget_ReceiveByte();			
 		}
 
