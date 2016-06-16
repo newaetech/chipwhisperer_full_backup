@@ -95,16 +95,16 @@ class CWCoreAPI(Parameterized):
                     {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
             ]},
         ])
-        self.scopeParam = Parameter(name="Scope Settings", type='group')
+        self.scopeParam = Parameter(name="Scope Settings", type='group').register()
         self.params.getChild('Scope Module').stealDynamicParameters(self.scopeParam)
 
-        self.targetParam = Parameter(name="Target Settings", type='group')
+        self.targetParam = Parameter(name="Target Settings", type='group').register()
         self.params.getChild('Target Module').stealDynamicParameters(self.targetParam)
 
-        self.traceParam = Parameter(name="Trace Settings", type='group')
+        self.traceParam = Parameter(name="Trace Settings", type='group').register()
         self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
 
-        self.auxParam = Parameter(name="Aux Settings", type='group')
+        self.auxParam = Parameter(name="Aux Settings", type='group').register()
         self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
 
         # self.attackParam = Parameter(name="Attack Settings", type='group')
@@ -220,6 +220,10 @@ class CWCoreAPI(Parameterized):
         """Open project file"""
         self.newProject()
         self.project().load(fname)
+        try:
+            ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(TraceSource.registeredObjects["Trace Management"])
+        except KeyError:
+            pass
 
     def saveProject(self, fname=None):
         """Save the current opened project to file"""
@@ -313,7 +317,7 @@ class CWCoreAPI(Parameterized):
         if not progressBar: progressBar = ProgressBarText()
 
         with progressBar:
-            progressBar.setStatusMask("Current Segment = %d Current Trace = %d")
+            progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
             progressBar.setMaximum(self._numTraces - 1)
 
             waveBuffer = None
@@ -324,7 +328,7 @@ class CWCoreAPI(Parameterized):
                 if self.getTraceFormat() is not None:
                     currentTrace = self.getNewTrace(self.getTraceFormat())
                     # Load trace writer information
-                    prefix = currentTrace.config.attr("prefix")
+                    prefix = currentTrace.config.attr("prefix")[:-1]
                     currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
                     currentTrace.config.setAttr("targetSW", "unknown")
                     currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
@@ -336,11 +340,11 @@ class CWCoreAPI(Parameterized):
                         currentTrace.setTraceBuffer(waveBuffer)
                 else:
                     currentTrace = None
-                    prefix = "None_"
+                    prefix = datetime.now().strftime('%Y.%m.%d-%H.%M.%S')
 
                 for aux in self._auxList:
                     if aux:
-                        aux.setPrefix(prefix[:-1])
+                        aux.setPrefix(prefix)
 
                 ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
@@ -349,7 +353,7 @@ class CWCoreAPI(Parameterized):
                 ac.sigTraceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
                 ac.sigTraceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
 
-                self.sigCampaignStart.emit(prefix[:-1])
+                self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager())
                 self.sigCampaignDone.emit()
                 tcnt += setSize
@@ -393,6 +397,10 @@ class CWCoreAPI(Parameterized):
                                 ), sys.exc_info()[2])
         finally:
             self.busy.setValue(False)
+
+    def getParameter(self, pathAndValue):
+        """Return the value of a registered parameter"""
+        return Parameter.getParameter(pathAndValue)
 
     def setParameter(self, pathAndValue):
         """Set the parameter value, given its path. It should be registered in Parameter.registeredParameters"""

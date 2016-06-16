@@ -160,6 +160,8 @@ class Signal(object):
         for observer in self.observers:
             try:
                 observer(*arg, **args)
+            except StopIteration:
+                raise
             except Exception as e:
 
                 #TODO - catch exception like TypeError("setThreshold() got an unexpected keyword argument 'blockSignal'")

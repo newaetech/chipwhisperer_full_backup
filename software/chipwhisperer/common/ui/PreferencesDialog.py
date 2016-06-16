@@ -52,7 +52,6 @@ class CWPreferencesDialog(QtFixes.QDialog):
 
         self.setLayout(mainLayout)
 
-
 class GeneralTab(QWidget, Parameterized):
     _name = "Preferences"
 
