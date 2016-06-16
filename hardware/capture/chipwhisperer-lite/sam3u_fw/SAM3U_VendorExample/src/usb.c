@@ -338,7 +338,7 @@ static void ctrl_sam3ucfg_cb(void)
 
 static void ctrl_usart_cb(void)
 {
-	ctrl_usart(USART0, false);
+	ctrl_usart(USART_TARGET, false);
 }
 
 static void ctrl_usart_cb_data(void)
@@ -349,7 +349,7 @@ static void ctrl_usart_cb_data(void)
 	}
 	
 	for (int i = 0; i < udd_g_ctrlreq.req.wLength; i++){
-		usart_driver_putchar(USART0, NULL, udd_g_ctrlreq.payload[i]);
+		usart_driver_putchar(USART_TARGET, NULL, udd_g_ctrlreq.payload[i]);
 	}
 }
 
@@ -523,12 +523,12 @@ bool main_setup_in_received(void)
 			break;
 			
 		case REQ_USART0_CONFIG:
-			return ctrl_usart(USART0, true);
+			return ctrl_usart(USART_TARGET, true);
 			break;
 			
 		case REQ_USART0_DATA:						
 			for(cnt = 0; cnt < udd_g_ctrlreq.req.wLength; cnt++){
-				respbuf[cnt] = usart_driver_getchar(USART0);
+				respbuf[cnt] = usart_driver_getchar(USART_TARGET);
 			}
 			udd_g_ctrlreq.payload = respbuf;
 			udd_g_ctrlreq.payload_size = cnt;
