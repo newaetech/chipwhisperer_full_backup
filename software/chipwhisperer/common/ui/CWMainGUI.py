@@ -429,7 +429,7 @@ class CWMainGUI(QMainWindow):
         if not self.okToContinue():
             return
         if fname is None:
-            fname, _ = QFileDialog.getOpenFileName(self, 'Open File', './projects/','ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
+            fname, _ = QFileDialog.getOpenFileName(self, 'Open File', self.api.settings.value("project-home-dir"),'ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
         self.updateStatusBar("Opening Project: " + fname)
