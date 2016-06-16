@@ -65,6 +65,21 @@ void ISPTarget_EnableTargetISP(void)
 {
 	uint32_t sckfreq = avrispmkIIfreqs[V2Params_GetParameterValue(PARAM_SCK_DURATION)];
 
+#if AVRISP_USEUART
+	usart_spi_opt_t spiopts;
+	spiopts.baudrate = sckfreq;
+	spiopts.char_length = US_MR_CHRL_8_BIT;
+	spiopts.channel_mode = US_MR_CHMODE_NORMAL;
+	spiopts.spi_mode = SPI_MODE_0;
+	
+	sysclk_enable_peripheral_clock(AVRISP_USART_ID);
+	usart_init_spi_master(AVRISP_USART, &spiopts, sysclk_get_cpu_hz());
+	gpio_configure_pin(AVRISP_MISO_GPIO, AVRISP_MISO_FLAGS);
+	gpio_configure_pin(AVRISP_MOSI_GPIO, AVRISP_MOSI_FLAGS);
+	gpio_configure_pin(AVRISP_SCK_GPIO, AVRISP_SCK_FLAGS);
+	usart_enable_tx(AVRISP_USART);
+	usart_enable_rx(AVRISP_USART);
+#else
 	spi_enable_clock(SPI);
 	spi_reset(SPI);
 	spi_set_master_mode(SPI);
@@ -88,6 +103,7 @@ void ISPTarget_EnableTargetISP(void)
 	gpio_configure_pin(SPI_MOSI_GPIO, SPI_MOSI_FLAGS);
 	gpio_configure_pin(SPI_MISO_GPIO, SPI_MISO_FLAGS);
 	gpio_configure_pin(SPI_SPCK_GPIO, SPI_SPCK_FLAGS);
+#endif
 
 }
 
@@ -96,8 +112,14 @@ void ISPTarget_EnableTargetISP(void)
  */
 void ISPTarget_DisableTargetISP(void)
 {
+#if AVRISP_USEUART
+	usart_disable_tx(AVRISP_USART);
+	usart_disable_rx(AVRISP_USART);
+	sysclk_disable_peripheral_clock(AVRISP_USART_ID);
+#else
 	spi_disable(SPI);
 	spi_disable_clock(SPI);
+#endif
 }
 
 /** Asserts or deasserts the target's reset line, using the correct polarity as set by the host using a SET PARAM command.
