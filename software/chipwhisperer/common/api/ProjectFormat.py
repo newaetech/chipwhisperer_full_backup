@@ -127,6 +127,10 @@ class ProjectFormat(object):
         if not os.path.isdir(os.path.join(self.datadirectory, 'analysis')):
             os.mkdir(os.path.join(self.datadirectory, 'analysis'))
 
+        # Make glitchresults storage directory
+        if not os.path.isdir(os.path.join(self.datadirectory, 'glitchresults')):
+            os.mkdir(os.path.join(self.datadirectory, 'glitchresults'))
+
     def load(self, f = None):
         if f is not None:
             self.setFilename(f)

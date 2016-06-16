@@ -69,13 +69,13 @@ class CWAnalyzerGUI(CWMainGUI):
 
     def doAnalysis(self):
         """Called when the 'Do Analysis' button is pressed"""
+        self.clearFocus()
         if self.api.project().traceManager().numTraces() == 0:
             ret = QMessageBox.question(self, "Attack Error", "No traces enabled in project.\nOpen Trace Manager?", QMessageBox.Yes | QMessageBox.No)
             if ret == QMessageBox.Yes:
                 self.traceManagerDialog.show()
             return
 
-        QApplication.focusWidget().clearFocus()  # Force accepting the current parameter edition by removing its focus
         self.attackScriptGen.flushTimer()
         self.updateStatusBar("Executing analyzis...")
         self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
