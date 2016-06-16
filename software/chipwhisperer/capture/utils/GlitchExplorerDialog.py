@@ -198,7 +198,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
         if widget is not None:
             widget.clearPushed()
-            widget.setLabels(top=None, xaxis=self.tuneParamList[0].name() if len(self.tuneParamList)>0 else "",
+            widget.setLabels(top="Glitch Map", xaxis=self.tuneParamList[0].name() if len(self.tuneParamList)>0 else "",
                              yaxis=self.tuneParamList[1].name() if len(self.tuneParamList)>1 else "")
 
     def tuneEnabled(self, status):
