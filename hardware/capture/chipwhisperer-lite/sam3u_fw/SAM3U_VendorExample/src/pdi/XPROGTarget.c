@@ -58,6 +58,12 @@ void XPROGTarget_EnableTargetPDI(void)
 	gpio_configure_pin(PIN_PDIDRX_GPIO, PIN_PDIDRX_FLAGS);
 	gpio_configure_pin(PIN_PDIC_GPIO, PIN_PDIC_OUT_FLAGS);
 
+#ifdef PIN_PDIDWR_GPIO
+	gpio_set_pin_high(PIN_PDIDWR_GPIO);
+	gpio_set_pin_high(PIN_PDICWR_GPIO);
+#endif
+	
+
 	delay_us(50);
 
 	/* Set DATA line high for at least 90ns to disable /RESET functionality */
@@ -97,6 +103,11 @@ void XPROGTarget_DisableTargetPDI(void)
 	gpio_configure_pin(PIN_PDIC_GPIO, PIN_PDIC_IN_FLAGS);
 	gpio_configure_pin(PIN_PDIDRX_GPIO, PIN_PDIDRX_FLAGS);
 	gpio_configure_pin(PIN_PDIDTX_GPIO, PIN_PDIDTX_IN_FLAGS);
+	
+#ifdef PIN_PDIDWR_GPIO
+	gpio_set_pin_low(PIN_PDICWR_GPIO);
+	gpio_set_pin_low(PIN_PDIDWR_GPIO);
+#endif
 	
 	/* Turn off USART */
 	sysclk_disable_peripheral_clock(USART_PDI_ID);
@@ -162,6 +173,11 @@ static void XPROGTarget_SetTxMode(void)
 	usart_disable_rx(USART_PDI);
 	usart_enable_tx(USART_PDI);
 	gpio_configure_pin(PIN_PDIDTX_GPIO, PIN_PDIDTX_USART_FLAGS);
+	
+#ifdef PIN_PDIDWR_GPIO
+	gpio_set_pin_high(PIN_PDIDWR_GPIO);
+	gpio_set_pin_high(PIN_PDICWR_GPIO);
+#endif
 
 	IsSending = true;
 }
@@ -174,6 +190,10 @@ static void XPROGTarget_SetRxMode(void)
 	usart_enable_rx(USART_PDI);
 	
 	gpio_configure_pin(PIN_PDIDTX_GPIO, PIN_PDIDTX_IN_FLAGS);
+	
+#ifdef PIN_PDIDWR_GPIO
+	gpio_set_pin_low(PIN_PDIDWR_GPIO);
+#endif
 	
 	IsSending = false;
 }
