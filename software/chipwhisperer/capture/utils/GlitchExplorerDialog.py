@@ -34,6 +34,7 @@ from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.results.base import ResultsBase
 
 
 class TuningParameter(Parameterized):
@@ -148,6 +149,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.getParams().register()
         self.getParams().addChildren([
             {'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
+            {'name':'Plot Widget', 'type':'action', 'action':self.openPlotWidget},
             {'name':'Reset', 'type':'action', 'action':self.reset, 'tip':"Resets all Tuning Parameters to its minimum value."},
             {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'action':self.updateParameters, 'readonly':False},
             {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True, 'children':[
@@ -184,6 +186,21 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.clearTable()
         self._campaignRunning = False
 
+    def openPlotWidget(self, _):
+        if "Glitch Explorer" not in ResultsBase.registeredObjects:
+            ResultsBase.createNew("Trace Output Plot", "Glitch Explorer")
+        widget = ResultsBase.registeredObjects["Glitch Explorer"]
+        widget.raise_()
+        widget.yLocked(False)
+        self.clearPlotWidget()
+
+    def clearPlotWidget(self):
+        widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
+        if widget is not None:
+            widget.clearPushed()
+            widget.setLabels(top=None, xaxis=self.tuneParamList[0].name() if len(self.tuneParamList)>0 else "",
+                             yaxis=self.tuneParamList[1].name() if len(self.tuneParamList)>1 else "")
+
     def tuneEnabled(self, status):
         self.findParam('numtune').setReadonly(not status)
 
@@ -193,6 +210,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self._autosavef = None
         self._campaignRunning = True
         self.tuneEnabled(False)
+        self.clearPlotWidget()
 
     def campaignDone(self):
         self._campaignRunning = False
@@ -297,14 +315,16 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
             outdata = QTableWidgetItem(repr(newdata["output"]))
             if newdata["success"]:
-                outdata.setBackground(Qt.green)
+                color = Qt.green
                 status = "Success"
             elif newdata["normal"] == False:
-                outdata.setBackground(Qt.red)
+                color = Qt.red
                 status = "Failed"
             else:
+                color = Qt.white
                 status = "Normal"
 
+            outdata.setBackground(color)
             self.table.setItem(0, 0, QTableWidgetItem(status))
             self.table.setItem(0, 1, QTableWidgetItem(""))
             self.table.setItem(0, 2, outdata)
@@ -313,7 +333,17 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 self.table.setItem(0, 4 + i, QTableWidgetItem(str(v)))
 
             self.table.resizeRowsToContents()
-        except AttributeError as e :
+
+            widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
+            if widget is not None:
+                widget.setupPlot(widget.pw.plot([newdata["settings"][0] if len(newdata["settings"])>0 else 0],
+                    [newdata["settings"][1] if len(newdata["settings"])>1 else 0],
+                     pen=None, symbol="o", symbolBrush=(
+                     (0, 255, 0, 75) if status=="Success" else
+                     (255, 0, 75) if status=="Failed" else
+                     (200, 200, 200, 50))), 1, True, str(newdata["settings"]))
+
+        except AttributeError as e:
             raise StopIteration("Error when adding data to the table. Plese clear it and try again. Details:" + str(e))
 
     def addResponse(self, resp):

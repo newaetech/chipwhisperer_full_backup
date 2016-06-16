@@ -165,21 +165,21 @@ class UserScript(UserScriptBase):
             ['Glitch Explorer', 'Tuning Parameter 1', 'Name', u'Width'],
             ['Glitch Explorer', 'Tuning Parameter 1', 'Parameter Path', u"['Glitch Module', 'Glitch Width (as % of period)']"],
             ['Glitch Explorer', 'Tuning Parameter 1', 'Data Format', 'Float'],
-            ['Glitch Explorer', 'Tuning Parameter 1', 'Range', (0, 9)],
-            ['Glitch Explorer', 'Tuning Parameter 1', 'Value', 0],
+            ['Glitch Explorer', 'Tuning Parameter 1', 'Range', (4, 11)],
+            ['Glitch Explorer', 'Tuning Parameter 1', 'Value', 4],
             ['Glitch Explorer', 'Tuning Parameter 1', 'Step', 0.5],
             ['Glitch Explorer', 'Tuning Parameter 1', 'Repeat', 1],
-            ['Glitch Explorer', 'Tuning Parameter 0', 'Range', (-7, 1)],
-            ['Glitch Explorer', 'Tuning Parameter 0', 'Value', -7],
+            ['Glitch Explorer', 'Tuning Parameter 0', 'Range', (-8, 3)],
+            ['Glitch Explorer', 'Tuning Parameter 0', 'Value', -8],
             ['Glitch Module', 'Repeat', 1],
-            ['Generic Settings', 'Acquisition Settings', 'Number of Traces', 323],
+            ['Generic Settings', 'Acquisition Settings', 'Number of Traces', 345],
         ]
         for cmd in lstexample: self.api.setParameter(cmd)
         self.api.captureM()
 
         print "Using the Glitch Explorer - Fine-tune those values"
-        self.api.setParameter(['Glitch Module', 'Glitch Offset (as % of period)',-4])
-        self.api.setParameter(['Glitch Module', 'Glitch Width (as % of period)',8.5])
+        self.api.setParameter(['Glitch Module', 'Glitch Offset (as % of period)',-3.5])
+        self.api.setParameter(['Glitch Module', 'Glitch Width (as % of period)',7.5])
         self.api.capture1()
         self.api.capture1()
         self.api.capture1()
