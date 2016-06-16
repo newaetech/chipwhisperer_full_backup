@@ -39,10 +39,42 @@
 #define TRUE                    (!FALSE)
 #endif
 
-enum card_detect_return_t       {RETURN_CARD_NDET=0, RETURN_CARD_TEST_PB=1, RETURN_CARD_4_TRIES_LEFT=14,  RETURN_CARD_3_TRIES_LEFT=13,  RETURN_CARD_2_TRIES_LEFT=12,  RETURN_CARD_1_TRIES_LEFT=11, RETURN_CARD_0_TRIES_LEFT=10};
-enum mooltipass_detect_return_t {RETURN_MOOLTIPASS_INVALID = 0, RETURN_MOOLTIPASS_PB = 1, RETURN_MOOLTIPASS_BLOCKED = 2, RETURN_MOOLTIPASS_BLANK = 3, RETURN_MOOLTIPASS_USER = 4, RETURN_MOOLTIPASS_0_TRIES_LEFT = 5, RETURN_MOOLTIPASS_1_TRIES_LEFT = 6, RETURN_MOOLTIPASS_2_TRIES_LEFT = 7, RETURN_MOOLTIPASS_3_TRIES_LEFT = 8, RETURN_MOOLTIPASS_4_TRIES_LEFT = 9};
-enum pin_check_return_t {RETURN_PIN_OK = 10, RETURN_PIN_NOK_3=3, RETURN_PIN_NOK_2=2, RETURN_PIN_NOK_1=1, RETURN_PIN_NOK_0=0};
-enum return_type_t {RETURN_NOK = -1, RETURN_OK = 0};
+enum return_type_t
+{
+	RETURN_NOK = -1, 	                    // Check was unsuccessful
+	RETURN_OK  =  0, 	                    // Check was successful
+		
+	RETURN_CARD_NDET    = 0x01,	            // No card detected
+	RETURN_CARD_TEST_PB = 0x02,	            // Card detected, but has a problem
+	RETURN_CARD_0_TRIES_LEFT = 0x10,        // 0 tries remaining on detected card (it's locked forever!)
+	RETURN_CARD_1_TRIES_LEFT = 0x11,        // 1 try
+	RETURN_CARD_2_TRIES_LEFT = 0x12,        // 2 tries
+	RETURN_CARD_3_TRIES_LEFT = 0x13,        // 3 tries
+	RETURN_CARD_4_TRIES_LEFT = 0x14,        // 4 tries
+	
+	RETURN_PIN_NOK_0   = 0x20,              // Pin entry failed; can never unlock card again
+	RETURN_PIN_NOK_1   = 0x21,              // Pin entry failed; 1 attempt remaining
+	RETURN_PIN_NOK_2   = 0x22,              // Pin entry failed; 2 attempts remaining
+	RETURN_PIN_NOK_3   = 0x23,              // Pin entry failed; 3 attempts remaining
+	RETURN_PIN_OK      = 0x24,              // Pin entry was successful
+	RETURN_PIN_TIMEOUT = 0x25,              // Pin entry could not be completed
+	
+	RETURN_MOOLTIPASS_INVALID      = 0x30,	// Mooltipass return values
+	RETURN_MOOLTIPASS_PB           = 0x31,	// 
+	RETURN_MOOLTIPASS_BLOCKED      = 0x32,	// 
+	RETURN_MOOLTIPASS_BLANK        = 0x33, 	// 
+	RETURN_MOOLTIPASS_USER         = 0x34, 	// 
+	RETURN_MOOLTIPASS_0_TRIES_LEFT = 0x35, 	// 
+	RETURN_MOOLTIPASS_1_TRIES_LEFT = 0x36, 	// 
+	RETURN_MOOLTIPASS_2_TRIES_LEFT = 0x37, 	// 
+	RETURN_MOOLTIPASS_3_TRIES_LEFT = 0x38, 	// 
+	RETURN_MOOLTIPASS_4_TRIES_LEFT = 0x39,  // 
+};
+
+//enum card_detect_return_t       {RETURN_CARD_NDET=0, RETURN_CARD_TEST_PB=1, RETURN_CARD_4_TRIES_LEFT=14,  RETURN_CARD_3_TRIES_LEFT=13,  RETURN_CARD_2_TRIES_LEFT=12,  RETURN_CARD_1_TRIES_LEFT=11, RETURN_CARD_0_TRIES_LEFT=10};
+//enum mooltipass_detect_return_t {RETURN_MOOLTIPASS_INVALID = 0, RETURN_MOOLTIPASS_PB = 1, RETURN_MOOLTIPASS_BLOCKED = 2, RETURN_MOOLTIPASS_BLANK = 3, RETURN_MOOLTIPASS_USER = 4, RETURN_MOOLTIPASS_0_TRIES_LEFT = 5, RETURN_MOOLTIPASS_1_TRIES_LEFT = 6, RETURN_MOOLTIPASS_2_TRIES_LEFT = 7, RETURN_MOOLTIPASS_3_TRIES_LEFT = 8, RETURN_MOOLTIPASS_4_TRIES_LEFT = 9};
+//enum pin_check_return_t {RETURN_PIN_TIMEOUT = 11, RETURN_PIN_OK = 10, RETURN_PIN_NOK_3=3, RETURN_PIN_NOK_2=2, RETURN_PIN_NOK_1=1, RETURN_PIN_NOK_0=0};
+//enum return_type_t {RETURN_NOK = -1, RETURN_OK = 0};
 typedef int8_t RET_TYPE;
 
 // Prototypes
@@ -57,6 +89,9 @@ void removeFunctionSMC(void);
 void scanSMCDectect(void);
 void setSPIModeSMC(void);
 void initPortSMC(void);
+
+// Greg's new testing function
+void compareBit(uint16_t bit, uint16_t value);
 
 // Macros
 
