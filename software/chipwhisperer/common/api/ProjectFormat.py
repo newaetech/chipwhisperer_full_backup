@@ -30,6 +30,7 @@ import sys
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
+from chipwhisperer.common.api.settings import Settings
 
 try:
     from configobj import ConfigObj  # import the module
@@ -58,7 +59,7 @@ class ConfigObjProj(ConfigObj):
 
 
 class ProjectFormat(object):
-    untitledFileName = "tmp/default.cwp"
+    untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
     def __init__(self):
         self.sigFilenameChanged = util.Signal()
@@ -125,6 +126,10 @@ class ProjectFormat(object):
         # Make analysis storage directory
         if not os.path.isdir(os.path.join(self.datadirectory, 'analysis')):
             os.mkdir(os.path.join(self.datadirectory, 'analysis'))
+
+        # Make glitchresults storage directory
+        if not os.path.isdir(os.path.join(self.datadirectory, 'glitchresults')):
+            os.mkdir(os.path.join(self.datadirectory, 'glitchresults'))
 
     def load(self, f = None):
         if f is not None:

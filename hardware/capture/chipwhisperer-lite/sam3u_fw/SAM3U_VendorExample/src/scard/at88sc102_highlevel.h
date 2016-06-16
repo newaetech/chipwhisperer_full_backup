@@ -33,6 +33,7 @@ RET_TYPE checkAuthenticatedReadWriteAccessToZone1(void);
 RET_TYPE checkAuthenticatedReadWriteAccessToZone2(void);
 RET_TYPE setAuthenticatedReadWriteAccessToZone1(void);
 RET_TYPE setAuthenticatedReadWriteAccessToZone2(void);
+RET_TYPE checkSecurityMode2(void);
 void setAuthenticatedReadWriteAccessToZone1and2(void);
 void writeSecurityCode(volatile uint16_t* code);
 RET_TYPE transformBlankCardIntoMooltipass(void);

@@ -34,8 +34,6 @@ uint16_t scard_tx_buffer_size;
 /* For smartcard testing */
 #define ISO7816_BAUDRATE 9600
 #define ISO7816_FI_DI 372
-#define SCARD_USART USART2
-#define SCARD_USART_ID ID_USART2
 
 /* Buffer holding ATR */
 uint8_t scard_atr[MAX_ATR_SIZE];

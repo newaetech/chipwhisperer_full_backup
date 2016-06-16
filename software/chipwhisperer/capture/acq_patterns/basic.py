@@ -42,6 +42,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
 
         self.params.addChildren([
             {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue())},
+            # {'name':'Size', 'type':'int'},
             {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':self.getKeyType()},
             {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue())},
             {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
@@ -120,10 +121,10 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         return (self._key, self._textin)
 
     def __str__(self):
-        key = "Key=" + self.findParam("Key").getKey()
+        key = "Key=" + self.findParam("Key").getValueKey()
         if self._fixedKey:
             key = key + ":" + self.findParam("initkey").getValue()
-        plaintext = "Plaintext=" + self.findParam("Plaintext").getKey()
+        plaintext = "Plaintext=" + self.findParam("Plaintext").getValueKey()
         if self._fixedPlain:
             plaintext = plaintext + ":" + self.findParam("inittext").getValue()
 

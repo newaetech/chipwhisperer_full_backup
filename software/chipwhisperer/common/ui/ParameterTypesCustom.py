@@ -216,10 +216,14 @@ class FileParameterItemHelp(WidgetParameterItemHelp):
         return w
 
     def openFile(self):
-        fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Get file path', QtCore.QSettings().value(self.param.opts["name"]), self.param.opts["filter"])
+        if self.param.opts.get("filter", None) == "dir":
+            fname = QtGui.QFileDialog.getExistingDirectory(None, "Open Directory", self.param.value(),
+                                                           QtGui.QFileDialog.ShowDirsOnly)
+        else:
+            fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Get file path', self.param.value(),
+                                                         self.param.opts.get("filter", "*"))
         if fname:
             self.param.setValue(fname)
-            QtCore.QSettings().setValue(self.param.opts["name"], fname)
 
 
 class FileParameter(Parameter):

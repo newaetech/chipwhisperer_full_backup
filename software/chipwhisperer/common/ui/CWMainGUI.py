@@ -54,8 +54,10 @@ from chipwhisperer.common.results.base import ResultsBase
 import chipwhisperer.common.ui.qrc_resources
 from pyqtgraph.parametertree import ParameterTree
 from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils import qt_tweaks
 from chipwhisperer.common.ui.HelpWindow import HelpBrowser
 from chipwhisperer.common.ui import ParameterTypesCustom
+from chipwhisperer.common.ui.PreferencesDialog import CWPreferencesDialog
 import urllib
 
 class CWMainGUI(QMainWindow):
@@ -69,6 +71,7 @@ class CWMainGUI(QMainWindow):
         QMainWindow.__init__(self)
         CWMainGUI.instance = self
         self.name = name
+        self.cwPrefDialog = CWPreferencesDialog(self, api.settings)
         sys.excepthook = self.exceptionHandlerDialog
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
@@ -152,8 +155,7 @@ class CWMainGUI(QMainWindow):
 
     def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
         """Add a QTextBrowser, used as a console/debug window"""
-        console = QTextBrowser()
-        console.write = console.insertPlainText
+        console = qt_tweaks.QTextBrowser()
         if redirectStdOut:
             self.originalStdout = sys.stdout
             sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
@@ -272,6 +274,11 @@ class CWMainGUI(QMainWindow):
         self.saveAct = QAction(QIcon('save.png'), '&Save...', self, shortcut=QKeySequence.Save,
                                statusTip='Save current project to Disk', triggered=self.saveProject)
         self.fileMenu.addAction(self.saveAct)
+
+        self.prefAct = QAction("&Preferences", self, statusTip="Set preferences", triggered=self.cwPrefDialog.show)
+        self.fileMenu.addSeparator()
+        self.fileMenu.addAction(self.prefAct)
+
         self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
                                statusTip="Exit the application", triggered=self.close)
         self.fileMenu.addSeparator()
@@ -290,13 +297,11 @@ class CWMainGUI(QMainWindow):
         self.windowMenu = self.menuBar().addMenu("&Windows")        
                 
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpMenu.addAction(QAction('&Save Settings', self, statusTip='Save all settings', triggered=self.saveSettings))
-        self.helpMenu.addAction(QAction('&Restore Settings', self, statusTip='Restore all settings to previous saved state', triggered=self.restoreSettings))
-        self.helpMenu.addAction(QAction('Reset Settings and &Exit', self, statusTip='Clear all settings and exit', triggered=self.reset))
         self.helpMenu.addAction(QAction('&Tutorial/User Manual', self, statusTip='Everything you need to know', triggered=self.helpdialog))
         self.helpMenu.addAction(QAction('&List Enabled/Disable Plugins', self, statusTip='Check if you\'re missing plugins', triggered=self.pluginDialog))
         # self.helpMenu.addAction(QAction('&ChipWhisperer Documentation', self, statusTip='ChipWisperer Wiki Page', triggered=lambda:QDesktopServices.openUrl(QUrl("http://wiki.newae.com/Main_Page"))))
         self.helpMenu.addAction(QAction('&Check for Updates', self, statusTip='Check for new versions', triggered=self.checkForUpdates))
+        self.helpMenu.addAction(self.prefAct)
         self.helpMenu.addAction(QAction('&About', self, statusTip='About dialog', triggered=self.aboutdialog))
 
     def checkForUpdates(self):
@@ -433,7 +438,7 @@ class CWMainGUI(QMainWindow):
     def saveProject(self):
         fname = self.api.project().getFilename()
         if self.api.project().isUntitled():
-            fd = QFileDialog(self, 'Save New File', './projects/', 'ChipWhisperer Project (*.cwp)')
+            fd = QFileDialog(self, 'Save New File', self.api.settings.value("project-home-dir"), 'ChipWhisperer Project (*.cwp)')
             fd.setOption(QFileDialog.DontUseNativeDialog)
             fd.setDefaultSuffix('cwp') # Will not append the file extension if using the static file dialog
             fd.setAcceptMode(QFileDialog.AcceptSave)
@@ -551,6 +556,10 @@ class OutLog:
         if self.origStdout:
             self.origStdout.write(m)
 
+    def clearFocus(self):
+        """Accept the current parameter edition by removing its focus"""
+        if QApplication.focusWidget() is not None:
+            QApplication.focusWidget().clearFocus()
 
 def main():    
     app = QApplication(sys.argv)

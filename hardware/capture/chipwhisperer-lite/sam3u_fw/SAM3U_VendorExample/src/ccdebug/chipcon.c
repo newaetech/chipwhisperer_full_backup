@@ -693,7 +693,7 @@ unsigned char cc_debug(unsigned char len,
 	  
 	  if(timeout == 0){
 		  printf("Timeout in chipcon cc_debug()\n");
-		  return;
+		  return 0x00;
 	  }
   }
   

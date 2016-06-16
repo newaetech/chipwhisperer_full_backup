@@ -141,7 +141,8 @@ class PassiveTraceObserver(Parameterized):
         par = self.findParam('input')
         par.setLimits({})  # Will not update if the obj is the same :(
         par.setLimits(TraceSource.registeredObjects)
-
+        if par.getValue() not in TraceSource.registeredObjects.values():
+            par.setValue(None)
 
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """

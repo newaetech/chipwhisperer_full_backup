@@ -24,6 +24,7 @@
 #=================================================
 
 import sys
+import copy
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
 from chipwhisperer.common.utils import util
 import functools
@@ -223,16 +224,13 @@ class Parameter(object):
         else:
             return val()
 
-    def getKey(self):
+    def getValueKey(self):
         """Return the key used to set list type parameters"""
         if self.opts["type"] == "list":
             limits = self.opts["limits"]
             if isinstance(limits, dict):
                 return limits.keys()[limits.values().index(self.getValue())]
-            else:
-                return self.getValue()
-        else:
-            raise Exception("Only parameter type \"list\" support keys")
+        return self.getValue()
 
     def addChildren(self, children):
         """Add a list of children to the current paramenter"""
@@ -262,7 +260,7 @@ class Parameter(object):
             self.sigChildAdded.emit(child)
         self.sigParametersChanged.emit()
 
-    def setValue(self, value,  ignoreReadonly = False, blockSignal=None,  blockAction=False, init=False, echo=True):
+    def setValue(self, value, blockSignal=None,  blockAction=False, init=False, ignoreReadonly = False, echo=True, addWithKey=False):
         """
         Set the parameter value. External values are updated using signals.
 
@@ -272,6 +270,7 @@ class Parameter(object):
         blockAction    - prevents action callback of being called.
         init           - used internally to initialize the parameter.
         echo           - enables/disables broadcasting the changes.
+        addWithKey     - add given value to list of valid values if not already present
         """
         if not ignoreReadonly and not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
@@ -279,7 +278,13 @@ class Parameter(object):
         type = self.opts["type"]
         if type == "group":
             return
-        if limits is not None and not self.invalid:
+
+        if addWithKey:
+            newlimits = copy.copy(limits)
+            newlimits[value.getName()] = value
+            self.setLimits(newlimits)
+
+        elif limits is not None and not self.invalid:
             if (type == "list" and
                    ((isinstance(limits, dict) and value not in limits.values()) or\
                    (not isinstance(limits, dict) and value not in limits))
@@ -317,8 +322,10 @@ class Parameter(object):
                     if v == value:
                         value = k
 
-            if echo and not self.opts.get("echooff", False):
-                print >> Parameter.scriptingOutput, str(self.getPath() + [value])
+            if echo and not self.opts.get("echooff", False) and not self.readonly():
+                path = self.getPath()
+                if path is not None:
+                    print >> Parameter.scriptingOutput, str(path + [value])+","
 
     def callLinked(self):
         for name in self.opts.get("linked", []):
@@ -330,7 +337,9 @@ class Parameter(object):
         act = self.opts.get("action", None)
         if act is not None:
             act(self)
-            print >> Parameter.scriptingOutput, (str(self.getPath() + [None]))
+            path = self.getPath()
+            if path is not None:
+                print >> Parameter.scriptingOutput, (str(path + [None])+",")
         self.callLinked()
 
     def setDefault(self, default):
@@ -464,11 +473,14 @@ class Parameter(object):
 
     def getPath(self):
         """Return the path to the root."""
-        if self.parent is None:
+        if self in Parameter.registeredParameters.values():
             path = []
+        elif self.parent is None:
+            return None
         else:
             path = self.parent.getPath()
-        path.append(self.opts["name"])
+        if path is not None:
+            path.append(self.opts["name"])
         return path
 
     def stealDynamicParameters(self, parent):
@@ -518,7 +530,8 @@ class Parameter(object):
         """Return a list with all parameters with a given type in the hierarchy."""
         ret = []
         for p in cls.registeredParameters.itervalues():
-            ret.extend(p._getAllParameters(type))
+            parameters = p._getAllParameters(type)
+            [ret.append(param) for param in parameters if param not in ret]
         return ret
 
     def register(self):
@@ -531,6 +544,21 @@ class Parameter(object):
         Parameter.registeredParameters.pop(self.getName(), None)
 
     @classmethod
+    def findParameter(cls, path):
+        """
+        Find a registered parameter based on a list (used for scripting).
+        """
+        child = cls.registeredParameters.get(path[0], None)
+        if child is None:
+            raise KeyError("Parameter not found: %s" % str(path))
+        return child.getChild(path[1:])
+
+    @classmethod
+    def getParameter(cls, path, echo=False, blockSignal=False):
+        """Return the value of a registered parameter"""
+        return cls.findParameter(path).getValueKey()
+
+    @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
         """
         Sets a parameter based on a list (used for scripting).
@@ -539,23 +567,15 @@ class Parameter(object):
         path = parameter[:-1]
         value = parameter[-1]
 
-        child = None
-        p = cls.registeredParameters.get(path[0], None)
-        if p is not None:
-            child = p.getChild(path[1:])
-            if child is not None:
-
-                if isinstance(child.getOpts().get("values", None), dict):
-                    try:
-                        value = child.getOpts()["values"][value]
-                    except KeyError:
-                        raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s"%(value,
-                                                                                    str(parameter),
-                                                                                    child.getOpts()["values"].keys()))
-                child.setValue(value, echo=echo)
-
-        if child is None:
-            raise KeyError("Parameter not found: %s" % str(parameter))
+        child = cls.findParameter(path)
+        if isinstance(child.getOpts().get("values", None), dict):
+            try:
+                value = child.getOpts()["values"][value]
+            except KeyError:
+                raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s"%(value,
+                                                                            str(parameter),
+                                                                            child.getOpts()["values"].keys()))
+        child.setValue(value, echo=echo)
 
     def __del__(self):
         self.delete()
@@ -571,12 +591,15 @@ def setupSetParam(parameter):
         @functools.wraps(func)
         def func_wrapper(*args, **kargs):
             blockSignal = kargs.get("blockSignal", None)
+            if "blockSignal" in kargs:
+                del kargs["blockSignal"]
             if blockSignal is None:
                 if parameter!="":
                     tmp = args[0].findParam(parameter)
-                    tmp.setValue(args[1], tmp.opts["set"])
-            if "blockSignal" in kargs:
-                del kargs["blockSignal"]
+                    tmp.setValue(args[1], blockSignal=tmp.opts["set"], **kargs)
+            #todo - use inspect to remove things from kargs that are handled by setvalue above
+            if "addWithKey" in kargs:
+                del kargs["addWithKey"]
             func(*args, **kargs)
         return func_wrapper
         func_wrapper.__wrapped__ = func

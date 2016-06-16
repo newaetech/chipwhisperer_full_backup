@@ -305,6 +305,8 @@
 */
 
 //! USART0 (Target Communication)
+#define USART_TARGET USART0
+
 #define PIN_USART0_RXD	         (PIO_PA19_IDX)
 #define PIN_USART0_RXD_FLAGS      (PIO_PERIPH_A | PIO_DEFAULT)
 #define PIN_USART0_TXD	        (PIO_PA18_IDX)
