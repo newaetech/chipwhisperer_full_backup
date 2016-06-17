@@ -8,8 +8,6 @@ from chipwhisperer.analyzer.attacks.cpa import CPA
 from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive
 import chipwhisperer.analyzer.attacks.models.AES128_8bit
 # Imports from utilList
-from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeTTest, DifferenceModeSAD
-from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammer
 
 

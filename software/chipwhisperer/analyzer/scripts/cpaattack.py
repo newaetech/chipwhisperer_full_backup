@@ -9,7 +9,7 @@ import chipwhisperer.analyzer.attacks.models.AES128_8bit
 # Imports from utilList
 
 class UserScript(UserScriptBase):
-    _name = "CPA with noise"
+    _name = "CPA attack with noise"
     _description = "Simple example of attack script using CPA Progressive and random noise"
 
     def __init__(self, api):
@@ -42,13 +42,14 @@ class UserScript(UserScriptBase):
 
     def initReporting(self):
         # Configures the attack observers (usually a set of GUI widgets)
-        self.api.resultWidgets["Correlation vs Traces in Attack"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Knownkey Source"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Output vs Point Plot"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["PGE vs Trace Plot"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Results Table"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Save to Files"].setAnalysisSource(self.attack)
-        self.api.resultWidgets["Trace Output Plot"].setTraceSource(self.traces)
+        self.api.getResults("Attack Settings").setAnalysisSource(self.attack)
+        self.api.getResults("Correlation vs Traces in Attack").setAnalysisSource(self.attack)
+        self.api.getResults("Output vs Point Plot").setAnalysisSource(self.attack)
+        self.api.getResults("PGE vs Trace Plot").setAnalysisSource(self.attack)
+        self.api.getResults("Results Table").setAnalysisSource(self.attack)
+        self.api.getResults("Save to Files").setAnalysisSource(self.attack)
+        self.api.getResults("Trace Output Plot").setTraceSource(self.traces)
+        self.api.getResults("Trace Recorder").setTraceSource(self.traces)
 
     def run(self):
         self.attack.processTraces()
@@ -58,12 +59,11 @@ if __name__ == '__main__':
     from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
     import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
     from chipwhisperer.common.utils.parameter import Parameter
-    app = cwa.makeApplication()                     # Comment this line if you don't want to use the GUI
-    Parameter.usePyQtGraph = True                   # Comment this line if you don't want to use the GUI
-    api = CWCoreAPI()                               # Instantiate the API
-    # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
-    gui = cwa.CWAnalyzerGUI(api)                     # Comment this line if you don't want to use the GUI
-    gui.show()                                      # Comment this line if you don't want to use the GUI
-    api.runScriptClass(UserScript)                  # Run the User Script
+    app = cwa.makeApplication()     # Comment if you don't need the GUI
+    Parameter.usePyQtGraph = True   # Comment if you don't need the GUI
+    api = CWCoreAPI()               # Instantiate the API
+    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI
+    gui.show()                      # Comment if you don't need the GUI
+    api.runScriptClass(UserScript)  # Run UserScript through the API
 
-    sys.exit(app.exec_())                           # Comment this line if you don't want to use the GUI
+    sys.exit(app.exec_())           # Comment if you don't need the GUI
