@@ -144,12 +144,11 @@ class Attack(UserScriptBase):
         self.api.executingScripts.disconnectAll()
 
 if __name__ == '__main__':
-    import sys
     from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
     import chipwhisperer.capture.ui.CWCaptureGUI as cwc
     import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
     from chipwhisperer.common.utils.parameter import Parameter
-    app = cwa.makeApplication()
+    app = cwc.makeApplication()
     Parameter.usePyQtGraph = True
     api = CWCoreAPI()               # Instantiate the API
     gui = cwc.CWCaptureGUI(api)        # Instantiate the Capture GUI
@@ -162,4 +161,4 @@ if __name__ == '__main__':
     gui.show()
     api.runScriptClass(Attack)      # Run the script (default is the "run" method)
 
-    sys.exit(app.exec_())
+    app.exec_()

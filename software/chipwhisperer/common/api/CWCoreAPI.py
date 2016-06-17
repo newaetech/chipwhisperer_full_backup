@@ -398,9 +398,9 @@ class CWCoreAPI(Parameterized):
         finally:
             self.executingScripts.setValue(False)
 
-    def getParameter(self, pathAndValue):
+    def getParameter(self, path):
         """Return the value of a registered parameter"""
-        return Parameter.getParameter(pathAndValue)
+        return Parameter.getParameter(path)
 
     def setParameter(self, pathAndValue):
         """Set the parameter value, given its path. It should be registered in Parameter.registeredParameters"""
