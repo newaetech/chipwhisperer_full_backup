@@ -4,13 +4,13 @@ from setuptools import setup
 
 setup(
     name = 'chipwhisperer',
-    version = '3.1rc4',
+    version = '3.1.6',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
     license = 'GPLv3',
     url = 'http://www.ChipWhisperer.com',
-    download_url='https://www.newae.com/files/chipwhisperer-3.1rc4.tar.gz',
+    download_url='https://www.newae.com/files/chipwhisperer-3.1.6.tar.gz',
     packages = ['chipwhisperer',
                 'chipwhisperer.capture',
                 'chipwhisperer.capture.acq_patterns',
@@ -53,7 +53,9 @@ setup(
     install_requires = [
         'configobj',
         'docutils',
-        'numpy',
+
+        #Numpy is required, but might be installed in a way pip doesn't know about it. Need to test this more still.
+        #'numpy',
 
         # pyusb could be removed from required list, but for most people it's needed
         # and it's not "too" bad (i.e., won't hurt on a cloud platform I think)
