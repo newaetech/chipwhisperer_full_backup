@@ -53,5 +53,9 @@ setup(
         #This is normally required, but not listed to avoid pulling in on cloud platforms, which will also
         #trigger a bunch of stuff like pyside
         #pyqtgraph
-    ]
+    ],
+    scripts=[
+        'scripts/chipwhisperer-ana',
+        'scripts/chipwhisperer-cap',
+    ],
 )
