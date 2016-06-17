@@ -1,7 +1,7 @@
-def capture():
-    from chipwhisperer.analyzer.ui.CWCaptureGUI import main
+def capture_gui():
+    from chipwhisperer.capture.ui.CWCaptureGUI import main
     main()
 
-def analyzer():
+def analyzer_gui():
     from chipwhisperer.analyzer.ui.CWAnalyzerGUI import main
     main()
