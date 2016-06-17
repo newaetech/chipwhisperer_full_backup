@@ -27,8 +27,14 @@
 import sys
 try:
     from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-except ImportError:
+except ImportError, e:
+    print "*******************************************\n"
     print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
+    print "*******************************************\n\n"
+
+    print "Failed to import 'PySide', full exception trace given below in case it's another problem:"
+    raise()
+
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
