@@ -244,6 +244,7 @@ def makeApplication():
 def main():
     # Create the Qt Application
     app = makeApplication()
+    app.aboutToQuit.connect(app.deleteLater)
     Parameter.usePyQtGraph = True
     # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
@@ -254,9 +255,6 @@ def main():
 
     #Restore exception handlers (in case called from interactive console)
     sys.excepthook = sys.__excepthook__
-
-    #Force removal of QApplication
-    del app
 
     #sys.exit()
 

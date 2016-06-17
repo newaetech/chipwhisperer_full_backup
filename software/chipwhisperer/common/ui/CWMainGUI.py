@@ -24,6 +24,8 @@
 
 __author__ = "Colin O'Flynn"
 
+import sys
+
 #We always import PySide first, to force usage of PySide over PyQt
 try:
     from PySide.QtCore import *
@@ -41,7 +43,7 @@ except ImportError:
     sys.exit()
 
 import os
-import sys, traceback
+import traceback
 from functools import partial
 from datetime import datetime
 from PythonConsole import QPythonConsole
@@ -563,6 +565,7 @@ class OutLog:
 
 def main():    
     app = QApplication(sys.argv)
+    app.aboutToQuit.connect(app.deleteLater)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Window Demo")
     CWMainGUI(CWCoreAPI(), app.applicationName())
