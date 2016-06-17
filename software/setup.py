@@ -4,12 +4,12 @@ from setuptools import setup
 
 setup(
     name = 'chipwhisperer',
-    version = '3.1rc1',
+    version = '3.1rc3',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
     license = 'GPLv3',
-    url = 'www.ChipWhisperer.com',
+    url = 'http://www.ChipWhisperer.com',
     download_url='https://www.newae.com/files/chipwhisperer-3.1rc1.tar.gz',
     packages = ['chipwhisperer',
                 'chipwhisperer.capture.api',
@@ -26,7 +26,6 @@ setup(
                 'chipwhisperer.analyzer',
                 'chipwhisperer.analyzer.attacks',
                 'chipwhisperer.analyzer.attacks.cpa_algorithms',
-                'chipwhisperer.analyzer.attacks.cpa_algorithms.c_accel',
                 'chipwhisperer.analyzer.attacks.models',
                 'chipwhisperer.analyzer.preprocessing',
                 'chipwhisperer.analyzer.ui',
@@ -43,11 +42,16 @@ setup(
                 'chipwhisperer.hardware.naeusb',
                 ],
     install_requires = [
-        'pyqtgraph',
         'configobj',
-        #pyusb could be removed from required list, but for most people it's needed
-        'pyusb',
         'docutils',
-        'numpy'
+        'numpy',
+
+        # pyusb could be removed from required list, but for most people it's needed
+        # and it's not "too" bad (i.e., won't hurt on a cloud platform I think)
+        'pyusb',
+
+        #This is normally required, but not listed to avoid pulling in on cloud platforms, which will also
+        #trigger a bunch of stuff like pyside
+        #pyqtgraph
     ]
 )
