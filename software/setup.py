@@ -4,13 +4,13 @@ from setuptools import setup
 
 setup(
     name = 'chipwhisperer',
-    version = '3.1.7',
+    version = '3.1.8',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
     license = 'GPLv3',
     url = 'http://www.ChipWhisperer.com',
-    download_url='https://www.newae.com/files/chipwhisperer-3.1.6.tar.gz',
+    download_url='https://www.newae.com/files/chipwhisperer-3.1.8.tar.gz',
     packages = ['chipwhisperer',
                 'chipwhisperer.capture',
                 'chipwhisperer.capture.acq_patterns',
@@ -52,6 +52,9 @@ setup(
                 ],
     install_requires = [
         'configobj',
+        'pyserial',
+
+        #docutils is kinda optional, but makes the help prettier so we add it here
         'docutils',
 
         #Numpy is required, but might be installed in a way pip doesn't know about it. Need to test this more still.
@@ -62,7 +65,7 @@ setup(
         'pyusb',
 
         #This is normally required, but not listed to avoid pulling in on cloud platforms, which will also
-        #trigger a bunch of stuff like pyside
+        #trigger a bunch of stuff like pyside, numpy, etc.
         #pyqtgraph
     ],
     scripts=[
