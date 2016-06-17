@@ -31,24 +31,24 @@ try:
     from PySide.QtCore import *
     from PySide.QtGui import *
 except ImportError, e:
-    print "*******************************************\n"
+    print "**********************************************"
     print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
-    print "*******************************************\n\n"
+    print "**********************************************\n\n"
 
-    print "Failed to import 'PySide', full exception trace given below in case it's another problem:"
-    raise ()
+    print "Failed to import 'PySide', original exception information:"
+    raise
 
 try:
     import pyqtgraph
     pyqtgraph.setConfigOption('background', 'w')
     pyqtgraph.setConfigOption('foreground', 'k')
 except ImportError, e:
-    print "*******************************************\n"
+    print "***********************************************"
     print "ERROR: PyQtGraph is required for this program.\nTry installing with 'pip install pyqtgraph' first."
-    print "*******************************************\n\n"
+    print "***********************************************\n\n"
 
     print "Failed to import 'pyqtgraph', full exception trace given below in case it's another problem:"
-    raise ()
+    raise
 import os
 import traceback
 from functools import partial

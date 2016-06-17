@@ -25,25 +25,15 @@
 #=================================================
 
 import sys
-try:
-    from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-except ImportError, e:
-    print "*******************************************\n"
-    print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
-    print "*******************************************\n\n"
-
-    print "Failed to import 'PySide', full exception trace given below in case it's another problem:"
-    raise()
-
-from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
+from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter
-
 
 class CWAnalyzerGUI(CWMainGUI):
     """ Main ChipWhisperer Analyzer GUI Window Class.
