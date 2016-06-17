@@ -29,7 +29,7 @@ try:
     from PySide.QtCore import *
     from PySide.QtGui import *
 except ImportError:
-    print "ERROR: PySide is required for this program"
+    print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
     sys.exit()
 
 try:
@@ -37,7 +37,7 @@ try:
     pyqtgraph.setConfigOption('background', 'w')
     pyqtgraph.setConfigOption('foreground', 'k')
 except ImportError:
-    print "ERROR: PyQtGraph is required for this program"
+    print "ERROR: PyQtGraph is required for this program. \nTry installing with 'pip install pyqtgraph' first."
     sys.exit()
 
 import os
