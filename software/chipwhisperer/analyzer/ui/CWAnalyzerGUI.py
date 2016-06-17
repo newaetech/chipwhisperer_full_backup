@@ -25,8 +25,10 @@
 #=================================================
 
 import sys
-from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-
+try:
+    from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
+except ImportError:
+    print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
@@ -129,7 +131,8 @@ def main():
     window.show()
 
     # Run the main Qt loop
-    sys.exit(app.exec_())
+    app.exec_()
+    #sys.exit()
 
 if __name__ == '__main__':
     main()
