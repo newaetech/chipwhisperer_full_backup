@@ -24,11 +24,11 @@
 #=================================================
 
 import sys  # Do not remove!
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.results.base import ResultsBase
-from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
 from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
@@ -244,6 +244,7 @@ def makeApplication():
 def main():
     # Create the Qt Application
     app = makeApplication()
+    app.aboutToQuit.connect(app.deleteLater)
     Parameter.usePyQtGraph = True
     # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
@@ -251,6 +252,13 @@ def main():
 
     # Run the main Qt loop
     app.exec_()
+
+    #Restore exception handlers (in case called from interactive console)
+    sys.excepthook = sys.__excepthook__
+
+    #Restore print statements
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
 
     #sys.exit()
 

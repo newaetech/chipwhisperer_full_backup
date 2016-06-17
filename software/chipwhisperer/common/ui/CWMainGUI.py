@@ -24,24 +24,33 @@
 
 __author__ = "Colin O'Flynn"
 
+import sys
+
 #We always import PySide first, to force usage of PySide over PyQt
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
-except ImportError:
+except ImportError, e:
+    print "**********************************************"
     print "ERROR: PySide is required for this program.\nTry installing with 'pip install pyside' first."
-    sys.exit()
+    print "**********************************************\n\n"
+
+    print "Failed to import 'PySide', original exception information:"
+    raise
 
 try:
     import pyqtgraph
     pyqtgraph.setConfigOption('background', 'w')
     pyqtgraph.setConfigOption('foreground', 'k')
-except ImportError:
-    print "ERROR: PyQtGraph is required for this program. \nTry installing with 'pip install pyqtgraph' first."
-    sys.exit()
+except ImportError, e:
+    print "***********************************************"
+    print "ERROR: PyQtGraph is required for this program.\nTry installing with 'pip install pyqtgraph' first."
+    print "***********************************************\n\n"
 
+    print "Failed to import 'pyqtgraph', full exception trace given below in case it's another problem:"
+    raise
 import os
-import sys, traceback
+import traceback
 from functools import partial
 from datetime import datetime
 from PythonConsole import QPythonConsole
@@ -563,6 +572,7 @@ class OutLog:
 
 def main():    
     app = QApplication(sys.argv)
+    app.aboutToQuit.connect(app.deleteLater)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName("Window Demo")
     CWMainGUI(CWCoreAPI(), app.applicationName())
