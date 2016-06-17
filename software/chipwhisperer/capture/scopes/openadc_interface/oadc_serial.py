@@ -24,11 +24,9 @@ import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
-try:
-    import serial
-    import chipwhisperer.common.utils.serialport as scan
-except ImportError:
-    serial = None
+import serial
+import chipwhisperer.common.utils.serialport as scan
+
 
 
 class OpenADCInterface_Serial(Parameterized, Plugin):
@@ -43,11 +41,7 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
             {'name':'Refresh List', 'type':'action', 'action':lambda _: self.serialRefresh()},
             {'name':'Selected Port', 'type':'list', 'values':[''], 'get':self.getPortName, 'set':self.setPortName},
         ])
-
-        if (openadc_qt is None) or (serial is None):
-            raise ImportError("Needed imports for serial missing")
-        else:
-            self.scope = oadcInstance
+        self.scope = oadcInstance
 
     def getPortName(self):
         return self.portName

@@ -13,16 +13,7 @@ successful.
 import sys
 import platform
 import glob
-
-try:
-    import serial
-except ImportError:
-    print "*****************************************"
-    print "*****************************************"
-    print "PySerial not found. Install from https://pypi.python.org/pypi/pyserial or http://www.lfd.uci.edu/~gohlke/pythonlibs/#pyserial"
-    print "*****************************************"
-    print "*****************************************"
-    sys.exit()
+import serial
 
 def scan():
     """scan for available ports. return a list of names"""
