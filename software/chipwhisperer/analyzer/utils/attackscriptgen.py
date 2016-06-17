@@ -182,11 +182,11 @@ class AttackScriptGen(Parameterized):
 
     def reloadScripts(self):
         """Rewrite the auto-generated analyzer script, using settings from the GUI"""
-        if self.cwGUI.api.busy.value():
-            self.cwGUI.api.busy.connect(self.reloadScripts)
+        if self.cwGUI.api.executingScripts.value():
+            self.cwGUI.api.executingScripts.connect(self.reloadScripts)
             return
 
-        self.cwGUI.api.busy.disconnect(self.reloadScripts)
+        self.cwGUI.api.executingScripts.disconnect(self.reloadScripts)
 
         # Auto-Generated is always first
         mse = self.scriptList[0]['widget']

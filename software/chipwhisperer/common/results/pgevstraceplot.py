@@ -34,8 +34,8 @@ class PGEVsTrace(AttackResultPlot, Plugin):
     _name = "PGE vs Trace Plot"
     _description = "Plots Partial Guessing Entropy (PGE) vs Traces in Attack"
 
-    def __init__(self, parentParam=None, name=None):
-        AttackResultPlot.__init__(self, parentParam, name)
+    def __init__(self, name=None):
+        AttackResultPlot.__init__(self, name)
         self.setLabels("Partial Guessing Entropy vs. Traces", "Traces", "Partial Guessing Entropy")
 
         self.params.addChildren([

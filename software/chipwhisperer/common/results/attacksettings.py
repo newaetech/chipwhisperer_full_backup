@@ -35,7 +35,7 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
     _name = "Attack Settings"
     _description = "General settings for all the attack widgets"
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         AttackObserver.__init__(self)
         self._overridedKey = [00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
         self.params = self.getParams()

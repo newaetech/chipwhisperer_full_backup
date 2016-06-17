@@ -40,7 +40,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
     correlation over all data points, or the most likely correlation over number of traces
     """
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         GraphWidget.__init__(self)
 
         self.getParams().addChildren([

@@ -27,6 +27,7 @@ from pyqtgraph.parametertree import ParameterTree
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameter import Parameterized
 
+
 class CWPreferencesDialog(QtFixes.QDialog):
 
     def __init__(self, parent, settings):
@@ -42,7 +43,6 @@ class CWPreferencesDialog(QtFixes.QDialog):
         tabWidget.addTab(self._windowsTab, "Window Layout")
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
-
         buttonBox.accepted.connect(self.accept)
 
         mainLayout = QVBoxLayout()
@@ -51,6 +51,7 @@ class CWPreferencesDialog(QtFixes.QDialog):
         mainLayout.addWidget(buttonBox)
 
         self.setLayout(mainLayout)
+
 
 class GeneralTab(QWidget, Parameterized):
     _name = "Preferences"
@@ -73,6 +74,7 @@ class GeneralTab(QWidget, Parameterized):
         mainLayout.addLayout(defdirLayout)
         mainLayout.addStretch(1)
         self.setLayout(mainLayout)
+
 
 class WindowTab(QWidget):
     def __init__(self, parent):

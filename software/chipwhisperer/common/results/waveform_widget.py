@@ -35,7 +35,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
     _name = 'Trace Output Plot'
     _description = 'Plots the waveform for a given trace source'
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         GraphWidget.__init__(self)
         if name is not None:
             self._name = name
