@@ -12,7 +12,7 @@ setup(
     url = 'http://www.ChipWhisperer.com',
     download_url='https://www.newae.com/files/chipwhisperer-3.1rc1.tar.gz',
     packages = ['chipwhisperer',
-                'chipwhisperer.capture.acq_pattern',
+                'chipwhisperer.capture.acq_patterns',
                 'chipwhisperer.capture.api',
                 'chipwhisperer.capture.auxiliary',
                 'chipwhisperer.capture.scopes',
