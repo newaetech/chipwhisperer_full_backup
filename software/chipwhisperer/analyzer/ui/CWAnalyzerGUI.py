@@ -37,6 +37,8 @@ from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
 from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
+from chipwhisperer.analyzer.attacks._base import AttackObserver
 
 
 class CWAnalyzerGUI(CWMainGUI):
@@ -94,7 +96,8 @@ class CWAnalyzerGUI(CWMainGUI):
         # Load all ActiveTraceObservers
         self.windowMenu.addSeparator()
         for k, v in ResultsBase.getClasses().iteritems():
-            ResultsBase.createNew(k)
+            if issubclass(v, PassiveTraceObserver) or issubclass(v, AttackObserver):
+                ResultsBase.createNew(k)
         self.tabifyDocks(self.resultDocks)
 
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,

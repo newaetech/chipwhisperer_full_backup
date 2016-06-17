@@ -200,7 +200,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         tdiff = self._reportinginterval
 
         if progressBar:
-            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d")
+            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d", (0, 0, 0))
             progressBar.setMaximum(16 * len(traces))
         pcnt = 0
 

@@ -36,7 +36,7 @@ class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
     _name = 'Trace Recorder'
     _description = 'Saves the traces for a given input.'
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         PassiveTraceObserver.__init__(self)
 
         self.getParams().addChildren([

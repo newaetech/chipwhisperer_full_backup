@@ -68,7 +68,7 @@ class ResultsBase(Parameterized):
         if instanceName in cls.registeredObjects:
             raise Warning("Result widget \"%s\" already exists, choose a different name" % instanceName)
 
-        obj = cls.getClasses()[className](None, instanceName)
+        obj = cls.getClasses()[className](instanceName)
         cls.registeredObjects[obj.getName()] = obj
         cls.sigRegisteredObjectsChanged.emit(obj)
         cls.getClassParameter().append(obj.getParams())

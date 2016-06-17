@@ -36,7 +36,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     _name = 'Results Table'
     _description = "Show all guesses based on sorting output of attack"
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         QTableWidget.__init__(self)
 
         self.colorGradient = True

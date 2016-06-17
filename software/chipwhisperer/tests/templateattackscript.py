@@ -12,25 +12,28 @@ from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import D
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammer
 
+
 class Capture(UserScriptBase):
     _name = "Template Attack Script"
-    _description = "Template Attack Script"
 
     def run(self):
+        # Deletes previous saved data
         if os.path.isfile("projects/tut_randkey_randplain.cwp"): os.remove("projects/tut_randkey_randplain.cwp")
         shutil.rmtree("projects/tut_randkey_randplain_data", ignore_errors=True)
         if os.path.isfile("projects/tut_fixedkey_randplain.cwp"): os.remove("projects/tut_fixedkey_randplain.cwp")
         shutil.rmtree("projects/tut_fixedkey_randplain_data", ignore_errors=True)
 
-        #User commands here
+        # Setup the capture hardware
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
         self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
 
+        # Conect both: scope and target
         self.api.connect()
 
+        # Flash the firmware
         xmega = XMEGAProgrammer()
         xmega.setUSBInterface(self.api.getScope().scopetype.dev.xmega)
         xmega._logging = None
@@ -39,7 +42,7 @@ class Capture(UserScriptBase):
         xmega.program(r"simeplserial-aes-xmega.hex", memtype="flash", verify=True)
         xmega.close()
 
-        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        # Setup the capture parameters
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
                       ['CW Extra Settings', 'Target IOn Pins', 'Target IO1', 'Serial RXD'],
                       ['CW Extra Settings', 'Target IOn Pins', 'Target IO2', 'Serial TXD'],
@@ -53,19 +56,16 @@ class Capture(UserScriptBase):
                       #Final step: make DCMs relock in case they are lost
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ]
-
-        #Download all hardware setup parameters
         for cmd in lstexample: self.api.setParameter(cmd)
 
-        #Let's only do a few traces
-        self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
-
-        #Capture a set of traces and save the project
+        # Capture a set of traces with random key and save the project
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Random'])
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1500])
         self.api.saveProject("projects/tut_randkey_randplain.cwp")
         self.api.captureM()
         self.api.saveProject()
+
+        # Capture a set of traces with fixed key and save the project
         self.api.newProject()
         self.api.saveProject("projects/tut_fixedkey_randplain.cwp")
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Fixed'])
@@ -76,9 +76,9 @@ class Capture(UserScriptBase):
 
 class Attack(UserScriptBase):
     _name = "Template Attack Script"
-    _description = "Template Attack Script"
 
     def initAnalysis(self):
+        # Setup the Profiling algorith to generate the templates
         self.attack = Profiling()
         self.attack.setProject(self.api.project())
         self.attack.setTraceSource(self.traces)
@@ -91,16 +91,12 @@ class Attack(UserScriptBase):
         self.attack.setPointRange((0,2999))
 
     def initAnalysis2(self):
-        self.attack = Profiling()
+        # Setup the Profiling algorith to perform the actual attack
         self.attack.setProject(self.api.project())
         self.attack.setTraceSource(self.traces)
         self.attack.setAnalysisAlgorithm(ProfilingTemplate)
-        self.attack.setTraceStart(0)
         self.attack.setTracesPerAttack(20)
-        self.attack.setIterations(1)
         self.attack.setReportingInterval(1)
-        self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-        self.attack.setPointRange((0,2999))
 
     def initReporting(self):
         # Configures the attack observers (usually a set of GUI widgets)
@@ -114,6 +110,7 @@ class Attack(UserScriptBase):
         self.api.getResults("Trace Recorder").setTraceSource(self.traces)
 
     def run(self):
+        # This is what the API will execute
         self.api.openProject("projects/tut_randkey_randplain.cwp")
         self.traces = self.api.project().traceManager()
         self.initAnalysis()
@@ -125,8 +122,11 @@ class Attack(UserScriptBase):
         self.api.project().addDataConfig(template[-1], sectionName="Template Data", subsectionName="Templates")
         self.traces = self.api.project().traceManager()
         self.initAnalysis2()
-        self.initReporting()
         self.attack.processTraces()
+
+        # Delete all pending scripts executions (that are observing the api be available again),
+        # otherwise the current setup would be overridden
+        self.api.executingScripts.disconnectAll()
 
     def TraceExplorerDialog_PartitionDisplay_displayPartitionStats(self):
         self.cwagui = CWAnalyzerGUI.getInstance()
@@ -141,11 +141,13 @@ class Attack(UserScriptBase):
         ted.poi.setDifferences(partDiffs)
 
     def TraceExplorerDialog_PartitionDisplay_findPOI(self):
+        # Calculate the POIs
         self.cwagui = CWAnalyzerGUI.getInstance()
         ted = self.cwagui.attackScriptGen.utilList[0].exampleScripts[0]
         return ted.poi.calcPOI(numMax=3, pointRange=(0, 3000), minSpace=5)['poi']
 
     def generateTemplates(self):
+        # Generate the templates and save to the project
         self.TraceExplorerDialog_PartitionDisplay_displayPartitionStats()
         tRange = (0, 1499)
         poiList = self.TraceExplorerDialog_PartitionDisplay_findPOI()
@@ -158,12 +160,12 @@ if __name__ == '__main__':
     from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
     import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
     from chipwhisperer.common.utils.parameter import Parameter
-    app = cwa.makeApplication()     # Comment if you don't need the GUI
-    Parameter.usePyQtGraph = True   # Comment if you don't need the GUI
+    app = cwa.makeApplication()
+    Parameter.usePyQtGraph = True
     api = CWCoreAPI()               # Instantiate the API
     api.runScriptClass(Capture)
-    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI
-    gui.show()                      # Comment if you don't need the GUI
-    api.runScriptClass(Attack)
+    gui = cwa.CWAnalyzerGUI(api)    # Instantiate the Analyzer GUI
+    gui.show()
+    api.runScriptClass(Attack)      # Run the script (default is the "run" method)
 
-    sys.exit(app.exec_())           # Comment if you don't need the GUI
+    sys.exit(app.exec_())

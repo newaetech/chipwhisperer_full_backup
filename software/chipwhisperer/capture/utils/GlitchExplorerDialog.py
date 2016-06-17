@@ -188,7 +188,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
     def openPlotWidget(self, _):
         if "Glitch Explorer" not in ResultsBase.registeredObjects:
-            ResultsBase.createNew("Trace Output Plot", "Glitch Explorer")
+            ResultsBase.createNew("Scatter Plot", "Glitch Explorer")
         widget = ResultsBase.registeredObjects["Glitch Explorer"]
         widget.raise_()
         widget.yLocked(False)
@@ -336,12 +336,11 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
 
             widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
             if widget is not None:
-                widget.setupPlot(widget.pw.plot([newdata["settings"][0] if len(newdata["settings"])>0 else 0],
+                widget.plot([newdata["settings"][0] if len(newdata["settings"])>0 else 0],
                     [newdata["settings"][1] if len(newdata["settings"])>1 else 0],
-                     pen=None, symbol="o", symbolBrush=(
-                     (0, 255, 0, 75) if status=="Success" else
+                     ((0, 255, 0, 75) if status=="Success" else
                      (255, 0, 75) if status=="Failed" else
-                     (200, 200, 200, 50))), 1, True, str(newdata["settings"]))
+                     (200, 200, 200, 50)), str(newdata["settings"]))
 
         except AttributeError as e:
             raise StopIteration("Error when adding data to the table. Plese clear it and try again. Details:" + str(e))
