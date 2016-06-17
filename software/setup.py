@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name = 'chipwhisperer',
-    version = '3.1.6',
+    version = '3.1.7',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
