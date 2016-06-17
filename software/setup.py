@@ -52,7 +52,7 @@ setup(
                 ],
     install_requires = [
         'configobj',
-        'serial',
+        'pyserial',
 
         #docutils is kinda optional, but makes the help prettier so we add it here
         'docutils',
