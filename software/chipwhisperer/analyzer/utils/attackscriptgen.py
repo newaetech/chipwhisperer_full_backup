@@ -298,7 +298,6 @@ class AttackScriptGen(Parameterized):
                             mse.append(s.replace("UserScript.", "self."))
 
         mse.append("if __name__ == '__main__':\n"
-                    "    import sys\n"
                     "    from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI\n"
                     "    import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa\n"
                     "    from chipwhisperer.common.utils.parameter import Parameter\n"
@@ -308,8 +307,7 @@ class AttackScriptGen(Parameterized):
                     "    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI\n"
                     "    gui.show()                      # Comment if you don't need the GUI\n"
                     "    api.runScriptClass(UserScript)  # Run UserScript through the API\n"
-                    "\n"
-                    "    sys.exit(app.exec_())           # Comment if you don't need the GUI\n", 0)
+                    "    app.exec_()                     # Comment if you don't need the GUI\n", 0)
 
         mse.restoreSliderPosition()
         self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)
