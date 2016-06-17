@@ -256,6 +256,10 @@ def main():
     #Restore exception handlers (in case called from interactive console)
     sys.excepthook = sys.__excepthook__
 
+    #Restore print statements
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+
     #sys.exit()
 
 if __name__ == '__main__':
