@@ -129,6 +129,13 @@ def main():
 
     # Run the main Qt loop
     app.exec_()
+
+    #Restore exception handlers (in case called from interactive console)
+    sys.excepthook = sys.__excepthook__
+
+    #Force removal of QApplication
+    del app
+
     #sys.exit()
 
 if __name__ == '__main__':
