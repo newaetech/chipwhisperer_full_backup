@@ -53,6 +53,8 @@ class ChipWhispererExtra(Parameterized):
             self.cwEXTRA = CWExtraSettings(self, oa)
         elif cwtype == "cwlite":
             self.cwEXTRA = CWExtraSettings(self, oa, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
+        elif cwtype == "cw1200":
+            self.cwEXTRA = CWExtraSettings(self, oa, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 

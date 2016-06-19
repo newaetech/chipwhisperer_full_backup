@@ -49,8 +49,8 @@ class CWLiteUSB(Parameterized):
             {'name':"CW-Lite AVR Programmer", 'tip':"Open AVR Programmer (ChipWhisperer-Lite Only)", 'type':"menu", "action":lambda _:self.getCwliteAVR().show()}
         ])
 
-    def con(self):
-        self._cwusb.con()
+    def con(self, idProduct):
+        return self._cwusb.con(idProduct=idProduct)
 
     # def __del__(self):
     #     print "here"

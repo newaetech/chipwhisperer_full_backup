@@ -43,6 +43,7 @@ def packuint16(data):
 NEWAE_VID = 0x2B3E
 NEWAE_PIDS = {
     0xACE2: "ChipWhisperer-Lite",
+    0xACE3: "ChipWHisperer-CW1200",
     0xC305: "CW305 Artix FPGA Board",
 }
 
@@ -66,12 +67,18 @@ class NAEUSB(object):
     def __init__(self):
         self._usbdev = None
 
-    def con(self, idProduct=0xACE2):
+    def con(self, idProduct=[0xACE2]):
         """
         Connect to device using default VID/PID
         """
 
-        dev = usb.core.find(idVendor=0x2B3E, idProduct=idProduct)
+        for id in idProduct:
+            dev = usb.core.find(idVendor=0x2B3E, idProduct=id)
+            foundId = id
+
+            #Found something
+            if dev:
+                break
 
         if not dev:
             raise Warning("Failed to find USB Device")
@@ -88,10 +95,10 @@ class NAEUSB(object):
             self.snum = usb.util.get_string(dev, length=256, index=3)
 
 
-        if idProduct in NEWAE_PIDS:
-            name = NEWAE_PIDS[idProduct]
+        if foundId in NEWAE_PIDS:
+            name = NEWAE_PIDS[foundId]
         else:
-            name = "Unknown (PID = %04x)"%idProduct
+            name = "Unknown (PID = %04x)"%foundId
 
         print "Found %s, Serial Number = %s" % (name, self.snum)
 
@@ -106,6 +113,8 @@ class NAEUSB(object):
         if not (fwver[0] >= self.fwversion_latest[0] and fwver[1] >= self.fwversion_latest[1]):
             print "**NOTE: Your firmware is outdated - latest is %d.%d" % (self.fwversion_latest[0], self.fwversion_latest[1])
             print "**Suggested to update firmware, as you may experience errors"
+
+        return foundId
 
     def usbdev(self):
         if not self._usbdev: raise Warning("USB Device not found. Did you connect it first?")
