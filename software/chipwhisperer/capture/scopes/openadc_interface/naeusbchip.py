@@ -85,7 +85,12 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
                 self.cwFirmwareConfig = FWLoaderConfig(CW1200_Loader())
 
             self.cwFirmwareConfig.setInterface(self.dev.fpga)
-            self.cwFirmwareConfig.loadRequired()
+            try:
+                self.cwFirmwareConfig.loadRequired()
+            except:
+                self.dev.dis()
+                self.dev.usbdev().close()
+                raise
             self.ser = self.dev.usbdev()
 
         try:
