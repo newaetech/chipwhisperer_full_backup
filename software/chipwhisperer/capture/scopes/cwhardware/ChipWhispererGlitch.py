@@ -87,6 +87,10 @@ class ChipWhispererGlitch(Parameterized):
                 settingprefix = "cwlite"
                 partialbasename = "cwlite"
                 self.glitchPR = pr.PartialReconfigDataMulti()
+            elif cwtype == "cw1200":
+                settingprefix = "cw1200"
+                partialbasename = "cw1200"
+                self.glitchPR = pr.PartialReconfigDataMulti()
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
