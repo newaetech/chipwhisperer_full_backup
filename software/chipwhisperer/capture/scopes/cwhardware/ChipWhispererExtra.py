@@ -49,17 +49,8 @@ class ChipWhispererExtra(Parameterized):
     def __init__(self, parentParam, cwtype, scope, oa):
         #self.cwADV = CWAdvTrigger()
 
-        if cwtype == "cwrev2":
-            self.cwEXTRA = CWExtraSettings(self, oa)
-        elif cwtype == "cwlite":
-            self.cwEXTRA = CWExtraSettings(self, oa, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
-        elif cwtype == "cw1200":
-            self.cwEXTRA = CWExtraSettings(self, oa, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
-        else:
-            raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
-
+        self.cwEXTRA = CWExtraSettings(self, oa, cwtype)
         self.enableGlitch = True
-
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope, oa)
 
@@ -95,6 +86,7 @@ class CWExtraSettings(Parameterized):
     MODULE_BASIC = 0x00
     MODULE_ADVPATTERN = 0x01
     MODULE_SADPATTERN = 0x02
+    MODULE_DECODEIO = 0x03
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
@@ -114,7 +106,23 @@ class CWExtraSettings(Parameterized):
 
     _name = "CW Extra Settings"
 
-    def __init__(self, parentParam, oa, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
+    def __init__(self, parentParam, oa, cwtype):
+
+        if cwtype == "cwrev2":
+            hasFPAFPB = True
+            hasGlitchOut = False
+            hasPLL = True
+        elif cwtype == "cwlite":
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+        elif cwtype == "cw1200":
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+        else:
+            raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
+
         self.oa = oa
         self.hasFPAFPB = hasFPAFPB
         self.hasGlitchOut = hasGlitchOut
@@ -139,9 +147,23 @@ class CWExtraSettings(Parameterized):
         ])
 
         # Add trigger pins & modules
+
+        trigger_modules = {"Basic (Edge/Level)": self.MODULE_BASIC}
+
+        if cwtype == "cwlite":
+            pass
+        elif cwtype == "cw1200":
+            trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
+            trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO
+        elif cwtype == "cwrev2":
+            trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
+            trigger_modules["Digital Pattern Matching"] = self.MODULE_ADVPATTERN
+        else:
+            raise ValueError("Unknown ChipWhisperer %s"%cwtype)
+
         ret.extend([
             {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
-            {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
+            {'name': 'Trigger Module', 'type':'list', 'values':trigger_modules,
              'set':self.setModule, 'get':self.getModule}
         ])
 
@@ -160,7 +182,7 @@ class CWExtraSettings(Parameterized):
         #Added July 6/2015, Release 0.11RC1
         #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
         #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
-        if self.hasFPAFPB==False and self.hasPLL==False:
+        if cwtype == "cwlite":
             self.forceclkin = True
         else:
             self.forceclkin = False
