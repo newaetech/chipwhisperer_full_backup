@@ -22,7 +22,7 @@
 import sys
 
 import chipwhisperer.capture.scopes._qt as openadc_qt
-from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader
+from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -40,7 +40,7 @@ except ImportError:
 
 
 class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
-    _name = "ChipWhisperer-Lite"
+    _name = "NewAE USB (CWLite/CW1200)"
 
     def __init__(self, parentParam, oadcInstance):
         self.ser = None
@@ -73,13 +73,24 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.getParams().append(self.dev.getParams())
 
             try:
-                self.dev.con()
+                found_id = self.dev.con(idProduct=[0xACE2, 0xACE3])
             except IOError as e:
                 exctype, value = sys.exc_info()[:2]
                 raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
 
+            if (found_id == 0xACE3):
+                print "WARNING: Found CW1200. FPGA dialog being switched, if you made changes they are lost."
+                print "         If you need a different bitstream loaded, edit the dialog now and reconnect."
+
+                self.cwFirmwareConfig = FWLoaderConfig(CW1200_Loader())
+
             self.cwFirmwareConfig.setInterface(self.dev.fpga)
-            self.cwFirmwareConfig.loadRequired()
+            try:
+                self.cwFirmwareConfig.loadRequired()
+            except:
+                self.dev.dis()
+                self.dev.usbdev().close()
+                raise
             self.ser = self.dev.usbdev()
 
         try:

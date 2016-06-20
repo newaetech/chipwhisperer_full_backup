@@ -185,6 +185,36 @@ class CWLite_Loader(CW_Loader):
         self.driver = driver
 
 
+class CW1200_Loader(CW_Loader):
+    name = "cw1200"
+
+    def __init__(self):
+        super(CW1200_Loader, self).__init__()
+        self.driver = None
+
+        def_bsZipLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-cw1200/cw1200_firmware.zip"))
+        def_bsLoc = os.path.join(util.getRootDir(), os.path.normpath("../hardware/capture/chipwhisperer-cw1200/hdl/cwlite_cw1200/cw1200_interface.bit"))
+
+        self._bsZipLoc = self._bsZipLoc = self.read_setting('zipbitstream-location', def_bsZipLoc)
+        self._bsZipLoc_filename = "cw1200_interface.bit"
+        self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
+        self._fwFLoc = ""
+        #self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
+        self._bsBuiltinData = None
+        self.setFPGAMode("debug")
+
+    def loadRequired(self, callback, forceFirmware=False):
+        callback()
+
+    def loadFPGA(self):
+        #Save settings
+        self.write_setting('debugbitstream-location', self._bsLoc)
+        self.write_setting('zipbitstream-location', self._bsZipLoc)
+        self.driver.FPGAProgram(self.fpga_bitstream())
+
+    def setInterface(self, driver):
+        self.driver = driver
+
 class FWLoaderConfig(object):
     def __init__(self, loader):
         self.loader = loader

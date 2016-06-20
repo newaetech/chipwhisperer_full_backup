@@ -25,6 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as ChipWhispererDecodeTrigger
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
@@ -96,6 +97,8 @@ class OpenADCInterface(ScopeTemplate):
 
                 if "Lite" in self.qtadc.sc.hwInfo.versions()[2]:
                     cwtype = "cwlite"
+                elif "CW1200" in self.qtadc.sc.hwInfo.versions()[2]:
+                    cwtype = "cw1200"
                 else:
                     cwtype = "cwrev2"
 
@@ -110,10 +113,15 @@ class OpenADCInterface(ScopeTemplate):
 
                 util.chipwhisperer_extra = self.advancedSettings
 
-                if "Lite" not in self.qtadc.sc.hwInfo.versions()[2]:
+                if cwtype == "cwrev2" or cwtype == "cw1200":
                     self.advancedSAD = ChipWhispererSAD.ChipWhispererSAD(self.qtadc.sc)
                     self.params.append(self.advancedSAD.getParams())
 
+                if cwtype == "cw1200":
+                    self.decodeIO = ChipWhispererDecodeTrigger.ChipWhispererDecodeTrigger(self.qtadc.sc)
+                    self.params.append(self.decodeIO.getParams())
+
+                if cwtype == "cwcrev2":
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
                     self.params.append(self.digitalPattern.getParams())
 
