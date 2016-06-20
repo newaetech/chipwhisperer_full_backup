@@ -26,6 +26,9 @@ import importlib
 import inspect
 import os.path
 import traceback
+
+import imp
+
 import util
 from chipwhisperer.common.api.settings import Settings
 
@@ -81,13 +84,22 @@ def importModulesInPackage(path):
     resp = []
     normPath = (os.path.normpath(path).replace(".", "/"))
     packages = util.getPyFiles(os.path.join(util.getRootDir(), normPath))
-    packages.extend(util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath)))
     for package_name in packages:
         full_package_name = '%s.%s' % (path, package_name)
         try:
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
             print "INFO: Could not import module: " + full_package_name + ": " + str(e)
+            loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
+
+    packages = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath))
+    for package_name in packages:
+        full_package_name = '%s.%s' % (path, package_name)
+        try:
+            p = os.path.join(Settings().value("project-home-dir"), normPath)+"/"+package_name+".py"
+            resp.append(imp.load_source(full_package_name, p))
+        except Exception as e:
+            print "INFO: Could not import user module: " + p + ": " + str(e)
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
     return resp
 
