@@ -27,6 +27,7 @@ import inspect
 import os.path
 import traceback
 import util
+from chipwhisperer.common.api.settings import Settings
 
 loadedItems = []
 
@@ -78,7 +79,10 @@ def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
 
 def importModulesInPackage(path):
     resp = []
-    for package_name in util.getPyFiles(os.path.join(util.getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
+    normPath = (os.path.normpath(path).replace(".", "/"))
+    packages = util.getPyFiles(os.path.join(util.getRootDir(), normPath))
+    packages.extend(util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath)))
+    for package_name in packages:
         full_package_name = '%s.%s' % (path, package_name)
         try:
             resp.append(importlib.import_module(full_package_name))
