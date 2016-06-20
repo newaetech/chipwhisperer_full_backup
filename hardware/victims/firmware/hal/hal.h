@@ -19,6 +19,8 @@
 #ifndef HAL_H_
 #define HAL_H_
 
+void platform_init(void);
+
 //PLATFORM Define Types
 #define CW301_AVR 1
 #define CW301_XMEGA 2
