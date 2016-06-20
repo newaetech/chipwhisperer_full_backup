@@ -88,7 +88,7 @@ class USART(object):
         """
         # print "%d: %s" % (len(data), str(data))
 
-        data = bytearray(data, 'latin-1')
+        data = bytearray(data)
         datasent = 0
 
         while datasent < len(data):
