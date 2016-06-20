@@ -28,6 +28,8 @@ import collections
 import os.path
 import shutil
 import sys
+import weakref
+import functools
 
 try:
     # OrderedDict is new in 2.7
@@ -132,48 +134,76 @@ def hexStrToByteArray(hexStr):
     return ba
 
 
-def getPyFiles(dir):
+def getPyFiles(dir, extension=False):
     scriptList = []
     if os.path.isdir(dir):
         for fn in os.listdir(dir):
             fnfull = dir + '/' + fn
             if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')) and (not fn.startswith('_')):
-                scriptList.append(os.path.splitext(fn)[0])
+                if extension:
+                    scriptList.append(fn)
+                else:
+                    scriptList.append(os.path.splitext(fn)[0])
     return scriptList
+
+def _make_id(target):
+    if hasattr(target, '__func__'):
+        return (id(target.__self__), id(target.__func__))
+    return id(target)
 
 
 class Signal(object):
     def __init__(self):
-        self.observers = []
+        self.callbacks = {}  #observing object ID -> weak ref, methodNames
 
     def connect(self, observer):
-        if observer not in self.observers:
-            self.observers.append(observer)
+        if not callable(observer):
+            raise TypeError('Expected method, got %s' % observer.__class__)
+
+        if hasattr(observer, '__self__') and hasattr(observer, '__func__'):
+            obj = observer.__self__
+        else:
+            obj = observer
+        ID = _make_id(obj)
+        if ID in self.callbacks:
+            s = self.callbacks[ID][1]
+        else:
+            wr = weakref.ref(obj, self.disconnect)
+            s = set()
+            self.callbacks[ID] = (wr, s)
+        try:
+            s.add(observer.__name__)
+        except AttributeError:
+            s.add('<partial>')
 
     def disconnect(self, observer):
         try:
-            self.observers.remove(observer)
+            if hasattr(observer, '__self__') and hasattr(observer, '__func__'):
+                obj = observer.__self__
+            else:
+                obj = observer
+            ID = _make_id(obj)
+            if ID in self.callbacks:
+               self.callbacks[ID][1].discard(observer.__name__)
         except ValueError:
             pass
 
-    def emit(self, *arg, **args):
-        for observer in self.observers:
-            try:
-                observer(*arg, **args)
-            except StopIteration:
-                raise
-            except Exception as e:
-
-                #TODO - catch exception like TypeError("setThreshold() got an unexpected keyword argument 'blockSignal'")
-                #       and print a better message
-
-                etype, value, trace = sys.exc_info()
-                value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s with arguments: %s, %s" % \
-                        (type(e).__name__, e, observer, str(arg), str(args))
-                sys.excepthook(etype, value, trace)
-
     def disconnectAll(self):
-        self.observers = []
+        self.callbacks = {}  #observing object ID -> weak ref, methodNames
+
+    def emit(self, *arg, **kw):
+        callbacks = self.callbacks.keys()
+        for ID in callbacks:
+            wr, methodNames = self.callbacks[ID]
+            obj = wr()
+            if obj is not None:
+                for methodName in methodNames:
+                    if methodName == '<lambda>':
+                        obj(*arg, **kw)
+                    elif  methodName == '<partial>':
+                        obj(*arg, **kw)
+                    else:
+                        getattr(obj, methodName)(*arg, **kw)
 
 
 class Observable(Signal):

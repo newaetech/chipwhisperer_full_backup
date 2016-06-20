@@ -25,6 +25,8 @@
 
 import sys
 import copy
+import weakref
+
 from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
 from chipwhisperer.common.utils import util
 import functools
@@ -111,6 +113,7 @@ class Parameter(object):
     "readonly"            - Prevents the user of changing its value (it can be forced though)
     "help"                - Text displayed when clicking the help button
     "graphwidget"         - Reference to the graph widget when using parameters with type "rangegraph"
+    'siPrefix', 'suffix'  - Adds prefix and sets the suffix text
     ...
 
     Examples:
@@ -187,10 +190,15 @@ class Parameter(object):
                 self.opts['limits'] = opts['values']
 
             if 'set' in self.opts:
-                if 'psync' in self.opts and self.opts['psync'] == False:
-                    self.sigValueChanged.connect(lambda v, blockSignal : self.opts['set'](v))
-                else:
-                    self.sigValueChanged.connect(self.opts['set'])
+                self.sigValueChanged.connect(self.opts['set'])
+                self.opts['set'] = None
+
+            if 'get' in self.opts:
+                try:
+                    callback = self.opts['get']
+                    self.opts['get'] = weakref.ref(callback.__func__), weakref.ref(callback.__self__)
+                except AttributeError:
+                    self.opts['get'] = weakref.ref(callback), None
 
             if "default" not in self.opts:
                 self.opts["default"] = self.getValue()
@@ -222,7 +230,14 @@ class Parameter(object):
         if val is None:
             return self.opts.get("value", default)
         else:
-            return val()
+            callback, arg = val[0](), val[1]
+            if arg is not None:
+                # method
+                arg = arg()
+                return callback(arg)
+            else:
+                if callback is not None:
+                    return callback()
 
     def getValueKey(self):
         """Return the key used to set list type parameters"""
@@ -300,8 +315,10 @@ class Parameter(object):
 
             if "value" in self.opts:
                 self.opts["value"] = value
-            self.sigValueChanged.emit(value, blockSignal=self.setValue)
-
+            if 'psync' in self.opts and self.opts['psync'] == False:
+                self.sigValueChanged.emit(value)
+            else:
+                self.sigValueChanged.emit(value, blockSignal=self.setValue)
         finally:
             if blockSignal is not None:
                 self.sigValueChanged.connect(blockSignal)
@@ -455,13 +472,15 @@ class Parameter(object):
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
         if hasattr(self._PyQtGraphParameter, "sigActivated"):
             self._PyQtGraphParameter.sigActivated.connect(self.callAction)
-        self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
-        self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
-        updateParamValue = lambda _, v: self.setValue(v, guiCallback)
-        guiCallback = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, updateParamValue)
-        self._PyQtGraphParameter.sigValueChanged.connect(updateParamValue)
-        self.sigValueChanged.connect(guiCallback)
-        self.sigLimitsChanged.connect(lambda v: self._PyQtGraphParameter.setLimits(v))
+        self.__sigChildRemovedAdapter = lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter())
+        self.sigChildRemoved.connect(self.__sigChildRemovedAdapter)
+        self.__sigChildAddedAdapter = lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter())
+        self.sigChildAdded.connect(self.__sigChildAddedAdapter)
+        self.__sigValueUpdatedAdapter = lambda _, v: self.setValue(v, self.__sigSetValueAdapter)
+        self._PyQtGraphParameter.sigValueChanged.connect(self.__sigValueUpdatedAdapter)
+        self.__sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, self.__sigValueUpdatedAdapter)
+        self.sigValueChanged.connect(self.__sigSetValueAdapter)
+        self.sigLimitsChanged.connect(self._PyQtGraphParameter.setLimits)
         self.sigOptionsChanged.connect(self._PyQtGraphParameter.setOpts)
 
     def setParent(self, parent):
@@ -729,3 +748,15 @@ if __name__ == '__main__':
     # root.addChild(par)
     #
     # QtGui.QApplication.instance().exec_()
+
+def weak_bind(instancemethod):
+
+    weakref_self = weakref.ref(instancemethod.im_self)
+    func = instancemethod.im_func
+
+    def callback(*args, **kwargs):
+        self = weakref_self()
+        bound = func.__get__(self)
+        return bound(*args, **kwargs)
+
+    return callback

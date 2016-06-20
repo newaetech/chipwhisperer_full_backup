@@ -435,7 +435,7 @@ class ClockSettings(Parameterized):
                 {'name': 'DCM Locked', 'type':'bool', 'get':self.dcmADCLocked, 'readonly':True},
                 {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.resetDcms(True, False), 'linked':['Phase Adjust']},
             ]},
-            {'name': 'Freq Counter', 'type': 'str', 'readonly':True, 'get':lambda: str(self.extFrequency()) + " Hz"},
+            {'name': 'Freq Counter', 'type': 'str', 'readonly':True, 'get':self.extFrequency, 'siPrefix':True, 'suffix':'Hz'},
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
@@ -444,7 +444,7 @@ class ClockSettings(Parameterized):
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
-                                            'get':lambda: str(self.getClkgen()) + " Hz"},
+                                            'get':self.getClkgen, 'siPrefix':True, 'suffix':'Hz'},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
             ]}

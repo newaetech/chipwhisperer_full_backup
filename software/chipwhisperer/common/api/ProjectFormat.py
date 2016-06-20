@@ -71,7 +71,8 @@ class ProjectFormat(object):
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self._traceManager = TraceManager().register()
-        self._traceManager.dirty.connect(lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value()))
+        self.__dirtyCallback = lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())
+        self._traceManager.dirty.connect(self.__dirtyCallback)
         self.setFilename(ProjectFormat.untitledFileName)
 
     def configObjChanged(self, key):

@@ -69,6 +69,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def getTrace(self, n):
         """Get trace number n"""
+
         if self.enabled:
             trace = self._traceSource.getTrace(n)
             # Do your preprocessing here
@@ -106,3 +107,6 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def numPoints(self):
         return self._traceSource.numPoints()
+
+    def __del__(self):
+        print "Deleted: " + str(self)

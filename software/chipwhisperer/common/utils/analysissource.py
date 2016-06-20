@@ -44,6 +44,9 @@ class AnalysisObserver(object):
         self._analysisSource = None
         self.setAnalysisSource(analysisSource)
 
+    def getAnalysisSource(self):
+        return self._analysisSource
+
     def setAnalysisSource(self, analysisSource):
         if analysisSource:
             analysisSource.sigAnalysisStarted.connect(self.analysisStarted)
