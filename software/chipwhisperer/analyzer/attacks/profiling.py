@@ -62,7 +62,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.updateBytesVisible()
         self.updateScript()
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
 
         analysAlgoStr = self.attack.__class__.__name__

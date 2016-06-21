@@ -160,50 +160,47 @@ class Signal(object):
         if not callable(observer):
             raise TypeError('Expected method, got %s' % observer.__class__)
 
-        if hasattr(observer, '__self__') and hasattr(observer, '__func__'):
-            obj = observer.__self__
-        else:
-            obj = observer
-        ID = _make_id(obj)
+        ID = _make_id(observer)
         if ID in self.callbacks:
             s = self.callbacks[ID][1]
         else:
-            wr = weakref.ref(obj, self.disconnect)
+            try:
+                target = weakref.ref(observer.__self__, self.disconnect)
+            except AttributeError:
+                target = None
             s = set()
-            self.callbacks[ID] = (wr, s)
-        try:
-            s.add(observer.__name__)
-        except AttributeError:
-            s.add('<partial>')
+            self.callbacks[ID] = (target, s)
+
+        if hasattr(observer, "__func__"):
+            method = observer.__func__
+        else:
+            method = observer
+        s.add(method)
 
     def disconnect(self, observer):
         try:
-            if hasattr(observer, '__self__') and hasattr(observer, '__func__'):
-                obj = observer.__self__
-            else:
-                obj = observer
-            ID = _make_id(obj)
+            ID = _make_id(observer)
             if ID in self.callbacks:
-               self.callbacks[ID][1].discard(observer.__name__)
+                if hasattr(observer, "__func__"):
+                    method = observer.__func__
+                else:
+                    method = observer
+                self.callbacks[ID][1].discard(method)
         except ValueError:
             pass
 
     def disconnectAll(self):
         self.callbacks = {}  #observing object ID -> weak ref, methodNames
 
-    def emit(self, *arg, **kw):
+    def emit(self, *args, **kwargs):
         callbacks = self.callbacks.keys()
         for ID in callbacks:
-            wr, methodNames = self.callbacks[ID]
-            obj = wr()
-            if obj is not None:
-                for methodName in methodNames:
-                    if methodName == '<lambda>':
-                        obj(*arg, **kw)
-                    elif  methodName == '<partial>':
-                        obj(*arg, **kw)
-                    else:
-                        getattr(obj, methodName)(*arg, **kw)
+            target, methods = self.callbacks[ID]
+            for method in methods:
+                if target is None:  # Lambda or partial
+                    method(*args, **kwargs)
+                else:
+                    method(target(), *args, **kwargs)
 
 
 class Observable(Signal):
@@ -229,3 +226,47 @@ def setUIupdateFunction(func):
 def updateUI():
     if _uiupdateFunction:
         _uiupdateFunction()
+
+
+class WeakMethod(object):
+    """A callable object. Takes one argument to init: 'object.method'.
+    Once created, call this object -- MyWeakMethod() --
+    and pass args/kwargs as you normally would.
+    """
+    def __init__(self, object_dot_method):
+        try:
+            if sys.getrefcount(object_dot_method) == 2:
+                print "Error: you need a strong reference to this method (are you using lambda or partial?)"
+            self.target = weakref.ref(object_dot_method.__self__)
+            self.method = object_dot_method.__func__
+        except AttributeError:
+            self.target = None
+            self.method = object_dot_method
+
+    def __call__(self, *args, **kwargs):
+        """Call the method with args and kwargs as needed."""
+        if self.is_dead():
+            raise TypeError('Method called on dead object')
+        if self.target is None:  # Lambda or partial
+            return self.method(*args, **kwargs)
+        else:
+            return self.method(self.target(), *args, **kwargs)
+
+    def is_dead(self):
+        '''Returns True if the referenced callable was a bound method and
+        the instance no longer exists. Otherwise, return False.
+        '''
+        return self.target is not None and self.target() is None
+
+if __name__ == '__main__':
+    class test(object):
+        def m(self):
+            print "here"
+
+        def __del__(self):
+            print "deleted"
+
+    x = test()
+    y = x.m
+    x = None
+    y()

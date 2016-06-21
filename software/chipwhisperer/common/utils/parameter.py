@@ -194,11 +194,10 @@ class Parameter(object):
                 self.opts['set'] = None
 
             if 'get' in self.opts:
-                try:
-                    callback = self.opts['get']
-                    self.opts['get'] = weakref.ref(callback.__func__), weakref.ref(callback.__self__)
-                except AttributeError:
-                    self.opts['get'] = weakref.ref(callback), None
+                self.opts['get'] = util.WeakMethod(self.opts['get'])
+
+            if 'action' in self.opts:
+                self.opts['action'] = util.WeakMethod(self.opts['action'])
 
             if "default" not in self.opts:
                 self.opts["default"] = self.getValue()
@@ -211,6 +210,7 @@ class Parameter(object):
         self.keys = {}
         if ignoreChildren is False:
             self.addChildren(self.ignoredChildren)
+            self.ignoredChildren = []
 
     def getName(self):
         return self.opts["name"]
@@ -230,14 +230,7 @@ class Parameter(object):
         if val is None:
             return self.opts.get("value", default)
         else:
-            callback, arg = val[0](), val[1]
-            if arg is not None:
-                # method
-                arg = arg()
-                return callback(arg)
-            else:
-                if callback is not None:
-                    return callback()
+            return val()
 
     def getValueKey(self):
         """Return the key used to set list type parameters"""
@@ -472,14 +465,12 @@ class Parameter(object):
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
         if hasattr(self._PyQtGraphParameter, "sigActivated"):
             self._PyQtGraphParameter.sigActivated.connect(self.callAction)
-        self.__sigChildRemovedAdapter = lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter())
-        self.sigChildRemoved.connect(self.__sigChildRemovedAdapter)
-        self.__sigChildAddedAdapter = lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter())
-        self.sigChildAdded.connect(self.__sigChildAddedAdapter)
-        self.__sigValueUpdatedAdapter = lambda _, v: self.setValue(v, self.__sigSetValueAdapter)
-        self._PyQtGraphParameter.sigValueChanged.connect(self.__sigValueUpdatedAdapter)
-        self.__sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, self.__sigValueUpdatedAdapter)
-        self.sigValueChanged.connect(self.__sigSetValueAdapter)
+        self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
+        self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
+        sigValueUpdatedAdapter = lambda _, v: self.setValue(v, sigSetValueAdapter)
+        self._PyQtGraphParameter.sigValueChanged.connect(sigValueUpdatedAdapter)
+        sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, sigValueUpdatedAdapter)
+        self.sigValueChanged.connect(sigSetValueAdapter)
         self.sigLimitsChanged.connect(self._PyQtGraphParameter.setLimits)
         self.sigOptionsChanged.connect(self._PyQtGraphParameter.setOpts)
 
@@ -597,6 +588,7 @@ class Parameter(object):
         child.setValue(value, echo=echo)
 
     def __del__(self):
+        print "Deleting: " + self.getName()
         self.delete()
 
 def setupSetParam(parameter):
