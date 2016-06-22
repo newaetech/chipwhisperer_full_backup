@@ -136,10 +136,7 @@ class CPAProgressiveOneSubkey(object):
             #if sumden.any() < 1E-12:
             #    print "WARNING: sumden small"
 
-            try:
-                diffs[key] = sumnum / np.sqrt(sumden)
-            except RuntimeWarning:
-                print "Not enough data yet to calculate correlation..."
+            diffs[key] = sumnum / np.sqrt(sumden)
 
             if progressBar:
                 progressBar.updateStatus(pbcnt, (self.totalTraces-numtraces, self.totalTraces-1, bnum))
