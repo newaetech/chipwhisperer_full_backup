@@ -45,7 +45,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
-            {'name':'Redraw', 'type':'action', 'action':lambda _: self.plotInputTrace()},
+            {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
 
         self.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
@@ -69,7 +69,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         self.findParam('pointrng').setLimits((0, lastPoint))
         self.findParam('pointrng').setValue((0, lastPoint))
 
-    def plotInputTrace(self):
+    def plotInputTrace(self, _=None):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         initialPersist = self.persistant
         if not self.persistant:

@@ -66,7 +66,7 @@ class ResyncSAD(PreprocessingBase):
             self.findParam('refpts').setLimits((0,self._traceSource.numPoints()))
             self.findParam('windowpt').setLimits((0, self._traceSource.numPoints()))
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
         refpt = self.findParam('refpts').getValue()
