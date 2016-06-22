@@ -28,7 +28,7 @@
 import random
 import numpy as np
 from ._base import PreprocessingBase
-
+from chipwhisperer.common.utils import util
 
 class AddNoiseJitter(PreprocessingBase):
     """
@@ -42,11 +42,11 @@ class AddNoiseJitter(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self.maxJitter = 0
         self.params.addChildren([
-            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'action':lambda _: self.updateScript()}
+            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'action':self.updateScript}
         ])
         self.updateScript()
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
         jit = self.findParam('jitter').getValue()
         self.addFunction("init", "setMaxJitter", "%d" % jit)

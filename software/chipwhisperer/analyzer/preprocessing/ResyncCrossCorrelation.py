@@ -48,13 +48,13 @@ class ResyncCrossCorrelation(PreprocessingBase):
         self.ccEnd = 0
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':lambda _:self.updateScript()},
-            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript(), 'default':(0, 0)},
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
+            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateScript, 'default':(0, 0)},
             # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}
         ])
         self.updateScript()
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
         rtrace = self.findParam('reftrace').getValue()
         rrange = self.findParam('rwindow').getValue()

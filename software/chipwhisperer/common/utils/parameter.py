@@ -70,8 +70,9 @@ class Parameterized(object):
 
     def deleteParams(self):
         """Delete its parameters. Helps the GC in doing its work."""
-        self.getParams().delete()
-        del self.params
+        if hasattr(self, "params"):
+            self.getParams().delete()
+            del self.params
 
 
 class Parameter(object):
@@ -201,7 +202,7 @@ class Parameter(object):
 
             if "default" not in self.opts:
                 self.opts["default"] = self.getValue()
-                self.setValue(self.getValue(), init=True)
+                self.setValue(self.opts["default"], init=True)
 
         self.childs = []
         self.ignoredChildren = self.opts.pop("children", [])
@@ -232,13 +233,20 @@ class Parameter(object):
         else:
             return val()
 
-    def getValueKey(self):
+    def getKeyFromValue(self, value):
         """Return the key used to set list type parameters"""
         if self.opts["type"] == "list":
             limits = self.opts["limits"]
             if isinstance(limits, dict):
-                return limits.keys()[limits.values().index(self.getValue())]
-        return self.getValue()
+                try:
+                    return limits.keys()[limits.values().index(value)]
+                except ValueError:
+                    ValueError("Error: Value " + value + " is not valid in Parameter \"" + self.getName() + "\". Options are: " + str(limits))
+        return value
+
+    def getValueKey(self):
+        """Return the key used to set list type parameters"""
+        return self.getKeyFromValue(self.getValue())
 
     def addChildren(self, children):
         """Add a list of children to the current paramenter"""
@@ -300,7 +308,10 @@ class Parameter(object):
                (type == "bool" and value not in [True, False]) or\
                ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
                (type =="rangegraph" and (value[1] - value[0] != -1) and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
-                raise ValueError("Value %s out of limits in parameter \"%s\"" % (str(value), self.getName()))
+                    if isinstance(limits, dict) and value in limits.keys():
+                        value = limits[value]
+                    else:
+                        raise ValueError("Value %s out of limits in parameter \"%s\"" % (str(value), self.getName()))
 
         try:
             if blockSignal is not None:
@@ -367,7 +378,7 @@ class Parameter(object):
         else:
             self.invalid = False
             self.sigOptionsChanged.emit(visible=self.isVisible())
-            self.sigLimitsChanged.emit(limits)
+            self.sigLimitsChanged.emit(limits.keys() if isinstance(limits, dict) else limits)
 
     def readonly(self):
         return self.opts.get('readonly', False)
@@ -462,6 +473,10 @@ class Parameter(object):
         opts.update(self.getOpts())
         if "default" in self.opts:
             opts["value"] = opts["default"]
+        if "limits" in self.opts and isinstance(self.opts["limits"], dict):
+            opts['limits'] = opts['limits'].keys()
+            opts["value"] = self.getKeyFromValue(opts["default"])
+            del opts['values']
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
         if hasattr(self._PyQtGraphParameter, "sigActivated"):
             self._PyQtGraphParameter.sigActivated.connect(self.callAction)
@@ -469,7 +484,7 @@ class Parameter(object):
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
         sigValueUpdatedAdapter = lambda _, v: self.setValue(v, sigSetValueAdapter)
         self._PyQtGraphParameter.sigValueChanged.connect(sigValueUpdatedAdapter)
-        sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, sigValueUpdatedAdapter)
+        sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v), sigValueUpdatedAdapter)
         self.sigValueChanged.connect(sigSetValueAdapter)
         self.sigLimitsChanged.connect(self._PyQtGraphParameter.setLimits)
         self.sigOptionsChanged.connect(self._PyQtGraphParameter.setOpts)
@@ -586,10 +601,6 @@ class Parameter(object):
                                                                             str(parameter),
                                                                             child.getOpts()["values"].keys()))
         child.setValue(value, echo=echo)
-
-    def __del__(self):
-        print "Deleting: " + self.getName()
-        self.delete()
 
 def setupSetParam(parameter):
     """

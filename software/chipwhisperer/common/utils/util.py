@@ -235,8 +235,6 @@ class WeakMethod(object):
     """
     def __init__(self, object_dot_method):
         try:
-            if sys.getrefcount(object_dot_method) == 2:
-                print "Error: you need a strong reference to this method (are you using lambda or partial?)"
             self.target = weakref.ref(object_dot_method.__self__)
             self.method = object_dot_method.__func__
         except AttributeError:
@@ -257,6 +255,17 @@ class WeakMethod(object):
         the instance no longer exists. Otherwise, return False.
         '''
         return self.target is not None and self.target() is None
+
+
+class Command:
+    """Converts a method call with arguments to be ignored in a simple call with no/fixed arguments (replaces lambda)"""
+    def __init__(self, callback, *args, **kwargs):
+        self.callback = WeakMethod(callback)
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, *args, **kwargs):
+        return apply(self.callback, self.args, self.kwargs)
 
 if __name__ == '__main__':
     class test(object):

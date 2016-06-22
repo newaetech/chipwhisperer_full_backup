@@ -48,12 +48,12 @@ class ResyncSAD(PreprocessingBase):
         self.wdEnd = 1
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':lambda _:self.updateScript()},
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
             {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"],
-                                                                     'action':lambda _:self.updateScript(), 'value':(0, 0), 'default':(0, 0)},
+                                                                     'action':self.updateScript, 'value':(0, 0), 'default':(0, 0)},
 
             {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"],
-                                                                     'action':lambda _:self.updateScript(), 'value':(0, 0), 'default':(0, 0)},
+                                                                     'action':self.updateScript, 'value':(0, 0), 'default':(0, 0)},
             # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
             # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}
         ])
