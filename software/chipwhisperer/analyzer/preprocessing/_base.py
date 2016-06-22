@@ -53,6 +53,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
                  {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
         ])
         self.findParam('input').hide()
+        print "Created: " + str(self)
 
     def updateScript(self, ignored=None):
         pass

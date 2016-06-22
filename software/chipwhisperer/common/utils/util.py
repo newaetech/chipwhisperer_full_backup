@@ -200,7 +200,9 @@ class Signal(object):
                 if target is None:  # Lambda or partial
                     method(*args, **kwargs)
                 else:
-                    method(target(), *args, **kwargs)
+                    targetObj = target()
+                    if targetObj is not None:
+                        method(targetObj, *args, **kwargs)
 
 
 class Observable(Signal):
@@ -233,9 +235,12 @@ class WeakMethod(object):
     Once created, call this object -- MyWeakMethod() --
     and pass args/kwargs as you normally would.
     """
-    def __init__(self, object_dot_method):
+    def __init__(self, object_dot_method, callback=None):
         try:
-            self.target = weakref.ref(object_dot_method.__self__)
+            if callback is None:
+                self.target = weakref.ref(object_dot_method.__self__)
+            else:
+                self.target = weakref.ref(object_dot_method.__self__, callback)
             self.method = object_dot_method.__func__
         except AttributeError:
             self.target = None
