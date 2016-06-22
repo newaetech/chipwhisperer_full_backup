@@ -57,6 +57,7 @@ module reg_chipwhisperer(
 	/* Advanced IO Trigger Connections */
 	output			trigger_ext_o,	
 	input				trigger_advio_i, 
+	input          trigger_decodedio_i,
 	input				trigger_anapattern_i,
 	
 	/* Clock Sources */
@@ -396,7 +397,9 @@ module reg_chipwhisperer(
 	 wire trigger;	 		  
 	 assign trigger = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
 						   (registers_cwtrigmod[2:0] == 3'b001) ? trigger_advio_i : 
-							(registers_cwtrigmod[2:0] == 3'b010) ? trigger_anapattern_i : 1'b0;
+							(registers_cwtrigmod[2:0] == 3'b010) ? trigger_anapattern_i :
+							(registers_cwtrigmod[2:0] == 3'b011) ? trigger_decodedio_i
+							: 1'b0;
 							
 	 assign trigger_ext_o = trigger_ext;
 	 
