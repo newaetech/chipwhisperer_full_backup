@@ -154,7 +154,6 @@ if __name__ == '__main__':
     gui = cwc.CWCaptureGUI(api)        # Instantiate the Capture GUI
     gui.show()
     api.runScriptClass(Capture)
-    gui.close()
     gui.reset()
 
     gui = cwa.CWAnalyzerGUI(api)    # Instantiate the Analyzer GUI

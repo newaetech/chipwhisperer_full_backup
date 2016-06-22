@@ -169,9 +169,6 @@ class MainScriptEditor(QWidget):
 
         modulename = str(uuid.uuid1())
         try:
-            self.scriptModule = imp.load_source(modulename, self.filename)
+            return imp.load_source(modulename, self.filename)
         except SyntaxError as e:
             raise Warning("Could not execute the python code (%s) in the Script Editor:\n%s in line %s" % (self.filename, e.msg, e.lineno))
-
-        # print self.scriptModule
-        return self.scriptModule

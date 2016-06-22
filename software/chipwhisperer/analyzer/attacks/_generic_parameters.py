@@ -61,8 +61,8 @@ class AttackGenericParameters(Parameterized, AutoScript):
         self.setupPointsParam()
         self.getParams().addChildren([
             {'name':'Hardware Model', 'type':'group', 'children':[
-                {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':models_AES128_8bit, 'action':lambda _:self.updateScript()},
-                {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':'LEAK_HW_SBOXOUT_FIRSTROUND', 'action':lambda _:self.updateScript()},
+                {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':{'AES-128 (8-bit)':models_AES128_8bit}, 'value':models_AES128_8bit, 'action':self.updateScript},
+                {'name':'Leakage Model', 'key':'hw_leak', 'type':'list', 'values':models_AES128_8bit.leakagemodels, 'value':'LEAK_HW_SBOXOUT_FIRSTROUND', 'action':self.updateScript},
             ]},
             {'name':'Take Absolute', 'type':'bool', 'get':self.getAbsoluteMode, 'set':self.setAbsoluteMode},
            #TODO: Should be called from the AES module to figure out # of bytes
@@ -73,7 +73,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
         self.updateBytesVisible()
 
-    def updateScript(self):
+    def updateScript(self, _=None):
         pass
 
     def getAbsoluteMode(self):
@@ -84,12 +84,12 @@ class AttackGenericParameters(Parameterized, AutoScript):
         self.useAbs = mode
 
     def getByteList(self):
-        init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, action=lambda _:self.updateScriptBytesEnabled()) for bnum in range(0, self.maxSubKeys)]
-        init.insert(0,{'name':'All On', 'type':'action', 'action':lambda _:self.allBytesOn()})
-        init.insert(0,{'name':'All Off', 'type':'action', 'action':lambda _:self.allBytesOff()})
+        init = [dict(name='Byte %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True, bytenum=bnum, action=self.updateScriptBytesEnabled) for bnum in range(0, self.maxSubKeys)]
+        init.insert(0,{'name':'All On', 'type':'action', 'action':self.allBytesOn})
+        init.insert(0,{'name':'All Off', 'type':'action', 'action':self.allBytesOff})
         return init
 
-    def updateScriptBytesEnabled(self):
+    def updateScriptBytesEnabled(self, _=None):
         blist = []
         for i,t in enumerate(self.bytesParameters()):
             if i < self.numsubkeys:
@@ -105,11 +105,11 @@ class AttackGenericParameters(Parameterized, AutoScript):
                 t.hide()
         self.updateScriptBytesEnabled()
 
-    def allBytesOn(self):
+    def allBytesOn(self, _=None):
         for t in self.bytesParameters():
             t.setValue(True)
 
-    def allBytesOff(self):
+    def allBytesOff(self, _=None):
         for t in self.bytesParameters():
             t.setValue(False)
 
@@ -124,10 +124,10 @@ class AttackGenericParameters(Parameterized, AutoScript):
 ############ Trace-Specific
     def setupTraceParam(self):
         self.traceParams = Parameter(self, name='Trace Setup', type='group', children=[
-            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'value':0, 'action':lambda _:self.updateGenericScript()},
-            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'action':lambda _:self.updateGenericScript()},
-            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'action':lambda _:self.updateGenericScript()},
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'action':lambda _:self.updateGenericScript()},
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'value':0, 'action':self.updateGenericScript},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'value':1, 'action':self.updateGenericScript},
+            {'name':'Attack Runs', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'value':1, 'action':self.updateGenericScript},
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':10, 'action':self.updateGenericScript},
         ])
 
         self.addFunction("init", "setTraceStart", "0")
@@ -135,7 +135,7 @@ class AttackGenericParameters(Parameterized, AutoScript):
         self.addFunction("init", "setIterations", "1")
         self.addFunction("init", "setReportingInterval", "10")
 
-    def updateGenericScript(self, ignored=None):
+    def updateGenericScript(self, _=None):
         runs = self.traceParams.getChild('runs')
         atraces = self.traceParams.getChild('atraces')
         strace = self.traceParams.getChild('strace')
@@ -166,8 +166,8 @@ class AttackGenericParameters(Parameterized, AutoScript):
 
     def getPointList(self):
     #   init = [{'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'value':(0,0), 'limits':(self.startPoint[0], self.endPoint[0]), 'default':(0, 0), 'set':self.updateGenericScript, 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"]},
-        init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'action':lambda _:self.updateGenericScript()},
-                    {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'action':lambda _:self.updateGenericScript()},
+        init = [{'name':'Starting Point', 'key':'startpoint', 'type':'int', 'value':self.startPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'action':self.updateGenericScript},
+                    {'name':'Ending Point', 'key':'endpoint', 'type':'int', 'value':self.endPoint[0], 'limits':(self.startPoint[0], self.endPoint[0]), 'action':self.updateGenericScript},
                     ]
     #
     #    #NOT ACTUALLY SUPPORTED

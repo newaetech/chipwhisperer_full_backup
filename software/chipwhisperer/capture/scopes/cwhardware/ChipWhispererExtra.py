@@ -260,10 +260,7 @@ class CWExtraSettings(Parameterized):
         if data[IONumber] & self.IOROUTE_GPIOE == 0:
             return None
 
-        if data[IONumber] == self.IOROUTE_GPIO:
-            return True
-        else:
-            return False
+        return data[IONumber] == self.IOROUTE_GPIO
 
     @setupSetParam("")
     def setTargetIOMode(self, setting, IONumber):

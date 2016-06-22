@@ -42,9 +42,9 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         self.params.addChildren([
             {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.txBaud, 'set':self.setTxBaud},
             {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
-            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'default':0, 'get':self.stopBits,
+            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'default':1, 'get':self.stopBits,
                             'set':self.setStopBits, 'readonly':True},
-            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'default':0, 'get':self.parity,
+            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'default':'n', 'get':self.parity,
                             'set':self.setParity, 'readonly':True},
         ])
 

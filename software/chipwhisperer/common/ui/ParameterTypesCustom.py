@@ -842,7 +842,7 @@ def optsChanged_Fix(self, param, opts):
 GroupParameterItem.optsChanged = optsChanged_Fix
 
 
-def setLimits_fix(self, limits):
+def setLimits(self, limits):
     """
     Fixes an incompatibility bug between CW and PyQtGraph Parameter classes.
     Prevents setValue being called when the current value is not within the new limits.
@@ -850,4 +850,4 @@ def setLimits_fix(self, limits):
     self.forward, self.reverse = self.mapping(limits)
     Parameter.setLimits(self, limits)
 
-ListParameter.setLimits = setLimits_fix
+ListParameter.setLimits = setLimits

@@ -85,7 +85,7 @@ class CWCoreAPI(Parameterized):
             {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
             {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'get':self.getTarget, 'set':self.setTarget},
             {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'get':self.getTraceFormat, 'set':self.setTraceFormat},
-            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':lambda: self.getAuxList()[0], 'set':self.setAux},
+            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':self.getAuxModule, 'set':self.setAux},
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
                     {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
@@ -142,6 +142,10 @@ class CWCoreAPI(Parameterized):
         if self.getTarget():
             self.getTarget().newInputData.connect(self.sigNewInputData.emit)
             self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
+
+    def getAuxModule(self):
+        """Return a list with the auxiliary modules."""
+        return self._auxList[0]
 
     def getAuxList(self):
         """Return a list with the auxiliary modules."""
@@ -350,8 +354,10 @@ class CWCoreAPI(Parameterized):
                 ac.setMaxtraces(setSize)
                 ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)
-                ac.sigTraceDone.connect(lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace)))
-                ac.sigTraceDone.connect(lambda: ac.abortCapture(progressBar.wasAborted()))
+                __pb = lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace))
+                ac.sigTraceDone.connect(__pb)
+                __abort = lambda: ac.abortCapture(progressBar.wasAborted())
+                ac.sigTraceDone.connect(__abort)
 
                 self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager())
