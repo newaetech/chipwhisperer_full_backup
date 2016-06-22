@@ -55,11 +55,11 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         self.params.addChildren([
             {'name':'Load Template', 'type':'group', 'children':[]},
             {'name':'Generate New Template', 'type':'group', 'children':[
-                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'action':lambda _:self.updateScript()},
-                {'name':'Trace End', 'key':'tgenstop', 'value':parent.traceMax, 'type':'int', 'action':lambda _:self.updateScript()},
-                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'action':lambda _:self.updateScript()},
-                {'name':'Read POI', 'type':'action', 'action':lambda _:self.updateScript()},
-                {'name':'Generate Templates', 'type':'action', 'action': lambda _:self.runScriptFunction.emit("generateTemplates")}
+                {'name':'Trace Start', 'key':'tgenstart', 'value':0, 'type':'int', 'action':self.updateScript},
+                {'name':'Trace End', 'key':'tgenstop', 'value':parent.traceMax, 'type':'int', 'action':self.updateScript},
+                {'name':'POI Selection', 'key':'poimode', 'type':'list', 'values':{'TraceExplorer Table':0, 'Read from Project File':1}, 'value':0, 'action':self.updateScript},
+                {'name':'Read POI', 'type':'action', 'action':self.updateScript},
+                {'name':'Generate Templates', 'type':'action', 'action':util.Command(self.runScriptFunction.emit, "generateTemplates")}
             ]},
         ])
 
@@ -76,7 +76,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         self.profiling.scriptsUpdated.connect(self.updateScript)
         self.updateScript()
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         #self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
 
         try:

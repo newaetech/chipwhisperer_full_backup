@@ -92,14 +92,14 @@ def importModulesInPackage(path):
             print "INFO: Could not import module: " + full_package_name + ": " + str(e)
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
 
-    packages = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath))
-    for package_name in packages:
-        full_package_name = '%s.%s' % (path, package_name)
+    files = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath), extension=True)
+    for file in files:
+        full_package_name = '%s.%s' % (path, os.path.splitext(file)[0])
+        full_file_path = os.path.join(Settings().value("project-home-dir"), normPath)+"/"+file
         try:
-            p = os.path.join(Settings().value("project-home-dir"), normPath)+"/"+package_name+".py"
-            resp.append(imp.load_source(full_package_name, p))
+            resp.append(imp.load_source(full_package_name, full_file_path))
         except Exception as e:
-            print "INFO: Could not import user module: " + p + ": " + str(e)
+            print "INFO: Could not import user module: " + full_file_path + ": " + str(e)
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
     return resp
 

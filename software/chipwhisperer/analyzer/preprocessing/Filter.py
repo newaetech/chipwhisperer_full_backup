@@ -40,11 +40,11 @@ class Filter(PreprocessingBase):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self.importsAppend("import scipy as sp")
         self.params.addChildren([
-            {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'default':"sp.signal.butter", 'value':"sp.signal.butter", 'action':lambda _:self.updateScript()},
-            {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'default':'low', 'value':'low', 'action':lambda _:self.updateScript()},
-            {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'default':0.1, 'value':0.1, 'action':lambda _:self.updateScript()},
-            {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'default':0.8, 'value':0.8, 'action':lambda _:self.updateScript()},
-            {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'default':5, 'value':5, 'action':lambda _:self.updateScript()},
+            {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'default':"sp.signal.butter", 'value':"sp.signal.butter", 'action':self.updateScript},
+            {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'default':'low', 'value':'low', 'action':self.updateScript},
+            {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'default':0.1, 'value':0.1, 'action':self.updateScript},
+            {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'default':0.8, 'value':0.8, 'action':self.updateScript},
+            {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'default':5, 'value':5, 'action':self.updateScript},
         ])
         self.updateScript()
 
@@ -55,7 +55,7 @@ class Filter(PreprocessingBase):
     def setFilterParams(self, form='low', freq=0.8, order=5):
         self.b, self.a = self.filterForm(order, freq, form)
 
-    def updateScript(self, param1=None):
+    def updateScript(self, _=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
         
         ftype = self.findParam('type').getValue()

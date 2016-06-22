@@ -35,7 +35,7 @@ class Settings(object):
 
     #Default settings all in one handy location
     _settings_dict = {
-        "project-home-dir":os.path.join(os.path.expanduser('~'), 'chipwhisperer_projects'),
+        "project-home-dir":os.path.join(os.path.expanduser('~'), 'chipwhisperer/projects'),
     }
 
     _backendclass = settings_backendclass
