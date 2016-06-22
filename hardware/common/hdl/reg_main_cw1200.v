@@ -40,7 +40,7 @@ module reg_main_cwlite(
 	input 			reset_i,
 	input 			clk,
 	
-	/* Interface to ChipWhisperer-Lite USB Chip */
+	/* Interface to ChipWhisperer-CW1200 USB Chip */
 	input	[7:0]		cwusb_din,
 	output [7:0]	cwusb_dout,
 	output 			cwusb_isout,
