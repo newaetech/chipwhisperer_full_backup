@@ -293,12 +293,24 @@ class TriggerSettings(Parameterized):
 
     @setupSetParam("Pre-Trigger Samples")
     def setPresamples(self, samples):
-        #enforce samples is multiple of 3
-        samplesact = int(samples / 3)
 
-        #Account for shitty hardware design
-        if samplesact > 0:
-            samplesact = samplesact + self.presampleTempMargin
+        self.presamples_desired = samples
+
+        if self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9:
+            #CW-1200 Hardware
+            samplesact = samples
+            self.presamples_actual = samples
+        else:
+            #CW-Lite/Other Hardware
+
+            #enforce samples is multiple of 3
+            samplesact = int(samples / 3)
+
+            #CW-Lite uses old crappy FIFO system that requires the following
+            if samplesact > 0:
+                samplesact = samplesact + self.presampleTempMargin
+
+            self.presamples_actual = samplesact * 3
 
         cmd = bytearray(4)
         cmd[0] = ((samplesact >> 0) & 0xFF)
@@ -307,8 +319,6 @@ class TriggerSettings(Parameterized):
         cmd[3] = ((samplesact >> 24) & 0xFF)
         self.oa.sendMessage(CODE_WRITE, ADDR_PRESAMPLES, cmd)
 
-        self.presamples_actual = samplesact*3
-        self.presamples_desired = samples
 
         #print "Requested presamples: %d, actual: %d"%(samples, self.presamples_actual)
 
@@ -332,9 +342,14 @@ class TriggerSettings(Parameterized):
         samples = samples | (temp[2] << 16)
         samples = samples | (temp[3] << 24)
 
-        self.presamples_actual = samples*3
+        #CW1200 reports presamples using different method
+        if self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9:
+            self.presamples_actual = samples
 
-        return samples*3
+        else:
+            self.presamples_actual = samples*3
+
+        return self.presamples_actual
 
     @setupSetParam("Source")
     def setSource(self,  src):
@@ -1172,6 +1187,13 @@ class OpenADCInterface(object):
             if bytesToRead == 0:
                 bytesToRead = BytesPerPackage
 
+            #If bytesToRead is huge, we only read what is needed
+            #Bytes get packed 3 samples / 4 bytes
+            #Add some extra in case needed
+            hypBytes = (NumberPoints * 4)/3 + 256
+
+            bytesToRead = min(hypBytes, bytesToRead)
+
             # +1 for sync byte
             data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead + 1)  # BytesPerPackage)
 
@@ -1229,7 +1251,7 @@ class OpenADCInterface(object):
                 if (mergpt != 3):
                        trigfound = True
                        trigsamp = trigsamp + mergpt
-                       # print "Trigger found at %d"%trigsamp
+                       #print "Trigger found at %d"%trigsamp
                 else:
                    trigsamp += 3
 
