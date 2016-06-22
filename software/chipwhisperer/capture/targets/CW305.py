@@ -167,7 +167,7 @@ class CW305(TargetTemplate):
     def con(self, scope = None, bsfile = None, force = False):
         """Connect to CW305 board, download bitstream"""
 
-        self._naeusb.con(idProduct=0xC305)
+        self._naeusb.con(idProduct=[0xC305])
         if self.fpga.isFPGAProgrammed() == False or force:
             if bsfile is None:
                 bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
