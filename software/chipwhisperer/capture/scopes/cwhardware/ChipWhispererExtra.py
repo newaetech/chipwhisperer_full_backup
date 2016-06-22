@@ -49,7 +49,7 @@ class ChipWhispererExtra(Parameterized):
     def __init__(self, parentParam, cwtype, scope, oa):
         #self.cwADV = CWAdvTrigger()
 
-        self.cwEXTRA = CWExtraSettings(self, oa, cwtype)
+        self.cwEXTRA = CWExtraSettings(parentParam, oa, cwtype)
         self.enableGlitch = True
         if self.enableGlitch:
             self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope, oa)
@@ -108,6 +108,8 @@ class CWExtraSettings(Parameterized):
 
     def __init__(self, parentParam, oa, cwtype):
 
+        self.parentParam = parentParam
+
         if cwtype == "cwrev2":
             hasFPAFPB = True
             hasGlitchOut = False
@@ -164,7 +166,7 @@ class CWExtraSettings(Parameterized):
         ret.extend([
             {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
             {'name': 'Trigger Module', 'type':'list', 'values':trigger_modules,
-             'set':self.setModule, 'get':self.getModule}
+             'set':self.setTriggerModule, 'get':self.getTriggerModule}
         ])
 
         # Generate list of clock sources present in the hardware
@@ -394,13 +396,22 @@ class CWExtraSettings(Parameterized):
         return(pins, mode)
 
     @setupSetParam("Trigger Module")
-    def setModule(self, module):
+    def setTriggerModule(self, module):
+
+        #When using special modes, force rising edge & stop user from easily changing
+        if (module != self.MODULE_BASIC):
+            self.parentParam.findParam(['OpenADC', 'Trigger Setup', 'Mode']).setValue("rising edge", ignoreReadonly=True)
+            self.parentParam.findParam(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(True)
+        else:
+            self.parentParam.findParam(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(False)
+
+
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         resp[0] = resp[0] & 0xF8
         resp[0] = resp[0] | module
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
-    def getModule(self):
+    def getTriggerModule(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
 
