@@ -200,7 +200,7 @@ class AttackScriptGen(Parameterized):
         # Get imports from preprocessing
         mse.append("# Imports from Preprocessing", 0)
         mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
-        mse.append("import gc", 0)
+
         for p in self.preprocessingListGUI:
             if p:
                 imports = p.getImportStatements()
@@ -274,9 +274,6 @@ class AttackScriptGen(Parameterized):
         # Do the attack
         mse.append("def run(self):", 1)
         mse.append("self.attack.processTraces()")
-        mse.append("print 'Traces: ' + str(gc.get_referrers(self.traces))")
-        mse.append("print 'Attack: ' + str(gc.get_referrers(self.attack))")
-
 
         # Get other commands from attack module
         if self.attack:
