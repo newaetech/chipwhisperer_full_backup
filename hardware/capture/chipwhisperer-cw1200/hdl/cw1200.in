@@ -37,7 +37,7 @@ cw1200_ise/cw1200_lx45_csg324.ucf
 [Verilog Files]
 #List of verilog source files... by default added for sim + implementation
 cw1200_ise/cw1200_interface.v
-../../../common/hdl/reg_main_cwlite.v
+../../../common/hdl/reg_main_cw1200.v
 setup.v = Setup File
 
 #OpenADC Files
