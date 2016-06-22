@@ -33,13 +33,13 @@ module cw1200_interface(
 	 /* XMEGA Programming  */
 	 output wire       target_PDIDTX,
     input wire        target_PDIDRX,
-	 output wire       target_PDIC,
+	 inout wire       target_PDIC,
 	 
 	 /* Spare Lines - AVR Programming */
 	 output wire 		target_nRST,
 	 input wire 		target_MISO,
-	 output wire 		target_MOSI,
-	 output wire 		target_SCK,
+	 inout wire 		target_MOSI,
+	 inout wire 		target_SCK,
 	 	 
 	 /* Target IO Interfaces */
 	 inout wire			target_io4, // Normally trigger
@@ -109,7 +109,7 @@ module cw1200_interface(
 	 assign sc_clk = (sc_enable) ? USB_SCK0 : 1'bZ;
 	 assign sc_aux1 = (sc_enable) ? USB_RTS0 : 1'bZ;
 	 assign sc_aux2 = (sc_enable) ? USB_CTS0 : 1'bZ;
-	 assign sc_io = (sc_enable) ? ((USB_TXD0) ? 0 : 1'bZ) : 1'bZ;
+	 assign sc_io = (sc_enable) ? ((USB_TXD0) ? 1'b0 : 1'bZ) : 1'bZ;
 	 assign USB_RXD0 = (sc_enable) ? sc_io : 1'bZ;
 
    // Clocking primitive
@@ -191,6 +191,7 @@ module cw1200_interface(
 	wire [7:0] reg_datai_reconfig;
 	wire [7:0] reg_datai_sad;
 	wire [7:0] reg_datai_glitch;
+	wire [7:0] reg_datai_decode;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
@@ -200,6 +201,7 @@ module cw1200_interface(
 	wire [15:0] reg_hyplen_glitch;
 	wire [15:0] reg_hyplen_reconfig;
 	wire [15:0] reg_hyplen_sad;
+	wire [15:0] reg_hyplen_decode;
 	
 	wire [9:0] ADC_Data_int;
 	wire       ADC_Clk_int;
@@ -250,14 +252,14 @@ module cw1200_interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_sad),
+		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_sad | reg_datai_decode),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(1'b0),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_sad)
+		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_sad | reg_hyplen_decode)
 		
 		,.ADC_Data_out(ADC_Data_int),
 		.ADC_Clk_out(ADC_Clk_int)
@@ -265,6 +267,7 @@ module cw1200_interface(
 	);	
 	
 		wire apatt_trigger;
+		wire decode_trigger;
 	
 		reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -296,6 +299,7 @@ module cw1200_interface(
 		//.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(apatt_trigger),
+		.trigger_decodedio_i(decode_trigger),
 		.clkgen_i(clkgen),
 		.glitchclk_i(glitchclk),
 		
@@ -374,6 +378,30 @@ module cw1200_interface(
 		.trig_out(apatt_trigger)
 	);
 	
+			reg_decodeiotrigger registers_decodetrigger (
+		.reset_i(reg_rst),
+		.clk(clk_usb_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_decode), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_decode),
+		.reg_stream(),
+		
+		.sck(target_SCK),
+		.mosi(target_MOSI),
+		.miso(target_MOSI),
+		.pdid_cs(target_PDIDRX),
+		.pdic(target_PDIC),
+				
+		.trig_out(decode_trigger)
+	);
+	
 	 assign target_nRST = (enable_avrprog) ? USB_spare2 : 1'bZ;
 	 assign target_MOSI = (enable_avrprog) ? USB_TXD2 : 1'bZ;
 	 assign target_SCK = (enable_avrprog) ? USB_SCK2 : 1'bZ;
@@ -384,8 +412,7 @@ module cw1200_interface(
 	 assign target_PDIDTX = (USB_PDID_WR) ? USB_TXD1 : 1'bZ;
 	 assign USB_RXD1 = target_PDIDRX;
 	 assign target_PDIC = (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
-	 
-	
+	 	
 	/*
 	wire [63:0] ila_trigbus;
 	wire [35:0] cs_control0;
