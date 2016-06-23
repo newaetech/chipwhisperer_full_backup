@@ -146,11 +146,19 @@ def getPyFiles(dir, extension=False):
 
 def _make_id(target):
     if hasattr(target, '__func__'):
-        return (id(target.__self__), id(target.__func__))
+        return (id(target.__self__))
     return id(target)
 
 
 class Signal(object):
+    class Cleanup(object):
+        def __init__(self, key, d):
+            self.key = key
+            self.d = d
+
+        def __call__(self, wr):
+            del self.d[self.key]
+
     def __init__(self):
         self.callbacks = {}  #observing object ID -> weak ref, methodNames
 
@@ -163,7 +171,7 @@ class Signal(object):
             s = self.callbacks[ID][1]
         else:
             try:
-                target = weakref.ref(observer.__self__, self.disconnect)
+                target = weakref.ref(observer.__self__, Signal.Cleanup(ID, self.callbacks))
             except AttributeError:
                 target = None
             s = set()
@@ -176,15 +184,16 @@ class Signal(object):
         s.add(method)
 
     def disconnect(self, observer):
-        try:
-            ID = _make_id(observer)
-            if ID in self.callbacks:
-                if hasattr(observer, "__func__"):
-                    method = observer.__func__
-                else:
-                    method = observer
-                self.callbacks[ID][1].discard(method)
-        except ValueError:
+        ID = _make_id(observer)
+        if ID in self.callbacks:
+            if hasattr(observer, "__func__"):
+                method = observer.__func__
+            else:
+                method = observer
+            self.callbacks[ID][1].discard(method)
+            if len(self.callbacks[ID][1]) == 0:
+                del self.callbacks[ID]
+        else:
             pass
 
     def disconnectAll(self):
