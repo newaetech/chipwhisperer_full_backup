@@ -121,8 +121,8 @@ def main():
     # Create the Qt Application
     app = makeApplication()
     app.aboutToQuit.connect(app.deleteLater)
-    # Create and show the GUI
 
+    # Create and show the GUI
     Parameter.usePyQtGraph = True
     window = CWAnalyzerGUI(CWCoreAPI())
     window.show()
@@ -130,14 +130,6 @@ def main():
     # Run the main Qt loop
     app.exec_()
 
-    #Restore exception handlers (in case called from interactive console)
-    sys.excepthook = sys.__excepthook__
-
-    #Restore print statements
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
-
-    #sys.exit()
 
 if __name__ == '__main__':
     main()

@@ -242,21 +242,13 @@ def main():
     app = makeApplication()
     app.aboutToQuit.connect(app.deleteLater)
     Parameter.usePyQtGraph = True
+
     # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
     window.show()
 
     # Run the main Qt loop
     app.exec_()
-
-    #Restore exception handlers (in case called from interactive console)
-    sys.excepthook = sys.__excepthook__
-
-    #Restore print statements
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
-
-    #sys.exit()
 
 if __name__ == '__main__':
     main()
