@@ -36,8 +36,10 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         AcqKeyTextPattern_Base.__init__(self, parentParam, target)
         self._fixedKey = True
         self._fixedPlain = False
-        self.initkey = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
-        self.inittext = '2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'
+        self.inittext = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
+        self.initkey = '2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'
+        self._key = util.hexStrToByteArray(self.initkey)
+        self._textin = bytearray(self.inittext)
         self.types = {'Random': False, 'Fixed': True}
 
         self.params.addChildren([
@@ -63,12 +65,8 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def setPlainType(self, t):
         self._fixedPlain = t
 
-    def _initPattern(self):
-        self.setInitialKey('2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C')
-        self.setInitialText('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
-
     def getInitialKey(self):
-        return self.initkey
+        return " ".join(["%02X"%b for b in self._key])
 
     @setupSetParam("Fixed Encryption Key")
     def setInitialKey(self, initialKey, binaryKey=False):
@@ -85,7 +83,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             self.initkey = keyStr
 
     def getInitialText(self):
-        return self.inittext
+        return " ".join(["%02X" % b for b in self._textin])
 
     @setupSetParam("Fixed Plaintext Key")
     def setInitialText(self, initialText, binaryText=False):
