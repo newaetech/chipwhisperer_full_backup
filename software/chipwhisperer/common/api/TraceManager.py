@@ -85,8 +85,13 @@ class TraceManager(TraceSource):
         self.setModified()
         self.dirty.setValue(False)
 
-    def removeTraceSet(self, pos):
-        self.traceSets.pop(pos)
+    def removeTraceSet(self, positions):
+        if not isinstance(positions, list):
+            positions = [positions]
+        else:
+            positions.sort(reverse=True)
+        for pos in positions:
+            self.traceSets.pop(pos)
         self.setModified()
 
     def setTraceSetStatus(self, pos, newStatus):
