@@ -24,7 +24,7 @@
 #=================================================
 
 import sys  # Do not remove!
-from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
@@ -229,18 +229,9 @@ class CWCaptureGUI(CWMainGUI):
         self.api.captureM(ProgressBar("Capture in Progress", "Capturing:"))
 
 
-def makeApplication():
-    # Create the Qt Application
-    app = QApplication(sys.argv)
-    app.setOrganizationName(CWCoreAPI.__organization__)
-    app.setApplicationName(CWCoreAPI.__name__ + " - Capture ")
-    return app
-
-
 def main():
     # Create the Qt Application
-    app = makeApplication()
-    app.aboutToQuit.connect(app.deleteLater)
+    app = makeApplication("Capture")
     Parameter.usePyQtGraph = True
 
     # Create and show the GUI
@@ -249,6 +240,7 @@ def main():
 
     # Run the main Qt loop
     app.exec_()
+
 
 if __name__ == '__main__':
     main()

@@ -151,7 +151,7 @@ if __name__ == '__main__':
     app = cwc.makeApplication()
     Parameter.usePyQtGraph = True
     api = CWCoreAPI()               # Instantiate the API
-    gui = cwc.CWCaptureGUI(api)        # Instantiate the Capture GUI
+    gui = cwc.CWCaptureGUI(api)     # Instantiate the Capture GUI
     gui.show()
     api.runScriptClass(Capture)
     gui.reset()

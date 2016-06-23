@@ -193,11 +193,10 @@ if __name__ == '__main__':
     app = cwc.makeApplication()                     # Comment this line if you don't want to use the GUI
     Parameter.usePyQtGraph = True                   # Comment this line if you don't want to use the GUI
     api = CWCoreAPI()                               # Instantiate the API
-    # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
     gui = cwc.CWCaptureGUI(api)                     # Comment this line if you don't want to use the GUI
     gui.show()
     gui.glitchMonitor.show()
     gui.serialTerminal.show()
     api.runScriptClass(UserScript)                  # Run the User Script
 
-    sys.exit(app.exec_())
+    app.exec_()
