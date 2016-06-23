@@ -573,13 +573,25 @@ class OutLog:
         if QApplication.focusWidget() is not None:
             QApplication.focusWidget().clearFocus()
 
-def main():    
+
+def makeApplication(name="Other"):
+    """ Create a Qt Application.
+    @param name: The QSettings scope name. If no scope is specified it will erase the default at each new execution.
+    """
     app = QApplication(sys.argv)
-    app.aboutToQuit.connect(app.deleteLater)
     app.setOrganizationName("ChipWhisperer")
-    app.setApplicationName("Window Demo")
+    app.setApplicationName(CWCoreAPI.__name__ + " - " + name)
+    app.aboutToQuit.connect(app.deleteLater)
+    if name=="Other":
+        QSettings().clear()
+
+    return app
+
+
+def main():    
+    app = makeApplication("Test")
     CWMainGUI(CWCoreAPI(), app.applicationName())
-    sys.exit(app.exec_())
+    app.exec_()
 
 if __name__ == '__main__':
     main()
