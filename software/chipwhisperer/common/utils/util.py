@@ -128,9 +128,7 @@ def convert_to_str(data):
 
 
 def hexStrToByteArray(hexStr):
-    ba = bytearray()
-    for s in hexStr.split():
-        ba.append(int(s, 16))
+    ba = bytearray(hexstr2list(hexStr))
     return ba
 
 
