@@ -327,13 +327,12 @@ class Parameter(object):
             if blockSignal is not None:
                 self.sigValueChanged.connect(blockSignal)
 
-        if self.previousValue is not None and isinstance(self.previousValue, Parameterized):
-            self.previousValue.getParams().hide()
+        if self.previousValue is not None and self.previousValue() is not None:
+            self.previousValue().getParams().hide()
 
         if isinstance(value, Parameterized):
             value.getParams().show()
-
-        self.previousValue = value
+            self.previousValue = weakref.ref(value)
 
         if not init:
             if not blockAction:
