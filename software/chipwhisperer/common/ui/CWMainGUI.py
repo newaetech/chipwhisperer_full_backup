@@ -51,7 +51,6 @@ except ImportError, e:
     raise
 import os
 import traceback
-from functools import partial
 from datetime import datetime
 from PythonConsole import QPythonConsole
 from saveproject import SaveProjectDialog
@@ -131,9 +130,6 @@ class CWMainGUI(QMainWindow):
         dock.setAllowedAreas(allowedAreas)
         dock.setObjectName(name)
         self.addDockWidget(area, dock)
-        if(hasattr(dockWidget,"visibilityChanged")):
-            dockWidget.visibilityChanged.connect(dock.setVisible)
-            dock.visibilityChanged.connect(lambda: dockWidget.updateVisibility(dock.isVisible()))
 
         if visible == False:
             dock.toggleViewAction()
@@ -217,6 +213,10 @@ class CWMainGUI(QMainWindow):
             QMainWindow.closeEvent(self, event)
         else:
             event.ignore()
+
+    def close(self):
+        # del self.traceManagerDialog
+        super(CWMainGUI,self).close()
 
     def helpdialog(self):
         """Helps the User"""
@@ -382,7 +382,7 @@ class CWMainGUI(QMainWindow):
         subMenu = QMenu("Submenu", self)
 
         for name, script in scripts.iteritems():
-            subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=partial(self.runScript, script)))
+            subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=util.Command(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 
