@@ -45,39 +45,38 @@ class TraceManagerDialog(QtFixes.QDialog):
     def __init__(self, parent):
         QDialog.__init__(self, parent)
         self.setWindowTitle("Trace Management")
-        layout = QVBoxLayout()
+        vlayout = QVBoxLayout()
 
         #Get labels in use
         self.attrs = chipwhisperer.common.traces._cfgfile.TraceContainerConfig().attrHeaderValues()
         attrHeaders = [i["header"] for i in self.attrs]
-        attrHeaders.insert(0, "Options")
+        attrHeaders.insert(0, "Sel.")
         attrHeaders.insert(1, "Mapped Range")
         self.table = QTableWidget(0, len(attrHeaders))
         self.table.setHorizontalHeaderLabels(attrHeaders)
-        layout.setContentsMargins(5,5,5,5)
-        layout.setSpacing(5)
-        layout.addWidget(QLabel("Trace Sets:"))
-        layout.addWidget(self.table)
-        layout.addWidget(QLabel("* Cell editions are saved immediately"))
+        vlayout.setContentsMargins(5,5,5,5)
+        vlayout.setSpacing(5)
+        vlayout.addWidget(QLabel("Trace Sets:"))
+        vlayout.addWidget(self.table)
 
-        #temp = QPushButton("Add Blank")
-        #temp.clicked.connect(self.addRow)
-        #layout.addWidget(temp)
-
-        #importDPAv3 = QPushButton("Import DPAv3")
-        #importDPAv3.clicked.connect(self.importDPAv3)
-        #layout.addWidget(importDPAv3)
-
-        #copyExisting = QPushButton("Copy Existing and Add")
-        #copyExisting.clicked.connect(self.copyExisting)
-        #layout.addWidget(copyExisting)
-
-        importExisting = QPushButton("Add Reference to Existing")
+        hlayout = QHBoxLayout()
+        hlayout.setSpacing(15)
+        removeExisting = QPushButton("-")
+        removeExisting.clicked.connect(self.removeExisting)
+        removeExisting.setFixedWidth(20)
+        removeExisting.setFixedHeight(20)
+        hlayout.addWidget(removeExisting)
+        importExisting = QPushButton("+")
         importExisting.clicked.connect(self.importExisting)
-        layout.addWidget(importExisting)
+        importExisting.setFixedWidth(20)
+        importExisting.setFixedHeight(20)
+        hlayout.addWidget(importExisting)
+        hlayout.addWidget(QLabel("* Cell editions are saved immediately"))
+
+        vlayout.addLayout(hlayout)
 
         # Set dialog layout
-        self.setLayout(layout)
+        self.setLayout(vlayout)
         self.resize(950, 400)
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
@@ -98,24 +97,12 @@ class TraceManagerDialog(QtFixes.QDialog):
         self.disconnect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
         self.table.setRowCount(len(self._traceManager.traceSets))
         for p, t in enumerate(self._traceManager.traceSets):
-            if not self.table.cellWidget(p, 0): # check if the option buttons already exist
-                self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
+            if t:
                 cb = QCheckBox()
                 cb.setChecked(t.enabled)
                 cb.clicked.connect(partial(self.changeTraceStatus, p))
                 cb.setToolTip("Enable/disable trace set")
-                tb = QPushButton("x")
-                tb.setFixedSize(14, 14)
-                tb.setToolTip("Remove trace set")
-                tb.clicked.connect(partial(self.removeTrace, p))
-                tmp = QWidget()
-                pLayout = QHBoxLayout(tmp)
-                pLayout.addWidget(cb)
-                pLayout.addWidget(tb)
-                pLayout.setAlignment(Qt.AlignHCenter)
-                pLayout.setContentsMargins(0, 0, 0, 0)
-                self.table.setCellWidget(p, self.findCol("Options"), tmp)
-            if t:
+                self.table.setCellWidget(p, 0, cb)
                 rangeWidget = QTableWidgetItem(("%d-%d" % (t.mappedRange[0], t.mappedRange[1])) if (t.enabled and t.numTraces()>0) else "")
                 rangeWidget.setFlags(rangeWidget.flags() & ~Qt.ItemIsEditable)
                 self.table.setItem(p, self.findCol("Mapped Range"), rangeWidget)
@@ -130,7 +117,7 @@ class TraceManagerDialog(QtFixes.QDialog):
                     else:
                         print "Internal Error: Column doesn't exists: " + column["header"]
             else:
-                print "Internal Error: Set #%d should never be None: " % p # Otherwise there will be an empty line at the end of the table
+                print "Internal Error: Set #%d should never be None: " % p
 
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
@@ -147,11 +134,14 @@ class TraceManagerDialog(QtFixes.QDialog):
     def changeTraceStatus(self, pos):
         self._traceManager.setTraceSetStatus(pos, not self._traceManager.traceSets[pos].enabled)
 
-    def removeTrace(self, pos):
+    def removeExisting(self):
         """Confirm before removing traces at pos."""
-        ret = QMessageBox.question(self, "Remove traces", "Trace set #%d will be removed from the project.\nDo you confirm?" % (pos), QMessageBox.Yes | QMessageBox.No)
+        positions=[]
+        for idx in self.table.selectedIndexes():
+            positions.append(idx.row())
+        ret = QMessageBox.question(self, "Remove traces", "Trace segment(s) %s will be removed from the project.\nDo you confirm?" % str(positions), QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
-            self._traceManager.removeTraceSet(pos)
+            self._traceManager.removeTraceSet(positions)
 
     def findCol(self, name):
         """Function is a hack/cheat to deal with movable headers if they become enabled."""
