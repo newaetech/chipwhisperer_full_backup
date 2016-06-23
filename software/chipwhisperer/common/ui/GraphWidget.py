@@ -323,7 +323,7 @@ class GraphWidget(QWidget):
         if pen is None:
             pen = pg.mkPen(self.acolor)
 
-        p = self.pw.plot(xaxis, trace, pen=pen)
+        p = self.pw.plot(x=xaxis, y=trace, pen=pen)
         self.setupPlot(p, 0, True, idString)
 
         if ghostTrace is False:
