@@ -77,10 +77,11 @@ class CWMainGUI(QMainWindow):
 
     def __init__(self, api, name="Demo", icon="cwicon"):
         QMainWindow.__init__(self)
+        self.setAttribute(Qt.WA_DeleteOnClose)
         CWMainGUI.instance = self
         self.name = name
-        self.cwPrefDialog = CWPreferencesDialog(self, api.settings)
         sys.excepthook = self.exceptionHandlerDialog
+        self.cwPrefDialog = CWPreferencesDialog(self, api.settings)
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
         self.setCentralWidget(None)
@@ -215,7 +216,9 @@ class CWMainGUI(QMainWindow):
             event.ignore()
 
     def close(self):
-        # del self.traceManagerDialog
+        sys.excepthook = sys.__excepthook__
+        sys.stdout = sys.__stdout__
+        sys.stderr = sys.__stderr__
         super(CWMainGUI,self).close()
 
     def helpdialog(self):

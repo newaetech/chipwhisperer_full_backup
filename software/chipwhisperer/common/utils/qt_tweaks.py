@@ -42,6 +42,6 @@ class QDialog(qtg.QDialog):
         self.raise_()
 
 class QTextBrowser(qtg.QTextBrowser):
-        def write(self, text):
-            self.moveCursor(qtg.QTextCursor.End)
-            self.insertPlainText(text)
+    def write(self, text):
+        self.moveCursor(qtg.QTextCursor.End)
+        self.insertPlainText(text)

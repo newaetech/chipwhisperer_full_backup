@@ -49,10 +49,6 @@ class CWCaptureGUI(CWMainGUI):
         self.api.sigCampaignStart.connect(self.glitchMonitor.campaignStart)
         self.api.sigCampaignDone.connect(self.glitchMonitor.campaignDone)
 
-    def closeEvent(self, event):
-        CWMainGUI.closeEvent(self, event)
-        self.glitchMonitor.close() #  Fixes a crash on exit bug (PyQtGraph bug?)
-
     def loadExtraModules(self):
         self.serialTerminal = SerialTerminalDialog(self, self.api)
         self.glitchMonitor = GlitchExplorerDialog(self)
