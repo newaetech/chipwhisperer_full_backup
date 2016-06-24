@@ -32,7 +32,6 @@ from PySide.QtCore import *
 from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 import ConfigParser
-import pstats, cProfile #For profiling support (not 100% needed)
 import chipwhisperer.common.traces._cfgfile
 import chipwhisperer.common.traces.TraceContainerNative
 from chipwhisperer.common.traces.TraceContainerDPAv3 import ImportDPAv3Dialog
@@ -56,21 +55,19 @@ class TraceManagerDialog(QtFixes.QDialog):
         self.table.setHorizontalHeaderLabels(attrHeaders)
         vlayout.setContentsMargins(5,5,5,5)
         vlayout.setSpacing(5)
-        vlayout.addWidget(QLabel("Trace Sets:"))
+        vlayout.addWidget(QLabel("Trace Segments:"))
         vlayout.addWidget(self.table)
 
         hlayout = QHBoxLayout()
         hlayout.setSpacing(15)
-        removeExisting = QPushButton("-")
-        removeExisting.clicked.connect(self.removeExisting)
-        removeExisting.setFixedWidth(20)
-        removeExisting.setFixedHeight(20)
-        hlayout.addWidget(removeExisting)
         importExisting = QPushButton("+")
         importExisting.clicked.connect(self.importExisting)
-        importExisting.setFixedWidth(20)
-        importExisting.setFixedHeight(20)
+        importExisting.setFixedSize(20, 20)
+        removeExisting = QPushButton("-")
+        removeExisting.clicked.connect(self.removeExisting)
+        removeExisting.setFixedSize(20, 20)
         hlayout.addWidget(importExisting)
+        hlayout.addWidget(removeExisting)
         hlayout.addWidget(QLabel("* Cell editions are saved immediately"))
 
         vlayout.addLayout(hlayout)
@@ -98,6 +95,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         self.table.setRowCount(len(self._traceManager.traceSets))
         for p, t in enumerate(self._traceManager.traceSets):
             if t:
+                self.table.setVerticalHeaderItem(p, QTableWidgetItem("%d" % p))
                 cb = QCheckBox()
                 cb.setChecked(t.enabled)
                 cb.clicked.connect(partial(self.changeTraceStatus, p))
@@ -117,7 +115,7 @@ class TraceManagerDialog(QtFixes.QDialog):
                     else:
                         print "Internal Error: Column doesn't exists: " + column["header"]
             else:
-                print "Internal Error: Set #%d should never be None: " % p
+                print "Internal Error: Sequence #%d should never be None: " % p
 
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
@@ -125,10 +123,11 @@ class TraceManagerDialog(QtFixes.QDialog):
     def cellChanged(self, row, column):
         """Saves cell edition to the traceManager and .cfg file"""
         for attr in self.attrs:
-            attrName = attr["name"]
-            if attrName == self.table.horizontalHeaderItem(column).text():
-                self._traceManager.traceSets[row].config.setAttr(attrName, self.table.item(row,column).text())
+            if attr["header"] == self.table.horizontalHeaderItem(column).text():
+                text = self.table.item(row, column).text()
+                self._traceManager.traceSets[row].config.setAttr(attr["name"], text)
                 self._traceManager.traceSets[row].config.saveTrace()
+                print 'Trace atribute "%s" of segment %d changed to: %s' % (attr["header"], row, text)
                 break
 
     def changeTraceStatus(self, pos):
@@ -136,9 +135,10 @@ class TraceManagerDialog(QtFixes.QDialog):
 
     def removeExisting(self):
         """Confirm before removing traces at pos."""
-        positions=[]
+        positions = set()
         for idx in self.table.selectedIndexes():
-            positions.append(idx.row())
+            positions.add(idx.row())
+        positions = list(positions)
         ret = QMessageBox.question(self, "Remove traces", "Trace segment(s) %s will be removed from the project.\nDo you confirm?" % str(positions), QMessageBox.Yes | QMessageBox.No)
         if ret == QMessageBox.Yes:
             self._traceManager.removeTraceSet(positions)

@@ -202,7 +202,10 @@ class Signal(object):
     def emit(self, *args, **kwargs):
         callbacks = self.callbacks.keys()
         for ID in callbacks:
-            target, methods = self.callbacks[ID]
+            try:
+                target, methods = self.callbacks[ID]
+            except KeyError:
+                continue
             for method in methods:
                 if target is None:  # Lambda or partial
                     method(*args, **kwargs)
@@ -210,7 +213,6 @@ class Signal(object):
                     targetObj = target()
                     if targetObj is not None:
                         method(targetObj, *args, **kwargs)
-
 
 class Observable(Signal):
     def __init__(self, value):
