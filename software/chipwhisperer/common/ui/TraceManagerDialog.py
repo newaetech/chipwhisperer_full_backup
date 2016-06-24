@@ -127,14 +127,15 @@ class TraceManagerDialog(QtFixes.QDialog):
                 text = self.table.item(row, column).text()
                 self._traceManager.traceSets[row].config.setAttr(attr["name"], text)
                 self._traceManager.traceSets[row].config.saveTrace()
-                print 'Trace atribute "%s" of segment %d changed to: %s' % (attr["header"], row, text)
-                break
+                print 'Trace attribute "%s" of segment %d changed to: %s' % (attr["header"], row, text)
+                return
+        raise KeyError
 
     def changeTraceStatus(self, pos):
         self._traceManager.setTraceSetStatus(pos, not self._traceManager.traceSets[pos].enabled)
 
     def removeExisting(self):
-        """Confirm before removing traces at pos."""
+        """Confirm before removing selected traces."""
         positions = set()
         for idx in self.table.selectedIndexes():
             positions.add(idx.row())
