@@ -27,9 +27,7 @@ import ast
 import collections
 import os.path
 import shutil
-import sys
 import weakref
-import functools
 
 try:
     # OrderedDict is new in 2.7

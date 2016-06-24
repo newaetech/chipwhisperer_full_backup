@@ -1,9 +1,9 @@
-V3.2:
-- Fixed lots of memory leaks.
+V3.2RC:
+- Fixed a lot of memory leaks.
 - New trace manager (supports deletion of multiple items).
 - Pip support.
-- Support to projects/plugins in the user's home.
-- Test Scripts.
+- Support to projects/plugins in user's home.
+- Test scripts.
 - Improved code documentation.
 - Code cleanups.
 - New Glitch Explorer widget.

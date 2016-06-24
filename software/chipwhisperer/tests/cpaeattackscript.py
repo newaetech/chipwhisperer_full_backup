@@ -127,8 +127,8 @@ class Attack(UserScriptBase):
         self.api.setParameter(['Results', 'Trace Recorder', 'Save', None])
 
         # Deselect the original traces and select this new one
-        self.api.project().traceManager().setTraceSetStatus(0, False)
-        self.api.project().traceManager().setTraceSetStatus(1, True)
+        self.api.project().traceManager().setTraceSegmentStatus(0, False)
+        self.api.project().traceManager().setTraceSegmentStatus(1, True)
         self.api.saveProject()
 
         # Fix the traces

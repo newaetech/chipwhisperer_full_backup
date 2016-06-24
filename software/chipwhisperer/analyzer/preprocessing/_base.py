@@ -53,24 +53,23 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
                  {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
         ])
         self.findParam('input').hide()
-        print "Created: " + str(self)
+        # print "Created: " + str(self)
 
     def updateScript(self, ignored=None):
         pass
 
     def getEnabled(self):
-        """Turn on/off this preprocessing"""
+        """Return if it is enable or not"""
         return self.enabled
 
     @setupSetParam("Enabled")
     def setEnabled(self, enabled):
-        """Turn on/off this preprocessing"""
+        """Turn on/off this preprocessing module"""
         self.enabled = enabled
         self.updateScript()
 
     def getTrace(self, n):
         """Get trace number n"""
-
         if self.enabled:
             trace = self._traceSource.getTrace(n)
             # Do your preprocessing here
@@ -100,8 +99,8 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def getAuxData(self, n, auxDic):
         return self._traceSource.getAuxData(n, auxDic)
 
-    def findMappedTrace(self, n):
-        return self._traceSource.findMappedTrace(n)
+    def getSegment(self, n):
+        return self._traceSource.getSegment(n)
 
     def numTraces(self):
         return self._traceSource.numTraces()
@@ -109,5 +108,5 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def numPoints(self):
         return self._traceSource.numPoints()
 
-    def __del__(self):
-        print "Deleted: " + str(self)
+    # def __del__(self):
+    #     print "Deleted: " + str(self)

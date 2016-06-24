@@ -206,12 +206,12 @@ class Partition(Parameterized):
             end = self._traces.numTraces()
 
         # Generate blank partition table
-        partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
+        partitionTable = self.createBlankTable(self._traces.getSegment(start))
         print np.shape(partitionTable)
 
         tnum = start
         while tnum < end:
-            t = self._traces.findMappedTrace(tnum)
+            t = self._traces.getSegment(tnum)
             # Discover where this trace starts & ends
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
@@ -254,7 +254,7 @@ class Partition(Parameterized):
         start = tRange[0]
         end = tRange[1]
 
-        num_keys=len(self.partMethod.getPartitionNum(self._traces.findMappedTrace(start), 0))
+        num_keys=len(self.partMethod.getPartitionNum(self._traces.getSegment(start), 0))
         num_parts=self.partMethod.getNumPartitions()
 
         if partitionTable is None:
@@ -265,7 +265,7 @@ class Partition(Parameterized):
 
             tnum = start
             while tnum < end:
-                t = self._traces.findMappedTrace(tnum)
+                t = self._traces.getSegment(tnum)
                 # Discover where this trace starts & ends
                 tmapstart = t.mappedRange[0]
                 tmapend = t.mappedRange[1]
