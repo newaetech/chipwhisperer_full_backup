@@ -225,7 +225,7 @@ class CWCoreAPI(Parameterized):
         self.newProject()
         self.project().load(fname)
         try:
-            ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(TraceSource.registeredObjects["Trace Management"])
+            ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(self.project().traceManager())
         except KeyError:
             pass
 
@@ -242,8 +242,7 @@ class CWCoreAPI(Parameterized):
                 self.getScope().con()
                 try:
                     # Sets the Plot Widget input (if it exists) to the last added TraceSource
-                    ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
-                        TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
+                    ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(self.getScope().liveTraceSource)
                 except KeyError:
                     pass
 
