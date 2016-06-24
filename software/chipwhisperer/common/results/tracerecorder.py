@@ -81,4 +81,4 @@ class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
         for tnum in range(tstart, tend+1):
             trace.addTrace(self.getTraceSource().getTrace(tnum)[pstart:pend+1], self.getTraceSource().getTextin(tnum), self.getTraceSource().getTextout(tnum), self.getTraceSource().getKnownKey(tnum))
         trace.closeAll()
-        CWCoreAPI.getInstance().project().traceManager().appendTraceSet(trace, enabled=False)
+        CWCoreAPI.getInstance().project().traceManager().appendSegment(trace, enabled=False)

@@ -180,7 +180,7 @@ class AcquisitionController():
             # Don't clear trace as we re-use the buffer
             self.writer.closeAll(clearTrace=False)
             if tracesDestination:
-                tracesDestination.appendTraceSet(self.writer)
+                tracesDestination.appendSegment(self.writer)
 
         self.sigCaptureDone.emit(self.running)
         self.running = False
