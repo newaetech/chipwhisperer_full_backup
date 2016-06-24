@@ -305,7 +305,7 @@ class AttackScriptGen(Parameterized):
                     "    from chipwhisperer.common.utils.parameter import Parameter\n"
                     "    Parameter.usePyQtGraph = True            # Comment if you don't need the GUI\n"
                     "    api = CWCoreAPI()                        # Instantiate the API\n"
-                    "    app = cwa.makeApplication(\"Analyzer\")  # Comment if you don't need the GUI\n"
+                    "    app = cwa.makeApplication(\"Analyzer\")    # Comment if you don't need the GUI\n"
                     "    gui = cwa.CWAnalyzerGUI(api)             # Comment if you don't need the GUI\n"
                     "    gui.show()                               # Comment if you don't need the GUI\n"
                     "    api.runScriptClass(UserScript)           # Run UserScript through the API\n"
