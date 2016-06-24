@@ -46,7 +46,7 @@ class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
             {'name':'Save', 'type':'action', 'action':self.processTraces},
         ])
 
-        self.findParam('input').setValue("Trace Management")
+        self.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
         TraceSource.sigRegisteredObjectsChanged.connect(self.traceSourcesChanged)
         TraceSource.sigRegisteredObjectsChanged.connect(self.resetTraceLimits)
 

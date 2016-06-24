@@ -40,7 +40,7 @@ from picoscope import ps6000
 from chipwhisperer.common.utils.parameter import setupSetParam
 
 
-class PicoScope(ScopeTemplate):
+class PicoScope(ScopeTemplate): #TODO: ScopeBase instead?
     _name = 'Pico Scope'
 
     def __init__(self, parentParam=None, psClass=None):
@@ -194,6 +194,7 @@ class PicoScopeInterface(ScopeTemplate):
             self.scopetype.dataUpdated.connect(self.passUpdated)
         else:
             self.scopetype = scope
+
    
     def _con(self):
         if self.scopetype is not None:
