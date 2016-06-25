@@ -241,11 +241,13 @@ class TriggerSettings(Parameterized):
             {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, 1000000), 'set':self.setPresamples, 'get':self.presamples,
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
-                            'recording samples BEFORE the trigger event.'},
+                            'recording samples BEFORE the trigger event.\n\n' +
+                            'WARNING: The pretrigger only works reliable on the CW1200 hardware. The ChipWhisperer-Lite often has trouble with '+
+                            'pre-triggering for many FPGA builds. It is  recommended use presampling only on the CW1200 hardware.'},
             {'name': 'Total Samples', 'type':'int', 'limits':(0, 1000000), 'set':self.setMaxSamples, 'get':self.maxSamples,
                      'help':'%namehdr%'+
-                            'Total number of samples to record. Note the api system has an upper limit, and may have a practical lower limit (i.e.,' +
-                            ' if this value is set too low the system may not api samples. Suggest to always set > 256 samples.'},
+                            'Total number of samples to record. Note the capture system has an upper limit, and may have a practical lower limit (i.e.,' +
+                            ' if this value is set too low the system may not capture samples. Suggest to always set > 256 samples.'},
         ])
 
     @setupSetParam("Total Samples")
@@ -302,6 +304,8 @@ class TriggerSettings(Parameterized):
             self.presamples_actual = samples
         else:
             #CW-Lite/Other Hardware
+            if samples > 0:
+                print("WARNING: Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. Check data is reliably recorded before using in capture.")
 
             #enforce samples is multiple of 3
             samplesact = int(samples / 3)
@@ -450,7 +454,7 @@ class ClockSettings(Parameterized):
                 {'name': 'DCM Locked', 'type':'bool', 'get':self.dcmADCLocked, 'readonly':True},
                 {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.resetDcms(True, False), 'linked':['Phase Adjust']},
             ]},
-            {'name': 'Freq Counter', 'type': 'str', 'readonly':True, 'get':lambda: str(self.extFrequency()) + " Hz"},
+            {'name': 'Freq Counter', 'type': 'float', 'readonly':True, 'get':self.extFrequency, 'siPrefix':True, 'suffix':'Hz'},
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
@@ -459,7 +463,7 @@ class ClockSettings(Parameterized):
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
-                                            'get':lambda: str(self.getClkgen()) + " Hz"},
+                                            'get':self.getClkgen},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
             ]}
@@ -1108,7 +1112,7 @@ class OpenADCInterface(object):
 
             # If we've timed out, don't wait any longer for a trigger
             if (diff.total_seconds() > self._timeout):
-                print("Timeout in OpenADC api(), trigger FORCED")
+                print("Timeout in OpenADC capture(), trigger FORCED")
                 timeout = True
                 self.triggerNow()
 

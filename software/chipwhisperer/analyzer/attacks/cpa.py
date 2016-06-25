@@ -43,15 +43,15 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", False, False)
         self.getParams().addChildren([
-            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':algos, 'value':algos["Progressive"], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':algos, 'value':algos["Progressive"], 'action':self.updateAlgorithm}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
         AttackGenericParameters.__init__(self)
         self.setAnalysisAlgorithm(self.findParam('CPA_algo').getValue(), None, None)
         self.updateBytesVisible()
         self.updateScript()
 
-    def updateAlgorithm(self, algo):
-        self.setAnalysisAlgorithm(algo, None, None)
+    def updateAlgorithm(self, parameter):
+        self.setAnalysisAlgorithm(parameter.getValue(), None, None)
         self.updateBytesVisible()
         self.updateScript()
 
@@ -75,7 +75,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
         self.getParams().append(self.attack.getParams())
 
-    def updateScript(self):
+    def updateScript(self, _=None):
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
 
         analysAlgoStr = self.attack.__class__.__name__

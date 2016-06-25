@@ -25,7 +25,7 @@
 #=================================================
 
 import sys
-from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
 from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
@@ -36,6 +36,7 @@ from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.analyzer.attacks._base import AttackObserver
+
 
 class CWAnalyzerGUI(CWMainGUI):
     """ Main ChipWhisperer Analyzer GUI Window Class.
@@ -110,19 +111,11 @@ class CWAnalyzerGUI(CWMainGUI):
     def getInstance():
         return CWAnalyzerGUI.instance
 
-def makeApplication():
-    # Create the Qt Application
-    app = QApplication(sys.argv)
-    app.setOrganizationName("ChipWhisperer")
-    app.setApplicationName("Analyzer V2")
-    return app
-
 def main():
     # Create the Qt Application
-    app = makeApplication()
-    app.aboutToQuit.connect(app.deleteLater)
-    # Create and show the GUI
+    app = makeApplication("Analyzer")
 
+    # Create and show the GUI
     Parameter.usePyQtGraph = True
     window = CWAnalyzerGUI(CWCoreAPI())
     window.show()
@@ -130,14 +123,6 @@ def main():
     # Run the main Qt loop
     app.exec_()
 
-    #Restore exception handlers (in case called from interactive console)
-    sys.excepthook = sys.__excepthook__
-
-    #Restore print statements
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
-
-    #sys.exit()
 
 if __name__ == '__main__':
     main()

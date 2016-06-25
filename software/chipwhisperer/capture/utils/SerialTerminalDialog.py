@@ -32,8 +32,6 @@ import chipwhisperer.common.utils.qt_tweaks as QtFixes
 class SerialTerminalDialog(QtFixes.QDialog):
     def __init__(self, parent, cwAPI):
         super(SerialTerminalDialog, self).__init__(parent)
-
-        self.parent = parent
         self.cwAPI = cwAPI
         self.mainLayout = QVBoxLayout()
 

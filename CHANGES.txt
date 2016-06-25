@@ -1,3 +1,13 @@
+V3.2RC:
+- Fixed a lot of memory leaks.
+- New trace manager (supports deletion of multiple items).
+- Pip support.
+- Support to projects/plugins in user's home.
+- Test scripts.
+- Improved code documentation.
+- Code cleanups.
+- New Glitch Explorer widget.
+
 V3.1:
 - Read/save buttons.
 - Trace recorder.

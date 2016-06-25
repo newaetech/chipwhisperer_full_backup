@@ -113,7 +113,8 @@ class AttackScriptGen(Parameterized):
 
             # No previous dock, do setup
             if 'dock' not in script.keys():
-                script['widget'].editWindow.runFunction.connect(partial(self.runScriptFunction, filename=script['filename']))
+                self.__runScriptConverter = partial(self.runScriptFunction, filename=script['filename'])
+                script['widget'].editWindow.runFunction.connect(self.__runScriptConverter)
                 script['dock'] = self.cwGUI.addDock(script['widget'], name=dockname, area=Qt.BottomDockWidgetArea)
 
             script['dock'].setWindowTitle(dockname)
@@ -195,10 +196,12 @@ class AttackScriptGen(Parameterized):
         mse.editWindow.clear()
 
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
+        mse.append("from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI", 0)
         mse.append("from chipwhisperer.common.scripts.base import UserScriptBase", 0)
         # Get imports from preprocessing
         mse.append("# Imports from Preprocessing", 0)
         mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
+
         for p in self.preprocessingListGUI:
             if p:
                 imports = p.getImportStatements()
@@ -298,16 +301,15 @@ class AttackScriptGen(Parameterized):
                             mse.append(s.replace("UserScript.", "self."))
 
         mse.append("if __name__ == '__main__':\n"
-                    "    from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI\n"
                     "    import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa\n"
                     "    from chipwhisperer.common.utils.parameter import Parameter\n"
-                    "    app = cwa.makeApplication()     # Comment if you don't need the GUI\n"
-                    "    Parameter.usePyQtGraph = True   # Comment if you don't need the GUI\n"
-                    "    api = CWCoreAPI()               # Instantiate the API\n"
-                    "    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI\n"
-                    "    gui.show()                      # Comment if you don't need the GUI\n"
-                    "    api.runScriptClass(UserScript)  # Run UserScript through the API\n"
-                    "    app.exec_()                     # Comment if you don't need the GUI\n", 0)
+                    "    Parameter.usePyQtGraph = True            # Comment if you don't need the GUI\n"
+                    "    api = CWCoreAPI()                        # Instantiate the API\n"
+                    "    app = cwa.makeApplication(\"Analyzer\")    # Comment if you don't need the GUI\n"
+                    "    gui = cwa.CWAnalyzerGUI(api)             # Comment if you don't need the GUI\n"
+                    "    gui.show()                               # Comment if you don't need the GUI\n"
+                    "    api.runScriptClass(UserScript)           # Run UserScript through the API\n"
+                    "    app.exec_()                              # Comment if you don't need the GUI\n", 0)
 
         mse.restoreSliderPosition()
         self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)

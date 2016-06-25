@@ -48,7 +48,7 @@ class TraceContainerDPAv3(TraceContainer):
 
     def prepareDisk(self):
         self.startTime = gmtime()
-        self.setDirectory("api-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
+        self.setDirectory("capture-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
         
         if os.path.exists(self.dir + "text_in.txt"):
             print "Textin File exists!"

@@ -47,22 +47,22 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
 
         algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
         self.getParams().addChildren([
-            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':algos['Template Attack'], 'action':lambda p:self.updateAlgorithm(p.getValue())}, #TODO: Should be called from the AES module to figure out # of bytes
+            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':algos['Template Attack'], 'action':self.updateAlgorithm}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
         AttackGenericParameters.__init__(self)
 
         # Do not use absolute
         self.useAbs = False
-        self.updateAlgorithm(self.findParam('Prof_algo').getValue())
+        self.updateAlgorithm()
         self.updateBytesVisible()
         self.setAbsoluteMode(False)
 
-    def updateAlgorithm(self, algo):
-        self.setAnalysisAlgorithm(algo)
+    def updateAlgorithm(self, _=None):
+        self.setAnalysisAlgorithm(self.findParam('Prof_algo').getValue())
         self.updateBytesVisible()
         self.updateScript()
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
 
         analysAlgoStr = self.attack.__class__.__name__

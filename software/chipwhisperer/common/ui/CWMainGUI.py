@@ -51,7 +51,6 @@ except ImportError, e:
     raise
 import os
 import traceback
-from functools import partial
 from datetime import datetime
 from PythonConsole import QPythonConsole
 from saveproject import SaveProjectDialog
@@ -78,10 +77,11 @@ class CWMainGUI(QMainWindow):
 
     def __init__(self, api, name="Demo", icon="cwicon"):
         QMainWindow.__init__(self)
+        self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
         CWMainGUI.instance = self
         self.name = name
-        self.cwPrefDialog = CWPreferencesDialog(self, api.settings)
         sys.excepthook = self.exceptionHandlerDialog
+        self.cwPrefDialog = CWPreferencesDialog(self, api.settings)
         util.setUIupdateFunction(QCoreApplication.processEvents)
         self.api = api
         self.setCentralWidget(None)
@@ -131,9 +131,6 @@ class CWMainGUI(QMainWindow):
         dock.setAllowedAreas(allowedAreas)
         dock.setObjectName(name)
         self.addDockWidget(area, dock)
-        if(hasattr(dockWidget,"visibilityChanged")):
-            dockWidget.visibilityChanged.connect(dock.setVisible)
-            dock.visibilityChanged.connect(lambda: dockWidget.updateVisibility(dock.isVisible()))
 
         if visible == False:
             dock.toggleViewAction()
@@ -217,6 +214,12 @@ class CWMainGUI(QMainWindow):
             QMainWindow.closeEvent(self, event)
         else:
             event.ignore()
+
+    def close(self):
+        sys.excepthook = sys.__excepthook__  # Restore exception handlers
+        sys.stdout = sys.__stdout__          # Restore print statements
+        sys.stderr = sys.__stderr__
+        super(CWMainGUI,self).close()
 
     def helpdialog(self):
         """Helps the User"""
@@ -382,7 +385,7 @@ class CWMainGUI(QMainWindow):
         subMenu = QMenu("Submenu", self)
 
         for name, script in scripts.iteritems():
-            subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=partial(self.runScript, script)))
+            subMenu.addAction(QAction(name, self, statusTip=script.getDescription(), triggered=util.Command(self.runScript, script)))
 
         self.exampleScriptAct.setMenu(subMenu)
 
@@ -570,13 +573,25 @@ class OutLog:
         if QApplication.focusWidget() is not None:
             QApplication.focusWidget().clearFocus()
 
-def main():    
+
+def makeApplication(name="Other"):
+    """ Create a Qt Application.
+    @param name: The QSettings scope name. If no scope is specified it will erase the default at each new execution.
+    """
     app = QApplication(sys.argv)
-    app.aboutToQuit.connect(app.deleteLater)
     app.setOrganizationName("ChipWhisperer")
-    app.setApplicationName("Window Demo")
+    app.setApplicationName(CWCoreAPI.__name__ + " - " + name)
+    app.aboutToQuit.connect(app.deleteLater)
+    if name=="Other":
+        QSettings().clear()
+
+    return app
+
+
+def main():    
+    app = makeApplication("Test")
     CWMainGUI(CWCoreAPI(), app.applicationName())
-    sys.exit(app.exec_())
+    app.exec_()
 
 if __name__ == '__main__':
     main()
