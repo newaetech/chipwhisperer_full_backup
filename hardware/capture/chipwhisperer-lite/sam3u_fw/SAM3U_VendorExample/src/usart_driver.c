@@ -73,11 +73,13 @@ static inline void usart0_enableIO(void)
 #define usart1_enableIO() do{;}while(0)
 #define usart2_enableIO() do{;}while(0)
 	
+#ifdef USART3
 static inline void usart3_enableIO(void)
 {
 	gpio_configure_pin(PIN_USART3_RXD, PIN_USART3_RXD_FLAGS);
 	gpio_configure_pin(PIN_USART3_TXD, PIN_USART3_TXD_FLAGS);
 }
+#endif
 
 bool ctrl_usart(Usart * usart, bool directionIn)
 {
@@ -191,13 +193,15 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 							sysclk_enable_peripheral_clock(ID_USART2);
 							init_circ_buf(&tx2buf);
 							init_circ_buf(&rx2buf);
-						} else if (usart == USART3)
+						}
+#ifdef USART3
+						else if (usart == USART3)
 						{
 							sysclk_enable_peripheral_clock(ID_USART3);
 							init_circ_buf(&tx3buf);
 							init_circ_buf(&rx3buf);
 						}
-
+#endif
 						usart_init_rs232(usart, &usartopts,  sysclk_get_cpu_hz());						 
 					} else {
 						printf("ERR: Invalid USART Configuration packet?\n");
@@ -222,10 +226,13 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 				} else if (usart == USART2) {
 					usart2_enableIO();
 					irq_register_handler(USART2_IRQn, 5);
-				} else if (usart == USART3) {
+				}
+#ifdef USART3
+				else if (usart == USART3) {
 					usart3_enableIO();
 					irq_register_handler(USART3_IRQn, 5);
 				}
+#endif
 			}
 			break;
 						
@@ -251,9 +258,12 @@ bool ctrl_usart(Usart * usart, bool directionIn)
 						cnt = circ_buf_count(&rx1buf);
 					} else if (usart == USART2){
 						cnt = circ_buf_count(&rx2buf);
-					} else if (usart == USART3){
+					}
+#ifdef USART3
+					else if (usart == USART3){
 						cnt = circ_buf_count(&rx3buf);
 					}			
+#endif
 					
 					word2buf(ctrlbuffer, cnt);
 			
@@ -272,7 +282,9 @@ void usart_driver_putchar(Usart * usart, tcirc_buf * txbuf, uint8_t data)
 		if (usart == USART0) txbuf = &tx0buf;
 		else if (usart == USART1) txbuf = &tx1buf;
 		else if (usart == USART2) txbuf = &tx2buf;
+#ifdef USART3
 		else if (usart == USART3) txbuf = &tx3buf;
+#endif
 		else return;
 	}
 	
@@ -295,7 +307,9 @@ uint8_t usart_driver_getchar(Usart * usart)
 			if (usart == USART0) rxbuf = &rx0buf;
 			else if (usart == USART1) rxbuf = &rx1buf;
 			else if (usart == USART2) rxbuf = &rx2buf;
+#ifdef USART3
 			else if (usart == USART3) rxbuf = &rx3buf;
+#endif
 			else return 0xFF;
 	}
 	return get_from_circ_buf(rxbuf);
@@ -340,8 +354,10 @@ ISR(USART2_Handler)
 }
 #endif
 
+#ifdef USART3
 ISR(USART3_Handler)
 {
 	generic_isr(USART3, &rx3buf, &tx3buf);
 }
+#endif
 

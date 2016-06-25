@@ -39,8 +39,6 @@ uint16_t cc_status_payload_size;
 unsigned char cctrans8(unsigned char byte);
 void cccmd(unsigned char len);
 void ccread(unsigned char len);
-void ccsetup(void);
-void ccdebuginit(void);
 
 //! Set up the pins for CC mode.  Does not init debugger.
 void ccsetup(void){
