@@ -31,8 +31,8 @@ from _base import AcqKeyTextPattern_Base
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     _name = "CRI T-Test"
 
-    def __init__(self, parentParam, target=None):
-        AcqKeyTextPattern_Base.__init__(self, parentParam, target)
+    def __init__(self, target=None):
+        AcqKeyTextPattern_Base.__init__(self)
         self._fixedPlain = False
         self._fixedKey = True
         self.setTarget(target)

@@ -31,10 +31,10 @@ from chipwhisperer.common.utils import util, timer
 class OpenADCQt(Parameterized):
     _name= 'OpenADC'
 
-    def __init__(self, parentParam=None):
+    def __init__(self):
         self.dataUpdated = util.Signal()
 
-        self.params = Parameter(name=self.getName(), type='group')
+        self.getParams()
 
         self.offset = 0.5
         self.ser = None

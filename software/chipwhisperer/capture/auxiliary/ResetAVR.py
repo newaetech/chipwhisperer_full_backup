@@ -31,12 +31,12 @@ from _base import AuxiliaryTemplate
 class ResetAVR(AuxiliaryTemplate):
     _name = 'Reset AVR via STK500'
 
-    def __init__(self, parentParam=None):
-        AuxiliaryTemplate.__init__(self, parentParam)
-        self.params.addChildren([
+    def __init__(self):
+        AuxiliaryTemplate.__init__(self)
+        self.getParams().addChildren([
             {'name':'STK500.exe Path', 'type':'file', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
             {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
-            {'name':'Test Reset', 'type':'action', 'action':lambda _:self.testReset()}
+            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
         ])
 
     def captureInit(self):
@@ -61,5 +61,5 @@ class ResetAVR(AuxiliaryTemplate):
     def traceDone(self):
         pass
 
-    def testReset(self):
+    def testReset(self, _=None):
         self.traceArm()

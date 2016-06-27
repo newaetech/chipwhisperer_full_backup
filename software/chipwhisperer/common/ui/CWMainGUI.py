@@ -21,7 +21,6 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-
 __author__ = "Colin O'Flynn"
 
 import sys
@@ -371,9 +370,15 @@ class CWMainGUI(QMainWindow):
         self.toolbar.addAction(QAction(QIcon(":/images/save.png"), 'Save', self, triggered=self.saveProject))
         self.toolbar.addSeparator()
         self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'Trace Manager', self, triggered=self.traceManagerDialog.show))
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'CW Analyzer', self, triggered=self.openAnalyzer))
 
         self.addToolbarItems(self.toolbar)
         self.toolbar.show()
+
+    def openAnalyzer(self):
+        from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
+        CWAnalyzerGUI(self.api).show()
 
     def addToolbarItems(self, toolbar):
         pass

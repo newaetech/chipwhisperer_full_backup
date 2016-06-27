@@ -52,8 +52,8 @@ class DecimationClockRecovery(PreprocessingBase):
     _description = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
                   "decimate to only points of interest.\n****CURRENTLY NOT SUPPORTED****"
 
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.setFilterOptions()
         self.getParams().addChildren([
             {'name':'Filter Design', 'type':'group', 'children':[

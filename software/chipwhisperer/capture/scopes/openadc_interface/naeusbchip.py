@@ -42,7 +42,7 @@ except ImportError:
 class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
     _name = "NewAE USB (CWLite/CW1200)"
 
-    def __init__(self, parentParam, oadcInstance):
+    def __init__(self, oadcInstance):
         self.ser = None
         self.dev = None
         self.scope = None

@@ -242,8 +242,8 @@ class FTDIComm(object):
 class SakuraG(TargetTemplate):
     _name = "SAKURA G"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
         self.hw = None
 
         conntypes = util.DictType()

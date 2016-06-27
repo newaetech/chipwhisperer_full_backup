@@ -63,7 +63,7 @@ class CPA(AttackBaseClass, AttackGenericParameters):
     def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
         if self.attack is not None:
             self.attack.getParams().remove()
-        self.attack = analysisAlgorithm(self, hardwareModel, leakageModel)
+        self.attack = analysisAlgorithm(hardwareModel, leakageModel)
 
         try:
             self.attackParams = self.attack.paramList()[0]

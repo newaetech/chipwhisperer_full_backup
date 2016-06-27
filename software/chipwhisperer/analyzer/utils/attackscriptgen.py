@@ -36,7 +36,7 @@ from functools import partial
 class AttackScriptGen(Parameterized):
     _name = "Attack Script Generator"
 
-    def __init__(self, parentParam, cwGUI):
+    def __init__(self, cwGUI):
         self.cwGUI = cwGUI
 
         self.locked = False

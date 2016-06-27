@@ -36,8 +36,8 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
 
-    def __init__(self, parentParam=None):
-        SimpleSerialTemplate.__init__(self, parentParam)
+    def __init__(self):
+        SimpleSerialTemplate.__init__(self)
         self._regVer = 0
         self.params.addChildren([
             {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.txBaud, 'set':self.setTxBaud},

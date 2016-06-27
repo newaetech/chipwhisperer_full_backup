@@ -38,8 +38,8 @@ class ResyncResampleZC(PreprocessingBase):
     _name = "Resync: Resample based on Zero-Crossing"
     _description = "Deals with resampling 'bins' based on zero-crossing detection"
 
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.rtrace = 0
         self.debugReturnSad = False
 

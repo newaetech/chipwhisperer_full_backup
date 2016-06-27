@@ -32,13 +32,13 @@ import chipwhisperer.common.utils.serialport as scan
 class OpenADCInterface_Serial(Parameterized, Plugin):
     _name = "Serial Port (LX9)"
 
-    def __init__(self, parentParam, oadcInstance):
+    def __init__(self, oadcInstance):
         self.portName = ''
         self.ser = None
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Refresh List', 'type':'action', 'action':lambda _: self.serialRefresh()},
+            {'name':'Refresh List', 'type':'action', 'action':self.serialRefresh},
             {'name':'Selected Port', 'type':'list', 'values':[''], 'get':self.getPortName, 'set':self.setPortName},
         ])
         self.scope = oadcInstance
@@ -84,7 +84,7 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
             self.ser.close()
             self.ser = None
 
-    def serialRefresh(self):
+    def serialRefresh(self, _=None):
         serialnames = scan.scan()
         if serialnames == None or len(serialnames) == 0:
             serialnames = [" "]

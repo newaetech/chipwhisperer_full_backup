@@ -37,12 +37,11 @@ class VisaScope(Parameterized):
 
     header = ":SYSTem:HEADer OFF\n"
 
-    def __init__(self, parentParam):
+    def __init__(self):
         self.visaInst = None
         self.dataUpdated = util.Signal()
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'X-Scale', 'key':'xscale', 'type':'list', 'values':self.xScales},
             {'name':'Y-Scale', 'key':'yscale', 'type':'list', 'values':self.yScales},
             {'name':'Y-Offset', 'key':'yoffset', 'type':'float', 'step':1E-3, 'siPrefix': True, 'suffix': 'V'},

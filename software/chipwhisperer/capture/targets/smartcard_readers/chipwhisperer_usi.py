@@ -30,9 +30,9 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 class ReaderChipWhispererUSI(ReaderTemplate):
     _name = "CWCR2-USI (obsolete)"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
-        self.params.addChildren([
+    def __init__(self):
+        ReaderTemplate.__init__(self)
+        self.getParams().addChildren([
             {'name':'Baud', 'type':'int', 'value':9600, 'action':lambda p: self.setBaud(p.getValue())}
         ])
         self.usi = ChipWhispererTargets.CWUniversalSerial()

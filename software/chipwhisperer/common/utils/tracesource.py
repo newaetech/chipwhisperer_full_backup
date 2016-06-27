@@ -120,7 +120,7 @@ class LiveTraceSource(TraceSource):
 class PassiveTraceObserver(Parameterized):
     """ It processes data from a TraceSource when requested """
 
-    def __init__(self, parentParam=None):
+    def __init__(self):
         self._traceSource = None
 
         self.getParams().addChildren([
@@ -143,6 +143,7 @@ class PassiveTraceObserver(Parameterized):
         par.setLimits(TraceSource.registeredObjects)
         if par.getValue() not in TraceSource.registeredObjects.values():
             par.setValue(None)
+
 
 class ActiveTraceObserver(PassiveTraceObserver):
     """ It observes a TraceSource for state changes and process the Traces actively """

@@ -32,8 +32,8 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     _name = "Basic"
 
-    def __init__(self, parentParam, target=None):
-        AcqKeyTextPattern_Base.__init__(self, parentParam, target)
+    def __init__(self, target=None):
+        AcqKeyTextPattern_Base.__init__(self)
         self._fixedKey = True
         self._fixedPlain = False
         self.inittext = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
@@ -42,7 +42,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self._textin = bytearray(self.inittext)
         self.types = {'Random': False, 'Fixed': True}
 
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue())},
             # {'name':'Size', 'type':'int'},
             {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':self.getKeyType()},

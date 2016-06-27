@@ -36,10 +36,10 @@ except ImportError:
 class TargetTemplate(Parameterized, Plugin):
     _name = 'Target Connection'
 
-    def __init__(self, parentParam=None):
+    def __init__(self):
         self.newInputData = util.Signal()
         self.connectStatus = util.Observable(False)
-        self.params = Parameter(name=self.getName(), type='group').register()
+        self.getParams().register()
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""

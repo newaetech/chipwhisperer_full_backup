@@ -32,8 +32,8 @@ from chipwhisperer.common.utils import serialport
 class ReaderSystemSER(ReaderTemplate):
     _name = "System Serial (SASEBO-W without OpenADC)"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.ser = None
         self.params.addChildren([
@@ -43,7 +43,7 @@ class ReaderSystemSER(ReaderTemplate):
             {'name':'ATR', 'key':'atr', 'type':'str', 'value':""}
         ])
 
-    def updateSerial(self):
+    def updateSerial(self, _=None):
         serialnames = serialport.scan()
         self.findParam('port').setLimits(serialnames)
         if len(serialnames) > 0:
@@ -148,7 +148,7 @@ class ReaderSystemSER(ReaderTemplate):
             self.ser.open()
         self.reset()
 
-    def reset(self):
+    def reset(self, _=None):
         """Reset card & save the ATR"""
 
         self.atr = [0]

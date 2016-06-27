@@ -157,7 +157,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
     """
     _name = "Progressive"
 
-    def __init__(self, parentParam, targetModel, leakageFunction):
+    def __init__(self, targetModel, leakageFunction):
         AutoScript.__init__(self)
 
         self.getParams().addChildren([

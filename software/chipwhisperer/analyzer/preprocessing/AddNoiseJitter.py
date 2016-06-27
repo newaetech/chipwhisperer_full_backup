@@ -38,8 +38,8 @@ class AddNoiseJitter(PreprocessingBase):
     _description = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
                   "in actual analysis."
 
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.maxJitter = 0
         self.params.addChildren([
             {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'action':self.updateScript}

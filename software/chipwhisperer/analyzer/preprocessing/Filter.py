@@ -40,8 +40,8 @@ class Filter(PreprocessingBase):
     _name = "Digital Filter"
     _description = "Frequency specific filter"
 
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.importsAppend("import scipy as sp")
         self.getParams().addChildren([
             {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'default':"sp.signal.butter", 'value':"sp.signal.butter", 'action':self.updateScript},

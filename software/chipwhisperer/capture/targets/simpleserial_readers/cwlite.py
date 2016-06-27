@@ -31,8 +31,8 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     _name = 'NewAE USB (CWLite/CW1200)'
 
-    def __init__(self, parentParam=None):
-        SimpleSerialTemplate.__init__(self, parentParam)
+    def __init__(self):
+        SimpleSerialTemplate.__init__(self)
         self.cwlite_usart = None
         self.params.addChildren([
             {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud, 'default':38400}
