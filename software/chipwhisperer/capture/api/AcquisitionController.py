@@ -65,7 +65,7 @@ class AcquisitionController():
         while self.target.isDone() == False and timeout:
             timeout -= 1
             time.sleep(0.01)
-            
+
         if timeout == 0:
             print "WARNING: Target timeout"
 
@@ -161,10 +161,10 @@ class AcquisitionController():
                     print "WARNING: Exception caught in adding trace %d, trace skipped." % self.currentTrace
                     print "         Exception info: %s" % str(e)
                 self.sigTraceDone.emit()
-                if progressBar is not None:
-                    if progressBar.wasAborted():
-                        break
                 self.currentTrace += 1
+            if progressBar is not None:
+                if progressBar.wasAborted():
+                    break
 
         if self.auxList:
             for aux in self.auxList:
