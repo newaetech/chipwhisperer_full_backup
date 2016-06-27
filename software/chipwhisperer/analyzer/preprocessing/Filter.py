@@ -66,10 +66,7 @@ class Filter(PreprocessingBase):
         freq1 = self.findParam('freq1').getValue()
         freq2 = self.findParam('freq2').getValue()
         
-        if ftype == "bandpass":
-            self.findParam('freq2').show()
-            freqs = "(%f, %f)" % (freq1, freq2)
-        elif ftype == "bandstop":
+        if ftype == "bandpass" or ftype == "bandstop":
             self.findParam('freq2').show()
             freqs = "(%f, %f)" % (freq1, freq2)
         else:
@@ -77,21 +74,14 @@ class Filter(PreprocessingBase):
             freqs = "%f" % freq1
 
         self.addFunction("init", "setFilterForm", self.findParam('form').getValue())
-        self.addFunction("init", "setFilterParams", "form='%s', freq=%s, order=%d" % (
-                                ftype,
-                                freqs,
-                                self.findParam('order').getValue()
-                            ))
+        self.addFunction("init", "setFilterParams", "form='%s', freq=%s, order=%d" %
+                         (ftype, freqs, self.findParam('order').getValue()))
    
     def getTrace(self, n):
         if self.enabled:
             trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
-            
-            filttrace = signal.lfilter(self.b, self.a, trace)
-            
-            return filttrace
-            
+            return signal.lfilter(self.b, self.a, trace)
         else:
             return self._traceSource.getTrace(n)
