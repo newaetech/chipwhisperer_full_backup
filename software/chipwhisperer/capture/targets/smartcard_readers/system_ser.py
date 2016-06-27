@@ -30,7 +30,7 @@ from chipwhisperer.common.utils import serialport
 
 
 class ReaderSystemSER(ReaderTemplate):
-    _name = "System Serial (SASEBO-W)"
+    _name = "System Serial (SASEBO-W without OpenADC)"
 
     def __init__(self, parentParam=None):
         ReaderTemplate.__init__(self, parentParam)
