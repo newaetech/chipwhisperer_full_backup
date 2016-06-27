@@ -226,7 +226,7 @@ class CWCaptureGUI(CWMainGUI):
         self.api.capture1()
 
     def captureM(self):
-        self.api.captureM(ProgressBar("Capture in Progress", "Capturing:", parent=self))
+        self.api.captureM(ProgressBar("Capture in Progress", "Capturing:"))
 
 
 def main():

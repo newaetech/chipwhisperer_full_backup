@@ -27,6 +27,7 @@ from datetime import *
 from ..utils import qt_tweaks
 from ..utils import util
 
+
 class ProgressBarText(object):
     def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues=None, show=True, parent=None):
         self.title = title
