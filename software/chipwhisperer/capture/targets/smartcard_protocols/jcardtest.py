@@ -27,6 +27,7 @@ from _base import ProtocolTemplate
 
 
 class ProtocolJCardTest(ProtocolTemplate):
+    _name = "JCARD"
 
     def loadEncryptionKey(self, key):
         pass
