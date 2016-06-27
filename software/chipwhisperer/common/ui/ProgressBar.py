@@ -28,7 +28,7 @@ from ..utils import qt_tweaks
 from ..utils import util
 
 class ProgressBarText(object):
-    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues=None, show=True):
+    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues=None, show=True, parent=None):
         self.title = title
         self.last = self.currentProgress = 0
         self.maximum = 100
@@ -114,10 +114,10 @@ try:
     from PySide.QtGui import *
 
     class ProgressBarGUI(qt_tweaks.QDialog, ProgressBarText):
-        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None, show=True):
+        def __init__(self, title="Progress", text=None, statusMask="Initializing...", textValues=None, show=True, parent=None):
 
-            ProgressBarText.__init__(self, title = title, text=text, statusMask= statusMask, textValues = textValues)
-            QDialog.__init__(self, None)
+            ProgressBarText.__init__(self, title = title, text=text, statusMask=statusMask, textValues=textValues)
+            QDialog.__init__(self, parent)
 
             self.setModal(False)
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
