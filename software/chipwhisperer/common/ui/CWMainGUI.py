@@ -371,12 +371,13 @@ class CWMainGUI(QMainWindow):
         self.toolbar.addSeparator()
         self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'Trace Manager', self, triggered=self.traceManagerDialog.show))
         # self.toolbar.addSeparator()
-        # self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'CW Analyzer', self, triggered=self.openAnalyzer))
+        # self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'CW Analyzer', self, triggered=self._openAnalyzer))
 
         self.addToolbarItems(self.toolbar)
         self.toolbar.show()
 
-    def openAnalyzer(self):
+    def _openAnalyzer(self):
+        """Just for test purposes"""
         from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
         CWAnalyzerGUI(self.api).show()
 

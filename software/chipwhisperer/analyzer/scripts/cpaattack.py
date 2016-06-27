@@ -23,7 +23,7 @@ class UserScript(UserScriptBase):
         pass
 
     def initPreprocessing(self):
-        ppMod0 = preprocessing.AddNoiseRandom.AddNoiseRandom(None, self.api.project().traceManager())
+        ppMod0 = preprocessing.AddNoiseRandom.AddNoiseRandom(self.api.project().traceManager())
         ppMod0.setEnabled(True)
         ppMod0.setMaxNoise(0.005000)
         ppMod0.init()

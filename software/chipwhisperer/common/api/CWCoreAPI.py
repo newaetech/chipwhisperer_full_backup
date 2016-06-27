@@ -353,11 +353,8 @@ class CWCoreAPI(Parameterized):
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)
                 __pb = lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace))
                 ac.sigTraceDone.connect(__pb)
-                __abort = lambda: ac.abortCapture(progressBar.wasAborted())
-                ac.sigTraceDone.connect(__abort)
-
                 self.sigCampaignStart.emit(prefix)
-                ac.doReadings(tracesDestination=self.project().traceManager())
+                ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
                 self.sigCampaignDone.emit()
                 tcnt += setSize
 
