@@ -30,10 +30,10 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 class ReaderChipWhispererSasebowSCard(ReaderTemplate):
     _name = "SASEBOW-W with OpenADC Mounted"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Card Present', 'key':'statusStr', 'type':'bool', 'value':False, 'readonly':True},
             {'name':'Update Status', 'type':'action', 'action':self.statusUpdate},
             {'name':'Answer To Reset (ATR)', 'key':'atr', 'type':'str', 'value':'', 'readonly':True},
@@ -42,14 +42,14 @@ class ReaderChipWhispererSasebowSCard(ReaderTemplate):
 
         self.scard = ChipWhispererTargets.CWSCardIntegrated()
 
-    def reset(self):
+    def reset(self, _=None):
         atr = self.scard.reset()
         self.findParam('atr').setValue(atr, ignoreReadonly=True)
 
     def getATR(self):
         return self.scard.stratr
 
-    def statusUpdate(self):
+    def statusUpdate(self, _=None):
         self.findParam('statusStr').setValue(self.scard.isPresent(), ignoreReadonly=True)
 
     def con(self, scope=None):

@@ -34,8 +34,8 @@ from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 class VisaScopeInterface(ScopeTemplate):
     _name = "VISA Scope"
 
-    def __init__(self, parentParam=None):
-        ScopeTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ScopeTemplate.__init__(self)
 
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
         for scope in scopes.itervalues():

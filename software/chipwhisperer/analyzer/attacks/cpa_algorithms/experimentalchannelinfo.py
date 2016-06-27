@@ -290,7 +290,7 @@ class TemplateOneSubkey(object):
 class CPAExperimentalChannelinfo(Parameterized, Plugin):
     _name = "CPA Experimental Channel Info"
 
-    def __init__(self, parentParam, targetModel, leakageFunction):
+    def __init__(self, targetModel, leakageFunction):
 
         self.getParams().addChildren([
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},

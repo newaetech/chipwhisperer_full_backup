@@ -31,9 +31,9 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 class SimpleSerialTemplate(Parameterized, Plugin):
     _name= 'Simple Serial Reader'
 
-    def __init__(self, parentParam):
+    def __init__(self):
         self.connectStatus = util.Observable(False)
-        self.params = Parameter(name=self.getName(), type='group')
+        self.getParams()
 
     def selectionChanged(self):
         pass

@@ -32,10 +32,10 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class SimpleSerial(TargetTemplate):
     _name = "Simple Serial"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
 
-        ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
+        ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False)
         self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
 
         self.keylength = 128

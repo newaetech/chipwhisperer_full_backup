@@ -32,8 +32,8 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 class AuxiliaryTemplate(Parameterized, Plugin):
     _name = "None"
 
-    def __init__(self, parentParam=None):
-        self.params = Parameter(name=self.getName(), type='group')
+    def __init__(self):
+        self.getParams()
         self.prefix = ""
 
     def __del__(self):

@@ -69,11 +69,11 @@ class Attack(UserScriptBase):
 
     def initPreprocessing(self):
         # Add amplitude noise and jitter to the original traces
-        ppMod0 = preprocessing.AddNoiseJitter.AddNoiseJitter(None, self.api.project().traceManager())
+        ppMod0 = preprocessing.AddNoiseJitter.AddNoiseJitter(self.api.project().traceManager())
         ppMod0.setEnabled(True)
         ppMod0.setMaxJitter(2)
         ppMod0.init()
-        ppMod1 = preprocessing.AddNoiseRandom.AddNoiseRandom(None, ppMod0)
+        ppMod1 = preprocessing.AddNoiseRandom.AddNoiseRandom(ppMod0)
         ppMod1.setEnabled(False)
         ppMod1.setMaxNoise(0.005000)
         ppMod1.init()
@@ -81,11 +81,11 @@ class Attack(UserScriptBase):
 
     def initPreprocessing2(self):
         # Resync using SAD (to fix the jitter) and applies decimation (because we want to test this feature :)
-        ppMod0 = preprocessing.ResyncSAD.ResyncSAD(None, self.api.project().traceManager())
+        ppMod0 = preprocessing.ResyncSAD.ResyncSAD(self.api.project().traceManager())
         ppMod0.setEnabled(True)
         ppMod0.setReference(rtraceno=0, refpoints=(90,100), inputwindow=(70,120))
         ppMod0.init()
-        ppMod1 = preprocessing.DecimationFixed.DecimationFixed(None, ppMod0)
+        ppMod1 = preprocessing.DecimationFixed.DecimationFixed(ppMod0)
         ppMod1.setEnabled(True)
         ppMod1.setDecimationFactor(2)
         ppMod1.init()

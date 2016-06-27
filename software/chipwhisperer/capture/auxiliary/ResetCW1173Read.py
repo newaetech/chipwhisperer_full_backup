@@ -53,14 +53,14 @@ class ResetCW1173Read(AuxiliaryTemplate):
     '''
     _name = "Reset AVR/XMEGA via CW-Lite"
 
-    def __init__(self, parentParam=None):
-        AuxiliaryTemplate.__init__(self, parentParam)
-        self.params.addChildren([
+    def __init__(self):
+        AuxiliaryTemplate.__init__(self)
+        self.getParams().addChildren([
             {'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
             {'name':'Delay (Pre-Arm)' , 'type':'int',  'key':'predelay',  'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
 			{'name':'Delay (Post-Arm)', 'type':'int',  'key':'postdelay', 'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
             {'name':'Reset Timing'  , 'type':'list', 'key':'resettiming', 'values':['Pre-Arm', 'Post-Arm'], 'value':'Pre-Arm'},
-            {'name':'Test Reset', 'type':'action', 'action':lambda _:self.testReset()}
+            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
         ])
 
     def captureInit(self):
@@ -100,7 +100,7 @@ class ResetCW1173Read(AuxiliaryTemplate):
         else:
             CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteAVR().readSignature()
         
-    def testReset(self):
+    def testReset(self, _=None):
         self.resetDevice()
 
     def nonblockingSleep_done(self):

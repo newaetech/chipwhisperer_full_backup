@@ -47,8 +47,8 @@ class CW305_USB(object):
 class CW305(TargetTemplate):
     _name = "ChipWhisperer CW305 (Artix-7)"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, parent=self)
         self.fpga = FPGA(self._naeusb)

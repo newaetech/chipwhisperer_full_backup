@@ -35,11 +35,11 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     REQ_CFG_PROTOCOL = 0x02
     REQ_CFG_TXRX = 0x05
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.protocol = 0
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
             {'name':'ATR', 'key':'atr', 'type':'str', 'value':""},
         ])
@@ -136,7 +136,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
         """Discard all input buffers"""
         pass
 
-    def reset(self):
+    def reset(self, _=None):
         """Reset card & save the ATR"""
 
         self.usbcon.sendCtrl(self.REQ_CFG, self.REQ_CFG_ATR)

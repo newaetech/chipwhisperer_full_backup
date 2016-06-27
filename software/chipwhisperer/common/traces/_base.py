@@ -40,11 +40,11 @@ class TraceContainer(Parameterized, Plugin):
     """
     _name = "Trace Configuration"
     
-    def __init__(self, parentParam=None, configfile=None):
+    def __init__(self, configfile=None):
         self.configfile = configfile
         self.fmt = None
-        self.params = Parameter(name=self._name, type='group').register()
-        self.params.addChildren([
+        self.getParams().register()
+        self.getParams().addChildren([
                 {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
                 {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
         ])

@@ -121,8 +121,8 @@ class Normalize(PreprocessingBase):
     _name = "Normalize"
     _description = "Normalizes by standard deviation"
 
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.ptStart = 0
         self.ptEnd = 0
         self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")

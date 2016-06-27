@@ -43,8 +43,8 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class PicoScope(ScopeTemplate):
     _name = 'Pico Scope'
 
-    def __init__(self, parentParam=None, psClass=None):
-        ScopeTemplate.__init__(self, parentParam)
+    def __init__(self, psClass=None):
+        ScopeTemplate.__init__(self)
         self.ps = psClass
         self.dataUpdated = util.Signal()
 
@@ -164,8 +164,8 @@ class PicoScope(ScopeTemplate):
 class PicoScopeInterface(ScopeTemplate):
     _name = "PicoScope"
 
-    def __init__(self, parentParam=None):
-        super(PicoScopeInterface, self).__init__(parentParam)
+    def __init__(self):
+        super(PicoScopeInterface, self).__init__()
 
         scopes = {"PS6000": ps6000.PS6000(connect=False), "PS5000a": ps5000a.PS5000a(connect=False),
                   "PS2000": ps2000.PS2000(connect=False)}
@@ -186,11 +186,11 @@ class PicoScopeInterface(ScopeTemplate):
 
     def setCurrentScope(self, scope):
         if scope is not None:
+            if self.scopetype is not None:
+                self.scopetype.deleteParams()
+
             self.scopetype = PicoScope(self, scope)
-
-            #TODO - remove old first?
             self.params.append(self.scopetype.getParams())
-
             self.scopetype.dataUpdated.connect(self.passUpdated)
         else:
             self.scopetype = scope

@@ -31,16 +31,16 @@ import time
 class ReaderChipWhispererSER(ReaderTemplate):
     _name = "CWCR2-SER"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.ser = SimpleSerial_ChipWhisperer(self)
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Reset Pin', 'type':'list', 'values':['GPIO1'], 'value':'GPIO1'},
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
             {'name':'ATR', 'key':'atr', 'type':'str', 'value':""}
         ])
-        self.params.append(self.ser.getParams())
+        self.getParams().append(self.ser.getParams())
 
     def waitEcho(self, data):
         rxdata = []
@@ -154,7 +154,7 @@ class ReaderChipWhispererSER(ReaderTemplate):
         """Discard all input buffers"""
         self.ser.flush()
 
-    def reset(self):
+    def reset(self, _=None):
         """Reset card & save the ATR"""
 
         self.atr = [0]

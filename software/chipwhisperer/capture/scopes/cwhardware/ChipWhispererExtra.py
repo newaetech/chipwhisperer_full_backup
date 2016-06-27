@@ -46,17 +46,16 @@ ADDR_IOROUTE = 55
 class ChipWhispererExtra(Parameterized):
     _name = 'CW Extra'
 
-    def __init__(self, parentParam, cwtype, scope, oa):
+    def __init__(self, cwtype, scope, oa):
         #self.cwADV = CWAdvTrigger()
 
-        self.cwEXTRA = CWExtraSettings(parentParam, oa, cwtype)
+        self.cwEXTRA = CWExtraSettings(oa, cwtype)
         self.enableGlitch = True
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope, oa)
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.append(self.cwEXTRA.getParams())
-        self.params.append(self.glitch.getParams())
+        self.getParams().append(self.cwEXTRA.getParams())
+        self.getParams().append(self.glitch.getParams())
 
     def armPreScope(self):
         if self.enableGlitch:
@@ -106,9 +105,7 @@ class CWExtraSettings(Parameterized):
 
     _name = "CW Extra Settings"
 
-    def __init__(self, parentParam, oa, cwtype):
-
-        self.parentParam = parentParam
+    def __init__(self, oa, cwtype):
 
         if cwtype == "cwrev2":
             hasFPAFPB = True
@@ -397,10 +394,10 @@ class CWExtraSettings(Parameterized):
 
         #When using special modes, force rising edge & stop user from easily changing
         if (module != self.MODULE_BASIC):
-            self.parentParam.findParam(['OpenADC', 'Trigger Setup', 'Mode']).setValue("rising edge", ignoreReadonly=True)
-            self.parentParam.findParam(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(True)
+            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setValue("rising edge", ignoreReadonly=True)
+            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(True)
         else:
-            self.parentParam.findParam(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(False)
+            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(False)
 
 
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)

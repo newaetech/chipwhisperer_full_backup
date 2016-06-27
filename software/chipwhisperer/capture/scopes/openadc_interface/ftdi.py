@@ -32,13 +32,13 @@ except:
 class OpenADCInterface_FTDI(Parameterized, Plugin):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
-    def __init__(self, parentParam, oadcInstance):
+    def __init__(self, oadcInstance):
         self.serialNumber = ''
         self._serialnumbers = ['']
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Refresh Device List', 'type':'action', 'action':lambda _ : self.serialRefresh()},
+            {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
             {'name':'Device Serial Number', 'key':'snum', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSelectedDevice},
         ])
         self.ser = None
@@ -86,7 +86,7 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
             self.ser.close()
             self.ser = None
 
-    def serialRefresh(self):
+    def serialRefresh(self, _=None):
         serialnames = ft.listDevices()
         if serialnames == None:
             serialnames = [""]

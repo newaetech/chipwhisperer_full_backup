@@ -39,7 +39,7 @@ class CPASimpleLoop(Parameterized, Plugin):
     """
     _name = "Simple"
 
-    def __init__(self, parentParam, targetModel, leakageFunction):
+    def __init__(self, targetModel, leakageFunction):
         self.model = targetModel
         self.leakage = leakageFunction
         self.stats = DataTypeDiffs()

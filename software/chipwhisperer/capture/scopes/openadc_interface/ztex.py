@@ -37,7 +37,7 @@ except ImportError:
 class OpenADCInterface_ZTEX(Parameterized, Plugin):
     _name = "ChipWhisperer Rev2"
 
-    def __init__(self, parentParam, oadcInstance):
+    def __init__(self, oadcInstance):
         self.getParams().addChildren([
             {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI.show()},
             {'name':'Download CW Firmware','tip':'Download Firmware+FPGA To Hardware', 'type':"menu", "action":lambda _:self.getCwFirmwareConfig.loadRequired()},

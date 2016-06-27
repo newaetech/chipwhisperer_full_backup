@@ -40,8 +40,8 @@ class ResyncCrossCorrelation(PreprocessingBase):
     _description = "Uses cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.rtrace = 0
         self.debugReturnCorr = False
         self.ccStart = 0

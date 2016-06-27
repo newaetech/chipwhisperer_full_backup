@@ -40,8 +40,8 @@ from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 class OpenADCInterface(ScopeTemplate):
     _name = "ChipWhisperer/OpenADC"
 
-    def __init__(self, parentParam=None):
-        ScopeTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ScopeTemplate.__init__(self)
 
         self.qtadc = openadc_qt.OpenADCQt()
         self.qtadc.dataUpdated.connect(self.doDataUpdated)
@@ -51,7 +51,7 @@ class OpenADCInterface(ScopeTemplate):
         self.digitalPattern = None
         self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
 
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self, self.qtadc)
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
         self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
         self.params.addChildren([
             {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'parent'},
@@ -108,7 +108,7 @@ class OpenADCInterface(ScopeTemplate):
                 #             settings will work, but not CWExtra ones? For now this works, but doesn't let
                 #             you change the OpenADC type.
                 #if self.advancedSettings is None:
-                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(self, cwtype, self.scopetype, self.qtadc.sc)
+                self.advancedSettings = ChipWhispererExtra.ChipWhispererExtra(cwtype, self.scopetype, self.qtadc.sc)
                 self.params.append(self.advancedSettings.getParams())
 
                 util.chipwhisperer_extra = self.advancedSettings

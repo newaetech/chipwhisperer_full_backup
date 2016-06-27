@@ -186,8 +186,8 @@ class SaseboGIIAESRev1(object):
 class SaseboGII(TargetTemplate):
     _name = "SASEBO GII"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
 
         self.getParams().addChildren([
         {'name': 'USB Serial #:', 'key': 'serno', 'type': 'list', 'values': ['Press Refresh'], 'value': 'Press Refresh'},

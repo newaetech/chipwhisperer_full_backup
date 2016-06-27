@@ -51,7 +51,7 @@ class CWAnalyzerGUI(CWMainGUI):
 
     def loadExtraModules(self):
         self.keyScheduleDialog = KeyScheduleDialog(self)
-        self.attackScriptGen = AttackScriptGen(None, self)
+        self.attackScriptGen = AttackScriptGen(self)
 
         self.traceExplorerDialog = TraceExplorerDialog(self)
         self.traceExplorerDialog.scriptsUpdated.connect(self.attackScriptGen.reloadScripts)
