@@ -67,7 +67,6 @@ class ProjectFormat(object):
         self.dirty = util.Observable(True)
 
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
-        self.paramListList = []        
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self._traceManager = TraceManager().register()
@@ -98,9 +97,6 @@ class ProjectFormat(object):
     
     def setFileVersion(self, ver):
         self.settingsDict['Project File Version']=ver
-    
-    def addParamTree(self, pt):
-        self.paramListList.append(pt)
         
     def addWave(self, configfile):
         return       

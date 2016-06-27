@@ -24,6 +24,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+#
+#    Date         Author                Changes
+#    -----------  --------------------  -----------------------------------
+#    20-Jun-2016  marc                  Added "bandstop" filter option
 
 from ._base import PreprocessingBase
 from scipy import signal
@@ -39,9 +43,9 @@ class Filter(PreprocessingBase):
     def __init__(self, parentParam=None, traceSource=None):
         PreprocessingBase.__init__(self, parentParam, traceSource)
         self.importsAppend("import scipy as sp")
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":"sp.signal.butter"}, 'default':"sp.signal.butter", 'value':"sp.signal.butter", 'action':self.updateScript},
-            {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass"], 'default':'low', 'value':'low', 'action':self.updateScript},
+            {'name':'Type', 'key':'type', 'type':'list', 'values':["low", "high", "bandpass", "bandstop"], 'default':'low', 'value':'low', 'action':self.updateScript},
             {'name':'Critical Freq #1 (0-1)', 'key':'freq1', 'type':'float', 'limits':(0, 1), 'step':0.05, 'default':0.1, 'value':0.1, 'action':self.updateScript},
             {'name':'Critical Freq #2 (0-1)', 'key':'freq2', 'type':'float', 'limits':(0, 1), 'step':0.05, 'default':0.8, 'value':0.8, 'action':self.updateScript},
             {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'default':5, 'value':5, 'action':self.updateScript},
@@ -63,6 +67,9 @@ class Filter(PreprocessingBase):
         freq2 = self.findParam('freq2').getValue()
         
         if ftype == "bandpass":
+            self.findParam('freq2').show()
+            freqs = "(%f, %f)" % (freq1, freq2)
+        elif ftype == "bandstop":
             self.findParam('freq2').show()
             freqs = "(%f, %f)" % (freq1, freq2)
         else:
