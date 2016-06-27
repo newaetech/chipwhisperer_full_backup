@@ -244,7 +244,7 @@ class AttackScriptGen(Parameterized):
             if p and p.getName() != "None":
                 classname = type(p).__name__
                 instname = "ppMod%d" % i
-                mse.append("%s = preprocessing.%s.%s(None, %s)" % (instname, classname, classname, lastOutput))
+                mse.append("%s = preprocessing.%s.%s(%s)" % (instname, classname, classname, lastOutput))
                 for s in p.getStatements('init'):
                     mse.append(s.replace("self.", instname + ".").replace("UserScript.", "self."))
                 mse.append("%s.init()" % (instname))
