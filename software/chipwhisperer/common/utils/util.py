@@ -195,7 +195,7 @@ class Signal(object):
             pass
 
     def disconnectAll(self):
-        self.callbacks = {}  #observing object ID -> weak ref, methodNames
+        self.callbacks = {}  # observing object ID -> weak ref, methods
 
     def emit(self, *args, **kwargs):
         callbacks = self.callbacks.keys()
@@ -204,13 +204,14 @@ class Signal(object):
                 target, methods = self.callbacks[ID]
             except KeyError:
                 continue
-            for method in methods:
+            for method in methods.copy():
                 if target is None:  # Lambda or partial
                     method(*args, **kwargs)
                 else:
                     targetObj = target()
                     if targetObj is not None:
                         method(targetObj, *args, **kwargs)
+
 
 class Observable(Signal):
     def __init__(self, value):
