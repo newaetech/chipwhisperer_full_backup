@@ -132,8 +132,8 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                         if self.colorGradient:
                             try:
                                 cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
-                            except OverflowError:
-                                cell.setBackground(QBrush(Qt.white))
+                            except:
+                                cell.setBackground(QBrush(Qt.darkYellow))
                         else:
                             cell.setBackground(QBrush(Qt.white))
             else:

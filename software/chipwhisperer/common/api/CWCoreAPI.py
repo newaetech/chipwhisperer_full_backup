@@ -215,9 +215,6 @@ class CWCoreAPI(Parameterized):
         self.setProject(ProjectFormat())
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
-        self.project().addParamTree(self)
-        # self.project().addParamTree(self.getScope())
-        # self.project().addParamTree(self.getTarget())
         self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
 
     def openProject(self, fname):
