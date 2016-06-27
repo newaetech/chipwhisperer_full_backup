@@ -7,6 +7,7 @@ V3.2RC:
 - Improved code documentation.
 - Code cleanups.
 - New Glitch Explorer widget.
+- Bandstop digital filter option.
 
 V3.1:
 - Read/save buttons.
