@@ -32,7 +32,7 @@ from chipwhisperer.common.utils.parameter import Parameterized
 
 class Scatterplot(GraphWidget, ResultsBase, Parameterized, Plugin):
     _name = 'Scatter Plot'
-    _description = 'Use Cartesian coordinates to display values for typically two variables for a set of data'
+    _description = 'Use cartesian coordinates to display values for a set of data'
 
     def __init__(self, name=None):
         GraphWidget.__init__(self)
@@ -45,7 +45,7 @@ class Scatterplot(GraphWidget, ResultsBase, Parameterized, Plugin):
         self.setDefaultYRange(-0.5, 0.5)
 
     def plot(self, posX, posY, color, label):
-        self.setupPlot(self.pw.plot(posX, posY,pen=None, symbol=self.findParam("Symbol").getValue(), symbolBrush=color), 1, True, label)
+        self.setupPlot(self.pw.plot(posX, posY, pen=None, symbol=self.findParam("Symbol").getValue(), symbolBrush=color), 1, True, label)
 
     def getWidget(self):
         return self
