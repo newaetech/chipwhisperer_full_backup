@@ -370,8 +370,8 @@ class CWMainGUI(QMainWindow):
         self.toolbar.addAction(QAction(QIcon(":/images/save.png"), 'Save', self, triggered=self.saveProject))
         self.toolbar.addSeparator()
         self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'Trace Manager', self, triggered=self.traceManagerDialog.show))
-        self.toolbar.addSeparator()
-        self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'CW Analyzer', self, triggered=self.openAnalyzer))
+        # self.toolbar.addSeparator()
+        # self.toolbar.addAction(QAction(QIcon(":/images/tracemanager.png"), 'CW Analyzer', self, triggered=self.openAnalyzer))
 
         self.addToolbarItems(self.toolbar)
         self.toolbar.show()
