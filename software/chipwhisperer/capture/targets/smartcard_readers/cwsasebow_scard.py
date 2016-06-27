@@ -44,16 +44,16 @@ class ReaderChipWhispererSasebowSCard(ReaderTemplate):
 
     def reset(self):
         atr = self.scard.reset()
-        self.findParam('atr').setValue(atr)
+        self.findParam('atr').setValue(atr, ignoreReadonly=True)
 
     def getATR(self):
         return self.scard.stratr
 
     def statusUpdate(self):
-        self.findParam('statusStr').setValue(self.scard.isPresent())
+        self.findParam('statusStr').setValue(self.scard.isPresent(), ignoreReadonly=True)
 
     def con(self, scope=None):
-        self.scard.con(scope.qtadc.ser)
+        self.scard.con(scope.qtadc.sc)
         self.reset()
 
     def sendAPDU(self, cla, ins, p1, p2, txdata=None, rxdatalen=0):
