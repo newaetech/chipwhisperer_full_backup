@@ -52,7 +52,10 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         self.cwlite_usart.write(string)
 
     def inWaiting(self):
-        return self.cwlite_usart.inWaiting()
+        bwait =  self.cwlite_usart.inWaiting()
+        if bwait == 127:
+            print "WARNING: SAM3U Serial buffers OVERRUN - data loss has occurred."
+        return bwait
 
     def read(self, num=0, timeout=250):
         data = bytearray(self.cwlite_usart.read(num, timeout=timeout))
