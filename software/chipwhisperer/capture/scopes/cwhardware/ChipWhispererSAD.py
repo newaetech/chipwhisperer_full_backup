@@ -47,20 +47,26 @@ class ChipWhispererSAD(Parameterized):
              
     def __init__(self, oa):
 
-        #Update SAD calculation when data changes
-        ResultsBase.registeredObjects["Trace Output Plot"].dataChanged.connect(self.dataChanged)
-
         self.oldlow = None
         self.oldhigh = None
         self.oa = oa
         self.sadref = [0]
 
+        try:
+            # Update SAD calculation when data changes
+            ResultsBase.registeredObjects["Trace Output Plot"].dataChanged.connect(self.dataChanged)
+            outwid = ResultsBase.registeredObjects["Trace Output Plot"]
+            rangewidget = {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
+                                       'graphwidget':outwid, 'action':self.updateSADTraceRef, 'fixedsize':128}
+        except KeyError:
+            rangewidget = {'name':'Point Range', 'key':'pointrng', 'type':'range', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
+                                       'action':self.updateSADTraceRef, 'fixedsize':128}
+
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             # {'name':'Open SAD Viewer', 'type':'action'},
             {'name':'SAD Ref From Captured', 'key':'sad', 'type':'group', 'children':[
-                {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'default':(0, 0),
-                                       'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateSADTraceRef, 'fixedsize':128},
+                rangewidget,
                 {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
                 {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'value':0, 'limits':(-1, 100E6), 'readonly':True},
             ]},
@@ -84,7 +90,11 @@ class ChipWhispererSAD(Parameterized):
     def getCaptueTraceRef(self):
         """ Get the reference data for SAD algorithm from the api trace window """
 
-        waveformWidget = ResultsBase.registeredObjects["Trace Output Plot"]
+        try:
+            waveformWidget = ResultsBase.registeredObjects["Trace Output Plot"]
+        except KeyError:
+            print "SAD Trigger: Not running in GUI mode, no data source"
+            return [0.0]*128
         pstart = self.findParam(['sad', 'pointrng']).getValue()[0] - waveformWidget.lastStartOffset
         pend = self.findParam(['sad', 'pointrng']).getValue()[1] - waveformWidget.lastStartOffset
         data = waveformWidget.lastTraceData[pstart:pend]
