@@ -112,6 +112,7 @@ class CWCaptureGUI(CWMainGUI):
         # Capture
         self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1))
         self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM))
+        self.stopCaptureMAct = QAction(QIcon(':/images/stopM.png'), 'Stop Capture', self, triggered=lambda: self.capturingProgressBar.abort(), enabled=False)
 
         # Master
         self.captureStatus = QToolButton()
@@ -133,6 +134,7 @@ class CWCaptureGUI(CWMainGUI):
 
         toolbar.addAction(self.capture1Act)
         toolbar.addAction(self.captureMAct)
+        toolbar.addAction(self.stopCaptureMAct)
         toolbar.addSeparator()
         toolbar.addWidget(QLabel('Master:'))
         toolbar.addWidget(self.captureStatus)
@@ -226,7 +228,10 @@ class CWCaptureGUI(CWMainGUI):
         self.api.capture1()
 
     def captureM(self):
-        self.api.captureM(ProgressBar("Capture in Progress", "Capturing:"))
+        self.stopCaptureMAct.setEnabled(True)
+        self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
+        self.api.captureM(self.capturingProgressBar)
+        self.stopCaptureMAct.setEnabled(False)
 
 
 def main():
