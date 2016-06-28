@@ -43,10 +43,10 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self.types = {'Random': False, 'Fixed': True}
 
         self.getParams().addChildren([
-            {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue())},
+            {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue()), 'linked':['initkey']},
             # {'name':'Size', 'type':'int'},
             {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':self.getKeyType()},
-            {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue())},
+            {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue()), 'linked':['inittext']},
             {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
         ])
         self.setTarget(target)
