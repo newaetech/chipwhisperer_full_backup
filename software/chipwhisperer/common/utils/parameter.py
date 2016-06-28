@@ -578,7 +578,7 @@ class Parameter(object):
         return child.getChild(path[1:])
 
     @classmethod
-    def getParameter(cls, path, echo=False, blockSignal=False):
+    def getParameter(cls, path):
         """Return the value of a registered parameter"""
         return cls.findParameter(path).getValueKey()
 
@@ -596,10 +596,10 @@ class Parameter(object):
             try:
                 value = child.getOpts()["values"][value]
             except KeyError:
-                raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s"%(value,
-                                                                            str(parameter),
-                                                                            child.getOpts()["values"].keys()))
+                raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s" %
+                                 (value, str(parameter), child.getOpts()["values"].keys()))
         child.setValue(value, echo=echo)
+
 
 def setupSetParam(parameter):
     """
@@ -750,15 +750,3 @@ if __name__ == '__main__':
     # root.addChild(par)
     #
     # QtGui.QApplication.instance().exec_()
-
-def weak_bind(instancemethod):
-
-    weakref_self = weakref.ref(instancemethod.im_self)
-    func = instancemethod.im_func
-
-    def callback(*args, **kwargs):
-        self = weakref_self()
-        bound = func.__get__(self)
-        return bound(*args, **kwargs)
-
-    return callback
