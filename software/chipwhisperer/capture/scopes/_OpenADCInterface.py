@@ -460,7 +460,7 @@ class ClockSettings(Parameterized):
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
                 {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
                 {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
-                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 200E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
+                {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
                                             'get':self.getClkgen},
@@ -1272,6 +1272,9 @@ class OpenADCInterface(object):
             fpData.append(float(intpt3) / 1024.0 - self.offset)
 
         #print len(fpData)
+
+        if trigfound == False:
+            print "WARNING: Trigger not found in ADC data. No data reported!"
 
         #Ensure that the trigger point matches the requested by padding/chopping
         diff = self.presamples_desired - trigsamp
