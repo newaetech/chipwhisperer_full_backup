@@ -8,6 +8,7 @@ V3.2RC:
 - Code cleanups.
 - New Glitch Explorer widget.
 - Bandstop digital filter option (credits to Marc).
+- Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
 
 V3.1:
 - Read/save buttons.
@@ -26,6 +27,6 @@ V3.0:
 - Consolidate project (move traces to the project dir).
 - Improved trace manager.
 - Fixed GUI bugs with Mac OS X.
-- New plugin archtiecture (should be much easier to add new modules).
+- New plugin architecture (should be much easier to add new modules).
 - Bug fixes.
 - Large code refactoring.

@@ -393,16 +393,15 @@ class CWExtraSettings(Parameterized):
     def setTriggerModule(self, module):
 
         #When using special modes, force rising edge & stop user from easily changing
-        if (module != self.MODULE_BASIC):
+        if module != self.MODULE_BASIC:
             Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setValue("rising edge", ignoreReadonly=True)
             Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(True)
         else:
             Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(False)
 
-
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] = resp[0] & 0xF8
-        resp[0] = resp[0] | module
+        resp[0] &= 0xF8
+        resp[0] |= module
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
     def getTriggerModule(self):
@@ -412,17 +411,14 @@ class CWExtraSettings(Parameterized):
     @setupSetParam("Trigger Out on FPA")
     def setTrigOut(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] = resp[0] & 0xE7
+        resp[0] &= 0xE7
         if enabled:
-            resp[0] = resp[0] | 0x08
+            resp[0] |= 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
     def getTrigOut(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        if resp[0] & 0x08:
-            return True
-        else:
-            return False
+        return resp[0] & 0x08
 
 
 class CWPLLDriver(object):
@@ -462,9 +458,9 @@ class CWPLLDriver(object):
         self.writeByte(0x02, N & 0xFF)
 
         b = self.readByte(0x03)
-        b &= (1<<6)|(1<<5)
+        b &= (1 << 6)|(1 << 5)
         if bypass:
-            b |= 1<<7
+            b |= 1 << 7
 
         b |= (M >> 8)
         b |= ((N >> 8) & 0x0F) << 1
@@ -472,7 +468,7 @@ class CWPLLDriver(object):
         self.writeByte(0x03, b)
 
         b = self.readByte(0x06)
-        b &= ~(1<<7)
+        b &= ~(1 << 7)
         if highspeed:
             b |= 1 << 7
 
@@ -533,14 +529,13 @@ class CWPLLDriver(object):
         divsource = divider source, 0-5
         """
         outreg = 19 + outnum
-
         data = 0
 
         if enabled:
-            data |= 1<<3
+            data |= 1 << 3
 
         if inv:
-            data |= 1<<6
+            data |= 1 << 6
 
         if divsource > 5:
             raise ValueError("Invalid Divider Source Number (0-5 allowed): %d"%divsource)
@@ -601,15 +596,15 @@ class CWPLLDriver(object):
         d = bytearray([data])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CDATA, d, Validate=False)
 
-        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
         time.sleep(0.05)
 
-        d = bytearray([0x04, 0x69, 0x80 |  regaddr])
+        d = bytearray([0x04, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
         time.sleep(0.05)
 
-        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
         time.sleep(0.05)
 
