@@ -217,6 +217,9 @@ class Parameter(object):
     def getName(self):
         return self.opts["name"]
 
+    def getType(self):
+        return self.opts["type"]
+
     def getTip(self):
         return self.opts["tip"]
 
