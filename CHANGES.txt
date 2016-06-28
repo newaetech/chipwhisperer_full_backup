@@ -1,4 +1,6 @@
-V3.2RC:
+V3.1.9:
+- Improved serial terminal.
+- Added stop capture button.
 - Fixed a lot of memory leaks.
 - New trace manager (supports deletion of multiple items).
 - Pip support.
@@ -10,7 +12,7 @@ V3.2RC:
 - Bandstop digital filter option (credits to Marc).
 - Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
 
-V3.1:
+V3.1.8:
 - Read/save buttons.
 - Trace recorder.
 - Graph widget: hairlines, grid, move, help, select trace, position.
