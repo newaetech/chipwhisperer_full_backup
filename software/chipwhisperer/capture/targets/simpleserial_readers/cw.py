@@ -206,7 +206,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.oa = scope.qtadc.sc
-        scope.connectStatus.connect(self.dis())
+        scope.connectStatus.connect(self.dis)
         # Check first!
         self.checkVersion()
         self.params.refreshAllParameters()
