@@ -30,7 +30,7 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class Scatterplot(GraphWidget, ResultsBase, Parameterized, Plugin):
+class ScatterPlot(GraphWidget, ResultsBase, Parameterized, Plugin):
     _name = 'Scatter Plot'
     _description = 'Use cartesian coordinates to display values for a set of data'
 

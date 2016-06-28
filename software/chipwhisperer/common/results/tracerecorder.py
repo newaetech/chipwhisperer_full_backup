@@ -23,7 +23,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from datetime import datetime
 
 from .base import ResultsBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI

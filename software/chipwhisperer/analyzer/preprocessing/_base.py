@@ -34,10 +34,9 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     """
     Base Class for all preprocessing modules
-    Derivate Classes work like this:
-        - updateScript is used by the GUI to create the parameters list and generate the API scripts
+    Derivable Classes work like this:
+        - updateScript is called to update the scripts based on the current status of the object
         - the other methods are used by the API to apply the preprocessing filtering
-          You need to pass the getTraceSource reference in the constructor in order to apply the preprocessing step
     """
     _name = "None"
 
@@ -90,7 +89,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         return self._traceSource.getKnownKey(n)
 
     def init(self):
-        """Do any initilization required once all traces are loaded"""
+        """Do any initialization required once all traces are loaded"""
         pass
 
     def getSegmentList(self):

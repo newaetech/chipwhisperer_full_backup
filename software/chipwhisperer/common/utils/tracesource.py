@@ -67,6 +67,18 @@ class TraceSource(object):
         """Get known-key number n"""
         raise NotImplementedError
 
+    def getSegmentList(self):
+        """Return a list of segments."""
+        raise NotImplementedError
+
+    def getAuxData(self, n, auxDic):
+        """Return data about a segment"""
+        raise NotImplementedError
+
+    def getSegment(self, n):
+        """Return the trace segment with the specified trace in the list with all enabled segments."""
+        raise NotImplementedError
+
     def register(self):
         self.registeredObjects[self.name] = self
         self.sigRegisteredObjectsChanged.emit()

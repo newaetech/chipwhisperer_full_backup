@@ -1,31 +1,40 @@
 # PynSource Version 1.1
 {'type':'meta', 'info1':'Lorem ipsum dolor sit amet, consectetur adipiscing elit is latin.'}
 {'type':'umlshape', 'id':'AttackObserver', 'x':1066, 'y':204, 'width':128, 'height':163, 'attrs':'highlitedKeyColor|traceColor', 'meths':'__init__|setAnalysisSource|_highlightedKeys|_numPerms|_maxNumPerms|_numKeys'}
-{'type':'umlshape', 'id':'AnalysisObserver', 'x':1058, 'y':3, 'width':144, 'height':124, 'attrs':'_analysisSource', 'meths':'setAnalysisSource|analysisStarted|analysisUpdated|processAnalysis'}
-{'type':'umlshape', 'id':'AnalysisSource', 'x':506, 'y':10, 'width':128, 'height':111, 'attrs':'sigAnalysisStarted|sigAnalysisUpdated|sigAnalysisDone', 'meths':'__init__'}
-{'type':'umlshape', 'id':'Parameterized', 'x':304, 'y':12, 'width':142, 'height':267, 'attrs':'name|description|newName|paramListUpdated|__activeParams|params', 'meths':'__init__|paramList|getName|getDescription|setupActiveParams|addActiveParams|guiActions|getAllActiveParameters|setupGuiActions|lazy'}
-{'type':'umlshape', 'id':'ActiveTraceObserver', 'x':290, 'y':499, 'width':170, 'height':62, 'attrs':'', 'meths':'_setTraceSource'}
-{'type':'umlshape', 'id':'LiveTraceSource', 'x':2, 'y':566, 'width':136, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'PassiveTraceObserver', 'x':286, 'y':315, 'width':178, 'height':150, 'attrs':'_traceSource', 'meths':'__init__|setTraceSource|_setTraceSource|getTraceSource|processTraces|traceSourcesChanged'}
-{'type':'umlshape', 'id':'TraceSource', 'x':79, 'y':301, 'width':172, 'height':189, 'attrs':'registeredObjects|sigRegisteredObjectsChanged|sigTracesChanged', 'meths':'__init__|getTrace|numPoints|numTraces|offset|deregister|registerAs'}
-{'type':'umlshape', 'id':'ResultsBase', 'x':744, 'y':215, 'width':172, 'height':150, 'attrs':'registeredObjects|sigRegisteredObjectsChanged', 'meths':'__init__|getWidget|getClasses|getParamTree|createNew'}
-{'type':'umlshape', 'id':'AttackResultPlot', 'x':733, 'y':546, 'width':144, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'GraphWidget', 'x':684, 'y':461, 'width':102, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'CorrelationVsTrace', 'x':730, 'y':626, 'width':161, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'AttackSettings', 'x':1001, 'y':546, 'width':128, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'OutputVsTime', 'x':900, 'y':626, 'width':111, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'PGEVsTrace', 'x':628, 'y':626, 'width':94, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'ResultsSave', 'x':1134, 'y':546, 'width':102, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'ResultsTable', 'x':885, 'y':546, 'width':111, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'WaveFormWidget', 'x':446, 'y':626, 'width':128, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'UserScriptBase', 'x':36, 'y':38, 'width':128, 'height':75, 'attrs':'', 'meths':'__init__|run'}
+{'type':'umlshape', 'id':'AnalysisObserver', 'x':1058, 'y':3, 'width':144, 'height':137, 'attrs':'_analysisSource', 'meths':'getAnalysisSource|setAnalysisSource|analysisStarted|analysisUpdated|processAnalysis'}
+{'type':'umlshape', 'id':'AnalysisSource', 'x':761, 'y':5, 'width':128, 'height':111, 'attrs':'sigAnalysisStarted|sigAnalysisUpdated|sigAnalysisDone', 'meths':'__init__'}
+{'type':'umlshape', 'id':'Parameterized', 'x':316, 'y':84, 'width':119, 'height':163, 'attrs':'name|description', 'meths':'getParams|findParam|getName|getClassName|getDescription|deleteParams'}
+{'type':'umlshape', 'id':'ActiveTraceObserver', 'x':290, 'y':499, 'width':170, 'height':62, 'attrs':'', 'meths':'setTraceSource'}
+{'type':'umlshape', 'id':'LiveTraceSource', 'x':2, 'y':576, 'width':136, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'PassiveTraceObserver', 'x':286, 'y':297, 'width':178, 'height':137, 'attrs':'_traceSource', 'meths':'__init__|setTraceSource|getTraceSource|processTraces|traceSourcesChanged'}
+{'type':'umlshape', 'id':'TraceSource', 'x':79, 'y':260, 'width':172, 'height':280, 'attrs':'registeredObjects|sigRegisteredObjectsChanged|sigTracesChanged', 'meths':'__init__|getTrace|numPoints|numTraces|offset|getTextin|getTextout|getKnownKey|getSegmentList|getAuxData|getSegment|register|deregister|deregisterObject'}
+{'type':'umlshape', 'id':'ResultsBase', 'x':734, 'y':240, 'width':172, 'height':150, 'attrs':'registeredObjects|sigRegisteredObjectsChanged', 'meths':'__init__|getWidget|getClasses|getClassParameter|createNew'}
+{'type':'umlshape', 'id':'AttackResultPlot', 'x':803, 'y':546, 'width':144, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'GraphWidget', 'x':749, 'y':486, 'width':102, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'CorrelationVsTrace', 'x':855, 'y':626, 'width':161, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'AttackSettings', 'x':1071, 'y':546, 'width':128, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'OutputVsTime', 'x':1025, 'y':626, 'width':111, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'PGEVsTrace', 'x':753, 'y':626, 'width':94, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'ResultsSave', 'x':1204, 'y':546, 'width':102, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'ResultsTable', 'x':955, 'y':546, 'width':111, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'WaveFormWidget', 'x':481, 'y':626, 'width':128, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'UserScriptBase', 'x':6, 'y':73, 'width':128, 'height':75, 'attrs':'', 'meths':'__init__|run'}
 {'type':'umlshape', 'id':'PreprocessingBase', 'x':239, 'y':626, 'width':153, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'AttackBaseClass', 'x':497, 'y':461, 'width':136, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'TraceManager', 'x':150, 'y':566, 'width':111, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'ScopeTemplate', 'x':11, 'y':211, 'width':119, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'AttackBaseClass', 'x':507, 'y':386, 'width':136, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'TraceManager', 'x':150, 'y':576, 'width':111, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'ScopeTemplate', 'x':11, 'y':206, 'width':119, 'height':29, 'attrs':'', 'meths':''}
 {'type':'umlshape', 'id':'Plugin', 'x':205, 'y':31, 'width':60, 'height':29, 'attrs':'', 'meths':''}
-{'type':'umlshape', 'id':'TargetTemplate', 'x':6, 'y':141, 'width':128, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'TargetTemplate', 'x':6, 'y':156, 'width':128, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'ScatterPlot', 'x':614, 'y':626, 'width':102, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'Parameter', 'x':571, 'y':6, 'width':88, 'height':218, 'attrs':'', 'meths':'__init__|getValue|getValueKey|addChildren|setValue|setLimits|remove|delete|register|findParameter|getParameter|setParameter|...'}
+{'type':'umlshape', 'id':'AutoScript', 'x':288, 'y':31, 'width':94, 'height':29, 'attrs':'', 'meths':''}
+{'type':'umlshape', 'id':'TraceRecorder', 'x':476, 'y':546, 'width':119, 'height':29, 'attrs':'', 'meths':''}
+{'type':'edge', 'id':'ScatterPlot_to_GraphWidget', 'source':'ScatterPlot', 'target':'GraphWidget', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'ScatterPlot_to_ResultsBase', 'source':'ScatterPlot', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'TraceRecorder_to_ResultsBase', 'source':'TraceRecorder', 'target':'ResultsBase', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'TraceRecorder_to_PassiveTraceObserver', 'source':'TraceRecorder', 'target':'PassiveTraceObserver', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'ScopeTemplate_to_Parameterized', 'source':'ScopeTemplate', 'target':'Parameterized', 'uml_edge_type':'generalisation'}
+{'type':'edge', 'id':'Parameter_to_Parameterized', 'source':'Parameter', 'target':'Parameterized', 'uml_edge_type':'composition'}
 {'type':'edge', 'id':'TraceManager_to_TraceSource', 'source':'TraceManager', 'target':'TraceSource', 'uml_edge_type':'generalisation'}
 {'type':'edge', 'id':'LiveTraceSource_to_ScopeTemplate', 'source':'LiveTraceSource', 'target':'ScopeTemplate', 'uml_edge_type':'composition'}
 {'type':'edge', 'id':'AttackObserver_to_AnalysisObserver', 'source':'AttackObserver', 'target':'AnalysisObserver', 'uml_edge_type':'generalisation'}

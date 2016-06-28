@@ -43,13 +43,16 @@ class PGEVsTrace(AttackResultPlot, Plugin):
             {'name':'Clipboard Format', 'key':'fmt', 'type':'list', 'values':['CSV', 'MATLAB'], 'value':'CSV'}
         ])
 
-    def copyPGE(self, dontCopy=False, addPlotMatlab=True):
+    def copyPGE(self, _=None):
         """Copy the Partial Guessing Entropy (PGE) to clipboard for use in other programs"""
-        allpge = self.calculatePGE()
         cb = QClipboard()
+        cb.setText(self.getPGE())
+
+    def getPGE(self, addPlotMatlab=True):
+        """Return the  Partial Guessing Entropy (PGE) according to the specified format"""
+        allpge = self.calculatePGE()
 
         fmt = self.findParam('fmt').getValue()
-
         if fmt == 'CSV':
             spge = "Trace Number, "
             for i in range(0, self._numKeys()):
@@ -87,15 +90,13 @@ class PGEVsTrace(AttackResultPlot, Plugin):
                 spge += "title('Average Partial Guessing Entropy (PGE) via ChipWhisperer')\n"
                 spge += "legend("
                 for k in range(0, self._numKeys()):
-                    spge += "'Subkey %d'"%k
+                    spge += "'Subkey %d'" % k
                     if k != (self._numKeys()-1):
                         spge += ", "
                 spge += ")\n"
         else:
-            raise ValueError("Invalid fmt: %s"%fmt)
+            raise ValueError("Invalid fmt: %s" % fmt)
 
-        if dontCopy is False:
-            cb.setText(spge)
         return spge
 
     def calculatePGE(self):
@@ -122,8 +123,6 @@ class PGEVsTrace(AttackResultPlot, Plugin):
                     # print "%d "%j['trials'],
                 else:
                     j['pge'] = None
-
-        #print ""
 
         return allpge
 
