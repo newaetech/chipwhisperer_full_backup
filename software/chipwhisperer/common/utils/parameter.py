@@ -115,6 +115,7 @@ class Parameter(object):
     "help"                - Text displayed when clicking the help button
     "graphwidget"         - Reference to the graph widget when using parameters with type "rangegraph"
     'siPrefix', 'suffix'  - Adds prefix and sets the suffix text
+    "psync"               - Disable reverse synchronization when calling the set method directly (no decorator needed)
     ...
 
     Examples:
