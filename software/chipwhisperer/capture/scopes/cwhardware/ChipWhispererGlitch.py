@@ -74,7 +74,7 @@ class ChipWhispererGlitch(Parameterized):
             {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': self.glitchManual},
             {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
             {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
-            {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
+            {'name':'Reset DCM', 'type':'action', 'action':self.actionResetDCMs},
         ])
 
         # Check if we've got partial reconfiguration stuff for this scope
@@ -312,6 +312,10 @@ class ChipWhispererGlitch(Parameterized):
 
         return (phase1, phase2, dcm1Lock, dcm2Lock)
 
+    def actionResetDCMs(self, _=None):
+        """Action for parameter class"""
+        self.resetDCMs()
+
     def resetDCMs(self, keepPhase=False):
         """Reset the DCMs for the Glitch width & Glitch offset. Required after doing a PR operation"""
 
@@ -329,7 +333,7 @@ class ChipWhispererGlitch(Parameterized):
             self.findParam('widthfine').setValue(0)
             self.findParam('offsetfine').setValue(0)
 
-    def checkLocked(self):
+    def checkLocked(self, _=None):
         """Check if the DCMs are locked and print results """
 
         stat = self.getDCMStatus()
