@@ -65,9 +65,9 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#if HW_CRYPTO
+#if HWCRYPTO
 
-#include "AES_driver.h"
+#include "XMEGA_AES_driver.h"
 
 /*! \brief  Function that initialize the interrupt driver
  *
