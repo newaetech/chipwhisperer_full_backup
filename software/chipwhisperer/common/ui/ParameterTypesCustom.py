@@ -67,26 +67,35 @@ def showHelpWindow(curParam):
                                       QtGui.QMessageBox.Cancel)
 
 
-def drawHelpIcon(curParam):
+def drawHelpIcon(curParam, layout=None, removeDefault=True):
     """Add a single help icons to a Parameter Item. Also removes the "default" button which isn't really used in our applications"""
-    layout = curParam.layoutWidget.layout()
 
-    # Bonus: We don't want the default button so delete it here
-    numitems = layout.count()
-    lastitem = layout.itemAt(numitems - 1)
+    if layout is None:
+        layout = curParam.layoutWidget.layout()
+        standard_icon = curParam.layoutWidget.style().standardIcon
+    else:
+        standard_icon = QtGui.qApp.style().standardIcon
 
-    if (type(lastitem.widget()) == QtGui.QPushButton) and lastitem.widget().width() == 20:
-        lastitem.widget().deleteLater()
+    if removeDefault:
+        # Bonus: We don't want the default button so delete it here
+        numitems = layout.count()
+        lastitem = layout.itemAt(numitems - 1)
+
+        if (type(lastitem.widget()) == QtGui.QPushButton) and lastitem.widget().width() == 20:
+            lastitem.widget().deleteLater()
 
     # If help option add the button
     if 'help' in curParam.param.opts:
         buthelp = QtGui.QPushButton()
         buthelp.setFixedWidth(20)
         buthelp.setFixedHeight(20)
-        buthelp.setIcon(curParam.layoutWidget.style().standardIcon(QtGui.QStyle.SP_TitleBarContextHelpButton))
+        buthelp.setIcon(standard_icon(QtGui.QStyle.SP_TitleBarContextHelpButton))
         buthelp.clicked[bool].connect(lambda ignored: showHelpWindow(curParam))
         layout.addWidget(buthelp)
 
+
+def ignore_param(a=None, b=None):
+    pass
 
 def __init___fix(self, param, depth):
     """
@@ -120,12 +129,22 @@ def __init___fix(self, param, depth):
     if 'tip' in opts:
         w.setToolTip(opts['tip'])
 
-    self.defaultBtn = QtGui.QPushButton()
-    self.defaultBtn.setFixedWidth(20)
-    self.defaultBtn.setFixedHeight(20)
+    self.updateDefaultBtn = ignore_param
+    self.defaultBtn = None
+    self.defaultBtn.setHidden = ignore_param
+    self.defaultBtn.setEnabled = ignore_param
+
+    #No default button
+    #self.defaultBtn = QtGui.QPushButton()
+    #self.defaultBtn.setEnabled(False)
+    #self.defaultBtn.setHidden(True)
+    #self.defaultBtn.setFixedWidth(20)
+    #self.defaultBtn.setFixedHeight(20)
     modDir = os.path.dirname(__file__)
-    self.defaultBtn.setIcon(QtGui.QIcon(pixmaps.getPixmap('default')))
-    self.defaultBtn.clicked.connect(self.defaultClicked)
+    #self.defaultBtn.setIcon(QtGui.QIcon(pixmaps.getPixmap('default')))
+    #self.defaultBtn.clicked.connect(self.defaultClicked)
+    #self.defaultBtn.setHidden = ignore_param
+    #self.defaultBtn.setEnabled = ignore_param
 
     self.displayLabel = QtGui.QLabel()
 
@@ -134,7 +153,11 @@ def __init___fix(self, param, depth):
     layout.setSpacing(2)
     layout.addWidget(w)
     layout.addWidget(self.displayLabel)
-    layout.addWidget(self.defaultBtn)
+
+    drawHelpIcon(self, layout, False)
+
+    #No default button
+    #layout.addWidget(self.defaultBtn)
 
     self.layoutWidget = QtGui.QWidget()
     self.layoutWidget.setLayout(layout)
@@ -153,7 +176,7 @@ def __init___fix(self, param, depth):
         ## no starting value was given; use whatever the widget has
         self.widgetValueChanged()
 
-    self.updateDefaultBtn()
+    #self.updateDefaultBtn()
 
 WidgetParameterItem.__init__ = __init___fix
 
