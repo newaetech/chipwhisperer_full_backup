@@ -46,7 +46,6 @@ setup.v = Setup File
 ../../../../openadc/hdl/hdl/reg_openadc_adcfifo.v
 ../../../../openadc/hdl/hdl/trigger_unit.v
 ../../../../openadc/hdl/hdl/spartan6/dcm_phaseshift_interface.v
-../../../../openadc/hdl/hdl/spartan6/fifo_top.v
 ../../../../openadc/hdl/hdl/spartan6/clock_managment_advanced.v
 ../../../../openadc/hdl/hdl/spartan6/dcm_clkgen_load.v
 
@@ -58,6 +57,7 @@ setup.v = Setup File
 ../../../common/hdl/io_trigger/trigger_system.v
 ../../../common/hdl/reg_chipwhisperer.v
 ../../../common/hdl/reconfig/reg_reconfig.v
+../../../common/hdl/fifo_stream/fifo_top_stream.v
 
 [CoreGen Files]
 #Add XCO files. You can just list the filename, OR have the CoreGen files be
@@ -70,8 +70,6 @@ InputFile = fifoonly_adcfifo.xco.in
 #WARNING: Do not modify this w/o adjusting 'Setup File' Depth
 input_depth = 8192
 output_depth = CALCULATE $input_depth$ / 4
-full_threshold_assert_value = CALCULATE $input_depth$ - 2
-full_threshold_negate_value = CALCULATE $input_depth$ - 1
 #How to get these widths? Just copied from the file in the end...
 write_data_count_width = 14
 read_data_count_width = 12

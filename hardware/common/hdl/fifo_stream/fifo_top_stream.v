@@ -15,7 +15,7 @@ module fifo_top(
 	 input wire			adc_capture_go, //Set to '1' to start capture, keep at 1 until adc_capture_stop goes high
 	 output wire   	adc_capture_stop,
 	 input wire       adc_capture_armed,
-	 input wire			cmd_arm_i,
+	 input wire			arm_i,
 	 
 	 //FIFO to USB Read Interface
 	 input wire			fifo_read_fifoclk,
@@ -117,7 +117,7 @@ module fifo_top(
 	
 	/** Reset FIFO on arm **/
 	reg prev_arm, prev_arm_dly;
-	always@(posedge adc_sampleclk) prev_arm <= cmd_arm_i;
+	always@(posedge adc_sampleclk) prev_arm <= arm_i;
 	always@(posedge adc_sampleclk) prev_arm_dly <= prev_arm;
 	always@(posedge adc_sampleclk) fifo_rst <= ~prev_arm_dly & prev_arm;
 		
