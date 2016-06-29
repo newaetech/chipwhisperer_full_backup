@@ -39,3 +39,25 @@ void platform_init(void)
     PORTA.OUTSET = PIN5_bm | PIN6_bm;
  #endif
 }
+
+#if HWCRYPTO
+#include "XMEGA_AES_driver.h"
+static uint8_t enckey[16];
+
+void HW_AES128_Init(void)
+{
+    return;
+}
+
+void HW_AES128_LoadKey(uint8_t * key)
+{
+	for(uint8_t i=0; i < 16; i++){
+		enckey[i] = key[i];
+	}
+}
+
+void HW_AES128_Enc(uint8_t * pt)
+{
+    AES_encrypt(pt, pt, enckey);
+}
+#endif

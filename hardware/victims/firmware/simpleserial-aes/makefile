@@ -38,6 +38,8 @@ F_CPU = 7372800
 
 #Multi-Target Board, XMEGA Device
 #PLATFORM = CW301_XMEGA
+#Optional - use hardware crypto
+#CDEFS += -DHWCRYPTO=1
 
 #CW-Lite XMEGA Target Device (XMEGA128D4)
 PLATFORM = CW303
@@ -48,7 +50,7 @@ PLATFORM = CW303
 #802.15.4 Attack Platform (ATMega128RFA1)
 #PLATFORM = CW308_MEGARF
 #F_CPU = 16000000
-#CDEFS += -DHW_CRYPTO=1
+#CDEFS += -DHWCRYPTO=1
 
 #Pull in require files
 HALPATH = ../hal
@@ -103,13 +105,13 @@ EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
 
 ########
 #From http://avrcryptolib.das-labor.org, ASM Version
-#CRYPTO_LIB = avr-crypto-lib/aes
+#CRYPTO_LIB = avrcryptolib/
 #ASRC += aes_enc-asm.S \
 #       aes_keyschedule-asm.S \
 #	   aes_sbox-asm.S
 #CDEFS += -DAVRCRYPTOLIB  
-#VPATH += :../crypto/$(CRYPTO_LIB)/aes:../crypto/$(CRYPTO_LIB)/gf256mul
-#EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
+#VPATH += :../crypto/$(CRYPTO_LIB)/aes:../crypto/$(CRYPTO_LIB)/gf256mul:../crypto/$(CRYPTO_LIB)/
+#EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB) ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
 
 ########
 #From http://www.dpacontest.org/v4/rsm_doc.php which is a masked version
@@ -236,6 +238,8 @@ CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 #,--listing-cont-lines=100
 
 ASFLAGS = $(ADEFS) -Wa,-gstabs,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.S=%.lst)))
+ASFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
+
 
 
 
