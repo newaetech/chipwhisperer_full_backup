@@ -215,7 +215,7 @@ class Parameter(object):
                 self.setValue(self.opts["default"], init=True)
         else:
             if 'addLoadSave' in self.opts and self.opts["addLoadSave"]:
-                self.opts["addLoadSave"] = (self.load, self.save)
+                self.opts["addLoadSave"] = (self.load, self.saveRegistered)
 
         self.childs = []
         self.ignoredChildren = self.opts.pop("children", [])
@@ -599,8 +599,12 @@ class Parameter(object):
             if lastLevel != level+1:
                 ret += ("[" * (level + 1)) + self.getName() + ("]" * (level + 1)) + "\n"
                 lastLevel = level+1
-            txt, lastLevel = child.toString(lastLevel)
-            ret += txt
+            try:
+                txt, lastLevel = child.toString(lastLevel)
+                ret += txt
+            except:
+                # print 'Warning: Could not read parameter %s. Ignoring it...' % str(child.getPath())
+                pass
         return ret, lastLevel
 
     def __str__(self):
@@ -610,6 +614,13 @@ class Parameter(object):
     def save(self, fname):
         f = open(fname, 'w')
         f.write(str(self))
+
+    @classmethod
+    def saveRegistered(cls, fname):
+        f = open(fname, 'w')
+        for p in cls.registeredParameters.itervalues():
+            if 'addLoadSave' in p.opts and p.opts['addLoadSave'] is not False:
+                f.write(str(p))
 
     def load(self, fname):
         f = open(fname, 'r')
