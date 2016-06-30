@@ -89,6 +89,10 @@ class TargetTemplate(Parameterized, Plugin):
         """System 'suggests' encryption key, and target modifies it if required because e.g. hardware has fixed key"""
         return key
 
+    def checkPlaintext(self, text):
+        """System suggests plaintext; target modifies as required"""
+        return text
+
     def loadEncryptionKey(self, key):
         """Load desired encryption key"""        
         self.key = key
@@ -112,7 +116,11 @@ class TargetTemplate(Parameterized, Plugin):
     def keyLen(self):
         """Length of key system is using"""
         return 16
-    
+
+    def textLen(self):
+        """Length of the plaintext used by the system"""
+        return 16
+
     def getExpected(self):
         """Based on key & text get expected if known, otherwise returns None"""
         
