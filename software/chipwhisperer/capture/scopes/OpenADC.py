@@ -61,15 +61,16 @@ class OpenADCInterface(ScopeTemplate):
         self.params.append(self.qtadc.getParams())
 
     def dcmTimeout(self):
-        try:
-            self.qtadc.sc.getStatus()
-            # The following happen with signals, so a failure will likely occur outside of the try...except
-            # For this reason we do the call to .getStatus() to verify USB connection first
-            Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
-            Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
-        except Exception as e:
-            self.dis()
-            raise e
+        if self.connectStatus.value():
+            try:
+                self.qtadc.sc.getStatus()
+                # The following happen with signals, so a failure will likely occur outside of the try...except
+                # For this reason we do the call to .getStatus() to verify USB connection first
+                Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
+                Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
+            except Exception as e:
+                self.dis()
+                raise e
 
     def setAutorefreshDCM(self, parameter):
         if parameter.getValue():

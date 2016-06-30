@@ -638,6 +638,7 @@ class Parameter(object):
                 child = self.getChild(param)
                 if child is None:
                     print 'Warning: Error reading file %s, line %d: %s. Parameter "%s" not found. Ignoring it...' % (fname, i, line, str(param))
+                    continue
 
                 if child.getType() == "int":
                     value = int(value)
