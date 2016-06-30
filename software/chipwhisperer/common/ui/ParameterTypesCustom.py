@@ -130,7 +130,7 @@ def __init___fix(self, param, depth):
         w.setToolTip(opts['tip'])
 
     self.updateDefaultBtn = ignore_param
-    self.defaultBtn = None
+    self.defaultBtn = ignore_param
     self.defaultBtn.setHidden = ignore_param
     self.defaultBtn.setEnabled = ignore_param
 
