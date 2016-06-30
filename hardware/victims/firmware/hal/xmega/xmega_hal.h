@@ -36,6 +36,10 @@
 #define led_ok(a) if (a) {PORTA.OUTCLR = PIN5_bm;} else {PORTA.OUTSET = PIN5_bm;}
 #endif
 
+void HW_AES128_Init(void);
+void HW_AES128_LoadKey(uint8_t * key);
+void HW_AES128_Enc(uint8_t * pt);
+
 #endif //AVR_HAL_H_
 
    

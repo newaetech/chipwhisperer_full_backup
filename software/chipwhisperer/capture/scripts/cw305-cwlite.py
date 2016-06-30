@@ -24,13 +24,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-#
-#
-#
-# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
-# to the ChipWhisperer.
-#
-
 
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 from chipwhisperer.common.scripts.base import UserScriptBase
@@ -44,17 +37,15 @@ class UserScript(UserScriptBase):
         super(UserScript, self).__init__(api)
 
     def run(self):
-        #User commands here
+        # User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'ChipWhisperer CW305 (Artix-7)'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'NewAE USB (CWLite/CW1200)'])
 
-        #Load FW (must be configured in GUI first)
-
         self.api.connect()
         
-        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        # Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
                      # ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 5000000.0],
                      # ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
@@ -63,18 +54,18 @@ class UserScript(UserScriptBase):
                       ['OpenADC', 'Gain Setting', 'Setting', 30],
                       ['OpenADC', 'Gain Setting', 'Mode', 'high'],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
-                      #Final step: make DCMs relock in case they are lost
+                      # Final step: make DCMs relock in case they are lost
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Phase Adjust', 255],
                       ]
         
-        #Download all hardware setup parameters
+        # Download all hardware setup parameters
         for cmd in lstexample: self.api.setParameter(cmd)
         
-        #Let's only do a few traces
+        # Let's only do a few traces
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 5000])
                       
-        #Throw away first few
+        # Throw away first few
         self.api.capture1()
         self.api.capture1()
 

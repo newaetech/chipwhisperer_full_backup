@@ -19,7 +19,7 @@
 #include "aes-independant.h"
 #include "hal.h"
 
-#if HW_CRYPTO
+#if HWCRYPTO
 
 void aes_indep_init(void)
 {

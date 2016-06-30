@@ -22,15 +22,14 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
+from chipwhisperer.capture.ui.programmers_dialog import XMEGAProgrammerDialog, AVRProgrammerDialog
+from chipwhisperer.common.utils.parameter import Parameterized
 from chipwhisperer.hardware.naeusb.fpga import FPGA
+from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.programmer_avr import AVRISP
 from chipwhisperer.hardware.naeusb.programmer_xmega import XMEGAPDI
 from chipwhisperer.hardware.naeusb.serial import USART
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
-from chipwhisperer.capture.utils.AVRProgrammer import AVRProgrammerDialog
-from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammerDialog
-import sys, gc
+
 
 class CWLiteUSB(Parameterized):
     _name = "ChipWisperer-Lite USB"

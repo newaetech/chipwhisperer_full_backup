@@ -24,14 +24,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-#
-#
-#
-# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
-# to the ChipWhisperer.
-#
-# Data is saved into both a project file and a MATLAB array
-#
 
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 from chipwhisperer.common.scripts.base import UserScriptBase
@@ -45,7 +37,7 @@ class UserScript(UserScriptBase):
         super(UserScript, self).__init__(api)
 
     def run(self):
-        #User commands here
+        # User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'FTDI (SASEBO-W/SAKURA-G)'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'FTDI (SASEBO-W/SAKURA-G)', 'Refresh Device List', None])
@@ -56,28 +48,28 @@ class UserScript(UserScriptBase):
 
         self.api.connect()
 
-        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        # Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'EXTCLK x1 via DCM'],
                       ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
                       ['OpenADC', 'Trigger Setup', 'Offset', 0],
                       ['OpenADC', 'Gain Setting', 'Setting', 50],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
-                      #Final step: make DCMs relock in case they are lost
+                      # Final step: make DCMs relock in case they are lost
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ]
         
-        #Download all hardware setup parameters
+        # Download all hardware setup parameters
         for cmd in lstexample: self.api.setParameter(cmd)
         
-        #Let's only do a few traces
+        # Let's only do a few traces
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 1000])
                       
-        #Throw away first few
+        # Throw away first few
         self.api.capture1()
         self.api.capture1()
 
-        #Capture a set of traces and save the project
+        # Capture a set of traces and save the project
         # self.api.captureM()
         # self.api.saveProject("../../../projects/test.cwp")
 

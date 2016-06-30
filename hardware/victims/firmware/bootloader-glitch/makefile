@@ -30,16 +30,11 @@
 
 ######### Specify your platform here
 
-# Processor frequency.
-F_CPU = 7372800
-
 #Multi-Target Board, AVR Device (ATMega328P)
 #PLATFORM = CW301_AVR
 
 #Multi-Target Board, XMEGA Device
 #PLATFORM = CW301_XMEGA
-#Optional - use hardware crypto
-#CDEFS += -DHWCRYPTO=1
 
 #CW-Lite XMEGA Target Device (XMEGA128D4)
 PLATFORM = CW303
@@ -47,10 +42,14 @@ PLATFORM = CW303
 #NOTDUINO Kit (ATMega328P)
 #PLATFORM = CW304
 
-#802.15.4 Attack Platform (ATMega128RFA1)
-#PLATFORM = CW308_MEGARF
+# Processor frequency.
+#     This will define a symbol, F_CPU, in all source code files equal to the 
+#     processor frequency. You can then use this symbol in your source code to 
+#     calculate timings. Do NOT tack on a 'UL' at the end, this will be done
+#     automatically to create a 32-bit value in your source code.
+F_CPU = 7372800
+#F_CPU = 2000000
 #F_CPU = 16000000
-#CDEFS += -DHWCRYPTO=1
 
 #Pull in require files
 HALPATH = ../hal
@@ -60,7 +59,7 @@ include $(HALPATH)/PLATFORM_INCLUDE.mk
 FORMAT = ihex
 
 # Target file name (without extension).
-TARGET = simpleserial-aes
+TARGET = bootloader
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
@@ -68,7 +67,7 @@ TARGET = simpleserial-aes
 OBJDIR = objdir
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c aes-independant.c $(HALSRC)
+SRC = $(TARGET).c $(HALSRC) decryption.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = 
@@ -83,50 +82,10 @@ CPPSRC =
 #     care about how the name is spelled on its command-line.
 ASRC = 
 
-#########################################################################
-######################### CHOOSE CRYPTO LIB #############################
-#Uncomment the lines below for whichever crypto lib you'd like to attack
-
-########
-#From http://avrcryptolib.das-labor.org, C Version
-#*This is the recommended first version to test*
-CRYPTO_LIB = avrcryptolib/
-SRC += aes_enc.c aes_keyschedule.c aes_sbox.c aes128_enc.c
-ASRC += gf256mul.S
-CDEFS += -DAVRCRYPTOLIB
-VPATH += :../crypto/$(CRYPTO_LIB)/aes:../crypto/$(CRYPTO_LIB)/gf256mul
-EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
-
-########
-#From http://cs.ucsb.edu/~koc/cs178/projects/JT/avr_aes.html modified to be timing-independant
-#CRYPTO_LIB = straightforward-aes
-#SRC += aes.c
-#CDEFS += -DSIMPLEAES
-
-########
-#From http://avrcryptolib.das-labor.org, ASM Version
-#CRYPTO_LIB = avrcryptolib/
-#ASRC += aes_enc-asm.S \
-#       aes_keyschedule-asm.S \
-#	   aes_sbox-asm.S
-#CDEFS += -DAVRCRYPTOLIB  
-#VPATH += :../crypto/$(CRYPTO_LIB)/aes:../crypto/$(CRYPTO_LIB)/gf256mul:../crypto/$(CRYPTO_LIB)/
-#EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB) ../crypto/$(CRYPTO_LIB)/aes ../crypto/$(CRYPTO_LIB)/gf256mul
-
-########
-#From http://www.dpacontest.org/v4/rsm_doc.php which is a masked version
-#of AES-256. You must copy source files into ../crypto/dpav4/ directory yourself
-#CRYPTO_LIB = dpav4
-#SRC += aes_enc.c aes_keyschedule.c
-#ASRC += gf256mul.S aes_sbox-asm.S
-#CDEFS += -DDPAV4 -D"hal_trig1(a)" -D"hal_trig0(a)"
-#VPATH += :../crypto/$(CRYPTO_LIB)
-#EXTRAINCDIRS += ../crypto/$(CRYPTO_LIB)
-
 ##########################################################################
 ##########################################################################
 
-VPATH += :../crypto/:./
+VPATH += :./
 
 # Optimization level, can be [0, 1, 2, 3, s]. 
 #     0 = turn off optimization. s = optimize for size.
@@ -145,7 +104,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS += ../crypto ../hal
+EXTRAINCDIRS += ../hal
 
 
 # Compiler flag to set the C Standard level.
@@ -238,8 +197,6 @@ CPPFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 #,--listing-cont-lines=100
 
 ASFLAGS = $(ADEFS) -Wa,-gstabs,-adhlns=$(addprefix $(OBJDIR)/,$(notdir $(<:%.S=%.lst)))
-ASFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
-
 
 
 

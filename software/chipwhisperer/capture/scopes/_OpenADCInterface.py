@@ -213,8 +213,7 @@ class TriggerSettings(Parameterized):
                             'Refreshes the "Digital Pin State" status.'},
             {'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'set':self.setSource, 'get':self.source,
                      'help':'%namehdr%'+
-                            'Selects if trigger system is based on digital signal (including internally generated), or an ADC level. Currently ' +
-                            'only the digital trigger system is supported.'},
+                            'Selects if trigger system is based on digital signal (including internally generated), or an ADC level.'},
             {'name': 'Digital Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
                      'help':'%namehdr%'+
                             'Gives the status of the digital signal being used as the trigger signal, either high or low.'},
@@ -298,19 +297,19 @@ class TriggerSettings(Parameterized):
 
         self.presamples_desired = samples
 
-        if self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9:
-            #CW-1200 Hardware
+        if (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9) or (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 8):
+            #CW-1200 Hardware / CW-Lite
             samplesact = samples
             self.presamples_actual = samples
         else:
-            #CW-Lite/Other Hardware
+            #Other Hardware
             if samples > 0:
                 print("WARNING: Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. Check data is reliably recorded before using in capture.")
 
             #enforce samples is multiple of 3
             samplesact = int(samples / 3)
 
-            #CW-Lite uses old crappy FIFO system that requires the following
+            #Old crappy FIFO system that requires the following
             if samplesact > 0:
                 samplesact = samplesact + self.presampleTempMargin
 
@@ -346,8 +345,8 @@ class TriggerSettings(Parameterized):
         samples = samples | (temp[2] << 16)
         samples = samples | (temp[3] << 24)
 
-        #CW1200 reports presamples using different method
-        if self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9:
+        #CW1200/CW-Lite reports presamples using different method
+        if (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9) or (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 8):
             self.presamples_actual = samples
 
         else:
@@ -463,7 +462,7 @@ class ClockSettings(Parameterized):
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
-                                            'get':self.getClkgen},
+                                            'get':self._getClkgenStr},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
             ]}
@@ -473,7 +472,7 @@ class ClockSettings(Parameterized):
     @setupSetParam("Freq Counter Src")
     def setFreqSrc(self, src):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-        result[3] = result[3] & ~(0x08)
+        result[3] &= ~0x08
         result[3] |= src << 3
         #print "%x"%result[3]
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
@@ -482,7 +481,10 @@ class ClockSettings(Parameterized):
         if self.oa is None:
             return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-        return ((result[3] & 0x08) >> 3)
+        return (result[3] & 0x08) >> 3
+
+    def _getClkgenStr(self):
+        return str(self.getClkgen()) + " Hz"
 
     def getClkgen(self):
         return (self._hwinfo.sysFrequency() * self.clkgenMul()) / self.clkgenDiv()
@@ -1204,7 +1206,8 @@ class OpenADCInterface(object):
             # for p in data:
             #       print "%x "%p,
 
-            datapoints = datapoints + self.processData(data, 0.0)
+            if data:
+                datapoints = datapoints + self.processData(data, 0.0)
 
             if progressDialog:
                 progressDialog.setValue(status)

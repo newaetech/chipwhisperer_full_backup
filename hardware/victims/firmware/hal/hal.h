@@ -45,13 +45,6 @@ void platform_init(void);
     #error "Unsupported HAL Type"
 #endif
 
-/*
-#if PLATFORM == CW301_XMEGA
-    #define HW_CRYPTO 1
-#else
-    #define HW_CRYPTO 0
-#endif
-*/
 
 #if PLATFORM == CW308_MEGARF
     #undef trigger_setup
