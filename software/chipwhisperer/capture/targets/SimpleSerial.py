@@ -39,10 +39,14 @@ class SimpleSerial(TargetTemplate):
         self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
 
         self.keylength = 128
+        self.textlength = 128
+        self.outputlength = 128
         self.input = ""
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'Key Length', 'type':'list', 'values':[128, 256], 'get':self.keyLen, 'set':self.setKeyLen},
+            {'name':'Input Length', 'type':'list', 'values':[64, 128], 'get':self.textLen, 'set':self.setTextLen},
+            {'name':'Output Length', 'type':'list', 'values':[64, 128], 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -65,6 +69,24 @@ class SimpleSerial(TargetTemplate):
     def keyLen(self):
         """ Return key length in BYTES """
         return self.keylength
+
+    @setupSetParam("Input Length")
+    def setTextLen(self, tlen):
+        """ Set plaintext length. tlen given in BITS """
+        self.textlength = tlen / 8
+
+    def textLen(self):
+        """ Return plaintext length in BYTES """
+        return self.textlength
+
+    @setupSetParam("Output Length")
+    def setOutputLen(self, tlen):
+        """ Set plaintext length in bytes. tlen given in BITS """
+        self.outputlength = tlen / 8
+
+    def outputLen(self):
+        """ Return output length in bytes """
+        return self.outputlength
 
     def getConnection(self):
         return self.ser
@@ -147,7 +169,7 @@ class SimpleSerial(TargetTemplate):
         return True
 
     def readOutput(self):
-        dataLen= 32
+        dataLen= self.outputlength*2
 
         fmt = self.findParam('cmdout').getValue()
         #This is dumb
@@ -191,12 +213,12 @@ class SimpleSerial(TargetTemplate):
         startindx = len(expected[0])
 
         #Is middle part?
-        data = bytearray(16)
+        data = bytearray(self.outputlength)
         if len(expected) == 2:
-            for i in range(0,16):
+            for i in range(0,self.outputlength):
                 data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)
 
-            startindx += 32
+            startindx += self.outputlength*2
 
         #Is end part?
         if len(expected[1]) > 0:
@@ -222,3 +244,23 @@ class SimpleSerial(TargetTemplate):
             return kin[0:blen]
 
         return kin
+
+    def checkPlaintext(self, text):
+        blen = self.textLen()
+
+        if len(text) < blen:
+            print "note: Padding plaintext..."
+            newtext = bytearray(text)
+            newtext += bytearray([0] * (blen - len(text)))
+            return newtext
+        elif len(text) > blen:
+            print "note: Truncating plaintext..."
+            return text[0:blen]
+        return text
+
+    def getExpected(self):
+        """Based on key & text get expected if known, otherwise returns None"""
+        if self.textLen() == 16:
+            return TargetTemplate.getExpected(self)
+        else:
+            return None

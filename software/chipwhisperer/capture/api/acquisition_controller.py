@@ -111,6 +111,7 @@ class AcquisitionController():
             self.target.reinit()
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
+            self.target.loadInput(self.textin)
             # Load input, start encryption, get output. Key was set already, don't resend
             self.textout = self.targetDoTrace(self.textin, key=None)
         else:

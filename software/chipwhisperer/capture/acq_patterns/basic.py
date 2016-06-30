@@ -109,12 +109,13 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._key[i] = random.randint(0, 255)
 
         if self._fixedPlain is False:
-            self._textin = bytearray(16)
-            for i in range(0, 16):
+            self._textin = bytearray(self.textLen())
+            for i in range(0, self.textLen()):
                 self._textin[i] = random.randint(0, 255)
 
-        # Check key works with target
+        # Check pair works with target
         self.validateKey()
+        self.validateText()
 
         return (self._key, self._textin)
 
