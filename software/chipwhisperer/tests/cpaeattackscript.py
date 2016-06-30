@@ -1,6 +1,8 @@
 # Date Auto-Generated: 2016.06.09-16.47.02
+import os
+import shutil
+
 from chipwhisperer.common.scripts.base import UserScriptBase
-import shutil, os
 # Imports from Preprocessing
 import chipwhisperer.analyzer.preprocessing as preprocessing
 # Imports from Attack
@@ -8,7 +10,7 @@ from chipwhisperer.analyzer.attacks.cpa import CPA
 from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive
 import chipwhisperer.analyzer.attacks.models.AES128_8bit
 # Imports from utilList
-from chipwhisperer.capture.utils.XMEGAProgrammer import XMEGAProgrammer
+from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 
 
 class Capture(UserScriptBase):

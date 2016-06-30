@@ -72,11 +72,10 @@ class SmartCard(TargetTemplate):
             self.params.append(self.protocol.getParams())
             self.protocol.setReaderHardware(self.driver)
 
-    def con(self, scope = None):
+    def _con(self, scope = None):
         self.driver.con(scope)
         self.driver.flush()
         self.protocol.setReaderHardware(self.driver)
-        self.connectStatus.setValue(True)
 
     def close(self):
         if self.driver != None:

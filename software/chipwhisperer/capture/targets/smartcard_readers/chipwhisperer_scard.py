@@ -30,8 +30,8 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 class ReaderChipWhispererSCard(ReaderTemplate):
     _name = "CWCR2-SCARD (obsolete)"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.params.addChildren([
             {'name':'Card Present', 'key':'statusStr', 'type':'bool', 'value':False, 'readonly':True},
