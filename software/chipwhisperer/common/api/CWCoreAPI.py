@@ -82,7 +82,7 @@ class CWCoreAPI(Parameterized):
         self._numTraces = 50
         self._numTraceSets = 1
 
-        self.params = Parameter(name='Generic Settings', type='group').register()
+        self.params = Parameter(name='Generic Settings', type='group', addLoadSave=True).register()
         self.params.addChildren([
             {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
             {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'get':self.getTarget, 'set':self.setTarget},
@@ -97,16 +97,16 @@ class CWCoreAPI(Parameterized):
                     {'name':'Key/Text Pattern', 'type':'list', 'values':self.valid_acqPatterns, 'get':self.getAcqPattern, 'set':self.setAcqPattern},
             ]},
         ])
-        self.scopeParam = Parameter(name="Scope Settings", type='group').register()
+        self.scopeParam = Parameter(name="Scope Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Scope Module').stealDynamicParameters(self.scopeParam)
 
-        self.targetParam = Parameter(name="Target Settings", type='group').register()
+        self.targetParam = Parameter(name="Target Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Target Module').stealDynamicParameters(self.targetParam)
 
-        self.traceParam = Parameter(name="Trace Settings", type='group').register()
+        self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
 
-        self.auxParam = Parameter(name="Aux Settings", type='group').register()
+        self.auxParam = Parameter(name="Aux Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
 
         # self.attackParam = Parameter(name="Attack Settings", type='group')
