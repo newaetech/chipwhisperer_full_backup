@@ -280,7 +280,6 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
     def updateTableHeaders(self, ignored=None, ignoredmore=None, override=None):
         headerlist = ["Status", "Sent", "Received", "Date"]
 
-
         if override is not None:
             for c in override:
                 headerlist.append(c)
@@ -427,6 +426,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 except EOFError:
                     break
             file.close()
+
 
 def main():
     # Create the Qt Application

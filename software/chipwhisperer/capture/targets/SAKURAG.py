@@ -66,7 +66,7 @@ class ChipWhispererComm(Parameterized):
         time.sleep(0.05)
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [0x00], Validate=False)
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         if scope and scope.qtadc and scope.qtadc.sc:
             self.oa = scope.qtadc.sc
         else:
@@ -223,7 +223,7 @@ class FTDIComm(object):
     def setSerial(self, ser):
         self.serNo = ser
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         try:
             self.sasebo = ft.openEx(self.serNo)
         except ft.ftd2xx.DeviceError, e:
@@ -256,9 +256,9 @@ class SakuraG(TargetTemplate):
         self.hw = None
         self.getParams().addChildren([
             {'name':'Connection via:', 'key':'conn', 'type':'list', 'values':conntypes, 'set':self.setConn, 'get':self.getConn, 'default':None},
-            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action':lambda _ : self.reset(), 'visible':False},
+            {'name':'Reset FPGA', 'key':'reset', 'type':'action', 'action': self.reset, 'visible':False},
             {'name':'USB Serial #:', 'key':'serno', 'type':'list', 'values':['Press Refresh'], 'value':'Press Refresh', 'visible':False},
-            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action':lambda _ :self.refreshSerial(), 'visible':False},
+            {'name':'Enumerate Attached Devices', 'key':'pushsno', 'type':'action', 'action': self.refreshSerial, 'visible':False},
         ])
 
     def getConn(self):
@@ -274,17 +274,15 @@ class SakuraG(TargetTemplate):
             self.findParam('serno').hide()
             self.findParam('serno').hide()
 
-    def refreshSerial(self):
+    def refreshSerial(self, _=None):
         serialnames = ft.listDevices()
         if serialnames == None:
             serialnames = [" No Connected Devices "]
 
         self.findParam('serno').setLimits(serialnames)
         self.findParam('serno').setValue(serialnames[0])
-#        self.paramListUpdated.emit(self.paramList())
 
-    def con(self, scope = None):
-
+    def _con(self, scope=None):
         self.hw = self.findParam('conn').getValue()
 
         if hasattr(self.hw, 'setSerial'):
@@ -294,21 +292,17 @@ class SakuraG(TargetTemplate):
                 print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
             self.hw.setSerial(ser)
 
-        hwok = self.hw.con(scope)
-
         if hasattr(self.hw, 'reset'):
             self.findParam('reset').show()
         else:
             self.findParam('reset').hide()
 
-        if hwok:
-            # Init
+        if self.hw.con(scope):
             self.init()
-        self.connectStatus.setValue(True)
+        else:
+            raise Warning("Opened USB, but failed to find expected FPGA setup")
 
-        return hwok
-
-    def reset(self):
+    def reset(self, _=None):
         if self.hw:
             if hasattr(self.hw, 'reset'):
                 self.hw.reset()

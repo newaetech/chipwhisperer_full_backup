@@ -212,7 +212,7 @@ class SaseboGII(TargetTemplate):
             i = 0
         self.findParam('serno').setValue(serialnames[i])
 
-    def con(self, scope = None):
+    def _con(self, scope=None):
         self._sn = self.findParam('serno').getValue()
         try:
             self.sasebo = ft.openEx(self._sn)
@@ -221,7 +221,6 @@ class SaseboGII(TargetTemplate):
             raise Warning("Failed to connect to FTDI device. Specificed serial number is '%s'. Check 'Target' tab to ensure correct serial-number selected."%self._sn)
         
         self.sasebo.setTimeouts(1000, 1000)
-        self.connectStatus.setValue(True)
 
         #Init
         self.init()

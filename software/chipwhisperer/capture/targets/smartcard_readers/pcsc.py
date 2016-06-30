@@ -70,7 +70,7 @@ class ReaderPCSC(ReaderTemplate):
         if (txdata is None) & (rxdatalen == 0):
             data.append(0)
 
-        #Append payload
+        # Append payload
         if txdata is not None:
             for b in txdata: data.append(b)
 

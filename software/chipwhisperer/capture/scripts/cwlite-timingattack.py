@@ -24,7 +24,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-#
 
 """
 This script is an example of a timing attack on a simple password checker. 
@@ -59,9 +58,9 @@ class UserScript(UserScriptBase):
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
         self.api.setParameter(['Simple Serial', 'Connection', 'NewAE USB (CWLite/CW1200)'])
         self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'NewAE USB (CWLite/CW1200)'])
+
         self.api.connect()
-        
-        
+
         # Next: set up everything we need to connect to the target
         # Put all of our commands in a list and execute them at the end
         lstexample = [
@@ -89,7 +88,7 @@ class UserScript(UserScriptBase):
                       ['Reset AVR/XMEGA via CW-Lite', 'Delay (Post-Arm)', 1200],
                       ]
         
-        #Download all hardware setup parameters
+        # Download all hardware setup parameters
         for cmd in lstexample: 
             self.api.setParameter(cmd)
                        

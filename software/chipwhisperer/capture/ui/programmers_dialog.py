@@ -29,10 +29,11 @@ import time
 from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
-from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
-from chipwhisperer.capture.utils.IntelHex import IntelHex
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
+from PySide.QtGui import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QFileDialog
+
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from chipwhisperer.capture.api.programmers import AVRProgrammer, XMEGAProgrammer
+from chipwhisperer.common.utils import qt_tweaks as QtFixes
 
 
 class AVRProgrammerDialog(QtFixes.QDialog):
@@ -236,78 +237,114 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         self.avr.setUSBInterface(iface)
 
 
-class AVRProgrammer(object):
-    
+class XMEGAProgrammerDialog(QtFixes.QDialog):
     def __init__(self):
-        super(AVRProgrammer, self).__init__()
-        self.supported_chips = []
-        self._logging = None
-        self._foundchip = False
-        self.avr = None
+        super(XMEGAProgrammerDialog, self).__init__(CWMainGUI.getInstance())
+        # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        self.xmega = XMEGAProgrammer()
+
+        self.setWindowTitle("ChipWhisperer-Lite XMEGA Programmer")
+        layout = QVBoxLayout()
+
+        layoutFW = QHBoxLayout()
+        self.flashLocation = QtFixes.QLineEdit()
+        flashFileButton = QPushButton("Find")
+        flashFileButton.clicked.connect(self.findFlash)
+        layoutFW.addWidget(QLabel("FLASH File"))
+        layoutFW.addWidget(self.flashLocation)
+        layoutFW.addWidget(flashFileButton)
+        layout.addLayout(layoutFW)
+
+        self.flashLocation.setText(QSettings().value("xmega-flash-location"))
+
+        # Add buttons
+        readSigBut = QPushButton("Check Signature")
+        readSigBut.clicked.connect(self.readSignature)
+        verifyFlashBut = QPushButton("Verify FLASH")
+        verifyFlashBut.clicked.connect(self.verifyFlash)
+        verifyFlashBut.setEnabled(False)
+        progFlashBut = QPushButton("Erase/Program/Verify FLASH")
+        progFlashBut.clicked.connect(self.writeFlash)
+
+        layoutBut = QHBoxLayout()
+        layoutBut.addWidget(readSigBut)
+        layoutBut.addWidget(verifyFlashBut)
+        layoutBut.addWidget(progFlashBut)
+        layout.addLayout(layoutBut)
+
+        # Add status stuff
+        self.statusLine = QPlainTextEdit()
+        self.statusLine.setReadOnly(True)
+        # self.statusLine.setFixedHeight(QFontMetrics(self.statusLine.font()).lineSpacing() * 5 + 10)
+        self.statusLine.append = self.statusLine.appendPlainText
+        layout.addWidget(self.statusLine)
+
+        self.xmega._logging = self.statusLine.append
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+    def findFlash(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("xmega-flash-location"), '*.hex')
+        if fname:
+            self.flashLocation.setText(fname)
+            QSettings().setValue("xmega-flash-location", fname)
+
+    def readSignature(self, close=True):
+        self.xmega.find()
+        if close:
+            self.xmega.close()
+
+    def verifyFlash(self):
+        pass
+
+    def writeFlash(self, erase=True, verify=True):
+
+        status = "FAILED"
+
+        fname = self.flashLocation.text()
+        self.statusLine.append("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
+        if (os.path.isfile(fname)):
+            self.statusLine.append("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+            QCoreApplication.processEvents()
+
+            try:
+                self.statusLine.append("Entering Programming Mode")
+                QCoreApplication.processEvents()
+                self.readSignature(close=False)
+
+                if erase:
+                    try:
+                        self.statusLine.append("Erasing Chip")
+                        QCoreApplication.processEvents()
+                        self.xmega.erase()
+                    except IOError:
+                        self.statusLine.append("**chip-erase timeout, erasing application only**")
+                        QCoreApplication.processEvents()
+                        self.xmega.xmega.enablePDI(False)
+                        self.xmega.xmega.enablePDI(True)
+                        self.xmega.erase("app")
+
+                QCoreApplication.processEvents()
+                self.xmega.program(self.flashLocation.text(), memtype="flash", verify=verify)
+                QCoreApplication.processEvents()
+                self.statusLine.append("Exiting programming mode")
+                self.xmega.close()
+                QCoreApplication.processEvents()
+
+                status = "SUCCEEDED"
+
+            except IOError, e:
+                self.statusLine.append("FAILED: %s" % str(e))
+                try:
+                    self.xmega.close()
+                except IOError:
+                    pass
+
+        else:
+            self.statusLine.append("%s does not appear to be a file, check path" % fname)
+
+        self.statusLine.append("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
 
     def setUSBInterface(self, iface):
-        self.avr = iface
-        # self.avr.setChip(self.supported_chips[0])
-
-    def find(self):
-        self._foundchip = False
-
-        self.avr.enableISP(True)
-        sig = self.avr.readSignature()
-
-        # self.log("Signature = %02x %02x %02x" % (sig[0], sig[1], sig[2]))
-
-        # Figure out which device?
-        # Check if it's one we know about?
-        for t in supported_avr:
-            if ((sig[0] == t.signature[0]) and
-                (sig[1] == t.signature[1]) and
-                (sig[2] == t.signature[2])):
-
-                self._foundchip = True
-
-                self.log("Detected %s" % t.name)
-                self.avr.setChip(t)
-                break
-
-        # Print signature of unknown device
-        if self._foundchip == False:
-            self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
-
-    def erase(self):
-        self.avr.eraseChip()
-
-    def program(self, filename, memtype="flash", verify=True):
-        f = IntelHex(filename)
-
-        maxsize = self.avr._chip.memtypes[memtype]["size"]
-        fsize = f.maxaddr() - f.minaddr()
-
-        if fsize > maxsize:
-            raise IOError("File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
-
-        self.log("AVR Programming %s..." % memtype)
-        QCoreApplication.processEvents()
-        fdata = f.tobinarray(start=0)
-        self.avr.writeMemory(0, fdata, memtype)
-
-        self.log("AVR Reading %s..." % memtype)
-        QCoreApplication.processEvents()
-        # Do verify run
-        rdata = self.avr.readMemory(0, len(fdata))  # memtype ?
-
-        for i in range(0, len(fdata)):
-            if fdata[i] != rdata[i]:
-                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
-
-        self.log("Verified %s OK, %d bytes" % (memtype, fsize))
-    
-    def close(self):
-        if self.avr is not None:
-            self.avr.enableISP(False)
-
-    def log(self, text):
-        if self._logging is None:
-            print text
-        else:
-            self._logging(text)
+        self.xmega.setUSBInterface(iface)

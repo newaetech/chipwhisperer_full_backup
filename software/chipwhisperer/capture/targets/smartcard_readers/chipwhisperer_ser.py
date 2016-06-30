@@ -34,7 +34,7 @@ class ReaderChipWhispererSER(ReaderTemplate):
     def __init__(self):
         ReaderTemplate.__init__(self)
 
-        self.ser = SimpleSerial_ChipWhisperer(self)
+        self.ser = SimpleSerial_ChipWhisperer()
         self.getParams().addChildren([
             {'name':'Reset Pin', 'type':'list', 'values':['GPIO1'], 'value':'GPIO1'},
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},

@@ -23,9 +23,11 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import os
 import traceback
 import sys
-from chipwhisperer.capture.api.AcquisitionController import AcquisitionController
+from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
+from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
@@ -331,7 +333,7 @@ class CWCoreAPI(Parameterized):
                     # Load trace writer information
                     prefix = currentTrace.config.attr("prefix")[:-1]
                     currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
-                    currentTrace.config.setAttr("targetSW", "unknown")
+                    currentTrace.config.setAttr("targetSW", os.path.split(Programmer.lastFlashedFile)[1])
                     currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
                     currentTrace.config.setAttr("scopeSampleRate", 0)
                     currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
