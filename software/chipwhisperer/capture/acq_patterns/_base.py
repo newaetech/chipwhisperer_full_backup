@@ -26,6 +26,7 @@
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
+
 class AcqKeyTextPattern_Base(Parameterized, Plugin):
     _name = "Key/Text Pattern"
 
