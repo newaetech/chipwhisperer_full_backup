@@ -41,6 +41,8 @@ from pyqtgraph.widgets.SpinBox import SpinBox
 
 
 # User defined Help Window used in the parameters
+from chipwhisperer.common.api.settings import Settings
+
 helpwnd = None
 
 
@@ -140,7 +142,6 @@ def __init___fix(self, param, depth):
     #self.defaultBtn.setHidden(True)
     #self.defaultBtn.setFixedWidth(20)
     #self.defaultBtn.setFixedHeight(20)
-    modDir = os.path.dirname(__file__)
     #self.defaultBtn.setIcon(QtGui.QIcon(pixmaps.getPixmap('default')))
     #self.defaultBtn.clicked.connect(self.defaultClicked)
     #self.defaultBtn.setHidden = ignore_param
@@ -179,6 +180,68 @@ def __init___fix(self, param, depth):
     #self.updateDefaultBtn()
 
 WidgetParameterItem.__init__ = __init___fix
+
+
+def __init___fix2(self, param, depth):
+    ParameterItem.__init__(self, param, depth)
+    self.updateDepth(depth)
+
+    self.addItem = None
+
+    if 'addLoadSave' in param.opts:
+        self.loadBtn = QtGui.QPushButton(QtGui.QIcon(":/images/open.png"),"")
+        self.loadBtn.setCheckable(False)
+        self.loadBtn.setFixedSize(20, 20)
+        self.loadBtn.clicked.connect(self.loadBtnClicked)
+        self.saveBtn = QtGui.QPushButton(QtGui.QIcon(":/images/save.png"),"")
+        self.saveBtn.setCheckable(False)
+        self.saveBtn.setFixedSize(20, 20)
+        self.saveBtn.clicked.connect(self.saveBtnClicked)
+
+        layout = QtGui.QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        layout.addStretch()
+        layout.addWidget(self.loadBtn)
+        layout.addWidget(self.saveBtn)
+
+        self.widget = QtGui.QWidget()
+        self.widget.setLayout(layout)
+
+GroupParameterItem.__init__ = __init___fix2
+
+def loadBtnClicked(self):
+    fname = QtCore.QSettings().value("Group_"+ self.param.name(), Settings().value("project-home-dir"))
+    fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Load settings from:', fname, "*.cwset")
+    if fname:
+        self.param.opts['addLoadSave'][0](fname)
+
+GroupParameterItem.loadBtnClicked = loadBtnClicked
+
+def saveBtnClicked(self):
+    fname = QtCore.QSettings().value("Group_"+ self.param.name(), Settings().value("project-home-dir"))
+    fname, _ = QtGui.QFileDialog.getSaveFileName(None, 'Save settings to:', fname, "*.cwset")
+    if fname:
+        QtCore.QSettings().setValue("Group_"+ self.param.name(), fname)
+        self.param.opts['addLoadSave'][1](fname)
+
+GroupParameterItem.saveBtnClicked = saveBtnClicked
+
+
+def treeWidgetChanged_fix(self):
+    ParameterItem.treeWidgetChanged(self)
+    self.treeWidget().setFirstItemColumnSpanned(self, True)
+
+    ## add all widgets for this item into the tree
+    if hasattr(self, "widget"):
+        tree = self.treeWidget()
+        if tree is None:
+            return
+        tree.setItemWidget(self, 1, self.widget)
+        self.selected(False)
+
+GroupParameterItem.treeWidgetChanged = treeWidgetChanged_fix
 
 
 class WidgetParameterItemHelp(WidgetParameterItem):
