@@ -297,19 +297,19 @@ class TriggerSettings(Parameterized):
 
         self.presamples_desired = samples
 
-        if self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9:
-            #CW-1200 Hardware
+        if (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9) or (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 8):
+            #CW-1200 Hardware / CW-Lite
             samplesact = samples
             self.presamples_actual = samples
         else:
-            #CW-Lite/Other Hardware
+            #Other Hardware
             if samples > 0:
                 print("WARNING: Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. Check data is reliably recorded before using in capture.")
 
             #enforce samples is multiple of 3
             samplesact = int(samples / 3)
 
-            #CW-Lite uses old crappy FIFO system that requires the following
+            #Old crappy FIFO system that requires the following
             if samplesact > 0:
                 samplesact = samplesact + self.presampleTempMargin
 
@@ -345,8 +345,8 @@ class TriggerSettings(Parameterized):
         samples = samples | (temp[2] << 16)
         samples = samples | (temp[3] << 24)
 
-        #CW1200 reports presamples using different method
-        if self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9:
+        #CW1200/CW-Lite reports presamples using different method
+        if (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9) or (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 8):
             self.presamples_actual = samples
 
         else:
@@ -1206,7 +1206,8 @@ class OpenADCInterface(object):
             # for p in data:
             #       print "%x "%p,
 
-            datapoints = datapoints + self.processData(data, 0.0)
+            if data:
+                datapoints = datapoints + self.processData(data, 0.0)
 
             if progressDialog:
                 progressDialog.setValue(status)
