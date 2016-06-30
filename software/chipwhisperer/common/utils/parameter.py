@@ -614,7 +614,8 @@ class Parameter(object):
     def load(self, fname):
         f = open(fname, 'r')
         path = []
-        for line in f:
+        foundCorrectSection = False
+        for i, line in enumerate(f):
             level = 0
             for p in range(0, len(line)):
                 if line[p] == "[":
@@ -625,15 +626,18 @@ class Parameter(object):
                 path = path[0:level - 1]
                 if level >= len(path):
                     if level > len(path) + 1:
-                        raise Warning("Group hierarchy missing before line %d of file %s: %s" % (p, fname, line))
+                        raise Warning("Error reading file %s, line %d: %s. Group hierarchy missing." % (fname, i, line))
                     path.append(line[level:-(level + 1)])
             else:
+                if path[0] != self.getName():
+                    continue
+                foundCorrectSection = True
                 separator = line.find("=")
                 value = line[separator + 1:-1].strip()
                 param = path[1:] + [line[0:separator].strip()]
                 child = self.getChild(param)
                 if child is None:
-                    raise ValueError("Error reading file %s in line %s. Parameter %s not found." % (fname, line, str(param)))
+                    print 'Warning: Error reading file %s, line %d: %s. Parameter "%s" not found. Ignoring it...' % (fname, i, line, str(param))
 
                 if child.getType() == "int":
                     value = int(value)
@@ -649,6 +653,8 @@ class Parameter(object):
                 elif child.getType() != "list" and value != "":
                     value = eval(value)
                 child.setValue(value)
+        if not foundCorrectSection:
+            raise Warning('Could not found section "%s" in file: %s' % (self.getName(), fname))
 
     @classmethod
     def findParameter(cls, path):
