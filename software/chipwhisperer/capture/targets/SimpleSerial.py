@@ -38,15 +38,15 @@ class SimpleSerial(TargetTemplate):
         ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False)
         self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
 
-        self.keylength = 128
-        self.textlength = 128
-        self.outputlength = 128
+        self.keylength = 16
+        self.textlength = 16
+        self.outputlength = 16
         self.input = ""
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
-            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'get':self.keyLen, 'set':self.setKeyLen},
-            {'name':'Input Length', 'type':'list', 'values':[64, 128], 'get':self.textLen, 'set':self.setTextLen},
-            {'name':'Output Length', 'type':'list', 'values':[64, 128], 'get':self.outputLen, 'set':self.setOutputLen},
+            {'name':'Key Length (Bytes)', 'type':'list', 'values':[16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
+            {'name':'Input Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
+            {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -63,26 +63,26 @@ class SimpleSerial(TargetTemplate):
 
     @setupSetParam("Key Length")
     def setKeyLen(self, klen):
-        """ Set key length in BITS """
-        self.keylength = klen / 8
+        """ Set key length in bytes """
+        self.keylength = klen
 
     def keyLen(self):
-        """ Return key length in BYTES """
+        """ Return key length in bytes """
         return self.keylength
 
     @setupSetParam("Input Length")
     def setTextLen(self, tlen):
-        """ Set plaintext length. tlen given in BITS """
-        self.textlength = tlen / 8
+        """ Set plaintext length. tlen given in bytes """
+        self.textlength = tlen
 
     def textLen(self):
-        """ Return plaintext length in BYTES """
+        """ Return plaintext length in bytes """
         return self.textlength
 
     @setupSetParam("Output Length")
     def setOutputLen(self, tlen):
-        """ Set plaintext length in bytes. tlen given in BITS """
-        self.outputlength = tlen / 8
+        """ Set plaintext length in bytes """
+        self.outputlength = tlen
 
     def outputLen(self):
         """ Return output length in bytes """
