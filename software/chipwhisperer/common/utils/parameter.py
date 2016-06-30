@@ -117,6 +117,7 @@ class Parameter(object):
     "graphwidget"         - Reference to the graph widget when using parameters with type "rangegraph"
     'siPrefix', 'suffix'  - Adds prefix and sets the suffix text
     "psync"               - Disable reverse synchronization when calling the set method directly (no decorator needed)
+    "addLoadSave"         - Adds load / save settings button to a group parameter
     ...
 
     Examples:
@@ -212,6 +213,9 @@ class Parameter(object):
             if "default" not in self.opts:
                 self.opts["default"] = self.getValue()
                 self.setValue(self.opts["default"], init=True)
+        else:
+            if 'addLoadSave' in self.opts and self.opts["addLoadSave"]:
+                self.opts["addLoadSave"] = (self.load, self.save)
 
         self.childs = []
         self.ignoredChildren = self.opts.pop("children", [])
@@ -588,7 +592,7 @@ class Parameter(object):
     def toString(self, level):
         lastLevel = level
         ret = ""
-        if self.getType() != "group" and self.getType() != "action" and self.getType() != "menu" and self.getType() != "action":
+        if self.getType() != "group" and self.getType() != "action" and self.getType() != "menu":
             if not self.readonly():
                 ret += self.getName() + " = " + str(self.getValueKey()) + "\n"
         for child in self.childs:
