@@ -98,14 +98,13 @@ class SimpleSerial(TargetTemplate):
         self.ser.connectStatus.connect(self.connectStatus.emit)
         self.ser.selectionChanged()
 
-    def con(self, scope = None):
+    def _con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.ser.con(scope)
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
-        self.connectStatus.setValue(True)
 
     def close(self):
         if self.ser != None:

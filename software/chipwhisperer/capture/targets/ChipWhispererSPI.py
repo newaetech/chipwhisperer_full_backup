@@ -104,9 +104,8 @@ class ChipWhispererSPI(TargetTemplate):
         """ Return key length in BYTES """
         return self.keylength
 
-    def con(self, scope = None):
+    def _con(self, scope=None):
         self.hdev.findCWSPI()
-        self.connectStatus.setValue(True)
 
     def init(self):
         return

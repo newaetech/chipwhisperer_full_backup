@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
@@ -57,10 +58,14 @@ class TargetTemplate(Parameterized, Plugin):
         self.close()
         self.connectStatus.setValue(False)
 
-    def con(self, scope = None):
+    def con(self, scope=None):
         """Connect to target"""
+        Programmer.lastFlashedFile = "unknown"
+        self._con(scope)
         self.connectStatus.setValue(True)
-        # raise Warning("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+
+    def _con(self, scope=None):
+        raise NotImplementedError
 
     def flush(self):
         """Flush input/output buffers"""
