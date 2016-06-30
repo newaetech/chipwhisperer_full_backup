@@ -99,7 +99,7 @@ def ignore_param(a=None, b=None):
 
 def __init___fix(self, param, depth):
     """
-    Fixes some bug with PyQtGraph:
+    Fix some bugs with PyQtGraph:
     - Disconnect the signals when the widget is gone.
     - Adjusts the parameter height to also take into account the edit widget
     """
