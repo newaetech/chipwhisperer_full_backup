@@ -113,7 +113,10 @@ class FrequencyMeasure(AuxiliaryTemplate):
 
     @setupSetParam("Device")
     def setConnection(self, con):
-        self.fm = FreqMeasure(con)
+        if con == None:
+            self.fm == None
+        else:
+            self.fm = FreqMeasure(con)
 
     def captureInit(self):
         self.fm.openScope()
