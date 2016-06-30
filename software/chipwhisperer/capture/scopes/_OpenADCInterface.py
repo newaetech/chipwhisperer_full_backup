@@ -134,7 +134,7 @@ class GainSettings(Parameterized):
         self.gain_cached = 0
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.mode,
+            {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.mode, 'linked':['Result'],
                      'help': '%namehdr%'+
                              'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
                              '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
