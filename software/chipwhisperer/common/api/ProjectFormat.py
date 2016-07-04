@@ -201,12 +201,12 @@ class ProjectFormat(object):
 
         return self.config[cfgSectionName]
 
-    def saveAllSettings(self, fname=None):
+    def saveAllSettings(self, fname=None, onlyVisibles=False):
         """ Save registered parameters to a file, so it can be loaded again latter."""
         if fname is None:
             fname = os.path.join(self.datadirectory, 'settings.cwset')
             print "Saving settings to file: " + fname
-        Parameter.saveRegistered(fname)
+        Parameter.saveRegistered(fname, onlyVisibles)
 
     def saveTraceManager(self):
         #Waveform list is Universal across ALL types
