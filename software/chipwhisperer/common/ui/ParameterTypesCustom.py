@@ -200,7 +200,7 @@ def __init___fix2(self, param, depth):
 
         layout = QtGui.QHBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
+        layout.setSpacing(11)
 
         layout.addStretch()
         layout.addWidget(self.loadBtn)

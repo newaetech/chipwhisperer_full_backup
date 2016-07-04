@@ -1,0 +1,5 @@
+V3.1.10
+- Logging
+- AckPattern info in .cfg
+
+
