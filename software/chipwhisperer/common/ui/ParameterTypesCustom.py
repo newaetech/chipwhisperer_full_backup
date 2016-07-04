@@ -211,16 +211,18 @@ def __init___fix2(self, param, depth):
 
 GroupParameterItem.__init__ = __init___fix2
 
+
 def loadBtnClicked(self):
-    fname = QtCore.QSettings().value("Group_"+ self.param.name(), Settings().value("project-home-dir"))
+    fname = QtCore.QSettings().value("Group_"+ self.param.name(), Settings().value("project-home-dir", "/"))
     fname, _ = QtGui.QFileDialog.getOpenFileName(None, 'Load settings from:', fname, "*.cwset")
     if fname:
         self.param.opts['addLoadSave'][0](fname)
 
 GroupParameterItem.loadBtnClicked = loadBtnClicked
 
+
 def saveBtnClicked(self):
-    fname = QtCore.QSettings().value("Group_"+ self.param.name(), Settings().value("project-home-dir"))
+    fname = QtCore.QSettings().value("Group_"+ self.param.name(), Settings().value("project-home-dir", "/"))
     fname, _ = QtGui.QFileDialog.getSaveFileName(None, 'Save settings to:', fname, "*.cwset")
     if fname:
         QtCore.QSettings().setValue("Group_"+ self.param.name(), fname)
