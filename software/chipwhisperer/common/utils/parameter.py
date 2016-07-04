@@ -215,7 +215,7 @@ class Parameter(object):
                 self.setValue(self.opts["default"], init=True)
         else:
             if 'addLoadSave' in self.opts and self.opts["addLoadSave"]:
-                self.opts["addLoadSave"] = (self.load, self.saveRegistered)
+                self.opts["addLoadSave"] = (self.load, self.save)
 
         self.childs = []
         self.ignoredChildren = self.opts.pop("children", [])
