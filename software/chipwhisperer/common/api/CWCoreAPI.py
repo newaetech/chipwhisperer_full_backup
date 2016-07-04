@@ -358,7 +358,7 @@ class CWCoreAPI(Parameterized):
                 self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
                 self.sigCampaignDone.emit()
-                self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix)
+                self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                 tcnt += setSize
 
                 if currentTrace is not None:
