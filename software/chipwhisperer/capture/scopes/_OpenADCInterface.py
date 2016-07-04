@@ -695,7 +695,12 @@ class ClockSettings(Parameterized):
             return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2)
 
-        if (result[1] & 0x02):
+        #Current bitstream doesn't set this bit ever?
+        #phase_valid = (result[1] & 0x02)
+        #Temp fix - set as true always
+        phase_valid = True
+
+        if phase_valid:
             LSB = result[0]
             MSB = result[1] & 0x01
 
