@@ -504,7 +504,11 @@ class Parameter(object):
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
         sigValueUpdatedAdapter = lambda _, v: self.setValue(v, sigSetValueAdapter)
         self._PyQtGraphParameter.sigValueChanged.connect(sigValueUpdatedAdapter)
-        sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v),
+        if "psync" in self.opts and self.opts["psync"] == False:
+            sigSetValueAdapter = lambda v: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v),
+                                                                                          sigValueUpdatedAdapter)
+        else:
+            sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v),
                                                                                       sigValueUpdatedAdapter)
         self.sigValueChanged.connect(sigSetValueAdapter)
         self.sigLimitsChanged.connect(self._PyQtGraphParameter.setLimits)
