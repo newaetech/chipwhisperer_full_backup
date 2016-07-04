@@ -298,7 +298,9 @@ class CWMainGUI(QMainWindow):
         self.fileMenu.addAction(self.exitAct)
 
         self.projectMenu = self.menuBar().addMenu("&Project")
-        self.saveSettingsAct = QAction('&Save Settings', self, statusTip='Save parameter settings to a file inside the project folder.', triggered=self.api.project().saveAllSettings)
+        self.saveSettingsAct = QAction('&Save Settings', self, statusTip='Save parameter settings to a file inside the '
+                              'project folder so you can load it latter using the load button in the group settings.',
+                              triggered=self.api.project().saveAllSettings)
         self.projectMenu.addAction(self.saveSettingsAct)
         self.traceManageAct = QAction('&Trace Management', self, statusTip='Add/Remove traces from project.', triggered=self.traceManagerDialog.show)
         self.projectMenu.addAction(self.traceManageAct)
