@@ -321,7 +321,7 @@ class CWCoreAPI(Parameterized):
 
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
-            progressBar.setMaximum(self._numTraces - 1)
+            progressBar.setMaximum(self._numTraces)
 
             waveBuffer = None
             tcnt = 0
@@ -353,11 +353,12 @@ class CWCoreAPI(Parameterized):
                 ac.setMaxtraces(setSize)
                 ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)
-                __pb = lambda: progressBar.updateStatus(i*setSize + ac.currentTrace, (i, ac.currentTrace))
+                __pb = lambda: progressBar.updateStatus(i*setSize + ac.currentTrace + 1, (i, ac.currentTrace))
                 ac.sigTraceDone.connect(__pb)
                 self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
                 self.sigCampaignDone.emit()
+                self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix)
                 tcnt += setSize
 
                 if currentTrace is not None:
