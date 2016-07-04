@@ -589,11 +589,11 @@ class Parameter(object):
         """Deregister a registered parameter. Ignores if it is already deregistered."""
         Parameter.registeredParameters.pop(self.getName(), None)
 
-    def toString(self, level):
+    def toString(self, level, includeReadonly=False):
         lastLevel = level
         ret = ""
         if self.getType() != "group" and self.getType() != "action" and self.getType() != "menu":
-            if not self.readonly():
+            if includeReadonly or not self.readonly():
                 ret += self.getName() + " = " + str(self.getValueKey()) + "\n"
         for child in self.childs:
             if lastLevel != level+1:
@@ -611,9 +611,10 @@ class Parameter(object):
         txt, _ = self.toString(0)
         return txt
 
-    def save(self, fname):
+    def save(self, fname, includeReadonly=False):
         f = open(fname, 'w')
-        f.write(str(self))
+        txt, _ = self.toString(0, includeReadonly=False)
+        f.write(txt)
 
     @classmethod
     def saveRegistered(cls, fname):
