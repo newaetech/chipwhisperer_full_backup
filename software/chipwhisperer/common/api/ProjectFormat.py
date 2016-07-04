@@ -21,6 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+from chipwhisperer.common.utils.parameter import Parameter
 
 __author__ = "Colin O'Flynn"
 
@@ -199,7 +200,13 @@ class ProjectFormat(object):
                 self.config[cfgSectionName][k] = settings[k]
 
         return self.config[cfgSectionName]
-        
+
+    def saveAllSettings(self):
+        """ Save registered parameters to a file, so it can be loaded again latter."""
+        path = os.path.join(self.datadirectory, 'settings.cwset')
+        Parameter.saveRegistered(path)
+        print "Settings saved to file: " + path
+
     def saveTraceManager(self):
         #Waveform list is Universal across ALL types
         if 'Trace Management' not in self.config:
