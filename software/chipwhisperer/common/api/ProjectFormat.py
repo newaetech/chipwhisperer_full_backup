@@ -22,8 +22,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-__author__ = "Colin O'Flynn"
-
 import os
 import re
 import sys
@@ -31,12 +29,15 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
 from chipwhisperer.common.api.settings import Settings
+from chipwhisperer.common.utils.parameter import Parameter
 
 try:
     from configobj import ConfigObj  # import the module
 except ImportError:
     print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
     sys.exit()
+
+__author__ = "Colin O'Flynn"
 
 
 class ConfigObjProj(ConfigObj):
@@ -199,7 +200,14 @@ class ProjectFormat(object):
                 self.config[cfgSectionName][k] = settings[k]
 
         return self.config[cfgSectionName]
-        
+
+    def saveAllSettings(self, fname=None, onlyVisibles=False):
+        """ Save registered parameters to a file, so it can be loaded again latter."""
+        if fname is None:
+            fname = os.path.join(self.datadirectory, 'settings.cwset')
+            print "Saving settings to file: " + fname
+        Parameter.saveRegistered(fname, onlyVisibles)
+
     def saveTraceManager(self):
         #Waveform list is Universal across ALL types
         if 'Trace Management' not in self.config:

@@ -36,8 +36,9 @@ from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 
 
-#TODO - Rename this or the other OpenADCInterface - not good having two classes with same name
-class OpenADCInterface(ScopeTemplate):
+class OpenADC(ScopeTemplate):
+    """ Common API to OpenADC Hardware"""
+
     _name = "ChipWhisperer/OpenADC"
 
     def __init__(self):
@@ -49,27 +50,30 @@ class OpenADCInterface(ScopeTemplate):
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
-        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
 
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
         self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
         self.params.addChildren([
             {'name':'Connection', 'key':'con', 'type':'list', 'values':scopes, 'get':self.getCurrentScope, 'set':self.setCurrentScope, 'childmode':'parent'},
-            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM}
+            {'name':'Auto-Refresh DCM Status', 'type':'bool', 'value':True, 'action':self.setAutorefreshDCM, 'help':"Refresh status/info automatically every second."}
         ])
         self.params.init()
         self.params.append(self.qtadc.getParams())
 
+        self.refreshTimer = timer.runTask(self.dcmTimeout, 1)
+        self.refreshTimer.start()
+
     def dcmTimeout(self):
-        try:
-            self.qtadc.sc.getStatus()
-            # The following happen with signals, so a failure will likely occur outside of the try...except
-            # For this reason we do the call to .getStatus() to verify USB connection first
-            Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
-            Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
-        except Exception as e:
-            self.dis()
-            raise e
+        if self.connectStatus.value():
+            try:
+                self.qtadc.sc.getStatus()
+                # The following happen with signals, so a failure will likely occur outside of the try...except
+                # For this reason we do the call to .getStatus() to verify USB connection first
+                Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
+                Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
+            except Exception as e:
+                self.dis()
+                raise e
 
     def setAutorefreshDCM(self, parameter):
         if parameter.getValue():
@@ -87,7 +91,6 @@ class OpenADCInterface(ScopeTemplate):
     def _con(self):
         if self.scopetype is not None:
             self.scopetype.con()
-            self.refreshTimer.start()
 
             # TODO Fix this hack
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
@@ -130,7 +133,6 @@ class OpenADCInterface(ScopeTemplate):
 
     def _dis(self):
         if self.scopetype is not None:
-            self.refreshTimer.stop()
             self.scopetype.dis()
             if self.advancedSettings is not None:
                 self.advancedSettings.getParams().remove()

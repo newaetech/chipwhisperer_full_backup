@@ -59,7 +59,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         vlayout.addWidget(self.table)
 
         hlayout = QHBoxLayout()
-        hlayout.setSpacing(15)
+        hlayout.setSpacing(11)
         importExisting = QPushButton("+")
         importExisting.clicked.connect(self.importExisting)
         importExisting.setFixedSize(20, 20)

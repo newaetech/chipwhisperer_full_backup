@@ -47,7 +47,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             # {'name':'Size', 'type':'int'},
             {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':self.getKeyType()},
             {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue()), 'linked':['inittext']},
-            {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
+            {'name':'Fixed Plaintext', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
         ])
         self.setTarget(target)
 
@@ -85,7 +85,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def getInitialText(self):
         return " ".join(["%02X" % b for b in self._textin])
 
-    @setupSetParam("Fixed Plaintext Key")
+    @setupSetParam("Fixed Plaintext")
     def setInitialText(self, initialText, binaryText=False):
         if initialText:
             if binaryText:

@@ -162,7 +162,7 @@ class Signal(object):
 
     def connect(self, observer):
         if not callable(observer):
-            raise TypeError('Expected method, got %s' % observer.__class__)
+            raise TypeError('Expected a method, got %s' % observer.__class__)
 
         ID = _make_id(observer)
         if ID in self.callbacks:

@@ -243,7 +243,7 @@ class TriggerSettings(Parameterized):
                             'recording samples BEFORE the trigger event.\n\n' +
                             'WARNING: The pretrigger only works reliable on the CW1200 hardware. The ChipWhisperer-Lite often has trouble with '+
                             'pre-triggering for many FPGA builds. It is  recommended use presampling only on the CW1200 hardware.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(0, 1000000), 'set':self.setMaxSamples, 'get':self.maxSamples,
+            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setMaxSamples, 'get':self.maxSamples,
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the capture system has an upper limit, and may have a practical lower limit (i.e.,' +
                             ' if this value is set too low the system may not capture samples. Suggest to always set > 256 samples.'},
@@ -695,7 +695,12 @@ class ClockSettings(Parameterized):
             return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2)
 
-        if (result[1] & 0x02):
+        #Current bitstream doesn't set this bit ever?
+        #phase_valid = (result[1] & 0x02)
+        #Temp fix - set as true always
+        phase_valid = True
+
+        if phase_valid:
             LSB = result[0]
             MSB = result[1] & 0x01
 

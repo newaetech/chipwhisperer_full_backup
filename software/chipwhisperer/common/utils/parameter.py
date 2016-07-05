@@ -504,7 +504,7 @@ class Parameter(object):
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
         sigValueUpdatedAdapter = lambda _, v: self.setValue(v, sigSetValueAdapter)
         self._PyQtGraphParameter.sigValueChanged.connect(sigValueUpdatedAdapter)
-        sigSetValueAdapter = lambda v, blockSignal: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v),
+        sigSetValueAdapter = lambda v, blockSignal=None: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v),
                                                                                       sigValueUpdatedAdapter)
         self.sigValueChanged.connect(sigSetValueAdapter)
         self.sigLimitsChanged.connect(self._PyQtGraphParameter.setLimits)
@@ -589,32 +589,48 @@ class Parameter(object):
         """Deregister a registered parameter. Ignores if it is already deregistered."""
         Parameter.registeredParameters.pop(self.getName(), None)
 
-    def toString(self, level):
+    def toString(self, level, onlyVisibles=False):
         lastLevel = level
         ret = ""
-        if self.getType() != "group" and self.getType() != "action" and self.getType() != "menu":
-            if not self.readonly():
+        if self.getType() != "group" and self.getType() != "action" and self.getType() != "menu" and self.getType() != "label":
+            if (onlyVisibles and self.isVisible()) or not (onlyVisibles or self.readonly()):
                 ret += self.getName() + " = " + str(self.getValueKey()) + "\n"
-        for child in self.childs:
-            if lastLevel != level+1:
-                ret += ("[" * (level + 1)) + self.getName() + ("]" * (level + 1)) + "\n"
-                lastLevel = level+1
-            txt, lastLevel = child.toString(lastLevel)
-            ret += txt
+
+        if not onlyVisibles or self.isVisible():
+            for child in self.childs:
+                if lastLevel != level+1:
+                    ret += ("[" * (level + 1)) + self.getName() + ("]" * (level + 1)) + "\n"
+                    lastLevel = level+1
+                try:
+                    txt, lastLevel = child.toString(lastLevel, onlyVisibles)
+                    ret += txt
+                except:
+                    # print 'Warning: Could not read parameter %s. Ignoring it...' % str(child.getPath())
+                    pass
         return ret, lastLevel
 
     def __str__(self):
         txt, _ = self.toString(0)
         return txt
 
-    def save(self, fname):
+    def save(self, fname, onlyVisibles=False):
         f = open(fname, 'w')
-        f.write(str(self))
+        txt, _ = self.toString(0, onlyVisibles=False)
+        f.write(txt)
+
+    @classmethod
+    def saveRegistered(cls, fname, onlyVisibles=False):
+        f = open(fname, 'w')
+        for p in cls.registeredParameters.itervalues():
+            if 'addLoadSave' in p.opts and p.opts['addLoadSave'] is not False:
+                txt, _ = p.toString(0, onlyVisibles)
+                f.write(txt)
 
     def load(self, fname):
         f = open(fname, 'r')
         path = []
-        for line in f:
+        foundCorrectSection = False
+        for lineNum, line in enumerate(f):
             level = 0
             for p in range(0, len(line)):
                 if line[p] == "[":
@@ -625,15 +641,19 @@ class Parameter(object):
                 path = path[0:level - 1]
                 if level >= len(path):
                     if level > len(path) + 1:
-                        raise Warning("Group hierarchy missing before line %d of file %s: %s" % (p, fname, line))
+                        raise Warning("Error reading file %s, line %d: %s. Group hierarchy missing." % (fname, lineNum, line))
                     path.append(line[level:-(level + 1)])
             else:
+                if path[0] != self.getName():
+                    continue
+                foundCorrectSection = True
                 separator = line.find("=")
                 value = line[separator + 1:-1].strip()
                 param = path[1:] + [line[0:separator].strip()]
                 child = self.getChild(param)
                 if child is None:
-                    raise ValueError("Error reading file %s in line %s. Parameter %s not found." % (fname, line, str(param)))
+                    print 'Warning: Error reading file %s, line %d: %s. Parameter "%s" not found. Ignoring it...' % (fname, lineNum, line, str(param))
+                    continue
 
                 if child.getType() == "int":
                     value = int(value)
@@ -648,7 +668,13 @@ class Parameter(object):
                     value = child.opts["limits"][value]
                 elif child.getType() != "list" and value != "":
                     value = eval(value)
-                child.setValue(value)
+                if not child.readonly():
+                    child.setValue(value)
+                else:
+                    if str(child.getValue()) != str(value):
+                        print 'Info: Parameter %s in line %d is readonly and value being set is different than the current one.' % (child.getName(), lineNum)
+        if not foundCorrectSection:
+            raise Warning('Could not found section "%s" in file: %s' % (self.getName(), fname))
 
     @classmethod
     def findParameter(cls, path):
