@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 # =================================================
-
+import logging
 import sys
 import copy
 import weakref
@@ -605,7 +605,7 @@ class Parameter(object):
                     txt, lastLevel = child.toString(lastLevel, onlyVisibles)
                     ret += txt
                 except:
-                    # print 'Warning: Could not read parameter %s. Ignoring it...' % str(child.getPath())
+                    logging.info('Info: Could not read parameter %s. Ignoring it...' % str(child.getPath()))
                     pass
         return ret, lastLevel
 
@@ -641,7 +641,8 @@ class Parameter(object):
                 path = path[0:level - 1]
                 if level >= len(path):
                     if level > len(path) + 1:
-                        raise Warning("Error reading file %s, line %d: %s. Group hierarchy missing." % (fname, lineNum, line))
+                        raise Warning(
+                            'Error reading file %s, line "%d:%s". Group hierarchy missing.' % (fname, lineNum, line))
                     path.append(line[level:-(level + 1)])
             else:
                 if path[0] != self.getName():
@@ -652,7 +653,7 @@ class Parameter(object):
                 param = path[1:] + [line[0:separator].strip()]
                 child = self.getChild(param)
                 if child is None:
-                    print 'Warning: Error reading file %s, line %d: %s. Parameter "%s" not found. Ignoring it...' % (fname, lineNum, line, str(param))
+                    logging.warning('Parameter "%s" in line "%d:%s" not found. Ignoring it.' % (line, lineNum, str(param)))
                     continue
 
                 if child.getType() == "int":
@@ -672,7 +673,7 @@ class Parameter(object):
                     child.setValue(value)
                 else:
                     if str(child.getValue()) != str(value):
-                        print 'Info: Parameter %s in line %d is readonly and value being set is different than the current one.' % (child.getName(), lineNum)
+                        logging.info('Parameter %s in line %d is readonly and value being set is different than the current one.' % (child.getName(), lineNum))
         if not foundCorrectSection:
             raise Warning('Could not found section "%s" in file: %s' % (self.getName(), fname))
 

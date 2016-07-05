@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 from datetime import *
 from ..utils import qt_tweaks
 from ..utils import util
@@ -40,7 +40,7 @@ class ProgressBarText(object):
         self.aborted = False
         self.printAll = False
         ProgressBarText.setText(self, text)
-        print self.title + ": " + self.getStatusText()
+        logging.info(self.title + ": " + self.getStatusText())
 
     def __enter__(self):
         pass
@@ -55,7 +55,7 @@ class ProgressBarText(object):
     def setText(self, text):
         if text:
             self.text = text
-            print self.title + ": " + self.text
+            logging.info(self.title + ": " + self.text)
         else:
             self.text = ""
 
@@ -73,7 +73,7 @@ class ProgressBarText(object):
 
     def printStatus(self):
         if self.maximum!=0:
-            print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
+            logging.info(self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")")
 
     def updateStatus(self, currentProgress, textValues=None):
         self.textValues = textValues
@@ -89,7 +89,7 @@ class ProgressBarText(object):
             message = "User request."
         self.aborted = True
         self.setStatusMask("Aborted. Reason = " + message)
-        print self.title + ": " + self.getStatusText()
+        logging.warn(self.title + ": " + self.getStatusText())
 
     def wasAborted(self):
         return self.aborted
@@ -97,9 +97,10 @@ class ProgressBarText(object):
     def close(self):
         #assert self.currentProgress == self.maximum or self.wasAborted(), \
         if (self.currentProgress != self.maximum) and (self.wasAborted() == False):
-            print "WARNING: ProgressBar %s"%self.title + "Closing not in 100%%: progress = %d and maximum = %d" % (self.currentProgress, self.maximum)
+            logging.warn('ProgressBar ' + self.title + ' closed not in 100%%: progress = %d and maximum = %d' %
+                            (self.currentProgress, self.maximum))
 
-        print self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime))
+        logging.info(self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime)))
 
     def setMaximum(self, value):
         self.maximum = float(value)

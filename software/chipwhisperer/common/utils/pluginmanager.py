@@ -24,6 +24,7 @@
 
 import importlib
 import inspect
+import logging
 import os.path
 import traceback
 
@@ -89,7 +90,7 @@ def importModulesInPackage(path):
         try:
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
-            print "INFO: Could not import module: " + full_package_name + ": " + str(e)
+            logging.info('Could not import module: ' + full_package_name + ": " + str(e))
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
 
     files = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath), extension=True)
@@ -99,7 +100,7 @@ def importModulesInPackage(path):
         try:
             resp.append(imp.load_source(full_package_name, full_file_path))
         except Exception as e:
-            print "INFO: Could not import user module: " + full_file_path + ": " + str(e)
+            logging.info('Could not import user module: ' + full_file_path + ": " + str(e))
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
     return resp
 
@@ -126,11 +127,11 @@ def putInDict(items, instantiate, *args, **kwargs):
                 resp[item.getClassName()] = item
             loadedItems.append([str(c), True, "", ""])
         except Exception as e:
-            print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
+            logging.info('Could not instantiate module ' + str(c) + ": " + str(e))
             loadedItems.append([str(c), False, str(e), traceback.format_exc()])
 
     if len(resp) == 0:
-        print "Warning: Dictionary contains zero modules"
+        logging.info('Dictionary contains zero modules')
     return resp
 
 

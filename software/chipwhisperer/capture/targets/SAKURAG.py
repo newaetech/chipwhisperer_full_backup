@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 
 import chipwhisperer.capture.scopes._qt as openadc_qt
@@ -289,7 +289,7 @@ class SakuraG(TargetTemplate):
             # For SAKURA-G normally we use 'A' channel
             ser = self.findParam('serno').getValue()
             if ser.endswith('A') is False:
-                print "WARNING: Normally SAKURA-G uses 'A' ending in serial number"
+                logging.warning('Normally SAKURA-G uses "A" ending in serial number')
             self.hw.setSerial(ser)
 
         if hasattr(self.hw, 'reset'):

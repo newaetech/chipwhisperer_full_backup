@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import sys
 
 import chipwhisperer.capture.scopes._qt as openadc_qt
@@ -79,8 +79,8 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
                 raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
 
             if (found_id == 0xACE3):
-                print "WARNING: Found CW1200. FPGA dialog being switched, if you made changes they are lost."
-                print "         If you need a different bitstream loaded, edit the dialog now and reconnect."
+                logging.warning('Found CW1200. FPGA dialog being switched, if you made changes they are lost. '
+                                'If you need a different bitstream loaded, edit the dialog now and reconnect.')
 
                 self.cwFirmwareConfig = FWLoaderConfig(CW1200_Loader())
 
@@ -95,7 +95,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
         try:
             self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
+            logging.info('OpenADC Found, Connecting')
         except IOError, e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC: " + (str(exctype) + str(value)))

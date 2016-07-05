@@ -24,6 +24,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
+
+from usb import USBError
 
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as ChipWhispererDecodeTrigger
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
@@ -71,6 +74,9 @@ class OpenADC(ScopeTemplate):
                 # For this reason we do the call to .getStatus() to verify USB connection first
                 Parameter.setParameter(['OpenADC', 'Clock Setup', 'Refresh Status', None], blockSignal=True)
                 Parameter.setParameter(['OpenADC', 'Trigger Setup', 'Refresh Status', None], blockSignal=True)
+            except USBError:
+                self.dis()
+                raise Warning("Error in the scope. It may have been disconnected.")
             except Exception as e:
                 self.dis()
                 raise e

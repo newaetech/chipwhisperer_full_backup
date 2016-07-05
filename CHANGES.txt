@@ -12,7 +12,8 @@ V3.1.9:
 - Bandstop digital filter option (credits to Marc).
 - Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
 - Added buttons to load and save settings.
-- Project settings saved to the traces during capture.
+- Project settings saved with the traces during capture.
+- Logging
 
 V3.1.8:
 - Read/save buttons.

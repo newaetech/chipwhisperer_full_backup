@@ -24,6 +24,7 @@
 #=================================================
 
 # Python standard imports
+import logging
 import math
 import pickle
 import sys
@@ -364,15 +365,14 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
             succresult = False
 
         #Check ?
-        if isinstance(normresult, bool) == False:
-            raise ValueError("Result of 'normal' eval() not a bool, got %s (result: %s)"%(type(normresult), normresult))
+        if not isinstance(normresult, bool):
+            raise ValueError("Result of 'normal' eval() not a bool, got %s (result: %s)" % (type(normresult), normresult))
 
-        if isinstance(succresult, bool) == False:
-            raise ValueError("Result of 'success' eval() not a bool, got %s (result: %s)"%(type(succresult), succresult))
-
+        if not isinstance(succresult, bool):
+            raise ValueError("Result of 'success' eval() not a bool, got %s (result: %s)" % (type(succresult), succresult))
 
         if normresult and succresult:
-            print "WARNING: Both normresult and succresult True!"
+            logging.warning('Both normresult and succresult True!')
 
         starttime = datetime.now()
 

@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import zipfile
 import StringIO
 import base64
@@ -152,7 +152,7 @@ class ChipWhispererGlitch(Parameterized):
             # Check this is actually working
             if self.prCon.isPresent() == False:
                 self.prEnabled = False
-                print "WARNING: Partial Reconfiguration block not detected, PR disabled"
+                logging.warning('Partial Reconfiguration block not detected, PR disabled')
                 return
 
             # Reset FPGA back to defaults in case previous bitstreams loaded
@@ -177,10 +177,10 @@ class ChipWhispererGlitch(Parameterized):
         offsetint = round((offset / 100) * 256)
 
         if (widthint == 0):
-            print "WARNING: Partial reconfiguration for width = 0 may not work"
+            logging.warning('Partial reconfiguration for width = 0 may not work')
 
         if (offsetint == 0):
-            print "WARNING: Partial reconfiguration for width = 0 may not work"
+            logging.warning('Partial reconfiguration for width = 0 may not work')
 
         bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
 

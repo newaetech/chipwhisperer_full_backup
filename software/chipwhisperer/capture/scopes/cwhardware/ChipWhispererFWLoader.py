@@ -23,7 +23,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 import zipfile
 import os.path
@@ -71,18 +71,18 @@ class CW_Loader(object):
     def fpga_bitstream(self):
         """ Returns FPGA bitstream in use (either debug or release) """
         if self._release_mode == "builtin":
-            print "FPGA: Builtin mode"
+            logging.debug('FPGA: Builtin mode')
             filelike = self._bsBuiltinData
             zfile = zipfile.ZipFile(filelike)
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "zipfile":
-            print "FPGA: Zipfile mode"
+            logging.debug('FPGA: Zipfile mode')
             if not os.path.isfile(self._bsZipLoc):
                 raise IOError("FPGA Zip-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsZipLoc)
             zfile = zipfile.ZipFile(self._bsZipLoc, "r")
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "debug":
-            print "FPGA: Raw bitstream mode"
+            logging.debug('FPGA: Raw bitstream mode')
             if not os.path.isfile(self._bsLoc):
                 raise IOError("FPGA bit-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsLoc)
             return open(self._bsLoc, "rb")
@@ -98,7 +98,7 @@ class CW_Loader(object):
         """
 
         if (release_mode != "builtin") and (release_mode != "debug") and (release_mode != "zipfile"):
-            print "NOTE: FPGA mode switched to 'builtin' from invalid setting of '%s'"%release_mode
+            logging.warning('FPGA mode switched to \'builtin\' from invalid setting of \'%s\'' % release_mode)
             release_mode = "builtin"
 
         self.write_setting("fpga-bitstream-mode", release_mode)
@@ -123,7 +123,7 @@ class CWCRev2_Loader(CW_Loader):
         if self.driver.firmwareProgrammed == False or forceFirmware:
             self.loadFirmware()
         else:
-            print "EZ-USB Microcontroller: Skipped firmware download (already done)"
+            logging.info('EZ-USB Microcontroller: Skipped firmware download (already done)')
 
         if self.driver.deviceInfo["interfaceVersion"] != 1:
             raise IOError("Unknown interface version, invalid ZTEX Firmware?. Device info: %s" % str(self.driver.deviceInfo))
@@ -135,9 +135,9 @@ class CWCRev2_Loader(CW_Loader):
         if self.driver.fpgaConfigured == False:
             callback()
             self.driver.getFpgaState()
-            print "FPGA: Programmed bitstream successfully"
+            logging.info('FPGA: Programmed bitstream successfully')
         else:
-            print "FPGA: Skipped configuration (already done)"
+            logging.info('FPGA: Skipped configuration (already done)')
 
     def loadFirmware(self):
         if self._release_mode != "builtin":
@@ -229,7 +229,7 @@ class FWLoaderConfig(object):
 
         if hasattr(self.loader, 'loadFirmware'):
             self.loader.loadFirmware()
-            print "Firmware loaded"
+            logging.info('Firmware loaded')
 
     def setFPGAMode(self, fpgamode):
         self.loader.setFPGAMode(fpgamode)
@@ -247,10 +247,10 @@ class FWLoaderConfig(object):
         #Print if in debug mode
         if self.loader.fpga_bitstream_date():
             strdate = self.loader.fpga_bitstream_date()
-            print "FPGA: DEBUG MODE: Using .bit file, date: %s" % strdate
+            logging.info('FPGA: DEBUG MODE: Using .bit file, date: %s' % strdate)
         
         self.loader.loadFPGA()
-        print "FPGA programmed"
+        logging.info('FPGA programmed')
 
     def setInterface(self, dev):
         self.loader.setInterface(dev)

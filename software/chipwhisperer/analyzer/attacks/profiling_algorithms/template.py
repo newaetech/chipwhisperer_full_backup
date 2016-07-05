@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import numpy as np
 import scipy
 from ._base import TemplateBasic, multivariate_normal
@@ -82,7 +82,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         try:
             ted = CWAnalyzerGUI.getInstance().traceExplorerDialog.exampleScripts[0]
         except AttributeError:
-            print("INFO: Delaying script for template attack until TraceExplorer exists...")
+            logging.info('Delaying script for template attack until TraceExplorer exists...')
             return
 
         self.addFunction('generateTemplates', 'initPreprocessing', '', obj='UserScript')
@@ -165,10 +165,10 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
 
             # Validate in case someone tries to change via project file
             if f["partitiontype"] != t["partitiontype"]:
-                print "WARNING: PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used."
+                logging.warning('PartitionType for template from .npz file (%s) differs from project file (%s). npz file being used.')
 
             if (util.strListToList(str(f["poi"])) != t["poi"]).any():
-                print "WARNING: POI for template from .npz file (%s) differs from project file (%s). npz file being used."
+                logging.warning('POI for template from .npz file (%s) differs from project file (%s). npz file being used.')
 
         return templates
 
@@ -209,8 +209,8 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
                 try:
                     newresultsint = [multivariate_normal.logpdf(traces[tnum][pois[bnum]], mean=template['mean'][bnum][i], cov=np.diag(template['cov'][bnum][i])) for i in range(0, numparts)]
                 except np.linalg.LinAlgError as e:
-                    print("WARNING: Error in applying template, probably template is poorly formed or POI incorrect. Error: " + str(e))
-                    print("         Byte %d for tnum %d skipped due to this error."%(bnum, tnum))
+                    logging.warning('Error in applying template, probably template is poorly formed or POI incorrect. Byte %d for tnum %d skipped.' % (bnum, tnum))
+                    logging.debug(e)
                     newresultsint = [0] * 256
 
                 ptype = template["partitiontype"]

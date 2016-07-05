@@ -26,6 +26,7 @@ import copy
 import os
 import traceback
 import sys
+import logging
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
@@ -51,6 +52,7 @@ class CWCoreAPI(Parameterized):
     instance = None
 
     def __init__(self):
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
         CWCoreAPI.instance = self
         self.sigNewProject = util.Signal()
         self.sigNewScopeData = util.Signal()

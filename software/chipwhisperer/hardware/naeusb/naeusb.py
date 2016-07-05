@@ -21,7 +21,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-
+import logging
 import time
 import usb.core
 import usb.util
@@ -100,7 +100,7 @@ class NAEUSB(object):
         else:
             name = "Unknown (PID = %04x)"%foundId
 
-        print "Found %s, Serial Number = %s" % (name, self.snum)
+        logging.info('Found %s, Serial Number = %s' % (name, self.snum))
 
         self._usbdev = dev
         self.rep = 0x81
@@ -108,11 +108,11 @@ class NAEUSB(object):
         self._timeout = 200
 
         fwver = self.readFwVersion()
-        print "SAM3U Firmware version = %d.%d b%d" % (fwver[0], fwver[1], fwver[2])
+        logging.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
 
         if not (fwver[0] >= self.fwversion_latest[0] and fwver[1] >= self.fwversion_latest[1]):
-            print "**NOTE: Your firmware is outdated - latest is %d.%d" % (self.fwversion_latest[0], self.fwversion_latest[1])
-            print "**Suggested to update firmware, as you may experience errors"
+            logging.warning('Your firmware is outdated - latest is %d.%d' % (self.fwversion_latest[0], self.fwversion_latest[1]) +
+                            '. Suggested to update firmware, as you may experience errors')
 
         return foundId
 
@@ -121,14 +121,11 @@ class NAEUSB(object):
         return self._usbdev
 
     def close(self):
-        """
-        Close USB connection
-        """
-        # self.usbdev().close()
+        """Close USB connection."""
         try:
             usb.util.dispose_resources(self.usbdev())
         except usb.USBError as e:
-            print "INFO: USB Failure calling dispose_resources: %s" % str(e)
+            logging.info('USB Failure calling dispose_resources: %s' % str(e))
 
     def readFwVersion(self):
         try:
@@ -218,6 +215,7 @@ class NAEUSB(object):
             self.usbdev().read(self.rep, 1000, timeout=0.010)
         except:
             pass
+
 
 if __name__ == '__main__':
     from fpga import FPGA
