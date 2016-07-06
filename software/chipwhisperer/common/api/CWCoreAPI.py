@@ -382,9 +382,10 @@ class CWCoreAPI(Parameterized):
             for c in classes:
                 self.runScriptClass(c, funcName)
         except Exception as e:
-            sys.excepthook(Warning, "Could not execute Script Module %s: '%s'" %
+            sys.excepthook(Warning, "Could not execute Script Module %s: '%s:%s'" %
                              (str(mod),
-                              "".join(traceback.format_exception_only(sys.exc_info()[0], e.message)).rstrip("\n ")
+                              "".join(traceback.format_exception_only(sys.exc_info()[0], e.message)).rstrip("\n "),
+                              str(e).rstrip("\n ")
                               ), sys.exc_info()[2])
 
     def runScriptClass(self, scriptClass, funcName="run"):
@@ -395,10 +396,11 @@ class CWCoreAPI(Parameterized):
             if funcName is not None:
                 eval('m.%s()' % funcName)
         except Exception as e:
-                sys.excepthook(Warning, "Could not execute method %s in script class %s: '%s'" %
+                sys.excepthook(Warning, "Could not execute method %s in script class %s: '%s:%s'" %
                                (funcName,
                                 scriptClass.__name__,
-                                "".join(traceback.format_exception_only(sys.exc_info()[0], e.message)).rstrip("\n ")
+                                "".join(traceback.format_exception_only(sys.exc_info()[0], e.message)).rstrip("\n "),
+                                str(e).rstrip("\n ")
                                 ), sys.exc_info()[2])
         finally:
             self.executingScripts.setValue(False)
