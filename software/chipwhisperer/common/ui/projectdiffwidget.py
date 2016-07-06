@@ -32,6 +32,8 @@ class ProjectDiffWidget(QWidget):
         super(ProjectDiffWidget, self).__init__(parent)
 
         hlayout = QHBoxLayout()
+        hlayout.setContentsMargins(0, 0, 0, 0)
+        hlayout.setSpacing(5)
 
         self.changedTree = ParameterTree()
         self.addedTree = ParameterTree()

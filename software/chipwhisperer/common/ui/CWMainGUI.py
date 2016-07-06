@@ -485,7 +485,7 @@ class CWMainGUI(QMainWindow):
         self.api.setProject(proj)
 
     def okToContinue(self):
-        if self.api.project() is None: return False
+        if self.api.project() is None: return True
 
         reply = SaveProjectDialog.getSaveProjectDialog(self, self.api.project())
         if reply == QDialogButtonBox.RejectRole:
