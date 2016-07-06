@@ -159,15 +159,12 @@ class CWMainGUI(QMainWindow):
                 self.tabifyDockWidget(docks[index-1], docks[index])
             docks[0].raise_()
 
-    def getTraceSource(self):
-        raise self.api.project().traceManager()
-
-    def addConsole(self, name="Script Output", visible=True):
+    def addScriptingDock(self, name="Script Output", visible=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = qt_tweaks.QTextBrowser()
         return self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
-    def addLogging(self, name="Debug Logging", visible=True, redirectStdOut=True):
+    def addLoggingDock(self, name="Debug Logging", visible=True, redirectStdOut=True):
         loggingWidget = LoggingWidget(self)
         if redirectStdOut:
             sys.stdout = loggingWidget.editor
@@ -364,9 +361,9 @@ class CWMainGUI(QMainWindow):
         self.setupToolBar()
 
         # Project editor dock
-        self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
+        self.paramScriptingDock = self.addScriptingDock("Script Commands", visible=False)
         Parameter.scriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
-        self.loggingDock = self.addLogging()
+        self.loggingDock = self.addLoggingDock()
         self.pythonConsoleDock = self.addPythonConsole()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.loggingDock])
         self.setBaseSize(800,600)

@@ -38,17 +38,24 @@ class LoggingWidget(QWidget, QPlainTextEditLogger):
         [self._format.addItem(item) for item in self._formats]
 
         self._clearBtn = QPushButton("Clear")
+        self._clearBtn.setFixedSize(80, 33)
 
         # Add the new logging box widget to the layout
         layout = QVBoxLayout()
+        # layout.setContentsMargins(0,0,0,0)
+        layout.setSpacing(0)
         layoutH = QHBoxLayout()
+        layoutH.setSpacing(0)
+        layoutH.setContentsMargins(0,0,0,0)
 
         layout.addWidget(self.editor.widget)
         layout.addLayout(layoutH)
         layoutH.addWidget(QLabel('Level: '))
         layoutH.addWidget(self._level)
+        layoutH.addSpacing(12)
         layoutH.addWidget(QLabel('Format: '))
         layoutH.addWidget(self._format)
+        layoutH.addSpacing(12)
         layoutH.addWidget(self._clearBtn)
         layoutH.addStretch()
         self.setLayout(layout)

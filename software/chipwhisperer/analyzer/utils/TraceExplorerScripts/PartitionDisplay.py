@@ -268,7 +268,7 @@ class PartitionDisplay(Parameterized, AutoScript):
         self.graphDock.hide()
 
     def defineName(self):
-        self.partObject = Partition(self)
+        self.partObject = Partition()
         partModeList = {}
         for a in self.partObject.supportedMethods:
             partModeList[a.partitionType] = a
@@ -302,7 +302,7 @@ class PartitionDisplay(Parameterized, AutoScript):
               ]},
         ])
 
-    def updatePOI(self, ignored=None):
+    def updatePOI(self, _=None):
         self.updateScript()
 
         if self._autoscript_init == False:

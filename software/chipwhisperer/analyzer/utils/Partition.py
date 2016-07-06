@@ -26,15 +26,12 @@
 #=================================================
 
 import copy
-from PySide.QtCore import *
-from PySide.QtGui import *
 import numpy as np
 import random
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
 from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameter import Parameterized
 
 
@@ -124,34 +121,6 @@ class PartitionRandDebug(object):
         return [random.randint(0, self.numRand - 1)]
 
 
-class PartitionDialog(QtFixes.QDialog):
-    """Open dialog to run partioning"""
-
-    def __init__(self, parent, partInst):
-        super(PartitionDialog, self).__init__(parent)
-
-        self.part = partInst
-
-        self.setWindowTitle("Partition Traces")
-        self.setObjectName("Partition Traces")
-
-        layoutPart = QHBoxLayout()
-
-        pbStart = QPushButton("Generate Partitions")
-        pbStart.clicked.connect(self.runGenerate)
-        layoutPart.addWidget(pbStart)
-        self.setLayout(layoutPart)
-
-    def runGenerate(self):
-        pb = QProgressBar(self)
-
-        # TODO: Partition generation doesn't work
-        pb.setMinimum(0)
-        pb.setMaximum(self.part.getTraceSource.numTraces())
-
-        self.part.runPartitions(report=pb.updateStatus)
-
-
 class Partition(Parameterized):
     """
     Base Class for all partioning modules
@@ -172,7 +141,7 @@ class Partition(Parameterized):
 
     supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
-    def __init__(self, parent):
+    def __init__(self):
         self.setPartMethod(PartitionRandvsFixed)
         self.partDataCache = None
 
