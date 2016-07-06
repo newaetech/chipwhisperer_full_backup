@@ -162,7 +162,7 @@ class CWMainGUI(QMainWindow):
     def getTraceSource(self):
         raise self.api.project().traceManager()
 
-    def addConsole(self, name="Debug Logging", visible=True):
+    def addConsole(self, name="Script Output", visible=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = qt_tweaks.QTextBrowser()
         return self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
@@ -218,14 +218,11 @@ class CWMainGUI(QMainWindow):
 
         if self.okToContinue():
             QMainWindow.closeEvent(self, event)
+            sys.excepthook = sys.__excepthook__  # Restore exception handlers
+            sys.stdout = sys.__stdout__          # Restore print statements
+            sys.stderr = sys.__stderr__
         else:
             event.ignore()
-
-    def close(self):
-        sys.excepthook = sys.__excepthook__  # Restore exception handlers
-        sys.stdout = sys.__stdout__          # Restore print statements
-        sys.stderr = sys.__stderr__
-        super(CWMainGUI,self).close()
 
     def helpdialog(self):
         """Helps the User"""
@@ -369,9 +366,9 @@ class CWMainGUI(QMainWindow):
         # Project editor dock
         self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
         Parameter.scriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
-        self.consoleDock = self.addLogging()
+        self.loggingDock = self.addLogging()
         self.pythonConsoleDock = self.addPythonConsole()
-        self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
+        self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.loggingDock])
         self.setBaseSize(800,600)
 
     def setupToolBar(self):

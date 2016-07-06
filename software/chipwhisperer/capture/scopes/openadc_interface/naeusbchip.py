@@ -74,9 +74,8 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
             try:
                 found_id = self.dev.con(idProduct=[0xACE2, 0xACE3])
-            except IOError as e:
-                exctype, value = sys.exc_info()[:2]
-                raise IOError("ChipWhisperer USB "+ str(exctype) + str(value))
+            except IOError:
+                raise Warning('Could not connect to "%s". It may have been disconnected or is being used by another tool.')
 
             if (found_id == 0xACE3):
                 logging.warning('Found CW1200. FPGA dialog being switched, if you made changes they are lost. '

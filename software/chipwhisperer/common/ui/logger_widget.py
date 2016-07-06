@@ -26,7 +26,6 @@ class LoggingWidget(QWidget, QPlainTextEditLogger):
         QWidget.__init__(self, parent)
 
         self.editor = QPlainTextEditLogger(self)
-        # You can format what is printed to text box
         logging.getLogger().addHandler(self.editor)
 
         self._level = QComboBox()
@@ -71,3 +70,5 @@ class LoggingWidget(QWidget, QPlainTextEditLogger):
     def setLevel(self, levelName):
         logging.getLogger().setLevel(logging._levelNames[levelName])
 
+    def __del__(self):
+        logging.getLogger().removeHandler(self.editor)

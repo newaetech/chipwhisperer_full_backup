@@ -360,10 +360,10 @@ class CWCoreAPI(Parameterized):
                 self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
                 self.sigCampaignDone.emit()
-                self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                 tcnt += setSize
 
                 if currentTrace is not None:
+                    self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                     waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
 
                 if progressBar.wasAborted():

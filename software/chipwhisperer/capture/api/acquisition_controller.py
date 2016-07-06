@@ -121,10 +121,10 @@ class AcquisitionController():
         if self.scope:
             try:
                 if self.scope.capture(update, N) == True:
-                    print "Timeout"
+                    logging.warning('Timeout')
                     return False
             except IOError as e:
-                print "IOError: %s" % str(e)
+                logging.error('IOError: %s' % str(e))
                 return False
 
         if self.auxList:

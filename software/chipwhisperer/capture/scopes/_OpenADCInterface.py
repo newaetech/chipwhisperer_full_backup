@@ -950,7 +950,7 @@ class OpenADCInterface(object):
                 # Check for timeout, if so abort
                 if len(result) < 1:
                     self.flushInput()
-                    print("Timeout in read: %d" % len(result))
+                    logging.warning('Timeout in read: %d' % len(result))
                     return None
 
                 rb = bytearray(result)
@@ -980,7 +980,7 @@ class OpenADCInterface(object):
                         else:
                             errmsg += "<Timeout>"
 
-                        print(errmsg)
+                        logging.error(errmsg)
 
 ### Generic
     def setSettings(self, state, validate=True):
@@ -1120,7 +1120,7 @@ class OpenADCInterface(object):
 
             # If we've timed out, don't wait any longer for a trigger
             if (diff.total_seconds() > self._timeout):
-                print("Timeout in OpenADC capture(), trigger FORCED")
+                logging.warning('Timeout in OpenADC capture(), trigger FORCED')
                 timeout = True
                 self.triggerNow()
 
@@ -1238,7 +1238,7 @@ class OpenADCInterface(object):
         lastpt = -100
 
         if data[0] != 0xAC:
-            print("Unexpected sync byte: 0x%x"%data[0])
+            logging.warning('Unexpected sync byte: 0x%x' % data[0])
             return None
 
         trigfound = False
