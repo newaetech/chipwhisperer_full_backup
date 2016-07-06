@@ -21,10 +21,12 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-
+import logging
 import os
 import re
 import sys
+import weakref
+
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
@@ -47,11 +49,12 @@ class ConfigObjProj(ConfigObj):
     """
 
     def __init__(self, callback=None, *args, **kwargs):
-        self._callback = callback
-        super(ConfigObjProj, self).__init__(*args, **kwargs)
+        if callback is not None:
+            self._callback = util.WeakMethod(callback)
+        else:
+            self._callback = None
 
-    def setCallback(self, cb):
-        self._callback = cb
+        super(ConfigObjProj, self).__init__(*args, **kwargs)
 
     def __setitem__(self, key, value, unrepr=False):
         super(ConfigObjProj, self).__setitem__(key, value, unrepr)
@@ -71,9 +74,12 @@ class ProjectFormat(object):
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self._traceManager = TraceManager().register()
-        self.__dirtyCallback = lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())
         self._traceManager.dirty.connect(self.__dirtyCallback)
         self.setFilename(ProjectFormat.untitledFileName)
+        if __debug__: logging.debug('Created: ' + str(self))
+
+    def __dirtyCallback(self):
+        self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())
 
     def configObjChanged(self, key):
         self.dirty.setValue(True)
@@ -275,3 +281,6 @@ class ProjectFormat(object):
             util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
             t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
         self.sigStatusChanged.emit()
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))

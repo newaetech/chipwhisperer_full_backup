@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
@@ -36,6 +37,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         AnalysisSource.__init__(self)
         PassiveTraceObserver.__init__(self)
         self.getParams().getChild("Input").hide()
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def processKnownKey(self, inpkey):
         """
@@ -97,6 +99,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
 
     def targetBytes(self):
         return self._targetbytes
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))
 
 
 class AttackObserver(AnalysisObserver):

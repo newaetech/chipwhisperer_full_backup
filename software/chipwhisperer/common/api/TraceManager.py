@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import ConfigParser
+import logging
 import os.path
 import re
 
@@ -46,6 +47,7 @@ class TraceManager(TraceSource):
         self._numPoints = 0
         self.lastUsedSegment = None
         self.traceSegments = []
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def newProject(self):
         """Create a new empty set of traces."""
@@ -205,3 +207,6 @@ class TraceManager(TraceSource):
         self.dirty.setValue(True)
         self._updateRanges()
         self.sigTracesChanged.emit()
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))
