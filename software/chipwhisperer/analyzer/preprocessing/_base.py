@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -52,7 +53,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
                  {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
         ])
         self.findParam('input').hide()
-        # print "Created: " + str(self)
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def updateScript(self, ignored=None):
         pass
@@ -107,5 +108,5 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def numPoints(self):
         return self._traceSource.numPoints()
 
-    # def __del__(self):
-    #     print "Deleted: " + str(self)
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))

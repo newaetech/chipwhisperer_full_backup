@@ -41,6 +41,7 @@ class ProgressBarText(object):
         self.printAll = False
         ProgressBarText.setText(self, text)
         logging.info(self.title + ": " + self.getStatusText())
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def __enter__(self):
         pass
@@ -51,6 +52,9 @@ class ProgressBarText(object):
 
         self.close()
         return exc_type == Warning
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))
 
     def setText(self, text):
         if text:
@@ -121,6 +125,7 @@ try:
             ProgressBarText.__init__(self, title = title, text=text, statusMask=statusMask, textValues=textValues)
             QDialog.__init__(self, parent)
 
+            self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
             self.setModal(False)
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)

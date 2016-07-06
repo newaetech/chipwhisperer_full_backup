@@ -23,13 +23,15 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 from PySide.QtGui import *
+from PySide.QtCore import *
 from projectdiffwidget import ProjectDiffWidget
 
 
 class SaveProjectDialog(QDialog):
 
-    def __init__(self, parent):
+    def __init__(self, parent, project):
         super(SaveProjectDialog, self).__init__(parent)
+        self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
         self.setWindowTitle("Unsaved Changes Detected")
         self.setModal(True)
         layout = QVBoxLayout()
@@ -37,8 +39,7 @@ class SaveProjectDialog(QDialog):
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
         layout.addWidget(self.buttonBox)
 
-        detailedWidget = ProjectDiffWidget(self, project=self.parent().api.project())
-        detailedWidget.checkDiff(updateGUI=True)
+        detailedWidget = ProjectDiffWidget(self, project)
         detailedLayout = QVBoxLayout()
         detailedLayout.addWidget(detailedWidget)
 
@@ -71,6 +72,6 @@ class SaveProjectDialog(QDialog):
     def getSaveProjectDialog(parent, project):
         if not project.hasDiffs():
             return QDialogButtonBox.NoRole
-        dialog = SaveProjectDialog(parent)
+        dialog = SaveProjectDialog(parent, project)
         dialog.exec_()
         return dialog.value()
