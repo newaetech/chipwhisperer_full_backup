@@ -21,6 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+from functools import partial
 
 from PySide.QtGui import *
 from PySide.QtCore import *
@@ -39,12 +40,9 @@ class SaveProjectDialog(QDialog):
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
         layout.addWidget(self.buttonBox)
 
-        detailedWidget = ProjectDiffWidget(self, project)
-        detailedLayout = QVBoxLayout()
-        detailedLayout.addWidget(detailedWidget)
-
-        detailedHidableWidget = QWidget()
-        detailedHidableWidget.setLayout(detailedLayout)
+        detailedHidableWidget = ProjectDiffWidget(self, project)
+        detailedHidableWidget.setContentsMargins(0, 0, 0, 0)
+        detailedHidableWidget.setFixedSize(600,200)
         detailedHidableWidget.hide()
 
         pbShowDetails = QPushButton("Show Details")
@@ -58,20 +56,14 @@ class SaveProjectDialog(QDialog):
         self.setLayout(layout)
 
         self._lastpushed = QDialogButtonBox.RejectRole
-        self.buttonBox.clicked.connect(self.setValue)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
 
-    def setValue(self, but):
-        self._lastpushed = self.buttonBox.buttonRole(but)
-
-    def value(self):
-        return self._lastpushed
+        self.buttonBox.button(QDialogButtonBox.Yes).clicked.connect(partial(self.done, QDialogButtonBox.YesRole))
+        self.buttonBox.button(QDialogButtonBox.No).clicked.connect(partial(self.done, QDialogButtonBox.NoRole))
+        self.buttonBox.button(QDialogButtonBox.Cancel).clicked.connect(partial(self.done, QDialogButtonBox.RejectRole))
 
     @staticmethod
     def getSaveProjectDialog(parent, project):
         if not project.hasDiffs():
             return QDialogButtonBox.NoRole
         dialog = SaveProjectDialog(parent, project)
-        dialog.exec_()
-        return dialog.value()
+        return dialog.exec_()
