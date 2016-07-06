@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import random
 from chipwhisperer.common.utils import util
 from _base import AcqKeyTextPattern_Base
@@ -30,7 +30,7 @@ from _base import AcqKeyTextPattern_Base
 try:
     from Crypto.Cipher import AES
 except ImportError:
-    print "No AES Module, Using rand() instead!"
+    logging.warn('No AES Module, Using rand() instead!')
     AES = None
 
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):

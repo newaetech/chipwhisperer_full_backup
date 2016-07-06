@@ -22,6 +22,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
+
+from usb import USBError
 
 from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
@@ -59,7 +62,7 @@ class SimpleSerial(TargetTemplate):
             #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
         ])
 
-        self.setConnection(self.ser)
+        self.setConnection(self.ser, blockSignal=True)
 
     @setupSetParam("Key Length")
     def setKeyLen(self, klen):
@@ -152,9 +155,12 @@ class SimpleSerial(TargetTemplate):
             if flushInputBefore:
                 self.ser.flushInput()
             self.ser.write(newstr)
-        except Exception:
+        except USBError:
             self.dis()
-            raise
+            raise Warning("Error in the target. It may have been disconnected.")
+        except Exception as e:
+            self.dis()
+            raise e
 
     def loadEncryptionKey(self, key):
         self.key = key
@@ -197,7 +203,7 @@ class SimpleSerial(TargetTemplate):
         response = self.ser.read(dataLen)
 
         if len(response) < dataLen:
-            print("WARNING: Response too short (len=%d): %s"%(len(response), response))
+            logging.warning('Response too short (len=%d): "%s"' % (len(response), response))
             return None
 
         #Go through...skipping expected if applicable

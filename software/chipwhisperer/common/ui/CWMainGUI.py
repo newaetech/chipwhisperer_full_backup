@@ -21,12 +21,14 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-
+import logging
 import sys
 import os
 import traceback
 
 #We always import PySide first, to force usage of PySide over PyQt
+from chipwhisperer.common.ui.logger_widget import LoggingWidget
+
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
@@ -160,15 +162,18 @@ class CWMainGUI(QMainWindow):
     def getTraceSource(self):
         raise self.api.project().traceManager()
 
-    def addConsole(self, name="Debug Logging", visible=True, redirectStdOut=True):
+    def addConsole(self, name="Script Output", visible=True):
         """Add a QTextBrowser, used as a console/debug window"""
         console = qt_tweaks.QTextBrowser()
-        if redirectStdOut:
-            self.originalStdout = sys.stdout
-            sys.stdout = OutLog(console, sys.stdout, origStdout=self.originalStdout)
-            sys.stderr = OutLog(console, sys.stderr, QColor(255, 0, 0), origStdout=self.originalStdout)
-
         return self.addDock(console, name, area=Qt.BottomDockWidgetArea, visible=visible)
+
+    def addLogging(self, name="Debug Logging", visible=True, redirectStdOut=True):
+        loggingWidget = LoggingWidget(self)
+        if redirectStdOut:
+            sys.stdout = loggingWidget.editor
+            sys.stderr = loggingWidget.editor
+
+        return self.addDock(loggingWidget, name, area=Qt.BottomDockWidgetArea, visible=visible)
 
     def addPythonConsole(self, name="Python Console", visible=False):
         """Add a python console, inside which you can access the Python interpreter"""
@@ -213,14 +218,11 @@ class CWMainGUI(QMainWindow):
 
         if self.okToContinue():
             QMainWindow.closeEvent(self, event)
+            sys.excepthook = sys.__excepthook__  # Restore exception handlers
+            sys.stdout = sys.__stdout__          # Restore print statements
+            sys.stderr = sys.__stderr__
         else:
             event.ignore()
-
-    def close(self):
-        sys.excepthook = sys.__excepthook__  # Restore exception handlers
-        sys.stdout = sys.__stdout__          # Restore print statements
-        sys.stderr = sys.__stderr__
-        super(CWMainGUI,self).close()
 
     def helpdialog(self):
         """Helps the User"""
@@ -362,11 +364,11 @@ class CWMainGUI(QMainWindow):
         self.setupToolBar()
 
         # Project editor dock
-        self.paramScriptingDock = self.addConsole("Script Commands", visible=False, redirectStdOut=False)
+        self.paramScriptingDock = self.addConsole("Script Commands", visible=False)
         Parameter.scriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
-        self.consoleDock = self.addConsole()
+        self.loggingDock = self.addLogging()
         self.pythonConsoleDock = self.addPythonConsole()
-        self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.consoleDock])
+        self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.loggingDock])
         self.setBaseSize(800,600)
 
     def setupToolBar(self):
@@ -514,7 +516,7 @@ class CWMainGUI(QMainWindow):
 
     def updateStatusBar(self, message):
         msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
-        print "Status: " + msg
+        logging.debug('Status: ' + msg)
         self.statusBar().showMessage(msg)
 
     def runScript(self, scriptClass, funcName="run"):
@@ -532,13 +534,13 @@ class CWMainGUI(QMainWindow):
         details = "".join(traceback.format_exception(etype, value, trace))
 
         if issubclass(etype, Warning):
-            print "WARNING: " + str(value)
+            logging.warning(str(value))
             dialog = QMessageBox(QMessageBox.Warning, "Warning", str(value), QMessageBox.Close, self)
             dialog.setDetailedText(details)
             dialog.exec_()
             return
 
-        print details
+        logging.error(details)
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
                     "If the error occurs again, please create a new ticket <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>here</a> informing the details bellow." % value, QMessageBox.Close, self)
@@ -550,42 +552,10 @@ class CWMainGUI(QMainWindow):
     def getInstance():
         return CWMainGUI.instance
 
-
-class OutLog:
-    def __init__(self, edit, out=None, color=None, origStdout=None):
-        """(edit, out=None, color=None) -> can write stdout, stderr to a
-        QTextEdit.
-        edit = QTextEdit
-        out = alternate stream ( can be the original sys.stdout )
-        color = alternate color (i.e. color stderr a different color)
-        """
-        self.edit = edit
-        self.out = None
-        self.color = color
-        self.origStdout = origStdout
-
-    def write(self, m):
-        # Still redirect to original STDOUT
-        tc = self.edit.textColor()
-        if self.color:
-            self.edit.setTextColor(self.color)
-
-        self.edit.moveCursor(QTextCursor.End)
-        self.edit.insertPlainText(m)
-
-        if self.color:
-            self.edit.setTextColor(tc)
-
-        if self.out:
-            self.out.write(m)
-
-        if self.origStdout:
-            self.origStdout.write(m)
-
-    def clearFocus(self):
-        """Accept the current parameter edition by removing its focus"""
-        if QApplication.focusWidget() is not None:
-            QApplication.focusWidget().clearFocus()
+    # def clearFocus(self):
+    #     """Accept the current parameter edition by removing its focus"""
+    #     if QApplication.focusWidget() is not None:
+    #         QApplication.focusWidget().clearFocus()
 
 
 def makeApplication(name="Other"):

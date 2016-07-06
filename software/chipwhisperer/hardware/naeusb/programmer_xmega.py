@@ -21,7 +21,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-
+import logging
 from naeusb import packuint32
 
 XMEGAMEM_TYPE_APP = 1
@@ -34,6 +34,7 @@ XMEGAMEM_TYPE_FACTORY_CALIBRATION = 7
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
+
 
 class XMEGA16A4(object):
     signature = [0x1e, 0x94, 0x41]
@@ -288,7 +289,7 @@ class XMEGAPDI(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            print "WARNING: You appear to be writing to an address that is not page aligned, you will probably write the wrong data"
+            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         while memwritten < len(data):
 

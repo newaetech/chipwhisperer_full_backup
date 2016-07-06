@@ -23,7 +23,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
@@ -32,6 +32,9 @@ from chipwhisperer.capture.utils.IntelHex import IntelHex
 
 class Programmer(object):
     lastFlashedFile = "unknown"
+
+    def __init__(self):
+        self.newTextLog = util.Signal()
 
     def setUSBInterface(self, iface):
         raise NotImplementedError
@@ -49,11 +52,12 @@ class Programmer(object):
         raise NotImplementedError
 
     def log(self, text):
-            print text
+        """Logs the text and broadcasts it"""
+        logging.info(text)
+        self.newTextLog.emit(text)
 
 
 class AVRProgrammer(Programmer):
-    
     def __init__(self):
         super(AVRProgrammer, self).__init__()
         self.supported_chips = []
@@ -69,8 +73,6 @@ class AVRProgrammer(Programmer):
 
         self.avr.enableISP(True)
         sig = self.avr.readSignature()
-
-        # self.log("Signature = %02x %02x %02x" % (sig[0], sig[1], sig[2]))
 
         # Figure out which device?
         # Check if it's one we know about?

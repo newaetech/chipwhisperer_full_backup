@@ -30,7 +30,7 @@ This module has an interface to the PicoTech PicoScope device. It uses the
 picoscope library at https://github.com/colinoflynn/pico-python which you
 must install
 """
-
+import logging
 import time
 from ._base import ScopeTemplate
 from chipwhisperer.common.utils import util, timer
@@ -153,7 +153,7 @@ class PicoScope(ScopeTemplate):
         while(self.ps.isReady() == False): time.sleep(0.01)
         data = self.ps.getDataV(self.findParam(['trace', 'tracesource']).getValue(), self.findParam('samplelength').getValue(), startIndex=self.findParam('sampleoffset').getValue(), returnOverflow=True)
         if data[1] is True:
-            print "WARNING: OVERFLOW IN DATA"
+            logging.warning('OVERFLOW IN DATA')
         self.datapoints = data[0]
         self.dataUpdated.emit(self.datapoints, 0)
 

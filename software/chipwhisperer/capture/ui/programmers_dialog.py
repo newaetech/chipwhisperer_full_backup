@@ -115,13 +115,14 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         self.statusLine = QPlainTextEdit()
         self.statusLine.setReadOnly(True)
         # self.statusLine.setFixedHeight(QFontMetrics(self.statusLine.font()).lineSpacing() * 5 + 10)
-        self.statusLine.append = self.statusLine.appendPlainText
         layout.addWidget(self.statusLine)
-
-        self.avr._logging = self.statusLine.append
+        self.avr.newTextLog.connect(self.append)
 
         # Set dialog layout
         self.setLayout(layout)
+
+    def append(self, text):
+        self.statusLine.appendPlainText(text)
 
     def toggleSlowClock(self):
         if self.clockMode.isChecked():
@@ -156,16 +157,16 @@ class AVRProgrammerDialog(QtFixes.QDialog):
     def readFuses(self):
         try:
             self.readSignature(close=False)
-            self.statusLine.append("Reading fuses")
+            self.statusLine.appendPlainText("Reading fuses")
             lfuse = self.avr.avr.readFuse("low")
             hfuse = self.avr.avr.readFuse("high")
             efuse = self.avr.avr.readFuse("extended")
-            self.statusLine.append("OK: %02x %02x %02x" % (lfuse, hfuse, efuse))
+            self.statusLine.appendPlainText("OK: %02x %02x %02x" % (lfuse, hfuse, efuse))
             self.lowfuseLine.setText("%02x" % lfuse)
             self.highfuseLine.setText("%02x" % hfuse)
             self.extfuseLine.setText("%02x" % efuse)
         except IOError:
-            self.statusLine.append("Reading fuses failed")
+            self.statusLine.appendPlainText("Reading fuses failed")
             self.lowfuseLine.setText("?")
             self.highfuseLine.setText("?")
             self.extfuseLine.setText("?")
@@ -176,7 +177,7 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         # hfuse = int(self.highfuseLine.text(), 16)
         # efuse = int(self.extfuseLine.text(), 16)
 
-        self.statusLine.append("Writing fuse: not only 'low' fuse is written, as hfuse/efuse can disable device\n")
+        self.statusLine.appendPlainText("Writing fuse: not only 'low' fuse is written, as hfuse/efuse can disable device\n")
 
         try:
             self.readSignature(close=False)
@@ -190,23 +191,23 @@ class AVRProgrammerDialog(QtFixes.QDialog):
             raise
 
     def verifyFlash(self):
-        self.statusLine.append("Verify not implemented")
+        self.statusLine.appendPlainText("Verify not implemented")
 
     def writeFlash(self, erase=True, verify=True):
         status = "FAILED"
         fname = self.flashLocation.text()
-        self.statusLine.append("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
+        self.statusLine.appendPlainText("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
         if (os.path.isfile(fname)):
-            self.statusLine.append("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+            self.statusLine.appendPlainText("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
             QCoreApplication.processEvents()
 
             try:
-                self.statusLine.append("Entering Programming Mode")
+                self.statusLine.appendPlainText("Entering Programming Mode")
                 QCoreApplication.processEvents()
                 self.readSignature(close=False)
 
                 if erase:
-                    self.statusLine.append("Erasing Chip")
+                    self.statusLine.appendPlainText("Erasing Chip")
                     QCoreApplication.processEvents()
                     self.avr.erase()
                     self.avr.close()
@@ -215,23 +216,23 @@ class AVRProgrammerDialog(QtFixes.QDialog):
                 QCoreApplication.processEvents()
                 self.avr.program(self.flashLocation.text(), memtype="flash", verify=verify)
                 QCoreApplication.processEvents()
-                self.statusLine.append("Exiting programming mode")
+                self.statusLine.appendPlainText("Exiting programming mode")
                 self.avr.close()
                 QCoreApplication.processEvents()
 
                 status = "SUCCEEDED"
 
             except IOError as e:
-                self.statusLine.append("FAILED: %s" % str(e))
+                self.statusLine.appendPlainText("FAILED: %s" % str(e))
                 try:
                     self.avr.close()
                 except IOError:
                     pass
 
         else:
-            self.statusLine.append("%s does not appear to be a file, check path" % fname)
+            self.statusLine.appendPlainText("%s does not appear to be a file, check path" % fname)
 
-        self.statusLine.append("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
+        self.statusLine.appendPlainText("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
 
     def setUSBInterface(self, iface):
         self.avr.setUSBInterface(iface)
@@ -276,13 +277,14 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
         self.statusLine = QPlainTextEdit()
         self.statusLine.setReadOnly(True)
         # self.statusLine.setFixedHeight(QFontMetrics(self.statusLine.font()).lineSpacing() * 5 + 10)
-        self.statusLine.append = self.statusLine.appendPlainText
+        self.xmega.newTextLog.connect(self.append)
         layout.addWidget(self.statusLine)
-
-        self.xmega._logging = self.statusLine.append
 
         # Set dialog layout
         self.setLayout(layout)
+
+    def append(self, text):
+        self.statusLine.appendPlainText(text)
 
     def findFlash(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("xmega-flash-location"), '*.hex')
@@ -299,27 +301,26 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
         pass
 
     def writeFlash(self, erase=True, verify=True):
-
         status = "FAILED"
 
         fname = self.flashLocation.text()
-        self.statusLine.append("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
+        self.statusLine.appendPlainText("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
         if (os.path.isfile(fname)):
-            self.statusLine.append("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+            self.statusLine.appendPlainText("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
             QCoreApplication.processEvents()
 
             try:
-                self.statusLine.append("Entering Programming Mode")
+                self.statusLine.appendPlainText("Entering Programming Mode")
                 QCoreApplication.processEvents()
                 self.readSignature(close=False)
 
                 if erase:
                     try:
-                        self.statusLine.append("Erasing Chip")
+                        self.statusLine.appendPlainText("Erasing Chip")
                         QCoreApplication.processEvents()
                         self.xmega.erase()
                     except IOError:
-                        self.statusLine.append("**chip-erase timeout, erasing application only**")
+                        self.statusLine.appendPlainText("**chip-erase timeout, erasing application only**")
                         QCoreApplication.processEvents()
                         self.xmega.xmega.enablePDI(False)
                         self.xmega.xmega.enablePDI(True)
@@ -328,23 +329,23 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
                 QCoreApplication.processEvents()
                 self.xmega.program(self.flashLocation.text(), memtype="flash", verify=verify)
                 QCoreApplication.processEvents()
-                self.statusLine.append("Exiting programming mode")
+                self.statusLine.appendPlainText("Exiting programming mode")
                 self.xmega.close()
                 QCoreApplication.processEvents()
 
                 status = "SUCCEEDED"
 
             except IOError, e:
-                self.statusLine.append("FAILED: %s" % str(e))
+                self.statusLine.appendPlainText("FAILED: %s" % str(e))
                 try:
                     self.xmega.close()
                 except IOError:
                     pass
 
         else:
-            self.statusLine.append("%s does not appear to be a file, check path" % fname)
+            self.statusLine.appendPlainText("%s does not appear to be a file, check path" % fname)
 
-        self.statusLine.append("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
+        self.statusLine.appendPlainText("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
 
     def setUSBInterface(self, iface):
         self.xmega.setUSBInterface(iface)

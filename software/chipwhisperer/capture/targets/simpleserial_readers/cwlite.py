@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import SimpleSerialTemplate
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
@@ -56,7 +57,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
     def inWaiting(self):
         bwait =  self.cwlite_usart.inWaiting()
         if bwait == 127:
-            print "WARNING: SAM3U Serial buffers OVERRUN - data loss has occurred."
+            logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
         return bwait
 
     def read(self, num=0, timeout=250):

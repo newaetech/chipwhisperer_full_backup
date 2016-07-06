@@ -88,7 +88,7 @@ You can customize the variables that are available in the shell by
 passing a dict as the "locals" argument.
 """
 
-    def __init__(self,parent=None,locals=None):
+    def __init__(self, parent=None, locals=None):
         super(QPythonConsole,self).__init__(parent)
         self.ui = _QPythonConsoleUI(self)
         self.interpreter = _QPythonConsoleInterpreter(self.ui,locals)

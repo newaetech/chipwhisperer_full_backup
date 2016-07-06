@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from chipwhisperer.common.utils import util
 
@@ -67,7 +67,7 @@ class AcquisitionController():
             time.sleep(0.01)
 
         if timeout == 0:
-            print "WARNING: Target timeout"
+            logging.warning('Target timeout')
 
         # print "DEBUG: Target go()"
 
@@ -121,10 +121,10 @@ class AcquisitionController():
         if self.scope:
             try:
                 if self.scope.capture(update, N) == True:
-                    print "Timeout"
+                    logging.warning('Timeout')
                     return False
             except IOError as e:
-                print "IOError: %s" % str(e)
+                logging.error('IOError: %s' % str(e))
                 return False
 
         if self.auxList:
@@ -159,8 +159,8 @@ class AcquisitionController():
                     if self.writer:
                         self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
                 except ValueError as e:
-                    print "WARNING: Exception caught in adding trace %d, trace skipped." % self.currentTrace
-                    print "         Exception info: %s" % str(e)
+                    logging.warning('Exception caught in adding trace %d, trace skipped.' % self.currentTrace)
+                    logging.debug(str(e))
                 self.sigTraceDone.emit()
                 self.currentTrace += 1
             if progressBar is not None:

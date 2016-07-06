@@ -30,6 +30,9 @@
 
 #Avoid namespace collision with 'serial'
 from __future__ import absolute_import
+
+import logging
+
 import serial
 import time
 
@@ -64,19 +67,17 @@ class Samba(object):
 
         cid = self.chip_id()
 
-        print "FWUP: CID = %04x" % cid
+        logging.info('FWUP: CID = %04x' % cid)
 
         eproc = (cid >> 5) & 0x7
         arch = (cid >> 20) & 0xff
 
-        if eproc == 3:
-            if (arch >= 0x80 and arch <= 0x8a) or \
-               (arch >= 0x93 and arch <= 0x9a):
-                    print "FWUP: Detected SAM3"
-                    self.flash = self.get_flash_instance(cid)
-                    return True
+        if eproc == 3 and ((0x80 <= arch <= 0x8a) or (0x93 <= arch <= 0x9a)):
+            logging.info('FWUP: Detected SAM3')
+            self.flash = self.get_flash_instance(cid)
+            return True
 
-        print "FWUP: Unsupported chip"
+        logging.warning('FWUP: Unsupported chip')
         return False
 
 
@@ -223,19 +224,19 @@ class Samba(object):
                 buf = bindata[i:(i + page_size)]
 
             if (page_num % 10) == 0 and doprint:
-                print "Flashing %d/%d" % (page_num, totalpages)
+                logging.debug('Flashing %d/%d' % (page_num, totalpages))
 
             self.flash.loadBuffer(buf)
             self.flash.writePage(page_num)
 
-            page_num = page_num + 1
+            page_num += 1
             if (page_num == totalpages) or (len(buf) != page_size):
                 break
 
-            i = i + page_size
-            bytesleft = bytesleft - page_size
+            i += page_size
+            bytesleft -= page_size
 
-        print "FWUP: Program Successful"
+        logging.info('FWUP: Program Successful')
 
     def verify(self, bindata, doprint=False):
         """ Verify a buffer that was written into chip """
@@ -262,12 +263,12 @@ class Samba(object):
                 buf = bindata[i:(i + page_size)]
 
             if (page_num % 10) == 0 and doprint:
-                print "Verifying %d/%d" % (page_num, totalpages)
+                logging.debug('Verifying %d/%d' % (page_num, totalpages))
 
             bufferB = self.flash.readPage(page_num)
 
             if bytearray(buf) != bytearray(bufferB):
-                print "FWUP: Verify FAILED at %d" % i
+                logging.warning('FWUP: Verify FAILED at %d"=' % i)
                 return False
                 # print "fail at %d"%i
                 # print "".join(["%02x"%ord(a) for a in buf])
@@ -279,7 +280,7 @@ class Samba(object):
             i = i + page_size
             bytesleft = bytesleft - page_size
 
-        print "FWUP: Verify successful"
+        logging.info('FWUP: Verify successful')
 
         return True
 
