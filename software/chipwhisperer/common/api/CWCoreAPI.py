@@ -26,6 +26,7 @@ import copy
 import os
 import traceback
 import sys
+import logging
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
 from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
@@ -51,6 +52,7 @@ class CWCoreAPI(Parameterized):
     instance = None
 
     def __init__(self):
+        logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
         CWCoreAPI.instance = self
         self.sigNewProject = util.Signal()
         self.sigNewScopeData = util.Signal()
@@ -358,10 +360,10 @@ class CWCoreAPI(Parameterized):
                 self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
                 self.sigCampaignDone.emit()
-                self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                 tcnt += setSize
 
                 if currentTrace is not None:
+                    self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                     waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
 
                 if progressBar.wasAborted():

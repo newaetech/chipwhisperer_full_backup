@@ -21,8 +21,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-
-
+import logging
 import time
 from chipwhisperer.common.utils import util
 
@@ -421,7 +420,7 @@ class AVRISP(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            print "WARNING: You appear to be writing to an address that is not page aligned, you will probably write the wrong data"
+            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         self._avrDoWrite(self.ISP_CMD_LOAD_ADDRESS, data=[0, 0, 0, 0])
 

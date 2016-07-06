@@ -6,7 +6,7 @@
 # Copyright (c) 2012-2013, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
 # This project is released under the Modified FreeBSD License. See LICENSE
 # file which should have came with this code.
-
+import logging
 import sys
 import time
 import datetime
@@ -304,7 +304,8 @@ class TriggerSettings(Parameterized):
         else:
             #Other Hardware
             if samples > 0:
-                print("WARNING: Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. Check data is reliably recorded before using in capture.")
+                logging.warning('Pre-sample on CW-Lite is unreliable with many FPGA bitstreams. '
+                                'Check data is reliably recorded before using in capture.')
 
             #enforce samples is multiple of 3
             samplesact = int(samples / 3)
@@ -949,7 +950,7 @@ class OpenADCInterface(object):
                 # Check for timeout, if so abort
                 if len(result) < 1:
                     self.flushInput()
-                    print("Timeout in read: %d" % len(result))
+                    logging.warning('Timeout in read: %d' % len(result))
                     return None
 
                 rb = bytearray(result)
@@ -979,7 +980,7 @@ class OpenADCInterface(object):
                         else:
                             errmsg += "<Timeout>"
 
-                        print(errmsg)
+                        logging.error(errmsg)
 
 ### Generic
     def setSettings(self, state, validate=True):
@@ -1119,7 +1120,7 @@ class OpenADCInterface(object):
 
             # If we've timed out, don't wait any longer for a trigger
             if (diff.total_seconds() > self._timeout):
-                print("Timeout in OpenADC capture(), trigger FORCED")
+                logging.warning('Timeout in OpenADC capture(), trigger FORCED')
                 timeout = True
                 self.triggerNow()
 
@@ -1135,8 +1136,8 @@ class OpenADCInterface(object):
             nosampletimeout -= 1
 
         if nosampletimeout == 0:
-            print "WARNING: No samples received from ADC. Either very long offset, or no ADC clock."
-            print "         If you need such a long offset, manually update 'nosampletimeout' limit in source code."
+            logging.warning('No samples received. Either very long offset, or no ADC clock (try "Reset ADC DCM"). '
+                            'If you need such a long offset, manually update "nosampletimeout" limit in source code.')
         
         return timeout
 
@@ -1237,7 +1238,7 @@ class OpenADCInterface(object):
         lastpt = -100
 
         if data[0] != 0xAC:
-            print("Unexpected sync byte: 0x%x"%data[0])
+            logging.warning('Unexpected sync byte: 0x%x' % data[0])
             return None
 
         trigfound = False
@@ -1282,13 +1283,13 @@ class OpenADCInterface(object):
         #print len(fpData)
 
         if trigfound == False:
-            print "WARNING: Trigger not found in ADC data. No data reported!"
+            logging.warning('Trigger not found in ADC data. No data reported!')
 
         #Ensure that the trigger point matches the requested by padding/chopping
         diff = self.presamples_desired - trigsamp
         if diff > 0:
                fpData = [pad]*diff + fpData
-               print "WARNING: Pretrigger not met. Increase presampleTempMargin."
+               logging.warning('Pretrigger not met. Increase presampleTempMargin.')
         else:
                fpData = fpData[-diff:]
 

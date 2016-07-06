@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 import numpy as np
 from scipy.stats import norm
@@ -482,7 +483,6 @@ class TemplateCSI(object):
         tend = trange[1]
 
         templateTraces = [ [ [] for j in range(0, numPartitions) ] for i in range(0, subkeys) ]
-
         templateMeans = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
         templateCovs = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
 
@@ -503,17 +503,14 @@ class TemplateCSI(object):
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
                 templateMeans[bnum][i] = np.mean(templateTraces[bnum][i], axis=0)
-                cov = np.cov(templateTraces[bnum][i], rowvar=0)
-                # print "templateTraces[%d][%d] = %d" % (bnum, i, len(templateTraces[bnum][i]))
+                cov = np.cov(templateTraces[bnum][i], rowvar=False)
+                if __debug__: logging.debug('templateTraces[%d][%d] = %d' % (bnum, i, len(templateTraces[bnum][i])))
 
                 if len(templateTraces[bnum][i]) > 0:
                     templateCovs[bnum][i] = cov
                 else:
-                    print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
+                    logging.warning('Insufficient template data to generate covariance matrix for bnum=%d, partition=%d' % (bnum, i))
                     templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
-
-                # except ValueError:
-                #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
 
         self.templateMeans = templateMeans
         self.templateCovs = templateCovs

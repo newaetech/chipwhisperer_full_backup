@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import sys
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -74,7 +74,7 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
 
         try:
             self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
+            logging.info('OpenADC Found, Connecting')
         except IOError as e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC Error (Serial Port): %s" % (str(exctype) + str(value)))

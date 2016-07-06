@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
@@ -217,7 +218,7 @@ class ChipWhispererDigitalPattern(Parameterized):
         patt = eval(patt, {}, {})
 
         if len(patt) > 1:
-            print "WARNING: IO Pattern too large! Restricted."
+            logging.warning('IO Pattern too large! Restricted.')
             self.findParam('trigpatt').setValue(patt[0])
             return
 

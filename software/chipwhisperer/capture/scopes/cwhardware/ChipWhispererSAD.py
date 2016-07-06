@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 import numpy as np
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
@@ -108,7 +109,7 @@ class ChipWhispererSAD(Parameterized):
         data = self.getCaptueTraceRef()
 
         if len(data) != 128:
-            print "WARNING: Reference IS NOT 128 samples long, got %d"%len(data)
+            logging.warning('Reference IS NOT 128 samples long, got %d' % len(data))
 
         self.sadref = data.copy()
         self.setRefWaveform(data)
