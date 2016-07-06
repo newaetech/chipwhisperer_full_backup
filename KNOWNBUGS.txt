@@ -1,0 +1,2 @@
+- "modalSession has been exited prematurely - check for a reentrant call to endModalSession" is a Mac specific bug
+  when closing modal dialogs and the only fix is updating the Qt library.
