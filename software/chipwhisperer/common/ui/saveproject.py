@@ -34,7 +34,6 @@ class SaveProjectDialog(QDialog):
         super(SaveProjectDialog, self).__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
         self.setWindowTitle("Unsaved Changes Detected")
-        self.setModal(True)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Save unsaved changes?"))
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
@@ -54,8 +53,6 @@ class SaveProjectDialog(QDialog):
         layout.addWidget(detailedHidableWidget)
 
         self.setLayout(layout)
-
-        self._lastpushed = QDialogButtonBox.RejectRole
 
         self.buttonBox.button(QDialogButtonBox.Yes).clicked.connect(partial(self.done, QDialogButtonBox.YesRole))
         self.buttonBox.button(QDialogButtonBox.No).clicked.connect(partial(self.done, QDialogButtonBox.NoRole))

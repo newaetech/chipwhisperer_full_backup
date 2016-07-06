@@ -214,10 +214,10 @@ class CWMainGUI(QMainWindow):
             self.saveSettings()
 
         if self.okToContinue():
-            QMainWindow.closeEvent(self, event)
             sys.excepthook = sys.__excepthook__  # Restore exception handlers
             sys.stdout = sys.__stdout__          # Restore print statements
             sys.stderr = sys.__stderr__
+            event.accept()
         else:
             event.ignore()
 
@@ -540,7 +540,7 @@ class CWMainGUI(QMainWindow):
         logging.error(details)
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
-                    "If the error occurs again, please create a new ticket <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>here</a> informing the details bellow." % value, QMessageBox.Close, self)
+                    "If it persists, try reseting the settings first before creating a <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>new ticket</a> informing the details bellow." % value, QMessageBox.Close, self)
         dialog.setTextFormat(Qt.RichText) # this is what makes the links clickable
         dialog.setDetailedText(details)
         dialog.exec_()
