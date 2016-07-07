@@ -337,7 +337,7 @@ class CWCoreAPI(Parameterized):
                     currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
                     currentTrace.config.setAttr("targetSW", os.path.split(Programmer.lastFlashedFile)[1])
                     currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
-                    currentTrace.config.setAttr("scopeSampleRate", 0)
+                    currentTrace.config.setAttr("scopeSampleRate", self.getScope().getSampleRate())
                     currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
                     currentTrace.setTraceHint(setSize)
 

@@ -25,21 +25,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
 from usb import USBError
-
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDecodeTrigger as ChipWhispererDecodeTrigger
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererDigitalPattern as ChipWhispererDigitalPattern
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererExtra as ChipWhispererExtra
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererSAD as ChipWhispererSAD
 import _qt as openadc_qt
-from _base import ScopeTemplate
+from base import ScopeTemplate
 from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInterface_NAEUSBChip
 from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class OpenADC(ScopeTemplate):
+class OpenADC(ScopeTemplate, Plugin):
     """ Common API to OpenADC Hardware"""
 
     _name = "ChipWhisperer/OpenADC"
@@ -182,3 +181,6 @@ class OpenADC(ScopeTemplate):
     def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
         return self.qtadc.capture(update, NumberPoints)
+
+    def getSampleRate(self):
+        return self.qtadc.parm_clock.adcFrequency()

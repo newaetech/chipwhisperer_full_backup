@@ -55,6 +55,9 @@ class TraceSource(object):
     def offset(self):
         return 0
 
+    def getSampleRate(self):
+        return 0
+
     def getTextin(self, n):
         """Get text-in number n"""
         raise NotImplementedError
@@ -127,6 +130,9 @@ class LiveTraceSource(TraceSource):
 
     def offset(self):
         return self._lastOffset
+
+    def getSampleRate(self):
+        return self._scope.getSampleRate()
 
 
 class PassiveTraceObserver(Parameterized):
