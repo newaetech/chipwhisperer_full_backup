@@ -165,9 +165,11 @@ if __name__ == '__main__':
     import chipwhisperer.capture.ui.CWCaptureGUI as cwc
     import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa
     from chipwhisperer.common.utils.parameter import Parameter
+    from chipwhisperer.common.utils import util
     app = cwc.makeApplication()
     Parameter.usePyQtGraph = True
     api = CWCoreAPI()               # Instantiate the API
     execCapture(api)
+    util.updateUI()
     execAnalyzer(api)
     app.exec_()
