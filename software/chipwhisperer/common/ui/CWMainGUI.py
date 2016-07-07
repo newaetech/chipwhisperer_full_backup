@@ -80,7 +80,6 @@ class CWMainGUI(QMainWindow):
 
     def __init__(self, api, name="Demo", icon="cwicon"):
         QMainWindow.__init__(self)
-        # self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
         CWMainGUI.instance = self
         self.name = name
         sys.excepthook = self.exceptionHandlerDialog

@@ -145,6 +145,21 @@ class Attack(UserScriptBase):
         # otherwise the current setup would be overridden
         self.api.executingScripts.disconnectAll()
 
+
+def execCapture(api):
+    gui = cwc.CWCaptureGUI(api)     # Instantiate the Capture GUI
+    gui.show()
+    api.runScriptClass(Capture)
+    gui.deleteLater()
+    gui.reset()
+
+
+def execAnalyzer(api):
+    gui = cwa.CWAnalyzerGUI(api)    # Instantiate the Analyzer GUI
+    gui.show()
+    api.runScriptClass(Attack)      # Run the script (default is the "run" method)
+
+
 if __name__ == '__main__':
     from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
     import chipwhisperer.capture.ui.CWCaptureGUI as cwc
@@ -153,13 +168,6 @@ if __name__ == '__main__':
     app = cwc.makeApplication()
     Parameter.usePyQtGraph = True
     api = CWCoreAPI()               # Instantiate the API
-    gui = cwc.CWCaptureGUI(api)     # Instantiate the Capture GUI
-    gui.show()
-    api.runScriptClass(Capture)
-    gui.reset()
-
-    gui = cwa.CWAnalyzerGUI(api)    # Instantiate the Analyzer GUI
-    gui.show()
-    api.runScriptClass(Attack)      # Run the script (default is the "run" method)
-
+    execCapture(api)
+    execAnalyzer(api)
     app.exec_()
