@@ -555,14 +555,17 @@ class CWMainGUI(QMainWindow):
     #         QApplication.focusWidget().clearFocus()
 
 
-def makeApplication(name="Other"):
+def makeApplication(name="Other", doDeleteLater=True):
     """ Create a Qt Application.
+    @param doDeleteLater: Hack to fix a crash on exit bug when the same QObject is deleted twice (Windows only). If True
+    it will release the QApplication so it can be called again later.
     @param name: The QSettings scope name. If no scope is specified it will erase the default at each new execution.
     """
     app = QApplication(sys.argv)
     app.setOrganizationName("ChipWhisperer")
     app.setApplicationName(CWCoreAPI.__name__ + " - " + name)
-    app.aboutToQuit.connect(app.deleteLater)
+    if doDeleteLater:
+        app.aboutToQuit.connect(app.deleteLater)
     if name=="Other":
         QSettings().clear()
 
