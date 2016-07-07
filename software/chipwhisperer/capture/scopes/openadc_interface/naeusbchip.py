@@ -75,7 +75,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             try:
                 found_id = self.dev.con(idProduct=[0xACE2, 0xACE3])
             except IOError:
-                raise Warning('Could not connect to "%s". It may have been disconnected or is being used by another tool.')
+                raise Warning('Could not connect to "%s". It may have been disconnected or is being used by another tool.' % self.getName())
 
             if (found_id == 0xACE3):
                 logging.warning('Found CW1200. FPGA dialog being switched, if you made changes they are lost. '

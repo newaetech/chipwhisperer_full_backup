@@ -128,6 +128,5 @@ if __name__ == '__main__':
     api = CWCoreAPI()                                           # Instantiate the API
     app = cwc.makeApplication("Capture")                        # Change the name if you want a different settings scope
     gui = cwc.CWCaptureGUI(api)                                 # Comment this line if you don't want to use the GUI
-    gui.show()                                                  # Comment this line if you don't want to use the GUI
     api.runScriptClass(UserScript)                              # Run the User Script (executes "run()" by default)
     app.exec_()                                                 # Comment this line if you don't want to use the GUI

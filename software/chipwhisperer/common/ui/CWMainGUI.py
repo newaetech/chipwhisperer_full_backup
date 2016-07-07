@@ -105,6 +105,7 @@ class CWMainGUI(QMainWindow):
         self.api.sigNewProject.connect(self.projectChanged)
         self.api.sigTracesChanged.connect(self.tracesChanged)
         Parameter.sigParametersChanged.connect(self.reloadGuiActions)
+        self.show()
 
     def newResultWidget(self, resultWidget):
         # Remove all old actions that don't apply for new selection
