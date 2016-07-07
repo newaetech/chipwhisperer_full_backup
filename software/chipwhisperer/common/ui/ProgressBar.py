@@ -154,8 +154,6 @@ try:
         def setText(self, text):
             ProgressBarText.setText(self, text)
             self.textLabel.setText(self.getText())
-            # if self.getText() == "":
-            #     self.textLabel.hide()
 
         def setStatusMask(self, statusTextMask, textValues=None):
             ProgressBarText.setStatusMask(self, statusTextMask, textValues)

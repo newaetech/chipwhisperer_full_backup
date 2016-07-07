@@ -23,7 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver

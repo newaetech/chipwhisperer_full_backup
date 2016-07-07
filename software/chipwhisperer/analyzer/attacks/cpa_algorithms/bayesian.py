@@ -105,9 +105,9 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
 
                     #Generate the output of the SBOX
                     if modeltype == "Hamming Weight":
-                        hypint = self.model.HypHW(pt, ct, key, bnum);
+                        hypint = self.model.HypHW(pt, ct, key, bnum)
                     elif modeltype == "Hamming Distance":
-                        hypint = self.model.HypHD(pt, ct, key, bnum);
+                        hypint = self.model.HypHD(pt, ct, key, bnum)
                     else:
                         raise ValueError("modeltype invalid")
 
@@ -190,7 +190,7 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
     def _getResult(self, bnum, hyprange=None):
         if hyprange == None:
             hyprange = range(0,256)
-        return [self.all_diffs[bnum][i] for i in hyprange];
+        return [self.all_diffs[bnum][i] for i in hyprange]
 
     def getDiff(self, bnum, hyprange=None):
         if self.algo == "original":

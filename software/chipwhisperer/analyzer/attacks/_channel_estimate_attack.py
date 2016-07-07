@@ -193,5 +193,3 @@ if __name__ == "__main__":
     #random noise, and check how things actually worked
     
     main(directory, fitrange, tryrange)
-   
-
