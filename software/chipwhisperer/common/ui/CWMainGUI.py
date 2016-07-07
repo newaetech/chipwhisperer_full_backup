@@ -512,13 +512,13 @@ class CWMainGUI(QMainWindow):
             self.api.project().consolidate(keepOriginals = False)
 
     def updateStatusBar(self, message):
-        msg = message + " (" +  datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
+        msg = message + " (" + datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
         logging.debug('Status: ' + msg)
         self.statusBar().showMessage(msg)
 
     def runScript(self, scriptClass, funcName="run"):
         self.updateStatusBar("Running Script: %s" % scriptClass.getClassName())
-        self.api.runScriptClass(scriptClass, funcName="run")
+        self.api.runScriptClass(scriptClass, funcName=funcName)
         self.updateStatusBar("Finished Script: %s" % scriptClass.getClassName())
 
     def exceptionHandlerDialog(self, etype, value, trace):
@@ -541,7 +541,7 @@ class CWMainGUI(QMainWindow):
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
                     "If it persists, try reseting the settings first before creating a <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>new ticket</a> informing the details bellow." % value, QMessageBox.Close, self)
-        dialog.setTextFormat(Qt.RichText) # this is what makes the links clickable
+        dialog.setTextFormat(Qt.RichText)  # this is what makes the links clickable
         dialog.setDetailedText(details)
         dialog.exec_()
 

@@ -177,13 +177,27 @@ class TraceManager(TraceSource):
     def _updateRanges(self):
         """Update the trace range for each segments."""
         startTrace = 0
+        self._sampleRate = 0
         self._numPoints = 0
         for t in self.traceSegments:
             if t.enabled:
                 tlen = t.numTraces()
                 t.mappedRange = [startTrace, startTrace+tlen-1]
                 startTrace = startTrace + tlen
-                self._numPoints = max(self._numPoints, int(t.config.attr("numPoints")))
+                np = int(t.config.attr("numPoints"))
+                if self._numPoints != np and np != 0:
+                    if self._numPoints == 0:
+                        self._numPoints = np
+                    else:
+                        logging.warning("Selected trace segments have different number of points: %d!=%d" % (self._numPoints, np))
+                        self._numPoints = min(self._numPoints, np)
+
+                sr = int(t.config.attr("scopeSampleRate"))
+                if self._sampleRate != sr and sr != 0:
+                    if self._sampleRate == 0:
+                        self._sampleRate = sr
+                    else:
+                        logging.warning("Selected trace segments have different sample rates: %d!=%d" % (self._sampleRate, sr))
             else:
                 t.mappedRange = None
         self._numTraces = startTrace
@@ -207,6 +221,9 @@ class TraceManager(TraceSource):
         self.dirty.setValue(True)
         self._updateRanges()
         self.sigTracesChanged.emit()
+
+    def getSampleRate(self, ):
+        return self._sampleRate
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))

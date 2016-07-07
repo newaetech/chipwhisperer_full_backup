@@ -22,13 +22,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 import numpy as np
 from matplotlib.mlab import find
 from _base import AuxiliaryTemplate
 from chipwhisperer.common.utils.parameter import setupSetParam
-
 
 try:
     from picoscope import ps5000a
@@ -36,7 +35,7 @@ except ImportError:
     ps5000a = None
 
 
-class FreqMeasure():
+class FreqMeasure(object):
     
     def __init__(self, ps):
         self.ps = ps
@@ -54,7 +53,7 @@ class FreqMeasure():
         self.ps.setChannel("D", enabled=False)
         res = self.ps.setSamplingFrequency(1000E6, 50000)
         self.sampleRate = res[0]
-        print "Sampling @ %f MHz, %d samples" % (res[0] / 1E6, res[1])
+        logging.info('Sampling @ %f MHz, %d samples' % (res[0] / 1E6, res[1]))
 
         # Use external trigger to mark when we sample
         self.ps.setSimpleTrigger(trigSrc="External", threshold_V=0.150, timeout_ms=5000)
@@ -89,7 +88,7 @@ class FreqMeasure():
         data = data - np.mean(data)
         freq = self.freq_from_crossings(data)
 
-        print "Aux: Frequency Measurement Done, %d Hz" % freq
+        logging.info('Aux: Frequency Measurement Done, %d Hz' % freq)
 
         return freq
 
@@ -100,10 +99,10 @@ class FrequencyMeasure(AuxiliaryTemplate):
     def __init__(self):
         AuxiliaryTemplate.__init__(self)
         scopes = {"None":None}
+        self.fm = None
         if ps5000a is not None:
             scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
 
-        self.fm = None
         self.getParams().addChildren([
             {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'get':self.getConnection, 'set':self.setConnection}
         ])
@@ -123,7 +122,8 @@ class FrequencyMeasure(AuxiliaryTemplate):
         self.data = []
         
     def close(self):
-        self.fm.closeScope()
+        if self.fm is not None:
+            self.fm.closeScope()
         
     def traceArm(self):
         self.fm.armMeasure()

@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
@@ -35,11 +36,12 @@ class AuxiliaryTemplate(Parameterized, Plugin):
     def __init__(self):
         self.getParams()
         self.prefix = ""
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def __del__(self):
         """Close system if needed"""
-        print "Aux: Closing"
         self.close()
+        if __debug__: logging.debug('Deleted: ' + str(self))
 
     def close(self):
         """Close target, disconnect if required"""

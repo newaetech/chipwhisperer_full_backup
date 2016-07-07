@@ -2,6 +2,8 @@
 import os
 import shutil
 
+import time
+
 from chipwhisperer.common.scripts.base import UserScriptBase
 # Imports from Preprocessing
 import chipwhisperer.analyzer.preprocessing as preprocessing
@@ -62,6 +64,7 @@ class Capture(UserScriptBase):
         self.api.setParameter(['Generic Settings', 'Basic', 'Key', 'Fixed'])
         self.api.setParameter(['Generic Settings', 'Basic', 'Fixed Encryption Key', u'2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'])
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 50])
+        time.sleep(1)
         self.api.captureM()
         self.api.saveProject()
 

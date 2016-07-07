@@ -89,6 +89,10 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         """Get known-key number n"""
         return self._traceSource.getKnownKey(n)
 
+    def getSampleRate(self):
+        """Get the Sample Rate"""
+        return self._traceSource.getSampleRate()
+
     def init(self):
         """Do any initialization required once all traces are loaded"""
         pass

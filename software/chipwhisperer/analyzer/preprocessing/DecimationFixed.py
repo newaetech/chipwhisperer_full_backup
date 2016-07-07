@@ -68,3 +68,6 @@ class DecimationFixed(PreprocessingBase):
             return len(range(0, self._traceSource.numPoints(), self._decfactor))
         else:
             return self._traceSource.numPoints()
+
+    def getSampleRate(self):
+        return self._traceSource.getSampleRate()/self._decfactor

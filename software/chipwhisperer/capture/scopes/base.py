@@ -26,12 +26,11 @@
 #=================================================
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
-class ScopeTemplate(Parameterized, Plugin):
+class ScopeTemplate(Parameterized):
     _name = "None"
 
     def __init__(self):
@@ -86,3 +85,6 @@ class ScopeTemplate(Parameterized, Plugin):
         #     time.sleep(0.05)
         #     util.updateUI()
         pass
+
+    def getSampleRate(self):
+        return 0

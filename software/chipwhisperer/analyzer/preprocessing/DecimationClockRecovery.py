@@ -163,3 +163,6 @@ class DecimationClockRecovery(PreprocessingBase):
             return filttrace
         else:
             return self._traceSource.getTrace(n)
+
+    def getSampleRate(self):
+        return 0  # TODO: it is not zero!
