@@ -549,10 +549,10 @@ class CWMainGUI(QMainWindow):
     def getInstance():
         return CWMainGUI.instance
 
-    # def clearFocus(self):
-    #     """Accept the current parameter edition by removing its focus"""
-    #     if QApplication.focusWidget() is not None:
-    #         QApplication.focusWidget().clearFocus()
+    def clearFocus(self):
+        """Accept the current parameter edition by removing its focus"""
+        if QApplication.focusWidget() is not None:
+            QApplication.focusWidget().clearFocus()
 
 
 def makeApplication(name="Other", doDeleteLater=True):
