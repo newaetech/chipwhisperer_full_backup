@@ -165,7 +165,6 @@ if __name__ == '__main__':
     api = CWCoreAPI()               # Instantiate the API
     api.runScriptClass(Capture)
     gui = cwa.CWAnalyzerGUI(api)    # Instantiate the Analyzer GUI
-    gui.show()
     api.runScriptClass(Attack)      # Run the script (default is the "run" method)
 
     sys.exit(app.exec_())

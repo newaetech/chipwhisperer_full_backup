@@ -63,7 +63,6 @@ if __name__ == '__main__':
     Parameter.usePyQtGraph = True   # Comment if you don't need the GUI
     api = CWCoreAPI()               # Instantiate the API
     gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI
-    gui.show()                      # Comment if you don't need the GUI
     api.runScriptClass(UserScript)  # Run UserScript through the API
 
     sys.exit(app.exec_())           # Comment if you don't need the GUI
