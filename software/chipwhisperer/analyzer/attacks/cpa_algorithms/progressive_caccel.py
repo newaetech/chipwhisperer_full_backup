@@ -273,7 +273,6 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
                 textins = np.array(textins)
                 textouts = np.array(textouts)
 
-
                 for bnum_bf in brange_bf:
 
                     if bf:

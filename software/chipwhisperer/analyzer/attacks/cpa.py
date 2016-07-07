@@ -121,9 +121,3 @@ class CPA(AttackBaseClass, AttackGenericParameters):
 
     def getStatistics(self):
         return self.attack.getStatistics()
-
-    def paramList(self):
-        l = [self.params, self.pointsParams, self.traceParams]
-        if self.attackParams is not None:
-            l.append(self.attackParams)
-        return l

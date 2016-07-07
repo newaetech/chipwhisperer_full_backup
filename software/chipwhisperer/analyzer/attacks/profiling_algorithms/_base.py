@@ -25,9 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
 import numpy as np
-
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver

@@ -25,7 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
 import numpy as np
 from scipy.stats import norm
 from .._stats import DataTypeDiffs
@@ -126,7 +125,7 @@ class CPAProgressiveOneSubkey(object):
             #numtraces * meanh * meant = sumh * meant
             #sumnum =  self.sumht[key] - meant*self.sumh[key] - meanh*self.sumt[key] + (self.sumh[key] * meant)
             #sumnum =  self.sumht[key] - meanh*self.sumt[key]
-#            sumnum =  self.sumht[key] - meanh*self.sumt[key]
+            #sumnum =  self.sumht[key] - meanh*self.sumt[key]
             #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
             sumnum = self.totalTraces*self.sumht[key] - self.sumh[key]*self.sumt[key]
 
@@ -455,7 +454,7 @@ class TemplateCSI(object):
     """
     def __init__(self, tmanager=None):
         self._traceSource = None
-        self.partObject = Partition(self)
+        self.partObject = Partition()
 
     def getTraceSource(self):
         return self._traceSource
