@@ -1,1 +1,2 @@
-V3.1.10
+- Improve documentation
+- Implement the streaming mode
