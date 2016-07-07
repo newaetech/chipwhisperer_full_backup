@@ -85,3 +85,6 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
     def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
         return self.scopetype.capture(update, NumberPoints)
+
+    def getSampleRate(self):
+        return self.scopetype.findParam('samplerate')
