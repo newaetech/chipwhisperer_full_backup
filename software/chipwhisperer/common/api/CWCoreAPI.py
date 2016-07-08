@@ -273,7 +273,7 @@ class CWCoreAPI(Parameterized):
 
     def doConDis(self):
         """DEPRECATED: It is here just for compatibility reasons"""
-        print "Method doConDis() is deprecated... use connect() or disconnect() instead"
+        logging.warning('Method doConDis() is deprecated... use connect() or disconnect() instead')
         return self.connect()
 
     def connect(self):

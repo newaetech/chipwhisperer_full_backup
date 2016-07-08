@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from _base import VisaScope
 
@@ -104,7 +104,7 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         start = data.find('#')
 
         if start < 0:
-            print "Error in header"
+            logging.error('Error in header')
             return
 
         start = start+1

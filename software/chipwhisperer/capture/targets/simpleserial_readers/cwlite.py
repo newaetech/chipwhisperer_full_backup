@@ -46,7 +46,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         if self.cwlite_usart:
             self.cwlite_usart.init(baud)
         else:
-            print "Baud rate not set, need to connect first"
+            logging.error('Baud rate not set, need to connect first')
 
     def baud(self):
         return self._baud

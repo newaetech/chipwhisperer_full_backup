@@ -241,12 +241,12 @@ class SimpleSerial(TargetTemplate):
         blen = self.keyLen()
 
         if len(kin) < blen:
-            print "note: Padding key..."
+            logging.warning('Padding key...')
             newkey = bytearray(kin)
             newkey += bytearray([0]*(blen - len(kin)))
             return newkey
         elif len(kin) > blen:
-            print "note: Truncating key..."
+            logging.warning('Truncating key...')
             return kin[0:blen]
 
         return kin
@@ -255,12 +255,12 @@ class SimpleSerial(TargetTemplate):
         blen = self.textLen()
 
         if len(text) < blen:
-            print "note: Padding plaintext..."
+            logging.warning('Padding plaintext...')
             newtext = bytearray(text)
             newtext += bytearray([0] * (blen - len(text)))
             return newtext
         elif len(text) > blen:
-            print "note: Truncating plaintext..."
+            logging.warning('Truncating plaintext...')
             return text[0:blen]
         return text
 

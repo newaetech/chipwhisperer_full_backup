@@ -962,7 +962,6 @@ class FlowchartWidget(QtGui.QWidget):
 
         self.chart.createNode(nodeType, pos=pos)
 
-
     def selectionChanged(self):
         #print "FlowchartWidget.selectionChanged called."
         items = self._scene.selectedItems()

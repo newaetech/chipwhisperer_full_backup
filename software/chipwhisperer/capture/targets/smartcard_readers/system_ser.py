@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 import serial
@@ -118,9 +119,9 @@ class ReaderSystemSER(ReaderTemplate):
         #print ""
 
         if len(ack) < 1:
-            print "ACK Error: not received?"
+            logging.error('ACK Error: not received?')
         elif ord(ack[0]) != ins:
-            print "ACK Error: %x != %x"%(ins, ord(ack[0]))
+            logging.error('ACK Error: %x != %x' % (ins, ord(ack[0])))
 
         if len(stat) < 2:
             raise IOError("Status too small: %d, %s" % (len(stat), " ".join(["%02x"%ord(t) for t in stat])))
@@ -174,7 +175,7 @@ class ReaderSystemSER(ReaderTemplate):
 
         self.atr = [ord(t) for t in atr]
         stratr = " ".join(["%02x"%ord(t) for t in atr])
-        print "ATR: %s"%stratr
+        logging.info('ATR: %s' % stratr)
         self.findParam('atr').setValue(stratr)
 
     def getATR(self):

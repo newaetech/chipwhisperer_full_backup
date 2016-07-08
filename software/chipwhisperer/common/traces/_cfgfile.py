@@ -21,6 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 __author__ = "Colin O'Flynn"
 
@@ -192,8 +193,6 @@ class TraceContainerConfig(object):
         
         If the 'changed' flag of an attribute is TRUE, the internal DB will overwrite the disk file.
         """
-         
-        debug = False
 
         for ad in self.attrList:
 
@@ -207,12 +206,10 @@ class TraceContainerConfig(object):
             #Does section exist?
             try:
                 self.config[sn]
-                if debug:
-                    print "Section %s found"%sn
+                logging.debug('Section %s found' % sn)
             except KeyError:
                 self.config[sn] = {}
-                if debug:
-                    print "Section %s not found"%sn
+                logging.debug('Section %s not found' % sn)
                 
             #Check each item
             for item in ad["values"].iterkeys():
@@ -222,19 +219,14 @@ class TraceContainerConfig(object):
                     #Check priority
                     if ad["values"][item]["changed"] == False:                        
                         ad["values"][item]["value"] = self.config[sn][item]
-                        if debug:
-                            print "%s from configfile = "%item,
-                            print self.config[sn][item]
+                        logging.debug('%s from configfile = %s' % (item, self.config[sn][item]))
                     else:
                         self.config[sn][item] = ad["values"][item]["value"]
-                        if debug:
-                            print "%s from cache = "%item,
-                            print ad["values"][item]["value"]
+                        logging.debug('%s from cache = %s' % (item, ad["values"][item]["value"]))
                 
                 except KeyError:
                     self.config[sn][item] = ad["values"][item]["value"]
-                    if debug: 
-                        print "%s missing in cfg file"%item                   
+                    logging.debug('%s missing in cfg file' % item)
         
     def loadTrace(self, configfile=None):
         """Load config file. Syncs internal DB to File"""

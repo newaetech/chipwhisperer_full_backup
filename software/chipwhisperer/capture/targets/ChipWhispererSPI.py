@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 import hid
 from _base import TargetTemplate
@@ -32,10 +33,10 @@ class HIDSPI(object):
     CMDBOOT = 0xFE
 
     def findCWSPI(self, VID=0x03EB, PID=0xBAED):
-        print "Detecting HID device..."
+        logging.info('Detecting HID device...')
         self.hdev = hid.device(VID, PID)
-        print "Manufacturer: %s" % self.hdev.get_manufacturer_string()
-        print "Product: %s" % self.hdev.get_product_string()
+        logging.info('Manufacturer: %s' % self.hdev.get_manufacturer_string())
+        logging.info('Product: %s' % self.hdev.get_product_string())
 
     def sendHID(self, cmd, data=[]):
         # Report is 64 bytes. -2 for our bytes
@@ -140,12 +141,12 @@ class ChipWhispererSPI(TargetTemplate):
         blen = self.keyLen()
 
         if len(kin) < blen:
-            print "note: Padding key..."
+            logging.warning('Padding key...')
             newkey = bytearray(kin)
             newkey += bytearray([0] * (blen - len(kin)))
             return newkey
         elif len(kin) > blen:
-            print "note: Trunacating key..."
+            logging.warning('Truncating key...')
             return kin[0:blen]
 
         return kin

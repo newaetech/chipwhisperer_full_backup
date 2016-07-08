@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 import numpy as np
 
@@ -49,7 +50,7 @@ class DataAnalysis(object):
         for tindex in range(0, ntests):
             tnum = self.rawdata[tindex]["tracecnt"][0]
 
-            print tnum
+            if __debug__: logging.debug(tnum)
 
             if tnum not in data.keys():
                 data[tnum] = {'pge':[0] * nkeys, 'gsr':0, 'tests':0}

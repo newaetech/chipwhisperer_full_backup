@@ -15,7 +15,7 @@
 #  General Public License for more details.
 #  You should have received a copy of the GNU General Public License
 #  along with this program; if not, see http://www.gnu.org/licenses/.
-
+import logging
 
 import usb
 import time
@@ -203,20 +203,20 @@ class IhxFile(object):
                     #  data record
                     for i in range(0, lenfield):
                         if self.ihxData[addr + i] >= 0:
-                            print("Warning: Memory at position " + "%x" % i + " overwritten")
+                            logging.warning('Memory at position ' + "%x" % i + " overwritten")
                         self.ihxData[addr + i] = int((buf[i] & 255))
                 elif b == 1:
                     #  eof record
                     eof = True
                 else:
-                    raise ValueError("Invalid record type: " + b)
+                    raise ValueError("Invalid record type: " + str(b))
         except ValueError as e:
             # raise IhxFileDamagedException(fileName, line, e.getLocalizedMessage())
             raise ValueError("Some Problem with decoding IHX file :(: %s" % str(e))
         try:
             in_.close()
         except Exception as e:
-            print("Warning: Error closing file " + fileName + ": " + str(e))
+            logging.error('Error closing file ' + fname + ": " + str(e))
 
     #  ******* dataInfo ************************************************************
     #
@@ -230,7 +230,7 @@ class IhxFile(object):
         while i <= 65536:
             #  data
             if (i == 65536 or self.ihxData[i] < 0) and addr >= 0:
-                print i - addr + " Bytes from " + "%x" % addr + " to " + "%x" % (i - 1)
+                logging.info(i - addr + " Bytes from " + "%x" % addr + " to " + "%x" % (i - 1))
                 addr = -1
             if i < 65536 and self.ihxData[i] >= 0 and addr < 0:
                 addr = i
@@ -287,15 +287,14 @@ class Ztex1v1(object):
         if dev:
             self.dev = dev
             self.firmwareProgrammed = False
-            if verbose: print "Found unprogrammed device"
+            if verbose: logging.info('Found unprogrammed device')
 
         # Find programmed chips
         dev = usb.core.find(idVendor=ztexVendorId, idProduct=ztexProductId)
         if dev:
             self.dev = dev
             self.firmwareProgrammed = True
-            if verbose: print "Found programmed device"
-
+            if verbose: logging.info('Found programmed device')
 
             # Probe the device to determine additional information
             buf = self.dev.ctrl_transfer(0xc0, 0x22, 0, 0, 40, 500)
@@ -350,7 +349,7 @@ class Ztex1v1(object):
 
         except IOError as e:
             # raise BitstreamReadException(e.getLocalizedMessage())
-            print "Shit - IO Error in configureFpgaLS"
+            logging.error('Shit - IO Error in configureFpgaLS')
 
         if size < 64 or size % 64 == 0:
             raise ValueError("Invalid file size: " + str(size))
@@ -392,7 +391,7 @@ class Ztex1v1(object):
                 #t0 += Date().getTime()
             except IOError as e:
                 if tries > 1:
-                    print("Warning: " + str(e) + ": Retrying it ...")
+                    logging.warning(str(e) + ": Retrying it ...")
                 else:
                     raise
             tries -= 1
@@ -408,7 +407,7 @@ class Ztex1v1(object):
             if ((buf[i] & 255) == 0x55) and ((buf[i + 1] & 255) == 0x99) and ((buf[i + 2] & 255) == 0xaa) and ((buf[i + 3] & 255) == 0x66):
                 return 0
             i += 1
-        print("Warning: Unable to determine bitstream bit order: no signature found")
+        logging.warning('Unable to determine bitstream bit order: no signature found')
         return 0
 
     #  ******* swapBits ************************************************************

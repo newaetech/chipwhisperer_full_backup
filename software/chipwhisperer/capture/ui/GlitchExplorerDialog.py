@@ -71,7 +71,7 @@ class TuningParameter(Parameterized):
         self.findParam('curval').setValue(self.findParam('range').getValue()[0])
         self.updateParams()
 
-    def updateParams(self, ignored=None):
+    def updateParams(self, _=None):
 
         rng = self.findParam('range').getValue()
 
@@ -89,8 +89,8 @@ class TuningParameter(Parameterized):
         self.paramType = self.findParam('datatype').getValue()
         try:
             self.paramScript = eval(self.findParam('parampath').getValue())
-        except SyntaxError, e:
-            print "Syntax Error: %s" % str(e)
+        except SyntaxError as e:
+            logging.error('Syntax Error: %s' % str(e))
 
         try:
             Parameter.setParameter(self.paramScript+[curval])

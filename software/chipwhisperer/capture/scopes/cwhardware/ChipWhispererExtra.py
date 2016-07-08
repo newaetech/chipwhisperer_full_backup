@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from functools import partial
 import ChipWhispererGlitch
@@ -570,7 +570,7 @@ class CWPLLDriver(object):
         if bnew != bold:
             self.writeByte(11, bnew)
 
-        print "%x, %x" % (bnew, self.readByte(11))
+        logging.debug('%x, %x' % (bnew, self.readByte(11)))
 
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])

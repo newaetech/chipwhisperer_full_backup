@@ -104,7 +104,7 @@ class SaseboGIIDPAContest(object):
         elif mode == "decryption":
             self.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
@@ -177,7 +177,7 @@ class SaseboGIIAESRev1(object):
         elif mode == "decryption":
             self.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
@@ -370,7 +370,7 @@ class SaseboGII(TargetTemplate):
         elif mode == "decryption":
             self.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)

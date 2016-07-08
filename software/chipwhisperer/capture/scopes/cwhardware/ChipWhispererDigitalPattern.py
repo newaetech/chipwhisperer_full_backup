@@ -72,7 +72,7 @@ class CWAdvTrigger(object):
             high = p[2]
             # TODO: support seconds
             if form == 'seconds':
-                print "Not Supported"
+                raise NotImplementedError
 
             if high == 'now':
                 high = 511

@@ -23,7 +23,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from datetime import datetime
 from functools import partial
@@ -108,7 +108,7 @@ class CW305(TargetTemplate):
         """ Read from address """
 
         if addr > self._woffset:
-            print "NOTE: Read from write address, confirm this is not an error"
+            logging.info('Read from write address, confirm this is not an error')
 
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
@@ -162,7 +162,7 @@ class CW305(TargetTemplate):
         starttime = datetime.now()
         self.fpga.FPGAProgram(open(bsfile, "rb"))
         stoptime = datetime.now()
-        print "FPGA Config time: %s" % str(stoptime - starttime)
+        logging.info('FPGA Config time: %s' % str(stoptime - starttime))
 
     def _con(self, scope=None, bsfile=None, force=False):
         """Connect to CW305 board, download bitstream"""
@@ -178,7 +178,7 @@ class CW305(TargetTemplate):
                 starttime = datetime.now()
                 self.fpga.FPGAProgram(open(bsfile, "rb"))
                 stoptime = datetime.now()
-                print "FPGA Config time: %s" % str(stoptime - starttime)
+                logging.info('FPGA Config time: %s' % str(stoptime - starttime))
         self.usb_clk_setenabled(True)
         self.fpga_write(0x100+self._woffset, [0])
         self.params.refreshAllParameters()

@@ -30,9 +30,7 @@
 import sys
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.utils import pluginmanager
-import chipwhisperer.analyzer.attacks.models.AES128_8bit as models_AES128_8bit
-import chipwhisperer.analyzer.attacks.models.AES256_8bit as models_AES256_8bit
-from chipwhisperer.analyzer.attacks._base import AttackBaseClass
+from _base import AttackBaseClass
 from _generic_parameters import AttackGenericParameters
 
 
@@ -107,21 +105,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
             self.attack.scriptsUpdated.connect(self.updateScript)
 
         self.getParams().append(self.attack.getParams())
-
-#    def setAlgo(self, algo):
-#        self.attack = algo(self)
-#        if self.setTraceSource() is not None:
-#            self.attack.setTraceSource(self.setTraceSource())
-#
-#        if self.project() is not None:
-#            self.attack.setProject(self.project())
-#
-#        try:
-#            self.attackParams = self.attack.paramList()[0]
-#        except:
-#            self.attackParams = None
-#
-#        self.paramListUpdated.emit(self.paramList())
 
     def setKeyround(self, rnd):
         self._keyround = rnd
