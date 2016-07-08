@@ -13,7 +13,8 @@ V3.1.9:
 - Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
 - Added buttons to load and save settings.
 - Project settings saved with the traces during capture.
-- Logging
+- Logging.
+- Trace Output Plot widget with new parameter: X Axis with time values.
 
 V3.1.8:
 - Read/save buttons.
