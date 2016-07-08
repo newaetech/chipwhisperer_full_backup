@@ -293,7 +293,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
-    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = ""):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = "", xaxis=None):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
@@ -318,7 +318,8 @@ class GraphWidget(QWidget):
             self.acolor = self.color
             self.pw.clear()
             
-        xaxis = range(startoffset, len(trace)+startoffset)
+        if xaxis is None:
+            xaxis = range(startoffset, len(trace)+startoffset)
             
         if pen is None:
             pen = pg.mkPen(self.acolor)

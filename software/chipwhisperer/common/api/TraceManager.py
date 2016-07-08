@@ -45,6 +45,7 @@ class TraceManager(TraceSource):
         self.dirty = util.Observable(False)
         self._numTraces = 0
         self._numPoints = 0
+        self._sampleRate = 0
         self.lastUsedSegment = None
         self.traceSegments = []
         if __debug__: logging.debug('Created: ' + str(self))
@@ -224,6 +225,14 @@ class TraceManager(TraceSource):
 
     def getSampleRate(self, ):
         return self._sampleRate
+
+    def changeSegmentAttribute(self, segmentNum, attribute, value):
+        """Change the value of a segment attribute. Changes are saved instantly."""
+        self.traceSegments[segmentNum].config.setAttr(attribute, value)
+        self.traceSegments[segmentNum].config.saveTrace()
+        logging.info('Trace attribute "%s" of segment %d changed to: %s' % (attribute, segmentNum, value))
+        self._updateRanges()
+        self.sigTracesChanged.emit()
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
