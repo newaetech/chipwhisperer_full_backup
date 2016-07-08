@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
@@ -44,6 +45,7 @@ class TraceSource(object):
         self.register()
 
     def getTrace(self, n):
+        """Return the trace with number n in the current TraceSource object"""
         return None
 
     def numPoints(self):
@@ -56,6 +58,7 @@ class TraceSource(object):
         return 0
 
     def getSampleRate(self):
+        """Return the Sample Rate used to generate the traces"""
         return 0
 
     def getTextin(self, n):
@@ -83,22 +86,26 @@ class TraceSource(object):
         raise NotImplementedError
 
     def register(self):
+        """Register the current TraceSource object in a list and emit a signal to inform it was updated"""
         self.registeredObjects[self.name] = self
         self.sigRegisteredObjectsChanged.emit()
         return self
 
     def deregister(self):
+        """Deregister the current TraceSource and emit a signal to inform this event"""
         if TraceSource.registeredObjects.pop(self.name, None):
             TraceSource.sigRegisteredObjectsChanged.emit()
 
     @classmethod
     def deregisterObject(cls, name):
+        """Deregister the TraceSource and emit a signal to inform this event"""
         if cls.registeredObjects.pop(name, None):
             cls.sigRegisteredObjectsChanged.emit()
 
 
 class LiveTraceSource(TraceSource):
-    """ It has live traces as output """
+    """Works like an adapter between the Scope channels and the TraceSourceObservers.
+    Observers the Channels for new data and notify the TraceSourceObservers."""
 
     def __init__(self, scope=None, name="Scope"):
         TraceSource.__init__(self, name)
@@ -106,6 +113,7 @@ class LiveTraceSource(TraceSource):
         self.setScope(scope)
         self._lastData = []
         self._lastOffset = 0
+        self._sampleRate = 0
 
     def setScope(self, newScope):
         if self._scope:
@@ -114,12 +122,19 @@ class LiveTraceSource(TraceSource):
             newScope.dataUpdated.connect(self.newScopeData)
         self._scope = newScope
 
-    def newScopeData(self, data=None, offset=0):
+    def newScopeData(self, data=None, offset=0, sampleRate=0):
+        """Capture the received trace and emit a signal to inform the observers"""
         self._lastData = data
         self._lastOffset = offset
-        self.sigTracesChanged.emit()
+        self._sampleRate = sampleRate
+        if len(data) > 0:
+            self.sigTracesChanged.emit()
+        else:
+            logging.warning("Captured trace has len=0")
 
-    def getTrace(self, n):
+    def getTrace(self, n=0):
+        if n != 0:
+            raise ValueError("Live trace source has no buffer, so it only supports trace 0.")
         return self._lastData
 
     def numPoints(self):
@@ -132,15 +147,14 @@ class LiveTraceSource(TraceSource):
         return self._lastOffset
 
     def getSampleRate(self):
-        return self._scope.getSampleRate()
+        return self._sampleRate
 
 
 class PassiveTraceObserver(Parameterized):
-    """ It processes data from a TraceSource when requested """
+    """Processes data from a TraceSource when requested """
 
     def __init__(self):
         self._traceSource = None
-
         self.getParams().addChildren([
             {'name':'Input', 'key':'input', 'type':'list', 'values':TraceSource.registeredObjects, 'default':None, 'get':self.getTraceSource, 'set':self.setTraceSource}
         ])
@@ -153,9 +167,13 @@ class PassiveTraceObserver(Parameterized):
         return self._traceSource
 
     def processTraces(self):
+        """Process the Traces acording to its current state"""
         pass
 
     def traceSourcesChanged(self):
+        """Update the Input parameter values (in the combobox).
+        Usually called when TraceSource.sigRegisteredObjectsChanged emits a Signal. Should be connected manually though.
+         """
         par = self.findParam('input')
         par.setLimits({})  # Will not update if the obj is the same :(
         par.setLimits(TraceSource.registeredObjects)
@@ -164,7 +182,7 @@ class PassiveTraceObserver(Parameterized):
 
 
 class ActiveTraceObserver(PassiveTraceObserver):
-    """ It observes a TraceSource for state changes and process the Traces actively """
+    """Observes a TraceSource for state changes and process the Traces actively """
 
     @setupSetParam('Input')
     def setTraceSource(self, traceSource):
