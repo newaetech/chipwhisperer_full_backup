@@ -45,6 +45,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
+            {'name':'X Axis', 'type':'list', 'values':["Sample", "Time"], 'value':"Sample"},
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
 
@@ -79,22 +80,33 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         tend = self.findParam('tracerng').getValue()[1]
         pstart = self.findParam('pointrng').getValue()[0]
         pend = self.findParam('pointrng').getValue()[1]
-        ttotal = 0
 
-        if tend - tstart + 1 > 1:
-            self.setPersistance(True)
+        if tend<tstart or pend<pstart:
+            return
 
-        for tnum in range(tstart, tend+1):
-            trace = self._traceSource.getTrace(tnum)
-            if trace is not None:
-                ttotal += 1
-                #TODO - Not sure if should add _traceSource.offset() or not?
-                self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum))
+        try:
+            if tend - tstart + 1 > 1:
+                self.setPersistance(True)
 
-                if self.findParam('Redraw after Each').getValue():
-                    util.updateUI()
+            scale = self.findParam('X Axis').getValue()
+            self.pw.setLabel('bottom', scale)
+            xaxis = range(pstart + self._traceSource.offset(), pend + self._traceSource.offset() + 1)
+            if scale == 'Time':
+                tmp = float(self._traceSource.getSampleRate())
+                if tmp == 0:
+                    raise Warning('X Axis of type "Time" in "%s" can\'t have "Sample Rate" with value=0. Change it to its actual value in the Trace Manager.' % self.getName())
+                xaxis = [v/tmp for v in xaxis]
 
-        self.setPersistance(initialPersist)
+            for tnum in range(tstart, tend+1):
+                trace = self._traceSource.getTrace(tnum)
+                if trace is not None:
+                    #TODO - Not sure if should add _traceSource.offset() or not?
+                    self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum), xaxis=xaxis)
+
+                    if self.findParam('Redraw after Each').getValue():
+                        util.updateUI()
+        finally:
+            self.setPersistance(initialPersist)
 
     def processTraces(self):
         self.resetTraceLimits()

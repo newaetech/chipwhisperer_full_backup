@@ -126,9 +126,7 @@ class TraceManagerDialog(QtFixes.QDialog):
         for attr in self.attrs:
             if attr["header"] == self.table.horizontalHeaderItem(column).text():
                 text = self.table.item(row, column).text()
-                self._traceManager.traceSegments[row].config.setAttr(attr["name"], text)
-                self._traceManager.traceSegments[row].config.saveTrace()
-                logging.info('Trace attribute "%s" of segment %d changed to: %s' % (attr["header"], row, text))
+                self._traceManager.changeSegmentAttribute(row, attr["name"], text)
                 return
         raise KeyError
 

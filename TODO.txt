@@ -1,2 +1,3 @@
 - Improve documentation
+- Time scale in the plot widgets.
 - Implement the streaming mode
