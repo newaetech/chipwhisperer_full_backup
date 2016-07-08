@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from ._base import PreprocessingBase
 import scipy
@@ -112,7 +113,7 @@ class DecimationClockRecovery(PreprocessingBase):
 
         freq = ((centerfreq - (centerfreq * freqbw) / 2), (centerfreq + (centerfreq * freqbw) / 2))
 
-        print "Designing filter for passband: %f-%f" % (freq[0], freq[1])
+        logging.info('Designing filter for passband: %f-%f' % (freq[0], freq[1]))
 
         b, a = sp.signal.butter(order, freq, form)
         self.b = b

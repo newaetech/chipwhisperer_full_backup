@@ -21,7 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-
+import logging
 import pickle
 import numpy as np
 from _base import TraceContainer
@@ -109,7 +109,7 @@ class TraceContainerMySQL(TraceContainer):
 
         #Check version as simple validation
         result = self.db.query("SELECT VERSION()")
-        print "MySQL Version: %s"%result.rows[0][0]
+        logging.info('MySQL Version: %s' % result.rows[0][0])
 
         self.tableName = traceprefix
 

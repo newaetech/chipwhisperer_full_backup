@@ -228,7 +228,7 @@ class FTDIComm(object):
             self.sasebo = ft.openEx(self.serNo)
         except ft.ftd2xx.DeviceError, e:
             self.sasebo = None
-            print "Failed to find device: %s" % str(e)
+            logging.error('Failed to find device: %s' % str(e))
             return False
 
         self.sasebo.setTimeouts(1000, 1000)
@@ -388,7 +388,7 @@ class SakuraG(TargetTemplate):
         elif mode == "decryption":
             self.hw.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.hw.write(0x0002, 0x00, 0x01)

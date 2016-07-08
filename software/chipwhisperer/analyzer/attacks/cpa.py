@@ -30,7 +30,6 @@ from chipwhisperer.common.utils import pluginmanager
 from ._base import AttackBaseClass
 from ._generic_parameters import AttackGenericParameters
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
-from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class CPA(AttackBaseClass, AttackGenericParameters):

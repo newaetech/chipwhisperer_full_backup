@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 from chipwhisperer.common.utils import timer
@@ -96,7 +97,7 @@ class ReaderPCSC(ReaderTemplate):
             if not self.timeoutTimer.isActive():
                 self.timeoutTimer.start()
 
-            print "SCARD: Connected..."
+            logging.info('SCARD: Connected...')
         except Exception:
             raise Exception("SCARD: Failed to connect...")
 

@@ -21,6 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 __author__ = "Colin O'Flynn"
 
@@ -51,19 +52,19 @@ class TraceContainerDPAv3(TraceContainer):
         self.setDirectory("capture-%s/"%strftime("%Y.%m.%d-%H.%M.%S", self.startTime))
         
         if os.path.exists(self.dir + "text_in.txt"):
-            print "Textin File exists!"
+            logging.info('Textin File exists!')
             return
 
         if os.path.exists(self.dir + "text_out.txt"):
-            print "Textout File exists!"
+            logging.info('Textout File exists!')
             return
 
         if os.path.exists(self.dir + "wave.txt"):
-            print "Wave File exists!"
+            logging.info('Wave File exists!')
             return
 
         if os.path.exists(self.dir + "key.txt"):
-            print "Key file exists!"
+            logging.info('Key file exists!')
             return
         
         self.inf = open(self.dir + "text_in.txt", "w")
@@ -294,7 +295,7 @@ class ImportDPAv3Dialog(QtFixes.QDialog):
         """
         
         if self.parent.parent.cwp == None:
-            print "No project open for import? Hmm..."
+            logging.warning('No project open for import? Hmm...')
             return
 
         if self.validatePrefix(False) == False:

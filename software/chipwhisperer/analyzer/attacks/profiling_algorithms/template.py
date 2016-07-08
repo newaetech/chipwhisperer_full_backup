@@ -149,7 +149,7 @@ class ProfilingTemplate(AutoScript, PassiveTraceObserver, Plugin):
         np.savez(fname["abs"], **templatedata)  # mean=self.profiling.templateMeans, cov=self.profiling.templateCovs)
         cfgsec["filename"] = fname["rel"]
 
-        print "Saved template to: %s" % fname["abs"]
+        logging.info('Saved template to: %s' % fname["abs"])
 
         return fname["abs"]
 

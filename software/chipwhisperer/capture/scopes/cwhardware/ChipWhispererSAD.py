@@ -75,7 +75,7 @@ class ChipWhispererSAD(Parameterized):
         ])
 
     def dataChanged(self, data, offset):
-        """ Called when data in the trace window has changed. Used to update the limits for the point selection dialog. """
+        """Called when data in the trace window has changed. Used to update the limits for the point selection dialog."""
 
         low = offset
         up = offset + len(data) - 1
@@ -94,7 +94,7 @@ class ChipWhispererSAD(Parameterized):
         try:
             waveformWidget = ResultsBase.registeredObjects["Trace Output Plot"]
         except KeyError:
-            print "SAD Trigger: Not running in GUI mode, no data source"
+            logging.warning('SAD Trigger: Trace Output Plot not running, no data source')
             return [0.0]*128
         pstart = self.findParam(['sad', 'pointrng']).getValue()[0] - waveformWidget.lastStartOffset
         pend = self.findParam(['sad', 'pointrng']).getValue()[1] - waveformWidget.lastStartOffset

@@ -26,6 +26,8 @@
 #=================================================
 
 import copy
+import logging
+
 import numpy as np
 import random
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
@@ -176,7 +178,7 @@ class Partition(Parameterized):
 
         # Generate blank partition table
         partitionTable = self.createBlankTable(self._traces.getSegment(start))
-        print np.shape(partitionTable)
+        logging.info(np.shape(partitionTable))
 
         tnum = start
         while tnum < end:

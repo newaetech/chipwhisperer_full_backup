@@ -122,7 +122,6 @@ class UserScript(UserScriptBase):
         self.api.capture1()
         self.api.capture1()
         self.api.capture1()
-        print self.api.getParameter(['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)'])
 
         print "Automatically Triggering Glitch - Enable the trigger of the glitch to occur based on this external trigger pin"
         self.api.setParameter(['Glitch Module', 'Glitch Trigger', 'Ext Trigger:Single-Shot'])
@@ -138,7 +137,7 @@ class UserScript(UserScriptBase):
         lstexample = [
             ['Glitch Explorer', 'Normal Response', u"s == '\\x00hello\\nA'"],
             ['Glitch Explorer', 'Successful Response', u"s.endswith('1234')"],
-            ]
+        ]
         for cmd in lstexample: self.api.setParameter(cmd)
         self.api.capture1()
         self.api.capture1()

@@ -21,7 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-
+import logging
 import os.path
 import shutil
 import glob
@@ -114,9 +114,9 @@ class TraceManagerDialog(QtFixes.QDialog):
                             wid.setFlags(wid.flags() & ~Qt.ItemIsEditable)
                         self.table.setItem(p, col, wid)
                     else:
-                        print "Internal Error: Column doesn't exists: " + column["header"]
+                        logging.error("Column doesn't exists: " + column["header"])
             else:
-                print "Internal Error: Sequence #%d should never be None: " % p
+                logging.error('Sequence #%d should never be None: ' % p)
 
         self.table.horizontalHeader().setStretchLastSection(True)
         self.connect(self.table, SIGNAL("cellChanged(int, int)"), self.cellChanged)
@@ -128,7 +128,7 @@ class TraceManagerDialog(QtFixes.QDialog):
                 text = self.table.item(row, column).text()
                 self._traceManager.traceSegments[row].config.setAttr(attr["name"], text)
                 self._traceManager.traceSegments[row].config.saveTrace()
-                print 'Trace attribute "%s" of segment %d changed to: %s' % (attr["header"], row, text)
+                logging.info('Trace attribute "%s" of segment %d changed to: %s' % (attr["header"], row, text))
                 return
         raise KeyError
 

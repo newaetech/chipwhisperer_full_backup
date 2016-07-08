@@ -22,6 +22,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
+
 
 class FakeQTimer(object):
     """ Replicates basic QTimer() API but does nothing """
@@ -37,9 +39,9 @@ class FakeQTimer(object):
 
     def start(self):
         if self._single_shot:
-            print("Timer: Not using Qt, calling callback immediatly")
+            logging.info('Timer: Not using Qt, calling callback immediatly')
             self._callback()
-        print("Timer: Not using Qt, timer disabled")
+        logging.warning('Timer: Not using Qt, timer disabled')
 
     def stop(self):
         pass

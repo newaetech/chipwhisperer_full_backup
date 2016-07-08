@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 import _OpenADCInterface as openadc
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
@@ -58,16 +59,13 @@ class OpenADCQt(Parameterized):
     def processData(self, data):
         fpData = []
 
-        #lastpt = -100;
-
         if data[0] != 0xAC:
-            print "Unexpected sync byte: 0x%x" % data[0]
+            logging.warning("Unexpected sync byte: 0x%x" % data[0])
             return None
 
         for i in range(2, len(data)-1, 2):
             if (0x80 & data[i + 1]) or ((0x80 & data[i + 0]) == 0):
-                print "Error at byte %d" % i
-                print("Bytes: %x %x"%(data[i], data[i+1]))
+                logging.error('Error at byte ' + str(i) + '. Bytes: %x %x' % (data[i], data[i+1]))
                 return None
 
             #Convert

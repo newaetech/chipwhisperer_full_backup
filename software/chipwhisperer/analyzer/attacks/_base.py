@@ -46,8 +46,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
         return inpkey
 
     def processTraces(self):
+        """Do the attack"""
         self.sigAnalysisStarted.emit()
-        # Do the attack
+        # ...
         self.sigAnalysisDone.emit()
 
     def getStatistics(self):

@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ProtocolTemplate
 
@@ -53,7 +54,7 @@ class ProtocolJCardTest(ProtocolTemplate):
         counter3 = (pay[9] << 8) | pay[10]
 
         self.resp = (counter1, counter2, counter3)
-        print (counter1, counter2, counter3)
+        logging.debug(str(self.resp))
 
     def readOutput(self):
         return self.resp

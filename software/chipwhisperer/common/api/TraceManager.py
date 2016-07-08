@@ -81,7 +81,7 @@ class TraceManager(TraceSource):
                 try:
                     ti.config.loadTrace(fname)
                 except Exception, e:
-                    print e.message
+                    logging.error(e.message)
                 self.traceSegments.append(ti)
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])

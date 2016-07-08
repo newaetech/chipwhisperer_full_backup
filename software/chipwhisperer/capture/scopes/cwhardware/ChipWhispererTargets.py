@@ -308,7 +308,7 @@ class CWUniversalSerial(object):
         #    print "%02x "%result[t],
         #print ""
             
-        print self.proc.rxPatternToString(result, 4)
+        logging.info(self.proc.rxPatternToString(result, 4))
 
     def setBaud(self, baud=9600, oversamplerate=None):        
         if oversamplerate:
@@ -476,7 +476,7 @@ class CWSCardIntegrated(object):
         cmd[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)            
 
-        print stratr
+        logging.info(stratr)
         self.stratr = stratr
         return stratr
         
@@ -504,7 +504,7 @@ class CWSCardIntegrated(object):
         if (resp[0] & FLAG_ACKOK):            
             return True
         else:
-            print "No ACK from SCard?"
+            logging.warning('No ACK from SCard?')
             return False
 
     def dis(self):
@@ -551,7 +551,7 @@ class CWSCardIntegrated(object):
         resp = self.readPayload()
 
         if len(resp) != 18:
-            print "SASEBOW: USB Data Error, wrong Response Size"
+            logging.error('SASEBOW: USB Data Error, wrong Response Size')
             return 0
 
         status = resp[16:18]
@@ -566,7 +566,7 @@ class CWSCardIntegrated(object):
         resp = self.readPayload()
 
         if len(resp) != 18:
-            print "SASEBOW: USB Data Error, wrong Response Size"
+            logging.error('SASEBOW: USB Data Error, wrong Response Size')
             return 0
 
         return bytearray(resp)

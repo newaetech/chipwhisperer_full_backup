@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from _base import VisaScope
 from chipwhisperer.common.utils import util
@@ -69,14 +69,14 @@ class VisaScopeInterface_DSO1024A(VisaScope):
         while ((result.startswith("WAIT") == False) and (result.startswith("RUN") == False)):
             result = self.visaInst.ask(":TRIGger:STATus?")
             time.sleep(0.1)
-            print "1Waiting..."
+            logging.info('1Waiting...')
 
     def capture(self, Update=False, N=None):
         # Wait?
         while (self.visaInst.ask("*OPC?\n") != "1"):
             time.sleep(0.1)
             util.updateUI()
-            print "2Waiting..."
+            logging.info('2Waiting...')
 
         # print command
         self.visaInst.write(":WAVeform:DATA?")
@@ -86,7 +86,7 @@ class VisaScopeInterface_DSO1024A(VisaScope):
         start = data.find('#')
 
         if start < 0:
-            print "Error in header"
+            logging.error('Error in header')
             return
 
         start = start + 1

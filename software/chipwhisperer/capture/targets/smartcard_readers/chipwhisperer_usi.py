@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
@@ -79,9 +80,10 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         temprx = bytearray(self.usi.read(2 + rxdatalen + txdatalen + proctime, waitonly=True))
 
         # Uncomment to print data stream on RX pin
-        print "APDU: ",
-        for t in temprx: print "%02x " % t,
-        print ""
+        stream = 'APDU: '
+        for t in temprx:
+            stream += "%02x " % t
+        logging.info(stream)
 
         # We've actually read entire sent + received data in
         # Strip header

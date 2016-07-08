@@ -22,7 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 from ._base import ReaderTemplate
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
 
@@ -65,7 +65,7 @@ class ReaderChipWhispererSasebowSCard(ReaderTemplate):
             status = (status[0] << 8) | status[1]
             payload = resp[0:rxdatalen]
 
-            print "%4x"%status
+            logging.info('%4x' % status)
 
             return (status, payload)
 

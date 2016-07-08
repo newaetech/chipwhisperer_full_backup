@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from _base import AuxiliaryTemplate
 from chipwhisperer.common.utils import timer
@@ -82,7 +82,7 @@ class GPIOToggle(AuxiliaryTemplate):
             util.updateUI()
 
     def trigger(self, _=None):
-        print "AUXIO: Trigger pin %d" % self.pin
+        logging.info('AUXIO: Trigger pin %d' % self.pin)
         self.checkMode()
         CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
         self.nonblockingSleep(self.triglength)

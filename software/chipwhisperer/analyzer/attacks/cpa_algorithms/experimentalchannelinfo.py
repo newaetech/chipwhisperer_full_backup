@@ -497,7 +497,7 @@ class TemplateCSI(object):
                         templateTraces[bnum][i].append(trace_fixed)
 
             if tnum % 100 == 0:
-                print tnum
+                logging.debug(tnum)
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
