@@ -51,6 +51,7 @@ STATUS_DCM_MASK    = 0x08
 STATUS_DDRCAL_MASK = 0x10
 STATUS_DDRERR_MASK = 0x20
 STATUS_DDRMODE_MASK= 0x40
+STATUS_OVERFLOW_MASK = 0x80
 
 # sign extend b low bits in x
 # from "Bit Twiddling Hacks"
@@ -98,6 +99,24 @@ class HWInformation(Parameterized):
             self.sysFreq = 40E6
 
         return self.vers
+
+    def is_cw1200(self):
+        if self.vers is None:
+            self.versions()
+
+        if self.vers[1] == 9:
+            return True
+        else:
+            return False
+
+    def is_cwlite(self):
+        if self.vers is None:
+            self.versions()
+
+        if self.vers[1] == 8:
+            return True
+        else:
+            return False
 
     def synthDate(self):
         return "unknown"
@@ -205,16 +224,17 @@ class TriggerSettings(Parameterized):
         self.presamples_actual = 0
         self.presampleTempMargin = 24
         self._timeout = 2
+        self._stream_mode = False
 
         self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
-            {'name': 'Refresh Status', 'type':'action', 'linked':['Digital Pin State'], 'visible':False,
+        child_list = [
+            {'name': 'Refresh Status', 'type':'action', 'linked':['Trigger Pin State'], 'visible':False,
                      'help':'%namehdr%'+
-                            'Refreshes the "Digital Pin State" status.'},
-            {'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'set':self.setSource, 'get':self.source,
-                     'help':'%namehdr%'+
-                            'Selects if trigger system is based on digital signal (including internally generated), or an ADC level.'},
-            {'name': 'Digital Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
+                            'Refreshes the "Trigger Pin State" status.'},
+            #{'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'set':self.setSource, 'get':self.source,
+            #         'help':'%namehdr%'+
+            #                'Selects if trigger system is based on digital signal (including internally generated), or an ADC level.'},
+            {'name': 'Trigger Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
                      'help':'%namehdr%'+
                             'Gives the status of the digital signal being used as the trigger signal, either high or low.'},
             {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'default':"low", 'set':self.setMode, 'get':self.mode,
@@ -237,7 +257,7 @@ class TriggerSettings(Parameterized):
                      'help':'%namehdr%'+
                             'Delays this many samples after the trigger event before recording samples. Based on the ADC clock cycles. ' +
                             'If using a 4x mode for example, an offset of "1000" would mean we skip 250 cycles of the target device.'},
-            {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, 1000000), 'set':self.setPresamples, 'get':self.presamples,
+            {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setPresamples, 'get':self.presamples,
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
                             'recording samples BEFORE the trigger event.\n\n' +
@@ -245,9 +265,48 @@ class TriggerSettings(Parameterized):
                             'pre-triggering for many FPGA builds. It is  recommended use presampling only on the CW1200 hardware.'},
             {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setMaxSamples, 'get':self.maxSamples,
                      'help':'%namehdr%'+
-                            'Total number of samples to record. Note the capture system has an upper limit, and may have a practical lower limit (i.e.,' +
-                            ' if this value is set too low the system may not capture samples. Suggest to always set > 256 samples.'},
-        ])
+                            'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples.'+
+                            'If using the ChipWhisperer-Lite/ChipWhisperer-Pro (CW1173/CW1200) this is no longer the case, and can be set to almost any number.'},
+        ]
+
+        if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
+            child_list.append(
+            {'name': 'Stream Mode', 'type': 'bool', 'default': self._stream_mode, 'set': self.setStreamMode,
+             'get': self.getStreamMode,
+             'help': '%namehdr%' +
+                     'Stream mode streams data over high-speed USB. Requires slow sampling rate (< 8 MS/s).\n' +
+                     'This is currently a beta feature, and you may find errors when attempting to use longer'+
+                     'sample sizes.'})
+        self.params.addChildren(child_list)
+
+    @setupSetParam("Stream Mode")
+    def setStreamMode(self, enabled):
+        self._stream_mode = enabled
+
+        if enabled:
+            self.findParam('Pre-Trigger Samples').setValue(0, ignoreReadonly=True)
+            self.findParam('Pre-Trigger Samples').setReadonly(True)
+            self.findParam('Total Samples').setLimits((0, 100E6))
+        else:
+            self.findParam('Pre-Trigger Samples').setReadonly(False)
+            self.findParam('Total Samples').setLimits((0, self.oa.hwMaxSamples))
+
+        #Write to FPGA
+        base = self.oa.sendMessage(CODE_READ, ADDR_SETTINGS)[0]
+        if enabled:
+            val = base | (1<<4)
+        else:
+            val = base & ~(1<<4)
+        self.oa.sendMessage(CODE_WRITE, ADDR_SETTINGS, [val])
+
+        #Notify capture system
+        self.oa.setStreamMode(enabled)
+
+    def getStreamMode(self):
+        return self._stream_mode
+
+    def fifoOverflow(self):
+        return self.oa.getStatus() & STATUS_OVERFLOW_MASK
 
     @setupSetParam("Total Samples")
     def setMaxSamples(self, samples):
@@ -297,7 +356,7 @@ class TriggerSettings(Parameterized):
 
         self.presamples_desired = samples
 
-        if (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 9) or (self.oa.hwInfo.vers and self.oa.hwInfo.vers[1] == 8):
+        if self.oa.hwInfo.is_cw1200() or self.oa.hwInfo.is_cwlite():
             #CW-1200 Hardware / CW-Lite
             samplesact = samples
             self.presamples_actual = samples
@@ -355,12 +414,12 @@ class TriggerSettings(Parameterized):
 
         return self.presamples_actual
 
-    @setupSetParam("Source")
-    def setSource(self,  src):
-        return
+    #@setupSetParam("Source")
+    #def setSource(self,  src):
+    #    return
 
-    def source(self):
-        return "digital"
+    #def source(self):
+    #    return "digital"
 
     @setupSetParam("Mode")
     def setMode(self,  mode):
@@ -816,6 +875,7 @@ class OpenADCInterface(object):
         self.offset = 0.5
         self.ddrMode = False
         self.sysFreq = 0
+        self._streammode = False
 
         self.settings()
 
@@ -828,6 +888,9 @@ class OpenADCInterface(object):
 
         self.setReset(True)
         self.setReset(False)
+
+    def setStreamMode(self, stream):
+        self._streammode = stream
 
     def setTimeout(self, timeout):
         self._timeout = timeout
@@ -1024,6 +1087,19 @@ class OpenADCInterface(object):
         cmd[3] = ((samples >> 24) & 0xFF)
         self.sendMessage(CODE_WRITE, ADDR_SAMPLES, cmd)
 
+        #Streaming mode also generates a buffer for storing
+        if self._streammode:
+            nae = self.serial
+            #Save the actual number of samples requested
+            self._stream_len = samples
+
+            #Save the number we will return
+            bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(samples)
+
+            #Generate the buffer to save buffer
+            self._sbuf = [0] * bufsizebytes
+
+
     def maxSamples(self):
         '''Return the number of samples captured in one go'''
         samples = 0x00000000
@@ -1102,42 +1178,65 @@ class OpenADCInterface(object):
         addr = addr | (temp[0] << 24)
         return addr
 
-    def arm(self):
-        self.setSettings(self.settings() | SETTINGS_ARM)
+    def arm(self, enable=True):
+        if enable:
+            self.setSettings(self.settings() | SETTINGS_ARM)
+        else:
+            self.setSettings(self.settings() & ~SETTINGS_ARM)
 
     def capture(self):
         timeout = False
-        status = self.getStatus()
-        starttime = datetime.datetime.now()
 
-        # Wait for a trigger, letting the UI run when it can
-        while ((status & STATUS_ARM_MASK) == STATUS_ARM_MASK) | ((status & STATUS_FIFO_MASK) == 0):
+        if self._streammode:
+            _, self._stream_rx_bytes = self.serial.cmdReadStream(self._stream_len_act, self._sbuf, timeout_ms=int(self._timeout*1000))
+            self.arm(False)
+
+            #Check the status now
+            overflow_flag = self.getStatus() & STATUS_OVERFLOW_MASK
+            bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
+            logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
+
+            if overflow_bytes_left > 0:
+                if overflow_bytes_left == self._stream_len_act:
+                    logging.warning("Streaming mode OVERFLOW occured as trigger signal was too fast. Try changing scope arm until after target.")
+                else:
+                    logging.warning("Streaming mode OVERFLOW occured with %d samples left - ADC sample clock may be too fast"%overflow_bytes_left)
+            elif unknown_overflow:
+                logging.warning("Streaming mode OVERFLOW occured - ADC sample clock may be too fast")
+
+
+        else:
             status = self.getStatus()
-            
-            # Wait for a moment before re-running the loop
-            time.sleep(0.05)
-            diff = datetime.datetime.now() - starttime
+            starttime = datetime.datetime.now()
 
-            # If we've timed out, don't wait any longer for a trigger
-            if (diff.total_seconds() > self._timeout):
-                logging.warning('Timeout in OpenADC capture(), trigger FORCED')
-                timeout = True
-                self.triggerNow()
+            # Wait for a trigger, letting the UI run when it can
+            while ((status & STATUS_ARM_MASK) == STATUS_ARM_MASK) | ((status & STATUS_FIFO_MASK) == 0):
+                status = self.getStatus()
 
-            # Give the UI a chance to update (does nothing if not using UI)
-            util.updateUI()
+                # Wait for a moment before re-running the loop
+                time.sleep(0.05)
+                diff = datetime.datetime.now() - starttime
 
-        self.setSettings(self.settings() & ~SETTINGS_ARM)
-        
-        # If using large offsets, system doesn't know we are delaying api
-        nosampletimeout = 100
-        while (self.getBytesInFifo() == 0) and nosampletimeout:
-            time.sleep(0.05)
-            nosampletimeout -= 1
+                # If we've timed out, don't wait any longer for a trigger
+                if (diff.total_seconds() > self._timeout):
+                    logging.warning('Timeout in OpenADC capture(), trigger FORCED')
+                    timeout = True
+                    self.triggerNow()
 
-        if nosampletimeout == 0:
-            logging.warning('No samples received. Either very long offset, or no ADC clock (try "Reset ADC DCM"). '
-                            'If you need such a long offset, manually update "nosampletimeout" limit in source code.')
+                # Give the UI a chance to update (does nothing if not using UI)
+                util.updateUI()
+
+            self.arm(False)
+
+            # If using large offsets, system doesn't know we are delaying api
+            nosampletimeout = 100
+            while (self.getBytesInFifo() == 0) and nosampletimeout:
+                time.sleep(0.05)
+                nosampletimeout -= 1
+
+            if nosampletimeout == 0:
+                logging.warning('No samples received. Either very long offset, or no ADC clock (try "Reset ADC DCM"). '
+                                'If you need such a long offset, manually update "nosampletimeout" limit in source code.')
         
         return timeout
 
@@ -1146,92 +1245,120 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, None)
 
     def readData(self, NumberPoints=None, progressDialog=None):
-        datapoints = []
 
-        if NumberPoints == None:
-            NumberPoints = 0x1000
+        if self._streammode:
+            # Process data
+            bsize = self.serial.cmdReadStream_size_of_fpgablock()
 
-        if self.ddrMode:
-            # We were passed number of samples to read. DDR interface
-            # reads 3 points per 4 bytes, and reads in blocks of
-            # 256 bytes (e.g.: 192 samples)
-            NumberPackages = NumberPoints / 192
-
-            # If user requests we send extra then scale back afterwards
-            if (NumberPoints % 192) > 0:
-                NumberPackages = NumberPackages + 1
-
-            start = 0
-            self.setDDRAddress(0)
-
-
-            BytesPerPackage = 257
-
-            if progressDialog:
-                progressDialog.setMinimum(0)
-                progressDialog.setMaximum(NumberPackages)
-        else:
-            # FIFO takes 3 samples at a time... todo figure this out
-            NumberPackages = 1
-
-            # We get 3 samples in each word returned (word = 4 bytes)
-            # So need to convert samples requested to words, rounding
-            # up if we request an incomplete number
-            nwords = NumberPoints / 3
-            if NumberPoints % 3:
-                nwords = nwords + 1
-
-            # Return 4x as many bytes as words, +1 for sync byte
-            BytesPerPackage = nwords * 4 + 1
-
-        for status in range(0, NumberPackages):
-            # Address of DDR is auto-incremented following a read command
-            # so no need to write new address
-
-            # print "Address=%x"%self.getDDRAddress()
-
-            # print "bytes = %d"%self.getBytesInFifo()
-
-            bytesToRead = self.getBytesInFifo()
-
-            # print bytesToRead
-
-            if bytesToRead == 0:
-                bytesToRead = BytesPerPackage
-
-            #If bytesToRead is huge, we only read what is needed
-            #Bytes get packed 3 samples / 4 bytes
-            #Add some extra in case needed
-            hypBytes = (NumberPoints * 4)/3 + 256
-
-            bytesToRead = min(hypBytes, bytesToRead)
-
-            # +1 for sync byte
-            data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead + 1)  # BytesPerPackage)
-
-            # for p in data:
-            #       print "%x "%p,
-
-            if data:
-                datapoints = datapoints + self.processData(data, 0.0)
-
-            if progressDialog:
-                progressDialog.setValue(status)
-
-                if progressDialog.wasCanceled():
+            data = [0] * self.serial.cmdReadStream_bufferSize(self._stream_len_act)[0]
+            data[0] = self._sbuf[0]
+            dbuf2_idx = 1
+            for i in range(0, self._stream_rx_bytes, bsize):
+                if self._sbuf[i] != 0xAC:
+                    print "shit"
                     break
+                s = i + 1
+                data[dbuf2_idx: (dbuf2_idx + (bsize - 1))] = self._sbuf[s:(s + (bsize - 1))]
 
-        # for point in datapoints:
-        #       print "%3x"%(int((point+0.5)*1024))
+                # Write to next section
+                dbuf2_idx += (bsize - 1)
 
-        if len(datapoints) > NumberPoints:
-            datapoints = datapoints[0:NumberPoints]
+            logging.debug("Stream mode done, %d bytes ready for processing"%len(data))
+            datapoints = self.processData(data, 0.0)
+            if datapoints:
+                logging.info("Stream mode done, %d samples processed"%len(datapoints))
+            else:
+                logging.warning("Stream mode done, no samples resulted from processing")
 
-        # if len(datapoints) < NumberPoints:
-        # print len(datapoints),
-        # print NumberPoints
+            return datapoints
 
-        return datapoints
+        else:
+            datapoints = []
+
+            if NumberPoints == None:
+                NumberPoints = 0x1000
+
+            if self.ddrMode:
+                # We were passed number of samples to read. DDR interface
+                # reads 3 points per 4 bytes, and reads in blocks of
+                # 256 bytes (e.g.: 192 samples)
+                NumberPackages = NumberPoints / 192
+
+                # If user requests we send extra then scale back afterwards
+                if (NumberPoints % 192) > 0:
+                    NumberPackages = NumberPackages + 1
+
+                start = 0
+                self.setDDRAddress(0)
+
+
+                BytesPerPackage = 257
+
+                if progressDialog:
+                    progressDialog.setMinimum(0)
+                    progressDialog.setMaximum(NumberPackages)
+            else:
+                # FIFO takes 3 samples at a time... todo figure this out
+                NumberPackages = 1
+
+                # We get 3 samples in each word returned (word = 4 bytes)
+                # So need to convert samples requested to words, rounding
+                # up if we request an incomplete number
+                nwords = NumberPoints / 3
+                if NumberPoints % 3:
+                    nwords = nwords + 1
+
+                # Return 4x as many bytes as words, +1 for sync byte
+                BytesPerPackage = nwords * 4 + 1
+
+            for status in range(0, NumberPackages):
+                # Address of DDR is auto-incremented following a read command
+                # so no need to write new address
+
+                # print "Address=%x"%self.getDDRAddress()
+
+                # print "bytes = %d"%self.getBytesInFifo()
+
+                bytesToRead = self.getBytesInFifo()
+
+                # print bytesToRead
+
+                if bytesToRead == 0:
+                    bytesToRead = BytesPerPackage
+
+                #If bytesToRead is huge, we only read what is needed
+                #Bytes get packed 3 samples / 4 bytes
+                #Add some extra in case needed
+                hypBytes = (NumberPoints * 4)/3 + 256
+
+                bytesToRead = min(hypBytes, bytesToRead)
+
+                # +1 for sync byte
+                data = self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, bytesToRead + 1)  # BytesPerPackage)
+
+                # for p in data:
+                #       print "%x "%p,
+
+                if data:
+                    datapoints = datapoints + self.processData(data, 0.0)
+
+                if progressDialog:
+                    progressDialog.setValue(status)
+
+                    if progressDialog.wasCanceled():
+                        break
+
+            # for point in datapoints:
+            #       print "%3x"%(int((point+0.5)*1024))
+
+            if len(datapoints) > NumberPoints:
+                datapoints = datapoints[0:NumberPoints]
+
+            # if len(datapoints) < NumberPoints:
+            # print len(datapoints),
+            # print NumberPoints
+
+            return datapoints
 
     def processData(self, data, pad=float('NaN'), pretrigger_out=None):
         fpData = []
@@ -1292,6 +1419,8 @@ class OpenADCInterface(object):
                logging.warning('Pretrigger not met. Increase presampleTempMargin.')
         else:
                fpData = fpData[-diff:]
+
+        logging.debug("Processed data, ended up with %d samples total"%len(fpData))
 
         return fpData
 

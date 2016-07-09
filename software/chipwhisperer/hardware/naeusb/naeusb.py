@@ -25,13 +25,21 @@ import logging
 import time
 import usb.core
 import usb.util
-
+import math
 
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
 
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
+def unpackuint32(buf):
+    """"Converts an array into a 32-bit integer"""
+
+    pint = buf[0]
+    pint |= buf[1] << 8
+    pint |= buf[2] << 16
+    pint |= buf[3] << 24
+    return pint
 
 def packuint16(data):
     """Converts a 16-bit integer into format expected by USB firmware"""
@@ -59,6 +67,7 @@ class NAEUSB(object):
     CMD_WRITEMEM_BULK = 0x11
     CMD_READMEM_CTRL = 0x12
     CMD_WRITEMEM_CTRL = 0x13
+    CMD_MEMSTREAM = 0x14
 
     stream = False
 
@@ -201,6 +210,107 @@ class NAEUSB(object):
             pass
 
         return data
+
+    def cmdReadStream_getStatus(self):
+        """
+        Gets the status of the streaming mode capture, tells you samples left to stream out along
+        with overflow buffer status. When an overflow occurs the samples left to stream goes to
+        zero.
+
+        samples_left_to_stream is number of samples not yet streamed out of buffer.
+        overflow_lcoation is the value of samples_left_to_stream when a buffer overflow occured.
+        unknown_overflow is a flag indicating if an overflow occured at an unknown time.
+
+        Returns:
+            Tuple indicating (samples_left_to_stream, overflow_location, unknown_overflow)
+        """
+        data = self.readCtrl(self.CMD_MEMSTREAM, dlen=9)
+
+        status = data[0]
+        samples_left_to_stream = unpackuint32(data[1:5])
+        overflow_location = unpackuint32(data[5:9])
+
+        if status == 0:
+            unknown_overflow = False
+        else:
+            unknown_overflow = True
+
+        return (samples_left_to_stream, overflow_location, unknown_overflow)
+
+    def _cmdReadStream_blockSizes(self, dlen):
+        bsize_bytes = 16384
+        bsize_samples = (bsize_bytes / 4) * 3
+
+        # dlen now has number of samples you should request instead (rounded up)
+        dlen = int(math.ceil(dlen / bsize_samples) * bsize_samples)
+
+        return (dlen, bsize_samples, bsize_bytes)
+
+    def cmdReadStream_size_of_fpgablock(self):
+        """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
+            bytes will be located. These sync bytes must be removed in post-processing. """
+        return 4096
+
+    def cmdReadStream_bufferSize(self, dlen):
+        """
+        Args:
+            dlen: Number of samples to be requested (will be rounded to something else)
+
+        Returns:
+            Tuple: (Size of temporary buffer required, actual samples in buffer)
+        """
+
+        dlen, _ , bsize_bytes = self._cmdReadStream_blockSizes(dlen)
+
+        # Make room for (4/3) * number of samples
+        blen = int((dlen * (4/3)))
+        tempbuf_len =  blen
+
+        return (tempbuf_len, dlen)
+
+    def cmdReadStream(self, dlen, dbuf_temp, timeout_ms=1000):
+        """
+        Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
+        streaming mode and then arm'd, otherwise this may return incorrect information.
+
+        Args:
+            dlen: Number of samples to request.
+            dbuf_temp: Temporary data buffer, must be of size cmdReadStream_bufferSize(dlen) or bad things happen
+            timeout_ms: Timeout in ms to wait for stream to start, otherwise returns a zero-length buffer
+        Returns:
+            Tuple of (samples_per_block, total_bytes_rx)
+        """
+
+        #Enter streaming mode for requested number of samples
+        self.sendCtrl(self.CMD_MEMSTREAM, data=packuint32(dlen))
+
+        # Get actual number of samples expected, block size of samples, bytes per block
+        dlen, bsize_samples, bsize_bytes = self._cmdReadStream_blockSizes(dlen)
+
+        drx = 0
+        while dlen:
+            try:
+                #Read in 4K-byte blocks
+                dbuf_temp[drx:(drx+bsize_bytes)] = (self.usbdev().read(self.rep, bsize_bytes, timeout=timeout_ms))
+            except IOError, e:
+                if drx == 0:
+                    logging.info("Timeout during stream mode with no data - assumed no trigger")
+                else:
+                    logging.warning("Timeout during stream mode after %d bytes - possible USB error" % drx)
+                break
+            dlen -= bsize_samples
+            drx += bsize_bytes
+
+        # Disable stream mode in case anything was left
+        self.sendCtrl(self.CMD_MEMSTREAM, data=packuint32(0))
+
+        # Flush input buffers in case anything was left
+        try:
+            self.usbdev().read(self.rep, bsize_bytes, timeout=50)
+        except IOError:
+            pass
+
+        return (bsize_samples, drx)
 
     def enterBootloader(self, forreal=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
