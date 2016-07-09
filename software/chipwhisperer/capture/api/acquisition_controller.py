@@ -120,7 +120,7 @@ class AcquisitionController():
         # Get ADC reading
         if self.scope:
             try:
-                if self.scope.capture(update, N) == True:
+                if self.scope.capture(update, N):
                     logging.warning('Timeout')
                     return False
             except IOError as e:
