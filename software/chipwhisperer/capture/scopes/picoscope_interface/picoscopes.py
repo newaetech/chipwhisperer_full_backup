@@ -46,7 +46,6 @@ class PicoScope(ScopeTemplate):
     def __init__(self, psClass=None):
         ScopeTemplate.__init__(self)
         self.ps = psClass
-        self.dataUpdated = util.Signal()
 
         chlist = {}
         for t in self.ps.CHANNELS:
@@ -147,13 +146,13 @@ class PicoScope(ScopeTemplate):
     def arm(self):
         self.ps.runBlock()
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self, update=True, numberPoints=None):
         while(self.ps.isReady() == False): time.sleep(0.01)
         data = self.ps.getDataV(self.findParam(['trace', 'tracesource']).getValue(), self.findParam('samplelength').getValue(), startIndex=self.findParam('sampleoffset').getValue(), returnOverflow=True)
         if data[1] is True:
             logging.warning('OVERFLOW IN DATA')
         self.datapoints = data[0]
-        self.dataUpdated.emit(self.datapoints, 0)
+        self.dataUpdated.emit(self.datapoints, 0, self.ps.sampleRate)
 
         # No timeout?
         return False

@@ -47,7 +47,7 @@ class OpenADC(ScopeTemplate, Plugin):
         ScopeTemplate.__init__(self)
 
         self.qtadc = openadc_qt.OpenADCQt()
-        self.qtadc.dataUpdated.connect(self.doDataUpdated)
+        self.qtadc.dataUpdated.connect(self.dataUpdated.emit)
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None
@@ -157,12 +157,6 @@ class OpenADC(ScopeTemplate, Plugin):
             self.qtadc.sc.usbcon = None
         return True
 
-    def doDataUpdated(self, l, offset=0):
-        self.datapoints = l
-        self.offset = offset
-        if len(l) > 0:
-            self.dataUpdated.emit(l, offset)
-
     def arm(self):
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
@@ -178,9 +172,6 @@ class OpenADC(ScopeTemplate, Plugin):
         if self.advancedSettings:
             self.advancedSettings.armPostScope()
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self, update=True, numberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        return self.qtadc.capture(update, NumberPoints)
-
-    def getSampleRate(self):
-        return self.qtadc.parm_clock.adcFrequency()
+        return self.qtadc.capture(update, numberPoints)
