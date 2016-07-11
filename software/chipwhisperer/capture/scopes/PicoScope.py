@@ -46,12 +46,17 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
         self.advancedSettings = None
         self.setCurrentScope(self.findParam('type').getValue())
 
+    def passUpdated(self, lst, offset):
+        self.datapoints = lst
+        self.offset = offset
+        self.dataUpdated.emit(lst, offset)
+
     def setCurrentScope(self, scope):
         if self.scopetype is not None:
-            self.scopetype.dataUpdated.disconnect(self.dataUpdated.emit)
+            self.scopetype.dataUpdated.disconnect(self.passUpdated)
         self.scopetype = scope
         if scope is not None:
-            self.scopetype.dataUpdated.connect(self.dataUpdated.emit)
+            self.scopetype.dataUpdated.connect(self.passUpdated)
 
     def _con(self):
         if self.scopetype is not None:
@@ -64,6 +69,12 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
             self.scopetype.dis()  
         return True
 
+    def doDataUpdated(self, l, offset=0):
+        self.datapoints = l
+        self.offset = offset
+        if len(l) > 0:
+            self.dataUpdated.emit(l, offset)
+
     def arm(self):
         try:
             self.scopetype.arm()
@@ -71,9 +82,9 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
             self.dis()
             raise
 
-    def capture(self, update=True, numberPoints=None):
+    def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
-        return self.scopetype.capture(update, numberPoints)
+        return self.scopetype.capture(update, NumberPoints)
 
     def getSampleRate(self):
         return self.scopetype.findParam('samplerate')

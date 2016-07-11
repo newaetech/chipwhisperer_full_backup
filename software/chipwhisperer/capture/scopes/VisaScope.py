@@ -53,13 +53,18 @@ class VisaScopeInterface(ScopeTemplate, Plugin):
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
 
+    def passUpdated(self, lst, offset):
+        self.datapoints = lst
+        self.offset = offset
+        self.dataUpdated.emit(lst, offset)
+
     @setupSetParam("Scope Type")
     def setCurrentScope(self, scope, update=True):
         if self.scopetype is not None:
-            self.scopetype.dataUpdated.disconnect(self.dataUpdated.emit)
+            self.scopetype.dataUpdated.disconnect(self.passUpdated)
         self.scopetype = scope
         if scope is not None:
-            self.scopetype.dataUpdated.connect(self.dataUpdated.emit)
+            self.scopetype.dataUpdated.connect(self.passUpdated)
 
     def _con(self):
         if self.scopetype is not None:
@@ -78,6 +83,6 @@ class VisaScopeInterface(ScopeTemplate, Plugin):
             self.dis()
             raise
 
-    def capture(self, update=True, numberPoints=None):
+    def capture(self, update=True, NumberPoints=None):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
-        return self.scopetype.capture(update, numberPoints)
+        return self.scopetype.capture(update, NumberPoints)
