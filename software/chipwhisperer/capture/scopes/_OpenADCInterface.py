@@ -1244,7 +1244,7 @@ class OpenADCInterface(object):
         # Flush output FIFO
         self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, None)
 
-    def readData(self, numberPoints=None, progressDialog=None):
+    def readData(self, NumberPoints=None, progressDialog=None):
 
         if self._streammode:
             # Process data
@@ -1275,24 +1275,48 @@ class OpenADCInterface(object):
         else:
             datapoints = []
 
-            if numberPoints == None:
-                numberPoints = 0x1000
+            if NumberPoints == None:
+                NumberPoints = 0x1000
 
-            # FIFO takes 3 samples at a time... todo figure this out
-            NumberPackages = 1
+            if self.ddrMode:
+                # We were passed number of samples to read. DDR interface
+                # reads 3 points per 4 bytes, and reads in blocks of
+                # 256 bytes (e.g.: 192 samples)
+                NumberPackages = NumberPoints / 192
 
-            # We get 3 samples in each word returned (word = 4 bytes)
-            # So need to convert samples requested to words, rounding
-            # up if we request an incomplete number
-            nwords = numberPoints / 3
+                # If user requests we send extra then scale back afterwards
+                if (NumberPoints % 192) > 0:
+                    NumberPackages = NumberPackages + 1
 
-            if numberPoints % 3:
-                nwords = nwords + 1
+                start = 0
+                self.setDDRAddress(0)
 
-            # Return 4x as many bytes as words, +1 for sync byte
-            BytesPerPackage = nwords * 4 + 1
+
+                BytesPerPackage = 257
+
+                if progressDialog:
+                    progressDialog.setMinimum(0)
+                    progressDialog.setMaximum(NumberPackages)
+            else:
+                # FIFO takes 3 samples at a time... todo figure this out
+                NumberPackages = 1
+
+                # We get 3 samples in each word returned (word = 4 bytes)
+                # So need to convert samples requested to words, rounding
+                # up if we request an incomplete number
+                nwords = NumberPoints / 3
+                if NumberPoints % 3:
+                    nwords = nwords + 1
+
+                # Return 4x as many bytes as words, +1 for sync byte
+                BytesPerPackage = nwords * 4 + 1
 
             for status in range(0, NumberPackages):
+                # Address of DDR is auto-incremented following a read command
+                # so no need to write new address
+
+                # print "Address=%x"%self.getDDRAddress()
+
                 # print "bytes = %d"%self.getBytesInFifo()
 
                 bytesToRead = self.getBytesInFifo()
@@ -1305,7 +1329,7 @@ class OpenADCInterface(object):
                 #If bytesToRead is huge, we only read what is needed
                 #Bytes get packed 3 samples / 4 bytes
                 #Add some extra in case needed
-                hypBytes = (numberPoints * 4) / 3 + 256
+                hypBytes = (NumberPoints * 4)/3 + 256
 
                 bytesToRead = min(hypBytes, bytesToRead)
 
@@ -1327,14 +1351,14 @@ class OpenADCInterface(object):
             # for point in datapoints:
             #       print "%3x"%(int((point+0.5)*1024))
 
-        if len(datapoints) > numberPoints:
-            datapoints = datapoints[0:numberPoints]
+            if len(datapoints) > NumberPoints:
+                datapoints = datapoints[0:NumberPoints]
 
-        # if len(datapoints) < numberPoints:
+            # if len(datapoints) < NumberPoints:
             # print len(datapoints),
-        # print numberPoints
+            # print NumberPoints
 
-        return datapoints
+            return datapoints
 
     def processData(self, data, pad=float('NaN'), pretrigger_out=None):
         fpData = []
