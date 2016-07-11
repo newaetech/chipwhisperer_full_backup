@@ -91,7 +91,12 @@ class USART(object):
         try:
             data = bytearray(data)
         except TypeError:
-            data = bytearray(data, 'latin-1')
+            try:
+                data = bytearray(data, 'latin-1')
+            except TypeError:
+                #Second type-error happens if input was already list?
+                pass
+
         datasent = 0
 
         while datasent < len(data):

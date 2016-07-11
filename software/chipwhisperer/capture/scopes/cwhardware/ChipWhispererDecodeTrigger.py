@@ -44,9 +44,12 @@ class ChipWhispererDecodeTrigger(Parameterized):
 
         self.getParams().addChildren([
 
-            {'name': 'Decode Type', 'type': 'list', 'values': {'SPI': 0}, 'value':0},
+            {'name': 'Decode Type', 'type': 'list', 'values': {'USART': 1, 'SPI': 2, 'Unknown':0}, 'get':self.get_decodetype, 'set':self.set_decodetype},
             #{'name':'Data Line Source', 'type':'list', 'values':{'Ext-Trigger Mux':0, 'MOSI':1, 'MOSI':2, 'PDID':3}, 'get':self.get_dataline_src, 'set':self.set_dataline_src},
             {'name':'Trigger Data', 'key':'trigpatt', 'type':'str', 'get':self.get_triggerpattern, 'set':self.set_triggerpattern},
+            {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.get_rxbaud, 'set':self.set_rxbaud},
+            #{'name': 'Stop-Bits', 'key': 'stopbits', 'type': 'list', 'values': {'1': 1, '2': 2}, 'default': 1, 'get': self.stopBits, 'set': self.setStopBits, 'readonly': True},
+            #{'name': 'Parity', 'key': 'parity', 'type': 'list', 'values': {'None': 'n', 'Even': 'e'}, 'default': 'n', 'get': self.parity, 'set': self.setParity, 'readonly': True},
         ])
 
 
@@ -85,6 +88,9 @@ class ChipWhispererDecodeTrigger(Parameterized):
         if len(tl) > 8:
             raise ValueError("Trigger Pattern is of length %d, too long (max is 8)"%len(tl))
 
+        #Reverse order
+        tl = tl[::-1]
+
         bm = 0
         tdata = [0]*8
         for i in range(0, len(tl)):
@@ -96,6 +102,16 @@ class ChipWhispererDecodeTrigger(Parameterized):
 
         self.set_trig_bitmap(bm)
         self.set_trig_rawdata(tdata)
+
+    @setupSetParam("Decode Type")
+    def set_decodetype(self, type):
+        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data[0] = (data[0] & 0xF0) | type
+        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+
+    def get_decodetype(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        return data[0] & 0x0F
 
     def get_trig_bitmap(self):
         data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
@@ -111,6 +127,30 @@ class ChipWhispererDecodeTrigger(Parameterized):
         return data
 
     def set_trig_rawdata(self, data):
-        data = data[::-1]
         self.oa.sendMessage(CODE_WRITE, ADDR_DECODEDATA, data)
 
+    @setupSetParam("Baud")
+    def set_rxbaud(self, baud):
+        breg = (baud * 8 * 512 + self.systemClk() / 255) / (self.systemClk() / 128)
+        breg = int(round(breg))
+        self.setRxBaudReg(breg)
+
+    def get_rxbaud(self):
+        breg = self.rxBaudReg()
+        baud = ((breg * (self.systemClk() / 128)) - (self.systemClk() / 255)) / 512
+        baud = baud / 8
+        return baud
+
+    def setRxBaudReg(self, breg):
+        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        data[3] = breg & 0xff
+        data[4] = (breg >> 8) & 0xff
+        self.oa.sendMessage(CODE_WRITE, ADDR_DECODECFG, data)
+
+    def rxBaudReg(self):
+        data = self.oa.sendMessage(CODE_READ, ADDR_DECODECFG, Validate=False, maxResp=8)
+        breg = data[3] | (data[4] << 8)
+        return breg
+
+    def systemClk(self):
+        return self.oa.hwInfo.sysFrequency()
