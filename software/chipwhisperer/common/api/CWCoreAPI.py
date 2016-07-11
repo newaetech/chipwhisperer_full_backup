@@ -55,6 +55,7 @@ class CWCoreAPI(Parameterized):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
         CWCoreAPI.instance = self
         self.sigNewProject = util.Signal()
+        self.sigNewScopeData = util.Signal()
         self.sigConnectStatus = util.Signal()
         self.sigAttackChanged = util.Signal()
         self.sigNewInputData = util.Signal()
@@ -130,6 +131,7 @@ class CWCoreAPI(Parameterized):
             self.getScope().dis()
         self._scope = driver
         if self.getScope():
+            self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
 
     def getTarget(self):

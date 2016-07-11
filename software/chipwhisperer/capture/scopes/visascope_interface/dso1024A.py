@@ -115,4 +115,4 @@ class VisaScopeInterface_DSO1024A(VisaScope):
 
             self.datapoints.append(data)
 
-        self.dataUpdated.emit(self.datapoints, 0, 0)
+        self.dataUpdated.emit(self.datapoints, 0)

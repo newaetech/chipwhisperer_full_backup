@@ -133,4 +133,4 @@ class VisaScopeInterface_MSO54831D(VisaScope):
 
             self.datapoints.append(data)
 
-        self.dataUpdated.emit(self.datapoints, 0, 0)
+        self.dataUpdated.emit(self.datapoints, 0)

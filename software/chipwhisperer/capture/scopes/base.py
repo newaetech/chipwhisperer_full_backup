@@ -67,17 +67,17 @@ class ScopeTemplate(Parameterized):
     def _dis(self):
         raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
 
+    def doDataUpdated(self,  l, offset=0):
+        self.dataUpdated.emit(l, offset)
+
     def arm(self):
-        """Prepare the scope for capturing"""
+        pass
         # NOTE - if reimplementing this, should always check for connection first
         # if self.connectStatus.value() is False:
         #     raise Exception("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
         # raise NotImplementedError("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".arm()")
-        pass
 
-    def capture(self, update=True, numberPoints=None):
-        """Capture one trace and returns True if timeout has happened."""
-
+    def capture(self, update=True, NumberPoints=None):
         # NOTE: If you have a waiting loop (waiting for arm), call the function util.updateUI() inside that loop to keep
         #       the UI responsive:
         #
