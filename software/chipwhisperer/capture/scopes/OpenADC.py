@@ -175,3 +175,6 @@ class OpenADC(ScopeTemplate, Plugin):
     def capture(self, update=True, numberPoints=None):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
         return self.qtadc.capture(update, numberPoints)
+
+    def getSampleRate(self):
+        return self.qtadc.parm_clock.adcFrequency()

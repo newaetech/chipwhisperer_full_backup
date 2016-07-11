@@ -85,3 +85,6 @@ class ScopeTemplate(Parameterized):
         #     time.sleep(0.05)
         #     util.updateUI()
         pass
+
+    def getSampleRate(self):
+        return 0
