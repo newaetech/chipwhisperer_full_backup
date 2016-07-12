@@ -26,6 +26,8 @@ import time
 import usb.core
 import usb.util
 import math
+from threading import Condition, Thread
+
 
 def packuint32(data):
     """Converts a 32-bit integer into format expected by USB firmware"""
@@ -268,49 +270,27 @@ class NAEUSB(object):
 
         return (tempbuf_len, dlen)
 
-    def cmdReadStream(self, dlen, dbuf_temp, timeout_ms=1000):
-        """
-        Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
-        streaming mode and then arm'd, otherwise this may return incorrect information.
-
-        Args:
-            dlen: Number of samples to request.
-            dbuf_temp: Temporary data buffer, must be of size cmdReadStream_bufferSize(dlen) or bad things happen
-            timeout_ms: Timeout in ms to wait for stream to start, otherwise returns a zero-length buffer
-        Returns:
-            Tuple of (samples_per_block, total_bytes_rx)
-        """
-
+    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000):
         #Enter streaming mode for requested number of samples
-        self.sendCtrl(self.CMD_MEMSTREAM, data=packuint32(dlen))
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(dlen))
 
-        # Get actual number of samples expected, block size of samples, bytes per block
-        dlen, bsize_samples, bsize_bytes = self._cmdReadStream_blockSizes(dlen)
+        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, dbuf_temp, timeout_ms)
+        self.streamModeCaptureStream.start()
 
-        drx = 0
-        while dlen:
-            try:
-                #Read in 4K-byte blocks
-                dbuf_temp[drx:(drx+bsize_bytes)] = (self.usbdev().read(self.rep, bsize_bytes, timeout=timeout_ms))
-            except IOError, e:
-                if drx == 0:
-                    logging.info("Timeout during stream mode with no data - assumed no trigger")
-                else:
-                    logging.warning("Timeout during stream mode after %d bytes - possible USB error" % drx)
-                break
-            dlen -= bsize_samples
-            drx += bsize_bytes
-
-        # Disable stream mode in case anything was left
-        self.sendCtrl(self.CMD_MEMSTREAM, data=packuint32(0))
+    def cmdReadStream(self):
+        """
+        Gets data acquired in streaming mode.
+        initStreamModeCapture should be called first in order to make it work.
+        """
+        self.streamModeCaptureStream.join()
 
         # Flush input buffers in case anything was left
         try:
-            self.usbdev().read(self.rep, bsize_bytes, timeout=50)
+            self.usbdev().read(self.rep, self.streamModeCaptureStream.bsize_bytes, timeout=50)
         except IOError:
             pass
 
-        return (bsize_samples, drx)
+        return self.streamModeCaptureStream.bsize_samples, self.streamModeCaptureStream.drx
 
     def enterBootloader(self, forreal=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
@@ -325,6 +305,52 @@ class NAEUSB(object):
             self.usbdev().read(self.rep, 1000, timeout=0.010)
         except:
             pass
+
+    class StreamModeCaptureThread(Thread):
+        def __init__(self, serial, dlen, dbuf_temp, timeout_ms=1000):
+            """
+            Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
+            streaming mode and then arm'd, otherwise this may return incorrect information.
+
+            Args:
+                dlen: Number of samples to request.
+                dbuf_temp: Temporary data buffer, must be of size cmdReadStream_bufferSize(dlen) or bad things happen
+                timeout_ms: Timeout in ms to wait for stream to start, otherwise returns a zero-length buffer
+            Returns:
+                Tuple of (samples_per_block, total_bytes_rx)
+            """
+            Thread.__init__(self)
+            self.dlen = dlen
+            self.dbuf_temp = dbuf_temp
+            self.timeout_ms = timeout_ms
+            self.serial = serial
+
+        def run(self):
+            # Get actual number of samples expected, block size of samples, bytes per block
+            dlen, self.bsize_samples, self.bsize_bytes = self.serial._cmdReadStream_blockSizes(self.dlen)
+
+            self.drx = 0
+            while dlen:
+                try:
+                    #Read in 4K-byte blocks
+                    self.dbuf_temp[self.drx:(self.drx+self.bsize_bytes)] = (self.serial.usbdev().read(self.serial.rep, self.bsize_bytes, timeout=self.timeout_ms))
+                except IOError, e:
+                    if self.drx == 0:
+                        logging.info("Timeout during stream mode with no data - assumed no trigger")
+                    else:
+                        logging.warning("Timeout during stream mode after %d bytes - possible USB error" % self.drx)
+                    break
+                dlen -= self.bsize_samples
+                self.drx += self.bsize_bytes
+
+            # Disable stream mode in case anything was left
+            self.serial.sendCtrl(self.serial.CMD_MEMSTREAM, data=packuint32(0))
+
+            # Flush input buffers in case anything was left
+            try:
+                self.serial.usbdev().read(self.serial.rep, self.bsize_bytes, timeout=50)
+            except IOError:
+                pass
 
 
 if __name__ == '__main__':
@@ -472,5 +498,3 @@ if __name__ == '__main__':
     #        flog.flush()
     #    except usb.core.USBError:
     #        pass
-
-

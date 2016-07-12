@@ -1099,7 +1099,6 @@ class OpenADCInterface(object):
             #Generate the buffer to save buffer
             self._sbuf = [0] * bufsizebytes
 
-
     def maxSamples(self):
         '''Return the number of samples captured in one go'''
         samples = 0x00000000
@@ -1155,31 +1154,34 @@ class OpenADCInterface(object):
 
         return True
 
-    def setDDRAddress(self, addr):
-        cmd = bytearray(1)
-        cmd[0] = ((addr >> 0) & 0xFF)
-        self.sendMessage(CODE_WRITE, ADDR_DDR1, cmd)
-        cmd[0] = ((addr >> 8) & 0xFF)
-        self.sendMessage(CODE_WRITE, ADDR_DDR2, cmd)
-        cmd[0] = ((addr >> 16) & 0xFF)
-        self.sendMessage(CODE_WRITE, ADDR_DDR3, cmd)
-        cmd[0] = ((addr >> 24) & 0xFF)
-        self.sendMessage(CODE_WRITE, ADDR_DDR4, cmd)
-
-    def getDDRAddress(self):
-        addr = 0x00000000
-        temp = self.sendMessage(CODE_READ, ADDR_DDR1)
-        addr = addr | (temp[0] << 0)
-        temp = self.sendMessage(CODE_READ, ADDR_DDR2)
-        addr = addr | (temp[0] << 8)
-        temp = self.sendMessage(CODE_READ, ADDR_DDR3)
-        addr = addr | (temp[0] << 16)
-        temp = self.sendMessage(CODE_READ, ADDR_DDR4)
-        addr = addr | (temp[0] << 24)
-        return addr
+    # def setDDRAddress(self, addr):
+    #     cmd = bytearray(1)
+    #     cmd[0] = ((addr >> 0) & 0xFF)
+    #     self.sendMessage(CODE_WRITE, ADDR_DDR1, cmd)
+    #     cmd[0] = ((addr >> 8) & 0xFF)
+    #     self.sendMessage(CODE_WRITE, ADDR_DDR2, cmd)
+    #     cmd[0] = ((addr >> 16) & 0xFF)
+    #     self.sendMessage(CODE_WRITE, ADDR_DDR3, cmd)
+    #     cmd[0] = ((addr >> 24) & 0xFF)
+    #     self.sendMessage(CODE_WRITE, ADDR_DDR4, cmd)
+    #
+    # def getDDRAddress(self):
+    #     addr = 0x00000000
+    #     temp = self.sendMessage(CODE_READ, ADDR_DDR1)
+    #     addr = addr | (temp[0] << 0)
+    #     temp = self.sendMessage(CODE_READ, ADDR_DDR2)
+    #     addr = addr | (temp[0] << 8)
+    #     temp = self.sendMessage(CODE_READ, ADDR_DDR3)
+    #     addr = addr | (temp[0] << 16)
+    #     temp = self.sendMessage(CODE_READ, ADDR_DDR4)
+    #     addr = addr | (temp[0] << 24)
+    #     return addr
 
     def arm(self, enable=True):
         if enable:
+            if self._streammode:
+                self.serial.initStreamModeCapture(self._stream_len_act, self._sbuf, timeout_ms=int(self._timeout*1000))
+
             self.setSettings(self.settings() | SETTINGS_ARM)
         else:
             self.setSettings(self.settings() & ~SETTINGS_ARM)
@@ -1188,7 +1190,7 @@ class OpenADCInterface(object):
         timeout = False
 
         if self._streammode:
-            _, self._stream_rx_bytes = self.serial.cmdReadStream(self._stream_len_act, self._sbuf, timeout_ms=int(self._timeout*1000))
+            _, self._stream_rx_bytes = self.serial.cmdReadStream()
             self.arm(False)
 
             #Check the status now
@@ -1203,7 +1205,6 @@ class OpenADCInterface(object):
                     logging.warning("Streaming mode OVERFLOW occured with %d samples left - ADC sample clock may be too fast"%overflow_bytes_left)
             elif unknown_overflow:
                 logging.warning("Streaming mode OVERFLOW occured - ADC sample clock may be too fast")
-
 
         else:
             status = self.getStatus()
