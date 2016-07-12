@@ -109,7 +109,7 @@ class Channel(TraceSource):
         if len(data) > 0:
             self.sigTracesChanged.emit()
         else:
-            logging.warning("Captured trace has len=0")
+            logging.warning('Error in "%s". Captured trace has len=0' % self.name)
 
     def getTrace(self, n=0):
         if n != 0:
