@@ -53,6 +53,8 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
                  {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
         ])
         self.findParam('input').hide()
+
+        self.register()
         if __debug__: logging.debug('Created: ' + str(self))
 
     def updateScript(self, ignored=None):
