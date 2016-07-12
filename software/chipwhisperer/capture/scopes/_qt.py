@@ -84,7 +84,7 @@ class OpenADCQt(Parameterized):
     def arm(self):
         self.sc.arm()
 
-    def read(self, update=True, numberPoints=None):
+    def read(self, update=True, numberPoints=None, channelNr=0):
         if numberPoints == None:
             numberPoints = self.parm_trigger.maxSamples()
 
@@ -93,7 +93,7 @@ class OpenADCQt(Parameterized):
         except IndexError, e:
             raise IOError("Error reading data: %s"%str(e))
 
-        self.dataUpdated.emit(self.datapoints, -self.parm_trigger.presamples(True), self.parm_clock.adcFrequency())
+        self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger.presamples(True), self.parm_clock.adcFrequency())
 
     def capture(self, update=True, numberPoints=None):
         timeout = self.sc.capture()

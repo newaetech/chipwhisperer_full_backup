@@ -28,8 +28,9 @@ import logging
 import time
 from ..base import ScopeTemplate
 from chipwhisperer.common.utils import util, timer
-from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.common.utils.parameter import setupSetParam, Parameterized
 from chipwhisperer.common.utils.pluginmanager import Plugin
+
 """
 This module has an interface to the PicoTech PicoScope device. It uses the
 picoscope library at https://github.com/colinoflynn/pico-python which you
@@ -40,12 +41,12 @@ from picoscope import ps5000a
 from picoscope import ps6000
 
 
-class PicoScope(ScopeTemplate):
+class PicoScope(Parameterized):
     _name = 'Pico Scope'
 
     def __init__(self, psClass=None):
-        ScopeTemplate.__init__(self)
         self.ps = psClass
+        self.dataUpdated = util.Signal()
 
         chlist = {}
         for t in self.ps.CHANNELS:
@@ -78,7 +79,7 @@ class PicoScope(ScopeTemplate):
         ])
 
     @setupSetParam("")
-    def updateSampleRateFreq(self, ignored=None):
+    def updateSampleRateFreq(self, _=None):
         if self.ps.handle is not None:
             paramSR = self.findParam('samplerate')
             paramSL = self.findParam('samplelength')
@@ -111,7 +112,7 @@ class PicoScope(ScopeTemplate):
         self.ps.close()
 
     @setupSetParam("")
-    def updateCurrentSettings(self, ignored=False):
+    def updateCurrentSettings(self, _=False):
         if self.ps.handle is None: return
 
         try:
@@ -152,7 +153,7 @@ class PicoScope(ScopeTemplate):
         if data[1] is True:
             logging.warning('OVERFLOW IN DATA')
         self.datapoints = data[0]
-        self.dataUpdated.emit(self.datapoints, 0, self.ps.sampleRate)
+        self.dataUpdated.emit(0, self.datapoints, 0, self.ps.sampleRate)
 
         # No timeout?
         return False

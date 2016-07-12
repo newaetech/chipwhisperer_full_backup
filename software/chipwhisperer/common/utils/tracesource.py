@@ -42,7 +42,6 @@ class TraceSource(object):
     def __init__(self, name="Unknown"):
         self.sigTracesChanged = util.Signal()
         self.name = name
-        self.register()
 
     def getTrace(self, n):
         """Return the trace with number n in the current TraceSource object"""
@@ -101,53 +100,6 @@ class TraceSource(object):
         """Deregister the TraceSource and emit a signal to inform this event"""
         if cls.registeredObjects.pop(name, None):
             cls.sigRegisteredObjectsChanged.emit()
-
-
-class LiveTraceSource(TraceSource):
-    """Works like an adapter between the Scope channels and the TraceSourceObservers.
-    Observers the Channels for new data and notify the TraceSourceObservers."""
-
-    def __init__(self, scope=None, name="Scope"):
-        TraceSource.__init__(self, name)
-        self._scope = None
-        self.setScope(scope)
-        self._lastData = []
-        self._lastOffset = 0
-        self._sampleRate = 0
-
-    def setScope(self, newScope):
-        if self._scope:
-            self._scope.dataUpdated.disconnect(self.newScopeData)
-        if newScope:
-            newScope.dataUpdated.connect(self.newScopeData)
-        self._scope = newScope
-
-    def newScopeData(self, data=None, offset=0, sampleRate=0):
-        """Capture the received trace and emit a signal to inform the observers"""
-        self._lastData = data
-        self._lastOffset = offset
-        self._sampleRate = sampleRate
-        if len(data) > 0:
-            self.sigTracesChanged.emit()
-        else:
-            logging.warning("Captured trace has len=0")
-
-    def getTrace(self, n=0):
-        if n != 0:
-            raise ValueError("Live trace source has no buffer, so it only supports trace 0.")
-        return self._lastData
-
-    def numPoints(self):
-        return len(self._lastData)
-
-    def numTraces(self):
-        return 1
-
-    def offset(self):
-        return self._lastOffset
-
-    def getSampleRate(self):
-        return self._sampleRate
 
 
 class PassiveTraceObserver(Parameterized):

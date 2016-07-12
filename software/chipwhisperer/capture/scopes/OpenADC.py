@@ -47,7 +47,7 @@ class OpenADC(ScopeTemplate, Plugin):
         ScopeTemplate.__init__(self)
 
         self.qtadc = openadc_qt.OpenADCQt()
-        self.qtadc.dataUpdated.connect(self.dataUpdated.emit)
+        self.qtadc.dataUpdated.connect(self.newDataReceived)
         # Bonus Modules for ChipWhisperer
         self.advancedSettings = None
         self.advancedSAD = None

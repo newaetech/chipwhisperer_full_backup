@@ -45,7 +45,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
-            {'name':'X Axis', 'type':'list', 'values':["Sample", "Time"], 'value':"Sample"},
+            {'name':'X Axis', 'type':'list', 'values':["Sample", "Time"], 'value':"Sample", 'action':self.plotInputTrace},
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
 

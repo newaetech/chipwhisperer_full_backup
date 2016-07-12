@@ -55,11 +55,9 @@ class VisaScopeInterface(ScopeTemplate, Plugin):
 
     @setupSetParam("Scope Type")
     def setCurrentScope(self, scope, update=True):
-        if self.scopetype is not None:
-            self.scopetype.dataUpdated.disconnect(self.dataUpdated.emit)
         self.scopetype = scope
         if scope is not None:
-            self.scopetype.dataUpdated.connect(self.dataUpdated.emit)
+            self.scopetype.dataUpdated.connect(self.newDataReceived)
 
     def _con(self):
         if self.scopetype is not None:

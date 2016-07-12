@@ -47,11 +47,9 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
         self.setCurrentScope(self.findParam('type').getValue())
 
     def setCurrentScope(self, scope):
-        if self.scopetype is not None:
-            self.scopetype.dataUpdated.disconnect(self.dataUpdated.emit)
         self.scopetype = scope
         if scope is not None:
-            self.scopetype.dataUpdated.connect(self.dataUpdated.emit)
+            self.scopetype.dataUpdated.connect(self.newDataReceived)
 
     def _con(self):
         if self.scopetype is not None:

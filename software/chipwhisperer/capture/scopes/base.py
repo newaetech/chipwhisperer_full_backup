@@ -24,10 +24,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.common.utils import util
-from chipwhisperer.common.utils.tracesource import TraceSource, LiveTraceSource
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.tracesource import TraceSource
+from chipwhisperer.common.utils.parameter import Parameterized
 
 
 class ScopeTemplate(Parameterized):
@@ -35,9 +36,8 @@ class ScopeTemplate(Parameterized):
 
     def __init__(self):
         self.connectStatus = util.Observable(False)
-        self.dataUpdated = util.Signal()
-        self.datapoints = []
         self.getParams().register()
+        self.channels = [Channel(self.getName() + " - Channel " + str(n)) for n in range(1,2)]
 
     def dcmTimeout(self):
         pass
@@ -48,11 +48,15 @@ class ScopeTemplate(Parameterized):
     def setCurrentScope(self, scope):
         pass
 
+    def newDataReceived(self, channelNum, data=None, offset=0, sampleRate=0):
+        self.channels[channelNum].newScopeData(data, offset, sampleRate)
+
     def getStatus(self):
         return self.connectStatus.value()
 
     def con(self):
-        LiveTraceSource(self, self.getName() + " - Channel 1").register()
+        for channel in self.channels:
+            channel.register()
         if self._con():
             self.connectStatus.setValue(True)
 
@@ -61,8 +65,9 @@ class ScopeTemplate(Parameterized):
 
     def dis(self):
         if self._dis():
-            TraceSource.deregisterObject(self.getName() + " - Channel 1")
-            self.connectStatus.setValue(False)
+            for channel in self.channels:
+                channel.deregister()
+        self.connectStatus.setValue(False)
 
     def _dis(self):
         raise Warning("Scope \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".dis()")
@@ -85,3 +90,40 @@ class ScopeTemplate(Parameterized):
         #     time.sleep(0.05)
         #     util.updateUI()
         pass
+
+
+class Channel(TraceSource):
+    """Save the traces emited by the scopes and notify the TraceSourceObservers."""
+
+    def __init__(self, name="Unknown Channel"):
+        TraceSource.__init__(self, name)
+        self._lastData = []
+        self._lastOffset = 0
+        self._sampleRate = 0
+
+    def newScopeData(self, data=None, offset=0, sampleRate=0):
+        """Capture the received trace and emit a signal to inform the observers"""
+        self._lastData = data
+        self._lastOffset = offset
+        self._sampleRate = sampleRate
+        if len(data) > 0:
+            self.sigTracesChanged.emit()
+        else:
+            logging.warning("Captured trace has len=0")
+
+    def getTrace(self, n=0):
+        if n != 0:
+            raise ValueError("Live trace source has no buffer, so it only supports trace 0.")
+        return self._lastData
+
+    def numPoints(self):
+        return len(self._lastData)
+
+    def numTraces(self):
+        return 1
+
+    def offset(self):
+        return self._lastOffset
+
+    def getSampleRate(self):
+        return self._sampleRate
