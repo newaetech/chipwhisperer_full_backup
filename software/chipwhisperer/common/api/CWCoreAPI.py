@@ -312,6 +312,8 @@ class CWCoreAPI(Parameterized):
         try:
             ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
             ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
+            if self.getTarget():
+                self.getTarget().init()
             return ac.doSingleReading()
         except Warning:
             sys.excepthook(*sys.exc_info())

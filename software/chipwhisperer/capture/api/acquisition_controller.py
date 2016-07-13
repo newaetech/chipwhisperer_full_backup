@@ -152,6 +152,9 @@ class AcquisitionController():
                 if aux:
                     aux.traceArm()
 
+        if self.target:
+            self.target.init()
+
         self.currentTrace = 0
         while self.currentTrace < self.maxtraces:
             if self.doSingleReading(True, None):
