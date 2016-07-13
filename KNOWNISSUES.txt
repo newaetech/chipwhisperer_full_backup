@@ -1,6 +1,7 @@
 - "modalSession has been exited prematurely - check for a re-entrant call to endModalSession" is a Mac specific bug
   when closing modal dialogs and the only fix is updating the Qt library.
 
-- Analyzer crashes on exit if the Capture tool is executed before. The capture window is being deleted twice, in the
-  exec_ loop (because the deleteLater call) and when the QApplication leaves the scope (because the deleterLater call
-  inside the makeApplication). Workaround was to insert an argument to disable this last call.
+- Analyzer crashes on exit if the Capture tool GUI is executed before (Windows only). The capture window is being
+ deleted twice, in the exec_ loop (because the deleteLater call) and when the QApplication leaves the scope (because
+  the deleterLater call inside the makeApplication). Workaround was to insert an argument to disable this last call.
+
