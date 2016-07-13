@@ -47,7 +47,7 @@ class CWCoreAPI(Parameterized):
 
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
-    __version__ = "V3.1.9"
+    __version__ = "V3.1.10"
     _name = 'Generic Settings'
     instance = None
 
@@ -55,7 +55,6 @@ class CWCoreAPI(Parameterized):
         logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
         CWCoreAPI.instance = self
         self.sigNewProject = util.Signal()
-        self.sigNewScopeData = util.Signal()
         self.sigConnectStatus = util.Signal()
         self.sigAttackChanged = util.Signal()
         self.sigNewInputData = util.Signal()
@@ -131,7 +130,6 @@ class CWCoreAPI(Parameterized):
             self.getScope().dis()
         self._scope = driver
         if self.getScope():
-            self.getScope().dataUpdated.connect(self.sigNewScopeData.emit)
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
 
     def getTarget(self):
@@ -339,7 +337,6 @@ class CWCoreAPI(Parameterized):
                     currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
                     currentTrace.config.setAttr("targetSW", os.path.split(Programmer.lastFlashedFile)[1])
                     currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
-                    currentTrace.config.setAttr("scopeSampleRate", self.getScope().getSampleRate())
                     currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
                     currentTrace.setTraceHint(setSize)
 
@@ -361,12 +358,12 @@ class CWCoreAPI(Parameterized):
                 ac.sigTraceDone.connect(__pb)
                 self.sigCampaignStart.emit(prefix)
                 ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
-                self.sigCampaignDone.emit()
-                tcnt += setSize
 
                 if currentTrace is not None:
                     self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                     waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
+                self.sigCampaignDone.emit()
+                tcnt += setSize
 
                 if progressBar.wasAborted():
                     break

@@ -1,2 +1,2 @@
 - Improve documentation
-- Implement the streaming mode
+- Save the settings with the project and add a new entry in the .cwp file with the settings path.

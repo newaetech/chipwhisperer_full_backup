@@ -137,7 +137,7 @@ class AcquisitionController():
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
 
-    def doReadings(self, tracesDestination=None, progressBar=None):
+    def doReadings(self, channelNumbers=[0], tracesDestination=None, progressBar=None):
         self._keyTextPattern.initPair()
         data = self._keyTextPattern.newPair()
         self.key = data[0]
@@ -160,7 +160,8 @@ class AcquisitionController():
             if self.doSingleReading(True, None):
                 try:
                     if self.writer:
-                        self.writer.addTrace(self.scope.datapoints, self.textin, self.textout, self.key)
+                        for channelNum in channelNumbers:
+                            self.writer.addTrace(self.scope.channels[channelNum].getTrace(), self.textin, self.textout, self.key, channelNum=channelNum)
                 except ValueError as e:
                     logging.warning('Exception caught in adding trace %d, trace skipped.' % self.currentTrace)
                     logging.debug(str(e))
@@ -177,6 +178,7 @@ class AcquisitionController():
 
         if self.writer:
             # Don't clear trace as we re-use the buffer
+            self.writer.config.setAttr("scopeSampleRate", self.scope.channels[channelNumbers[0]].getSampleRate())
             self.writer.closeAll(clearTrace=False)
             if tracesDestination:
                 tracesDestination.appendSegment(self.writer)

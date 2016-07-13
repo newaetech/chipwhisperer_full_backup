@@ -642,7 +642,7 @@ class Parameter(object):
                 if level >= len(path):
                     if level > len(path) + 1:
                         raise Warning(
-                            'Error reading file %s, line "%d:%s". Group hierarchy missing.' % (fname, lineNum, line))
+                            'Error reading file %s, line %d. Group hierarchy missing.' % (fname, lineNum))
                     path.append(line[level:-(level + 1)])
             else:
                 if path[0] != self.getName():
@@ -653,7 +653,7 @@ class Parameter(object):
                 param = path[1:] + [line[0:separator].strip()]
                 child = self.getChild(param)
                 if child is None:
-                    logging.warning('Parameter "%s" in line "%d:%s" not found. Ignoring it.' % (line, lineNum, str(param)))
+                    logging.warning('Parameter "%s" in line %d not found. Ignoring it.' % (str(param), lineNum))
                     continue
 
                 if child.getType() == "int":

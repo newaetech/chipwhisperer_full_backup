@@ -1,3 +1,8 @@
+V3.1.10:
+- Added basic support to multiple channels (doesn't save yet).
+- Trace Output Plot widget with new parameter: X Axis with time values.
+- New Streaming mode capture option.
+
 V3.1.9:
 - Improved serial terminal.
 - Added stop capture button.
@@ -14,7 +19,6 @@ V3.1.9:
 - Added buttons to load and save settings.
 - Project settings saved with the traces during capture.
 - Logging.
-- Trace Output Plot widget with new parameter: X Axis with time values.
 
 V3.1.8:
 - Read/save buttons.
