@@ -1256,7 +1256,7 @@ class OpenADCInterface(object):
             dbuf2_idx = 1
             for i in range(0, self._stream_rx_bytes, bsize):
                 if self._sbuf[i] != 0xAC:
-                    print "shit"
+                    logging.warning("Stream mode: Expected sync byte (AC) at location %d but got %x" % (i, self._sbuf[i]))
                     break
                 s = i + 1
                 data[dbuf2_idx: (dbuf2_idx + (bsize - 1))] = self._sbuf[s:(s + (bsize - 1))]
@@ -1264,12 +1264,13 @@ class OpenADCInterface(object):
                 # Write to next section
                 dbuf2_idx += (bsize - 1)
 
-            logging.debug("Stream mode done, %d bytes ready for processing"%len(data))
+            logging.debug("Stream mode: done, %d bytes ready for processing"%len(data))
             datapoints = self.processData(data, 0.0)
             if datapoints:
-                logging.info("Stream mode done, %d samples processed"%len(datapoints))
+                logging.info("Stream mode: done, %d samples processed"%len(datapoints))
             else:
-                logging.warning("Stream mode done, no samples resulted from processing")
+                logging.warning("Stream mode: done, no samples resulted from processing")
+                datapoints = []
 
             return datapoints
 
