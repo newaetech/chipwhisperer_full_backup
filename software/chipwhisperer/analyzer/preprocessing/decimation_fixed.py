@@ -31,7 +31,7 @@ import numpy as np
         
 class DecimationFixed(PreprocessingBase):
     _name = "Decimation: Fixed"
-    _description = "Decimate by a fixed factor"
+    _description = "Decimate (reduce the sample rate) by a fixed factor."
 
     def __init__(self, traceSource=None):
         PreprocessingBase.__init__(self, traceSource)
