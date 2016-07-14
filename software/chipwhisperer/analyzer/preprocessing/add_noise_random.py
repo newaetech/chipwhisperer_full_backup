@@ -32,7 +32,7 @@ from ._base import PreprocessingBase
 class AddNoiseRandom(PreprocessingBase):
     _name = "Add Noise: Amplitude"
     _description = "Add random noise."
-     
+
     def __init__(self, traceSource=None):
         PreprocessingBase.__init__(self, traceSource)
         self._maxNoise = 0
@@ -47,13 +47,13 @@ class AddNoiseRandom(PreprocessingBase):
 
     def setMaxNoise(self, maxNoise):
         self._maxNoise = maxNoise
-   
+
     def getTrace(self, n):
         if self.enabled:
             trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
-            
+
             if self._maxNoise == 0:
                 return trace
             else:

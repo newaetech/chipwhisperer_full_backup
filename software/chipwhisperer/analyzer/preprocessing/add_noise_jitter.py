@@ -28,7 +28,7 @@
 import random
 import numpy as np
 from ._base import PreprocessingBase
-from chipwhisperer.common.utils import util
+
 
 class AddNoiseJitter(PreprocessingBase):
     """
