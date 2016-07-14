@@ -25,38 +25,49 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import numpy as np
 from ._base import PreprocessingBase
+import numpy as np
 
+        
+class DecimationFixed(PreprocessingBase):
+    _name = "Decimation: Fixed"
+    _description = "Decimate (reduce the sample rate) by a fixed factor."
 
-class AddNoiseRandom(PreprocessingBase):
-    _name = "Add Noise: Amplitude"
-    _description = "Add random noise"
-     
     def __init__(self, traceSource=None):
         PreprocessingBase.__init__(self, traceSource)
-        self._maxNoise = 0
+        self.setDecimationFactor(2)
         self.params.addChildren([
-            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'action':self.updateScript}
+            {'name':'Decimation = N:1', 'key':'decfactor', 'type':'int', 'default':self._decfactor, 'value':self._decfactor, 'limit':(1, 1000), 'action':self.updateScript}
         ])
         self.updateScript()
 
-    def updateScript(self, _=None):
+    def updateScript(self, ignored=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        self.addFunction("init", "setMaxNoise", '%f' % self.findParam('noisestddev').getValue())
+        self.addFunction("init", "setDecimationFactor", self.findParam('decfactor').getValue())
 
-    def setMaxNoise(self, maxNoise):
-        self._maxNoise = maxNoise
-   
+    def setDecimationFactor(self, decfactor=1):
+        self._decfactor = decfactor
+
     def getTrace(self, n):
         if self.enabled:
             trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
-            
-            if self._maxNoise == 0:
-                return trace
-            else:
-                return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
+
+            outtrace = np.zeros(len(range(0, len(trace), self._decfactor)))
+
+            for idx, val in enumerate(range(0, len(trace), self._decfactor)):
+                outtrace[idx] = trace[val]
+
+            return outtrace
         else:
             return self._traceSource.getTrace(n)
+
+    def numPoints(self):
+        if self.enabled:
+            return len(range(0, self._traceSource.numPoints(), self._decfactor))
+        else:
+            return self._traceSource.numPoints()
+
+    def getSampleRate(self):
+        return self._traceSource.getSampleRate()/self._decfactor

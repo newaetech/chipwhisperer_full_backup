@@ -23,10 +23,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import sys
 from datetime import *
 from PySide.QtCore import *
-
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from chipwhisperer.common.results.base import ResultsBase
@@ -198,9 +197,6 @@ class AttackScriptGen(Parameterized):
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
         mse.append("from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI", 0)
         mse.append("from chipwhisperer.common.scripts.base import UserScriptBase", 0)
-        # Get imports from preprocessing
-        mse.append("# Imports from Preprocessing", 0)
-        mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
 
         for p in self.preprocessingListGUI:
             if p:
@@ -244,7 +240,7 @@ class AttackScriptGen(Parameterized):
             if p and p.getName() != "None":
                 classname = type(p).__name__
                 instname = "ppMod%d" % i
-                mse.append("%s = preprocessing.%s.%s(%s)" % (instname, classname, classname, lastOutput))
+                mse.append("%s = %s.%s(%s)" % (instname, sys.modules[p.__class__.__module__].__name__, classname, lastOutput))
                 for s in p.getStatements('init'):
                     mse.append(s.replace("self.", instname + ".").replace("UserScript.", "self."))
                 mse.append("%s.init()" % (instname))

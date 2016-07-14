@@ -45,7 +45,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
-            {'name':'X Axis', 'type':'list', 'values':["Sample", "Time"], 'value':"Sample", 'action':self.plotInputTrace},
+            {'name':'X Axis', 'type':'list', 'values':{"Sample":"Pts.", "Time":"s"}, 'value':"Pts.", 'action':self.plotInputTrace},
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
 
@@ -88,8 +88,9 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             if tend - tstart + 1 > 1:
                 self.setPersistance(True)
 
-            scale = self.findParam('X Axis').getValue()
-            self.pw.setLabel('bottom', scale)
+            unit = self.findParam('X Axis').getValue()
+            scale = self.findParam('X Axis').getValueKey()
+            self.pw.setLabel('bottom', text=scale, units=unit)
             xaxis = range(pstart + self._traceSource.offset(), pend + self._traceSource.offset() + 1)
             if scale == 'Time':
                 tmp = float(self._traceSource.getSampleRate())
