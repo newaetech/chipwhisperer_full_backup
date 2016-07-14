@@ -91,17 +91,18 @@ module reg_main_cwlite(
 	 //TODO: this should be synchronous to device clock, but is phase OK? Might need to
 	 //use resyncronized version...
 	 assign		reg_read = rdflag_rs & ~rdflag_rs_dly;
+	 
 	 assign 		cwusb_dout = reg_datai; 
 	 
 	 reg isoutreg, isoutregdly;
 	 
 	 always @(posedge usb_clk) begin
-		isoutreg <= ~cwusb_rdn;
+		isoutreg <= rdflag;
 		isoutregdly <= isoutreg;
 	 end
 	 
 	 //Don't immediatly turn off output drivers
-	 assign cwusb_isout = isoutreg | isoutregdly;
+	 assign cwusb_isout = isoutreg | isoutregdly | rdflag;
 		 
 	 //Address valid on rising edge of ALEn
 	 assign reg_hypaddress = cwusb_addr[5:0];

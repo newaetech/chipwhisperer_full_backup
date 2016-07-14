@@ -197,7 +197,8 @@ class AttackScriptGen(Parameterized):
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
         mse.append("from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI", 0)
         mse.append("from chipwhisperer.common.scripts.base import UserScriptBase", 0)
-
+        # Get imports from preprocessing
+        mse.append("# Imports from Preprocessing", 0)
         for p in self.preprocessingListGUI:
             if p:
                 imports = p.getImportStatements()
