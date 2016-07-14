@@ -12,6 +12,8 @@ module cw1200_interface(
 	 output wire        LED_GLITCHR,
 	 output wire        LED_GLITCHG,
 	 
+	 output wire 		  AUXOUT,
+	 
 	 /* FPGA - USB Interface */
 	 inout wire [7:0]	USB_D,
 	 input wire [7:0]	USB_Addr,
@@ -268,6 +270,7 @@ module cw1200_interface(
 	
 		wire apatt_trigger;
 		wire decode_trigger;
+		wire advio_trigger_line;
 	
 		reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -296,7 +299,7 @@ module cw1200_interface(
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
 		.trigger_io4_i(target_io4),
-		//.trigger_ext_o(advio_trigger_line),
+		.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(apatt_trigger),
 		.trigger_decodedio_i(decode_trigger),
@@ -342,7 +345,7 @@ module cw1200_interface(
 		.exttrigger(ext_trigger),
 		.dcm_unlocked(Glitch_DCM_Unlock)
 		);
-	
+
 	reg_reconfig reg_reconfig(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),
@@ -393,6 +396,7 @@ module cw1200_interface(
 		.reg_hyplen(reg_hyplen_decode),
 		.reg_stream(),
 		
+		.ext_iomux(advio_trigger_line),
 		.sck(target_SCK),
 		.mosi(target_MOSI),
 		.miso(target_MOSI),
@@ -413,6 +417,8 @@ module cw1200_interface(
 	 assign USB_RXD1 = target_PDIDRX;
 	 assign target_PDIC = (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
 	 	
+	 assign AUXOUT = ext_trigger;
+		
 	/*
 	wire [63:0] ila_trigbus;
 	wire [35:0] cs_control0;
