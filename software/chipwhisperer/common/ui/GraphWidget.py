@@ -109,6 +109,7 @@ class GraphWidget(QWidget):
 
         self.pw = pg.PlotWidget(name="Power Trace View")
         self.pw.setLabel('top', 'Power Trace View')
+        self.pw.getAxis('top').enableAutoSIPrefix(enable=False)
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
         self.pw.getPlotItem().setContentsMargins(5,5,10,1)
