@@ -203,8 +203,7 @@ class SimpleSerial(TargetTemplate):
         response = self.ser.read(dataLen)
 
         if len(response) < dataLen:
-            logging.warning('Response too short (len=%d): "%s".' % (len(response), response) +
-                            ' Check the clock settings and click "Reset ADC DCM" to see if it helps.')
+            logging.warning('Response too short (len=%d): "%s".' % (len(response), response))
             return None
 
         #Go through...skipping expected if applicable

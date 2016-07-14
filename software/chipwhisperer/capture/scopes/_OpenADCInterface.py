@@ -1179,10 +1179,13 @@ class OpenADCInterface(object):
 
     def arm(self, enable=True):
         if enable:
-            if self._streammode:
-                self.serial.initStreamModeCapture(self._stream_len_act, self._sbuf, timeout_ms=int(self._timeout*1000))
-
+            #Must arm first
             self.setSettings(self.settings() | SETTINGS_ARM)
+
+            #Then init the stream mode stuff
+            if self._streammode:
+                #Stream mode adds 500mS of extra timeout on USB traffic itself...
+                self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
         else:
             self.setSettings(self.settings() & ~SETTINGS_ARM)
 
@@ -1190,21 +1193,35 @@ class OpenADCInterface(object):
         timeout = False
 
         if self._streammode:
+
+            # Wait for a trigger, letting the UI run when it can
+            starttime = datetime.datetime.now()
+            while self.serial.cmdReadStream_isDone() == False:
+                # Wait for a moment before re-running the loop
+                time.sleep(0.05)
+                diff = datetime.datetime.now() - starttime
+
+                # If we've timed out, don't wait any longer for a trigger
+                if (diff.total_seconds() > self._timeout):
+                    logging.warning('Timeout in OpenADC capture(), trigger FORCED')
+                    timeout = True
+                    self.triggerNow()
+                    util.updateUI()
+                    break
+
+                # Give the UI a chance to update (does nothing if not using UI)
+                util.updateUI()
+
             _, self._stream_rx_bytes = self.serial.cmdReadStream()
-            self.arm(False)
 
             #Check the status now
-            overflow_flag = self.getStatus() & STATUS_OVERFLOW_MASK
             bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
             logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
+            self.arm(False)
 
-            if overflow_bytes_left > 0:
-                if overflow_bytes_left == self._stream_len_act:
-                    logging.warning("Streaming mode OVERFLOW occured as trigger signal was too fast. Try changing scope arm until after target.")
-                else:
-                    logging.warning("Streaming mode OVERFLOW occured with %d samples left - ADC sample clock may be too fast"%overflow_bytes_left)
-            elif unknown_overflow:
-                logging.warning("Streaming mode OVERFLOW occured - ADC sample clock may be too fast")
+            if  unknown_overflow:
+                logging.warning("Streaming mode OVERFLOW occured - ADC sample clock probably too fast for stream mode (keep < 8 MS/s)")
+                timeout = True
 
         else:
             status = self.getStatus()
@@ -1251,7 +1268,7 @@ class OpenADCInterface(object):
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
 
-            data = [0] * self.serial.cmdReadStream_bufferSize(self._stream_len_act)[0]
+            data = [0] * self.serial.cmdReadStream_bufferSize(self._stream_len)[0]
             data[0] = self._sbuf[0]
             dbuf2_idx = 1
             for i in range(0, self._stream_rx_bytes, bsize):
@@ -1267,10 +1284,13 @@ class OpenADCInterface(object):
             logging.debug("Stream mode: done, %d bytes ready for processing"%len(data))
             datapoints = self.processData(data, 0.0)
             if datapoints:
-                logging.info("Stream mode: done, %d samples processed"%len(datapoints))
+                logging.debug("Stream mode: done, %d samples processed"%len(datapoints))
             else:
                 logging.warning("Stream mode: done, no samples resulted from processing")
                 datapoints = []
+
+            if len(datapoints) > NumberPoints:
+                datapoints = datapoints[0:NumberPoints]
 
             return datapoints
 
