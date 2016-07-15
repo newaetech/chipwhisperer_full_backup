@@ -110,7 +110,7 @@ class CWCaptureGUI(CWMainGUI):
     def addToolbarItems(self, toolbar):
         # Capture
         self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1))
-        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM))
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture M', self, triggered=lambda: self.doCapture(self.captureM))
         self.stopCaptureMAct = QAction(QIcon(':/images/stopM.png'), 'Stop Capture', self, triggered=lambda: self.capturingProgressBar.abort(), enabled=False)
 
         # Master
