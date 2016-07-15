@@ -846,10 +846,10 @@ class ClockSettings(Parameterized):
         samplefreq = float(self.oa.hwInfo.sysFrequency()) / float(pow(2,23))
 
         temp = self.oa.sendMessage(CODE_READ, ADDR_FREQ, maxResp=4)
-        freq = freq | (temp[0] << 0)
-        freq = freq | (temp[1] << 8)
-        freq = freq | (temp[2] << 16)
-        freq = freq | (temp[3] << 24)
+        freq |= temp[0] << 0
+        freq |= temp[1] << 8
+        freq |= temp[2] << 16
+        freq |= temp[3] << 24
 
         measured = freq * samplefreq
         return long(measured)
@@ -883,7 +883,7 @@ class OpenADCInterface(object):
         self.ddrMode = False
         self.sysFreq = 0
         self._streammode = False
-
+        self._sbuf = []
         self.settings()
 
         # Send clearing function if using streaming mode
@@ -898,6 +898,7 @@ class OpenADCInterface(object):
 
     def setStreamMode(self, stream):
         self._streammode = stream
+        self.updateStreamBuffer()
 
     def setTimeout(self, timeout):
         self._timeout = timeout
@@ -984,7 +985,6 @@ class OpenADCInterface(object):
                             errmsg += "<Timeout>"
 
                         logging.error(errmsg)
-
         else:
             # ## Setup Message
             message = bytearray([])
@@ -1094,38 +1094,39 @@ class OpenADCInterface(object):
         cmd[3] = ((samples >> 24) & 0xFF)
         self.sendMessage(CODE_WRITE, ADDR_SAMPLES, cmd)
 
-        #Streaming mode also generates a buffer for storing
-        if self._streammode:
-            nae = self.serial
-            #Save the actual number of samples requested
+        self.updateStreamBuffer(samples)
+
+    def updateStreamBuffer(self, samples=None):
+        if samples is not None:
             self._stream_len = samples
 
+        bufsizebytes = 0
+        if self._streammode:
+            nae = self.serial
             #Save the number we will return
-            bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(samples)
+            bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
 
-            #Generate the buffer to save buffer
-            self._sbuf = [0] * bufsizebytes
-        else:
-            self._stream_len = None
+        #Generate the buffer to save buffer
+        self._sbuf = [0] * bufsizebytes
 
     def maxSamples(self):
-        '''Return the number of samples captured in one go'''
+        """Return the number of samples captured in one go."""
         samples = 0x00000000
         temp = self.sendMessage(CODE_READ, ADDR_SAMPLES, maxResp=4)
-        samples = samples | (temp[0] << 0)
-        samples = samples | (temp[1] << 8)
-        samples = samples | (temp[2] << 16)
-        samples = samples | (temp[3] << 24)
+        samples |= temp[0] << 0
+        samples |= temp[1] << 8
+        samples |= temp[2] << 16
+        samples |= temp[3] << 24
         return samples
 
     def getBytesInFifo(self):
         samples = 0
         temp = self.sendMessage(CODE_READ, ADDR_BYTESTORX, maxResp=4)
 
-        samples = samples | (temp[0] << 0)
-        samples = samples | (temp[1] << 8)
-        samples = samples | (temp[2] << 16)
-        samples = samples | (temp[3] << 24)
+        samples |= temp[0] << 0
+        samples |= temp[1] << 8
+        samples |= temp[2] << 16
+        samples |= temp[3] << 24
         return samples
 
     def flushInput(self):
@@ -1222,7 +1223,7 @@ class OpenADCInterface(object):
                 util.updateUI()
 
             _, self._stream_rx_bytes = self.serial.cmdReadStream()
-
+            timeout |= self.serial.streamModeCaptureStream.timeout
             #Check the status now
             bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
             logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
@@ -1230,10 +1231,9 @@ class OpenADCInterface(object):
 
             if overflow_bytes_left == (self._stream_len - 3072):
                 logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
-            elif  unknown_overflow:
+            elif unknown_overflow:
                 logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep < 10 MS/s)")
                 timeout = True
-
         else:
             status = self.getStatus()
             starttime = datetime.datetime.now()
