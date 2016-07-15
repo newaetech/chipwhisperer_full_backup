@@ -35,11 +35,13 @@ module fifo_top(
 	 parameter FIFO_FULL_SIZE = `MAX_SAMPLES - 128;
 	 parameter FIFO_FULL_SIZE_LARGEWORDS = ((`MAX_SAMPLES - 32) / 3) / 4;
 
+	wire				adc_capture_stop_int;
 	reg 				adc_capture_stop_reg;
    wire           fifo_overflow_int;
 	reg            fifo_overflow_reg;
 	assign fifo_overflow = fifo_overflow_reg;
-	assign adc_capture_stop = (stream_mode) ? fifo_overflow_int : adc_capture_stop_reg;
+	assign adc_capture_stop_int = (stream_mode) ? fifo_overflow_int : adc_capture_stop_reg;
+	assign adc_capture_stop = adc_capture_stop_int;
 	  
 	//Reset FIFO, clearning contents
 	reg 				fifo_rst;
@@ -114,7 +116,7 @@ module fifo_top(
 	always@(posedge adc_sampleclk) begin
 		if (fifo_rst)
 			fifo_capture_en <= 1'b1;
-		else if (adc_capture_stop_reg)
+		else if (adc_capture_stop_int)
 			fifo_capture_en <= 1'b0;
 	end
 	
