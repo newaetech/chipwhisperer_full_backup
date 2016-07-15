@@ -778,7 +778,7 @@ class ClockSettings(Parameterized):
 
             return phase
         else:
-            print("No phase shift loaded")
+            logging.warning("No phase shift loaded")
             return 0
 
     def dcmADCLocked(self):
@@ -795,7 +795,7 @@ class ClockSettings(Parameterized):
 
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         if (result[0] & 0x80) == 0:
-            print("ERROR: ADVCLK register not present. Version mismatch")
+            logging.error("ADVCLK register not present. Version mismatch")
             return (False, False)
 
         if (result[0] & 0x40) == 0:
@@ -910,17 +910,17 @@ class OpenADCInterface(object):
         totalerror = 0
 
         for n in range(10):
-               # Generate 500 bytes
-               testData = bytearray(range(250) + range(250)) #bytearray(random.randint(0,255) for r in xrange(500))
-               self.sendMessage(CODE_WRITE, ADDR_MULTIECHO, testData, False)
-               testDataEcho = self.sendMessage(CODE_READ, ADDR_MULTIECHO, None, False, 502)
-               testDataEcho = testDataEcho[2:]
+            # Generate 500 bytes
+            testData = bytearray(range(250) + range(250)) #bytearray(random.randint(0,255) for r in xrange(500))
+            self.sendMessage(CODE_WRITE, ADDR_MULTIECHO, testData, False)
+            testDataEcho = self.sendMessage(CODE_READ, ADDR_MULTIECHO, None, False, 502)
+            testDataEcho = testDataEcho[2:]
 
-               #Compare
-               totalerror = totalerror + len([(i,j) for i,j in zip(testData,testDataEcho) if i!=j])
-               totalbytes = totalbytes + len(testData)
+            #Compare
+            totalerror = totalerror + len([(i,j) for i,j in zip(testData,testDataEcho) if i!=j])
+            totalbytes = totalbytes + len(testData)
 
-               print("%d errors in %d"%(totalerror, totalbytes))
+            logging.error('%d errors in %d' % (totalerror, totalbytes))
 
     def sendMessage(self, mode, address, payload=None, Validate=True, maxResp=None, readMask=None):
         """Send a message out the serial port"""
@@ -932,7 +932,7 @@ class OpenADCInterface(object):
         length = len(payload)
 
         if ((mode == CODE_WRITE) and (length < 1)) or ((mode == CODE_READ) and (length != 0)):
-            print("Invalid payload for mode")
+            logging.warning('Invalid payload for mode')
             return None
 
         if mode == CODE_READ:
@@ -983,7 +983,7 @@ class OpenADCInterface(object):
                         else:
                             errmsg += "<Timeout>"
 
-                        print(errmsg)
+                        logging.error(errmsg)
 
         else:
             # ## Setup Message

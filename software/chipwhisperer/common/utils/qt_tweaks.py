@@ -45,3 +45,4 @@ class QTextBrowser(qtg.QTextBrowser):
     def write(self, text):
         self.moveCursor(qtg.QTextCursor.End)
         self.insertPlainText(text)
+        self.moveCursor(qtg.QTextCursor.End)

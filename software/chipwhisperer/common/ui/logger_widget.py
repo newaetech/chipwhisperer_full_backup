@@ -19,6 +19,7 @@ class QPlainTextEditLogger(logging.Handler):
     def append(self, text):
         self.widget.moveCursor(QTextCursor.End)
         self.widget.insertPlainText(text)
+        self.widget.moveCursor(QTextCursor.End)
 
 
 class LoggingWidget(QWidget, QPlainTextEditLogger):
