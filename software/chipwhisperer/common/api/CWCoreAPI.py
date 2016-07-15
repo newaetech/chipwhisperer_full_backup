@@ -371,6 +371,7 @@ class CWCoreAPI(Parameterized):
             if currentTrace is not None:
                 currentTrace.unloadAllTraces()  # Required in order to make the GC work properly :(
                 self._traceFormat.unloadAllTraces()
+        return True
 
     def runScriptModule(self, mod, funcName="run"):
         """Execute the function in the Plugin classes of the specified module"""

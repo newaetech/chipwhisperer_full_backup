@@ -8,9 +8,11 @@ class QPlainTextEditLogger(logging.Handler):
         super(QPlainTextEditLogger, self).__init__()
         self.widget = QPlainTextEdit(parent)
         self.widget.setReadOnly(True)
+        self.callback = None
 
     def emit(self, record):
         msg = self.format(record)
+        self.callback(msg)
         self.append(msg)
 
     def write(self, text):
@@ -22,7 +24,7 @@ class QPlainTextEditLogger(logging.Handler):
         self.widget.moveCursor(QTextCursor.End)
 
 
-class LoggingWidget(QWidget, QPlainTextEditLogger):
+class LoggingWidget(QWidget):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
 
