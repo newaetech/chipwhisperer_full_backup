@@ -290,9 +290,6 @@ class NAEUSB(object):
         """
         self.streamModeCaptureStream.join()
 
-        # Disable stream mode in case anything was left
-        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
-
         # Flush input buffers in case anything was left
         try:
             self.usbdev().read(self.rep, 4096, timeout=10)
@@ -301,6 +298,9 @@ class NAEUSB(object):
             self.usbdev().read(self.rep, 4096, timeout=10)
         except IOError:
             pass
+
+        # Ensure stream mode disabled
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
 
         return self.streamModeCaptureStream.bsize_samples, self.streamModeCaptureStream.drx
 
