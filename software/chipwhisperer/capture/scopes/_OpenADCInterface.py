@@ -248,7 +248,9 @@ class TriggerSettings(Parameterized):
                             '  Low             Trigger when line is "low".\n' +
                             '  High            Trigger when line is "high".\n' +
                             '  =============== ==============================\n\n' +
-                            'Note the "Trigger Mode" should be set to "Rising Edge" if using either the "SAD Trigger" or "IO Trigger" modes.'
+                            'Note the "Trigger Mode" should be set to "Rising Edge" if using either the "SAD Trigger" or "IO Trigger" modes.\n\n'+
+                            'If using STREAM mode (CW-Pro only), the trigger should use a rising or falling edge. Using a constant level is possible, but ' +
+                            'normally requires additional delay added via "offset" (see stream mode help for details).'
             },
             {'name': 'Timeout (secs)', 'type':'float', 'step':1, 'limits':(0, 1E99), 'set':self.setTimeout, 'get':self.timeout,
                      'help':'%namehdr%'+
@@ -274,9 +276,14 @@ class TriggerSettings(Parameterized):
             {'name': 'Stream Mode', 'type': 'bool', 'default': self._stream_mode, 'set': self.setStreamMode,
              'get': self.getStreamMode,
              'help': '%namehdr%' +
-                     'Stream mode streams data over high-speed USB. Requires slow sampling rate (< 8 MS/s).\n' +
-                     'This is currently a beta feature, and you may find errors when attempting to use longer'+
-                     'sample sizes.'})
+                     'Stream mode streams data over high-speed USB. Requires slow sampling rate (< 8 MS/s).\n\n' +
+                     '*NOTE*: '+
+                     'If the trigger is active on capture (for example, trigger is set to "low" and the external '+
+                     'pin is currently low), you MUST set a positive "offset" of approximately 200 000. This gives '+
+                     'time for the stream mode to initialize, otherwise the hardware triggers too quickly aftter arm. ' +
+                     'The specific timeout can be adjusted lower, but if you notice timeouts on attemping to capture ' +
+                     'this may be the case.\n\n' +
+                     'This feature is currently in BETA.'})
         self.params.addChildren(child_list)
 
     @setupSetParam("Stream Mode")
@@ -1098,6 +1105,8 @@ class OpenADCInterface(object):
 
             #Generate the buffer to save buffer
             self._sbuf = [0] * bufsizebytes
+        else:
+            self._stream_len = None
 
     def maxSamples(self):
         '''Return the number of samples captured in one go'''
@@ -1219,8 +1228,10 @@ class OpenADCInterface(object):
             logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
-            if  unknown_overflow:
-                logging.warning("Streaming mode OVERFLOW occured - ADC sample clock probably too fast for stream mode (keep < 8 MS/s)")
+            if overflow_bytes_left == (self._stream_len - 3072):
+                logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
+            elif  unknown_overflow:
+                logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep < 10 MS/s)")
                 timeout = True
 
         else:

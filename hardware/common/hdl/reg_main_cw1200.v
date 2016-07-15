@@ -8,7 +8,7 @@ or the codebase at http://www.assembla.com/spaces/openadc .
 This file is the computer interface. It provides a simple interface to the
 rest of the board.
 
-Copyright (c) 2014, NewAE Technology Inc. All rights reserved.
+Copyright (c) 2014-2016, NewAE Technology Inc. All rights reserved.
 
 Author: Colin O'Flynn, <coflynn@newae.com>
 
@@ -90,7 +90,9 @@ module reg_main_cwlite(
 	 
 	 //TODO: this should be synchronous to device clock, but is phase OK? Might need to
 	 //use resyncronized version...
-	 assign		reg_read = rdflag_rs & ~rdflag_rs_dly;
+	 assign		reg_read = rdflag & ~rdflag_rs;
+	 
+	 //rdflag_rs & ~rdflag_rs_dly;
 	 
 	 assign 		cwusb_dout = reg_datai; 
 	 
@@ -176,6 +178,8 @@ module reg_main_cwlite(
 	assign cs_data[22] = regout_addrvalid;
 	assign cs_data[23] = regout_write;
 	assign cs_data[24] = rdflag_rs;
+	assign cs_data[25] = cwusb_rdn;
+	assign cs_data[26] = cwusb_cen;
 	
 	coregen_icon icon (
     .CONTROL0(CONTROL0) // INOUT BUS [35:0]
