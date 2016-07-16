@@ -268,8 +268,7 @@ module fifo_top(
 	end
 
 	assign samples_o[3:0] = 4'b0000;
-
-	/*
+/*
 	wire [35:0] CONTROL0;
 	wire [63:0] cs_data;
 	
@@ -295,7 +294,6 @@ module fifo_top(
 	assign cs_data[11] = drain;
 	assign cs_data[31:16] = samples_o[19:4];
 	assign cs_data[63:32] = presample_counter;
-	*/
-	
+*/
 
 endmodule

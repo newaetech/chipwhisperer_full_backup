@@ -90,7 +90,7 @@ module reg_clockglitch(
 	 `define CLOCKGLITCH_SETTINGS	51
 	 `define CLOCKGLITCH_LEN      8
 	 `define CLOCKGLITCH_OFFSET    25
-	 `define CLOCKGLITCH_OFFSET_LEN 4
+	 `define CLOCKGLITCH_OFFSET_LEN 8
 	 
 `ifdef SUPPORT_GLITCH_READBACK
 	 `define GLITCH_RECONFIG_RB_ADDR 56
@@ -287,11 +287,14 @@ module reg_clockglitch(
 			phase2_done_reg <= 'b1;
 	 end	 
 			 
+	 wire [63:0] clockglitch_offset_read_reg;
+	 assign clockglitch_offset_read_reg[31:0] = clockglitch_offset_reg;
+			 
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
 				`CLOCKGLITCH_SETTINGS: begin reg_datao_reg <= clockglitch_settings_read[reg_bytecnt*8 +: 8]; end
-				`CLOCKGLITCH_OFFSET: begin reg_datao_reg <= clockglitch_offset_reg[reg_bytecnt*8 +: 8]; end
+				`CLOCKGLITCH_OFFSET: begin reg_datao_reg <= clockglitch_offset_read_reg[reg_bytecnt*8 +: 8]; end
 `ifdef SUPPORT_GLITCH_READBACK
 				`GLITCH_RECONFIG_RB_ADDR: begin reg_datao_reg <= clockglitch_readback_reg[reg_bytecnt*8 +: 8]; end
 `endif
