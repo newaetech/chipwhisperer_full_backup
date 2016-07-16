@@ -79,7 +79,7 @@ class CWAnalyzerGUI(CWMainGUI):
             return
 
         self.attackScriptGen.flushTimer()
-        logging.info("Executing analyzis...")
+        logging.info("Executing analysis...")
         self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
         logging.info("Analysis completed")
 
