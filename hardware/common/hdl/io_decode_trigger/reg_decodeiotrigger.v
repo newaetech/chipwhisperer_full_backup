@@ -210,11 +210,11 @@ module reg_decodeiotrigger(
 	wire [7:0] data_buf_int;
 	wire datardy_int;
 	
-	assign datardy_int = (match_module == 4'b0001) : rx_data_rdy :
-	                     (match_module == 4'b0010) : spi_datardy :
+	assign datardy_int = (match_module == 4'b0001) ? rx_data_rdy :
+	                     (match_module == 4'b0010) ? spi_datardy :
 								4'b0000;
-	assign data_buf_int = (match_module == 4'b0001) : rx_data :
-	                     (match_module == 4'b0010) : spi_data :
+	assign data_buf_int = (match_module == 4'b0001) ? rx_data :
+	                     (match_module == 4'b0010) ? spi_data :
 								4'b0000;
 	
 	always @(posedge datardy_int) begin

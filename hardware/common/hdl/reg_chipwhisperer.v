@@ -204,6 +204,7 @@ module reg_chipwhisperer(
 		  
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
+		  
  */
     
 	 reg [7:0] registers_cwextclk;
