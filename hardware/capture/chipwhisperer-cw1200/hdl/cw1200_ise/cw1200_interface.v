@@ -324,7 +324,7 @@ module cw1200_interface(
 				
 		.trigger_o(ext_trigger)
 	);
-		
+
 	reg_clockglitch reg_clockglitch(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),

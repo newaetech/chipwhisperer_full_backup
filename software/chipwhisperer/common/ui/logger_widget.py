@@ -1,16 +1,19 @@
 from PySide.QtGui import *
 import logging
-
 """ Copied from: http://stackoverflow.com/questions/28655198/best-way-to-display-logs-in-pyqt """
+
 
 class QPlainTextEditLogger(logging.Handler):
     def __init__(self, parent):
         super(QPlainTextEditLogger, self).__init__()
         self.widget = QPlainTextEdit(parent)
         self.widget.setReadOnly(True)
+        self.callback = None
 
     def emit(self, record):
         msg = self.format(record)
+        if self.callback is not None:
+            self.callback(msg)
         self.append(msg)
 
     def write(self, text):
@@ -19,9 +22,10 @@ class QPlainTextEditLogger(logging.Handler):
     def append(self, text):
         self.widget.moveCursor(QTextCursor.End)
         self.widget.insertPlainText(text)
+        self.widget.moveCursor(QTextCursor.End)
 
 
-class LoggingWidget(QWidget, QPlainTextEditLogger):
+class LoggingWidget(QWidget):
     def __init__(self, parent=None):
         QWidget.__init__(self, parent)
 

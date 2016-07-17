@@ -166,6 +166,7 @@ class CWMainGUI(QMainWindow):
 
     def addLoggingDock(self, name="Debug Logging", visible=True, redirectStdOut=True):
         loggingWidget = LoggingWidget(self)
+        loggingWidget.editor.callback = self.updateStatusBar
         if redirectStdOut:
             sys.stdout = loggingWidget.editor
             sys.stderr = loggingWidget.editor
@@ -456,7 +457,7 @@ class CWMainGUI(QMainWindow):
                                                    'ChipWhisperer Project (*.cwp)','', QFileDialog.DontUseNativeDialog)
             if not fname: return
 
-        self.updateStatusBar("Opening Project: " + fname)
+        logging.info("Opening Project: " + fname)
         self.api.openProject(fname)
 
     def saveProject(self):
@@ -474,12 +475,12 @@ class CWMainGUI(QMainWindow):
             fname = fd.selectedFiles()[0]
 
         self.api.saveProject(fname)
-        self.updateStatusBar("Project Saved")
+        logging.info("Project Saved")
 
     def newProject(self):
         self.okToContinue()
         self.api.newProject()
-        self.updateStatusBar("New Project Created")
+        logging.info("New Project Created")
 
     def setProject(self, proj):
         self.api.setProject(proj)
@@ -512,14 +513,16 @@ class CWMainGUI(QMainWindow):
             self.api.project().consolidate(keepOriginals = False)
 
     def updateStatusBar(self, message):
+        if len(message) > 150:
+            message = message[:147]+"..."
         msg = message + " (" + datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
         logging.debug('Status: ' + msg)
         self.statusBar().showMessage(msg)
 
     def runScript(self, scriptClass, funcName="run"):
-        self.updateStatusBar("Running Script: %s" % scriptClass.getClassName())
+        logging.info("Running Script: %s" % scriptClass.getClassName())
         self.api.runScriptClass(scriptClass, funcName=funcName)
-        self.updateStatusBar("Finished Script: %s" % scriptClass.getClassName())
+        logging.info("Finished Script: %s" % scriptClass.getClassName())
 
     def exceptionHandlerDialog(self, etype, value, trace):
         """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""

@@ -336,6 +336,7 @@ class NAEUSB(object):
             self.dbuf_temp = dbuf_temp
             self.timeout_ms = timeout_ms
             self.serial = serial
+            self.timeout = False
 
         def run(self):
             # Get block size of samples, bytes per block
@@ -347,7 +348,6 @@ class NAEUSB(object):
             self.drx = 0
             while dlen > 0:
                 try:
-
                     if dlen > 9216:
                         bsize = self.bsize_bytes
                     elif dlen >= 6122:
@@ -361,7 +361,8 @@ class NAEUSB(object):
                     #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
 
                     self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
-                except IOError, e:
+                except IOError:
+                    self.timeout = True
                     if self.drx == 0:
                         logging.info("Timeout during stream mode with no data - assumed no trigger")
                     else:

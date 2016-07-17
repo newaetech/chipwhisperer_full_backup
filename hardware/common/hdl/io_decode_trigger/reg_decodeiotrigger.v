@@ -92,14 +92,19 @@ module reg_decodeiotrigger(
 				default: reg_hyplen_reg<= 0;
 		endcase
 	 end    
-	
+		 	
 	 reg [7:0] reg_datao_reg;
 	 assign reg_datao = reg_datao_reg;
-	 
+	
+    wire [2:0] datain_src;
+	 wire [3:0] match_module;
 	 reg [64:0] reg_trig_cfg;
 	 reg [64:0] reg_trig_data; 
 	 reg [64:0] data_buffer;
-	  	 
+	 
+	 assign match_module = reg_trig_cfg[3:0];
+	 assign datain_src = reg_trig_cfg[7:5];
+	 	  	 
 	 always @(posedge clk) begin
 		if (reg_read) begin
 			case (reg_address)		
@@ -205,8 +210,12 @@ module reg_decodeiotrigger(
 	wire [7:0] data_buf_int;
 	wire datardy_int;
 	
-	assign datardy_int = rx_data_rdy; //spi_datardy;
-	assign data_buf_int = rx_data; //spi_data;
+	assign datardy_int = (match_module == 4'b0001) ? rx_data_rdy :
+	                     (match_module == 4'b0010) ? spi_datardy :
+								4'b0000;
+	assign data_buf_int = (match_module == 4'b0001) ? rx_data :
+	                     (match_module == 4'b0010) ? spi_data :
+								4'b0000;
 	
 	always @(posedge datardy_int) begin
 		data_buffer[7:0] <= data_buf_int;

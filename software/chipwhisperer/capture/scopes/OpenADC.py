@@ -165,9 +165,9 @@ class OpenADC(ScopeTemplate, Plugin):
 
         try:
             self.qtadc.arm()
-        except Exception as e:
+        except Exception:
             self.dis()
-            raise e
+            raise
 
         if self.advancedSettings:
              self.advancedSettings.armPostScope()

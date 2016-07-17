@@ -23,7 +23,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import sys
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
@@ -79,9 +79,9 @@ class CWAnalyzerGUI(CWMainGUI):
             return
 
         self.attackScriptGen.flushTimer()
-        self.updateStatusBar("Executing analyzis...")
+        logging.info("Executing analysis...")
         self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
-        self.updateStatusBar("Analysis completed")
+        logging.info("Analysis completed")
 
     def addSettingsDocks(self):
         self.settingsScriptDock = self.addSettings(self.attackScriptGen.params)

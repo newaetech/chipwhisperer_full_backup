@@ -109,8 +109,8 @@ class CWCaptureGUI(CWMainGUI):
 
     def addToolbarItems(self, toolbar):
         # Capture
-        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1))
-        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM))
+        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.api.capture1))
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture M', self, triggered=lambda: self.doCapture(self.captureM))
         self.stopCaptureMAct = QAction(QIcon(':/images/stopM.png'), 'Stop Capture', self, triggered=lambda: self.capturingProgressBar.abort(), enabled=False)
 
         # Master
@@ -147,27 +147,27 @@ class CWCaptureGUI(CWMainGUI):
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
             if self.api.connectScope():
-                self.updateStatusBar("Scope Connected")
+                logging.info("Scope Connected")
         else:
             self.api.disconnectScope()
-            self.updateStatusBar("Scope Disconnected")
+            logging.info("Scope Disconnected")
 
     def doConDisTarget(self):
         if self.targetStatus.defaultAction() == self.targetStatusActionDis:
             if self.api.connectTarget():
-                self.updateStatusBar("Target Connected")
+                logging.info("Target Connected")
         else:
             self.api.disconnectTarget()
-            self.updateStatusBar("Target Disconnected")
+            logging.info("Target Disconnected")
 
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:
             if self.api.connect():
-                self.updateStatusBar("Target and Scope Connected")
+                logging.info("Target and Scope Connected")
         else:
             if self.api.disconnect():
-                self.updateStatusBar("Target and Scope Disconnected")
+                logging.info("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-api
@@ -216,21 +216,21 @@ class CWCaptureGUI(CWMainGUI):
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
             if callback():
-                self.updateStatusBar("Capture completed")
+                logging.info("Capture completed.")
         finally:
             self.capture1Act.setEnabled(True)
             self.captureMAct.setEnabled(True)
             self.capture1Act.setChecked(False)
             self.captureMAct.setChecked(False)
 
-    def capture1(self):
-        self.api.capture1()
-
     def captureM(self):
-        self.stopCaptureMAct.setEnabled(True)
-        self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
-        self.api.captureM(self.capturingProgressBar)
-        self.stopCaptureMAct.setEnabled(False)
+        try:
+            self.stopCaptureMAct.setEnabled(True)
+            self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
+            ret = self.api.captureM(self.capturingProgressBar)
+        finally:
+            self.stopCaptureMAct.setEnabled(False)
+        return ret
 
 
 def main():
