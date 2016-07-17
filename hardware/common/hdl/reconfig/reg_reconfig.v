@@ -188,7 +188,9 @@ module reg_reconfig(
 	// ICAP_SPARTAN6: Internal Configuration Access Port
 	// Spartan-6
 	ICAP_SPARTAN6 #(
-	.DEVICE_ID('h04004093), // Specifies the pre-programmed Device ID value
+	
+	//'h04004093
+	.DEVICE_ID(`FPGA_IDCODE), // Specifies the pre-programmed Device ID value
 	.SIM_CFG_FILE_NAME("NONE") // Specifies the Raw Bitstream (RBT) file to be parsed by the simulation
 	// model
 	)
