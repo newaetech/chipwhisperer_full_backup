@@ -1190,13 +1190,14 @@ class OpenADCInterface(object):
         if enable:
             #Must arm first
             self.setSettings(self.settings() | SETTINGS_ARM)
-
-            #Then init the stream mode stuff
-            if self._streammode:
-                #Stream mode adds 500mS of extra timeout on USB traffic itself...
-                self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
         else:
             self.setSettings(self.settings() & ~SETTINGS_ARM)
+
+    def startCaptureThread(self):
+        # Then init the stream mode stuff
+        if self._streammode:
+            # Stream mode adds 500mS of extra timeout on USB traffic itself...
+            self.serial.initStreamModeCapture(self._stream_len, self._sbuf, timeout_ms=int(self._timeout * 1000) + 500)
 
     def capture(self):
         timeout = False
