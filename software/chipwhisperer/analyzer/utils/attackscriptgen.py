@@ -220,8 +220,8 @@ class AttackScriptGen(Parameterized):
 
         # Add main class
         mse.append("class UserScript(UserScriptBase):", 0)
-        mse.append("name = \"Auto-generated\"",1)
-        mse.append("description = \"Auto-generated Attack Script\"",1)
+        mse.append("_name = \"Auto-generated\"",1)
+        mse.append("_description = \"Auto-generated Attack Script\"",1)
 
         mse.append("def __init__(self, api):", 1)
         mse.append("UserScriptBase.__init__(self, api)")
