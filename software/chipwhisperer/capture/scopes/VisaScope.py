@@ -76,6 +76,6 @@ class VisaScopeInterface(ScopeTemplate, Plugin):
             self.dis()
             raise
 
-    def capture(self, update=True, numberPoints=None):
+    def capture(self):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
-        return self.scopetype.capture(update, numberPoints)
+        return self.scopetype.capture()

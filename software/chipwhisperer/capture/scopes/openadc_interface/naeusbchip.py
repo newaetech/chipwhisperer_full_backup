@@ -20,7 +20,6 @@
 #=================================================
 import logging
 import sys
-
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
@@ -63,12 +62,8 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
             self.scope = oadcInstance
 
-    def __del__(self):
-        if self.ser:
-            self.ser.close()
-
     def con(self):
-        if self.ser == None:
+        if self.ser is None:
             self.dev = CWL.CWLiteUSB()
             self.getParams().append(self.dev.getParams())
 
@@ -100,7 +95,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             raise IOError("OpenADC: " + (str(exctype) + str(value)))
 
     def dis(self):
-        if self.ser != None:
+        if self.ser is not None:
             self.cwFirmwareConfig.setInterface(None)
             self.scope.close()
             self.ser.close()
@@ -109,14 +104,11 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.dev.dis()
             self.dev = None
 
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
+    def __del__(self):
+        if self.ser is not None:
+            self.ser.close()
 
     def getFwLoaderConfigGUI(self):
         if not hasattr(self, 'fwLoaderConfigGUI'):
             self.fwLoaderConfigGUI = FWLoaderConfigGUI(self.cwFirmwareConfig)
         return self.fwLoaderConfigGUI
-

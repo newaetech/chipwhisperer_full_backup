@@ -275,8 +275,9 @@ class NAEUSB(object):
 
     def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000):
         #Enter streaming mode for requested number of samples
+        if hasattr(self, "streamModeCaptureStream"):
+            self.streamModeCaptureStream.join()
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(dlen))
-
         self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, dbuf_temp, timeout_ms)
         self.streamModeCaptureStream.start()
 

@@ -215,6 +215,7 @@ class CWCaptureGUI(CWMainGUI):
         try:
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
+            util.updateUI()  # Hide the buttons right away
             if callback():
                 logging.info("Capture completed.")
         finally:

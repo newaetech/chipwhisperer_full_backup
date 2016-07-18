@@ -219,7 +219,7 @@ class TriggerSettings(Parameterized):
 
     def __init__(self, oaiface):
         self.oa = oaiface
-        self.maxsamples = 0
+        self._numSamples = 0
         self.presamples_desired = 0
         self.presamples_actual = 0
         self.presampleTempMargin = 24
@@ -265,7 +265,7 @@ class TriggerSettings(Parameterized):
                             'recording samples BEFORE the trigger event.\n\n' +
                             'WARNING: The pretrigger only works reliable on the CW1200 hardware. The ChipWhisperer-Lite often has trouble with '+
                             'pre-triggering for many FPGA builds. It is  recommended use presampling only on the CW1200 hardware.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setMaxSamples, 'get':self.maxSamples,
+            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples.'+
                             'If using the ChipWhisperer-Lite/ChipWhisperer-Pro (CW1173/CW1200) this is no longer the case, and can be set to almost any number.'},
@@ -316,16 +316,16 @@ class TriggerSettings(Parameterized):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK
 
     @setupSetParam("Total Samples")
-    def setMaxSamples(self, samples):
-        self.maxsamples = samples
+    def setNumSamples(self, samples):
+        self._numSamples = samples
         self.oa.setMaxSamples(samples)
 
-    def maxSamples(self,  cached=False):
+    def numSamples(self,  cached=False):
         if self.oa is None:
             return 0
 
         if cached:
-            return self.maxsamples
+            return self._numSamples
         else:
             return self.oa.maxSamples()
 

@@ -84,17 +84,17 @@ class VisaScopeInterface_MSO54831D(VisaScope):
     def arm(self):
         self.visaInst.write(":DIGitize")
 
-    def capture(self, Update=False, N=None):
+    def capture(self):
         xdstart = self.findParam("xdisporigin").getValue()
         xdrange = self.findParam("xdisprange").getValue()
 
         command = ":WAVeform:DATA?"
 
         if (xdstart != 0) or (xdrange != 0):
-            command += " %d"%xdstart
+            command += " %d" % xdstart
 
             if xdrange != 0:
-                command += ",%d"%xdrange
+                command += ",%d" % xdrange
 
         #print command
         self.visaInst.write(command)
@@ -104,21 +104,20 @@ class VisaScopeInterface_MSO54831D(VisaScope):
         start = data.find('#')
 
         if start < 0:
-            logging.error('Error in header')
-            return
+            raise IOError('Error in header')
 
-        start = start+1
+        start += 1
         hdrlen = data[start]
         hdrlen = int(hdrlen)
 
         #print hdrlen
 
-        start = start+1
+        start += 1
         datalen = data[start:(start+hdrlen)]
         datalen = int(datalen)
         #print datalen
 
-        start = start+hdrlen
+        start += hdrlen
 
         #Each is two bytes
         wavdata = bytearray(data[start:(start + datalen)])
@@ -134,3 +133,4 @@ class VisaScopeInterface_MSO54831D(VisaScope):
             self.datapoints.append(data)
 
         self.dataUpdated.emit(self.datapoints, 0)
+        return False

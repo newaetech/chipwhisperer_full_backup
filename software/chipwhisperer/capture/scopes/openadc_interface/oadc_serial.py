@@ -20,13 +20,11 @@
 #=================================================
 import logging
 import sys
-import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 
 import serial
 import chipwhisperer.common.utils.serialport as scan
-
 
 
 class OpenADCInterface_Serial(Parameterized, Plugin):
@@ -50,16 +48,12 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
     def setPortName(self, snum):
         self.portName = snum
 
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
     def con(self):
-        if self.ser == None:
+        if self.ser is None:
             self.ser = serial.Serial()
-            self.ser.port     = self.portName
+            self.ser.port = self.portName
             self.ser.baudrate = 512000
-            self.ser.timeout  = 2     # 2 second timeout
+            self.ser.timeout = 2     # 2 second timeout
 
             attempts = 4
             while attempts > 0:
@@ -67,7 +61,7 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
                     self.ser.open()
                     attempts = 0
                 except serial.SerialException as e:
-                    attempts = attempts - 1
+                    attempts -= 1
                     self.ser = None
                     if attempts == 0:
                         raise IOError("Could not open %s" % self.ser.name)
@@ -80,21 +74,19 @@ class OpenADCInterface_Serial(Parameterized, Plugin):
             raise IOError("OpenADC Error (Serial Port): %s" % (str(exctype) + str(value)))
 
     def dis(self):
-        if self.ser != None:
+        if self.ser is not None:
             self.ser.close()
             self.ser = None
 
+    def __del__(self):
+        if self.ser is not None:
+            self.ser.close()
+
     def serialRefresh(self, _=None):
         serialnames = scan.scan()
-        if serialnames == None or len(serialnames) == 0:
+        if serialnames is None or len(serialnames) == 0:
             serialnames = [" "]
 
         p = self.params.getChild('Selected Port')
         p.setLimits(serialnames)
         p.setValue(serialnames[0])
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"

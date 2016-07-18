@@ -317,7 +317,7 @@ class CWCoreAPI(Parameterized):
             sys.excepthook(*sys.exc_info())
             return False
 
-    def captureM(self, progressBar = None):
+    def captureM(self, progressBar=None):
         """Capture multiple traces and save its result"""
         if not progressBar: progressBar = ProgressBarText()
 

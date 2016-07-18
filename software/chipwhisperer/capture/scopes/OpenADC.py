@@ -172,6 +172,6 @@ class OpenADC(ScopeTemplate, Plugin):
         if self.advancedSettings:
             self.advancedSettings.armPostScope()
 
-    def capture(self, update=True, numberPoints=None):
+    def capture(self):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        return self.qtadc.capture(update, numberPoints)
+        return self.qtadc.capture()
