@@ -84,6 +84,9 @@ class OpenADCQt(Parameterized):
     def arm(self):
         self.sc.arm()
 
+    def startCaptureThread(self):
+        self.sc.startCaptureThread()
+
     def read(self, update=True, numberPoints=None, channelNr=0):
         if numberPoints == None:
             numberPoints = self.parm_trigger.maxSamples()
