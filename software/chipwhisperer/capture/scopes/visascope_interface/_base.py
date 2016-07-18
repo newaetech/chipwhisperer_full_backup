@@ -76,6 +76,6 @@ class VisaScope(Parameterized):
         """Example arm implementation works on most"""
         self.visaInst.write(":DIGitize")
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self):
         """You MUST implement this"""
         self.dataUpdated.emit(self.datapoints, 0)

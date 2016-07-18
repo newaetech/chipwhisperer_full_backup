@@ -55,12 +55,8 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     def setSelectedDevice(self, snum):
         self.serialNumber = snum
 
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
     def con(self):
-        if self.ser == None:
+        if self.ser is None:
             try:
                 self.dev = ft.openEx(str(self.serialNumber), ft.ftd2xx.OPEN_BY_SERIAL_NUMBER)
                 self.dev.setBitMode(0x00, 0x40)
@@ -82,9 +78,13 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         #    self.cwAdvancedSettings.setOpenADC(self.scope)
 
     def dis(self):
-        if self.ser != None:
+        if self.ser is not None:
             self.ser.close()
             self.ser = None
+
+    def __del__(self):
+        if self.ser is not None:
+            self.ser.close()
 
     def serialRefresh(self, _=None):
         serialnames = ft.listDevices()
@@ -94,7 +94,6 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         self.findParam('snum').setValue(serialnames[0])
 
     def setSerialNumberLimits(self, newitems):
-
         for s in newitems:
             if s not in self._serialnumbers:
                 self._serialnumbers.append(s)
@@ -106,9 +105,3 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
 
     def write(self, data, debug=False):
         return self.dev.write(data)
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"

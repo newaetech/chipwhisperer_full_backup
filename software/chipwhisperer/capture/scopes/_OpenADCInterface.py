@@ -219,7 +219,7 @@ class TriggerSettings(Parameterized):
 
     def __init__(self, oaiface):
         self.oa = oaiface
-        self.maxsamples = 0
+        self._numSamples = 0
         self.presamples_desired = 0
         self.presamples_actual = 0
         self.presampleTempMargin = 24
@@ -262,10 +262,8 @@ class TriggerSettings(Parameterized):
             {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setPresamples, 'get':self.presamples,
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
-                            'recording samples BEFORE the trigger event.\n\n' +
-                            'WARNING: The pretrigger only works reliable on the CW1200 hardware. The ChipWhisperer-Lite often has trouble with '+
-                            'pre-triggering for many FPGA builds. It is  recommended use presampling only on the CW1200 hardware.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setMaxSamples, 'get':self.maxSamples,
+                            'recording samples BEFORE the trigger event.'},
+            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples.'+
                             'If using the ChipWhisperer-Lite/ChipWhisperer-Pro (CW1173/CW1200) this is no longer the case, and can be set to almost any number.'},
@@ -276,13 +274,9 @@ class TriggerSettings(Parameterized):
             {'name': 'Stream Mode', 'type': 'bool', 'default': self._stream_mode, 'set': self.setStreamMode,
              'get': self.getStreamMode,
              'help': '%namehdr%' +
-                     'Stream mode streams data over high-speed USB. Requires slow sampling rate (< 8 MS/s).\n\n' +
-                     '*NOTE*: '+
-                     'If the trigger is active on capture (for example, trigger is set to "low" and the external '+
-                     'pin is currently low), you MUST set a positive "offset" of approximately 200 000. This gives '+
-                     'time for the stream mode to initialize, otherwise the hardware triggers too quickly aftter arm. ' +
-                     'The specific timeout can be adjusted lower, but if you notice timeouts on attemping to capture ' +
-                     'this may be the case.\n\n' +
+                     'Streams data over high-speed USB allowing to capture more samples (the exact max sample value and '
+                     'sample rate is unknown since it depends on how fast your computer can read from the buffer).'
+                     ' A slow sampling rate (ADC Freq < 10 MHz) may be required.\n\n' +
                      'This feature is currently in BETA.'})
         self.params.addChildren(child_list)
 
@@ -316,16 +310,16 @@ class TriggerSettings(Parameterized):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK
 
     @setupSetParam("Total Samples")
-    def setMaxSamples(self, samples):
-        self.maxsamples = samples
+    def setNumSamples(self, samples):
+        self._numSamples = samples
         self.oa.setMaxSamples(samples)
 
-    def maxSamples(self,  cached=False):
+    def numSamples(self,  cached=False):
         if self.oa is None:
             return 0
 
         if cached:
-            return self.maxsamples
+            return self._numSamples
         else:
             return self.oa.maxSamples()
 
@@ -1233,7 +1227,7 @@ class OpenADCInterface(object):
             if overflow_bytes_left == (self._stream_len - 3072):
                 logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
             elif unknown_overflow:
-                logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep < 10 MS/s)")
+                logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
                 timeout = True
         else:
             status = self.getStatus()

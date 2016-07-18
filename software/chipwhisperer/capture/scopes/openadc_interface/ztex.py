@@ -20,13 +20,12 @@
 #=================================================
 import logging
 import sys
-
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized
 
 try:
     import usb
@@ -55,13 +54,8 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
             self.scope = oadcInstance
             self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
 
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
     def con(self):
-        if self.ser == None:
-
+        if self.ser is None:
             # Download firmware if required
             self.cwFirmwareConfig.loadRequired()
 
@@ -90,13 +84,17 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
             raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
 
     def dis(self):
-        if self.ser != None:
-            #self.ser.close()
+        if self.ser is not None:
+            self.ser.close()
             self.ser = None
+
+    def __del__(self):
+        if self.ser is not None:
+            self.ser.close()
 
     def read(self, N=0, debug=False):
         try:
-            # self.interface removed from call for latest API compatability
+            # self.interface removed from call for latest API compatibility
             data = self.dev.read(self.readEP, N, timeout=100)
         except IOError:
             return []
@@ -116,14 +114,8 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
             for b in data:
                 print "%02x "%b,
             print ""
-        # self.interface removed from call for latest API compatability
+        # self.interface removed from call for latest API compatibility
         self.dev.write(self.writeEP, data, timeout=500)
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
 
     def getFwLoaderConfigGUI(self):
         if not hasattr(self, 'fwLoaderConfigGUI'):

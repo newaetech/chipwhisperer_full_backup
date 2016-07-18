@@ -87,7 +87,7 @@ class AcquisitionController():
         self.sigNewTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
         return resp
 
-    def doSingleReading(self, update=True, N=None):
+    def doSingleReading(self, numPoints=None):
         # Set mode
         if self.auxList:
             for aux in self.auxList:
@@ -120,7 +120,10 @@ class AcquisitionController():
         # Get ADC reading
         if self.scope:
             try:
-                return not self.scope.capture(update, N)
+                ret = self.scope.capture()
+                if ret:
+                    logging.debug('Timeout happened during acquisition.')
+                return not ret
             except IOError as e:
                 logging.error('IOError: %s' % str(e))
                 return False
@@ -155,7 +158,7 @@ class AcquisitionController():
 
         self.currentTrace = 0
         while self.currentTrace < self.maxtraces:
-            if self.doSingleReading(True, None):
+            if self.doSingleReading():
                 try:
                     if self.writer:
                         for channelNum in channelNumbers:

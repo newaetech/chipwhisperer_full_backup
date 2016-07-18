@@ -69,6 +69,6 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
             self.dis()
             raise
 
-    def capture(self, update=True, numberPoints=None):
-        """Raises IOError if unknown failure, returns 'True' if successful, 'False' if timeout"""
-        return self.scopetype.capture(update, numberPoints)
+    def capture(self):
+        """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
+        return self.scopetype.capture()
