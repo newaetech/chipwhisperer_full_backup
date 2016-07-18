@@ -165,6 +165,9 @@ class AcquisitionController():
                     logging.debug(str(e))
                 self.sigTraceDone.emit()
                 self.currentTrace += 1
+            else:
+                util.updateUI()  # Check if it was aborted
+
             if progressBar is not None:
                 if progressBar.wasAborted():
                     break
@@ -174,7 +177,7 @@ class AcquisitionController():
                 if aux:
                     aux.captureComplete()
 
-        if self.writer:
+        if self.writer and self.writer.numTraces()>0:
             # Don't clear trace as we re-use the buffer
             self.writer.config.setAttr("scopeSampleRate", self.scope.channels[channelNumbers[0]].getSampleRate())
             self.writer.closeAll(clearTrace=False)

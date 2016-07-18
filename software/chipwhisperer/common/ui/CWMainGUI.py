@@ -516,7 +516,6 @@ class CWMainGUI(QMainWindow):
         if len(message) > 150:
             message = message[:147]+"..."
         msg = message + " (" + datetime.now().strftime('%d/%m/%y %H:%M:%S') + ")"
-        logging.debug('Status: ' + msg)
         self.statusBar().showMessage(msg)
 
     def runScript(self, scriptClass, funcName="run"):

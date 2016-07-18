@@ -54,7 +54,8 @@ class ProgressBarText(object):
         return exc_type == Warning
 
     def __del__(self):
-        if __debug__: logging.debug('Deleted: ' + str(self))
+        if __debug__:
+            logging.debug('Deleted: ' + str(self))
 
     def setText(self, text):
         if text:
