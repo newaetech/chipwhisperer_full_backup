@@ -203,7 +203,7 @@ class SimpleSerial(TargetTemplate):
         response = self.ser.read(dataLen)
 
         if len(response) < dataLen:
-            logging.warning('Response too short (len=%d): "%s".' % (len(response), response))
+            logging.warning('Response length shorter than expected (%d<%d): "%s".' % (len(response), dataLen, response))
             return None
 
         #Go through...skipping expected if applicable

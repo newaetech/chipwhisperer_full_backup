@@ -263,7 +263,7 @@ class TriggerSettings(Parameterized):
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
                             'recording samples BEFORE the trigger event.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
+            {'name': 'Total Samples', 'type':'int', 'limits':(1, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples.'+
                             'If using the ChipWhisperer-Lite/ChipWhisperer-Pro (CW1173/CW1200) this is no longer the case, and can be set to almost any number.'},

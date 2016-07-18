@@ -45,6 +45,11 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
+            {'name':'Y Axis', 'type':'group', 'expanded':False, 'children':[
+                {'name':'Unity', 'type':'list', 'values':{"None":"", "Voltage":"V", "Current":"A"}, 'value':"", 'action':self.plotInputTrace},
+                {'name':'Scale Factor', 'type':'float', 'limits':(1E-9, 1E9), 'value':1.0, 'action':self.plotInputTrace},
+                {'name':'Offset Factor', 'type':'float', 'limits':(-1E9, 1E9), 'value':0.0, 'action':self.plotInputTrace},
+            ]},
             {'name':'X Axis', 'type':'list', 'values':{"Sample":"Pts.", "Time":"s"}, 'value':"Pts.", 'action':self.plotInputTrace},
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
@@ -80,6 +85,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         tend = self.findParam('tracerng').getValue()[1]
         pstart = self.findParam('pointrng').getValue()[0]
         pend = self.findParam('pointrng').getValue()[1]
+        yaxisScaleFactor = self.findParam(['Y Axis', 'Scale Factor']).getValue()
+        yaxisOffsetFactor = self.findParam(['Y Axis', 'Offset Factor']).getValue()
 
         if tend<tstart or pend<pstart:
             return
@@ -88,11 +95,13 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             if tend - tstart + 1 > 1:
                 self.setPersistance(True)
 
-            unit = self.findParam('X Axis').getValue()
-            scale = self.findParam('X Axis').getValueKey()
-            self.pw.setLabel('bottom', text=scale, units=unit)
+            yUnit = self.findParam(['Y Axis','Unity']).getValue()
+            xUnit = self.findParam('X Axis').getValue()
+            xScale = self.findParam('X Axis').getValueKey()
+            self.pw.setLabel('bottom', text=xScale, units=xUnit)
+            self.pw.setLabel('left', units=yUnit)
             xaxis = range(pstart + self._traceSource.offset(), pend + self._traceSource.offset() + 1)
-            if scale == 'Time':
+            if xScale == 'Time':
                 tmp = float(self._traceSource.getSampleRate())
                 if tmp == 0:
                     raise Warning('X Axis of type "Time" in "%s" can\'t have "Sample Rate" with value=0. Change it to its actual value in the Trace Manager.' % self.getName())
@@ -101,6 +110,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             for tnum in range(tstart, tend+1):
                 trace = self._traceSource.getTrace(tnum)
                 if trace is not None:
+                    if yaxisScaleFactor != 1.0 or yaxisOffsetFactor != 0.0:
+                        trace = [yaxisOffsetFactor + x * yaxisScaleFactor for x in trace]
                     #TODO - Not sure if should add _traceSource.offset() or not?
                     self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum), xaxis=xaxis)
 
