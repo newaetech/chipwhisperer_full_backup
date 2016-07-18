@@ -160,18 +160,27 @@ class OpenADC(ScopeTemplate, Plugin):
     def arm(self):
         if self.connectStatus.value() is False:
             raise Warning("Scope \"" + self.getName() + "\" is not connected. Connect it first...")
-        if self.advancedSettings:
-            self.advancedSettings.armPreScope()
 
+        self.refreshTimer.stop()  # Disable DCM Status Auto-Refresh during capture
         try:
-            self.qtadc.arm()
+            if self.advancedSettings:
+                self.advancedSettings.armPreScope()
+
+                self.qtadc.arm()
+
+            if self.advancedSettings:
+                 self.advancedSettings.armPostScope()
+
+            self.qtadc.startCaptureThread()
         except Exception:
             self.dis()
+            self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
             raise
-
-        if self.advancedSettings:
-            self.advancedSettings.armPostScope()
 
     def capture(self):
         """Raises IOError if unknown failure, returns 'True' if timeout, 'False' if no timeout"""
-        return self.qtadc.capture()
+        try:
+            ret = self.qtadc.capture()
+        finally:
+            self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
+        return ret
