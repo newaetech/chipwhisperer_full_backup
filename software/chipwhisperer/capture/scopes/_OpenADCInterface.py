@@ -312,16 +312,16 @@ class TriggerSettings(Parameterized):
     @setupSetParam("Total Samples")
     def setNumSamples(self, samples):
         self._numSamples = samples
-        self.oa.setMaxSamples(samples)
+        self.oa.setNumSamples(samples)
 
-    def numSamples(self,  cached=False):
+    def numSamples(self, cached=False):
         if self.oa is None:
             return 0
 
         if cached:
             return self._numSamples
         else:
-            return self.oa.maxSamples()
+            return self.oa.numSamples()
 
     @setupSetParam("Timeout (secs)")
     def setTimeout(self, timeout):
@@ -1050,7 +1050,7 @@ class OpenADCInterface(object):
     def setSettings(self, state, validate=True):
         cmd = bytearray(1)
         cmd[0] = state
-        self.sendMessage(CODE_WRITE, ADDR_SETTINGS, cmd, Validate=validate);
+        self.sendMessage(CODE_WRITE, ADDR_SETTINGS, cmd, Validate=validate)
 
     def settings(self):
         sets = self.sendMessage(CODE_READ, ADDR_SETTINGS)
@@ -1062,7 +1062,9 @@ class OpenADCInterface(object):
     def setReset(self, value):
         if value:
             self.setSettings(self.settings() | SETTINGS_RESET, validate=False)
-            self.hwMaxSamples = self.maxSamples()
+            #TODO: Hack to adjust the hwMaxSamples since the number should be smaller than what is being returned
+            self.hwMaxSamples = self.numSamples() - 45
+            self.setNumSamples(self.hwMaxSamples)
         else:
             self.setSettings(self.settings() & ~SETTINGS_RESET)
 
@@ -1080,7 +1082,7 @@ class OpenADCInterface(object):
         else:
             return None
 
-    def setMaxSamples(self, samples):
+    def setNumSamples(self, samples):
         cmd = bytearray(4)
         cmd[0] = ((samples >> 0) & 0xFF)
         cmd[1] = ((samples >> 8) & 0xFF)
@@ -1103,8 +1105,8 @@ class OpenADCInterface(object):
         #Generate the buffer to save buffer
         self._sbuf = [0] * bufsizebytes
 
-    def maxSamples(self):
-        """Return the number of samples captured in one go."""
+    def numSamples(self):
+        """Return the number of samples captured in one go. Returns max after resetting the hardware"""
         samples = 0x00000000
         temp = self.sendMessage(CODE_READ, ADDR_SAMPLES, maxResp=4)
         samples |= temp[0] << 0
