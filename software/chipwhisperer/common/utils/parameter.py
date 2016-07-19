@@ -667,8 +667,11 @@ class Parameter(object):
                     pass
                 elif child.getType() == "list" and isinstance(child.opts["limits"], dict):
                     value = child.opts["limits"][value]
-                elif child.getType() != "list" and value != "":
-                    value = eval(value)
+                elif value != "":
+                    try:
+                        value = eval(value)
+                    except:
+                        pass
                 if not child.readonly():
                     child.setValue(value)
                 else:

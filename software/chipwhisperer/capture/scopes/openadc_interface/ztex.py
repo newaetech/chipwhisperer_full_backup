@@ -84,13 +84,10 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
             raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
 
     def dis(self):
-        if self.ser is not None:
-            self.ser.close()
-            self.ser = None
+        self.ser = None
 
     def __del__(self):
-        if self.ser is not None:
-            self.ser.close()
+        pass
 
     def read(self, N=0, debug=False):
         try:

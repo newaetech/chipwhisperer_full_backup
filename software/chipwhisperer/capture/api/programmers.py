@@ -92,6 +92,7 @@ class AVRProgrammer(Programmer):
             self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
 
     def erase(self):
+        self.log("Erasing Chip")
         self.avr.eraseChip()
 
     def program(self, filename, memtype="flash", verify=True):
@@ -162,6 +163,7 @@ class XMEGAProgrammer(Programmer):
             self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (data[0], data[1], data[2]))
 
     def erase(self, memtype="chip"):
+        self.log("Erasing Chip")
         if memtype == "app":
             self.xmega.eraseApp()
         elif memtype == "chip":

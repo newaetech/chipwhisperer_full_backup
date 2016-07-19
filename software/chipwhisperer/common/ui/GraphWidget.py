@@ -388,8 +388,7 @@ class GraphWidget(QWidget):
         else:
             self.selectedTrace = trace
             if self.selectedTrace.xData.size > 25000:
-                logging.warning("Trace selection (shadow pen) was disabled: Trace is too large. "
-                                "Keep the number of points bellow 25k")
+                logging.warning("Trace highlighting (shadow pen) disabled: Trace is too large (>25k points).")
             else:
                 self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=2, style=Qt.SolidLine))
             self.selection.setText("Selected Trace: %s" % (self.selectedTrace.id if hasattr(self.selectedTrace, "id") else ""))
