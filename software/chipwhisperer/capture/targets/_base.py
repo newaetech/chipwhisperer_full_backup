@@ -61,8 +61,13 @@ class TargetTemplate(Parameterized, Plugin):
     def con(self, scope=None):
         """Connect to target"""
         Programmer.lastFlashedFile = "unknown"
-        self._con(scope)
-        self.connectStatus.setValue(True)
+        try:
+            self.connectStatus.setValue(True)
+            self._con(scope)
+        except:
+            self.dis()
+            raise
+
 
     def _con(self, scope=None):
         raise NotImplementedError

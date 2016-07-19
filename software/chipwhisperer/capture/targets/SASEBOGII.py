@@ -236,7 +236,7 @@ class SaseboGII(TargetTemplate):
 
     def write(self, address, MSB, LSB):
         if self.connectStatus.value()==False:
-            raise Exception("Can't write to the target while disconected. Connect to it first.")
+            raise Exception("Can't write to the target while disconnected. Connect to it first.")
 
         msg = bytearray(5)
 
