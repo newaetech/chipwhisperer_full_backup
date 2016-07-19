@@ -78,13 +78,10 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         #    self.cwAdvancedSettings.setOpenADC(self.scope)
 
     def dis(self):
-        if self.ser is not None:
-            self.ser.close()
-            self.ser = None
+        self.ser = None
 
     def __del__(self):
-        if self.ser is not None:
-            self.ser.close()
+        pass
 
     def serialRefresh(self, _=None):
         serialnames = ft.listDevices()
