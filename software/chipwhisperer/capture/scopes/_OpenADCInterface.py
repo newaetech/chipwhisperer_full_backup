@@ -970,11 +970,9 @@ class OpenADCInterface(object):
                         errmsg = "For address 0x%02x=%d" % (address, address)
                         errmsg += "  Sent data: "
                         for c in pba: errmsg += "%02x" % c
-                        errmsg += "\n"
-                        errmsg += "  Read data: "
+                        errmsg += " Read data: "
                         if check:
                             for c in check: errmsg += "%02x" % c
-                            errmsg += "\n"
                         else:
                             errmsg += "<Timeout>"
 
@@ -1036,11 +1034,9 @@ class OpenADCInterface(object):
                         errmsg = "For address 0x%02x=%d" % (address, address)
                         errmsg += "  Sent data: "
                         for c in pba: errmsg += "%02x" % c
-                        errmsg += "\n"
-                        errmsg += "  Read data: "
+                        errmsg += " Read data: "
                         if check:
                             for c in check: errmsg += "%02x" % c
-                            errmsg += "\n"
                         else:
                             errmsg += "<Timeout>"
 
@@ -1228,6 +1224,7 @@ class OpenADCInterface(object):
 
             if overflow_bytes_left == (self._stream_len - 3072):
                 logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
+                timeout = True
             elif unknown_overflow:
                 logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
                 timeout = True
@@ -1263,7 +1260,8 @@ class OpenADCInterface(object):
             if nosampletimeout == 0:
                 logging.warning('No samples received. Either very long offset, or no ADC clock (try "Reset ADC DCM"). '
                                 'If you need such a long offset, manually update "nosampletimeout" limit in source code.')
-        
+                timeout = True
+
         return timeout
 
     def flush(self):
@@ -1446,7 +1444,7 @@ class OpenADCInterface(object):
         diff = self.presamples_desired - trigsamp
         if diff > 0:
                fpData = [pad]*diff + fpData
-               logging.warning('Pretrigger not met. Increase presampleTempMargin.')
+               logging.warning('Pretrigger not met. Increase presampleTempMargin (in the code).')
         else:
                fpData = fpData[-diff:]
 

@@ -207,8 +207,6 @@ class AVRProgrammerDialog(QtFixes.QDialog):
                 self.readSignature(close=False)
 
                 if erase:
-                    self.statusLine.appendPlainText("Erasing Chip")
-                    QCoreApplication.processEvents()
                     self.avr.erase()
                     self.avr.close()
                     self.readSignature(close=False)
@@ -316,8 +314,6 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
 
                 if erase:
                     try:
-                        self.statusLine.appendPlainText("Erasing Chip")
-                        QCoreApplication.processEvents()
                         self.xmega.erase()
                     except IOError:
                         self.statusLine.appendPlainText("**chip-erase timeout, erasing application only**")
