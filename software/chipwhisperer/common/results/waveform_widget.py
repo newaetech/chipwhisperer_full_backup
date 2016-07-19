@@ -88,7 +88,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         yaxisScaleFactor = self.findParam(['Y Axis', 'Scale Factor']).getValue()
         yaxisOffsetFactor = self.findParam(['Y Axis', 'Offset Factor']).getValue()
 
-        if tend<tstart or pend<pstart:
+        if tend < tstart or pend < pstart:
             return
 
         try:
@@ -104,7 +104,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             if xScale == 'Time':
                 tmp = float(self._traceSource.getSampleRate())
                 if tmp == 0:
-                    raise Warning('X Axis of type "Time" in "%s" can\'t have "Sample Rate" with value=0. Change it to its actual value in the Trace Manager.' % self.getName())
+                    raise Warning('X Axis of type "Time" in "%s" can\'t have "Sample Rate" with value=0. '
+                                  'Change it to its actual value in the Trace Manager.' % self.getName())
                 xaxis = [v/tmp for v in xaxis]
 
             for tnum in range(tstart, tend+1):
