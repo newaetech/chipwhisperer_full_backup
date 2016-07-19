@@ -43,13 +43,14 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         GraphWidget.__init__(self)
 
         self.getParams().addChildren([
-            {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'], 'value':'Normal',
-                                 'help':'%namehdr%'+
-                                        "Draw types:\n"
-                                        " * Fast: Group traces into a min/max area;\n"
-                                        " * Normal: Plot all traces continuously;\n"
-                                        " * Detailed: Plot all traces individually.\n"
-                                        "Only highlighted traces can be selected in fast/normal.\n"
+            {'name':'Draw Type', 'type':'list', 'key':'drawtype', 'values':['Fastest', 'Normal', 'Detailed'],
+             'value':'Normal',
+             'help': '%namehdr%'+
+                     "Draw types:\n"
+                     " * Fast: Group traces into a min/max area;\n"
+                     " * Normal: Plot all traces continuously;\n"
+                     " * Detailed: Plot all traces individually.\n\n"
+                     "Only highlighted traces can be selected in fast/normal modes.\n"
              },
         ])
 
