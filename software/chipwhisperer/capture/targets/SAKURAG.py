@@ -80,7 +80,7 @@ class ChipWhispererComm(Parameterized):
                 self.oaiface.con()
                 self.oa = self.qtadc.sc
             else:
-                raise Warning("No OpenADC detected  - did you connect in scope module already and/or set serial number (hit 'REFRESH')?")
+                raise Warning("No OpenADC detected  - did you connect the scope module and/or set serial number (hit 'REFRESH')?")
 
         # Reset AES Core
         self.oa.sendMessage(self.CODE_WRITE, self.ADDR_STATUS, [self.FLAG_RESET], Validate=False)
