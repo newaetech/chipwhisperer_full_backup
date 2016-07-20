@@ -50,13 +50,13 @@ class TuningParameter(Parameterized):
 
         self.getParams().addChildren([
             {'name':'Name', 'type':'str', 'key':'humanname', 'value':'Param #%d' % num, 'action':lambda p:self.nameChange(p.getValue())},
-            {'name':'Parameter Path', 'type':'str', 'key':'parampath', 'value':'[]', 'action':lambda p:self.updateParams()},
+            {'name':'Parameter Path', 'type':'str', 'key':'parampath', 'value':'[]', 'action':self.updateParams},
             {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int},
-            {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'default':(0, 10), 'action':lambda p:self.updateParams()},
+            {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'default':(0, 10), 'action':self.updateParams},
             {'name':'Value', 'type':'float', 'key':'curval', 'value':1.0},
-            {'name':'Step', 'type':'float', 'key':'step', 'value':1.0, 'action':lambda p:self.updateParams()},
-            {'name':'Repeat', 'type':'int', 'key':'repeat', 'value':1, 'action':lambda p:self.updateParams()},
-            {'name':'Mode', 'type':'list', 'key':'mode', 'values':["Linear"], 'value':"Linear", 'action':lambda p:self.updateParams()},
+            {'name':'Step', 'type':'float', 'key':'step', 'value':1.0, 'action':self.updateParams},
+            {'name':'Repeat', 'type':'int', 'key':'repeat', 'value':1, 'action':self.updateParams},
+            {'name':'Mode', 'type':'list', 'key':'mode', 'values':["Linear"], 'value':"Linear", 'action':self.updateParams},
         ])
         self.cnt = 0
         self.updateParams()
@@ -72,7 +72,6 @@ class TuningParameter(Parameterized):
         self.updateParams()
 
     def updateParams(self, _=None):
-
         rng = self.findParam('range').getValue()
 
         # Force to be valid values
