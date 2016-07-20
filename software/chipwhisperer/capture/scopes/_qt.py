@@ -133,7 +133,6 @@ class OpenADCQt(Parameterized):
 
         # Try a few times
         while(deviceFound == False):
-
             if self.sc.devicePresent():
                 deviceFound = True
                 break

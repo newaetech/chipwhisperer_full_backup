@@ -43,7 +43,7 @@ class SmartCard(TargetTemplate):
         self.params.addChildren([
             {'name':'Reader Hardware', 'type':'list', 'values':readers, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'SmartCard Protocol', 'type':'list', 'values':protocols, 'get':self.getProtocol, 'set':self.setProtocol},
-            {'name':'SmartCard Explorer', 'type':'action', 'action':lambda _: self.getScgui().show()}
+            {'name':'SmartCard Explorer Dialog', 'type':'action', 'action':lambda _: self.getScgui().show()}
         ])
 
     def __del__(self):

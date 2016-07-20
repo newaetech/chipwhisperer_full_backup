@@ -226,7 +226,6 @@ class CW305(TargetTemplate):
             
         #LED On
         self.fpga_write(0x10+self._woffset, [0x01])
-            
 
         time.sleep(0.01)
         self.usb_trigger_toggle()
