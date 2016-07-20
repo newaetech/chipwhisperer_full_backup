@@ -70,18 +70,18 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         try:
             self.scope.con(self.ser)
             logging.info('OpenADC Found, Connecting')
-        except IOError,e:
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC Error: %s"%(str(exctype) + str(value)) + " - " + e.message)
-
-        #if self.cwAdvancedSettings:
-        #    self.cwAdvancedSettings.setOpenADC(self.scope)
+            raise IOError("OpenADC Error: %s" % (str(exctype) + str(value)) + " - " + e.message)
 
     def dis(self):
         self.ser = None
+        if hasattr(self, 'dev'):
+            self.dev.close()
+            del self.dev
 
     def __del__(self):
-        pass
+        self.dis()
 
     def serialRefresh(self, _=None):
         serialnames = ft.listDevices()
