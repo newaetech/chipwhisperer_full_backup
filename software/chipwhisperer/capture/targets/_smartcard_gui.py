@@ -26,6 +26,8 @@ import logging
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.utils.util import hexstr2list
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
@@ -107,8 +109,8 @@ class APDUFilter(QObject):
 
 
 class SmartCardGUICard(QtFixes.QDialog):
-    def __init__(self, parent, smartCardAPI):
-        super(SmartCardGUICard, self).__init__(parent)
+    def __init__(self, smartCardAPI):
+        super(SmartCardGUICard, self).__init__(CWMainGUI.getInstance())
         self.setWindowTitle("Smartcard Explorer")
         self.smartCardAPI = smartCardAPI
         self.mainLayout = QVBoxLayout()

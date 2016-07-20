@@ -116,5 +116,5 @@ class SmartCard(TargetTemplate):
 
     def getScgui(self):
         if not hasattr(self, 'scgui'):
-            self.scgui = SmartCardGUICard(mainWindow, self)
+            self.scgui = SmartCardGUICard(self)
         return self.scgui
