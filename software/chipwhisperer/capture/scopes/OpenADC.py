@@ -166,7 +166,7 @@ class OpenADC(ScopeTemplate, Plugin):
             if self.advancedSettings:
                 self.advancedSettings.armPreScope()
 
-                self.qtadc.arm()
+            self.qtadc.arm()
 
             if self.advancedSettings:
                  self.advancedSettings.armPostScope()
