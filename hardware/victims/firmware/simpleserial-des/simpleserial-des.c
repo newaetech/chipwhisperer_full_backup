@@ -146,10 +146,10 @@ int main
 				trigger_low();
 				               
 				/* Print Results */
-				hex_print(ct, 16, asciibuf);
+				hex_print(ct, 8, asciibuf);
 				
 				putch('r');
-				for(int i = 0; i < 32; i++){
+				for(int i = 0; i < 16; i++){
 					putch(asciibuf[i]);
 				}
 				putch('\n');
