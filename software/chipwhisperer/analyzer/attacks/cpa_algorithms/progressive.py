@@ -66,7 +66,7 @@ class CPAProgressiveOneSubkey(object):
         sumden2 = (np.square(self.sumt) - self.totalTraces * self.sumtq)
 
         #For each 0..0xFF possible value of the key byte
-        for key in range(0, 256):
+        for key in range(0, 64):
             #Initialize arrays & variables to zero
             sumnum = np.zeros(len(traces[0,:]))
             # sumden1 = np.zeros(len(traces[0,:]))
@@ -183,7 +183,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         brange = self.brange
-        self.all_diffs = range(0,16)
+        self.all_diffs = range(0,8)
         numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:

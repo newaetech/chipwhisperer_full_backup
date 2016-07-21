@@ -24,23 +24,20 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.common.utils import util
+from chipwhisperer.analyzer.models.des.key_schedule import *
 
-numSubKeys = 16
-permPerSubkey = 256
+numSubKeys = 8
+permPerSubkey = 64
 
 #Generate Hamming Weight LUT:
 HW8Bit = []
-for n in range(0, 256):
+for n in range(permPerSubkey):
    HW8Bit += [bin(n).count("1")]
 
 
 def processKnownKey(setting, inpkey):
-    return keyScheduleRounds(inpkey, 0, 10)
+    return keyScheduleRounds(inpkey, 0, 1)
 
 
 def leakage(pt, ct, guess, bnum, setting, state):
-        return HW8Bit[sbox(pt[bnum] ^ guess)]
-
+        return HW8Bit[sbox_in_first_fbox(pt, guess, bnum)]
