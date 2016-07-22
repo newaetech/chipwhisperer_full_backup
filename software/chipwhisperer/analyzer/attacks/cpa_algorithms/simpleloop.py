@@ -39,13 +39,12 @@ class CPASimpleLoop(Parameterized, Plugin):
     """
     _name = "Simple"
 
-    def __init__(self, targetModel, leakageFunction):
+    def __init__(self, targetModel):
         self.model = targetModel
-        self.leakage = leakageFunction
         self.stats = DataTypeDiffs()
         self.modelstate = {'knownkey':None}
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, state, pbcnt):
         diffs = [0]*256
 
         if pointRange == None:
@@ -90,7 +89,7 @@ class CPASimpleLoop(Parameterized, Plugin):
 
                 state['knownkey'] = nk
 
-                hypint = model.leakage(pt, ct, key, bnum, leakagetype, state)
+                hypint = model.leakage(pt, ct, key, bnum, state)
 
                 hyp[tnum] = hypint
 
@@ -168,7 +167,7 @@ class CPASimpleLoop(Parameterized, Plugin):
 
         pbcnt = 0
         for bnum in brange:
-            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.leakage, self.modelstate, pbcnt)
+            (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.modelstate, pbcnt)
             self.stats.updateSubkey(bnum, data, tnum=tracerange[1])
             if progressBar:
                 progressBar.updateStatus(pbcnt, bnum)
@@ -181,6 +180,6 @@ class CPASimpleLoop(Parameterized, Plugin):
 
     def processKnownKey(self, inpkey):
         if hasattr(self.model, 'processKnownKey'):
-            return self.model.processKnownKey(self.leakage, inpkey)
+            return self.model.processKnownKey(inpkey)
         else:
             return inpkey

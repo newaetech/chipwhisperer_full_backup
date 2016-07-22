@@ -554,6 +554,7 @@ class Parameter(object):
                         value.getParams().hide()
                     elif mode == "child":
                         self.append(value.getParams())
+                        value.getParams().hide()
 
         self.setValue(self.getValue(), init=True)
         for child in self.childs:

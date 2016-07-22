@@ -101,11 +101,11 @@ class CWAnalyzerGUI(CWMainGUI):
                           self.settingsTraceExplorer, self.settingsResultsDock])
         self.attackScriptGen.editorDocks()
 
-    def tracesChanged(self):
-        """Traces changed due to loading new project or adjustment in trace manager,
-        so adjust limits displayed and re-plot the new input trace"""
-
-        self.attackScriptGen.reloadScripts()
+    # def tracesChanged(self):
+    #     """Traces changed due to loading new project or adjustment in trace manager,
+    #     so adjust limits displayed and re-plot the new input trace"""
+    #
+    #     self.attackScriptGen.reloadScripts()
 
     @staticmethod
     def getInstance():

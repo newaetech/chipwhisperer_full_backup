@@ -31,10 +31,9 @@ import sys
 from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.utils import pluginmanager
 from _base import AttackBaseClass
-from _generic_parameters import AttackGenericParameters
 
 
-class Profiling(AttackBaseClass, AttackGenericParameters):
+class Profiling(AttackBaseClass):
     """Profiling Power Analysis Attack"""
     _name = "Profiling"
 
@@ -47,7 +46,6 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
         self.getParams().addChildren([
             {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':algos['Template Attack'], 'action':self.updateAlgorithm}, #TODO: Should be called from the AES module to figure out # of bytes
         ])
-        AttackGenericParameters.__init__(self)
 
         # Do not use absolute
         self.useAbs = False
@@ -144,7 +142,7 @@ class Profiling(AttackBaseClass, AttackGenericParameters):
                     textouts.append(self.getTraceSource().getTextout(i))
 
                 #self.attack.clearStats()
-                self.attack.setByteList(self.targetBytes())
+                self.attack.setByteList(self.getTargetSubkeys())
                 self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
 
                 #TODO:  pointRange=self.TraceRangeList[1:17]

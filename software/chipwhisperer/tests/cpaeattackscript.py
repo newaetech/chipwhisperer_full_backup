@@ -104,7 +104,7 @@ class Attack(UserScriptBase):
         self.attack.setTracesPerAttack(50)
         self.attack.setIterations(1)
         self.attack.setReportingInterval(10)
-        self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        self.attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
         self.attack.setTraceSource(self.traces)
         self.attack.setPointRange((0, 2999))
 

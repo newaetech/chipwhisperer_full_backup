@@ -36,7 +36,7 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
     """
     _name = "Bayesian CPA"
 
-    def __init__(self, targetModel, leakageFunction):
+    def __init__(self, targetModel):
         self.model = targetModel
 
     def setByteList(self, brange):

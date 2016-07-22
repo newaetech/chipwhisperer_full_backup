@@ -127,7 +127,7 @@ class CPAProgressiveOneSubkey(object):
     def clearStats(self):
         self.anstate = None
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, state, pbcnt):
 
         if pointRange == None:
             traces = traces_all
@@ -144,7 +144,7 @@ class CPAProgressiveOneSubkey(object):
         
         guessdata = np.zeros((256, npoints), dtype=np.float64)
 
-        mstate.leakagemode = leakagetype
+        mstate.leakagemode = model.getHwModel()
 
         self.osk(traces.ctypes.data_as(POINTER(c_double)),
                  plaintexts.ctypes.data_as(POINTER(c_uint8)),
@@ -174,7 +174,7 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
     """
     _name = "Progressive-C Accel"
 
-    def __init__(self, targetModel, leakageFunction):
+    def __init__(self, targetModel):
         AutoScript.__init__(self)
 
         self.getParams().addChildren([
@@ -183,7 +183,6 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
         ])
 
         self.model = targetModel
-        self.leakage = leakageFunction
         self.sr = None
         self.stats = DataTypeDiffs()
         self.updateScript()
@@ -287,7 +286,7 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, self.model, self.leakage, cpa[bnum].modelstate, pbcnt)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, self.model, cpa[bnum].modelstate, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True
@@ -312,6 +311,6 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
 
     def processKnownKey(self, inpkey):
         if hasattr(self.model, 'processKnownKey'):
-            return self.model.processKnownKey(self.leakage, inpkey)
+            return self.model.processKnownKey(inpkey)
         else:
             return inpkey

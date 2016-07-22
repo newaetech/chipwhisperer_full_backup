@@ -47,7 +47,7 @@ class CPAProgressiveOneSubkey(object):
         self.totalTraces = 0
         self.modelstate = {'knownkey':None}
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, leakagetype, state, pbcnt):
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, state, pbcnt):
         diffs = [0]*256
         self.totalTraces += numtraces
 
@@ -96,7 +96,7 @@ class CPAProgressiveOneSubkey(object):
 
                 state['knownkey'] = nk
 
-                hypint = model.leakage(pt, ct, key, bnum, leakagetype, state)
+                hypint = model.leakage(pt, ct, key, bnum, state)
 
                 hyp[tnum] = hypint
 
@@ -157,7 +157,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
     """
     _name = "Progressive"
 
-    def __init__(self, targetModel, leakageFunction):
+    def __init__(self):
         AutoScript.__init__(self)
 
         self.getParams().addChildren([
@@ -165,8 +165,6 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
 
-        self.model = targetModel
-        self.leakage = leakageFunction
         self.sr = None
         self.stats = DataTypeDiffs()
         self.updateScript()
@@ -175,14 +173,10 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
         # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
         pass
 
-    def setTargetBytes(self, brange):
-        self.brange = brange
-
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
-        brange = self.brange
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, brange=[]):
         self.all_diffs = range(0,8)
         numtraces = tracerange[1] - tracerange[0] + 1
 
@@ -260,7 +254,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, self.model, self.leakage, cpa[bnum].modelstate, pbcnt)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, model, cpa[bnum].modelstate, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True
@@ -286,8 +280,11 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
+    def setModel(self, model):
+        self.model = model
+
     def processKnownKey(self, inpkey):
         if hasattr(self.model, 'processKnownKey'):
-            return self.model.processKnownKey(self.leakage, inpkey)
+            return self.model.processKnownKey(inpkey)
         else:
             return inpkey

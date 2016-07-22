@@ -66,15 +66,10 @@ class AttackScriptGen(Parameterized):
         self.attackParams = Parameter(name="Attack", type='group')
         self.params.getChild(['Attack','Module']).stealDynamicParameters(self.attackParams)
 
-        self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
-
     def flushTimer(self):
         """Flush all pending script updates"""
         [p.updateDelayTimer.flush() for p in self.preprocessingListGUI if p is not None]
         self.attack.updateDelayTimer.flush()
-
-    def updateAttackTraceLimits(self):
-        self.attack.setTraceLimits(self.cwGUI.api.project().traceManager().numTraces(), self.cwGUI.api.project().traceManager().numPoints())
 
     def editorControl(self, filename, filedesc, default=False, bringToFront=True):
         """This is the call-back from the script editor file list, which opens editors"""
@@ -157,7 +152,6 @@ class AttackScriptGen(Parameterized):
     def setAttack(self, module):
         self.attack = module
         if module:
-            self.updateAttackTraceLimits()
             self.reloadScripts()
             self.attack.scriptsUpdated.connect(self.reloadScripts)
             self.attack.runScriptFunction.connect(self.runScriptFunction)

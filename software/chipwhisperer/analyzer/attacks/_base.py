@@ -23,20 +23,68 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
+
+import sys
+
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
+from chipwhisperer.common.utils.tracesource import PassiveTraceObserver, ActiveTraceObserver, TraceSource
 from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver
+from chipwhisperer.common.api.autoscript import AutoScript
+from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.utils import pluginmanager
+
+def enforceLimits(value, limits):
+    if value < limits[0]:
+        value = limits[0]
+    elif value > limits[1]:
+        value = limits[1]
+    return value
 
 
-class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
+class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoScript, Plugin):
     """Generic Attack Interface"""
-    _name = "None"
+    _name= 'Attack Settings'
 
     def __init__(self):
+        AutoScript.__init__(self)
         AnalysisSource.__init__(self)
         PassiveTraceObserver.__init__(self)
-        self.getParams().getChild("Input").hide()
+        # self.getParams().getChild("Input").hide()
+        TraceSource.sigRegisteredObjectsChanged.connect(self.traceSourcesChanged)
+        self.traceLimitsChanged = util.Signal()
+        self._traceStart = 0
+        self._iterations = 1
+        self._tracePerAttack = 1
+        self._reportingInterval = 10
+        self._pointRange = (0,0)
+        self._targetSubkeys = []
+        self.useAbs = True
+
+        models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
+        self.getParams().addChildren([
+            {'name':'Crypto Algorithm', 'key':'hw_algo', 'type':'list', 'values':models, 'value':models['AES Model'], 'action':self.refreshByteList, 'childmode':'child'},
+            {'name':'Take Absolute', 'type':'bool', 'get':self.getAbsoluteMode, 'set':self.setAbsoluteMode},
+            {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateGenericScript},
+        ])
+        self.getParams().init()
+        self.getParams().addChildren([
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.getTraceStart, 'set':self.setTraceStart, 'action':self.updateGenericScript},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'get':self.getTracesPerAttack, 'set':self.setTracesPerAttack, 'action':self.updateGenericScript},
+            {'name':'Iterations', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'get':self.getIterations, 'set':self.setIterations, 'action':self.updateGenericScript},
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'get':self.getReportingInterval, 'set':self.setReportingInterval, 'action':self.updateGenericScript},
+        ])
+
         if __debug__: logging.debug('Created: ' + str(self))
+
+    @setupSetParam('Input')
+    def setTraceSource(self, traceSource):
+        if self._traceSource:
+            self._traceSource.sigTracesChanged.disconnect(self.updateTraceLimits)
+        if traceSource:
+            traceSource.sigTracesChanged.connect(self.updateTraceLimits)
+        self._traceSource = traceSource
+        self.updateTraceLimits()
 
     def processKnownKey(self, inpkey):
         """
@@ -57,33 +105,35 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
     def getTraceStart(self):
         return self._traceStart
 
+    @setupSetParam("Starting Trace")
     def setTraceStart(self, tnum):
         self._traceStart = tnum
 
     def getIterations(self):
         return self._iterations
 
+    @setupSetParam("Iterations")
     def setIterations(self, its):
         self._iterations = its
 
     def getTracesPerAttack(self):
         return self._tracePerAttack
 
+    @setupSetParam("Traces per Attack")
     def setTracesPerAttack(self, trace):
         self._tracePerAttack = trace
 
     def getReportingInterval(self):
-        return self._reportinginterval
+        return self._reportingInterval
 
+    @setupSetParam("Reporting Interval")
     def setReportingInterval(self, ri):
-        self._reportinginterval = ri
+        self._reportingInterval = ri
 
     def getPointRange(self, bnum=None):
-        if isinstance(self._pointRange, list) and bnum is not None:
-            return self._pointRange[bnum]
-        else:
-            return self._pointRange
+        return self._pointRange
 
+    @setupSetParam("Points Range")
     def setPointRange(self, rng):
         self._pointRange = rng
 
@@ -94,14 +144,88 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Plugin):
             key = [None] * len(self.getStatistics().diffs)
         return key
 
-    def setTargetBytes(self, blist):
-        self._targetbytes = blist
+    def setTargetSubkeys(self, blist):
+        self._targetSubkeys = blist
 
-    def targetBytes(self):
-        return self._targetbytes
+    def getTargetSubkeys(self):
+        return self._targetSubkeys
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
+
+    def updateScript(self, _=None):
+        pass
+
+    def getAbsoluteMode(self):
+        return self.useAbs
+
+    @setupSetParam("Take Absolute")
+    def setAbsoluteMode(self, mode):
+        self.useAbs = mode
+
+    def refreshByteList(self, _=None):
+        self.getParams().addChildren([
+            {'name':'Attacked Subkeys', 'type':'group', 'children': [
+                dict(name='Subkey %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True,
+                     action=self.updateScript) for bnum in range(0, self.findParam('Crypto Algorithm').getValue().getNumSubKeys())
+            ]}])
+        self.updateScript()
+
+    def getEnabledSubkeys(self):
+        blist = []
+        for bnum in range(self.findParam('Crypto Algorithm').getValue().getNumSubKeys()):
+                if self.findParam(['Attacked Subkeys', ('Subkey %d' % bnum)]).getValue():
+                    blist.append(bnum)
+        return blist
+
+    def updateGenericScript(self, _=None):
+        runs = self.findParam('runs')
+        atraces = self.findParam('atraces')
+        strace = self.findParam('strace')
+        ri = self.findParam('reportinterval')
+
+        #print "runs = %d\natraces= %d\nstrace = %d\n"%(runs.value(), atraces.value(), strace.value())
+
+        if (runs.getValue() * atraces.getValue() + strace.getValue()) > self._traceSource.numTraces() or atraces.getValue()<=0:
+            solv = (self._traceSource.numTraces() - strace.getValue()) / runs.getValue()
+            solv = int(solv)
+            atraces.setValue(1, blockAction = True)
+            atraces.setLimits((1, solv))
+            atraces.setValue(solv, blockAction = True)
+        else:
+            atraces.setLimits((1, self._traceSource.numTraces()))
+
+        pointrng = self.findParam('prange').getValue()
+
+        hardwareStr = self.findParam('Crypto Algorithm').getValue().__class__.__name__
+        leakModelStr = self.findParam('Crypto Algorithm').getValue().getHwModel()
+
+        self.importsAppend("from %s import %s" % (sys.modules[self.findParam('Crypto Algorithm').getValue().__class__.__module__].__name__, hardwareStr))
+
+        self.addFunction("init", "setAnalysisAlgorithm", "%s(%s)" % (hardwareStr, leakModelStr))
+        self.addFunction("init", "setTraceStart", "%d" % strace.getValue())
+        self.addFunction("init", "setTracesPerAttack", "%d" % atraces.getValue())
+        self.addFunction("init", "setIterations", "%d" % runs.getValue())
+        self.addFunction("init", "setReportingInterval", "%d" % ri.getValue())
+        self.addFunction("init", "setPointRange", "(%d,%d)" % (pointrng[0], pointrng[1]))
+
+    def updateTraceLimits(self):
+        if self._traceSource is None:
+            return
+
+        self.findParam('prange').setLimits((0, self._traceSource.numPoints()-1))
+        self.findParam('prange').setValue((0, self._traceSource.numPoints()-1))
+
+        self.addFunction("init", "setPointRange", "(%d,%d)" % (0, self._traceSource.numPoints()))
+
+        strace = self.findParam('strace')
+        self.findParam('runs').setValue(1)
+        atrace = self.findParam('atraces')
+
+        strace.setLimits((0, self._traceSource.numTraces()-1))
+        atrace.setValue(1, blockAction=True)
+        atrace.setLimits((1, self._traceSource.numTraces()))
+        atrace.setValue(self._traceSource.numTraces(), blockAction=True)
 
 
 class AttackObserver(AnalysisObserver):
