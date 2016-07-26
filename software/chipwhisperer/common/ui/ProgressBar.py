@@ -72,7 +72,7 @@ class ProgressBarText(object):
         self.textValues = textValues
 
     def getStatusText(self):
-        if self.textValues and not self.wasAborted():
+        if self.textValues is not None and not self.wasAborted():
             return self.statusMask % self.textValues
         return self.statusMask
 

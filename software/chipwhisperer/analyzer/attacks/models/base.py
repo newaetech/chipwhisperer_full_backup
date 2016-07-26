@@ -42,13 +42,14 @@ class ModelsBase(Parameterized):
           7, 7, 8]
 
     def __init__(self, numSubKeys, permPerSubkey, model=None):
+        self.sigParametersChanged = util.Signal()
         self.numSubKeys = numSubKeys
         self.permPerSubkey = permPerSubkey
         self.model = model
         self.getParams().addChildren([
-            {'name':'Hardware Model', 'key':'hw_model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel},
-            {'name':'Number of SubKeys', 'key':'hw_model', 'type':'int', 'get':self.getNumSubKeys, 'readonly':True},
-            {'name':'Number of Permutations', 'key':'hw_model', 'type':'int', 'get':self.getPermPerSubkey, 'readonly':True},
+            {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel},
+            {'name':'Number of SubKeys', 'type':'int', 'get':self.getNumSubKeys, 'readonly':True},
+            {'name':'Number of Permutations', 'type':'int', 'get':self.getPermPerSubkey, 'readonly':True},
         ])
 
     def processKnownKey(self, inpkey):
@@ -66,9 +67,10 @@ class ModelsBase(Parameterized):
     def getHwModel(self):
         return self.model
 
-    @setupSetParam("hw_model")
+    @setupSetParam("Hardware Model")
     def setHwModel(self, model):
         self.model = model
+        self.sigParametersChanged.emit()
 
     def getHwModelString(self):
         return sys.modules[self.__class__.__module__].__name__  + '.' + self.__class__.__name__  + '.' + self.hwModels_toStr[self.model]

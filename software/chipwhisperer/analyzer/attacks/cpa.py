@@ -39,11 +39,11 @@ class CPA(AttackBaseClass):
     def __init__(self):
         self.algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", True, False)
         self._analysisAlgorithm = self.algos["Progressive"]
+        AttackBaseClass.__init__(self)
         self.getParams().addChildren([
-            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':self.algos, 'get':self.getAnalysisAlgorithm, 'set':self.setAlgorithm, 'childmode':'child'}
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':self.algos, 'get':self.getAnalysisAlgorithm, 'set':self.setAlgorithm}
         ])
         self.setAlgorithm(self.findParam('CPA_algo').getValue())
-        AttackBaseClass.__init__(self)
         self.updateScript()
 
     def getAnalysisAlgorithm(self):
@@ -55,11 +55,12 @@ class CPA(AttackBaseClass):
 
         if hasattr(self._analysisAlgorithm, 'scriptsUpdated'):
             self._analysisAlgorithm.scriptsUpdated.connect(self.updateScript)
+        self.updateScript()
 
-    def setAnalysisAlgorithm(self, analysisAlgorithm, hardwareModel, leakageModel):
-        self.attack = analysisAlgorithm(leakageModel)
-        self.attackModel = hardwareModel
-        self.attackModel.setHwModel(leakageModel)
+    def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg, hwmodel):
+        self.attack = analysisAlgorithm()
+        self.attackModel = cryptoalg()
+        self.attackModel.setHwModel(hwmodel)
 
     def updateScript(self, _=None):
         AttackBaseClass.updateScript(self)
@@ -69,8 +70,8 @@ class CPA(AttackBaseClass):
         if hasattr(self._analysisAlgorithm, '_smartstatements'):
             self.mergeGroups('init', self._analysisAlgorithm, prefix='attack')
 
-        analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__
-        cryptoalg = sys.modules[self.findParam('Crypto Algorithm').getValue().__class__.__module__].__name__
+        analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__ + '.' + self._analysisAlgorithm.__class__.__name__
+        cryptoalg = sys.modules[self.findParam('Crypto Algorithm').getValue().__class__.__module__].__name__ + '.' + self.findParam('Crypto Algorithm').getValue().__class__.__name__
         hwmodel = self.findParam('Crypto Algorithm').getValue().getHwModelString()
 
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, cryptoalg, hwmodel), loc=0)

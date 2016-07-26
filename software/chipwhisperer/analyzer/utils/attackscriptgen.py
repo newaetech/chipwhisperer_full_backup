@@ -31,6 +31,8 @@ from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from chipwhisperer.common.results.base import ResultsBase
 from functools import partial
 
+from chipwhisperer.common.utils.tracesource import TraceSource
+
 
 class AttackScriptGen(Parameterized):
     _name = "Attack Script Generator"
@@ -65,6 +67,10 @@ class AttackScriptGen(Parameterized):
 
         self.attackParams = Parameter(name="Attack", type='group')
         self.params.getChild(['Attack','Module']).stealDynamicParameters(self.attackParams)
+
+    def projectChanged(self):
+        if self.attack:
+            self.attack.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
 
     def flushTimer(self):
         """Flush all pending script updates"""

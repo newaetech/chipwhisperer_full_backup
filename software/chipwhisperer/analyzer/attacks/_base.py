@@ -23,9 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
-import sys
-
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver, ActiveTraceObserver, TraceSource
 from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisObserver
@@ -50,7 +47,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         AutoScript.__init__(self)
         AnalysisSource.__init__(self)
         PassiveTraceObserver.__init__(self)
-        # self.getParams().getChild("Input").hide()
+        self.getParams().getChild("Input").hide()
         TraceSource.sigRegisteredObjectsChanged.connect(self.traceSourcesChanged)
         self.traceLimitsChanged = util.Signal()
         self._traceStart = 0
@@ -67,6 +64,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             {'name':'Take Absolute', 'type':'bool', 'get':self.getAbsoluteMode, 'set':self.setAbsoluteMode},
             {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateScript},
         ])
+        for m in models.itervalues():
+            m.sigParametersChanged.connect(self.updateScript)
+
         self.getParams().init()
         self.getParams().addChildren([
             {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.getTraceStart, 'set':self.setTraceStart, 'action':self.updateScript},
@@ -167,13 +167,17 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
                 dict(name='Subkey %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True,
                      action=self.updateScript) for bnum in range(0, self.findParam('Crypto Algorithm').getValue().getNumSubKeys())
             ]}])
+
         self.updateScript()
 
     def getEnabledSubkeys(self):
         blist = []
-        for bnum in range(self.findParam('Crypto Algorithm').getValue().getNumSubKeys()):
+        try:
+            for bnum in range(self.findParam('Crypto Algorithm').getValue().getNumSubKeys()):
                 if self.findParam(['Attacked Subkeys', ('Subkey %d' % bnum)]).getValue():
                     blist.append(bnum)
+        except KeyError:
+            pass
         return blist
 
     def updateScript(self, _=None):

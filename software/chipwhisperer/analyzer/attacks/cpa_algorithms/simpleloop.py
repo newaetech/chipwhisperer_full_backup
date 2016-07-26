@@ -26,12 +26,14 @@
 #=================================================
 
 import numpy as np
+
+from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
-class CPASimpleLoop(Parameterized, Plugin):
+class CPASimpleLoop(CpaAlgorithmBase, Plugin):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
     This attack does not provide trace-by-trace statistics however, you can only gather results once
@@ -39,13 +41,12 @@ class CPASimpleLoop(Parameterized, Plugin):
     """
     _name = "Simple"
 
-    def __init__(self, targetModel):
-        self.model = targetModel
-        self.stats = DataTypeDiffs()
+    def __init__(self):
+        CpaAlgorithmBase.__init__(self)
         self.modelstate = {'knownkey':None}
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, state, pbcnt):
-        diffs = [0]*256
+        diffs = [0]*self.model.getPermPerSubkey()
 
         if pointRange == None:
             traces = traces_all
@@ -58,7 +59,7 @@ class CPASimpleLoop(Parameterized, Plugin):
             # print "%d - %d (%d %d)"%( pointRange[0],  pointRange[1], padbefore, padafter)
 
         #For each 0..0xFF possible value of the key byte
-        for key in range(0, 256):
+        for key in range(0, self.model.getPermPerSubkey()):
             #Initialize arrays & variables to zero
             sumnum = np.zeros(len(traces[0,:]))
             sumden1 = np.zeros(len(traces[0,:]))
@@ -125,22 +126,13 @@ class CPASimpleLoop(Parameterized, Plugin):
 
         return (diffs, pbcnt)
 
-    def setTargetSubkeys(self, brange):
-        self.brange = brange
-
-    def setReportingInterval(self, ri):
-        # Not used for simpleloop
-        pass
-
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
         brange=self.brange
-        self.all_diffs = range(0,16)
         numtraces = tracerange[1] - tracerange[0] + 1
 
         if progressBar:
             progressBar.setText("Attacking traces: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
-            progressBar.setStatusMask("Current Subkey: %d", 0)
-            progressBar.setMaximum(len(brange) * 256)
+            progressBar.setMaximum(len(brange) * self.model.getPermPerSubkey())
 
         # Load all traces
         data = []
@@ -148,7 +140,6 @@ class CPASimpleLoop(Parameterized, Plugin):
         textouts = []
         knownkeys = []
         for i in range(tracerange[0], tracerange[1]+1):
-
             # Handle Offset
             tnum = i + tracerange[0]
 
@@ -167,19 +158,9 @@ class CPASimpleLoop(Parameterized, Plugin):
 
         pbcnt = 0
         for bnum in brange:
+            if progressBar:
+                progressBar.setStatusMask("Current Subkey: %d", bnum)
             (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.modelstate, pbcnt)
             self.stats.updateSubkey(bnum, data, tnum=tracerange[1])
             if progressBar:
-                progressBar.updateStatus(pbcnt, bnum)
-
-    def getStatistics(self):
-        return self.stats
-
-    def setStatsReadyCallback(self, sr):
-        pass
-
-    def processKnownKey(self, inpkey):
-        if hasattr(self.model, 'processKnownKey'):
-            return self.model.processKnownKey(inpkey)
-        else:
-            return inpkey
+                progressBar.updateStatus(pbcnt)

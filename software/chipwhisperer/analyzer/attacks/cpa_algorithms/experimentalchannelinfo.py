@@ -293,7 +293,6 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
     def __init__(self, targetModel, leakageFunction):
 
         self.getParams().addChildren([
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
@@ -309,10 +308,6 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-
-        foundkey = []
-
-        self.all_diffs = range(0,16)
 
         tdiff = self.findParam('reportinterval').getValue()
 

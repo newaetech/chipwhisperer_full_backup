@@ -199,10 +199,6 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         brange=self.brange
 
-        foundkey = []
-
-        self.all_diffs = range(0,16)
-
         numtraces = tracerange[1] - tracerange[0]
 
         if progressBar:

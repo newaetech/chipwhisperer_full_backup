@@ -47,7 +47,10 @@ class CWAnalyzerGUI(CWMainGUI):
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
         CWAnalyzerGUI.instance = self
-        self.attackScriptGen.reloadScripts()
+
+    def projectChanged(self):
+        CWMainGUI.projectChanged(self)
+        self.attackScriptGen.projectChanged()
 
     def loadExtraModules(self):
         self.keyScheduleDialog = KeyScheduleDialog(self)
@@ -100,12 +103,6 @@ class CWAnalyzerGUI(CWMainGUI):
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
                           self.settingsTraceExplorer, self.settingsResultsDock])
         self.attackScriptGen.editorDocks()
-
-    # def tracesChanged(self):
-    #     """Traces changed due to loading new project or adjustment in trace manager,
-    #     so adjust limits displayed and re-plot the new input trace"""
-    #
-    #     self.attackScriptGen.reloadScripts()
 
     @staticmethod
     def getInstance():

@@ -103,7 +103,6 @@ class CWMainGUI(QMainWindow):
 
         self.projectChanged()
         self.api.sigNewProject.connect(self.projectChanged)
-        self.api.sigTracesChanged.connect(self.tracesChanged)
         Parameter.sigParametersChanged.connect(self.reloadGuiActions)
         self.show()
 
@@ -113,9 +112,6 @@ class CWMainGUI(QMainWindow):
             self.resultDocks.append(self.addDock(resultWidget.getWidget(), name=resultWidget.getName(), area=Qt.TopDockWidgetArea))
 
     def loadExtraModules(self):
-        pass
-
-    def tracesChanged(self):
         pass
 
     def projectChanged(self):

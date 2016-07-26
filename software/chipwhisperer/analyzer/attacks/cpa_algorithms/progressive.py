@@ -27,6 +27,8 @@
 
 import numpy as np
 import math
+
+from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -37,9 +39,6 @@ class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self, model):
         self.model = model
-        self.clearStats()
-
-    def clearStats(self):
         self.sumhq = [0] * self.model.getPermPerSubkey()
         self.sumtq = [0]
         self.sumt = [0]
@@ -152,40 +151,26 @@ class CPAProgressiveOneSubkey(object):
         return (diffs, pbcnt)
 
 
-class CPAProgressive(Parameterized, AutoScript, Plugin):
+class CPAProgressive(CpaAlgorithmBase, Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     _name = "Progressive"
 
     def __init__(self):
-        AutoScript.__init__(self)
+        CpaAlgorithmBase.__init__(self)
 
         self.getParams().addChildren([
-            {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
-            {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
+            {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf', 'action':self.updateScript},
+            {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False, 'action':self.updateScript},
         ])
-
-        self.sr = None
-        self.stats = None
-        self.updateScript()
-
-    def updateScript(self, ignored=None):
-        # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
-        pass
-
-    def setTargetSubkeys(self, brange):
-        self.brange = brange
-
-    def setReportingInterval(self, ri):
-        self._reportingInterval = ri
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         numtraces = tracerange[1] - tracerange[0] + 1
         if progressBar:
             progressBar.setText("Attacking traces subset: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
             progressBar.setStatusMask("Trace Interval: %d-%d. Current Subkey: %d")
-            progressBar.setMaximum(len(self.brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
+            progressBar.setMaximum(len(self.brange) * self.model.getPermPerSubkey() * math.ceil(float(numtraces) / self._reportingInterval) - 1)
 
         pbcnt = 0
         cpa = [None]*(max(self.brange)+1)
@@ -275,19 +260,3 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
 
                 if self.sr:
                     self.sr()
-
-    def getStatistics(self):
-        return self.stats
-
-    def setStatsReadyCallback(self, sr):
-        self.sr = sr
-
-    def setModel(self, model):
-        self.model = model
-        self.stats = DataTypeDiffs(model.getNumSubKeys(), model.getPermPerSubkey())
-
-    def processKnownKey(self, inpkey):
-        if hasattr(self.model, 'processKnownKey'):
-            return self.model.processKnownKey(inpkey)
-        else:
-            return inpkey

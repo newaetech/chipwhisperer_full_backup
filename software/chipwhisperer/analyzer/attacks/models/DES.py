@@ -24,9 +24,11 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 class DES(ModelsBase, Plugin):
     _name = 'DES Model'
 
-    LEAK_HW_SBOXOUT_FIRSTROUND = 1
-    hwModels_toStr = ['LEAK_HW_SBOXOUT_FIRSTROUND']
-    hwModels = {'HW: SBoxes Output, First Round':'LEAK_HW_SBOXOUT_FIRSTROUND'}
+    LEAK_HW_SBOXOUT_FIRSTROUND = 0
+    LEAK_HW_SBOXIN_FIRSTROUND = 1
+    hwModels_toStr = ['LEAK_HW_SBOXOUT_FIRSTROUND', 'LEAK_HW_SBOXIN_FIRSTROUND']
+    hwModels = {'HW: SBoxes Output, First Round':LEAK_HW_SBOXOUT_FIRSTROUND,
+                'HW: SBoxes Input, First Round':LEAK_HW_SBOXIN_FIRSTROUND}
 
     # Based on https://gist.github.com/eigenein/1275094
     # Author:   Todd Whiteman
@@ -157,19 +159,22 @@ class DES(ModelsBase, Plugin):
         return self.keyScheduleRounds(inpkey, 0, 1)
 
     def leakage(self, pt, ct, guess, bnum, state):
-        return self.HW[self.sbox_in_first_fbox(pt, guess, bnum)]
+        if self.model == self.LEAK_HW_SBOXOUT_FIRSTROUND:
+            return self.HW[self.sbox_out_first_fbox(pt, guess, bnum)]
+        elif self.model == self.LEAK_HW_SBOXIN_FIRSTROUND:
+            return self.HW[self.binary_list_to_subkeys(self.sbox_in_first_fbox(pt, guess, bnum),6)[0]]
 
     def __permutate(self, table, block):
         """Permutate this block with the specified table"""
         return [block[v] if v is not None else v for i,v in enumerate(table)]
 
-    def keyScheduleRounds(self, inputkey, inputround, desiredround):
+    def keyScheduleRounds(self, inputkey, inputround, desiredround, returnSubkeys=True):
         """Create the 16 subkeys K[1] to K[16] from the given key"""
         if inputround == 0:
-            inputkey = self.array_of_bytes_to_bin(inputkey)
+            inputkey = self.array_of_bytes_to_bin(inputkey,8)
             key = self.__permutate(self.__pc1, inputkey)
         else:
-            #TODO: array of 6-bit subkeys to array of bits
+            inputkey = self.array_of_bytes_to_bin(inputkey,6)
             key = self.__permutate(self.__pc2_inv, inputkey)
         i = inputround
         L = key[:28]
@@ -207,9 +212,10 @@ class DES(ModelsBase, Plugin):
                 i -= 1
             key = L + R
         if desiredround==0:
-            return self.binary_list_to_subkeys(self.__permutate(self.__pc1_inv, key), 8)
+            key = self.__permutate(self.__pc1_inv, key)
+            return self.binary_list_to_subkeys(key, 8) if returnSubkeys else key
 
-        return self.binary_list_to_subkeys(key, 6)
+        return self.binary_list_to_subkeys(key, 6) if returnSubkeys else key
 
     def binary_list_to_subkeys(self, bitlist, nrBits):
         ret = []
@@ -222,14 +228,14 @@ class DES(ModelsBase, Plugin):
             pos += nrBits
         return ret
 
-    def array_of_bytes_to_bin(self, bytes):
+    def array_of_bytes_to_bin(self, bytes, nrBits):
         init=np.array([], dtype=bool)
         for byte in bytes:
-            init = np.concatenate((init, np.unpackbits(np.uint8(byte))), axis=0)
+            init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8-nrBits:]), axis=0)
         return init
 
     def sbox_in_first_fbox(self, pt, guess, bnum):
-        init=self.array_of_bytes_to_bin(pt)
+        init=self.array_of_bytes_to_bin(pt, 8)
 
         initPermut = self.__permutate(self.__ip, init)
         R = initPermut[32:]
@@ -238,53 +244,72 @@ class DES(ModelsBase, Plugin):
         guess = np.unpackbits(np.uint8(guess))
         guess = guess[2:]
         B = list(map(lambda x, y: x ^ y, expR, guess))
+        return B
+
+    def sbox_out_first_fbox(self, pt, guess, bnum):
+        B = self.sbox_in_first_fbox(pt, guess, bnum)
         m = (B[0] << 1) + B[5]
         n = (B[1] << 3) + (B[2] << 2) + (B[3] << 1) + B[4]
-
         # Find the permutation value
-        ret = self.sBox[bnum][(m << 4) + n]
-        return ret
+        return self.sBox[bnum][(m << 4) + n]
+
+    def compare(self, correctKey, guessedKey):
+        """Return the bits that are unknown and differ between the guessed key and the correct key"""
+        unknown=[]
+        wrong=[]
+        for i in range(len(correctKey)):
+            if guessedKey[i]!=correctKey[i] and i%8 != 7:
+                if guessedKey[i] is None:
+                    unknown.append(i)
+                else:
+                    wrong.append(i)
+        return (unknown, wrong)
+
 
 if __name__ == "__main__":
     model = DES()
-    rk = [[0,0,0,1,0,0,1,1,0,0,1,1,0,1,0,0,0,1,0,1,0,1,1,1,0,1,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,0,1,1,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1],
-        [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0],
-        [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1],
-        [0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1],
-        [0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1],
-        [0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0],
-        [0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
-        [1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0],
-        [1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
-        [1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
-        [1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1],
-        [0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
-        [0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1],
-        [1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-        [0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0],
-        [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0],
-        [1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1]
-    ]
-    for roundNum in range(17):
-        print model.keyScheduleRounds(rk[0], 0, roundNum)
+    # rk = [[0,0,0,1,0,0,1,1,0,0,1,1,0,1,0,0,0,1,0,1,0,1,1,1,0,1,1,1,1,0,0,1,1,0,0,1,1,0,1,1,1,0,1,1,1,1,0,0,1,1,0,1,1,1,1,1,1,1,1,1,0,0,0,1],
+    #     [0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0],
+    #     [0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 1],
+    #     [0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1],
+    #     [0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1],
+    #     [0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0],
+    #     [0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
+    #     [1, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0],
+    #     [1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1],
+    #     [1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1],
+    #     [1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1],
+    #     [0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+    #     [0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1],
+    #     [1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1],
+    #     [0, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0],
+    #     [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0],
+    #     [1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1]
+    # ]
+    # for roundNum in range(17):
+    #     print model.keyScheduleRounds(rk[0], 0, roundNum)
+    #
+    # for roundNum in range(0,17):
+    #     tmp = model.keyScheduleRounds(rk[roundNum], roundNum, 0)
+    #     f=0
+    #     for i in range(64):
+    #         if tmp[i]!=rk[0][i] and i%8 != 7:
+    #             if tmp[i] is None:
+    #                 f += 1
+    #             else:
+    #                 print "Error in bit %d in round %d" % (i, roundNum)
+    #     print "%d unrecoverable bits when reverting round key %d" % (f, roundNum)
+    #
+    # pt = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]
+    # for permNum in range(8):
+    #     v =  rk[1][permNum*6+0]*32
+    #     v +=  rk[1][permNum*6+1]*16
+    #     v +=  rk[1][permNum*6+2]*8
+    #     v +=  rk[1][permNum*6+3]*4
+    #     v +=  rk[1][permNum*6+4]*2
+    #     v +=  rk[1][permNum*6+5]*1
+    #     print model.sbox_in_first_fbox(pt, v, permNum)
 
-    for roundNum in range(0,17):
-        tmp = model.keyScheduleRounds(rk[roundNum], roundNum, 0)
-        f=0
-        for i in range(64):
-            if tmp[i]!=rk[0][i] and i%8 != 7:
-                if tmp[i] is None:
-                    f += 1
-                else:
-                    print "Error in bit %d in round %d" % (i, roundNum)
-        print "%d unrecoverable bits when reverting round key %d" % (f, roundNum)
-
-    pt = [0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF]
-    for permNum in range(8):
-        v =  rk[1][permNum*6+0]*32
-        v +=  rk[1][permNum*6+1]*16
-        v +=  rk[1][permNum*6+2]*8
-        v +=  rk[1][permNum*6+3]*4
-        v +=  rk[1][permNum*6+4]*2
-        v +=  rk[1][permNum*6+5]*1
-        print model.sbox_in_first_fbox(pt, v, permNum)
+    guessedkey = [0x22, 0x10, 0x30, 0x21, 0x32, 0x38, 0x07, 0x3F]
+    originalkey = [0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6]
+    print "Unknown bits = %s, Wrong bit guesses = %s" % model.compare(model.array_of_bytes_to_bin(originalkey, 8), model.keyScheduleRounds(guessedkey, 1, 0, returnSubkeys=False))
