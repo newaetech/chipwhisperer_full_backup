@@ -35,26 +35,12 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 class CPA(AttackBaseClass):
     """Correlation Power Analysis Attack"""
     _name = "CPA"
+    _algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", True, False)
 
     def __init__(self):
-        self.algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", True, False)
-        self._analysisAlgorithm = self.algos["Progressive"]
+        self._analysisAlgorithm = self._algos["Progressive"]
         AttackBaseClass.__init__(self)
-        self.getParams().addChildren([
-            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':self.algos, 'get':self.getAnalysisAlgorithm, 'set':self.setAlgorithm}
-        ])
         self.setAlgorithm(self.findParam('CPA_algo').getValue())
-        self.updateScript()
-
-    def getAnalysisAlgorithm(self):
-        return self._analysisAlgorithm
-
-    @setupSetParam('Algorithm')
-    def setAlgorithm(self, analysisAlgorithm):
-        self._analysisAlgorithm = analysisAlgorithm
-
-        if hasattr(self._analysisAlgorithm, 'scriptsUpdated'):
-            self._analysisAlgorithm.scriptsUpdated.connect(self.updateScript)
         self.updateScript()
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg, hwmodel):

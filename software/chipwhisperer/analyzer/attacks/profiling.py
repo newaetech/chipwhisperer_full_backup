@@ -36,17 +36,12 @@ from _base import AttackBaseClass
 class Profiling(AttackBaseClass):
     """Profiling Power Analysis Attack"""
     _name = "Profiling"
+    _algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
 
     def __init__(self):
         AttackBaseClass.__init__(self)
         self._project = None
         self.attack = None
-
-        algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
-        self.getParams().addChildren([
-            {'name':'Algorithm', 'key':'Prof_algo', 'type':'list', 'values':algos, 'value':algos['Template Attack'], 'action':self.updateAlgorithm}, #TODO: Should be called from the AES module to figure out # of bytes
-        ])
-
         # Do not use absolute
         self.useAbs = False
         self.updateAlgorithm()

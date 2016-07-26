@@ -27,12 +27,12 @@
 
 import copy
 import logging
+import random
 
 import numpy as np
-import random
+from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
+from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.parameter import Parameterized
 
 

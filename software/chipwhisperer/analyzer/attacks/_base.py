@@ -42,7 +42,7 @@ def enforceLimits(value, limits):
 class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoScript, Plugin):
     """Generic Attack Interface"""
     _name= 'Attack Settings'
-
+    _algos = {}
     def __init__(self):
         AutoScript.__init__(self)
         AnalysisSource.__init__(self)
@@ -61,7 +61,6 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
         self.getParams().addChildren([
             {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'value':models['AES Model'], 'action':self.refreshByteList, 'childmode':'child'},
-            {'name':'Take Absolute', 'type':'bool', 'get':self.getAbsoluteMode, 'set':self.setAbsoluteMode},
             {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateScript},
         ])
         for m in models.itervalues():
@@ -73,6 +72,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
             {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'get':self.getTracesPerAttack, 'set':self.setTracesPerAttack, 'action':self.updateScript},
             {'name':'Iterations', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'get':self.getIterations, 'set':self.setIterations, 'action':self.updateScript},
             {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'get':self.getReportingInterval, 'set':self.setReportingInterval, 'action':self.updateScript},
+        ])
+        self.getParams().addChildren([
+            {'name':'Algorithm', 'key':'CPA_algo', 'type':'list',  'values':self._algos, 'get':self.getAnalysisAlgorithm, 'set':self.setAlgorithm}
         ])
         self.refreshByteList()
         if __debug__: logging.debug('Created: ' + str(self))
@@ -86,6 +88,17 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         self._traceSource = traceSource
         self.updateScript()
         self.updateTraceLimits()
+
+    def getAnalysisAlgorithm(self):
+        return self._analysisAlgorithm
+
+    @setupSetParam('Algorithm')
+    def setAlgorithm(self, analysisAlgorithm):
+        self._analysisAlgorithm = analysisAlgorithm
+
+        if hasattr(self._analysisAlgorithm, 'scriptsUpdated'):
+            self._analysisAlgorithm.scriptsUpdated.connect(self.updateScript)
+        self.updateScript()
 
     def processKnownKey(self, inpkey):
         """
@@ -156,10 +169,6 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
     def getAbsoluteMode(self):
         return self.useAbs
-
-    @setupSetParam("Take Absolute")
-    def setAbsoluteMode(self, mode):
-        self.useAbs = mode
 
     def refreshByteList(self, _=None):
         self.getParams().addChildren([

@@ -26,21 +26,19 @@
 #=================================================
 
 import numpy as np
+
+from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class AttackCPA_Bayesian(Parameterized, Plugin):
+class AttackCPA_Bayesian(CpaAlgorithmBase):
     """
-    Bayesian CPA, as described in .
+    Bayesian CPA. NOT WORKING!!
     """
     _name = "Bayesian CPA"
 
-    def __init__(self, targetModel):
-        self.model = targetModel
-
-    def setByteList(self, brange):
-        self.brange = brange
+    def __init__(self):
+        CpaAlgorithmBase.__init__(self)
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
@@ -205,6 +203,3 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
-
-    def setStatsReadyCallback(self, sr):
-        pass

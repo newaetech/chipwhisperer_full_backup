@@ -28,9 +28,7 @@
 import numpy as np
 
 from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
-from .._stats import DataTypeDiffs
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class CPASimpleLoop(CpaAlgorithmBase, Plugin):
@@ -162,5 +160,7 @@ class CPASimpleLoop(CpaAlgorithmBase, Plugin):
                 progressBar.setStatusMask("Current Subkey: %d", bnum)
             (data, pbcnt) = self.oneSubkey(bnum, pointRange, traces, numtraces, textins, textouts, knownkeys, progressBar, self.model, self.modelstate, pbcnt)
             self.stats.updateSubkey(bnum, data, tnum=tracerange[1])
+            if self.sr:
+                self.sr()
             if progressBar:
-                progressBar.updateStatus(pbcnt)
+                progressBar.updateStatus(pbcnt, bnum)

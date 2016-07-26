@@ -29,10 +29,9 @@ import numpy as np
 import os
 import platform
 from ctypes import *
-from .._stats import DataTypeDiffs
-from chipwhisperer.common.api.autoscript import AutoScript
+
+from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class aesmodel_setup_t(Structure):
@@ -142,7 +141,7 @@ class CPAProgressiveOneSubkey(object):
             
         mstate = aesmodel_setup_t(bnum=bnum)
         
-        guessdata = np.zeros((256, npoints), dtype=np.float64)
+        guessdata = np.zeros((model.getPermPerSubkey(), npoints), dtype=np.float64)
 
         mstate.leakagemode = model.getHwModel()
 
@@ -163,38 +162,25 @@ class CPAProgressiveOneSubkey(object):
         if progressBar:
             progressBar.updateStatus(pbcnt, (self.anstate.totalTraces - numtraces, self.anstate.totalTraces-1, bnum))
 
-        pbcnt = pbcnt + 256
+        pbcnt = pbcnt + model.getPermPerSubkey()
 
         return (guessdata, pbcnt)
 
 
-class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
+class CPAProgressive_CAccel(CpaAlgorithmBase, Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     _name = "Progressive-C Accel"
 
-    def __init__(self, targetModel):
-        AutoScript.__init__(self)
+    def __init__(self):
+        CpaAlgorithmBase.__init__(self)
 
         self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
 
-        self.model = targetModel
-        self.sr = None
-        self.stats = DataTypeDiffs()
-        self.updateScript()
-
-    def updateScript(self, ignored=None):
-        pass
-
-    def setTargetSubkeys(self, brange):
-        self.brange = brange
-
-    def setReportingInterval(self, ri):
-        self._reportingInterval = ri
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         brange=self.brange
@@ -204,7 +190,7 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
         if progressBar:
             progressBar.setText("Attacking traces: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
             progressBar.setStatusMask("Trace Interval: %d-%d. Current Subkey: %d", (0,0,0))
-            progressBar.setMaximum(len(brange) * 256 * (numtraces / self._reportingInterval + 1))
+            progressBar.setMaximum(len(brange) * self.model.getPermPerSubkey() * (numtraces / self._reportingInterval + 1))
         pbcnt = 0
         #r = Parallel(n_jobs=4)(delayed(traceOneSubkey)(bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, self.model, pbcnt) for bnum in brange)
         #self.all_diffs, pb = zip(*r)
@@ -250,7 +236,6 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
                 textouts = []
                 knownkeys = []
                 for i in range(tstart, tend):
-
                     # Handle Offset
                     tnum = i + tracerange[0]
 
@@ -288,7 +273,7 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
                         skip = True
 
                     if skip:
-                        pbcnt = brangeMap[bnum] * 256 * (numtraces / self._reportingInterval + 1)
+                        pbcnt = brangeMap[bnum] * self.model.getPermPerSubkey() * (numtraces / self._reportingInterval + 1)
 
                         if bf is False:
                             tstart = numtraces
@@ -298,15 +283,3 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
 
                 if self.sr is not None:
                     self.sr()
-
-    def getStatistics(self):
-        return self.stats
-
-    def setStatsReadyCallback(self, sr):
-        self.sr = sr
-
-    def processKnownKey(self, inpkey):
-        if hasattr(self.model, 'processKnownKey'):
-            return self.model.processKnownKey(inpkey)
-        else:
-            return inpkey

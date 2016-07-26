@@ -18,6 +18,7 @@ import sys
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import util
 
+
 class ModelsBase(Parameterized):
     _name = 'Crypto Model'
 
@@ -74,3 +75,7 @@ class ModelsBase(Parameterized):
 
     def getHwModelString(self):
         return sys.modules[self.__class__.__module__].__name__  + '.' + self.__class__.__name__  + '.' + self.hwModels_toStr[self.model]
+
+    def _VccToGnd(self, var):
+        """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
+        return 8-var

@@ -29,10 +29,7 @@ import numpy as np
 import math
 
 from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
-from .._stats import DataTypeDiffs
-from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 
 class CPAProgressiveOneSubkey(object):

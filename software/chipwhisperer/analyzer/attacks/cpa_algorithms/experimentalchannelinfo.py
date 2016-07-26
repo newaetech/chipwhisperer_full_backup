@@ -27,6 +27,8 @@
 import logging
 import numpy as np
 from scipy.stats import norm
+
+from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
 from .._stats import DataTypeDiffs
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
@@ -44,9 +46,6 @@ except ImportError:
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
-        self.clearStats()
-
-    def clearStats(self):
         self.sumhq = [0]*256
         self.sumtq = [0]*256
         self.sumt = [0]*256
@@ -55,7 +54,6 @@ class CPAProgressiveOneSubkey(object):
         self.totalTraces = 0
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-
         diffs = [0]*256
         self.totalTraces += numtraces
 
@@ -287,22 +285,18 @@ class TemplateOneSubkey(object):
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(Parameterized, Plugin):
+class CPAExperimentalChannelinfo(CpaAlgorithmBase):
+    """NOT WORKING!!"""
     _name = "CPA Experimental Channel Info"
 
-    def __init__(self, targetModel, leakageFunction):
+    def __init__(self):
+        CpaAlgorithmBase.__init__(self)
 
         self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
 
-        self.model = targetModel
-        self.sr = None
-        self.stats = DataTypeDiffs()
-
-    def setByteList(self, brange):
-        self.brange = brange
 
     def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         keyround=self.keyround
@@ -434,12 +428,6 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
 
                 if self.sr is not None:
                     self.sr()
-
-    def getStatistics(self):
-        return self.stats
-
-    def setStatsReadyCallback(self, sr):
-        self.sr = sr
 
 
 # This is actually used by ProfilingTemplate via a hack, which requires more work...

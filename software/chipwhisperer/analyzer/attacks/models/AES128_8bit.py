@@ -23,24 +23,25 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-from aetypes import Enum
-from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
+
+from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
+
 from base import ModelsBase
+from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class AES128_8bit(ModelsBase, Plugin):
     _name = 'AES Model'
 
-    LEAK_HW_SBOXOUT_FIRSTROUND = 0
-    LEAK_HD_LASTROUND_STATE = 1
-    LEAK_HD_SBOX_IN_OUT = 2
-    LEAK_HD_SBOX_IN_SUCCESSIVE = 3
-    LEAK_HD_SBOX_OUT_SUCCESSIVE = 4
-    LEAK_HW_INVSBOXOUT_FIRSTROUND = 5
+    LEAK_HW_SBOXOUT_FIRSTROUND = 1
+    LEAK_HD_LASTROUND_STATE = 2
+    LEAK_HD_SBOX_IN_OUT = 3
+    LEAK_HD_SBOX_IN_SUCCESSIVE = 4
+    LEAK_HD_SBOX_OUT_SUCCESSIVE = 5
+    LEAK_HW_INVSBOXOUT_FIRSTROUND = 6
 
-    hwModels_toStr = ['LEAK_HW_SBOXOUT_FIRSTROUND', 'LEAK_HW_INVSBOXOUT_FIRSTROUND', 'LEAK_HD_LASTROUND_STATE',
+    hwModels_toStr = [None, 'LEAK_HW_SBOXOUT_FIRSTROUND', 'LEAK_HW_INVSBOXOUT_FIRSTROUND', 'LEAK_HD_LASTROUND_STATE',
                 'LEAK_HD_SBOX_IN_OUT', 'LEAK_HD_SBOX_IN_SUCCESSIVE', 'LEAK_HD_SBOX_OUT_SUCCESSIVE']
 
     hwModels = {'HW: AES SBox Output, First Round (Enc)':LEAK_HW_SBOXOUT_FIRSTROUND,
@@ -60,31 +61,30 @@ class AES128_8bit(ModelsBase, Plugin):
     def processKnownKey(self, inpkey):
         if self.model == self.LEAK_HD_LASTROUND_STATE:
             return keyScheduleRounds(inpkey, 0, 10)
-
         return inpkey
 
     def leakage(self, pt, ct, guess, bnum, state):
 
         if self.model == self.LEAK_HW_SBOXOUT_FIRSTROUND:
             # Classic HW of S-Box output
-            return self.getHW(sbox(pt[bnum] ^ guess))
+            return self.HW[sbox(pt[bnum] ^ guess)]
 
         elif self.model == self.LEAK_HW_INVSBOXOUT_FIRSTROUND:
             # HW Leakage of inverse S-Box (AES Decryption)
-            return self.getHW(inv_sbox(pt[bnum] ^ guess))
+            return self.HW[inv_sbox(pt[bnum] ^ guess)]
 
         elif self.model == self.LEAK_HD_LASTROUND_STATE:
             # HD Leakage of AES State between 9th and 10th Round
             # Used to break SASEBO-GII / SAKURA-G
             st10 = ct[self.INVSHIFT[bnum]]
             st9 =  inv_sbox(ct[bnum] ^ guess)
-            return self.getHW(st9 ^ st10)
+            return self.HW[st9 ^ st10]
 
         elif self.model == self.LEAK_HD_SBOX_IN_OUT:
             # Leakage from HD of S-Box input to output
             st1 = pt[bnum] ^ guess
             st2 = sbox(st1)
-            return self.getHW(st1 ^ st2)
+            return self.HW[st1 ^ st2]
 
         elif self.model == self.LEAK_HD_SBOX_IN_SUCCESSIVE:
             pass
@@ -94,18 +94,6 @@ class AES128_8bit(ModelsBase, Plugin):
 
         else:
             raise ValueError("Invalid model: %s" % str(self.model))
-
-
-    @staticmethod
-    def getHW(var):
-        """Given a variable, return the hamming weight (number of 1's)"""
-        return AES128_8bit.HW[var]
-
-
-    def VccToGnd(self, var):
-        """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
-        return 8 - var
-
 
     # TODO: Use this
     def xtime(self, a):
