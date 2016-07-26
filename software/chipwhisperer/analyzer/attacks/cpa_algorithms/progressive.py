@@ -35,20 +35,21 @@ from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
-    def __init__(self):
+    def __init__(self, model):
+        self.model = model
         self.clearStats()
 
     def clearStats(self):
-        self.sumhq = [0]*256
+        self.sumhq = [0] * self.model.getPermPerSubkey()
         self.sumtq = [0]
         self.sumt = [0]
-        self.sumh = [0]*256
-        self.sumht = [0]*256
+        self.sumh = [0] * self.model.getPermPerSubkey()
+        self.sumht = [0] * self.model.getPermPerSubkey()
         self.totalTraces = 0
         self.modelstate = {'knownkey':None}
 
-    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, state, pbcnt):
-        diffs = [0]*256
+    def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, state, pbcnt):
+        diffs = [0] * self.model.getPermPerSubkey()
         self.totalTraces += numtraces
 
         if pointRange == None:
@@ -66,7 +67,7 @@ class CPAProgressiveOneSubkey(object):
         sumden2 = (np.square(self.sumt) - self.totalTraces * self.sumtq)
 
         #For each 0..0xFF possible value of the key byte
-        for key in range(0, 64):
+        for key in range(0, self.model.getPermPerSubkey()):
             #Initialize arrays & variables to zero
             sumnum = np.zeros(len(traces[0,:]))
             # sumden1 = np.zeros(len(traces[0,:]))
@@ -96,7 +97,7 @@ class CPAProgressiveOneSubkey(object):
 
                 state['knownkey'] = nk
 
-                hypint = model.leakage(pt, ct, key, bnum, state)
+                hypint = self.model.leakage(pt, ct, key, bnum, state)
 
                 hyp[tnum] = hypint
 
@@ -166,33 +167,34 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
         ])
 
         self.sr = None
-        self.stats = DataTypeDiffs()
+        self.stats = None
         self.updateScript()
 
     def updateScript(self, ignored=None):
         # self.addFunction('init', 'setReportingInterval', '%d' % self.findParam('reportinterval').getValue())
         pass
 
+    def setTargetSubkeys(self, brange):
+        self.brange = brange
+
     def setReportingInterval(self, ri):
         self._reportingInterval = ri
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, brange=[]):
-        self.all_diffs = range(0,8)
+    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
         numtraces = tracerange[1] - tracerange[0] + 1
-
         if progressBar:
             progressBar.setText("Attacking traces subset: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
             progressBar.setStatusMask("Trace Interval: %d-%d. Current Subkey: %d")
-            progressBar.setMaximum(len(brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
+            progressBar.setMaximum(len(self.brange) * 256 * math.ceil(float(numtraces) / self._reportingInterval) - 1)
 
         pbcnt = 0
-        cpa = [None]*(max(brange)+1)
-        for bnum in brange:
-            cpa[bnum] = CPAProgressiveOneSubkey()
+        cpa = [None]*(max(self.brange)+1)
+        for bnum in self.brange:
+            cpa[bnum] = CPAProgressiveOneSubkey(self.model)
 
-        brangeMap = [None]*(max(brange)+1)
+        brangeMap = [None]*(max(self.brange)+1)
         i = 1
-        for bnum in brange:
+        for bnum in self.brange:
             brangeMap[bnum] = i
             i += 1
 
@@ -204,10 +206,10 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
         #search each subkey completely, then move onto the next.
         if bf:
             brange_df = [0]
-            brange_bf = brange
+            brange_bf = self.brange
         else:
             brange_bf = [0]
-            brange_df = brange
+            brange_df = self.brange
 
         for bnum_df in brange_df:
             tstart = 0
@@ -254,13 +256,13 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
                             bptrange = pointRange[bnum]
                         else:
                             bptrange = pointRange
-                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, model, cpa[bnum].modelstate, pbcnt)
+                        (data, pbcnt) = cpa[bnum].oneSubkey(bnum, bptrange, traces, tend - tstart, textins, textouts, knownkeys, progressBar, cpa[bnum].modelstate, pbcnt)
                         self.stats.updateSubkey(bnum, data, tnum=tend)
                     else:
                         skip = True
 
                     if skip:
-                        pbcnt = brangeMap[bnum] * 256 * (numtraces / self._reportingInterval + 1)
+                        pbcnt = brangeMap[bnum] * self.model.getPermPerSubkey() * (numtraces / self._reportingInterval + 1)
 
                         if bf is False:
                             tstart = numtraces
@@ -282,6 +284,7 @@ class CPAProgressive(Parameterized, AutoScript, Plugin):
 
     def setModel(self, model):
         self.model = model
+        self.stats = DataTypeDiffs(model.getNumSubKeys(), model.getPermPerSubkey())
 
     def processKnownKey(self, inpkey):
         if hasattr(self.model, 'processKnownKey'):

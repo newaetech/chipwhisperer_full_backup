@@ -63,18 +63,18 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
         models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
         self.getParams().addChildren([
-            {'name':'Hardware Model', 'key':'hw_algo', 'type':'list', 'values':models, 'value':models['AES Model'], 'action':self.refreshByteList, 'childmode':'child'},
+            {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'value':models['AES Model'], 'action':self.refreshByteList, 'childmode':'child'},
             {'name':'Take Absolute', 'type':'bool', 'get':self.getAbsoluteMode, 'set':self.setAbsoluteMode},
-            {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateGenericScript},
+            {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateScript},
         ])
         self.getParams().init()
         self.getParams().addChildren([
-            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.getTraceStart, 'set':self.setTraceStart, 'action':self.updateGenericScript},
-            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'get':self.getTracesPerAttack, 'set':self.setTracesPerAttack, 'action':self.updateGenericScript},
-            {'name':'Iterations', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'get':self.getIterations, 'set':self.setIterations, 'action':self.updateGenericScript},
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'get':self.getReportingInterval, 'set':self.setReportingInterval, 'action':self.updateGenericScript},
+            {'name':'Starting Trace', 'key':'strace', 'type':'int', 'get':self.getTraceStart, 'set':self.setTraceStart, 'action':self.updateScript},
+            {'name':'Traces per Attack', 'key':'atraces', 'type':'int', 'limits':(1, 1E6), 'get':self.getTracesPerAttack, 'set':self.setTracesPerAttack, 'action':self.updateScript},
+            {'name':'Iterations', 'key':'runs', 'type':'int', 'limits':(1, 1E6), 'get':self.getIterations, 'set':self.setIterations, 'action':self.updateScript},
+            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'get':self.getReportingInterval, 'set':self.setReportingInterval, 'action':self.updateScript},
         ])
-
+        self.refreshByteList()
         if __debug__: logging.debug('Created: ' + str(self))
 
     @setupSetParam('Input')
@@ -84,6 +84,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         if traceSource:
             traceSource.sigTracesChanged.connect(self.updateTraceLimits)
         self._traceSource = traceSource
+        self.updateScript()
         self.updateTraceLimits()
 
     def processKnownKey(self, inpkey):
@@ -153,9 +154,6 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
 
-    def updateScript(self, _=None):
-        pass
-
     def getAbsoluteMode(self):
         return self.useAbs
 
@@ -167,18 +165,20 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         self.getParams().addChildren([
             {'name':'Attacked Subkeys', 'type':'group', 'children': [
                 dict(name='Subkey %d' % bnum, type='bool', key='bnumenabled%d' % bnum, value=True,
-                     action=self.updateScript) for bnum in range(0, self.findParam('Hardware Model').getValue().getNumSubKeys())
+                     action=self.updateScript) for bnum in range(0, self.findParam('Crypto Algorithm').getValue().getNumSubKeys())
             ]}])
         self.updateScript()
 
     def getEnabledSubkeys(self):
         blist = []
-        for bnum in range(self.findParam('Hardware Model').getValue().getNumSubKeys()):
+        for bnum in range(self.findParam('Crypto Algorithm').getValue().getNumSubKeys()):
                 if self.findParam(['Attacked Subkeys', ('Subkey %d' % bnum)]).getValue():
                     blist.append(bnum)
         return blist
 
-    def updateGenericScript(self, _=None):
+    def updateScript(self, _=None):
+        if self._traceSource is None:
+            return
         runs = self.findParam('runs')
         atraces = self.findParam('atraces')
         strace = self.findParam('strace')
@@ -197,12 +197,7 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
         pointrng = self.findParam('prange').getValue()
 
-        hardwareStr = self.findParam('Hardware Model').getValue().__class__.__name__
-        leakModelStr = self.findParam('Hardware Model').getValue().getHwModel()
-
-        self.importsAppend("from %s import %s" % (sys.modules[self.findParam('Hardware Model').getValue().__class__.__module__].__name__, hardwareStr))
-
-        self.addFunction("init", "setAnalysisAlgorithm", "%s(%s), addToList=True" % (hardwareStr, leakModelStr))
+        self.addFunction("init", "setTargetSubkeys", "%s" % str(self.getEnabledSubkeys()))
         self.addFunction("init", "setTraceStart", "%d" % strace.getValue())
         self.addFunction("init", "setTracesPerAttack", "%d" % atraces.getValue())
         self.addFunction("init", "setIterations", "%d" % runs.getValue())

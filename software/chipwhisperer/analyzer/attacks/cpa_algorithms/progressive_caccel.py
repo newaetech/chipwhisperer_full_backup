@@ -190,7 +190,7 @@ class CPAProgressive_CAccel(Parameterized, AutoScript, Plugin):
     def updateScript(self, ignored=None):
         pass
 
-    def setTargetBytes(self, brange):
+    def setTargetSubkeys(self, brange):
         self.brange = brange
 
     def setReportingInterval(self, ri):

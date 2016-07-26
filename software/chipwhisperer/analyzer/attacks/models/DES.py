@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from aetypes import Enum
+
 from base import ModelsBase
 import numpy as np
 
@@ -22,11 +24,9 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 class DES(ModelsBase, Plugin):
     _name = 'DES Model'
 
-    #Generate Hamming Weight LUT:
-    HW8Bit = []
-
     LEAK_HW_SBOXOUT_FIRSTROUND = 1
-    hwModels = {'SBoxes Output, First Round':LEAK_HW_SBOXOUT_FIRSTROUND}
+    hwModels_toStr = ['LEAK_HW_SBOXOUT_FIRSTROUND']
+    hwModels = {'HW: SBoxes Output, First Round':'LEAK_HW_SBOXOUT_FIRSTROUND'}
 
     # Based on https://gist.github.com/eigenein/1275094
     # Author:   Todd Whiteman
@@ -150,16 +150,14 @@ class DES(ModelsBase, Plugin):
     # number left rotations of pc1
     __left_rotations = [0, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
 
-    def __init__(self, model=1):
+    def __init__(self, model=LEAK_HW_SBOXOUT_FIRSTROUND):
         ModelsBase.__init__(self, 8, 64, model)
-        for n in range(self.permPerSubkey):
-            DES.HW8Bit += [bin(n).count("1")]
 
     def processKnownKey(self, inpkey):
         return self.keyScheduleRounds(inpkey, 0, 1)
 
     def leakage(self, pt, ct, guess, bnum, state):
-        return DES.HW8Bit[self.sbox_in_first_fbox(pt, guess, bnum)]
+        return self.HW[self.sbox_in_first_fbox(pt, guess, bnum)]
 
     def __permutate(self, table, block):
         """Permutate this block with the specified table"""
@@ -168,8 +166,10 @@ class DES(ModelsBase, Plugin):
     def keyScheduleRounds(self, inputkey, inputround, desiredround):
         """Create the 16 subkeys K[1] to K[16] from the given key"""
         if inputround == 0:
+            inputkey = self.array_of_bytes_to_bin(inputkey)
             key = self.__permutate(self.__pc1, inputkey)
         else:
+            #TODO: array of 6-bit subkeys to array of bits
             key = self.__permutate(self.__pc2_inv, inputkey)
         i = inputround
         L = key[:28]
@@ -207,15 +207,20 @@ class DES(ModelsBase, Plugin):
                 i -= 1
             key = L + R
         if desiredround==0:
-            key = self.__permutate(self.__pc1_inv, key)
+            return self.binary_list_to_subkeys(self.__permutate(self.__pc1_inv, key), 8)
 
-        return key
+        return self.binary_list_to_subkeys(key, 6)
 
-    def binary_list_to_int(self, bitlist):
-        out = 0
-        for bit in bitlist:
-            out = (out << 1) | bit
-        return out
+    def binary_list_to_subkeys(self, bitlist, nrBits):
+        ret = []
+        pos = 0
+        while pos <= len(bitlist) - nrBits:
+            out = 0
+            for bit in range(nrBits):
+                out = (out << 1) | bitlist[pos+bit]
+            ret.append(out)
+            pos += nrBits
+        return ret
 
     def array_of_bytes_to_bin(self, bytes):
         init=np.array([], dtype=bool)

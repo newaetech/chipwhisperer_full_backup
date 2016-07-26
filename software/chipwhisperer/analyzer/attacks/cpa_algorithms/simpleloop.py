@@ -125,7 +125,7 @@ class CPASimpleLoop(Parameterized, Plugin):
 
         return (diffs, pbcnt)
 
-    def setTargetBytes(self, brange):
+    def setTargetSubkeys(self, brange):
         self.brange = brange
 
     def setReportingInterval(self, ri):

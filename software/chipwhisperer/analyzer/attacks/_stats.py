@@ -33,8 +33,6 @@ class DataTypeDiffs(object):
     Data type used for attacks generating peaks indicating the 'best' success. Examples include
     standard DPA & CPA attacks.
     """
-    numSubkeys = 16
-    numPerms = 256
 
     def __init__(self, numSubkeys=16, numPerms=256):
         self.numSubkeys = numSubkeys
@@ -92,7 +90,7 @@ class DataTypeDiffs(object):
                 continue
 
             if self.maxValid[i] == False:
-                for hyp in range(0, 256):
+                for hyp in range(0, self.numPerms):
                     if useAbsolute:
                         v = np.nanmax(np.fabs(self.diffs[i][hyp]))
                     else:
@@ -104,7 +102,7 @@ class DataTypeDiffs(object):
                     try:
                         mindex = np.amin(np.where(v == mvalue))
                     except ValueError:
-                        mindex = 255
+                        mindex = self.numPerms-1
                     self.maxes[i][hyp]['hyp'] = hyp
                     self.maxes[i][hyp]['point'] = mindex
                     self.maxes[i][hyp]['value'] = mvalue
@@ -117,7 +115,7 @@ class DataTypeDiffs(object):
                 if useSingle:
                     #All table values are taken from same point MAX is taken from
                     where = self.maxes[i][0]['point']
-                    for j in range(0,256):
+                    for j in range(0, self.numPerms):
                         self.maxes[i][j]['point'] = where
                         self.maxes[i][j]['value'] = self.diffs[i][self.maxes[i][j]['hyp']][where]
 
@@ -128,9 +126,9 @@ class DataTypeDiffs(object):
                     try:
                         self.pge[i] = np.where(self.maxes[i]['hyp'] == self.knownkey[i])[0][0] - numnans
                         if self.pge[i] < 0:
-                            self.pge[i] = 128
+                            self.pge[i] = self.numPerms/2
                     except IndexError:
-                        self.pge[i] = 255
+                        self.pge[i] = self.numPerms-1
 
             tnum = self.diffs_tnum[i]
             self.pge_total.append({'trace':tnum, 'subkey':i, 'pge':self.pge[i]})
