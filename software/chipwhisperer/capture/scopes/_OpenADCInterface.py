@@ -655,8 +655,9 @@ class ClockSettings(Parameterized):
 
             timeout -= 1
 
-        raise Warning("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
-                      " source settings.")
+        logging.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+                      " source settings. CLKGEN clock results are currently invalid.")
+        return 1
 
     def adcSource(self):
         if self.oa is None:
