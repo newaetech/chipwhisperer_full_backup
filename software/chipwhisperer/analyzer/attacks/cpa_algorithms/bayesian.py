@@ -27,20 +27,21 @@
 
 import numpy as np
 
-from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class AttackCPA_Bayesian(CpaAlgorithmBase):
+class AttackCPA_Bayesian(AlgorithmsBase):
     """
     Bayesian CPA. NOT WORKING!!
     """
     _name = "Bayesian CPA"
 
     def __init__(self):
-        CpaAlgorithmBase.__init__(self)
+        AlgorithmsBase.__init__(self)
+        self.updateScript()
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -63,10 +64,10 @@ class AttackCPA_Bayesian(CpaAlgorithmBase):
             # Handle Offset
             tnum = i + tracerange[0]
             try:
-                data.append(tracedata.getTrace(tnum))
-                textins.append(tracedata.getTextin(tnum))
-                textouts.append(tracedata.getTextout(tnum))
-                knownkeys.append(tracedata.getKnownKey(tnum))
+                data.append(traceSource.getTrace(tnum))
+                textins.append(traceSource.getTextin(tnum))
+                textouts.append(traceSource.getTextout(tnum))
+                knownkeys.append(traceSource.getKnownKey(tnum))
             except Exception, e:
                 progressBar.abort(e.message)
                 return

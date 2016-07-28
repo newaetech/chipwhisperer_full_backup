@@ -53,6 +53,10 @@ class ModelsBase(Parameterized):
             {'name':'Number of Permutations', 'type':'int', 'get':self.getPermPerSubkey, 'readonly':True},
         ])
 
+    @classmethod
+    def getHW(cls, n):
+        return cls.HW[n]
+
     def processKnownKey(self, inpkey):
         pass
 

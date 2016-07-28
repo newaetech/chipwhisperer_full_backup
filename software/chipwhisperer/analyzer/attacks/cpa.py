@@ -35,33 +35,21 @@ from chipwhisperer.common.ui.ProgressBar import ProgressBar
 class CPA(AttackBaseClass):
     """Correlation Power Analysis Attack"""
     _name = "CPA"
-    _algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", True, False)
 
     def __init__(self):
+        self._algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.cpa_algorithms", True, False)
         self._analysisAlgorithm = self._algos["Progressive"]
         AttackBaseClass.__init__(self)
-        self.setAlgorithm(self.findParam('CPA_algo').getValue())
         self.updateScript()
-
-    def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg, hwmodel):
-        self.attack = analysisAlgorithm()
-        self.attackModel = cryptoalg()
-        self.attackModel.setHwModel(hwmodel)
 
     def updateScript(self, _=None):
         AttackBaseClass.updateScript(self)
         self.importsAppend("from chipwhisperer.analyzer.attacks.cpa import CPA")
-        self.importsAppend("import chipwhisperer")
-
-        if hasattr(self._analysisAlgorithm, '_smartstatements'):
-            self.mergeGroups('init', self._analysisAlgorithm, prefix='attack')
 
         analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__ + '.' + self._analysisAlgorithm.__class__.__name__
         cryptoalg = sys.modules[self.findParam('Crypto Algorithm').getValue().__class__.__module__].__name__ + '.' + self.findParam('Crypto Algorithm').getValue().__class__.__name__
         hwmodel = self.findParam('Crypto Algorithm').getValue().getHwModelString()
-
         self.addFunction("init", "setAnalysisAlgorithm", "%s,%s,%s" % (analysAlgoStr, cryptoalg, hwmodel), loc=0)
-        self.addFunction("init", "setTraceSource", "UserScript.traces, blockSignal=True", loc=0)
 
     def processKnownKey(self, inpkey):
         if inpkey is None:
@@ -71,25 +59,6 @@ class CPA(AttackBaseClass):
             return self.attack.processKnownKey(inpkey)
         else:
             return inpkey
-
-    def processTraces(self):
-        progressBar = ProgressBar("Analysis in Progress", "Attaking with CPA:")
-        with progressBar:
-            self.attack.setModel(self.attackModel)
-            self.attack.setTargetSubkeys(self.getTargetSubkeys())
-            self.attack.setReportingInterval(self.getReportingInterval())
-            self.attack.getStatistics().clear()
-            self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
-
-            self.sigAnalysisStarted.emit()
-            for itNum in range(1, self.getIterations()+1):
-                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
-                endingTrace = startingTrace + self.getTracesPerAttack() - 1
-                self.attack.addTraces(self.getTraceSource(), (startingTrace, endingTrace), progressBar, pointRange=self.getPointRange())
-                if progressBar and progressBar.wasAborted():
-                    return
-
-        self.sigAnalysisDone.emit()
 
     def getStatistics(self):
         return self.attack.getStatistics()

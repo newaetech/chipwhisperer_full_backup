@@ -25,18 +25,27 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.analyzer.attacks._stats import DataTypeDiffs
+from _stats import DataTypeDiffs
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class CpaAlgorithmBase(Parameterized, AutoScript):
+class AlgorithmsBase(Parameterized, AutoScript):
 
     def __init__(self):
         AutoScript.__init__(self)
         self.sr = None
         self.stats = None
-        self.updateScript()
+        self._project = None
+
+    def setProject(self, proj):
+        self._project = proj
+
+    def project(self):
+        return self._project
+
+    def tracesUpdated(self, traceSource):
+        pass
 
     def updateScript(self, ignored=None):
         pass
@@ -60,5 +69,5 @@ class CpaAlgorithmBase(Parameterized, AutoScript):
     def setStatsReadyCallback(self, sr):
         self.sr = sr
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None):
         pass

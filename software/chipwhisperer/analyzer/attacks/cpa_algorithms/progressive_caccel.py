@@ -30,7 +30,7 @@ import os
 import platform
 from ctypes import *
 
-from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
@@ -167,22 +167,23 @@ class CPAProgressiveOneSubkey(object):
         return (guessdata, pbcnt)
 
 
-class CPAProgressive_CAccel(CpaAlgorithmBase, Plugin):
+class CPAProgressive_CAccel(AlgorithmsBase, Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     _name = "Progressive-C Accel"
 
     def __init__(self):
-        CpaAlgorithmBase.__init__(self)
+        AlgorithmsBase.__init__(self)
 
         self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
+        self.updateScript()
 
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None):
         brange=self.brange
 
         numtraces = tracerange[1] - tracerange[0]
@@ -239,15 +240,15 @@ class CPAProgressive_CAccel(CpaAlgorithmBase, Plugin):
                     # Handle Offset
                     tnum = i + tracerange[0]
 
-                    d = tracedata.getTrace(tnum)
+                    d = traceSource.getTrace(tnum)
 
                     if d is None:
                         continue
 
                     data.append(d)
-                    textins.append(tracedata.getTextin(tnum))
-                    textouts.append(tracedata.getTextout(tnum))
-                    knownkeys.append(tracedata.getKnownKey(tnum))
+                    textins.append(traceSource.getTextin(tnum))
+                    textouts.append(traceSource.getTextout(tnum))
+                    knownkeys.append(traceSource.getKnownKey(tnum))
 
                 traces = np.array(data)
                 textins = np.array(textins)

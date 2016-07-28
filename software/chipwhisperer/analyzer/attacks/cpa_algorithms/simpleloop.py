@@ -27,11 +27,11 @@
 
 import numpy as np
 
-from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class CPASimpleLoop(CpaAlgorithmBase, Plugin):
+class CPASimpleLoop(AlgorithmsBase, Plugin):
     """
     CPA Attack done as a loop - the 'classic' attack provided for familiarity to textbook samples.
     This attack does not provide trace-by-trace statistics however, you can only gather results once
@@ -40,8 +40,9 @@ class CPASimpleLoop(CpaAlgorithmBase, Plugin):
     _name = "Simple"
 
     def __init__(self):
-        CpaAlgorithmBase.__init__(self)
+        AlgorithmsBase.__init__(self)
         self.modelstate = {'knownkey':None}
+        self.updateScript()
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, knownkeys, progressBar, model, state, pbcnt):
         diffs = [0]*self.model.getPermPerSubkey()
@@ -124,7 +125,7 @@ class CPASimpleLoop(CpaAlgorithmBase, Plugin):
 
         return (diffs, pbcnt)
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None, tracesLoop=None):
         brange=self.brange
         numtraces = tracerange[1] - tracerange[0] + 1
 
@@ -141,14 +142,14 @@ class CPASimpleLoop(CpaAlgorithmBase, Plugin):
             # Handle Offset
             tnum = i + tracerange[0]
 
-            d = tracedata.getTrace(tnum)
+            d = traceSource.getTrace(tnum)
             if d is None:
                 continue
 
             data.append(d)
-            textins.append(tracedata.getTextin(tnum))
-            textouts.append(tracedata.getTextout(tnum))
-            knownkeys.append(tracedata.getKnownKey(tnum))
+            textins.append(traceSource.getTextin(tnum))
+            textouts.append(traceSource.getTextout(tnum))
+            knownkeys.append(traceSource.getKnownKey(tnum))
 
         traces = np.array(data)
         textins = np.array(textins)

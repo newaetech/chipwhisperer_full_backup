@@ -28,7 +28,6 @@
 #===========================================================
 
 import sys
-from chipwhisperer.common.ui.ProgressBar import ProgressBar
 from chipwhisperer.common.utils import pluginmanager
 from _base import AttackBaseClass
 
@@ -36,114 +35,16 @@ from _base import AttackBaseClass
 class Profiling(AttackBaseClass):
     """Profiling Power Analysis Attack"""
     _name = "Profiling"
-    _algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", False, False, self)
 
     def __init__(self):
+        self._algos = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.profiling_algorithms", True, False)
+        self._analysisAlgorithm = self._algos["Template Attack"]
         AttackBaseClass.__init__(self)
-        self._project = None
-        self.attack = None
-        # Do not use absolute
-        self.useAbs = False
-        self.updateAlgorithm()
-        self.updateBytesVisible()
-        self.setAbsoluteMode(False)
-
-    def updateAlgorithm(self, _=None):
-        self.setAnalysisAlgorithm(self.findParam('Prof_algo').getValue())
-        self.updateBytesVisible()
-        self.updateScript()
+        self.useAbs = False # Do not use absolute
 
     def updateScript(self, _=None):
+        AttackBaseClass.updateScript(self)
         self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
 
-        analysAlgoStr = self.attack.__class__.__name__
-        self.importsAppend("from %s import %s" % (sys.modules[self.attack.__class__.__module__].__name__, analysAlgoStr))
-
-        # self.addFunction("init", "setKeyround", "0")
-
-        # Add attack 'other' functions such as template generators etc
-        if hasattr(self.attack, '_smartstatements'):
-            for k in self.attack._smartstatements:
-                self.mergeGroups(k, self.attack, prefix='attack')
-
-            for k in self.attack.getImportStatements():
-                self.importsAppend(k)
-
-        self.addFunction("init", "setAnalysisAlgorithm", "%s" % (analysAlgoStr), loc=0)
-        self.addFunction("init", "setTraceSource", "UserScript.traces", loc=0)
-        self.addFunction("init", "setProject", "UserScript.api.project()", loc=0)
-
-    def setProject(self, project):
-        self._project = project
-
-    def project(self):
-        return self._project
-
-    def setAnalysisAlgorithm(self, analysisAlgorithm):
-        if self.attack is not None:
-            self.attack.getParams().remove()
-
-        self.attack = analysisAlgorithm(self)
-        self.attack.setTraceSource(self.getTraceSource())
-        self.attack.setProject(self.project())
-        self.attack.runScriptFunction.connect(self.runScriptFunction.emit)
-        self.traceLimitsChanged.connect(self.attack.traceLimitsChanged)
-
-        try:
-            self.attackParams = self.attack.paramList()[0]
-        except:
-            self.attackParams = None
-
-        if hasattr(self.attack, 'scriptsUpdated'):
-            self.attack.scriptsUpdated.connect(self.updateScript)
-
-        self.getParams().append(self.attack.getParams())
-
-    def setKeyround(self, rnd):
-        self._keyround = rnd
-
-    def keyround(self):
-        return self._keyround
-
-    def processTraces(self):
-        progressBar = ProgressBar("Analysis in Progress", "Attaking with Profiling:")
-        with progressBar:
-            self.attack.setReportingInterval(self.getReportingInterval())
-
-            #TODO: support start/end point different per byte
-            (startingPoint, endingPoint) = self.getPointRange(None)
-
-            self.attack.getStatistics().clear()
-
-            self.sigAnalysisStarted.emit()
-            for itNum in range(1, self.getIterations() + 1):
-                startingTrace = self.getTracesPerAttack() * (itNum - 1) + self.getTraceStart()
-                endingTrace = self.getTracesPerAttack() * itNum + self.getTraceStart()
-
-                data = []
-                textins = []
-                textouts = []
-
-                for i in range(startingTrace, endingTrace):
-                    d = self.getTraceSource().getTrace(i)
-
-                    if d is None:
-                        continue
-
-                    d = d[startingPoint:endingPoint]
-
-                    data.append(d)
-                    textins.append(self.getTraceSource().getTextin(i))
-                    textouts.append(self.getTraceSource().getTextout(i))
-
-                #self.attack.clearStats()
-                self.attack.setByteList(self.getTargetSubkeys())
-                self.attack.setStatsReadyCallback(self.sigAnalysisUpdated.emit)
-
-                #TODO:  pointRange=self.TraceRangeList[1:17]
-                self.attack.addTraces(data, textins, textouts, knownkeys=None, progressBar=progressBar)
-
-        self.sigAnalysisDone.emit()
-
-    def getStatistics(self):
-        return self.attack.getStatistics()
+        analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__ + '.' + self._analysisAlgorithm.__class__.__name__
+        self.addFunction("init", "setAnalysisAlgorithm", "%s" % analysAlgoStr, loc=0)

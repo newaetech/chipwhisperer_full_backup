@@ -161,6 +161,7 @@ class AttackScriptGen(Parameterized):
             self.reloadScripts()
             self.attack.scriptsUpdated.connect(self.reloadScripts)
             self.attack.runScriptFunction.connect(self.runScriptFunction)
+            self.attack.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
 
     def runScriptFunction(self, funcName, filename=None):
         """Loads a given script and runs a specific function within it."""

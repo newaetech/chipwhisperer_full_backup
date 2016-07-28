@@ -32,7 +32,7 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class AES128_8bit(ModelsBase, Plugin):
-    _name = 'AES Model'
+    _name = 'AES 128'
 
     LEAK_HW_SBOXOUT_FIRSTROUND = 1
     LEAK_HD_LASTROUND_STATE = 2

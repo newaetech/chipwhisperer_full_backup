@@ -28,7 +28,7 @@
 import numpy as np
 import math
 
-from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
@@ -148,21 +148,22 @@ class CPAProgressiveOneSubkey(object):
         return (diffs, pbcnt)
 
 
-class CPAProgressive(CpaAlgorithmBase, Plugin):
+class CPAProgressive(AlgorithmsBase, Plugin):
     """
     CPA Attack done as a loop, but using an algorithm which can progressively add traces & give output stats
     """
     _name = "Progressive"
 
     def __init__(self):
-        CpaAlgorithmBase.__init__(self)
+        AlgorithmsBase.__init__(self)
 
         self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf', 'action':self.updateScript},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False, 'action':self.updateScript},
         ])
+        self.updateScript()
 
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None):
         numtraces = tracerange[1] - tracerange[0] + 1
         if progressBar:
             progressBar.setText("Attacking traces subset: from %d to %d (total = %d)" % (tracerange[0], tracerange[1], numtraces))
@@ -213,10 +214,10 @@ class CPAProgressive(CpaAlgorithmBase, Plugin):
                     tnum = i + tracerange[0]
 
                     try:
-                        data.append(tracedata.getTrace(tnum))
-                        textins.append(tracedata.getTextin(tnum))
-                        textouts.append(tracedata.getTextout(tnum))
-                        knownkeys.append(tracedata.getKnownKey(tnum))
+                        data.append(traceSource.getTrace(tnum))
+                        textins.append(traceSource.getTextin(tnum))
+                        textouts.append(traceSource.getTextout(tnum))
+                        knownkeys.append(traceSource.getKnownKey(tnum))
                     except Exception, e:
                         progressBar.abort(e.message)
                         return

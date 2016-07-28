@@ -28,8 +28,7 @@ import logging
 import numpy as np
 from scipy.stats import norm
 
-from chipwhisperer.analyzer.attacks.cpa_algorithms.base import CpaAlgorithmBase
-from .._stats import DataTypeDiffs
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -285,20 +284,20 @@ class TemplateOneSubkey(object):
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(CpaAlgorithmBase):
+class CPAExperimentalChannelinfo(AlgorithmsBase):
     """NOT WORKING!!"""
     _name = "CPA Experimental Channel Info"
 
     def __init__(self):
-        CpaAlgorithmBase.__init__(self)
+        AlgorithmsBase.__init__(self)
 
         self.getParams().addChildren([
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
+        self.updateScript()
 
-
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -389,15 +388,15 @@ class CPAExperimentalChannelinfo(CpaAlgorithmBase):
                     # Handle Offset
                     tnum = i + tracerange[0]
 
-                    d = tracedata.getTrace(tnum)
+                    d = traceSource.getTrace(tnum)
 
                     if d is None:
                         continue
 
                     data.append(d)
-                    textins.append(tracedata.getTextin(tnum))
-                    textouts.append(tracedata.getTextout(tnum))
-                    knownkeys.append(tracedata.getKnownKey(tnum))
+                    textins.append(traceSource.getTextin(tnum))
+                    textouts.append(traceSource.getTextout(tnum))
+                    knownkeys.append(traceSource.getKnownKey(tnum))
 
                 traces = np.array(data)
                 textins = np.array(textins)

@@ -124,7 +124,7 @@ class Attack(UserScriptBase):
         self.initAnalysis2()
         self.attack.processTraces()
 
-        # Delete all pending scripts executions (that are observing the api to be available again),
+        # Delete all pending script executions (that are observing the api to be available again),
         # otherwise the current setup would be overridden
         self.api.executingScripts.disconnectAll()
 

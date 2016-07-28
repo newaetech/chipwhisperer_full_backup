@@ -22,7 +22,7 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
 class DES(ModelsBase, Plugin):
-    _name = 'DES Model'
+    _name = 'DES'
 
     LEAK_HW_SBOXOUT_FIRSTROUND = 0
     LEAK_HW_SBOXIN_FIRSTROUND = 1
