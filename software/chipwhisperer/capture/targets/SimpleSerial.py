@@ -200,7 +200,7 @@ class SimpleSerial(TargetTemplate):
         expected = fmt.split("$RESPONSE$")
 
         #Read data from serial port
-        response = self.ser.read(dataLen)
+        response = self.ser.read(dataLen, timeout=500)
 
         if len(response) < dataLen:
             logging.warning('Response length from target shorter than expected (%d<%d): "%s".' % (len(response), dataLen, response))
