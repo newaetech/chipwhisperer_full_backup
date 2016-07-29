@@ -101,6 +101,8 @@ int main
 	int ptr = 0;
     
 	char state = 0;
+    
+    //des_enc(ct, key, key);
 	 
 	while(1){
 	
@@ -141,7 +143,9 @@ int main
 				hex_decode(asciibuf, ptr, pt);
 
 				/* Do Encryption */					
-				trigger_high();
+                //NOTE: Setup for DES is huge - about 15000(!) clock cycles. This results in a large
+                //      and annoying offset. Instead trigger_high() is called within the DES algorithm.
+				//trigger_high();
 				des_enc(ct, pt, key); /* encrypting the data block */
 				trigger_low();
 				               

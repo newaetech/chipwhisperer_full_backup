@@ -29,6 +29,9 @@
 #include <string.h>
 #include <avr/pgmspace.h>
 
+//The following is ONLY required for trigger_high() call
+#include "hal.h"
+
 const uint8_t sbox[256] PROGMEM = {
   /* S-box 1 */
   0xE4, 0xD1, 0x2F, 0xB8, 0x3A, 0x6C, 0x59, 0x07,
@@ -278,8 +281,11 @@ uint32_t des_f(uint32_t r, uint8_t* kr){
 	for(i=0; i<7; ++i)
 		((uint8_t*)&data)[i] ^= kr[i];
 	
+    //Trigger now
+    trigger_high();
+    
 	/* Sbox substitution */
-	data = splitin6bitwords(data);
+    	data = splitin6bitwords(data);
 	sbp=(uint8_t*)sbox;
 	for(i=0; i<8; ++i){
 		uint8_t x;
