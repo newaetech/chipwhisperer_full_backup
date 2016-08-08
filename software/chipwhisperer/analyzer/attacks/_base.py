@@ -61,10 +61,10 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         self.useAbs = True
         self.attack = None
 
-        models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
         self.getParams().addChildren([
             {'name':'Attack Algorithm', 'type':'list',  'values':self._algos, 'get':self.getAlgorithm, 'set':self.setAlgorithm, 'action':self.updateScript, 'childmode': 'parent'}
         ])
+        models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
         self.getParams().addChildren([
             {'name':'Crypto Algorithm', 'type':'list', 'values':models, 'value':models['AES 128'], 'action':self.refreshByteList, 'childmode':'child'},
             {'name':'Points Range', 'key':'prange', 'type':'range', 'get':self.getPointRange, 'set':self.setPointRange, 'action':self.updateScript},

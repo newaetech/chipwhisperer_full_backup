@@ -30,8 +30,8 @@ import sys
 from PySide.QtGui import *
 
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.common.utils.util import hexstr2list
+from chipwhisperer.common.utils import pluginmanager
+from chipwhisperer.common.utils import util
 
 
 class KeyScheduleDialog(QtFixes.QDialog):
@@ -60,25 +60,30 @@ class KeyScheduleDialog(QtFixes.QDialog):
         self.outkey.setReadOnly(True)
         self.outkey.setFont(QFont("Courier"))
 
-
         outmodeL = QHBoxLayout()
         outmodeL.addWidget(QLabel("Format:"))
         outmodeL.addWidget(self.outmode)
         outmodeL.addStretch()
 
-
         self.inprnd = QComboBox()
         self.inprnd.currentIndexChanged.connect(self.inTextChanged)
-        self.setKeyLength(128)
+
+        models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
+        self.algo = QComboBox()
+        for k, v in models.iteritems():
+            self.algo.addItem(k, v)
+        self.algo.currentIndexChanged.connect(self.refreshRoundKeysLength)
 
         indataL = QHBoxLayout()
+        indataL.addWidget(self.algo)
         indataL.addWidget(QLabel("Key:"))
         indataL.addWidget(self.indata)
+        indataL.addWidget(QLabel("Round:"))
         indataL.addWidget(self.inprnd)
         self.indata.textChanged.connect(self.inTextChanged)
 
         outdataL = QHBoxLayout()
-        outdataL.addWidget(QLabel("Key:"))
+        outdataL.addWidget(QLabel("Subkeys:"))
         outdataL.addWidget(self.outkey)
 
         gbIndata = QGroupBox("Input Known Key")
@@ -99,88 +104,48 @@ class KeyScheduleDialog(QtFixes.QDialog):
 
         layout.addWidget(gbKeySched)
 
-        self.setWindowTitle("AES-128/AES-256 Key Schedule Calculator")
-        self.setObjectName("AES Key Schedule")
+        self.setWindowTitle("Key Schedule Calculator")
+        self.setObjectName("Key Schedule")
+        self.refreshRoundKeysLength()
 
-        # try:
-        self.setWindowIcon(QIcon(":/images/cwiconA.png"))
-        # except:
-        #    pass
-
-    def aesmodeChanged(self, indx):
-        self.setKeyLength(self.aesmode.itemData(indx))
-
-    def setKeyLength(self, klen):
-        pi = self.inprnd.currentIndex()
+    def refreshRoundKeysLength(self):
+        model = self.algo.itemData(self.algo.currentIndex())
         self.inprnd.blockSignals(True)
-        if klen == 128:
-            self.inprnd.clear()
-            self.inprnd.addItem("0  (Initial Enc.)", 0)
-            self.inprnd.addItem("10 (Initial Dec.)", 10)
-        elif klen == 256:
-            self.inprnd.clear()
-            self.inprnd.addItem("0/1   (Initial Enc.)", 0)
-            self.inprnd.addItem("13/14 (Initial Dec.)", 13)
-        else:
-            raise ValueError("Invalid keylength: %d" % klen)
-
-        if pi > -1:
-            self.inprnd.setCurrentIndex(pi)
+        self.inprnd.clear()
+        for n in range(model.getNumRoundKeys()+1):
+            self.inprnd.addItem(str(n), n)
+        self.inprnd.setCurrentIndex(0)
         self.inprnd.blockSignals(False)
 
-    def inTextChanged(self, data=None):
-
-        data = self.indata.text()
-
+    def inTextChanged(self, _=None):
         try:
-            newdata = hexstr2list(data)
+            model = self.algo.itemData(self.algo.currentIndex())
+            newdata = util.hexstr2list(self.indata.text())
+            newdata = [int(d) for d in newdata]
 
-            if len(newdata) != 16 and len(newdata) != 32:
-                err = "ERR: Len=%d: %s" % (len(newdata), newdata)
-                self.outkey.setText(err)
-                self.keysched.setText(err)
-            else:
-                if len(newdata) == 16:
-                    self.setKeyLength(128)
-                elif len(newdata) == 32:
-                    self.setKeyLength(256)
+            #Read settings
+            delim = self.outmode.itemData(self.outmode.currentIndex())
+            desired = 0
+            inpround = self.inprnd.itemData(self.inprnd.currentIndex())
 
-                #Read settings
-                delim = self.outmode.itemData(self.outmode.currentIndex())
-                desired = 0
-                inpround = self.inprnd.itemData(self.inprnd.currentIndex())
+            key = newdata
 
-                key = newdata
+            # Get initial key
+            self.outkey.setText(str(model.keyScheduleRounds(key, inpround, 0, returnSubkeys=False)))
 
-                # Get initial key
-                result = keyScheduleRounds(key, inpround, desired)
-                if len(key) == 32:
-                    result.extend(keyScheduleRounds(key, inpround, desired + 1))
+            # Get entire key schedule
+            totalrndstr = ""
+            roundKeys = model.getRoundKeys(key, inpround)
+            for i, key in enumerate(roundKeys):
+                totalrndstr += "%2d: " % i
+                for bit in key:
+                    totalrndstr += (str(bit) if bit is not None else '?')
+                totalrndstr += "\n"
 
-                rstr = ["%02x" % t for t in result]
-                rstr = (delim[1] + delim[0]).join(rstr)
-                rstr = delim[0] + rstr
+            self.keysched.setText(totalrndstr)
 
-                self.outkey.setText(rstr)
-
-                # Get entire key schedule
-                if len(key) == 16:
-                    rnds = 10
-                elif len(key) == 32:
-                    rnds = 14
-
-                totalrndstr = ""
-                for r in range(0, rnds+1):
-                    result = keyScheduleRounds(key, inpround, r)
-                    rstr = ["%02x" % t for t in result]
-                    rstr = (delim[1] + delim[0]).join(rstr)
-                    rstr = delim[0] + rstr
-                    totalrndstr += rstr + "\n"
-
-                self.keysched.setText(totalrndstr)
-
-        except ValueError:
-            self.outkey.setText("ERR in HEX: %s" % data)
+        except:
+            pass
 
 
 if __name__ == '__main__':

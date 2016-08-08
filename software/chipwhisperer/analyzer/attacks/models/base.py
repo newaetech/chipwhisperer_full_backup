@@ -17,6 +17,7 @@ import sys
 
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import util
+import numpy as np
 
 
 class ModelsBase(Parameterized):
@@ -46,6 +47,7 @@ class ModelsBase(Parameterized):
         self.sigParametersChanged = util.Signal()
         self.numSubKeys = numSubKeys
         self.permPerSubkey = permPerSubkey
+        self.numRoundKeys = 0
         self.model = model
         self.getParams().addChildren([
             {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel},
@@ -69,8 +71,20 @@ class ModelsBase(Parameterized):
     def getPermPerSubkey(self):
         return self.permPerSubkey
 
+    def getNumRoundKeys(self):
+        return self.numRoundKeys
+
     def getHwModel(self):
         return self.model
+
+    def keyScheduleRounds(self, inputkey, inputround, desiredround, returnSubkeys=True):
+        pass
+
+    def getRoundKeys(self, key, iniRound):
+        ret = []
+        for targetRound in range(0, self.numRoundKeys+1):
+            ret.append(self.keyScheduleRounds(key, iniRound, targetRound, returnSubkeys=False))
+        return ret
 
     @setupSetParam("Hardware Model")
     def setHwModel(self, model):
@@ -79,6 +93,23 @@ class ModelsBase(Parameterized):
 
     def getHwModelString(self):
         return sys.modules[self.__class__.__module__].__name__  + '.' + self.__class__.__name__  + '.' + self.hwModels_toStr[self.model]
+
+    def binary_list_to_subkeys(self, bitlist, nrBits):
+        ret = []
+        pos = 0
+        while pos <= len(bitlist) - nrBits:
+            out = 0
+            for bit in range(nrBits):
+                out = (out << 1) | bitlist[pos+bit]
+            ret.append(out)
+            pos += nrBits
+        return ret
+
+    def array_of_bytes_to_bin(self, bytes, nrBits):
+        init=np.array([], dtype=bool)
+        for byte in bytes:
+            init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8-nrBits:]), axis=0)
+        return init
 
     def _VccToGnd(self, var):
         """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""

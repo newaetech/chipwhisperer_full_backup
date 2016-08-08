@@ -57,6 +57,7 @@ class AES128_8bit(ModelsBase, Plugin):
 
     def __init__(self, model=LEAK_HW_SBOXOUT_FIRSTROUND):
         ModelsBase.__init__(self, 16, 256, model=model)
+        self.numRoundKeys = 10
 
     def processKnownKey(self, inpkey):
         if self.model == self.LEAK_HD_LASTROUND_STATE:

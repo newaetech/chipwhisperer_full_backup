@@ -13,8 +13,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from aetypes import Enum
-
 from base import ModelsBase
 import numpy as np
 
@@ -154,6 +152,7 @@ class DES(ModelsBase, Plugin):
 
     def __init__(self, model=LEAK_HW_SBOXOUT_FIRSTROUND):
         ModelsBase.__init__(self, 8, 64, model)
+        self.numRoundKeys = 16
 
     def processKnownKey(self, inpkey):
         return self.keyScheduleRounds(inpkey, 0, 1)
@@ -179,60 +178,36 @@ class DES(ModelsBase, Plugin):
         i = inputround
         L = key[:28]
         R = key[28:]
-        if i < desiredround:
-            while i < desiredround:
-                i += 1
-                j = 0
-                # Perform circular left shifts
-                while j < self.__left_rotations[i]:
-                    L.append(L[0])
-                    del L[0]
+        while i < desiredround:
+            i += 1
+            j = 0
+            # Perform circular left shifts
+            while j < self.__left_rotations[i]:
+                L.append(L[0])
+                del L[0]
 
-                    R.append(R[0])
-                    del R[0]
+                R.append(R[0])
+                del R[0]
 
-                    j += 1
+                j += 1
+        while i > desiredround:
+            # Perform circular right shifts
+            j = 0
+            while j < self.__left_rotations[i]:
+                L.insert(0,L[27])
+                del L[28]
 
-                # Create one of the 16 subkeys through pc2 permutation
-                key = self.__permutate(self.__pc2, L + R)
-        elif i > desiredround:
-            while i > desiredround:
-                # Perform circular right shifts
-                j = 0
-                while j < self.__left_rotations[i]:
-                    L.insert(0,L[27])
-                    del L[28]
+                R.insert(0,R[27])
+                del R[28]
 
-                    R.insert(0,R[27])
-                    del R[28]
-
-                    j += 1
-
-                # Create one of the 16 subkeys through pc2 permutation
-                i -= 1
-            key = L + R
+                j += 1
+            i -= 1
         if desiredround==0:
-            key = self.__permutate(self.__pc1_inv, key)
+            key = self.__permutate(self.__pc1_inv, L + R)
             return self.binary_list_to_subkeys(key, 8) if returnSubkeys else key
-
-        return self.binary_list_to_subkeys(key, 6) if returnSubkeys else key
-
-    def binary_list_to_subkeys(self, bitlist, nrBits):
-        ret = []
-        pos = 0
-        while pos <= len(bitlist) - nrBits:
-            out = 0
-            for bit in range(nrBits):
-                out = (out << 1) | bitlist[pos+bit]
-            ret.append(out)
-            pos += nrBits
-        return ret
-
-    def array_of_bytes_to_bin(self, bytes, nrBits):
-        init=np.array([], dtype=bool)
-        for byte in bytes:
-            init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8-nrBits:]), axis=0)
-        return init
+        else:
+            key = self.__permutate(self.__pc2, L + R)
+            return self.binary_list_to_subkeys(key, 6) if returnSubkeys else key
 
     def sbox_in_first_fbox(self, pt, guess, bnum):
         init=self.array_of_bytes_to_bin(pt, 8)
@@ -310,6 +285,10 @@ if __name__ == "__main__":
     #     v +=  rk[1][permNum*6+5]*1
     #     print model.sbox_in_first_fbox(pt, v, permNum)
 
+#22 10 30 21 32 38 07 3F
     guessedkey = [0x22, 0x10, 0x30, 0x21, 0x32, 0x38, 0x07, 0x3F]
     originalkey = [0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6]
+    print str(model.array_of_bytes_to_bin(originalkey, 8))
+    print str(model.array_of_bytes_to_bin(guessedkey, 6))
+
     print "Unknown bits = %s, Wrong bit guesses = %s" % model.compare(model.array_of_bytes_to_bin(originalkey, 8), model.keyScheduleRounds(guessedkey, 1, 0, returnSubkeys=False))
