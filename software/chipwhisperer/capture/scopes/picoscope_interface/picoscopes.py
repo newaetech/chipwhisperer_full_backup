@@ -41,7 +41,7 @@ from picoscope import ps5000a
 from picoscope import ps6000
 
 
-class PicoScope(Parameterized):
+class PicoScopeBase(Parameterized):
     _name = 'Pico Scope'
 
     def __init__(self, psClass=None):
@@ -58,7 +58,7 @@ class PicoScope(Parameterized):
         for key in sorted(self.ps.CHANNEL_RANGE):
             chRange[ key['rangeStr'] ] = key['rangeV']
 
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Trace Measurement', 'key':'trace', 'type':'group', 'children':[
                 {'name':'Source', 'key':'tracesource', 'type':'list', 'values':chlist, 'value':0, 'action':self.updateCurrentSettings},
                 {'name':'Probe Att.', 'key':'traceprobe', 'type':'list', 'values':{'1:1':1, '1:10':10}, 'value':1, 'action':self.updateCurrentSettings},
@@ -77,6 +77,7 @@ class PicoScope(Parameterized):
             {'name':'Sample Length', 'key':'samplelength', 'type':'int', 'step':250, 'limits':(1, 500E6), 'value':500, 'action':self.updateSampleRateFreq},
             {'name':'Sample Offset', 'key':'sampleoffset', 'type':'int', 'step':1000, 'limits':(0, 100E6), 'value':0, 'action':self.updateSampleRateFreq},
         ])
+
 
     @setupSetParam("")
     def updateSampleRateFreq(self, _=None):
@@ -107,6 +108,7 @@ class PicoScope(Parameterized):
     def con(self):
         self.ps.open()
         self.updateCurrentSettings()
+        self.params.init()
 
     def dis(self):
         self.ps.close()
@@ -148,31 +150,35 @@ class PicoScope(Parameterized):
         self.ps.runBlock()
 
     def capture(self):
+
+        #Hack for picoscope - report channel 0 only right now
+        channelNum = 0
+
         while not self.ps.isReady():
             time.sleep(0.01)
         data = self.ps.getDataV(self.findParam(['trace', 'tracesource']).getValue(), self.findParam('samplelength').getValue(), startIndex=self.findParam('sampleoffset').getValue(), returnOverflow=True)
         if data[1] is True:
             logging.warning('Overflow in data')
         self.datapoints = data[0]
-        self.dataUpdated.emit(self.datapoints, 0, self.ps.sampleRate)
+        self.dataUpdated.emit(channelNum, self.datapoints, 0, self.ps.sampleRate)
 
         # No timeout?
         return False
 
 
-class PicoScope6000(PicoScope, Plugin):
+class PicoScope6000(PicoScopeBase, Plugin):
     _name = "PS6000"
     def __init__(self):
-        PicoScope.__init__(self, ps6000.PS6000(connect=False))
+        PicoScopeBase.__init__(self, ps6000.PS6000(connect=False))
 
 
-class PicoScope5000a(PicoScope, Plugin):
+class PicoScope5000a(PicoScopeBase, Plugin):
     _name = "PS5000a"
     def __init__(self):
-        PicoScope.__init__(self, ps5000a.PS5000a(connect=False))
+        PicoScopeBase.__init__(self, ps5000a.PS5000a(connect=False))
 
 
-class PicoScope2000(PicoScope, Plugin):
+class PicoScope2000(PicoScopeBase, Plugin):
     _name = "PS2000"
     def __init__(self):
-        PicoScope.__init__(self, ps2000.PS2000(connect=False))
+        PicoScopeBase.__init__(self, ps2000.PS2000(connect=False))

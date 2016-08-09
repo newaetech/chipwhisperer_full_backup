@@ -39,17 +39,20 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.picoscope_interface", True, False)
 
         self.getParams().addChildren([
-            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'action':self.setCurrentScope}
+            {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes["PS5000a"], 'action':self.setCurrentScope_act}
         ])
-        self.params.init()
         self.scopetype = None
         self.advancedSettings = None
         self.setCurrentScope(self.findParam('type').getValue())
+
+    def setCurrentScope_act(self, param):
+        self.setCurrentScope(param.getValue())
 
     def setCurrentScope(self, scope):
         self.scopetype = scope
         if scope is not None:
             self.scopetype.dataUpdated.connect(self.newDataReceived)
+            self.params.append(self.scopetype.getParams())
 
     def _con(self):
         if self.scopetype is not None:
@@ -65,7 +68,7 @@ class PicoScopeInterface(ScopeTemplate, Plugin):
     def arm(self):
         try:
             self.scopetype.arm()
-        except Exception:
+        except:
             self.dis()
             raise
 
