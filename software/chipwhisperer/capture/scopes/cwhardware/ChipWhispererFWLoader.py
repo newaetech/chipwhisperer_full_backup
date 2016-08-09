@@ -179,7 +179,11 @@ class CWLite_Loader(CW_Loader):
         #Save settings
         self.write_setting('debugbitstream-location', self._bsLoc)
         self.write_setting('zipbitstream-location', self._bsZipLoc)
-        self.driver.FPGAProgram(self.fpga_bitstream())
+
+        if self.driver.isFPGAProgrammed() == False:
+            self.driver.FPGAProgram(self.fpga_bitstream())
+        else:
+            logging.info("FPGA Configuration skipped - detected already programmed")
 
     def setInterface(self, driver):
         self.driver = driver
