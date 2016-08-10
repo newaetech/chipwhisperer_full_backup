@@ -24,6 +24,7 @@
 
 
 import time
+import logging
 from naeusb import packuint32
 
 class FPGA(object):
@@ -80,7 +81,7 @@ class FPGA(object):
             self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
 
             if programStatus == False:
-                raise IOError("FPGA Done pin failed to go high, bad bitstream?")
+                raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
             return programStatus
         else:
