@@ -99,6 +99,7 @@ class AesKeyScheduleDialog(QtFixes.QDialog):
         self.setWindowTitle("AES-128/AES-256 Key Schedule Calculator")
         self.setObjectName("AES Key Schedule")
         self.setWindowIcon(QIcon(":/images/cwiconA.png"))
+        self.setMinimumSize(800,400)
 
     def aesmodeChanged(self, indx):
         self.setKeyLength(self.aesmode.itemData(indx))
@@ -160,12 +161,13 @@ class AesKeyScheduleDialog(QtFixes.QDialog):
                 elif len(key) == 32:
                     rnds = 14
 
-                totalrndstr = ""
+                totalrndstr = ''
                 for r in range(0, rnds+1):
                     result = self.model.keyScheduleRounds(key, inpround, r)
                     str = ["%02x" % t for t in result]
                     str = (delim[1] + delim[0]).join(str)
                     str = delim[0] + str
+                    totalrndstr += "%2d: " % r
                     totalrndstr += str + "\n"
 
                 self.keysched.setText(totalrndstr)
@@ -206,7 +208,7 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
         gbKeySched = QGroupBox("Full Key Schedule")
         keyschedL = QVBoxLayout()
         keyschedL.addWidget(self.keysched)
-        keyschedL.addWidget(QLabel("X - Parity bits (not used); ? - Unknown bits (could not recover)"))
+        keyschedL.addWidget(QLabel("X - Parity bits (not used); ? - Unknown/lost bits (could not be recovered)"))
         gbKeySched.setLayout(keyschedL)
 
         layout.addWidget(gbKeySched)
@@ -214,6 +216,7 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
         self.setWindowTitle("Key Schedule Calculator")
         self.setObjectName("Key Schedule")
         self.refreshRoundKeysLength()
+        self.setMinimumSize(800,400)
 
     def refreshRoundKeysLength(self):
         self.inprnd.blockSignals(True)

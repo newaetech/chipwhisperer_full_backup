@@ -108,3 +108,5 @@ class AES128_8bit(ModelsBase, Plugin):
         a ^= b
         return a
 
+    def keyScheduleRounds(self, inputkey, inputround, desiredround):
+        return keyScheduleRounds(inputkey, inputround, desiredround)
