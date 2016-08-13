@@ -113,10 +113,19 @@ class PassiveTraceObserver(Parameterized):
 
     @setupSetParam('Input')
     def setTraceSource(self, traceSource):
+        if self._traceSource:
+            self._traceSource.sigTracesChanged.disconnect(self.tracesUpdated)
+        if traceSource:
+            traceSource.sigTracesChanged.connect(self.tracesUpdated)
         self._traceSource = traceSource
+        self.tracesUpdated()
 
     def getTraceSource(self):
         return self._traceSource
+
+    def tracesUpdated(self):
+        """Trace source was updated. Time to do something about"""
+        pass
 
     def processTraces(self):
         """Process the Traces acording to its current state"""

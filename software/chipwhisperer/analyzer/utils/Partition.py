@@ -27,13 +27,12 @@
 
 import copy
 import logging
+import random
 
 import numpy as np
-import random
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
+from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
+from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.parameter import Parameterized
 
 
@@ -59,9 +58,9 @@ class PartitionHDLastRound(object):
 
         guess = [0] * 16
         for i in range(0, 16):
-            st10 = ct[INVSHIFT[i]]
+            st10 = ct[AES128_8bit.INVSHIFT[i]]
             st9 = inv_sbox(ct[i] ^ key[i])
-            guess[i] = getHW(st9 ^ st10)
+            guess[i] = AES128_8bit.getHW(st9 ^ st10)
         return guess
 
 
@@ -79,7 +78,7 @@ class PartitionHWIntermediate(object):
 
         guess = [0] * 16
         for i in range(0, 16):
-            guess[i] = getHW(sbox(text[i] ^ key[i]))
+            guess[i] = AES128_8bit.getHW(sbox(text[i] ^ key[i]))
 
         return guess
 

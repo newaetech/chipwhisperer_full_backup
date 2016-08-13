@@ -24,7 +24,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
-from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
+from base import ModelsBase
+from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
 
 
 class AES(object):
@@ -181,91 +182,61 @@ class AES(object):
         return output
 
 
-numSubKeys = 32
-permPerSubkey = 256
+class AES256_8bit(ModelsBase):
+    SHIFT = []
 
-##Generate this table with:
-#HW = []
-#for n in range(0, 256):
-#    HW = HW + [bin(n).count("1")]
-HW8Bit = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3,
-          4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4,
-          4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 1, 2, 2, 3, 2,
-          3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5,
-          4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4,
-          5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3,
-          3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2,
-          3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6,
-          4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5,
-          6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5,
-          5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6,
-          7, 7, 8]
+    INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
 
-SHIFT = []
+    def __init__(self, model=None):
+        ModelsBase.__init__(self, 32, 256, model=model)
 
-INVSHIFT = [0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12, 1, 6, 11]
+    def xtime(self, a):
+        """xtime operation"""
+        a %= 0x100
+        b = 0
+        if a & 0x80:
+            b = 0x1b
+        a <<= 1
+        a &= 0xff
+        a ^= b
+        return a
 
+    def HypHW(self, pt, ct, key, bnum):
+        """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
+        if pt != None:
+            return self.HW[sbox(pt[bnum] ^ key)]
+        elif ct != None:
+            knownkey = [0xae, 0x83, 0xc1, 0xa5, 0x6b, 0xcb, 0xc6, 0x46, 0x55, 0xa3, 0xbf, 0x8d, 0x58, 0xfa, 0x20, 0x6d]
+            a = AES()
+            xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
+            block = a.mapin(xored)
+            block = a.shiftRows(block, True)
+            block = a.subBytes(block, True)
+            block = a.mixColumns(block, True)
+            block = a.shiftRows(block, True)
+            result = a.mapout(block)
+            return self.HW[inv_sbox((result[bnum] ^ key))]
+        else:
+            raise ValueError("Must specify PT or CT")
 
-def xtime(a):
-    """xtime operation"""
-    a %= 0x100
-    b = 0
-    if a & 0x80:
-        b = 0x1b
-    a <<= 1
-    a &= 0xff
-    a ^= b
-    return a
+    def HypHWXtime(self, pt, keyguess, numguess, keyknown, bnumknown):
+        """Given plaintext + a subkey guess + a known subkey + subkey numbers return xtime result"""
+        a = sbox(pt[numguess] ^ keyguess)
+        b = sbox(pt[bnumknown] ^ keyknown)
+        raise ValueError("Should this be HW instead of just xtime()???")
+        return self.HW[xtime(a^b)]
 
-
-def HypHW(pt, ct, key, bnum):
-    """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming weight of result"""
-    if pt != None:
-        return getHW(sbox(pt[bnum] ^ key))
-    elif ct != None:
-        knownkey = [0xae, 0x83, 0xc1, 0xa5, 0x6b, 0xcb, 0xc6, 0x46, 0x55, 0xa3, 0xbf, 0x8d, 0x58, 0xfa, 0x20, 0x6d]
-        a = AES()
-        xored = [knownkey[i] ^ ct[i] for i in range(0, 16)]
-        block = a.mapin(xored)
-        block = a.shiftRows(block, True)
-        block = a.subBytes(block, True)
-        block = a.mixColumns(block, True)
-        block = a.shiftRows(block, True)
-        result = a.mapout(block)
-        return getHW(inv_sbox((result[bnum] ^ key)))
-    else:
-        raise ValueError("Must specify PT or CT")
-
-
-def HypHWXtime(pt, keyguess, numguess, keyknown, bnumknown):
-    """Given plaintext + a subkey guess + a known subkey + subkey numbers return xtime result"""
-    a = sbox(pt[numguess] ^ keyguess)
-    b = sbox(pt[bnumknown] ^ keyknown)
-    raise ValueError("Should this be HW instead of just xtime()???")
-    return getHW(xtime(a^b))
-
-
-def HypHD(pt, ct, key, bnum):
-    """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming distance of result"""
-    #Get output
-    if pt != None:
-        #TODO: This does't work too well, need to fix
-        st2 = sbox(pt[bnum] ^ key)
-        st1 = pt[bnum]
-        return getHW(st1 ^ st2)
-    elif ct != None:
-        st10 = ct[INVSHIFT[bnum]]
-        st9 = [ct[bnum] ^ key]
-        return getHW(st9 ^ st10)
-    else:
-        raise ValueError("Must specify PT or CT")
-
-
-def getHW(var):
-    """Given a variable, return the hamming weight (number of 1's)"""
-    return HW8Bit[var]
-
-
-def VccToGnd(var):
-    """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""
-    return 8-var
+    def HypHD(self, pt, ct, key, bnum):
+        """Given either plaintext or ciphertext (not both) + a key guess, return hypothetical hamming distance of result"""
+        #Get output
+        if pt != None:
+            #TODO: This does't work too well, need to fix
+            st2 = sbox(pt[bnum] ^ key)
+            st1 = pt[bnum]
+            return self.HW[st1 ^ st2]
+        elif ct != None:
+            st10 = ct[self.INVSHIFT[bnum]]
+            st9 = [ct[bnum] ^ key]
+            return self.HW[st9 ^ st10]
+        else:
+            raise ValueError("Must specify PT or CT")

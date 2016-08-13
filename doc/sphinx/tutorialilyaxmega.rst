@@ -194,7 +194,7 @@ We will first automatically configure a script, and then use that as the base fo
 
 12. Adjust the attack bytes to *NOT* attack the first byte, as our hacked script will not work with it::
 
-      self.attack.setTargetBytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+      self.attack.setTargetSubkeys([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
 
 13. We want to disable 'absolute mode', where by default the absolute value of the CPA attack is taken. We can do this by adding
     a call to `self.attack.setAbsoluteMode(False)` before the return statement, for example::
@@ -268,7 +268,7 @@ Here is the full attack script for current releases::
            self.attack.setTracesPerAttack(2999)
            self.attack.setIterations(1)
            self.attack.setReportingInterval(500)
-           self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
            self.attack.setTraceManager(self.traceManager())
            self.attack.setProject(self.project())
            self.attack.setPointRange((0,996))
@@ -339,7 +339,7 @@ Here is the full attack script::
            self.attack.setTracesPerAttack(2999)
            self.attack.setIterations(1)
            self.attack.setReportingInterval(50)
-           self.attack.setTargetBytes([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+           self.attack.setTargetSubkeys([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
            self.attack.setKeyround(0)
            self.attack.setDirection('enc')
            self.attack.setTraceManager(self.traceManager())
