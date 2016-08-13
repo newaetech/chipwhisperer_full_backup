@@ -25,19 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys
-
 from PySide.QtGui import *
-
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
-from chipwhisperer.common.utils import pluginmanager
 from chipwhisperer.common.utils import util
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
+from chipwhisperer.analyzer.attacks.models.DES import DES
 
 
-class KeyScheduleDialog(QtFixes.QDialog):
+class AesKeyScheduleDialog(QtFixes.QDialog):
 
     def __init__(self, parent=None):
-        super(KeyScheduleDialog, self).__init__(parent)
+        super(AesKeyScheduleDialog, self).__init__(parent)
+        self.model = AES128_8bit()
 
         layout = QVBoxLayout()
         self.setLayout(layout)
@@ -67,23 +66,16 @@ class KeyScheduleDialog(QtFixes.QDialog):
 
         self.inprnd = QComboBox()
         self.inprnd.currentIndexChanged.connect(self.inTextChanged)
-
-        models = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks.models", True, False)
-        self.algo = QComboBox()
-        for k, v in models.iteritems():
-            self.algo.addItem(k, v)
-        self.algo.currentIndexChanged.connect(self.refreshRoundKeysLength)
+        self.setKeyLength(128)
 
         indataL = QHBoxLayout()
-        indataL.addWidget(self.algo)
         indataL.addWidget(QLabel("Key:"))
         indataL.addWidget(self.indata)
-        indataL.addWidget(QLabel("Round:"))
         indataL.addWidget(self.inprnd)
         self.indata.textChanged.connect(self.inTextChanged)
 
         outdataL = QHBoxLayout()
-        outdataL.addWidget(QLabel("Subkeys:"))
+        outdataL.addWidget(QLabel("Key:"))
         outdataL.addWidget(self.outkey)
 
         gbIndata = QGroupBox("Input Known Key")
@@ -104,56 +96,156 @@ class KeyScheduleDialog(QtFixes.QDialog):
 
         layout.addWidget(gbKeySched)
 
+        self.setWindowTitle("AES-128/AES-256 Key Schedule Calculator")
+        self.setObjectName("AES Key Schedule")
+        self.setWindowIcon(QIcon(":/images/cwiconA.png"))
+
+    def aesmodeChanged(self, indx):
+        self.setKeyLength(self.aesmode.itemData(indx))
+
+    def setKeyLength(self, klen):
+        pi = self.inprnd.currentIndex()
+        self.inprnd.blockSignals(True)
+        if klen == 128:
+            self.inprnd.clear()
+            self.inprnd.addItem("0  (Initial Enc.)", 0)
+            self.inprnd.addItem("10 (Initial Dec.)", 10)
+        elif klen == 256:
+            self.inprnd.clear()
+            self.inprnd.addItem("0/1   (Initial Enc.)", 0)
+            self.inprnd.addItem("13/14 (Initial Dec.)", 13)
+        else:
+            raise ValueError("Invalid keylength: %d" % klen)
+
+        if pi > -1:
+            self.inprnd.setCurrentIndex(pi)
+        self.inprnd.blockSignals(False)
+
+    def inTextChanged(self, data=None):
+        data = self.indata.text()
+        try:
+            newdata = util.hexstr2list(data)
+
+            if len(newdata) != 16 and len(newdata) != 32:
+                err = "ERR: Len=%d: %s" % (len(newdata), newdata)
+                self.outkey.setText(err)
+                self.keysched.setText(err)
+            else:
+                if len(newdata) == 16:
+                    self.setKeyLength(128)
+                elif len(newdata) == 32:
+                    self.setKeyLength(256)
+
+                #Read settings
+                delim = self.outmode.itemData(self.outmode.currentIndex())
+                desired = 0
+                inpround = self.inprnd.itemData(self.inprnd.currentIndex())
+
+                key = newdata
+
+                # Get initial key
+                result = self.model.keyScheduleRounds(key, inpround, desired)
+                if len(key) == 32:
+                    result.extend(self.model.keyScheduleRounds(key, inpround, desired + 1))
+
+                rstr = ["%02x" % t for t in result]
+                rstr = (delim[1] + delim[0]).join(rstr)
+                rstr = delim[0] + rstr
+
+                self.outkey.setText(rstr)
+
+                # Get entire key schedule
+                if len(key) == 16:
+                    rnds = 10
+                elif len(key) == 32:
+                    rnds = 14
+
+                totalrndstr = ""
+                for r in range(0, rnds+1):
+                    result = self.model.keyScheduleRounds(key, inpround, r)
+                    str = ["%02x" % t for t in result]
+                    str = (delim[1] + delim[0]).join(str)
+                    str = delim[0] + str
+                    totalrndstr += str + "\n"
+
+                self.keysched.setText(totalrndstr)
+
+        except ValueError:
+            self.outkey.setText("ERR in HEX: %s" % data)
+
+
+class DesKeyScheduleDialog(QtFixes.QDialog):
+
+    def __init__(self, parent=None):
+        super(DesKeyScheduleDialog, self).__init__(parent)
+        self.model = DES()
+
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+
+        self.indata = QtFixes.QLineEdit("")
+        self.indata.setFont(QFont("Courier"))
+
+        self.keysched = QTextEdit("")
+        self.keysched.setFont(QFont("Courier"))
+
+        self.inprnd = QComboBox()
+        self.inprnd.currentIndexChanged.connect(self.inTextChanged)
+
+        indataL = QHBoxLayout()
+        indataL.addWidget(QLabel("Key:"))
+        indataL.addWidget(self.indata)
+        indataL.addWidget(QLabel("Round:"))
+        indataL.addWidget(self.inprnd)
+        self.indata.textChanged.connect(self.inTextChanged)
+
+        gbIndata = QGroupBox("Round Key/Subkey")
+        gbIndata.setLayout(indataL)
+        layout.addWidget(gbIndata)
+
+        gbKeySched = QGroupBox("Full Key Schedule")
+        keyschedL = QVBoxLayout()
+        keyschedL.addWidget(self.keysched)
+        keyschedL.addWidget(QLabel("X - Parity bits (not used); ? - Unknown bits (could not recover)"))
+        gbKeySched.setLayout(keyschedL)
+
+        layout.addWidget(gbKeySched)
+
         self.setWindowTitle("Key Schedule Calculator")
         self.setObjectName("Key Schedule")
         self.refreshRoundKeysLength()
 
     def refreshRoundKeysLength(self):
-        model = self.algo.itemData(self.algo.currentIndex())
         self.inprnd.blockSignals(True)
         self.inprnd.clear()
-        for n in range(model.getNumRoundKeys()+1):
+        for n in range(self.model.getNumRoundKeys()+1):
             self.inprnd.addItem(str(n), n)
         self.inprnd.setCurrentIndex(0)
         self.inprnd.blockSignals(False)
 
     def inTextChanged(self, _=None):
         try:
-            model = self.algo.itemData(self.algo.currentIndex())
-            newdata = util.hexstr2list(self.indata.text())
-            newdata = [int(d) for d in newdata]
+            key = util.hexstr2list(self.indata.text())
+            key = [int(d) for d in key]
 
             #Read settings
-            delim = self.outmode.itemData(self.outmode.currentIndex())
-            desired = 0
             inpround = self.inprnd.itemData(self.inprnd.currentIndex())
-
-            key = newdata
-
-            # Get initial key
-            self.outkey.setText(str(model.keyScheduleRounds(key, inpround, 0, returnSubkeys=False)))
 
             # Get entire key schedule
             totalrndstr = ""
-            roundKeys = model.getRoundKeys(key, inpround)
+            roundKeys = self.model.getRoundKeys(key, inpround)
             for i, key in enumerate(roundKeys):
                 totalrndstr += "%2d: " % i
-                for bit in key:
-                    totalrndstr += (str(bit) if bit is not None else '?')
+                for j, bit in enumerate(key):
+                    if bit is not None:
+                        totalrndstr += str(bit)
+                    elif i == 0 and j % 8 == 7:
+                        totalrndstr += 'X'
+                    else:
+                        totalrndstr += '?'
                 totalrndstr += "\n"
 
             self.keysched.setText(totalrndstr)
 
         except:
-            pass
-
-
-if __name__ == '__main__':
-    # Create the Qt Application
-    app = QApplication(sys.argv)
-    # Create and show the form
-    form = KeyScheduleDialog()
-    form.show()
-    # Run the main Qt loop
-    sys.exit(app.exec_())
-
+            self.keysched.clear()

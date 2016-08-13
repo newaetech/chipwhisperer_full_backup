@@ -152,7 +152,7 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
         try:
             ted = CWAnalyzerGUI.getInstance().traceExplorerDialog.exampleScripts[0]
         except AttributeError:
-            logging.info('Delaying script for template attack until TraceExplorer exists...')
+            logging.debug('Delaying script for template attack until TraceExplorer exists...')
             return
 
         self.addFunction('generateTemplates', 'initPreprocessing', '', obj='UserScript')
