@@ -213,8 +213,8 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
 
         layout.addWidget(gbKeySched)
 
-        self.setWindowTitle("Key Schedule Calculator")
-        self.setObjectName("Key Schedule")
+        self.setWindowTitle("DES Key Schedule Calculator")
+        self.setObjectName("DES Key Schedule")
         self.refreshRoundKeysLength()
         self.setMinimumSize(800,400)
 
