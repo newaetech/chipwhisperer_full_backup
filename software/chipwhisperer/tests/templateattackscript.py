@@ -2,6 +2,7 @@
 import os
 import shutil
 
+import chipwhisperer
 from chipwhisperer.common.scripts.base import UserScriptBase
 # Imports from Preprocessing
 # Imports from Attack
@@ -152,7 +153,7 @@ class Attack(UserScriptBase):
         tRange = (0, 1499)
         poiList = self.TraceExplorerDialog_PartitionDisplay_findPOI()
         partMethod = PartitionHWIntermediate()
-        templatedata = self.attack.attack.profiling.generate(self.attack.getTraceSource(), tRange, poiList, partMethod)
+        templatedata = chipwhisperer.analyzer.attacks.profiling_algorithms.template.TemplateUsingMVS.generate(self.attack.getTraceSource(), tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
 
 if __name__ == '__main__':

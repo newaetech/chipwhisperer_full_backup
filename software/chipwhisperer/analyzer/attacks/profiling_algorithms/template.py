@@ -170,7 +170,7 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
             self.importsAppend("from chipwhisperer.analyzer.utils.Partition import %s" % poidata["partitiontype"])
 
         profilingPath = sys.modules[self.profiling.__module__].__name__ + '.' + self.profiling.__name__
-        self.addFunction('generateTemplates', profilingPath + '.generate', 'self.getTraceSource(), tRange, poiList, partMethod', 'templatedata')
+        self.addFunction('generateTemplates', profilingPath + '.generate', 'self.getTraceSource(), tRange, poiList, partMethod', 'templatedata', "")
 
         #Save template data to project
         self.addFunction('generateTemplates', 'saveTemplatesToProject', 'tRange, templatedata', 'tfname')
@@ -257,7 +257,7 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
         results = np.zeros((self.model.getNumSubKeys(), self.model.getPermPerSubkey()))
 
         if progressBar:
-            progressBar.setStatusMask("Current Trace = %d-%d Current Subkey = %d", (0, 0, 0))
+            progressBar.setStatusMask("Current Trace = %d Current Subkey = %d", (0, 0))
             progressBar.setMaximum(self.model.getNumSubKeys() * len(data))
         pcnt = 0
 
@@ -299,7 +299,7 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
 
                 pcnt += 1
                 if progressBar:
-                    progressBar.updateStatus(pcnt, (tnum, len(data) - 1, bnum))
+                    progressBar.updateStatus(pcnt, (tnum, bnum))
                     if progressBar.wasAborted():
                         return
 

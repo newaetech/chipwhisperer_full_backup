@@ -101,10 +101,13 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
         if hasattr(self._analysisAlgorithm, 'scriptsUpdated'):
             self._analysisAlgorithm.scriptsUpdated.connect(self.updateScript)
+        if hasattr(self._analysisAlgorithm, 'runScriptFunction'):
+            self._analysisAlgorithm.runScriptFunction.connect(self.runScriptFunction.emit)
 
     def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg=AES128_8bit, hwmodel=1):
         """Called from the script to setup the attack"""
         self.attack = analysisAlgorithm()
+        self.attack.setProject(self._project)
         self.attackModel = cryptoalg()
         self.attackModel.setHwModel(hwmodel)
 
@@ -119,7 +122,6 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         progressBar = ProgressBar("Analysis in Progress", "Attacking with " + self.getName())
         with progressBar:
             self.attack.setModel(self.attackModel)
-            self.attack.setProject(self._project)
             self.attack.getStatistics().clear()
             self.attack.setReportingInterval(self.getReportingInterval())
             self.attack.setTargetSubkeys(self.getTargetSubkeys())
