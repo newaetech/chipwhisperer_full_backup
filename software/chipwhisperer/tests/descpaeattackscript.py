@@ -39,7 +39,7 @@ class Capture(UserScriptBase):
         xmega._logging = None
         xmega.find()
         xmega.erase()
-        xmega.program(r"simpleserial-des.hex", memtype="flash", verify=True)
+        xmega.program(r"simpleserial-des-xmega.hex", memtype="flash", verify=True)
         xmega.close()
 
         # Setup the capture parameters
@@ -50,8 +50,8 @@ class Capture(UserScriptBase):
             ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 7370000.0],
             ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
             ['OpenADC', 'Clock Setup', 'ADC Clock', 'Source', 'CLKGEN x4 via DCM'],
-            ['OpenADC', 'Trigger Setup', 'Total Samples', 3000],
-            ['OpenADC', 'Trigger Setup', 'Offset', 1250],
+            ['OpenADC', 'Trigger Setup', 'Total Samples', 3500],
+            ['OpenADC', 'Trigger Setup', 'Offset', 15500],
             ['OpenADC', 'Gain Setting', 'Setting', 45],
             ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
             #Final step: make DCMs relock in case they are lost
@@ -87,9 +87,9 @@ class Attack(UserScriptBase):
         self.attack.setTracesPerAttack(100)
         self.attack.setIterations(1)
         self.attack.setReportingInterval(10)
-        self.attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        self.attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7])
         self.attack.setTraceSource(self.traces)
-        self.attack.setPointRange((0, 2999))
+        self.attack.setPointRange((0, 3499))
 
     def initReporting(self):
         # Configures the attack observers (usually a set of GUI widgets)

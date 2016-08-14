@@ -99,8 +99,7 @@ class Attack(UserScriptBase):
     def initAnalysis(self):
         # Setup the CPA algorith
         self.attack = CPA()
-        self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit,chipwhisperer.analyzer.attacks.models.AES128_8bit.LEAK_HW_SBOXOUT_FIRSTROUND)
-        self.attack.setTraceStart(0)
+        self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit.AES128_8bit,chipwhisperer.analyzer.attacks.models.AES128_8bit.AES128_8bit.LEAK_HW_SBOXOUT_FIRSTROUND)
         self.attack.setTracesPerAttack(50)
         self.attack.setIterations(1)
         self.attack.setReportingInterval(10)

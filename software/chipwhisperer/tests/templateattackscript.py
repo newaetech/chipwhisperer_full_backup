@@ -40,7 +40,7 @@ class Capture(UserScriptBase):
         xmega._logging = None
         xmega.find()
         xmega.erase()
-        xmega.program(r"simeplserial-aes-xmega.hex", memtype="flash", verify=True)
+        xmega.program(r"simpleserial-aes-xmega.hex", memtype="flash", verify=True)
         xmega.close()
 
         # Setup the capture parameters
@@ -152,7 +152,7 @@ class Attack(UserScriptBase):
         tRange = (0, 1499)
         poiList = self.TraceExplorerDialog_PartitionDisplay_findPOI()
         partMethod = PartitionHWIntermediate()
-        templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
+        templatedata = self.attack.attack.profiling.generate(self.attack.getTraceSource(), tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
 
 if __name__ == '__main__':
