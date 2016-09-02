@@ -290,6 +290,7 @@ uint32_t des_f(uint32_t r, uint8_t* kr){
 	for(i=0; i<8; ++i){
 		uint8_t x;
 		x = substitute(((uint8_t*)&data)[i], sbp);
+        
 		t <<= 4;
 		t |= x;
 		sbp += 32;

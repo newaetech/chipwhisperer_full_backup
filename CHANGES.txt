@@ -1,3 +1,7 @@
+V3.1.11:
+- Added support to DES (recovers 48 of the 56 bits key)
+- Refactored attack classes
+
 V3.1.10:
 - Added basic support to multiple channels (doesn't save yet).
 - Trace Output Plot widget with new parameter: X Axis with time values.

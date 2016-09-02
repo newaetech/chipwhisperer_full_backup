@@ -2,6 +2,7 @@
 import os
 import shutil
 
+import chipwhisperer
 from chipwhisperer.common.scripts.base import UserScriptBase
 # Imports from Preprocessing
 # Imports from Attack
@@ -40,7 +41,7 @@ class Capture(UserScriptBase):
         xmega._logging = None
         xmega.find()
         xmega.erase()
-        xmega.program(r"simeplserial-aes-xmega.hex", memtype="flash", verify=True)
+        xmega.program(r"simpleserial-aes-xmega.hex", memtype="flash", verify=True)
         xmega.close()
 
         # Setup the capture parameters
@@ -88,7 +89,7 @@ class Attack(UserScriptBase):
         self.attack.setTracesPerAttack(1500)
         self.attack.setIterations(1)
         self.attack.setReportingInterval(10)
-        self.attack.setTargetBytes([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
+        self.attack.setTargetSubkeys([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
         self.attack.setPointRange((0,2999))
 
     def initAnalysis2(self):
@@ -124,7 +125,7 @@ class Attack(UserScriptBase):
         self.initAnalysis2()
         self.attack.processTraces()
 
-        # Delete all pending scripts executions (that are observing the api to be available again),
+        # Delete all pending script executions (that are observing the api to be available again),
         # otherwise the current setup would be overridden
         self.api.executingScripts.disconnectAll()
 
@@ -152,7 +153,7 @@ class Attack(UserScriptBase):
         tRange = (0, 1499)
         poiList = self.TraceExplorerDialog_PartitionDisplay_findPOI()
         partMethod = PartitionHWIntermediate()
-        templatedata = self.attack.attack.profiling.generate(tRange, poiList, partMethod)
+        templatedata = chipwhisperer.analyzer.attacks.profiling_algorithms.template.TemplateUsingMVS.generate(self.attack.getTraceSource(), tRange, poiList, partMethod)
         tfname = self.attack.attack.saveTemplatesToProject(tRange, templatedata)
 
 if __name__ == '__main__':

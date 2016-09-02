@@ -27,7 +27,7 @@ import logging
 import sys
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
-from chipwhisperer.common.ui.KeyScheduleDialog import KeyScheduleDialog
+from chipwhisperer.common.ui.KeyScheduleDialog import AesKeyScheduleDialog, DesKeyScheduleDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.common.results.base import ResultsBase
@@ -47,10 +47,14 @@ class CWAnalyzerGUI(CWMainGUI):
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
         CWAnalyzerGUI.instance = self
-        self.attackScriptGen.reloadScripts()
+
+    def projectChanged(self):
+        CWMainGUI.projectChanged(self)
+        self.attackScriptGen.projectChanged()
 
     def loadExtraModules(self):
-        self.keyScheduleDialog = KeyScheduleDialog(self)
+        self.aesKeyScheduleDialog = AesKeyScheduleDialog(self)
+        self.desKeyScheduleDialog = DesKeyScheduleDialog(self)
         self.attackScriptGen = AttackScriptGen(self)
 
         self.traceExplorerDialog = TraceExplorerDialog(self)
@@ -62,12 +66,10 @@ class CWAnalyzerGUI(CWMainGUI):
         toolbar.addAction(QAction(QIcon(':/images/attack.png'), 'Start Attack', self, triggered=self.doAnalysis))
 
     def addToolMenuItems(self):
-        # self.traceExplorerAct = QAction('Trace Explorer', self, statusTip='Get information on traces',
-        #                                 triggered=self.traceExplorerDialog.show)
-        # self.toolMenu.addAction(self.traceExplorerAct)
-        self.aesScheduleAct = QAction('AES Key Schedule', self, statusTip='Show AES Key Schedule calculator',
-                                      triggered=self.keyScheduleDialog.show)
-        self.toolMenu.addAction(self.aesScheduleAct)
+        self.toolMenu.addAction(QAction('AES Key Schedule', self, statusTip='Show AES Key Schedule calculator',
+                                      triggered=self.aesKeyScheduleDialog.show))
+        self.toolMenu.addAction(QAction('DES Key Schedule', self, statusTip='Show DES Key Schedule calculator',
+                                      triggered=self.desKeyScheduleDialog.show))
 
     def doAnalysis(self):
         """Called when the 'Do Analysis' button is pressed"""
@@ -100,12 +102,6 @@ class CWAnalyzerGUI(CWMainGUI):
         self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
                           self.settingsTraceExplorer, self.settingsResultsDock])
         self.attackScriptGen.editorDocks()
-
-    def tracesChanged(self):
-        """Traces changed due to loading new project or adjustment in trace manager,
-        so adjust limits displayed and re-plot the new input trace"""
-
-        self.attackScriptGen.reloadScripts()
 
     @staticmethod
     def getInstance():
