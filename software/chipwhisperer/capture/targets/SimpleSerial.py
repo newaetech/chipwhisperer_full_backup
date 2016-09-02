@@ -47,7 +47,7 @@ class SimpleSerial(TargetTemplate):
         self.input = ""
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
-            {'name':'Key Length (Bytes)', 'type':'list', 'values':[16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
+            {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
             {'name':'Input Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
             {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},

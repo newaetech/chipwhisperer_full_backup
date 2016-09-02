@@ -92,7 +92,7 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
     def analysisStarted(self):
         self.initUI()
         for i in range(0, self._numKeys()):
-            if i in self._analysisSource.targetBytes():
+            if i in self._analysisSource.getTargetSubkeys():
                 self.byteNumAct[i].setVisible(True)
             else:
                 self.byteNumAct[i].setVisible(False)

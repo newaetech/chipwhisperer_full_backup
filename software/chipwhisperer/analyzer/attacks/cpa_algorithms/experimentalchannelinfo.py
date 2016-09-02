@@ -27,7 +27,8 @@
 import logging
 import numpy as np
 from scipy.stats import norm
-from .._stats import DataTypeDiffs
+
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -44,9 +45,6 @@ except ImportError:
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
-        self.clearStats()
-
-    def clearStats(self):
         self.sumhq = [0]*256
         self.sumtq = [0]*256
         self.sumt = [0]*256
@@ -55,7 +53,6 @@ class CPAProgressiveOneSubkey(object):
         self.totalTraces = 0
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-
         diffs = [0]*256
         self.totalTraces += numtraces
 
@@ -287,32 +284,23 @@ class TemplateOneSubkey(object):
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(Parameterized, Plugin):
+class CPAExperimentalChannelinfo(AlgorithmsBase):
+    """NOT WORKING!!"""
     _name = "CPA Experimental Channel Info"
 
-    def __init__(self, targetModel, leakageFunction):
+    def __init__(self):
+        AlgorithmsBase.__init__(self)
 
         self.getParams().addChildren([
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
+        self.updateScript()
 
-        self.model = targetModel
-        self.sr = None
-        self.stats = DataTypeDiffs()
-
-    def setByteList(self, brange):
-        self.brange = brange
-
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-
-        foundkey = []
-
-        self.all_diffs = range(0,16)
 
         tdiff = self.findParam('reportinterval').getValue()
 
@@ -400,15 +388,15 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
                     # Handle Offset
                     tnum = i + tracerange[0]
 
-                    d = tracedata.getTrace(tnum)
+                    d = traceSource.getTrace(tnum)
 
                     if d is None:
                         continue
 
                     data.append(d)
-                    textins.append(tracedata.getTextin(tnum))
-                    textouts.append(tracedata.getTextout(tnum))
-                    knownkeys.append(tracedata.getKnownKey(tnum))
+                    textins.append(traceSource.getTextin(tnum))
+                    textouts.append(traceSource.getTextout(tnum))
+                    knownkeys.append(traceSource.getKnownKey(tnum))
 
                 traces = np.array(data)
                 textins = np.array(textins)
@@ -439,12 +427,6 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
 
                 if self.sr is not None:
                     self.sr()
-
-    def getStatistics(self):
-        return self.stats
-
-    def setStatsReadyCallback(self, sr):
-        self.sr = sr
 
 
 # This is actually used by ProfilingTemplate via a hack, which requires more work...

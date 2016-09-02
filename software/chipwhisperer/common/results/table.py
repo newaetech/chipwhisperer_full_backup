@@ -114,7 +114,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                 highlightValue = highlights[bnum]
             else:
                 highlightValue = None
-            if bnum in self._analysisSource.targetBytes() and attackStats.maxValid[bnum]:
+            if bnum in self._analysisSource.getTargetSubkeys() and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
 

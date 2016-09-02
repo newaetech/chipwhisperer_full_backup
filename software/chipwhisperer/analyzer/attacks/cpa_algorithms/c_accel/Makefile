@@ -6,5 +6,6 @@ dependency_libs =
 all:
 	g++ -march=native -fPIC -o CPAProgressive.o -c CPAProgressive.cpp
 	g++ -march=native -fPIC -o AESModels.o -c AESModels.cpp
-	g++ -shared -o lib${module}.so -Wl,--soname=lib${module}.so   -Wl,--whole-archive ${old_libs} -Wl,--no-whole-archive ${dependency_libs}
+	g++ -shared -o lib${module}.so -Wl,-install_name,lib${module}.so   ${old_libs}
 
+#-install_name changed from --soname

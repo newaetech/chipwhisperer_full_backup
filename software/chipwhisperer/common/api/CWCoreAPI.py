@@ -47,7 +47,7 @@ class CWCoreAPI(Parameterized):
 
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
-    __version__ = "V3.1.10"
+    __version__ = "V3.1.11"
     _name = 'Generic Settings'
     instance = None
 
@@ -62,7 +62,6 @@ class CWCoreAPI(Parameterized):
         self.sigTraceDone = util.Signal()
         self.sigCampaignStart = util.Signal()
         self.sigCampaignDone = util.Signal()
-        self.sigTracesChanged = util.Signal()
         self.executingScripts = util.Observable(False)
 
         self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
@@ -217,7 +216,6 @@ class CWCoreAPI(Parameterized):
         self.setProject(ProjectFormat())
         self.project().setProgramName(self.__name__)
         self.project().setProgramVersion(self.__version__)
-        self.project().traceManager().sigTracesChanged.connect(self.sigTracesChanged.emit)
 
     def openProject(self, fname):
         """Open project file"""
