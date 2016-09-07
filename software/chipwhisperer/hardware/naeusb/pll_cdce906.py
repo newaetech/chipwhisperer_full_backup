@@ -56,12 +56,16 @@ class PLLCDCE906(object):
         else:
             raise ValueError("Invalid output number = %d" % outnum)
 
-    def outputUpdateOutputs(self, outnum):
+    def outputUpdateOutputs(self, outnum, pllsrc_new=None, pllenabled_new=None, pllslewrate_new=None):
         """Update the output pins with enabled/disabled, slew rate, etc"""
         # Map to output pins on CDCE906 Chip
         if outnum == 0:
             outpin = 0
-            src = self.parent.findParam(['pll', 'pll0', 'pll0source']).getValue()
+            if pllsrc_new is None:
+                src = self.parent.findParam(['pll', 'pll0', 'pll0source']).getValue()
+            else:
+                src = pllsrc_new
+
             if src == 'PLL0':
                 divsrc = 0
             elif src == 'PLL1':
@@ -74,8 +78,18 @@ class PLLCDCE906(object):
         elif outnum == 2:
             outpin = 4
             divsrc = 2
-        self.cdce906setoutput(outpin, divsrc, slewrate=self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%dslew' % outnum]).getValue(),
-                              enabled=self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%denabled' % outnum]).getValue())
+
+        if pllenabled_new is None:
+            pll_enabled = self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%denabled' % outnum]).getValue()
+        else:
+            pll_enabled = pllenabled_new
+
+        if pllslewrate_new is None:
+            pll_slewrate = self.parent.findParam(['pll', 'pll%d' % outnum, 'pll%dslew' % outnum]).getValue()
+        else:
+            pll_slewrate = pllslewrate_new
+
+        self.cdce906setoutput(outpin, divsrc, slewrate=pll_slewrate, enabled=pll_enabled)
 
     def pll_outfreq_get(self, outnum):
         """Read the programmed output frequency from a PLL"""
@@ -85,7 +99,7 @@ class PLLCDCE906(object):
 
     def pll_outenable_set(self, enabled, outnum):
         """Enable or disable one of the PLLs"""
-        self.outputUpdateOutputs(outnum)
+        self.outputUpdateOutputs(outnum, pllenabled_new=enabled)
 
     def pll_outenable_get(self, outnum):
         """Get if an output is enabled or not"""
@@ -93,9 +107,9 @@ class PLLCDCE906(object):
         data = self.cdce906read(19 + outpin)
         return bool(data & (1 << 3))
 
-    def pll_outslew_set(self, enabled, outnum):
+    def pll_outslew_set(self, slew, outnum):
         """Updates slew rates from GUI settings"""
-        self.outputUpdateOutputs(outnum)
+        self.outputUpdateOutputs(outnum, pllslewrate_new=slew)
 
     def pll_outslew_get(self, outnum):
         """Get slew rate of PLL output"""
@@ -114,7 +128,7 @@ class PLLCDCE906(object):
 
     def pll_outsource_set(self, source, outnum):
         """Updates sources from GUI settings"""
-        self.outputUpdateOutputs(outnum)
+        self.outputUpdateOutputs(outnum, pllsrc_new=source)
 
     def pll_outsource_get(self, outnum):
         """Get output source settings"""
