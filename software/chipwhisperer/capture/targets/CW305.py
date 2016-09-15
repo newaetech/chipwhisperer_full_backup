@@ -33,6 +33,7 @@ from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.common.utils import util
 
 
 class CW305_USB(object):
@@ -160,9 +161,13 @@ class CW305(TargetTemplate):
         if not os.path.isfile(bsfile):
             raise Warning("FPGA Bitstream not configured or %s not a file." % str(bsfile))
         starttime = datetime.now()
-        self.fpga.FPGAProgram(open(bsfile, "rb"))
+        result = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
         stoptime = datetime.now()
-        logging.info('FPGA Config time: %s' % str(stoptime - starttime))
+
+        if result:
+            logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+        else:
+            logging.warning('FPGA Config failed: DONE pin did not go high. Check bitstream is for target device.')
 
     def _con(self, scope=None, bsfile=None, force=False):
         """Connect to CW305 board, download bitstream"""
@@ -176,13 +181,20 @@ class CW305(TargetTemplate):
             else:
                 from datetime import datetime
                 starttime = datetime.now()
-                self.fpga.FPGAProgram(open(bsfile, "rb"))
+                status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
                 stoptime = datetime.now()
-                logging.info('FPGA Config time: %s' % str(stoptime - starttime))
+                if status:
+                    logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+                else:
+                    logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
         self.usb_clk_setenabled(True)
         self.fpga_write(0x100+self._woffset, [0])
         self.params.refreshAllParameters()
         self.pll.cdce906init()
+
+    def _dis(self):
+        if self._naeusb:
+            self._naeusb.close()
 
     def checkEncryptionKey(self, key):
         """Validate encryption key"""
@@ -217,6 +229,7 @@ class CW305(TargetTemplate):
         """"Read output from FPGA"""
         data = self.fpga_read(0x200, 16)
         data = data[::-1]
+        self.newInputData.emit(util.list2hexstr(data))
         return data
 
     def go(self):
