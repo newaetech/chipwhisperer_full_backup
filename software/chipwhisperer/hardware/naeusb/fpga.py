@@ -50,7 +50,7 @@ class FPGA(object):
         else:
             return False
 
-    def FPGAProgram(self, bitstream=None):
+    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
         """
@@ -80,7 +80,7 @@ class FPGA(object):
             # Exit FPGA programming mode
             self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
 
-            if programStatus == False:
+            if programStatus == False and exceptOnDoneFailure:
                 raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
             return programStatus
