@@ -109,7 +109,9 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         self.attack = analysisAlgorithm()
         self.attack.setProject(self._project)
         self.attackModel = cryptoalg()
-        self.attackModel.setHwModel(hwmodel)
+
+        if hwmodel:
+            self.attackModel.setHwModel(hwmodel)
 
     def processKnownKey(self, inpkey):
         """
