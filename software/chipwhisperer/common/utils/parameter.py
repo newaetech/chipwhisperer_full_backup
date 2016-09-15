@@ -258,7 +258,7 @@ class Parameter(object):
                     return limits.keys()[limits.values().index(value)]
                 except ValueError:
                     ValueError(
-                        "Error: Value " + value + " is not valid in Parameter \"" + self.getName() + "\". Options are: " + str(
+                        "Error: Value " + str(value) + " is not valid in Parameter \"" + self.getName() + "\". Options are: " + str(
                             limits))
         return value
 

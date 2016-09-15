@@ -75,7 +75,7 @@ class ModelsBase(Parameterized):
         return cls.HW[n]
 
     def processKnownKey(self, inpkey):
-        pass
+        return inpkey
 
     def leakage(self, pt, ct, guess, bnum, state):
         pass
