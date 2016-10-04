@@ -31,7 +31,7 @@ from chipwhisperer.common.utils.analysissource import AnalysisSource, AnalysisOb
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import pluginmanager
-from .models.AES128_8bit import AES128_8bit
+from .models.AES128_8bit import AES128_8bit, SBox_output
 
 def enforceLimits(value, limits):
     if value < limits[0]:
@@ -104,14 +104,14 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         if hasattr(self._analysisAlgorithm, 'runScriptFunction'):
             self._analysisAlgorithm.runScriptFunction.connect(self.runScriptFunction.emit)
 
-    def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg=AES128_8bit, hwmodel=1):
+    def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg=AES128_8bit, hwmodel=SBox_output, kwargs=None):
         """Called from the script to setup the attack"""
         self.attack = analysisAlgorithm()
         self.attack.setProject(self._project)
         self.attackModel = cryptoalg()
 
         if hwmodel:
-            self.attackModel.setHwModel(hwmodel)
+            self.attackModel.setHwModel(hwmodel, kwargs)
 
     def processKnownKey(self, inpkey):
         """

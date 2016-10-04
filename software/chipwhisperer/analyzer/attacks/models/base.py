@@ -19,6 +19,7 @@ from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
 from chipwhisperer.common.utils import util
 import numpy as np
 
+#The following is placed here for backwards compatability with imports expected the getHW function
 _HW = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3,
        4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4,
        4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 1, 2, 2, 3, 2,
@@ -64,8 +65,12 @@ class ModelsBase(Parameterized):
         self.permPerSubkey = permPerSubkey
         self.numRoundKeys = 0
         self.model = model
+        #Update interal models (if required)
+        self._updateHwModel()
+        if model not in self.hwModels:
+            self.hwModels[str(model)] = model
         self.getParams().addChildren([
-            {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel},
+            {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel, 'addToList':True},
             {'name':'Number of SubKeys', 'type':'int', 'get':self.getNumSubKeys, 'readonly':True},
             {'name':'Number of Permutations', 'type':'int', 'get':self.getPermPerSubkey, 'readonly':True},
         ])
@@ -102,12 +107,18 @@ class ModelsBase(Parameterized):
         return ret
 
     @setupSetParam("Hardware Model")
-    def setHwModel(self, model):
+    def setHwModel(self, model, kwargs=None):
         self.model = model
+        self.model_kwargs = kwargs
+        self._updateHwModel()
         self.sigParametersChanged.emit()
 
+    def _updateHwModel(self):
+        """" Re-implement this to update leakage model """
+        pass
+
     def getHwModelString(self):
-        return sys.modules[self.__class__.__module__].__name__  + '.' + self.__class__.__name__  + '.' + self.hwModels_toStr[self.model]
+        return sys.modules[self.__class__.__module__].__name__  + '.' + self.model.__name__
 
     def binary_list_to_subkeys(self, bitlist, nrBits):
         ret = []
