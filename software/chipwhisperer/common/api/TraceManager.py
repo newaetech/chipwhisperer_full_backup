@@ -193,7 +193,7 @@ class TraceManager(TraceSource):
                         logging.warning("Selected trace segments have different number of points: %d!=%d" % (self._numPoints, np))
                         self._numPoints = min(self._numPoints, np)
 
-                sr = int(t.config.attr("scopeSampleRate"))
+                sr = int(float(t.config.attr("scopeSampleRate")))
                 if self._sampleRate != sr and sr != 0:
                     if self._sampleRate == 0:
                         self._sampleRate = sr
