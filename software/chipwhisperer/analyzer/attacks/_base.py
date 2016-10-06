@@ -104,14 +104,11 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
         if hasattr(self._analysisAlgorithm, 'runScriptFunction'):
             self._analysisAlgorithm.runScriptFunction.connect(self.runScriptFunction.emit)
 
-    def setAnalysisAlgorithm(self, analysisAlgorithm, cryptoalg=AES128_8bit, hwmodel=SBox_output, kwargs=None):
+    def setAnalysisAlgorithm(self, analysisAlgorithm, leakage_object=None):
         """Called from the script to setup the attack"""
         self.attack = analysisAlgorithm()
         self.attack.setProject(self._project)
-        self.attackModel = cryptoalg()
-
-        if hwmodel:
-            self.attackModel.setHwModel(hwmodel, kwargs)
+        self.attackModel = leakage_object
 
     def processKnownKey(self, inpkey):
         """

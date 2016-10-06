@@ -24,13 +24,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
+import inspect
+
 from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox, subbytes, inv_subbytes, mixcolumns, inv_mixcolumns, shiftrows, inv_shiftrows
 
 from base import ModelsBase
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from collections import OrderedDict
-import inspect
 
 class AESLeakageHelper(object):
 
@@ -104,6 +105,11 @@ class AESLeakageHelper(object):
             Value that will be presented on the 8-bit bus. Leakage model (such as HW) will map this to leakage itself.
         """
         raise NotImplementedError("ASKLeakageHelper does not implement leakage")
+
+class SBox_input(AESLeakageHelper):
+    name = 'HW: AES SBox Input, First Round (Enc)'
+    def leakage(self, pt, ct, key, bnum):
+        return pt[bnum] ^ key[bnum]
 
 class SBox_output(AESLeakageHelper):
     name = 'HW: AES SBox Output, First Round (Enc)'
@@ -226,7 +232,7 @@ class Round1Round2StateDiff_SBox(AESLeakageHelper):
         return state[bnum] ^ state1[bnum]
 
 #List of all classes you can use
-enc_list = [SBox_output, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, SBoxOutputSuccessive, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
+enc_list = [SBox_output, SBox_input, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, SBoxOutputSuccessive, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
 dec_list = [InvSBox_output]
 
 class AES128_8bit(ModelsBase, Plugin):
@@ -234,7 +240,7 @@ class AES128_8bit(ModelsBase, Plugin):
 
     hwModels = OrderedDict((mod.name, mod) for mod in (enc_list+dec_list) )
 
-    def __init__(self, model=SBox_output, bitmask=0xff):
+    def __init__(self, model=SBox_output, bitmask=0xFF):
         ModelsBase.__init__(self, 16, 256, model=model)
         self.numRoundKeys = 10
         self._mask = bitmask
@@ -257,8 +263,6 @@ class AES128_8bit(ModelsBase, Plugin):
                 if (mod.c_model_enum_value == self.model) or (mod.name == self.model):
                     self.modelobj = mod()
                     break
-
-
 
         if self.modelobj is None:
             raise ValueError("Invalid model: %s" % str(self.model))

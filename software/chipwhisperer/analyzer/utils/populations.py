@@ -76,3 +76,20 @@ def wttest(groups, axis=0):
     ttest = np.nan_to_num(ttest)
 
     return ttest
+
+def dpa(groups, axis=0):
+    """
+    Performs Difference between two groups.
+    Args:
+        groups:
+        axis:
+
+    Returns:
+
+    """
+
+    if len(groups) != 2:
+        raise AttributeError("dpa only works between two groups")
+
+    dpa = np.subtract(np.mean(groups[1], axis=axis), np.mean(groups[0], axis=axis))
+    return dpa
