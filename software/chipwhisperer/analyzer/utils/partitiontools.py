@@ -37,7 +37,7 @@ class base(object):
     def new_run(self):
         pass
 
-    def get_partition(self, trace_num):
+    def get_partition(self, trace_num, key_guess=None):
         return random.randint(0, 2)
 
 class HWAES(base):
@@ -48,16 +48,14 @@ class HWAES(base):
         self.num_parts = bin(bmask).count('1') + 1
         self.aes = AES128_8bit(model, bmask)
 
-    def get_partition(self, trace_num):
+    def get_partition(self, trace_num, key_guess = None):
         bnum = self._bnum
         key = self.tm.getKnownKey(trace_num)
         pt = self.tm.getTextin(trace_num)
         ct = self.tm.getTextout(trace_num)
 
         key = self.aes.processKnownKey(key)
-
-        guess = None
         state = {"knownkey":key}
 
-        return self.aes.leakage(pt, ct, guess, bnum, state)
+        return self.aes.leakage(pt, ct, key_guess, bnum, state)
 

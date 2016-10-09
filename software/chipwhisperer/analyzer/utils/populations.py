@@ -27,7 +27,7 @@
 
 import numpy as np
 
-def partition_traces(tracemanager, ptool, start_trace=0, end_trace=None, index_only=False):
+def partition_traces(tracemanager, ptool, start_trace=0, end_trace=None, index_only=False, key_guess=None):
     """
     Partitions a bunch of traces into two (or more) groups.
 
@@ -48,7 +48,7 @@ def partition_traces(tracemanager, ptool, start_trace=0, end_trace=None, index_o
     groups = [list() for _ in xrange(ptool.num_parts)]
 
     for i in range(start_trace, end_trace):
-        gnum = ptool.get_partition(i)
+        gnum = ptool.get_partition(i, key_guess=key_guess)
         if index_only:
             data = i
         else:
