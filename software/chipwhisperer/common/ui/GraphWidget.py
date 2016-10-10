@@ -117,7 +117,7 @@ class GraphWidget(QWidget):
             logging.warning("pyqtgraph window does not have SIPrefix API - probably you should upgrade pyqtgraph!")
         try:
             self.pw.getAxis('top').setStyle(showValues=False)
-        except ValueError:
+        except TypeError:
             logging.debug("Could not disable top axis labels")
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
