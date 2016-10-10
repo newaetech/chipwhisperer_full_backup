@@ -399,7 +399,7 @@ module cw1200_interface(
 		.ext_iomux(advio_trigger_line),
 		.sck(target_SCK),
 		.mosi(target_MOSI),
-		.miso(target_MOSI),
+		.miso(target_MISO),
 		.pdid_cs(target_PDIDRX),
 		.pdic(target_PDIC),
 				
