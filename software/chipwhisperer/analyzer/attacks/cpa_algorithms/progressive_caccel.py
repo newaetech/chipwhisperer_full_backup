@@ -134,7 +134,7 @@ class CPAProgressiveOneSubkey(object):
             # traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
             traces = traces_all[:, pointRange[0] : pointRange[1]]
 
-        npoints = np.shape(traces)[1]
+        npoints = np.shape(traces)[1] + 1
 
         if self.anstate is None:
             self.anstate = analysis_state_t(npoints, numtraces)
