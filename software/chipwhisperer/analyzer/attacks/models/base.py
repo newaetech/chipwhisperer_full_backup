@@ -36,6 +36,7 @@ _HW = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3,
 def getHW(byte):
     return _HW[byte]
 
+
 class ModelsBase(Parameterized):
     _name = 'Crypto Model'
 
@@ -67,7 +68,7 @@ class ModelsBase(Parameterized):
         self.model = model
         #Update interal models (if required)
         self._updateHwModel()
-        if model not in self.hwModels:
+        if (model not in self.hwModels.values()) and (model.__name__ not in self.hwModels.keys()):
             self.hwModels[str(model)] = model
         self.getParams().addChildren([
             {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel, 'addToList':True},
@@ -116,26 +117,6 @@ class ModelsBase(Parameterized):
     def _updateHwModel(self):
         """" Re-implement this to update leakage model """
         pass
-
-    def getHwModelString(self):
-        return sys.modules[self.__class__.__module__].__name__  + '.' + self.model.__name__
-
-    def binary_list_to_subkeys(self, bitlist, nrBits):
-        ret = []
-        pos = 0
-        while pos <= len(bitlist) - nrBits:
-            out = 0
-            for bit in range(nrBits):
-                out = (out << 1) | bitlist[pos+bit]
-            ret.append(out)
-            pos += nrBits
-        return ret
-
-    def array_of_bytes_to_bin(self, bytes, nrBits):
-        init=np.array([], dtype=bool)
-        for byte in bytes:
-            init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8-nrBits:]), axis=0)
-        return init
 
     def _VccToGnd(self, var):
         """Convert from number of 1's to number of 0's... used when shunt inserted in GND path"""

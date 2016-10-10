@@ -18,7 +18,7 @@ import inspect
 from base import ModelsBase
 import numpy as np
 from chipwhisperer.common.utils.pluginmanager import Plugin
-
+from chipwhisperer.common.utils.util import binarylist2bytearray, bytearray2binarylist
 
 class DESLeakageHelper(object):
 
@@ -158,10 +158,10 @@ class DESLeakageHelper(object):
     def keyScheduleRounds(self, inputkey, inputround, desiredround, returnSubkeys=True):
         """Create the 16 subkeys K[1] to K[16] from the given key"""
         if inputround == 0:
-            inputkey = self.array_of_bytes_to_bin(inputkey,8)
+            inputkey = bytearray2binarylist(inputkey,8)
             key = self.__permutate(self.__pc1, inputkey)
         else:
-            inputkey = self.array_of_bytes_to_bin(inputkey,6)
+            inputkey = bytearray2binarylist(inputkey,6)
             key = self.__permutate(self.__pc2_inv, inputkey)
         i = inputround
         L = key[:28]
@@ -192,13 +192,13 @@ class DESLeakageHelper(object):
             i -= 1
         if desiredround==0:
             key = self.__permutate(self.__pc1_inv, L + R)
-            return self.binary_list_to_subkeys(key, 8) if returnSubkeys else key
+            return binarylist2bytearray(key, 8) if returnSubkeys else key
         else:
             key = self.__permutate(self.__pc2, L + R)
-            return self.binary_list_to_subkeys(key, 6) if returnSubkeys else key
+            return binarylist2bytearray(key, 6) if returnSubkeys else key
 
     def sbox_in_first_fbox(self, pt, guess, bnum):
-        init=self.array_of_bytes_to_bin(pt, 8)
+        init=bytearray2binarylist(pt, 8)
 
         initPermut = self.__permutate(self.__ip, init)
         R = initPermut[32:]
@@ -243,7 +243,7 @@ class SBox_input(DESLeakageHelper):
     c_model_enum_value = 1
     c_model_enum_name = 'LEAK_HW_SBOXIN_FIRSTROUND'
     def leakage(self, pt, ct, key, bnum):
-        return self.binary_list_to_subkeys(self.sbox_in_first_fbox(pt, key[bnum], bnum), 6)[0]
+        return binarylist2bytearray(self.sbox_in_first_fbox(pt, key[bnum], bnum), 6)[0]
 
 enc_list = [SBox_output, SBox_input]
 dec_list = []

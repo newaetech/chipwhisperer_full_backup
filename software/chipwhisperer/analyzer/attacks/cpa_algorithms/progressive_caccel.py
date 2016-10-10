@@ -143,7 +143,10 @@ class CPAProgressiveOneSubkey(object):
         
         guessdata = np.zeros((model.getPermPerSubkey(), npoints), dtype=np.float64)
 
-        mstate.leakagemode = model.getHwModel()
+        if hasattr(model.getHwModel(), 'c_model_enum_value'):
+            mstate.leakagemode = model.getHwModel().c_model_enum_value
+        else:
+            mstate.leakagemode = model.getHwModel()
 
         self.osk(traces.ctypes.data_as(POINTER(c_double)),
                  plaintexts.ctypes.data_as(POINTER(c_uint8)),
