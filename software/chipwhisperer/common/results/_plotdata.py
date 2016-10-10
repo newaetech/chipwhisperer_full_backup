@@ -205,9 +205,12 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         if drawtype.startswith('fast') and xdataptr:
             p1 = self.setupPlot(self.pw.plot(x=xdataptr, y=top), -1, True, "Maxes")
             p2 = self.setupPlot(self.pw.plot(x=xdataptr, y=bottom), -1, True, "Mins")
-            p3 = pg.FillBetweenItem(p1, p2, brush=self.traceColor)
-            p3.setZValue(-1)
-            self.pw.addItem(p3)
+            if p1 and p2:
+                p3 = pg.FillBetweenItem(p1, p2, brush=self.traceColor)
+                p3.setZValue(-1)
+                self.pw.addItem(p3)
+            else:
+                logging.debug("fast draw type but failed to fill - probably old version of pyqtgraph?")
 
     def processAnalysis(self):
         self.redrawPlot()
