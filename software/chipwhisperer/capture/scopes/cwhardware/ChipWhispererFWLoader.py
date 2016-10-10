@@ -205,7 +205,7 @@ class CW1200_Loader(CW_Loader):
         self._fwFLoc = ""
         #self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
         self._bsBuiltinData = None
-        self.setFPGAMode("zipfile")
+        #self.setFPGAMode("zipfile")
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
