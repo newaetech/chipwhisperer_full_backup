@@ -68,8 +68,8 @@ class ModelsBase(Parameterized):
         self.model = model
         #Update interal models (if required)
         self._updateHwModel()
-        if (model not in self.hwModels.values()) and (model.__name__ not in self.hwModels.keys()):
-            self.hwModels[str(model)] = model
+        if (model not in self.hwModels.values()) and (model.name not in self.hwModels.keys()):
+            self.hwModels[model.name] = model
         self.getParams().addChildren([
             {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel, 'addToList':True},
             {'name':'Number of SubKeys', 'type':'int', 'get':self.getNumSubKeys, 'readonly':True},
