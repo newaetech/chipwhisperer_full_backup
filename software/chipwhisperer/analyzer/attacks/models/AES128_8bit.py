@@ -106,8 +106,8 @@ class AESLeakageHelper(object):
         """
         raise NotImplementedError("ASKLeakageHelper does not implement leakage")
 
-class SBox_input(AESLeakageHelper):
-    name = 'HW: AES SBox Input, First Round (Enc)'
+class PtKey_XOR(AESLeakageHelper):
+    name = 'HW: AddRoundKey Output, First Round (Enc)'
     def leakage(self, pt, ct, key, bnum):
         return pt[bnum] ^ key[bnum]
 
@@ -232,7 +232,7 @@ class Round1Round2StateDiff_SBox(AESLeakageHelper):
         return state[bnum] ^ state1[bnum]
 
 #List of all classes you can use
-enc_list = [SBox_output, SBox_input, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, SBoxOutputSuccessive, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
+enc_list = [SBox_output, PtKey_XOR, SBoxInputSuccessive, SBoxInOutDiff, LastroundStateDiff, SBoxOutputSuccessive, Mixcolumns_output, Round1Round2StateDiff_Text, Round1Round2StateDiff_KeyMix, Round1Round2StateDiff_SBox]
 dec_list = [InvSBox_output]
 
 class AES128_8bit(ModelsBase, Plugin):

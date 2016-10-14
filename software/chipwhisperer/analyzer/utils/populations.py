@@ -37,6 +37,7 @@ def partition_traces(tracemanager, ptool, start_trace=0, end_trace=None, index_o
         start_trace: Starting trace number.
         end_trace: Ending trace number.
         index_only: Specifies if return object is all trace data (huge memory) or just indexes
+        key_guess: Overrides known-key with specified guess, None if you want to use known-key for partition.
 
     Returns: Copy of various partitions.
 
