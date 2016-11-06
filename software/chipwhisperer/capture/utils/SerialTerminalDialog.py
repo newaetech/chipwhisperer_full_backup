@@ -64,8 +64,9 @@ class SerialTerminalDialog(QtFixes.QDialog):
         self.settingsLineEnd.addItem("\\n", '\n')
         self.settingsLineEnd.addItem("\\r", '\r')
         self.settingsLineEnd.addItem("\\n\\r", '\n\r')
+        self.settingsLineEnd.addItem("\\r\\n", '\n\r')
         self.settingsLineEnd.addItem("None", '')
-        self.settingsLineLayout.addWidget(QLabel("TX on Enter: "))
+        self.settingsLineLayout.addWidget(QLabel("TX on Send: "))
         self.settingsLineLayout.addWidget(self.settingsLineEnd)
         self.settingsLineLayout.addStretch()
 

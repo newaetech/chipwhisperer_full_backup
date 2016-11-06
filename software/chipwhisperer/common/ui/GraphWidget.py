@@ -111,8 +111,14 @@ class GraphWidget(QWidget):
         self.pw = pg.PlotWidget(name="Power Trace View")
         # self.pw.setTitle(title= 'Power Trace View')
         self.pw.setLabel('top', 'Power Trace View')
-        self.pw.getAxis('top').enableAutoSIPrefix(enable=False)
-        self.pw.getAxis('top').setStyle(showValues=False)
+        try:
+            self.pw.getAxis('top').enableAutoSIPrefix(enable=False)
+        except AttributeError:
+            logging.warning("pyqtgraph window does not have SIPrefix API - probably you should upgrade pyqtgraph!")
+        try:
+            self.pw.getAxis('top').setStyle(showValues=False)
+        except TypeError:
+            logging.debug("Could not disable top axis labels")
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
         self.pw.getPlotItem().setContentsMargins(5,5,10,1)

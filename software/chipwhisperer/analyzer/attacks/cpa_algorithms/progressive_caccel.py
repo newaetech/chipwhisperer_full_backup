@@ -130,9 +130,15 @@ class CPAProgressiveOneSubkey(object):
 
         if pointRange == None:
             traces = traces_all
+            pointstart = 0
         else:
             # traces = np.array(traces_all[:, pointRange[0] : pointRange[1]])
             traces = traces_all[:, pointRange[0] : pointRange[1]]
+            pointstart = pointRange[0]
+
+
+        if (pointRange[0] != 0):
+            raise NotImplementedError("C-Accel only works with full point range on current version.")
 
         npoints = np.shape(traces)[1]
 
@@ -141,9 +147,12 @@ class CPAProgressiveOneSubkey(object):
             
         mstate = aesmodel_setup_t(bnum=bnum)
         
-        guessdata = np.zeros((model.getPermPerSubkey(), npoints), dtype=np.float64)
+        guessdata = np.zeros((model.getPermPerSubkey(), npoints-pointstart), dtype=np.float64)
 
-        mstate.leakagemode = model.getHwModel()
+        if hasattr(model.getHwModel(), 'c_model_enum_value'):
+            mstate.leakagemode = model.getHwModel().c_model_enum_value
+        else:
+            mstate.leakagemode = model.getHwModel()
 
         self.osk(traces.ctypes.data_as(POINTER(c_double)),
                  plaintexts.ctypes.data_as(POINTER(c_uint8)),
@@ -152,7 +161,7 @@ class CPAProgressiveOneSubkey(object):
                  c_size_t(npoints),
                  c_size_t(0),
                  c_size_t(numtraces),
-                 c_size_t(0),
+                 c_size_t(pointstart),
                  c_size_t(npoints),
                  c_analysis_state_t_ptr(self.anstate),
                  c_void_p(0),
