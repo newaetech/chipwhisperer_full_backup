@@ -28,6 +28,7 @@ import collections
 import os.path
 import shutil
 import weakref
+import numpy as np
 
 try:
     # OrderedDict is new in 2.7
@@ -128,6 +129,25 @@ def convert_to_str(data):
 def hexStrToByteArray(hexStr):
     ba = bytearray(hexstr2list(hexStr))
     return ba
+
+
+def binarylist2bytearray(bitlist, nrBits=8):
+    ret = []
+    pos = 0
+    while pos <= len(bitlist) - nrBits:
+        out = 0
+        for bit in range(nrBits):
+            out = (out << 1) | bitlist[pos + bit]
+        ret.append(out)
+        pos += nrBits
+    return ret
+
+
+def bytearray2binarylist(bytes, nrBits=8):
+    init = np.array([], dtype=bool)
+    for byte in bytes:
+        init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
+    return init
 
 
 def getPyFiles(dir, extension=False):

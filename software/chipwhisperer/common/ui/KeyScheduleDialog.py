@@ -110,6 +110,7 @@ class AesKeyScheduleDialog(QtFixes.QDialog):
         if klen == 128:
             self.inprnd.clear()
             self.inprnd.addItem("0  (Initial Enc.)", 0)
+            self.inprnd.addItem("1  (2nd-Round Enc.)", 1)
             self.inprnd.addItem("10 (Initial Dec.)", 10)
         elif klen == 256:
             self.inprnd.clear()

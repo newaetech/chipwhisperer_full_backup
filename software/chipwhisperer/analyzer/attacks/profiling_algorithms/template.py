@@ -276,10 +276,10 @@ class ProfilingTemplate(AlgorithmsBase, Plugin):
                 # Map to key guess format
                 for i in range(0, self.model.getPermPerSubkey()):
                     if ptype == "PartitionHWIntermediate":
-                        self.model.setHwModel(self.model.LEAK_HW_SBOXOUT_FIRSTROUND)
+                        self.model.setHwModel(self.model.hwModels['HW: AES SBox Output, First Round (Enc)'])
                         hypint = self.model.leakage(textins[tnum], textouts[tnum], i, bnum, None)
                     elif ptype == "PartitionHDLastRound":
-                        self.model.setHwModel(self.model.LEAK_HW_SBOXOUT_FIRSTROUND)
+                        self.model.setHwModel(self.model.hwModels['HD: AES Last-Round State'])
                         hypint = self.model.leakage(textins[tnum], textouts[tnum], i, bnum, None)
                     # TODO Temp
                     elif ptype == "PartitionHDRounds":
