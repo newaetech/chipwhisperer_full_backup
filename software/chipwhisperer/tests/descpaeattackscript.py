@@ -82,8 +82,8 @@ class Attack(UserScriptBase):
     def initAnalysis(self):
         # Setup the CPA algorith
         self.attack = CPA()
-        leakage_object = chipwhisperer.analyzer.attacks.models.DES.DES(chipwhisperer.analyzer.attacks.models.DES.DES.LEAK_HW_SBOXOUT_FIRSTROUND)
-        self.attack.setAnalysisAlgorithm(chipwhisperer.analyzer.attacks.cpa_algorithms.progressive.CPAProgressive)
+        leakage_object = chipwhisperer.analyzer.attacks.models.DES.DES(chipwhisperer.analyzer.attacks.models.DES.SBox_output)
+        self.attack.setAnalysisAlgorithm(chipwhisperer.analyzer.attacks.cpa_algorithms.progressive.CPAProgressive, leakage_object)
         self.attack.setTraceStart(0)
         self.attack.setTracesPerAttack(100)
         self.attack.setIterations(1)
