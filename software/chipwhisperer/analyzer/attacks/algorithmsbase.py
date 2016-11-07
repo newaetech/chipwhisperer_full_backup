@@ -58,7 +58,8 @@ class AlgorithmsBase(Parameterized, AutoScript):
 
     def setModel(self, model):
         self.model = model
-        self.stats = DataTypeDiffs(model.getNumSubKeys(), model.getPermPerSubkey())
+        if model:
+            self.stats = DataTypeDiffs(model.getNumSubKeys(), model.getPermPerSubkey())
 
     def processKnownKey(self, inpkey):
         return self.model.processKnownKey(inpkey)
