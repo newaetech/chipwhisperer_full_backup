@@ -1,3 +1,9 @@
+V3.2.0:
+-Updated HW model system, breaks some old APIs but makes it easier to add custom leakage models
+-Fixed bug where unplugging CW-Lite with terminal open caused flood of close messages
+-Fixes to CW305 interface
+-AVR Programmer adds ATMegaRF2564RFR2 device support
+
 V3.1.11:
 - Added support to DES (recovers 48 of the 56 bits key)
 - Refactored attack classes
