@@ -101,7 +101,7 @@ module reg_main_cwlite(
 	 always @(posedge usb_clk) rdflag_rs_dly <= rdflag_rs;
 	 
 	 always @(posedge usb_clk) begin
-		//if (rdflag_rs_dly)
+		if (rdflag_rs_dly)
 			reg_datai_buf <= reg_datai;
 	 end
 	 
