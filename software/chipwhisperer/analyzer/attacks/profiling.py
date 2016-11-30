@@ -47,4 +47,8 @@ class Profiling(AttackBaseClass):
         self.importsAppend("from chipwhisperer.analyzer.attacks.profiling import Profiling")
 
         analysAlgoStr = sys.modules[self._analysisAlgorithm.__class__.__module__].__name__ + '.' + self._analysisAlgorithm.__class__.__name__
-        self.addFunction("init", "setAnalysisAlgorithm", "%s" % analysAlgoStr, loc=0)
+        model_path = sys.modules[self.findParam('Crypto Algorithm').getValue().__class__.__module__].__name__
+        cryptoalg = model_path + '.' + self.findParam('Crypto Algorithm').getValue().__class__.__name__
+        hwmodel = model_path + '.' + self.findParam('Crypto Algorithm').getValue().getHwModel().__name__
+        self.addVariable("init", "leakage_object", "%s(%s)" % (cryptoalg, hwmodel))
+        self.addFunction("init", "setAnalysisAlgorithm", "%s,leakage_object" % (analysAlgoStr), loc=1)

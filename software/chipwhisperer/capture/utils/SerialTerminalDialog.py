@@ -27,6 +27,7 @@ import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
+import logging
 
 
 class SerialTerminalDialog(QtFixes.QDialog):
@@ -64,8 +65,9 @@ class SerialTerminalDialog(QtFixes.QDialog):
         self.settingsLineEnd.addItem("\\n", '\n')
         self.settingsLineEnd.addItem("\\r", '\r')
         self.settingsLineEnd.addItem("\\n\\r", '\n\r')
+        self.settingsLineEnd.addItem("\\r\\n", '\n\r')
         self.settingsLineEnd.addItem("None", '')
-        self.settingsLineLayout.addWidget(QLabel("TX on Enter: "))
+        self.settingsLineLayout.addWidget(QLabel("TX on Send: "))
         self.settingsLineLayout.addWidget(self.settingsLineEnd)
         self.settingsLineLayout.addStretch()
 
@@ -99,7 +101,8 @@ class SerialTerminalDialog(QtFixes.QDialog):
         self.conLayout.addStretch()
         self.conLayout.addWidget(QLabel("Polling Interval (mS)"))
         self.conLayout.addWidget(self.pollIntervalSP)
-        self.conPB.clicked.connect(self.tryCon)
+        self.conPB.clicked.connect(self.handleConButton)
+        self.conPB.setCheckable(True)
 
         self.mainLayout.addLayout(self.conLayout)
 
@@ -172,25 +175,46 @@ class SerialTerminalDialog(QtFixes.QDialog):
             self.driver.write(toSend)
 
     def checkRead(self):
-        bavail = self.driver.inWaiting()
+        try:
+            bavail = self.driver.inWaiting()
+        except IOError, e:
+            logging.error("IOError in read (%s), serial port disabled"%str(e))
+            self.tryDis()
+            return
 
         while bavail > 0:
             s = self.driver.read(bavail)
             self.addTextOut(s)
             QCoreApplication.processEvents()
             bavail = self.driver.inWaiting()
-        
+
+    def handleConButton(self):
+        if self.conPB.isChecked():
+            self._tryCon()
+            self.conPB.setText("Disconnect")
+        else:
+            self._tryDis()
+            self.conPB.setText("Connect")
+
     def tryCon(self):
+        self.conPB.setChecked(True)
+        self.handleConButton()
+
+    def _tryCon(self):
         self.driver = self.cwAPI.getTarget().ser
         #self.driver.con()
 
         self.textIn.setEnabled(True)
         self.textOut.setEnabled(True)
         self.pollIntervalSP.setEnabled(True)
-        
+
         self.timerRead.start(self.pollIntervalSP.value())
 
     def tryDis(self):
+        self.conPB.setChecked(False)
+        self.handleConButton()
+
+    def _tryDis(self):
         self.textIn.setEnabled(False)
         self.textOut.setEnabled(False)
         self.pollIntervalSP.setEnabled(False)

@@ -24,6 +24,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 from functools import partial
+import logging
 import numpy as np
 from PySide.QtGui import *
 from chipwhisperer.analyzer.attacks._base import AttackObserver
@@ -205,9 +206,12 @@ class AttackResultPlot(GraphWidget, ResultsBase, AttackObserver):
         if drawtype.startswith('fast') and xdataptr:
             p1 = self.setupPlot(self.pw.plot(x=xdataptr, y=top), -1, True, "Maxes")
             p2 = self.setupPlot(self.pw.plot(x=xdataptr, y=bottom), -1, True, "Mins")
-            p3 = pg.FillBetweenItem(p1, p2, brush=self.traceColor)
-            p3.setZValue(-1)
-            self.pw.addItem(p3)
+            try:
+                p3 = pg.FillBetweenItem(p1, p2, brush=self.traceColor)
+                p3.setZValue(-1)
+                self.pw.addItem(p3)
+            except AttributeError:
+                logging.debug("fast draw type but failed to fill - probably old version of pyqtgraph?")
 
     def processAnalysis(self):
         self.redrawPlot()

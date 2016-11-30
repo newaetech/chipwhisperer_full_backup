@@ -13,20 +13,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+from collections import OrderedDict
+import inspect
 from base import ModelsBase
 import numpy as np
-
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.util import binarylist2bytearray, bytearray2binarylist
 
+class DESLeakageHelper(object):
 
-class DES(ModelsBase, Plugin):
-    _name = 'DES'
+    #Name of DES Model
+    name = 'DES Leakage Model (unnamed)'
 
-    LEAK_HW_SBOXOUT_FIRSTROUND = 0
-    LEAK_HW_SBOXIN_FIRSTROUND = 1
-    hwModels_toStr = ['LEAK_HW_SBOXOUT_FIRSTROUND', 'LEAK_HW_SBOXIN_FIRSTROUND']
-    hwModels = {'HW: SBoxes Output, First Round':LEAK_HW_SBOXOUT_FIRSTROUND,
-                'HW: SBoxes Input, First Round':LEAK_HW_SBOXIN_FIRSTROUND}
+    #c model enumeration value, if a C model exists for this device
+    c_model_enum_value = None
+    c_model_enum_name = None
 
     # Based on https://gist.github.com/eigenein/1275094
     # Author:   Todd Whiteman
@@ -150,19 +151,6 @@ class DES(ModelsBase, Plugin):
     # number left rotations of pc1
     __left_rotations = [0, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1]
 
-    def __init__(self, model=LEAK_HW_SBOXOUT_FIRSTROUND):
-        ModelsBase.__init__(self, 8, 64, model)
-        self.numRoundKeys = 16
-
-    def processKnownKey(self, inpkey):
-        return self.keyScheduleRounds(inpkey, 0, 1)
-
-    def leakage(self, pt, ct, guess, bnum, state):
-        if self.model == self.LEAK_HW_SBOXOUT_FIRSTROUND:
-            return self.HW[self.sbox_out_first_fbox(pt, guess, bnum)]
-        elif self.model == self.LEAK_HW_SBOXIN_FIRSTROUND:
-            return self.HW[self.binary_list_to_subkeys(self.sbox_in_first_fbox(pt, guess, bnum),6)[0]]
-
     def __permutate(self, table, block):
         """Permutate this block with the specified table"""
         return [block[v] if v is not None else v for i,v in enumerate(table)]
@@ -170,10 +158,10 @@ class DES(ModelsBase, Plugin):
     def keyScheduleRounds(self, inputkey, inputround, desiredround, returnSubkeys=True):
         """Create the 16 subkeys K[1] to K[16] from the given key"""
         if inputround == 0:
-            inputkey = self.array_of_bytes_to_bin(inputkey,8)
+            inputkey = bytearray2binarylist(inputkey,8)
             key = self.__permutate(self.__pc1, inputkey)
         else:
-            inputkey = self.array_of_bytes_to_bin(inputkey,6)
+            inputkey = bytearray2binarylist(inputkey,6)
             key = self.__permutate(self.__pc2_inv, inputkey)
         i = inputround
         L = key[:28]
@@ -204,13 +192,13 @@ class DES(ModelsBase, Plugin):
             i -= 1
         if desiredround==0:
             key = self.__permutate(self.__pc1_inv, L + R)
-            return self.binary_list_to_subkeys(key, 8) if returnSubkeys else key
+            return binarylist2bytearray(key, 8) if returnSubkeys else key
         else:
             key = self.__permutate(self.__pc2, L + R)
-            return self.binary_list_to_subkeys(key, 6) if returnSubkeys else key
+            return binarylist2bytearray(key, 6) if returnSubkeys else key
 
     def sbox_in_first_fbox(self, pt, guess, bnum):
-        init=self.array_of_bytes_to_bin(pt, 8)
+        init=bytearray2binarylist(pt, 8)
 
         initPermut = self.__permutate(self.__ip, init)
         R = initPermut[32:]
@@ -227,6 +215,96 @@ class DES(ModelsBase, Plugin):
         n = (B[1] << 3) + (B[2] << 2) + (B[3] << 1) + B[4]
         # Find the permutation value
         return self.sBox[bnum][(m << 4) + n]
+
+    def leakage(self, pt, ct, key, bnum):
+        """
+        Override this function with specific leakage function (S-Box output, HD, etc).
+
+        Args:
+            pt: 16-byte plain-text input
+            ct: 16-byte cipher-text output.
+            key: 16-byte AES key - byte 'bnum' may be a GUESS if key is known. Rest of bytes may/may not be valid too.
+            bnum: Byte number we are trying to attack.
+
+        Returns:
+            Value that will be presented on the 8-bit bus. Leakage model (such as HW) will map this to leakage itself.
+        """
+        raise NotImplementedError("ASKLeakageHelper does not implement leakage")
+
+class SBox_output(DESLeakageHelper):
+    name = 'HW: SBoxes Output, First Round'
+    c_model_enum_value = 0
+    c_model_enum_name = 'LEAK_HW_SBOXOUT_FIRSTROUND'
+    def leakage(self, pt, ct, key, bnum):
+        return self.sbox_out_first_fbox(pt, key[bnum], bnum)
+
+class SBox_input(DESLeakageHelper):
+    name = 'HW: SBoxes Output, First Round'
+    c_model_enum_value = 1
+    c_model_enum_name = 'LEAK_HW_SBOXIN_FIRSTROUND'
+    def leakage(self, pt, ct, key, bnum):
+        return binarylist2bytearray(self.sbox_in_first_fbox(pt, key[bnum], bnum), 6)[0]
+
+enc_list = [SBox_output, SBox_input]
+dec_list = []
+
+class DES(ModelsBase, Plugin):
+    _name = 'DES'
+
+    hwModels = OrderedDict((mod.name, mod) for mod in (enc_list + dec_list))
+
+    def __init__(self, model=SBox_output, bitmask=0xFF):
+        ModelsBase.__init__(self, 8, 64, model=model)
+        self.numRoundKeys = 16
+        self._mask = bitmask
+
+    def _updateHwModel(self):
+        """" Re-implement this to update leakage model """
+        self.modelobj = None
+
+        #Check if they passed an object...
+        if isinstance(self.model, DESLeakageHelper):
+            self.modelobj = self.model
+
+        #Check if they passed a class...
+        elif inspect.isclass(self.model) and issubclass(self.model, DESLeakageHelper):
+            self.modelobj = self.model()
+
+        #Otherwise it's probably one of these older keys (kept for backwards-compatability)
+        else:
+            for mod in self.hwModels:
+                if (mod.c_model_enum_value == self.model) or (mod.name == self.model):
+                    self.modelobj = mod()
+                    break
+
+        if self.modelobj is None:
+            raise ValueError("Invalid model: %s" % str(self.model))
+
+    def processKnownKey(self, inpkey):
+        return self.modelobj.keyScheduleRounds(inpkey, 0, 1)
+
+    def leakage(self, pt, ct, guess, bnum, state):
+        try:
+            # Make a copy so we don't screw with anything...
+            key = list(state['knownkey'])
+        except:
+            # We don't log due to time-sensitive nature... but if state doesn't have "knownkey" will result in
+            # unknown knownkey which causes some attacks to fail. Possibly should make this some sort of
+            # flag to indicate we want to ignore the problem?
+            key = [None] * 8
+
+        # Guess can be 'none' if we want to use original key as-is
+        if guess is not None:
+            key[bnum] = guess
+
+        # Get intermediate value
+        intermediate_value = self.modelobj.leakage(pt, ct, key, bnum)
+
+        # For bit-wise attacks, mask off specific bit value
+        intermediate_value = self._mask & intermediate_value
+
+        # Return HW of guess
+        return self.HW[intermediate_value]
 
     def compare(self, correctKey, guessedKey):
         """Return the bits that are unknown and differ between the guessed key and the correct key"""

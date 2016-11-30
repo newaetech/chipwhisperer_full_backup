@@ -31,7 +31,8 @@ class UserScript(UserScriptBase):
 
     def initAnalysis(self):
         self.attack = CPA()
-        self.attack.setAnalysisAlgorithm(CPAProgressive,chipwhisperer.analyzer.attacks.models.AES128_8bit,chipwhisperer.analyzer.attacks.models.AES128_8bit.LEAK_HW_SBOXOUT_FIRSTROUND)
+        leakage_object = chipwhisperer.analyzer.attacks.models.AES128_8bit(chipwhisperer.analyzer.attacks.models.AES128_8bit.LEAK_HW_SBOXOUT_FIRSTROUND)
+        self.attack.setAnalysisAlgorithm(CPAProgressive,leakage_object)
         self.attack.setTraceStart(0)
         self.attack.setTracesPerAttack(50)
         self.attack.setIterations(1)

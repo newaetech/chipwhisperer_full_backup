@@ -32,9 +32,11 @@
 extern "C" {
 #endif
 
-//#define EXPORT __declspec(dllexport)
-#define EXPORT __attribute__((visibility("default")))
-
+#ifdef _MSC_VER
+  #define EXPORT __declspec(dllexport)
+#else
+  #define EXPORT __attribute__((visibility("default")))
+#endif
 extern const int hamming_weight[];
 
 typedef struct {
