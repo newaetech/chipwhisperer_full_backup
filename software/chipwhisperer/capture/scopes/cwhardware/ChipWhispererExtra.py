@@ -215,7 +215,6 @@ class CWExtraSettings(Parameterized):
                                        'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
                 {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
                                        'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
-
             ]},
 
             {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
@@ -227,6 +226,12 @@ class CWExtraSettings(Parameterized):
                                        'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
                 {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
                                        'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
+                {'name':'nRST: GPIO', 'key':'gpiostatenrst', 'type':'list', 'values':{'Low':False, 'High':True, 'Default':None},
+                                       'get':partial(self.getGPIOState, IONumber=100), 'set':partial(self.setGPIOState, IONumber=100)},
+                {'name': 'PDID: GPIO', 'key': 'gpiostatepdid', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
+                                       'get': partial(self.getGPIOState, IONumber=101), 'set': partial(self.setGPIOState, IONumber=101)},
+                {'name': 'PDIC: GPIO', 'key': 'gpiostatepdic', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
+                                       'get': partial(self.getGPIOState, IONumber=102), 'set': partial(self.setGPIOState, IONumber=102)},
             ]},
         ])
 
@@ -240,8 +245,39 @@ class CWExtraSettings(Parameterized):
 
     @setupSetParam("")
     def setGPIOState(self, state, IONumber):
-        if state is not None:
+
+        # Special GPIO nRST, PDID, PDIC
+        if IONumber >= 100:
+            if IONumber == 100: # nRST IO Number
+                bitnum = 0
+            elif IONumber == 101: # PDID IO Number
+                bitnum = 2
+            elif IONumber == 102: # PDIC IO Number
+                bitnum = 4
+            else:
+                raise ValueError("Invalid special IO Number: %d"%IONumber)
+
             data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+            if state is None:
+                #Disable GPIO mode
+                data[6] &= ~(1<<bitnum)
+            else:
+                #Enable GPIO mode
+                data[6] |= (1<<bitnum)
+
+                #Set pin high/low
+                if state:
+                    data[6] |= (1<<(bitnum+1))
+                else:
+                    data[6] &= ~(1<<(bitnum + 1))
+
+            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+        #Regular GPIO1-4
+        elif state is not None:
+            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
             if data[IONumber] & self.IOROUTE_GPIOE == 0:
                 raise IOError("TargetIO %d is not in GPIO mode" % IONumber)
 
@@ -254,6 +290,23 @@ class CWExtraSettings(Parameterized):
 
     def getGPIOState(self, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+        #Catch special modes
+        if IONumber >= 100:
+            if IONumber == 100: # nRST IO Number
+                bitnum = 0
+            elif IONumber == 101: # PDID IO Number
+                bitnum = 2
+            elif IONumber == 102: # PDIC IO Number
+                bitnum = 4
+            else:
+                raise ValueError("Invalid special IO Number: %d"%IONumber)
+
+            if (data[6] & (1<<bitnum)) == 0:
+                return None
+            else:
+                return (data[6] & (1<<(bitnum+1))) != 0
+
         if data[IONumber] & self.IOROUTE_GPIOE == 0:
             return None
 
