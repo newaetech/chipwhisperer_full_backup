@@ -406,16 +406,23 @@ module cw1200_interface(
 		.trig_out(decode_trigger)
 	);
 	
-	 assign target_nRST = (enable_avrprog) ? USB_spare2 : 1'bZ;
-	 assign target_MOSI = (enable_avrprog) ? USB_TXD2 : 1'bZ;
-	 assign target_SCK = (enable_avrprog) ? USB_SCK2 : 1'bZ;
+	 wire target_highz = target_npower;
+	
+	 assign target_nRST = (target_highz) ? 1'bZ:
+	                      (enable_avrprog) ? USB_spare2 : 1'bZ;
+	 assign target_MOSI = (target_highz) ? 1'bZ:
+	                      (enable_avrprog) ? USB_TXD2 : 1'bZ;
+	 assign target_SCK = (target_highz) ? 1'bZ:
+							   (enable_avrprog) ? USB_SCK2 : 1'bZ;
 	 assign USB_RXD2 = (enable_avrprog) ? target_MISO : 1'b0;	
 	 
 	 
 	 //XMEGA Programming uses spare pins to select direction
-	 assign target_PDIDTX = (USB_PDID_WR) ? USB_TXD1 : 1'bZ;
+	 assign target_PDIDTX = (target_highz) ? 1'bZ:
+									(USB_PDID_WR) ? USB_TXD1 : 1'bZ;
 	 assign USB_RXD1 = target_PDIDRX;
-	 assign target_PDIC = (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
+	 assign target_PDIC = (target_highz) ? 1'bZ:
+								 (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
 	 	
 	 assign AUXOUT = ext_trigger;
 		
