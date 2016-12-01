@@ -412,7 +412,9 @@ module reg_chipwhisperer(
 								 (registers_cwtrigsrc[5] & trigger_io4_i);	
 								 
 	 assign trigger_ext =  (registers_cwtrigsrc[7:6] == 2'b00) ? trigger_or :
-								  (registers_cwtrigsrc[7:6] == 2'b01) ? trigger_and : 1'b0;
+								  (registers_cwtrigsrc[7:6] == 2'b01) ? trigger_and : 
+								  (registers_cwtrigsrc[7:6] == 2'b10) ? (~trigger_and) :
+								  1'b0;
 	
 	 wire trigger;	 		  
 	 assign trigger = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
