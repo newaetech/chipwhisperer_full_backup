@@ -271,6 +271,13 @@ module cw1200_interface(
 		wire apatt_trigger;
 		wire decode_trigger;
 		wire advio_trigger_line;
+		
+	   wire enable_output_nrst;
+	   wire output_nrst;
+	   wire enable_output_pdid;
+	   wire output_pdid;
+	   wire enable_output_pdic;
+	   wire output_pdic;
 	
 		reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -315,6 +322,13 @@ module cw1200_interface(
 		.hsglitchb_o(glitchout_lowpwr),
 		
 		.enable_avrprog(enable_avrprog),
+		
+		.enable_output_nrst(enable_output_nrst),
+	   .output_nrst(output_nrst),
+	   .enable_output_pdid(enable_output_pdid),
+	   .output_pdid(output_pdid),
+	   .enable_output_pdic(enable_output_pdic),
+	   .output_pdic(output_pdic),
 		
 		.uart_tx_i(USB_TXD3),
 		.uart_rx_o(USB_RXD3),
@@ -407,9 +421,12 @@ module cw1200_interface(
 	);
 	
 	 wire target_highz = target_npower;
-	
-	 assign target_nRST = (target_highz) ? 1'bZ:
-	                      (enable_avrprog) ? USB_spare2 : 1'bZ;
+								 
+	 assign target_nRST = (target_highz) ? 1'bZ :
+	                      (enable_avrprog) ? USB_spare2 :
+								 (enable_output_nrst) ? output_nrst :
+								 1'bZ;
+								 
 	 assign target_MOSI = (target_highz) ? 1'bZ:
 	                      (enable_avrprog) ? USB_TXD2 : 1'bZ;
 	 assign target_SCK = (target_highz) ? 1'bZ:
@@ -419,9 +436,11 @@ module cw1200_interface(
 	 
 	 //XMEGA Programming uses spare pins to select direction
 	 assign target_PDIDTX = (target_highz) ? 1'bZ:
+	                        (enable_output_pdid) ? output_pdid :
 									(USB_PDID_WR) ? USB_TXD1 : 1'bZ;
 	 assign USB_RXD1 = target_PDIDRX;
 	 assign target_PDIC = (target_highz) ? 1'bZ:
+	                      (enable_output_pdic) ? output_pdic :
 								 (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
 	 	
 	 assign AUXOUT = ext_trigger;
