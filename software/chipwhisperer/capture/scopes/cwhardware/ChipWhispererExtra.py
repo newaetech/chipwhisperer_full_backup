@@ -81,6 +81,7 @@ class CWExtraSettings(Parameterized):
     PIN_RTIO4 = 0x20
     MODE_OR = 0x00
     MODE_AND = 0x01
+    MODE_NAND = 0x02
 
     MODULE_BASIC = 0x00
     MODULE_ADVPATTERN = 0x01
@@ -142,7 +143,7 @@ class CWExtraSettings(Parameterized):
             {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
             {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
             {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
-            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'get':self.getPinMode, 'set':self.setPinMode }
+            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND, "NAND":self.MODE_NAND}, 'get':self.getPinMode, 'set':self.setPinMode }
         ])
 
         # Add trigger pins & modules
