@@ -808,7 +808,8 @@ class SpinBoxWithSetItem(WidgetParameterItem):
         defs = {
             'value': 0, 'min': None, 'max': None, 'int': True,
             'step': 1.0, 'minStep': 1.0, 'dec': False,
-            'siPrefix': False, 'suffix': ''
+            'siPrefix': False, 'suffix': '',
+            'decimals': 10
         }
 
         defs.update(opts)
