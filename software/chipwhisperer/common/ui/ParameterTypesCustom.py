@@ -834,6 +834,7 @@ class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
 registerParameterType('int', SpinBoxWithSet, override=True)
+registerParameterType('float', SpinBoxWithSet, override=True)
 
 
 class LabelParameterItem(WidgetParameterItem):
