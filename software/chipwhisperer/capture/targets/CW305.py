@@ -90,7 +90,7 @@ class CW305(TargetTemplate):
             {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
             {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'action':self.usb_clk_setenabled_action},
             {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
-            {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'default':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
+            {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'default':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get, 'step':0.01},
             {'name':'FPGA Bitstream', 'type':'group', 'children':[
                     {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'file', 'value':"", "filter":'*.bit'},
                     {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
