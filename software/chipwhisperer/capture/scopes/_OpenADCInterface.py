@@ -519,7 +519,7 @@ class ClockSettings(Parameterized):
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc, 'linked':['Desired Frequency', 'Current Frequency']},
-                {'name':'EXTCLK Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
+                {'name':'Input Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                     'set':self.setFreqExt, 'get':self.freqExt, 'linked':['Desired Frequency', 'Current Frequency'], 'visible': True},
                 {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
                 {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
@@ -757,7 +757,7 @@ class ClockSettings(Parameterized):
         else:
             return "system"
             
-    @setupSetParam(['CLKGEN Settings', 'EXTCLK Frequency'])
+    @setupSetParam(['CLKGEN Settings', 'Input Frequency'])
     def setFreqExt(self, freq):
         self._freqExt = freq
     
