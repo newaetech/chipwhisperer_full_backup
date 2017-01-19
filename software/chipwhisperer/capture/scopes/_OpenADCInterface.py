@@ -475,6 +475,7 @@ class ClockSettings(Parameterized):
     def __init__(self, oaiface, hwinfo=None):
         self.oa = oaiface
         self._hwinfo = hwinfo
+        self._freqExt = 10e6
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
@@ -517,13 +518,15 @@ class ClockSettings(Parameterized):
             {'name': 'Freq Counter', 'type': 'float', 'readonly':True, 'get':self.extFrequency, 'siPrefix':True, 'suffix':'Hz'},
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
-                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
+                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc, 'linked':['Desired Frequency', 'Current Frequency']},
+                {'name':'EXTCLK Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
+                    'set':self.setFreqExt, 'get':self.freqExt, 'linked':['Desired Frequency', 'Current Frequency'], 'visible': True},
                 {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
                 {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
-                {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
-                                            'get':self._getClkgenStr},
+                {'name':'Current Frequency', 'type':'float', 'default':0, 'readonly':True, 'siPrefix':True, 'suffix':'Hz', 
+                                            'get':self.getClkgen},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
             ]}
@@ -544,15 +547,22 @@ class ClockSettings(Parameterized):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         return (result[3] & 0x08) >> 3
 
-    def _getClkgenStr(self):
-        return str(self.getClkgen()) + " Hz"
+    #def _getClkgenStr(self):
+    #    return str(self.getClkgen()) + " Hz"
 
     def getClkgen(self):
-        return (self._hwinfo.sysFrequency() * self.clkgenMul()) / self.clkgenDiv()
+        if self.clkgenSrc() == "extclk":
+            inpfreq = self.freqExt()
+        else:
+            inpfreq = self._hwinfo.sysFrequency()
+        return (inpfreq * self.clkgenMul()) / self.clkgenDiv()
 
     @setupSetParam(['CLKGEN Settings', 'Desired Frequency'])
     def autoMulDiv(self, freq):
-        inpfreq = self._hwinfo.sysFrequency()
+        if self.clkgenSrc() == "extclk":
+            inpfreq = self.freqExt()
+        else:
+            inpfreq = self._hwinfo.sysFrequency()
         sets = self.calculateClkGenMulDiv(freq, inpfreq)
         self.setClkgenMul(sets[0])
         self.setClkgenDiv(sets[1])
@@ -733,12 +743,26 @@ class ClockSettings(Parameterized):
             raise ValueError("source must be 'system' or 'extclk'")
 
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        
+        par = self.findParam(['CLKGEN Settings', 'EXTCLK Frequency'])
+        if par is not None:
+            if source == "extclk":
+                par.show()
+            else:
+                par.hide()
 
     def clkgenSrc(self):
         if self.oa is not None and self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)[0] & 0x08:
             return "extclk"
         else:
             return "system"
+            
+    @setupSetParam(['CLKGEN Settings', 'EXTCLK Frequency'])
+    def setFreqExt(self, freq):
+        self._freqExt = freq
+    
+    def freqExt(self):
+        return self._freqExt
 
     @setupSetParam(['ADC Clock', 'Phase Adjust'])
     def setPhase(self, phase):
