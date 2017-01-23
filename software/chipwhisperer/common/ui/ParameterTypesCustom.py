@@ -802,15 +802,18 @@ class SpinBoxWithSetItem(WidgetParameterItem):
         super(SpinBoxWithSetItem, self).__init__(*args, **kwargs)
         drawHelpIcon(self)
 
-    def makeWidget(self):
-        """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
-        opts = self.param.opts
-        defs = {
+    def get_widget_defs(self):
+        return {
             'value': 0, 'min': None, 'max': None, 'int': True,
             'step': 1.0, 'minStep': 1.0, 'dec': False,
             'siPrefix': False, 'suffix': '',
             'decimals': 10
         }
+
+    def makeWidget(self):
+        """Copy of SpinBox from PyQtGraph 0.9.10 & later, which adds special parameters we hack on"""
+        opts = self.param.opts
+        defs = self.get_widget_defs()
 
         defs.update(opts)
         if 'limits' in opts:
@@ -834,7 +837,21 @@ class SpinBoxWithSet(Parameter):
     itemClass = SpinBoxWithSetItem
 
 registerParameterType('int', SpinBoxWithSet, override=True)
-registerParameterType('float', SpinBoxWithSet, override=True)
+
+
+class SpinBoxFloatWithSetItem(WidgetParameterItem):
+    def get_widget_defs(self):
+        return {
+                'value': 0, 'min': None, 'max': None, 'int': False,
+                'step': 1.0, 'minStep': 0.01, 'dec': False,
+                'siPrefix': False, 'suffix': '',
+                'decimals': 10
+            }
+
+class SpinBoxFloatWithSet(Parameter):
+    itemClass = SpinBoxFloatWithSetItem
+
+registerParameterType('float', SpinBoxFloatWithSet, override=True)
 
 
 class LabelParameterItem(WidgetParameterItem):
