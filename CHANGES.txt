@@ -1,4 +1,36 @@
-V3.1:
+V3.2.0:
+-Updated HW model system, breaks some old APIs but makes it easier to add custom leakage models
+-Fixed bug where unplugging CW-Lite with terminal open caused flood of close messages
+-Fixes to CW305 interface
+-AVR Programmer adds ATMegaRF2564RFR2 device support
+
+V3.1.11:
+- Added support to DES (recovers 48 of the 56 bits key)
+- Refactored attack classes
+
+V3.1.10:
+- Added basic support to multiple channels (doesn't save yet).
+- Trace Output Plot widget with new parameter: X Axis with time values.
+- New Streaming mode capture option.
+
+V3.1.9:
+- Improved serial terminal.
+- Added stop capture button.
+- Fixed a lot of memory leaks.
+- New trace manager (supports deletion of multiple items).
+- Pip support.
+- Support to projects/plugins in user's home.
+- Test scripts.
+- Improved code documentation.
+- Code cleanups.
+- New Glitch Explorer widget.
+- Bandstop digital filter option (credits to Marc).
+- Removed parentParam argument from many classes (some older scripts may need to delete it to come back to live) :-/
+- Added buttons to load and save settings.
+- Project settings saved with the traces during capture.
+- Logging.
+
+V3.1.8:
 - Read/save buttons.
 - Trace recorder.
 - Graph widget: hairlines, grid, move, help, select trace, position.
@@ -15,6 +47,6 @@ V3.0:
 - Consolidate project (move traces to the project dir).
 - Improved trace manager.
 - Fixed GUI bugs with Mac OS X.
-- New plugin archtiecture (should be much easier to add new modules).
+- New plugin architecture (should be much easier to add new modules).
 - Bug fixes.
 - Large code refactoring.

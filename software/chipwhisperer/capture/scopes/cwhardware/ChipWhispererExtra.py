@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from functools import partial
 import ChipWhispererGlitch
@@ -46,24 +46,16 @@ ADDR_IOROUTE = 55
 class ChipWhispererExtra(Parameterized):
     _name = 'CW Extra'
 
-    def __init__(self, parentParam, cwtype, scope, oa):
+    def __init__(self, cwtype, scope, oa):
         #self.cwADV = CWAdvTrigger()
 
-        if cwtype == "cwrev2":
-            self.cwEXTRA = CWExtraSettings(self, oa)
-        elif cwtype == "cwlite":
-            self.cwEXTRA = CWExtraSettings(self, oa, hasFPAFPB=False, hasGlitchOut=True, hasPLL=False)
-        else:
-            raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
-
+        self.cwEXTRA = CWExtraSettings(oa, cwtype)
         self.enableGlitch = True
-
         if self.enableGlitch:
-            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(self, cwtype, scope, oa)
+            self.glitch = ChipWhispererGlitch.ChipWhispererGlitch(cwtype, scope, oa)
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.append(self.cwEXTRA.getParams())
-        self.params.append(self.glitch.getParams())
+        self.getParams().append(self.cwEXTRA.getParams())
+        self.getParams().append(self.glitch.getParams())
 
     def armPreScope(self):
         if self.enableGlitch:
@@ -89,10 +81,12 @@ class CWExtraSettings(Parameterized):
     PIN_RTIO4 = 0x20
     MODE_OR = 0x00
     MODE_AND = 0x01
+    MODE_NAND = 0x02
 
     MODULE_BASIC = 0x00
     MODULE_ADVPATTERN = 0x01
     MODULE_SADPATTERN = 0x02
+    MODULE_DECODEIO = 0x03
 
     CLOCK_FPA = 0x00
     CLOCK_FPB = 0x01
@@ -112,7 +106,23 @@ class CWExtraSettings(Parameterized):
 
     _name = "CW Extra Settings"
 
-    def __init__(self, parentParam, oa, hasFPAFPB=True, hasGlitchOut=False, hasPLL=True):
+    def __init__(self, oa, cwtype):
+
+        if cwtype == "cwrev2":
+            hasFPAFPB = True
+            hasGlitchOut = False
+            hasPLL = True
+        elif cwtype == "cwlite":
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+        elif cwtype == "cw1200":
+            hasFPAFPB=False
+            hasGlitchOut=True
+            hasPLL=False
+        else:
+            raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
+
         self.oa = oa
         self.hasFPAFPB = hasFPAFPB
         self.hasGlitchOut = hasGlitchOut
@@ -133,14 +143,28 @@ class CWExtraSettings(Parameterized):
             {'name': 'Target IO2 (Serial RXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO2), 'set':partial(self.setPin, pin=self.PIN_RTIO2)},
             {'name': 'Target IO3 (SmartCard Serial)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO3), 'set':partial(self.setPin, pin=self.PIN_RTIO3)},
             {'name': 'Target IO4 (Trigger Line)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO4), 'set':partial(self.setPin, pin=self.PIN_RTIO4)},
-            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND}, 'get':self.getPinMode, 'set':self.setPinMode }
+            {'name': 'Collection Mode', 'type':'list', 'values':{"OR":self.MODE_OR, "AND":self.MODE_AND, "NAND":self.MODE_NAND}, 'get':self.getPinMode, 'set':self.setPinMode }
         ])
 
         # Add trigger pins & modules
+
+        trigger_modules = {"Basic (Edge/Level)": self.MODULE_BASIC}
+
+        if cwtype == "cwlite":
+            pass
+        elif cwtype == "cw1200":
+            trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
+            trigger_modules["Digital IO Decode"] = self.MODULE_DECODEIO
+        elif cwtype == "cwrev2":
+            trigger_modules["SAD Match"] = self.MODULE_SADPATTERN
+            trigger_modules["Digital Pattern Matching"] = self.MODULE_ADVPATTERN
+        else:
+            raise ValueError("Unknown ChipWhisperer %s"%cwtype)
+
         ret.extend([
             {'name': 'Trigger Pins', 'type':'group', 'children':tpins},
-            {'name': 'Trigger Module', 'type':'list', 'values':{"Basic (Edge/Level)":self.MODULE_BASIC, "Digital Pattern Matching":self.MODULE_ADVPATTERN, "SAD Match":self.MODULE_SADPATTERN},
-             'set':self.setModule, 'get':self.getModule}
+            {'name': 'Trigger Module', 'type':'list', 'values':trigger_modules,
+             'set':self.setTriggerModule, 'get':self.getTriggerModule}
         ])
 
         # Generate list of clock sources present in the hardware
@@ -158,7 +182,7 @@ class CWExtraSettings(Parameterized):
         #Added July 6/2015, Release 0.11RC1
         #WORKAROUND: Initial CW-Lite FPGA firmware didn't default to CLKIN routed properly, and needed
         #            this to be set, as you can't do it through the GUI. This will be fixed in later firmwares.
-        if self.hasFPAFPB==False and self.hasPLL==False:
+        if cwtype == "cwlite":
             self.forceclkin = True
         else:
             self.forceclkin = False
@@ -192,7 +216,6 @@ class CWExtraSettings(Parameterized):
                                        'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
                 {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
                                        'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
-
             ]},
 
             {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
@@ -204,6 +227,12 @@ class CWExtraSettings(Parameterized):
                                        'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
                 {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
                                        'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
+                {'name':'nRST: GPIO', 'key':'gpiostatenrst', 'type':'list', 'values':{'Low':False, 'High':True, 'Default':None},
+                                       'get':partial(self.getGPIOState, IONumber=100), 'set':partial(self.setGPIOState, IONumber=100)},
+                {'name': 'PDID: GPIO', 'key': 'gpiostatepdid', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
+                                       'get': partial(self.getGPIOState, IONumber=101), 'set': partial(self.setGPIOState, IONumber=101)},
+                {'name': 'PDIC: GPIO', 'key': 'gpiostatepdic', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
+                                       'get': partial(self.getGPIOState, IONumber=102), 'set': partial(self.setGPIOState, IONumber=102)},
             ]},
         ])
 
@@ -217,8 +246,39 @@ class CWExtraSettings(Parameterized):
 
     @setupSetParam("")
     def setGPIOState(self, state, IONumber):
-        if state is not None:
+
+        # Special GPIO nRST, PDID, PDIC
+        if IONumber >= 100:
+            if IONumber == 100: # nRST IO Number
+                bitnum = 0
+            elif IONumber == 101: # PDID IO Number
+                bitnum = 2
+            elif IONumber == 102: # PDIC IO Number
+                bitnum = 4
+            else:
+                raise ValueError("Invalid special IO Number: %d"%IONumber)
+
             data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+            if state is None:
+                #Disable GPIO mode
+                data[6] &= ~(1<<bitnum)
+            else:
+                #Enable GPIO mode
+                data[6] |= (1<<bitnum)
+
+                #Set pin high/low
+                if state:
+                    data[6] |= (1<<(bitnum+1))
+                else:
+                    data[6] &= ~(1<<(bitnum + 1))
+
+            self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+        #Regular GPIO1-4
+        elif state is not None:
+            data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
             if data[IONumber] & self.IOROUTE_GPIOE == 0:
                 raise IOError("TargetIO %d is not in GPIO mode" % IONumber)
 
@@ -231,13 +291,27 @@ class CWExtraSettings(Parameterized):
 
     def getGPIOState(self, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
+
+        #Catch special modes
+        if IONumber >= 100:
+            if IONumber == 100: # nRST IO Number
+                bitnum = 0
+            elif IONumber == 101: # PDID IO Number
+                bitnum = 2
+            elif IONumber == 102: # PDIC IO Number
+                bitnum = 4
+            else:
+                raise ValueError("Invalid special IO Number: %d"%IONumber)
+
+            if (data[6] & (1<<bitnum)) == 0:
+                return None
+            else:
+                return (data[6] & (1<<(bitnum+1))) != 0
+
         if data[IONumber] & self.IOROUTE_GPIOE == 0:
             return None
 
-        if data[IONumber] == self.IOROUTE_GPIO:
-            return True
-        else:
-            return False
+        return data[IONumber] == self.IOROUTE_GPIO
 
     @setupSetParam("")
     def setTargetIOMode(self, setting, IONumber):
@@ -370,30 +444,35 @@ class CWExtraSettings(Parameterized):
         return(pins, mode)
 
     @setupSetParam("Trigger Module")
-    def setModule(self, module):
+    def setTriggerModule(self, module):
+
+        #When using special modes, force rising edge & stop user from easily changing
+        if module != self.MODULE_BASIC:
+            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setValue("rising edge", ignoreReadonly=True)
+            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(True)
+        else:
+            Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Mode']).setReadonly(False)
+
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] = resp[0] & 0xF8
-        resp[0] = resp[0] | module
+        resp[0] &= 0xF8
+        resp[0] |= module
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
-    def getModule(self):
+    def getTriggerModule(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
 
     @setupSetParam("Trigger Out on FPA")
     def setTrigOut(self, enabled):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        resp[0] = resp[0] & 0xE7
+        resp[0] &= 0xE7
         if enabled:
-            resp[0] = resp[0] | 0x08
+            resp[0] |= 0x08
         self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
     def getTrigOut(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
-        if resp[0] & 0x08:
-            return True
-        else:
-            return False
+        return resp[0] & 0x08
 
 
 class CWPLLDriver(object):
@@ -433,9 +512,9 @@ class CWPLLDriver(object):
         self.writeByte(0x02, N & 0xFF)
 
         b = self.readByte(0x03)
-        b &= (1<<6)|(1<<5)
+        b &= (1 << 6)|(1 << 5)
         if bypass:
-            b |= 1<<7
+            b |= 1 << 7
 
         b |= (M >> 8)
         b |= ((N >> 8) & 0x0F) << 1
@@ -443,7 +522,7 @@ class CWPLLDriver(object):
         self.writeByte(0x03, b)
 
         b = self.readByte(0x06)
-        b &= ~(1<<7)
+        b &= ~(1 << 7)
         if highspeed:
             b |= 1 << 7
 
@@ -504,14 +583,13 @@ class CWPLLDriver(object):
         divsource = divider source, 0-5
         """
         outreg = 19 + outnum
-
         data = 0
 
         if enabled:
-            data |= 1<<3
+            data |= 1 << 3
 
         if inv:
-            data |= 1<<6
+            data |= 1 << 6
 
         if divsource > 5:
             raise ValueError("Invalid Divider Source Number (0-5 allowed): %d"%divsource)
@@ -546,7 +624,7 @@ class CWPLLDriver(object):
         if bnew != bold:
             self.writeByte(11, bnew)
 
-        print "%x, %x" % (bnew, self.readByte(11))
+        logging.debug('%x, %x' % (bnew, self.readByte(11)))
 
     def readByte(self, regaddr, slaveaddr=0x69):
         d = bytearray([0x00, 0x80 | 0x69, 0x80 |  regaddr])
@@ -572,15 +650,15 @@ class CWPLLDriver(object):
         d = bytearray([data])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CDATA, d, Validate=False)
 
-        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
         time.sleep(0.05)
 
-        d = bytearray([0x04, 0x69, 0x80 |  regaddr])
+        d = bytearray([0x04, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
         time.sleep(0.05)
 
-        d = bytearray([0x00, 0x69, 0x80 |  regaddr])
+        d = bytearray([0x00, 0x69, 0x80 | regaddr])
         self.oa.sendMessage(CODE_WRITE, ADDR_I2CSTATUS, d, Validate=False)
         time.sleep(0.05)
 

@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from visa import *
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
@@ -37,12 +37,11 @@ class VisaScope(Parameterized):
 
     header = ":SYSTem:HEADer OFF\n"
 
-    def __init__(self, parentParam):
+    def __init__(self):
         self.visaInst = None
         self.dataUpdated = util.Signal()
 
-        self.params = Parameter(name=self.getName(), type='group')
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'X-Scale', 'key':'xscale', 'type':'list', 'values':self.xScales},
             {'name':'Y-Scale', 'key':'yscale', 'type':'list', 'values':self.yScales},
             {'name':'Y-Offset', 'key':'yoffset', 'type':'float', 'step':1E-3, 'siPrefix': True, 'suffix': 'V'},
@@ -54,10 +53,10 @@ class VisaScope(Parameterized):
     def con(self, constr):
         self.visaInst = instrument(constr)
         self.visaInst.write("*RST")
-        print self.visaInst.ask("*IDN?")
+        logging.info(self.visaInst.ask("*IDN?"))
         for cmd in self.header:
             self.visaInst.write(cmd)
-            print "VISA: %s" % cmd
+            logging.info('VISA: %s' % cmd)
             time.sleep(0.1)
         self.updateCurrentSettings()
 
@@ -77,6 +76,6 @@ class VisaScope(Parameterized):
         """Example arm implementation works on most"""
         self.visaInst.write(":DIGitize")
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self):
         """You MUST implement this"""
         self.dataUpdated.emit(self.datapoints, 0)

@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from _base import VisaScope
 from chipwhisperer.common.utils import util
@@ -66,17 +66,17 @@ class VisaScopeInterface_DSO1024A(VisaScope):
     def arm(self):
         self.visaInst.write(":RUN\n")
         result = "fake"
-        while ((result.startswith("WAIT") == False) and (result.startswith("RUN") == False)):
+        while (result.startswith("WAIT") == False) and (result.startswith("RUN") == False):
             result = self.visaInst.ask(":TRIGger:STATus?")
             time.sleep(0.1)
-            print "1Waiting..."
+            logging.info('1Waiting...')
 
-    def capture(self, Update=False, N=None):
+    def capture(self):
         # Wait?
-        while (self.visaInst.ask("*OPC?\n") != "1"):
+        while self.visaInst.ask("*OPC?\n") != "1":
             time.sleep(0.1)
             util.updateUI()
-            print "2Waiting..."
+            logging.info('2Waiting...')
 
         # print command
         self.visaInst.write(":WAVeform:DATA?")
@@ -86,21 +86,20 @@ class VisaScopeInterface_DSO1024A(VisaScope):
         start = data.find('#')
 
         if start < 0:
-            print "Error in header"
-            return
+            raise IOError('Error in header')
 
-        start = start + 1
+        start += 1
         hdrlen = data[start]
         hdrlen = int(hdrlen)
 
         # print hdrlen
 
-        start = start + 1
+        start += 1
         datalen = data[start:(start + hdrlen)]
         datalen = int(datalen)
         # print datalen
 
-        start = start + hdrlen
+        start += hdrlen
 
         # Each is two bytes
         wavdata = bytearray(data[start:(start + datalen)])
@@ -111,8 +110,9 @@ class VisaScopeInterface_DSO1024A(VisaScope):
             data = wavdata[j] | (wavdata[j + 1] << 8)
 
             if (data & 0x8000):
-                data = -65536 + data
+                data += -65536
 
             self.datapoints.append(data)
 
-        self.dataUpdated.emit(self.datapoints, 0)
+        self.dataUpdated.emit(0, self.datapoints, 0, 0)
+        return False

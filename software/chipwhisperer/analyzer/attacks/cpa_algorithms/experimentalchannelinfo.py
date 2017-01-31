@@ -24,10 +24,11 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import numpy as np
 from scipy.stats import norm
-from .._stats import DataTypeDiffs
+
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.Partition import Partition
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -44,9 +45,6 @@ except ImportError:
 class CPAProgressiveOneSubkey(object):
     """This class is the basic progressive CPA attack, capable of adding traces onto a variable with previous data"""
     def __init__(self):
-        self.clearStats()
-
-    def clearStats(self):
         self.sumhq = [0]*256
         self.sumtq = [0]*256
         self.sumt = [0]*256
@@ -55,7 +53,6 @@ class CPAProgressiveOneSubkey(object):
         self.totalTraces = 0
 
     def oneSubkey(self, bnum, pointRange, traces_all, numtraces, plaintexts, ciphertexts, keyround, modeltype, progressBar, model, pbcnt):
-
         diffs = [0]*256
         self.totalTraces += numtraces
 
@@ -125,7 +122,7 @@ class CPAProgressiveOneSubkey(object):
             #numtraces * meanh * meant = sumh * meant
             #sumnum =  self.sumht[key] - meant*self.sumh[key] - meanh*self.sumt[key] + (self.sumh[key] * meant)
             #sumnum =  self.sumht[key] - meanh*self.sumt[key]
-#            sumnum =  self.sumht[key] - meanh*self.sumt[key]
+            #sumnum =  self.sumht[key] - meanh*self.sumt[key]
             #sumnum =  self.sumht[key] - self.sumh[key]*self.sumt[key] / np.float64(self.totalTraces)
             sumnum = self.totalTraces*self.sumht[key] - self.sumh[key]*self.sumt[key]
 
@@ -287,32 +284,23 @@ class TemplateOneSubkey(object):
         return (self.diff, pbcnt)
 
 
-class CPAExperimentalChannelinfo(Parameterized, Plugin):
+class CPAExperimentalChannelinfo(AlgorithmsBase):
+    """NOT WORKING!!"""
     _name = "CPA Experimental Channel Info"
 
-    def __init__(self, parentParam, targetModel, leakageFunction):
+    def __init__(self):
+        AlgorithmsBase.__init__(self)
 
         self.getParams().addChildren([
-            {'name':'Reporting Interval', 'key':'reportinterval', 'type':'int', 'value':100},
             {'name':'Iteration Mode', 'key':'itmode', 'type':'list', 'values':{'Depth-First':'df', 'Breadth-First':'bf'}, 'value':'bf'},
             {'name':'Skip when PGE=0', 'key':'checkpge', 'type':'bool', 'value':False},
         ])
+        self.updateScript()
 
-        self.model = targetModel
-        self.sr = None
-        self.stats = DataTypeDiffs()
-
-    def setByteList(self, brange):
-        self.brange = brange
-
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
-
-        foundkey = []
-
-        self.all_diffs = range(0,16)
 
         tdiff = self.findParam('reportinterval').getValue()
 
@@ -400,15 +388,15 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
                     # Handle Offset
                     tnum = i + tracerange[0]
 
-                    d = tracedata.getTrace(tnum)
+                    d = traceSource.getTrace(tnum)
 
                     if d is None:
                         continue
 
                     data.append(d)
-                    textins.append(tracedata.getTextin(tnum))
-                    textouts.append(tracedata.getTextout(tnum))
-                    knownkeys.append(tracedata.getKnownKey(tnum))
+                    textins.append(traceSource.getTextin(tnum))
+                    textouts.append(traceSource.getTextout(tnum))
+                    knownkeys.append(traceSource.getKnownKey(tnum))
 
                 traces = np.array(data)
                 textins = np.array(textins)
@@ -440,12 +428,6 @@ class CPAExperimentalChannelinfo(Parameterized, Plugin):
                 if self.sr is not None:
                     self.sr()
 
-    def getStatistics(self):
-        return self.stats
-
-    def setStatsReadyCallback(self, sr):
-        self.sr = sr
-
 
 # This is actually used by ProfilingTemplate via a hack, which requires more work...
 class TemplateCSI(object):
@@ -454,7 +436,7 @@ class TemplateCSI(object):
     """
     def __init__(self, tmanager=None):
         self._traceSource = None
-        self.partObject = Partition(self)
+        self.partObject = Partition()
 
     def getTraceSource(self):
         return self._traceSource
@@ -482,7 +464,6 @@ class TemplateCSI(object):
         tend = trange[1]
 
         templateTraces = [ [ [] for j in range(0, numPartitions) ] for i in range(0, subkeys) ]
-
         templateMeans = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
         templateCovs = [ np.zeros(numPartitions) for i in range (0, subkeys) ]
 
@@ -498,22 +479,19 @@ class TemplateCSI(object):
                         templateTraces[bnum][i].append(trace_fixed)
 
             if tnum % 100 == 0:
-                print tnum
+                logging.debug(tnum)
 
         for bnum in range(0, subkeys):
             for i in range(0, numPartitions):
                 templateMeans[bnum][i] = np.mean(templateTraces[bnum][i], axis=0)
-                cov = np.cov(templateTraces[bnum][i], rowvar=0)
-                # print "templateTraces[%d][%d] = %d" % (bnum, i, len(templateTraces[bnum][i]))
+                cov = np.cov(templateTraces[bnum][i], rowvar=False)
+                if __debug__: logging.debug('templateTraces[%d][%d] = %d' % (bnum, i, len(templateTraces[bnum][i])))
 
                 if len(templateTraces[bnum][i]) > 0:
                     templateCovs[bnum][i] = cov
                 else:
-                    print "WARNING: Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i)
+                    logging.warning('Insufficient template data to generate covariance matrix for bnum=%d, partition=%d' % (bnum, i))
                     templateCovs[bnum][i] = np.zeros((len(poiList[bnum]), len(poiList[bnum])))
-
-                # except ValueError:
-                #    raise ValueError("Insufficient template data to generate covariance matrix for bnum=%d, partition=%d" % (bnum, i))
 
         self.templateMeans = templateMeans
         self.templateCovs = templateCovs

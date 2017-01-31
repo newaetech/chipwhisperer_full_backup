@@ -22,13 +22,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 from datetime import *
-from ..utils.timer import Timer
-from ..utils import qt_tweaks
+from ..utils import util
+
 
 class ProgressBarText(object):
-    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues = None, show=True):
+    def __init__(self, title = "Progress", text = None, statusMask ="Initializing...", textValues=None, show=True, parent=None):
         self.title = title
         self.last = self.currentProgress = 0
         self.maximum = 100
@@ -39,7 +39,8 @@ class ProgressBarText(object):
         self.aborted = False
         self.printAll = False
         ProgressBarText.setText(self, text)
-        print self.title + ": " + self.getStatusText()
+        logging.info(self.title + ": " + self.getStatusText())
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def __enter__(self):
         pass
@@ -51,10 +52,14 @@ class ProgressBarText(object):
         self.close()
         return exc_type == Warning
 
+    def __del__(self):
+        if __debug__:
+            logging.debug('Deleted: ' + str(self))
+
     def setText(self, text):
         if text:
             self.text = text
-            print self.title + ": " + self.text
+            logging.info(self.title + ": " + self.text)
         else:
             self.text = ""
 
@@ -66,28 +71,29 @@ class ProgressBarText(object):
         self.textValues = textValues
 
     def getStatusText(self):
-        if self.textValues and not self.wasAborted():
+        if self.textValues is not None and not self.wasAborted():
             return self.statusMask % self.textValues
         return self.statusMask
 
     def printStatus(self):
         if self.maximum!=0:
-            print self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")"
+            logging.info(self.title + (": %.1f" % ((self.currentProgress/self.maximum) * 100)) + "% (" + self.getStatusText() + ")")
 
-    def updateStatus(self, currentProgress, textValues = None):
+    def updateStatus(self, currentProgress, textValues=None):
         self.textValues = textValues
         self.currentProgress = currentProgress
         if self.printAll or self.currentProgress == 0 or self.currentProgress == self.maximum\
                 or self.currentProgress/self.maximum - self.last/self.maximum >= 0.2:
-            self.last = currentProgress
+            self.last = self.currentProgress
             self.printStatus()
+        util.updateUI()
 
-    def abort(self, message = None):
+    def abort(self, message=None):
         if not message:
             message = "User request."
         self.aborted = True
         self.setStatusMask("Aborted. Reason = " + message)
-        print self.title + ": " + self.getStatusText()
+        logging.warn(self.title + ": " + self.getStatusText())
 
     def wasAborted(self):
         return self.aborted
@@ -95,9 +101,10 @@ class ProgressBarText(object):
     def close(self):
         #assert self.currentProgress == self.maximum or self.wasAborted(), \
         if (self.currentProgress != self.maximum) and (self.wasAborted() == False):
-            print "WARNING: ProgressBar %s"%self.title + "Closing not in 100%%: progress = %d and maximum = %d" % (self.currentProgress, self.maximum)
+            logging.warn('ProgressBar ' + self.title + ' closed not in 100%%: progress = %d and maximum = %d' %
+                            (self.currentProgress, self.maximum))
 
-        print self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime))
+        logging.info(self.title + ": Done. Total time = " + (str(datetime.now() - self.startTime)))
 
     def setMaximum(self, value):
         self.maximum = float(value)
@@ -111,13 +118,15 @@ class ProgressBarText(object):
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
+    from ..utils import qt_tweaks
 
     class ProgressBarGUI(qt_tweaks.QDialog, ProgressBarText):
-        def __init__(self, title = "Progress", text=None, statusMask ="Initializing...", textValues = None, show=True):
+        def __init__(self, title="Progress", text=None, statusMask="Initializing...", textValues=None, show=True, parent=None):
 
-            ProgressBarText.__init__(self, title = title, text=text, statusMask= statusMask, textValues = textValues)
-            QDialog.__init__(self, None)
+            ProgressBarText.__init__(self, title = title, text=text, statusMask=statusMask, textValues=textValues)
+            QDialog.__init__(self, parent)
 
+            self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
             self.setModal(False)
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)
@@ -146,10 +155,8 @@ try:
         def setText(self, text):
             ProgressBarText.setText(self, text)
             self.textLabel.setText(self.getText())
-            # if self.getText() == "":
-            #     self.textLabel.hide()
 
-        def setStatusMask(self, statusTextMask, textValues = None):
+        def setStatusMask(self, statusTextMask, textValues=None):
             ProgressBarText.setStatusMask(self, statusTextMask, textValues)
             self.updateStatus(self.currentProgress, textValues)
 
@@ -158,12 +165,12 @@ try:
             if message:
                 QMessageBox.warning(self, "Warning", "Could not complete the execution:\n\n" + self.getStatusText())
 
-        def updateStatus(self, currentProgress, textValues = None):
+        def updateStatus(self, currentProgress, textValues=None):
             ProgressBarText.updateStatus(self, currentProgress, textValues)
             self.statusLabel.setText(self.getStatusText())
             if self.maximum!=0:
                 self.pbar.setValue((self.currentProgress/self.maximum) * 100)
-            QCoreApplication.processEvents()
+            util.updateUI()
 
         def close(self):
             ProgressBarText.close(self)

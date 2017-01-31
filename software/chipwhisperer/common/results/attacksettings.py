@@ -35,7 +35,7 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
     _name = "Attack Settings"
     _description = "General settings for all the attack widgets"
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         AttackObserver.__init__(self)
         self._overridedKey = [00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
         self.params = self.getParams()
@@ -45,11 +45,11 @@ class AttackSettings(ResultsBase, AttackObserver, Plugin):
             {'name':'Override with', 'type':'str', 'key':'knownkey', 'value':"00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00", 'action':lambda p:self.setKnownKey(p.getValue())},
             {'name':'Highlighted key color', 'type':'color', 'value':"F00", 'action':lambda p: self.setHighlightedKeyColor(p.getValue())},
             {'name':'Trace color', 'type':'color', 'value':"0F0", 'action':lambda p: self.setTraceColor(p.getValue())},
-            {'name':'Redraw Widgets',  'type':'action', 'action':lambda _:self.updateAll()},
+            {'name':'Redraw Widgets', 'type':'action', 'action':self.updateAll},
         ])
         self.findParam('knownkey').hide()
 
-    def updateAll(self):
+    def updateAll(self, _=None):
         for i in self.registeredObjects.itervalues():
             if isinstance(i, AttackObserver):
                 i.processAnalysis()

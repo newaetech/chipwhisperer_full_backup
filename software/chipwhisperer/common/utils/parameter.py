@@ -21,14 +21,22 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-#=================================================
-
+# =================================================
+import logging
 import sys
 import copy
-from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
+import weakref
+
 from chipwhisperer.common.utils import util
 import functools
-import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
+
+#TODO: pyqtgraph raises a general Exception(), so we can't actually test for importerror. Perhaps should manually check
+#      for pyside first
+try:
+    from pyqtgraph.parametertree import Parameter as pyqtgraphParameter
+    import chipwhisperer.common.ui.ParameterTypesCustom  # Do not remove!!!
+except:
+    logging.warning("PySide or PyQtGraph not installed, disabling support for pyqtgraph parameters")
 
 
 class Parameterized(object):
@@ -45,7 +53,8 @@ class Parameterized(object):
         if not hasattr(self, "params"):
             self.params = Parameter(name=self.getName(), type='group')
             if self._description != "":
-                self.params.addChildren([{'name':'', 'type':'label', 'value':self.getDescription(), 'readonly':True}])
+                self.params.addChildren(
+                    [{'name': '', 'type': 'label', 'value': self.getDescription(), 'readonly': True}])
         return self.params
 
     def findParam(self, nameOrPath):
@@ -68,8 +77,9 @@ class Parameterized(object):
 
     def deleteParams(self):
         """Delete its parameters. Helps the GC in doing its work."""
-        self.getParams().delete()
-        del self.params
+        if hasattr(self, "params"):
+            self.getParams().delete()
+            del self.params
 
 
 class Parameter(object):
@@ -111,6 +121,9 @@ class Parameter(object):
     "readonly"            - Prevents the user of changing its value (it can be forced though)
     "help"                - Text displayed when clicking the help button
     "graphwidget"         - Reference to the graph widget when using parameters with type "rangegraph"
+    'siPrefix', 'suffix'  - Adds prefix and sets the suffix text
+    "psync"               - Disable reverse synchronization when calling the set method directly (no decorator needed)
+    "addLoadSave"         - Adds load / save settings button to a group parameter
     ...
 
     Examples:
@@ -142,8 +155,10 @@ class Parameter(object):
     sigParametersChanged = util.Signal()
     registeredParameters = {}
     scriptingOutput = sys.stdout
-    supportedTypes = ["group", "list", "label", "str", 'text', "bool", "action", "int", "float", "rangegraph", "file", 'filelist', "range", "color", "menu"]
-    suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked", "default", "tip", "action", "visible", "children", "readonly", "graphwidget"}
+    supportedTypes = ["group", "list", "label", "str", 'text', "bool", "action", "int", "float", "rangegraph", "file",
+                      'filelist', "range", "color", "menu"]
+    suppertedAttributes = {"name", "key", "type", "values", "value", "set", "get", "limits", "step", "linked",
+                           "default", "tip", "action", "visible", "children", "readonly", "graphwidget"}
     usePyQtGraph = False
 
     def __init__(self, parent=None, ignoreChildren=False, **opts):
@@ -156,14 +171,15 @@ class Parameter(object):
         self.previousValue = None
         self.parent = parent
         self.invalid = False
-        self.opts = {"visible":True}
+        self.opts = {"visible": True}
         self.opts.update(opts)
 
         if 'name' not in self.opts or not isinstance(self.opts['name'], basestring):
             raise Exception("Parameter must have a name.")
 
         name = self.opts["name"]
-        if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts['type'] not in Parameter.supportedTypes:
+        if 'type' not in self.opts or not isinstance(self.opts['type'], basestring) or self.opts[
+            'type'] not in Parameter.supportedTypes:
             raise Exception("Parameter \"%s\" must have a valid string type." % name)
 
         # for opt in opts:
@@ -172,29 +188,40 @@ class Parameter(object):
 
         if self.opts['type'] != 'group':
             if (('set' in self.opts) or ('get' in self.opts)) and ('value' in self.opts):
-                raise Exception("Use set/get or value, not both simultaneously in parameter \"%s\". If an action is needed, use the action option." % name)
+                raise Exception(
+                    "Use set/get or value, not both simultaneously in parameter \"%s\". If an action is needed, use the action option." % name)
 
-            if not ('set' in self.opts or 'get' in self.opts or 'value' in self.opts or 'action' in self.opts or 'linked' in self.opts):
-                raise Exception("Useless parameter \"%s\" because no set/get/value/action/linked option is defined." % name)
+            if not (
+                                'set' in self.opts or 'get' in self.opts or 'value' in self.opts or 'action' in self.opts or 'linked' in self.opts):
+                raise Exception(
+                    "Useless parameter \"%s\" because no set/get/value/action/linked option is defined." % name)
 
-            if 'set' in self.opts and (not ('get' in self.opts)) :
+            if 'set' in self.opts and (not ('get' in self.opts)):
                 raise Exception("Option set and get should be used together in parameter \"%s\"." % name)
 
-            if 'get' in self.opts and (not 'set' in self.opts) and ('readonly' in self.opts) and self.opts['readonly'] == False :
+            if 'get' in self.opts and (not 'set' in self.opts) and ('readonly' in self.opts) and self.opts[
+                'readonly'] == False:
                 raise Exception("Parameters \"%s\" has get and no set. Should be marked as readonly." % name)
 
             if self.opts.get("type", None) == "list":
                 self.opts['limits'] = opts['values']
 
             if 'set' in self.opts:
-                if 'psync' in self.opts and self.opts['psync'] == False:
-                    self.sigValueChanged.connect(lambda v, blockSignal : self.opts['set'](v))
-                else:
-                    self.sigValueChanged.connect(self.opts['set'])
+                self.sigValueChanged.connect(self.opts['set'])
+                self.opts['set'] = None
+
+            if 'get' in self.opts:
+                self.opts['get'] = util.WeakMethod(self.opts['get'])
+
+            if 'action' in self.opts:
+                self.opts['action'] = util.WeakMethod(self.opts['action'])
 
             if "default" not in self.opts:
                 self.opts["default"] = self.getValue()
-                self.setValue(self.getValue(), init=True)
+                self.setValue(self.opts["default"], init=True)
+        else:
+            if 'addLoadSave' in self.opts and self.opts["addLoadSave"]:
+                self.opts["addLoadSave"] = (self.load, self.save)
 
         self.childs = []
         self.ignoredChildren = self.opts.pop("children", [])
@@ -203,9 +230,13 @@ class Parameter(object):
         self.keys = {}
         if ignoreChildren is False:
             self.addChildren(self.ignoredChildren)
+            self.ignoredChildren = []
 
     def getName(self):
         return self.opts["name"]
+
+    def getType(self):
+        return self.opts["type"]
 
     def getTip(self):
         return self.opts["tip"]
@@ -224,16 +255,22 @@ class Parameter(object):
         else:
             return val()
 
-    def getKey(self):
+    def getKeyFromValue(self, value):
         """Return the key used to set list type parameters"""
         if self.opts["type"] == "list":
             limits = self.opts["limits"]
             if isinstance(limits, dict):
-                return limits.keys()[limits.values().index(self.getValue())]
-            else:
-                return self.getValue()
-        else:
-            raise Exception("Only parameter type \"list\" support keys")
+                try:
+                    return limits.keys()[limits.values().index(value)]
+                except ValueError:
+                    ValueError(
+                        "Error: Value " + str(value) + " is not valid in Parameter \"" + self.getName() + "\". Options are: " + str(
+                            limits))
+        return value
+
+    def getValueKey(self):
+        """Return the key used to set list type parameters"""
+        return self.getKeyFromValue(self.getValue())
 
     def addChildren(self, children):
         """Add a list of children to the current paramenter"""
@@ -263,7 +300,8 @@ class Parameter(object):
             self.sigChildAdded.emit(child)
         self.sigParametersChanged.emit()
 
-    def setValue(self, value, blockSignal=None,  blockAction=False, init=False, ignoreReadonly = False, echo=True, addWithKey=False):
+    def setValue(self, value, blockSignal=None, blockAction=False, init=False, ignoreReadonly=False, echo=True,
+                 addToList=False):
         """
         Set the parameter value. External values are updated using signals.
 
@@ -273,7 +311,7 @@ class Parameter(object):
         blockAction    - prevents action callback of being called.
         init           - used internally to initialize the parameter.
         echo           - enables/disables broadcasting the changes.
-        addWithKey     - add given value to list of valid values if not already present
+        addToList      - add given value to list of valid values if not already present
         """
         if not ignoreReadonly and not init and self.readonly():
             raise ValueError("Parameter \"%s\" is currently set to read only." % self.getName())
@@ -282,20 +320,26 @@ class Parameter(object):
         if type == "group":
             return
 
-        if addWithKey:
+        if addToList:
             newlimits = copy.copy(limits)
             newlimits[value.getName()] = value
             self.setLimits(newlimits)
 
         elif limits is not None and not self.invalid:
             if (type == "list" and
-                   ((isinstance(limits, dict) and value not in limits.values()) or\
-                   (not isinstance(limits, dict) and value not in limits))
-                ) or\
-               (type == "bool" and value not in [True, False]) or\
-               ((type == "int" or type =="float") and (value < limits[0] or value > limits[1])) or\
-               (type =="rangegraph" and (value[1] - value[0] != -1) and (value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] > limits[1])):
-                raise ValueError("Value %s out of limits in parameter \"%s\"" % (str(value), self.getName()))
+                    ((isinstance(limits, dict) and value not in limits.values()) or \
+                             (not isinstance(limits, dict) and value not in limits))
+                ) or \
+                    (type == "bool" and value not in [True, False]) or \
+                    ((type == "int" or type == "float") and (value < limits[0] or value > limits[1])) or \
+                    (type == "rangegraph" and (value[1] - value[0] != -1) and (
+                                    value[0] < limits[0] or value[0] > limits[1] or value[1] < limits[0] or value[1] >
+                        limits[1])):
+                if isinstance(limits, dict) and value in limits.keys():
+                    value = limits[value]
+                else:
+                    #raise ValueError("Value %s out of limits (%s) in parameter \"%s\"" % (str(value), str(limits), self.getName()))
+                    logging.error("Value %s out of limits (%s) in parameter \"%s\"" % (str(value), str(limits), self.getName()))
 
         try:
             if blockSignal is not None:
@@ -303,32 +347,33 @@ class Parameter(object):
 
             if "value" in self.opts:
                 self.opts["value"] = value
-            self.sigValueChanged.emit(value, blockSignal=self.setValue)
-
+            if 'psync' in self.opts and self.opts['psync'] == False:
+                self.sigValueChanged.emit(value)
+            else:
+                self.sigValueChanged.emit(value, blockSignal=self.setValue)
         finally:
             if blockSignal is not None:
                 self.sigValueChanged.connect(blockSignal)
 
-        if self.previousValue is not None and isinstance(self.previousValue, Parameterized):
-            self.previousValue.getParams().hide()
+        if self.previousValue is not None and self.previousValue() is not None:
+            self.previousValue().getParams().hide()
 
         if isinstance(value, Parameterized):
             value.getParams().show()
-
-        self.previousValue = value
+            self.previousValue = weakref.ref(value)
 
         if not init:
             if not blockAction:
                 self.callAction()
             if isinstance(limits, dict):
-                for k,v in limits.iteritems():
+                for k, v in limits.iteritems():
                     if v == value:
                         value = k
 
-            if echo and not self.opts.get("echooff", False):
+            if echo and not self.opts.get("echooff", False) and not self.readonly():
                 path = self.getPath()
                 if path is not None:
-                    print >> Parameter.scriptingOutput, str(path + [value])
+                    print >> Parameter.scriptingOutput, str(path + [value]) + ","
 
     def callLinked(self):
         for name in self.opts.get("linked", []):
@@ -342,7 +387,7 @@ class Parameter(object):
             act(self)
             path = self.getPath()
             if path is not None:
-                print >> Parameter.scriptingOutput, (str(path + [None]))
+                print >> Parameter.scriptingOutput, (str(path + [None]) + ",")
         self.callLinked()
 
     def setDefault(self, default):
@@ -354,13 +399,13 @@ class Parameter(object):
         """Change the limits. Invalid interval limits are hidden."""
         self.opts['limits'] = limits
         type = self.opts["type"]
-        if (type == "int" or type =="float" or type =="rangegraph" or type =="range") and limits[0] > limits[1]:
+        if (type == "int" or type == "float" or type == "rangegraph" or type == "range") and limits[0] > limits[1]:
             self.invalid = True
             self.sigOptionsChanged.emit(visible=False)
         else:
             self.invalid = False
             self.sigOptionsChanged.emit(visible=self.isVisible())
-            self.sigLimitsChanged.emit(limits)
+            self.sigLimitsChanged.emit(limits.keys() if isinstance(limits, dict) else limits)
 
     def readonly(self):
         return self.opts.get('readonly', False)
@@ -445,7 +490,7 @@ class Parameter(object):
 
     def getPyQtGraphParameter(self):
         """Return the PyQtGraph Parameter if it exists."""
-        if hasattr(self,"_PyQtGraphParameter"):
+        if hasattr(self, "_PyQtGraphParameter"):
             return self._PyQtGraphParameter
         return None
 
@@ -455,16 +500,21 @@ class Parameter(object):
         opts.update(self.getOpts())
         if "default" in self.opts:
             opts["value"] = opts["default"]
+        if "limits" in self.opts and isinstance(self.opts["limits"], dict):
+            opts['limits'] = opts['limits'].keys()
+            opts["value"] = self.getKeyFromValue(opts["default"])
+            del opts['values']
         self._PyQtGraphParameter = pyqtgraphParameter.create(**opts)
         if hasattr(self._PyQtGraphParameter, "sigActivated"):
             self._PyQtGraphParameter.sigActivated.connect(self.callAction)
         self.sigChildRemoved.connect(lambda c: self._PyQtGraphParameter.removeChild(c.getPyQtGraphParameter()))
         self.sigChildAdded.connect(lambda c: self._PyQtGraphParameter.addChild(c.getPyQtGraphParameter()))
-        updateParamValue = lambda _, v: self.setValue(v, guiCallback)
-        guiCallback = lambda v, blockSignal: self._PyQtGraphParameter.setValue(v, updateParamValue)
-        self._PyQtGraphParameter.sigValueChanged.connect(updateParamValue)
-        self.sigValueChanged.connect(guiCallback)
-        self.sigLimitsChanged.connect(lambda v: self._PyQtGraphParameter.setLimits(v))
+        sigValueUpdatedAdapter = lambda _, v: self.setValue(v, sigSetValueAdapter)
+        self._PyQtGraphParameter.sigValueChanged.connect(sigValueUpdatedAdapter)
+        sigSetValueAdapter = lambda v, blockSignal=None: self._PyQtGraphParameter.setValue(self.getKeyFromValue(v),
+                                                                                      sigValueUpdatedAdapter)
+        self.sigValueChanged.connect(sigSetValueAdapter)
+        self.sigLimitsChanged.connect(self._PyQtGraphParameter.setLimits)
         self.sigOptionsChanged.connect(self._PyQtGraphParameter.setOpts)
 
     def setParent(self, parent):
@@ -491,8 +541,8 @@ class Parameter(object):
         if self.opts.get("type", None) == "list" and isinstance(self.opts["values"], dict):
             for value in self.opts["values"].itervalues():
                 if isinstance(value, Parameterized):
-                        parent.append(value.getParams())
-                        value.getParams().show(self.getValue()==value)
+                    parent.append(value.getParams())
+                    value.getParams().show(self.getValue() == value)
 
     def refreshAllParameters(self):
         """
@@ -511,6 +561,7 @@ class Parameter(object):
                         value.getParams().hide()
                     elif mode == "child":
                         self.append(value.getParams())
+                        value.getParams().hide()
 
         self.setValue(self.getValue(), init=True)
         for child in self.childs:
@@ -533,7 +584,8 @@ class Parameter(object):
         """Return a list with all parameters with a given type in the hierarchy."""
         ret = []
         for p in cls.registeredParameters.itervalues():
-            ret.extend(p._getAllParameters(type))
+            parameters = p._getAllParameters(type)
+            [ret.append(param) for param in parameters if param not in ret]
         return ret
 
     def register(self):
@@ -545,6 +597,115 @@ class Parameter(object):
         """Deregister a registered parameter. Ignores if it is already deregistered."""
         Parameter.registeredParameters.pop(self.getName(), None)
 
+    def toString(self, level, onlyVisibles=False):
+        lastLevel = level
+        ret = ""
+        if self.getType() != "group" and self.getType() != "action" and self.getType() != "menu" and self.getType() != "label":
+            if (onlyVisibles and self.isVisible()) or not (onlyVisibles or self.readonly()):
+                ret += self.getName() + " = " + str(self.getValueKey()) + "\n"
+
+        if not onlyVisibles or self.isVisible():
+            for child in self.childs:
+                if lastLevel != level+1:
+                    ret += ("[" * (level + 1)) + self.getName() + ("]" * (level + 1)) + "\n"
+                    lastLevel = level+1
+                try:
+                    txt, lastLevel = child.toString(lastLevel, onlyVisibles)
+                    ret += txt
+                except:
+                    logging.info('Info: Could not read parameter %s. Ignoring it...' % str(child.getPath()))
+                    pass
+        return ret, lastLevel
+
+    def __str__(self):
+        txt, _ = self.toString(0)
+        return txt
+
+    def save(self, fname, onlyVisibles=False):
+        f = open(fname, 'w')
+        txt, _ = self.toString(0, onlyVisibles=False)
+        f.write(txt)
+
+    @classmethod
+    def saveRegistered(cls, fname, onlyVisibles=False):
+        f = open(fname, 'w')
+        for p in cls.registeredParameters.itervalues():
+            if 'addLoadSave' in p.opts and p.opts['addLoadSave'] is not False:
+                txt, _ = p.toString(0, onlyVisibles)
+                f.write(txt)
+
+    def load(self, fname):
+        f = open(fname, 'r')
+        path = []
+        foundCorrectSection = False
+        for lineNum, line in enumerate(f):
+            level = 0
+            for p in range(0, len(line)):
+                if line[p] == "[":
+                    level += 1
+                else:
+                    break
+            if level != 0:
+                path = path[0:level - 1]
+                if level >= len(path):
+                    if level > len(path) + 1:
+                        raise Warning(
+                            'Error reading file %s, line %d. Group hierarchy missing.' % (fname, lineNum))
+                    path.append(line[level:-(level + 1)])
+            else:
+                if path[0] != self.getName():
+                    continue
+                foundCorrectSection = True
+                separator = line.find("=")
+                value = line[separator + 1:-1].strip()
+                param = path[1:] + [line[0:separator].strip()]
+                child = self.getChild(param)
+                if child is None:
+                    logging.warning('Parameter "%s" in line %d not found. Ignoring it.' % (str(param), lineNum))
+                    continue
+
+                if child.getType() == "int":
+                    value = int(value)
+                elif child.getType() == "float":
+                    value = float(value)
+                elif child.getType() == "menu" or child.getType() == "label" or child.getType() == "color":
+                    continue
+                elif child.getType() == "str" or child.getType() == "text" or child.getType() == "action" or \
+                                child.getType() == "file" or child.getType() == "filelist":
+                    pass
+                elif child.getType() == "list" and isinstance(child.opts["limits"], dict):
+                    value = child.opts["limits"][value]
+                elif value != "":
+                    try:
+                        value = eval(value)
+                    except:
+                        pass
+                if not child.readonly():
+                    child.setValue(value)
+                else:
+                    if str(child.getValue()) != str(value):
+                        logging.info('Parameter %s in line %d is readonly and value being set is different than the current one.' % (child.getName(), lineNum))
+        if not foundCorrectSection:
+            raise Warning('Could not found section "%s" in file: %s' % (self.getName(), fname))
+
+    @classmethod
+    def findParameter(cls, path):
+        """
+        Find a registered parameter based on a list (used for scripting).
+        """
+        child = cls.registeredParameters.get(path[0], None)
+        if child is None:
+            raise KeyError("Parameter not found: %s" % str(path))
+        if len(path) > 1:
+            return child.getChild(path[1:])
+        else:
+            return child
+
+    @classmethod
+    def getParameter(cls, path):
+        """Return the value of a registered parameter"""
+        return cls.findParameter(path).getValueKey()
+
     @classmethod
     def setParameter(cls, parameter, echo=False, blockSignal=False):
         """
@@ -554,26 +715,15 @@ class Parameter(object):
         path = parameter[:-1]
         value = parameter[-1]
 
-        child = None
-        p = cls.registeredParameters.get(path[0], None)
-        if p is not None:
-            child = p.getChild(path[1:])
-            if child is not None:
+        child = cls.findParameter(path)
+        if isinstance(child.getOpts().get("values", None), dict):
+            try:
+                value = child.getOpts()["values"][value]
+            except KeyError:
+                raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s" %
+                                 (value, str(parameter), child.getOpts()["values"].keys()))
+        child.setValue(value, echo=echo)
 
-                if isinstance(child.getOpts().get("values", None), dict):
-                    try:
-                        value = child.getOpts()["values"][value]
-                    except KeyError:
-                        raise ValueError("Invalid value '%s' for parameter '%s'.\nValid values: %s"%(value,
-                                                                                    str(parameter),
-                                                                                    child.getOpts()["values"].keys()))
-                child.setValue(value, echo=echo)
-
-        if child is None:
-            raise KeyError("Parameter not found: %s" % str(parameter))
-
-    def __del__(self):
-        self.delete()
 
 def setupSetParam(parameter):
     """
@@ -582,6 +732,7 @@ def setupSetParam(parameter):
     The blockSignal argument can be used to avoid this behavior when, for instance, you can't do that because the
     parameter wasn't created yet
     """
+
     def func_decorator(func):
         @functools.wraps(func)
         def func_wrapper(*args, **kargs):
@@ -589,15 +740,17 @@ def setupSetParam(parameter):
             if "blockSignal" in kargs:
                 del kargs["blockSignal"]
             if blockSignal is None:
-                if parameter!="":
+                if parameter != "":
                     tmp = args[0].findParam(parameter)
                     tmp.setValue(args[1], blockSignal=tmp.opts["set"], **kargs)
-            #todo - use inspect to remove things from kargs that are handled by setvalue above
-            if "addWithKey" in kargs:
-                del kargs["addWithKey"]
+            # todo - use inspect to remove things from kargs that are handled by setvalue above
+            if "addToList" in kargs:
+                del kargs["addToList"]
             func(*args, **kargs)
+
         return func_wrapper
         func_wrapper.__wrapped__ = func
+
     return func_decorator
 
 
@@ -607,12 +760,14 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication([])
 
+
     class submodule(Parameterized):
         def __init__(self, d):
             super(submodule, self).__init__()
             moreparams = [
-                {'name': 'Value', 'type': 'list', 'values': [2, 3, 4], 'value':3, 'action': self.action, 'linked':['Linked Value (1/Value)']},
-                {'name': 'Linked Value (1/Value)', 'type': 'float', 'default':1/3, 'get': self.getLinked}
+                {'name': 'Value', 'type': 'list', 'values': [2, 3, 4], 'value': 3, 'action': self.action,
+                 'linked': ['Linked Value (1/Value)']},
+                {'name': 'Linked Value (1/Value)', 'type': 'float', 'default': 1 / 3, 'get': self.getLinked}
             ]
             self.params = Parameter(name='Sub-module %d' % d, type='group', children=moreparams)
 
@@ -620,7 +775,7 @@ if __name__ == '__main__':
             print "action %s" % e.getValue()
 
         def getLinked(self):
-            return 1.0/float(self.params.getChild('Value').getValue())
+            return 1.0 / float(self.params.getChild('Value').getValue())
 
 
     class module(Parameterized):
@@ -643,20 +798,23 @@ if __name__ == '__main__':
         def setSubmodule(self, sm):
             self.sm = sm
 
+
     class maintest(Parameterized):
         def __init__(self):
             super(maintest, self).__init__()
             self.values = {'module 1': module(1), 'module 2': module(2), 'module 3': module(3)}
             self.module = self.values['module 2']
             p = [
-                    {'name': 'Module', 'type': 'list',
-                     'values': self.values,
-                     'set': self.setmodule,
-                     'get': self.getmodule,
-                     'childmode': "root",
-                     'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
-                    {'name': 'Rocks to Skips', 'type': 'int', 'value': 0, 'help': 'Another help example', 'helpwnd': None, 'linked':['1/Rocks to Skips']},
-                    {'name': '1/Rocks to Skips', 'type': 'float', 'help': 'Another help example', 'helpwnd': None, 'get': self.getLinked}
+                {'name': 'Module', 'type': 'list',
+                 'values': self.values,
+                 'set': self.setmodule,
+                 'get': self.getmodule,
+                 'childmode': "root",
+                 'help': '%namehdr%Boatload of text is possible here. Can use markup too with external help window.'},
+                {'name': 'Rocks to Skips', 'type': 'int', 'value': 0, 'help': 'Another help example', 'helpwnd': None,
+                 'linked': ['1/Rocks to Skips']},
+                {'name': '1/Rocks to Skips', 'type': 'float', 'help': 'Another help example', 'helpwnd': None,
+                 'get': self.getLinked}
             ]
             self.params = Parameter(name='Root', type='group', children=p).register()
             self.params.init()
@@ -666,7 +824,7 @@ if __name__ == '__main__':
 
             self.test = Parameter(name='Test', type='group')
             self.test.addChildren([
-                {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'value':38400}
+                {'name': 'baud', 'type': 'int', 'key': 'baud', 'limits': (500, 2000000), 'value': 38400}
             ])
 
             self.params.append(self.test)
@@ -678,6 +836,8 @@ if __name__ == '__main__':
             self.params2 = Parameter(name='Root', type='group')
             self.params.getChild("Module").stealDynamicParameters(self.params2)
             self.t2.addParameters(self.params2._PyQtGraphParameter)
+            self.params.save("abcde.txt")
+            self.params.load("abcde.txt")
 
         def printhelp(self, msg, obj):
             print msg
@@ -692,9 +852,10 @@ if __name__ == '__main__':
 
         def getLinked(self):
             try:
-                return 1.0/float(self.params.getChild('Rocks to Skips').getValue())
+                return 1.0 / float(self.params.getChild('Rocks to Skips').getValue())
             except:
                 return 0
+
 
     m = maintest()
 

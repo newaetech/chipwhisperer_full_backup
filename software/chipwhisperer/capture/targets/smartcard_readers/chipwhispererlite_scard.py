@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 
@@ -35,11 +36,11 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
     REQ_CFG_PROTOCOL = 0x02
     REQ_CFG_TXRX = 0x05
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.protocol = 0
-        self.params.addChildren([
+        self.getParams().addChildren([
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
             {'name':'ATR', 'key':'atr', 'type':'str', 'value':""},
         ])
@@ -93,7 +94,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
                     contRead = False
 
             #Simple reader passes everything back to us
-            print response
+            logging.info(response)
 
             if ((response[1] & 0x7F) == 0x81) or((response[1] & 0x7F) == 0x82):
                    raise IOError("Error on response:, T-1 PCB = %02x"%response[1])
@@ -102,7 +103,7 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
             resplen = response[2]
             #Cut off first three bytes & CRC bytes
             response = response[3:(3+resplen)]
-            print response
+            logging.info(response)
             #Get status
             status = (response[0] << 8) | response[1]
 
@@ -136,18 +137,18 @@ class ReaderChipWhispererLiteSCard(ReaderTemplate):
         """Discard all input buffers"""
         pass
 
-    def reset(self):
+    def reset(self, _=None):
         """Reset card & save the ATR"""
 
         self.usbcon.sendCtrl(self.REQ_CFG, self.REQ_CFG_ATR)
         self.atr = self.usbcon.readCtrl(self.REQ_CFG, self.REQ_CFG_ATR, 55)
         stratr = " ".join(["%02x"%t for t in self.atr])
-        print "ATR: %s"%stratr
+        logging.info('ATR: %s' % stratr)
         self.findParam('atr').setValue(stratr)
 
         self.protocol = self.usbcon.readCtrl(self.REQ_CFG, self.REQ_CFG_PROTOCOL, 1)[0]
 
-        print "SmartCard Protocol = T-%d"%self.protocol
+        logging.info('SmartCard Protocol = T-%d' % self.protocol)
 
     def getATR(self):
         """Get the ATR from the SmartCard. Reads a saved value, user reset() to actually reset card."""

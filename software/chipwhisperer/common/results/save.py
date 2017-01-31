@@ -37,7 +37,7 @@ class ResultsSave(ResultsBase, AttackObserver, Plugin):
     _name = "Save to Files"
     _description = "Save correlation output to files."
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         AttackObserver.__init__(self)
         self._filename = None
         self._enabled = False

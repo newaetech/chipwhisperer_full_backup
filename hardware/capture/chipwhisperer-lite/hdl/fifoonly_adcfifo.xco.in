@@ -1,7 +1,7 @@
 ##############################################################
 #
-# Xilinx Core Generator version 14.4
-# Date: Tue Sep 17 00:49:10 2013
+# Xilinx Core Generator version 14.7
+# Date: Wed Jun 29 16:32:45 2016
 #
 ##############################################################
 #
@@ -28,10 +28,10 @@ SET flowvendor = Other
 SET formalverification = false
 SET foundationsym = false
 SET implementationfiletype = Ngc
-SET package = csg225
+SET package = tqg144
 SET removerpms = false
 SET simulationfiles = Behavioral
-SET speedgrade = -2
+SET speedgrade = -3
 SET verilogsim = true
 SET vhdlsim = false
 # END Project Options
@@ -145,7 +145,7 @@ CSET input_depth_wrch=16
 CSET interface_type=Native
 CSET output_data_width=128
 CSET output_depth=2048
-CSET overflow_flag=false
+CSET overflow_flag=true
 CSET overflow_flag_axi=false
 CSET overflow_sense=Active_High
 CSET overflow_sense_axi=Active_High
@@ -157,7 +157,7 @@ CSET programmable_empty_type_rdch=No_Programmable_Empty_Threshold
 CSET programmable_empty_type_wach=No_Programmable_Empty_Threshold
 CSET programmable_empty_type_wdch=No_Programmable_Empty_Threshold
 CSET programmable_empty_type_wrch=No_Programmable_Empty_Threshold
-CSET programmable_full_type=Single_Programmable_Full_Threshold_Input_Port
+CSET programmable_full_type=No_Programmable_Full_Threshold
 CSET programmable_full_type_axis=No_Programmable_Full_Threshold
 CSET programmable_full_type_rach=No_Programmable_Full_Threshold
 CSET programmable_full_type_rdch=No_Programmable_Full_Threshold
@@ -210,4 +210,4 @@ CSET wuser_width=1
 MISC pkg_timestamp=2012-11-19T12:39:56Z
 # END Extra information
 GENERATE
-# CRC: bf395532
+# CRC: c6a4ac7f

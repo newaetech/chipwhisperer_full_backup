@@ -32,6 +32,11 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+  #define EXPORT __declspec(dllexport)
+#else
+  #define EXPORT __attribute__((visibility("default")))
+#endif
 extern const int hamming_weight[];
 
 typedef struct {
@@ -47,7 +52,7 @@ typedef struct {
 
 
 /* Perform CPA Attack on a single subkey */
-__declspec(dllexport) void oneSubkey(
+EXPORT void oneSubkey(
         double * traces,            /* trace data, 2d array * */
         uint8_t * datain,           /* data in to model, 2d array * */
         uint8_t * dataout,          /* data out from model, 2d array * */

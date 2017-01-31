@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as CalcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
@@ -71,7 +72,7 @@ class CWAdvTrigger(object):
             high = p[2]
             # TODO: support seconds
             if form == 'seconds':
-                print "Not Supported"
+                raise NotImplementedError
 
             if high == 'now':
                 high = 511
@@ -166,6 +167,7 @@ class CWAdvTrigger(object):
         return pattern
 
     def strToPattern(self, string, startbits=1, stopbits=1, parity='none'):
+        totalpat = strToBits(string, startbits, stopbits, parity)
         return self.bitsToPattern(totalpat)
 
 
@@ -217,7 +219,7 @@ class ChipWhispererDigitalPattern(Parameterized):
         patt = eval(patt, {}, {})
 
         if len(patt) > 1:
-            print "WARNING: IO Pattern too large! Restricted."
+            logging.warning('IO Pattern too large! Restricted.')
             self.findParam('trigpatt').setValue(patt[0])
             return
 

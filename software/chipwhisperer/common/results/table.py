@@ -36,7 +36,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
     _name = 'Results Table'
     _description = "Show all guesses based on sorting output of attack"
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         QTableWidget.__init__(self)
 
         self.colorGradient = True
@@ -114,7 +114,7 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                 highlightValue = highlights[bnum]
             else:
                 highlightValue = None
-            if bnum in self._analysisSource.targetBytes() and attackStats.maxValid[bnum]:
+            if bnum in self._analysisSource.getTargetSubkeys() and attackStats.maxValid[bnum]:
                 self.setColumnHidden(bnum, False)
                 maxes = attackStats.maxes[bnum]
 
@@ -132,8 +132,8 @@ class ResultsTable(QTableWidget, ResultsBase, AttackObserver, Plugin):
                         if self.colorGradient:
                             try:
                                 cell.setBackground(QColor(*self.getTraceGradientColor((maxes[j]['value']-maxes[-1]['value'])/(maxes[0]['value']-maxes[-1]['value']))))
-                            except OverflowError:
-                                cell.setBackground(QBrush(Qt.white))
+                            except:
+                                cell.setBackground(QBrush(Qt.darkYellow))
                         else:
                             cell.setBackground(QBrush(Qt.white))
             else:

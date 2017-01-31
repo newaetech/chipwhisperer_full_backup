@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 import _OpenADCInterface as openadc
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
@@ -31,10 +32,10 @@ from chipwhisperer.common.utils import util, timer
 class OpenADCQt(Parameterized):
     _name= 'OpenADC'
 
-    def __init__(self, parentParam=None):
+    def __init__(self):
         self.dataUpdated = util.Signal()
 
-        self.params = Parameter(name=self.getName(), type='group')
+        self.getParams()
 
         self.offset = 0.5
         self.ser = None
@@ -58,16 +59,13 @@ class OpenADCQt(Parameterized):
     def processData(self, data):
         fpData = []
 
-        #lastpt = -100;
-
         if data[0] != 0xAC:
-            print "Unexpected sync byte: 0x%x" % data[0]
+            logging.warning("Unexpected sync byte: 0x%x" % data[0])
             return None
 
         for i in range(2, len(data)-1, 2):
             if (0x80 & data[i + 1]) or ((0x80 & data[i + 0]) == 0):
-                print "Error at byte %d" % i
-                print("Bytes: %x %x"%(data[i], data[i+1]))
+                logging.error('Error at byte ' + str(i) + '. Bytes: %x %x' % (data[i], data[i+1]))
                 return None
 
             #Convert
@@ -86,20 +84,23 @@ class OpenADCQt(Parameterized):
     def arm(self):
         self.sc.arm()
 
-    def read(self, update=True, NumberPoints=None):
-        if NumberPoints == None:
-            NumberPoints = self.parm_trigger.maxSamples()
+    def startCaptureThread(self):
+        self.sc.startCaptureThread()
+
+    def read(self, numberPoints=None, channelNr=0):
+        if numberPoints == None:
+            numberPoints = self.parm_trigger.numSamples()
 
         try:
-            self.datapoints = self.sc.readData(NumberPoints)
+            self.datapoints = self.sc.readData(numberPoints)
         except IndexError, e:
-            raise IOError("Error reading data: %s"%str(e))
+            raise IOError("Error reading data: %s" % str(e))
 
-        self.dataUpdated.emit(self.datapoints, -self.parm_trigger.presamples(True))
+        self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger.presamples(True), self.parm_clock.adcFrequency())
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self):
         timeout = self.sc.capture()
-        self.read(update, NumberPoints)
+        self.read()
         return timeout
 
     def reset(self):
@@ -132,7 +133,6 @@ class OpenADCQt(Parameterized):
 
         # Try a few times
         while(deviceFound == False):
-
             if self.sc.devicePresent():
                 deviceFound = True
                 break

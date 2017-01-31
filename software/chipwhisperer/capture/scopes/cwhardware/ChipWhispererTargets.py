@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from chipwhisperer.capture.utils.SerialProtocols import CWCalcClkDiv as calcClkDiv
 from chipwhisperer.capture.utils.SerialProtocols import strToBits as strToBits
@@ -118,7 +118,7 @@ class CWUniversalSerialProcessor(object):
                 
                 for n in range(1, startbits):
                     if self.averageBits(bits[bindex:(bindex+samplesperbit)]) != 0:
-                        print "WARNING: USI Missing expected start bit"
+                        logging.warning('USI Missing expected start bit')
                     bindex += samplesperbit
                 
                 byte = 0
@@ -139,25 +139,17 @@ class CWUniversalSerialProcessor(object):
                     
                     if (onecnt % 2) == 0:
                         #Even number of 1's present
-                        if parity == "even":
-                            if paritystate == 1:
-                                print "WARNING: USI parity error"
-                        elif parity == "odd":
-                            if paritystate == 0:
-                                print "WARNING: USI parity error"
+                        if (parity == "even" and paritystate == 1) or (parity == "odd" and paritystate == 0):
+                            logging.warning('USI parity error')
                      
                     else:
                         #Even number of 1's present
-                        if parity == "even":
-                            if paritystate == 0:
-                                print "WARNING: USI parity error"
-                        elif parity == "odd":
-                            if paritystate == 1:
-                                print "WARNING: USI parity error"
+                        if (parity == "even" and paritystate == 0) or (parity == "odd" and paritystate == 1):
+                            logging.warning('USI parity error')
                                 
                 for n in range(0, stopbits):       
                     if self.averageBits(bits[bindex:(bindex+samplesperbit)]) != 1:
-                        print "WARNING: USI Missing expected stop bit @ point=%d,byte=%d"%(bindex,len(bytelist))
+                        logging.warning('USI Missing expected stop bit @ point=%d,byte=%d' % (bindex,len(bytelist)))
                     #else:
                     #    print "found stop bit"
                     bindex += samplesperbit
@@ -316,7 +308,7 @@ class CWUniversalSerial(object):
         #    print "%02x "%result[t],
         #print ""
             
-        print self.proc.rxPatternToString(result, 4)
+        logging.info(self.proc.rxPatternToString(result, 4))
 
     def setBaud(self, baud=9600, oversamplerate=None):        
         if oversamplerate:
@@ -484,7 +476,7 @@ class CWSCardIntegrated(object):
         cmd[0] = 0x00
         self.oa.sendMessage(CODE_WRITE, ADDR_STATUS, cmd, Validate=False)            
 
-        print stratr
+        logging.info(stratr)
         self.stratr = stratr
         return stratr
         
@@ -512,7 +504,7 @@ class CWSCardIntegrated(object):
         if (resp[0] & FLAG_ACKOK):            
             return True
         else:
-            print "No ACK from SCard?"
+            logging.warning('No ACK from SCard?')
             return False
 
     def dis(self):
@@ -541,7 +533,7 @@ class CWSCardIntegrated(object):
     def APDUPayloadGo(self, payload=None):
         if payload:
             if len(payload) > 16:
-                print "WARNING: APDU Payload must be < 16 bytes"
+                logging.warning('APDU Payload must be < 16 bytes')
             payload = bytearray(payload)
             payload = payload + bytearray(range(16-len(payload)))
         else:
@@ -559,7 +551,7 @@ class CWSCardIntegrated(object):
         resp = self.readPayload()
 
         if len(resp) != 18:
-            print "SASEBOW: USB Data Error, wrong Response Size"
+            logging.error('SASEBOW: USB Data Error, wrong Response Size')
             return 0
 
         status = resp[16:18]
@@ -574,7 +566,7 @@ class CWSCardIntegrated(object):
         resp = self.readPayload()
 
         if len(resp) != 18:
-            print "SASEBOW: USB Data Error, wrong Response Size"
+            logging.error('SASEBOW: USB Data Error, wrong Response Size')
             return 0
 
         return bytearray(resp)
@@ -594,7 +586,7 @@ class CWSCardIntegrated(object):
         if key != None:
             resp = self.APDUSend(0x80, 0x12, 0x00, 0x00, key)
             if resp != 0x9000:
-                print "WARNING: SCard returned 0x%x"%resp
+                logging.warning('SCard returned 0x%x' % resp)
                 return False
         return True
       
@@ -610,12 +602,12 @@ class CWSCardIntegrated(object):
         status = resp[16:18]
         status = (status[0] << 8) | status[1]
         if status != 0x9000:
-            print "WARNING in readOutput: SCard returned 0x%x"%status
+            logging.warning('In readOutput: SCard returned 0x%x' % status)
         return resp[:16]
 
     def go(self):
         resp = self.APDUSend(0x80, 0x04, 0x04, 0x00, self.input)
         if resp != 0x9F10:
-            print "WARNING in go: SCard returned 0x%x"%resp
+            logging.warning('In go: SCard returned 0x%x' % resp)
             return False
         return True   

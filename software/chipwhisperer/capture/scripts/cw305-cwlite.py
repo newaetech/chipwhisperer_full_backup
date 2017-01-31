@@ -24,17 +24,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-#
-#
-#
-# This example captures data using the ChipWhisperer Rev2 api hardware. The target is a SimpleSerial board attached
-# to the ChipWhisperer.
-#
 
-
-import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
 from chipwhisperer.common.scripts.base import UserScriptBase
 
 
@@ -46,17 +37,15 @@ class UserScript(UserScriptBase):
         super(UserScript, self).__init__(api)
 
     def run(self):
-        #User commands here
+        # User commands here
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'ChipWhisperer CW305 (Artix-7)'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
-
-        #Load FW (must be configured in GUI first)
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'NewAE USB (CWLite/CW1200)'])
 
         self.api.connect()
         
-        #Example of using a list to set parameters. Slightly easier to copy/paste in this format
+        # Example of using a list to set parameters. Slightly easier to copy/paste in this format
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],
                      # ['OpenADC', 'Clock Setup', 'CLKGEN Settings', 'Desired Frequency', 5000000.0],
                      # ['CW Extra Settings', 'Target HS IO-Out', 'CLKGEN'],
@@ -65,30 +54,28 @@ class UserScript(UserScriptBase):
                       ['OpenADC', 'Gain Setting', 'Setting', 30],
                       ['OpenADC', 'Gain Setting', 'Mode', 'high'],
                       ['OpenADC', 'Trigger Setup', 'Mode', 'rising edge'],
-                      #Final step: make DCMs relock in case they are lost
+                      # Final step: make DCMs relock in case they are lost
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Reset ADC DCM', None],
                       ['OpenADC', 'Clock Setup', 'ADC Clock', 'Phase Adjust', 255],
                       ]
         
-        #Download all hardware setup parameters
+        # Download all hardware setup parameters
         for cmd in lstexample: self.api.setParameter(cmd)
         
-        #Let's only do a few traces
+        # Let's only do a few traces
         self.api.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces', 5000])
                       
-        #Throw away first few
+        # Throw away first few
         self.api.capture1()
         self.api.capture1()
 
 
 if __name__ == '__main__':
-    api = CWCoreAPI()                               # Instantiate the API
-    app = cwc.makeApplication()                     # Make the GUI application (optional)
-    #app.setApplicationName("Capture V2 Scripted")  # If you DO NOT want to overwrite settings from the GUI
-    gui = cwc.CWCaptureGUI(api)                     # Pass the API as parameter to the GUI front-end (optional)
-    gui.show()
-    usercommands = UserScript(api)                  # Pass the API as parameter to the User Script
-    usercommands.run()                              # Run the User Script
-
-    app.exec_()
-    sys.exit()
+    import chipwhisperer.capture.ui.CWCaptureGUI as cwc         # Import the ChipWhispererCapture GUI
+    from chipwhisperer.common.utils.parameter import Parameter  # Comment this line if you don't want to use the GUI
+    Parameter.usePyQtGraph = True                               # Comment this line if you don't want to use the GUI
+    api = CWCoreAPI()                                           # Instantiate the API
+    app = cwc.makeApplication("Capture")                        # Change the name if you want a different settings scope
+    gui = cwc.CWCaptureGUI(api)                                 # Comment this line if you don't want to use the GUI
+    api.runScriptClass(UserScript)                              # Run the User Script (executes "run()" by default)
+    app.exec_()                                                 # Comment this line if you don't want to use the GUI

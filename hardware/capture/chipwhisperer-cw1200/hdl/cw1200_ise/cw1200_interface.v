@@ -12,6 +12,8 @@ module cw1200_interface(
 	 output wire        LED_GLITCHR,
 	 output wire        LED_GLITCHG,
 	 
+	 output wire 		  AUXOUT,
+	 
 	 /* FPGA - USB Interface */
 	 inout wire [7:0]	USB_D,
 	 input wire [7:0]	USB_Addr,
@@ -19,7 +21,6 @@ module cw1200_interface(
 	 input wire			USB_WRn,
 	 input wire			USB_CEn,
 	 input wire			USB_ALEn,
-
 
 	 /* ADC Interface */
 	 input wire [9:0]   ADC_Data,
@@ -34,13 +35,13 @@ module cw1200_interface(
 	 /* XMEGA Programming  */
 	 output wire       target_PDIDTX,
     input wire        target_PDIDRX,
-	 output wire       target_PDIC,
+	 inout wire       target_PDIC,
 	 
 	 /* Spare Lines - AVR Programming */
 	 output wire 		target_nRST,
 	 input wire 		target_MISO,
-	 output wire 		target_MOSI,
-	 output wire 		target_SCK,
+	 inout wire 		target_MOSI,
+	 inout wire 		target_SCK,
 	 	 
 	 /* Target IO Interfaces */
 	 inout wire			target_io4, // Normally trigger
@@ -77,16 +78,20 @@ module cw1200_interface(
 	 input wire       USB_RTS0,
 	 input wire       USB_CTS0,
 	 
+	 //These control the direction of the PDID/PDIC pins
+	 input wire       USB_PDID_WR, //USB_A18 (PC26)
+	 input wire       USB_PDIC_EN, //USB_A17 (PC25)
+	 
+	 input wire       USB_TXD1,
+	 output wire      USB_RXD1,
+	 inout wire       USB_SCK1,
+	 
 	 input wire       USB_spare0,
 	 input wire       USB_spare1,
 	 input wire			USB_spare2
 	 );
-	
-	/* PDI Programming done from SAM, must float these wires
-	   or programming will fail from weak pull-down on FPGA */
-	//assign XMEGA_PDID = 1'bZ;
-	//assign XMEGA_PDIC = 1'bZ;
-	
+
+
 	//wire [35:0] cs_control0;
 	//wire [63:0] ila_trigbus;
 	
@@ -106,7 +111,7 @@ module cw1200_interface(
 	 assign sc_clk = (sc_enable) ? USB_SCK0 : 1'bZ;
 	 assign sc_aux1 = (sc_enable) ? USB_RTS0 : 1'bZ;
 	 assign sc_aux2 = (sc_enable) ? USB_CTS0 : 1'bZ;
-	 assign sc_io = (sc_enable) ? ((USB_TXD0) ? 0 : 1'bZ) : 1'bZ;
+	 assign sc_io = (sc_enable) ? ((USB_TXD0) ? 1'b0 : 1'bZ) : 1'bZ;
 	 assign USB_RXD0 = (sc_enable) ? sc_io : 1'bZ;
 
    // Clocking primitive
@@ -188,6 +193,7 @@ module cw1200_interface(
 	wire [7:0] reg_datai_reconfig;
 	wire [7:0] reg_datai_sad;
 	wire [7:0] reg_datai_glitch;
+	wire [7:0] reg_datai_decode;
 	wire [15:0] reg_size;
 	wire reg_read;
 	wire reg_write;
@@ -197,6 +203,7 @@ module cw1200_interface(
 	wire [15:0] reg_hyplen_glitch;
 	wire [15:0] reg_hyplen_reconfig;
 	wire [15:0] reg_hyplen_sad;
+	wire [15:0] reg_hyplen_decode;
 	
 	wire [9:0] ADC_Data_int;
 	wire       ADC_Clk_int;
@@ -247,14 +254,14 @@ module cw1200_interface(
 		.reg_address_o(reg_addr),
 		.reg_bytecnt_o(reg_bcnt),
 		.reg_datao_o(reg_datao),
-		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_sad),
+		.reg_datai_i( reg_datai_cw | reg_datai_glitch | reg_datai_reconfig | reg_datai_sad | reg_datai_decode),
 		.reg_size_o(reg_size),
 		.reg_read_o(reg_read),
 		.reg_write_o(reg_write),
 		.reg_addrvalid_o(reg_addrvalid),
 		.reg_stream_i(1'b0),
 		.reg_hypaddress_o(reg_hypaddr),
-		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_sad)
+		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig | reg_hyplen_sad | reg_hyplen_decode)
 		
 		,.ADC_Data_out(ADC_Data_int),
 		.ADC_Clk_out(ADC_Clk_int)
@@ -262,6 +269,15 @@ module cw1200_interface(
 	);	
 	
 		wire apatt_trigger;
+		wire decode_trigger;
+		wire advio_trigger_line;
+		
+	   wire enable_output_nrst;
+	   wire output_nrst;
+	   wire enable_output_pdid;
+	   wire output_pdid;
+	   wire enable_output_pdic;
+	   wire output_pdic;
 	
 		reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -290,9 +306,10 @@ module cw1200_interface(
 		.trigger_io2_i(target_io2),
 		.trigger_io3_i(target_io3),
 		.trigger_io4_i(target_io4),
-		//.trigger_ext_o(advio_trigger_line),
+		.trigger_ext_o(advio_trigger_line),
 		.trigger_advio_i(1'b0),
 		.trigger_anapattern_i(apatt_trigger),
+		.trigger_decodedio_i(decode_trigger),
 		.clkgen_i(clkgen),
 		.glitchclk_i(glitchclk),
 		
@@ -306,6 +323,13 @@ module cw1200_interface(
 		
 		.enable_avrprog(enable_avrprog),
 		
+		.enable_output_nrst(enable_output_nrst),
+	   .output_nrst(output_nrst),
+	   .enable_output_pdid(enable_output_pdid),
+	   .output_pdid(output_pdid),
+	   .enable_output_pdic(enable_output_pdic),
+	   .output_pdic(output_pdic),
+		
 		.uart_tx_i(USB_TXD3),
 		.uart_rx_o(USB_RXD3),
 		.usi_out_i(1'b0),
@@ -314,7 +338,7 @@ module cw1200_interface(
 				
 		.trigger_o(ext_trigger)
 	);
-		
+
 	reg_clockglitch reg_clockglitch(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),
@@ -335,7 +359,7 @@ module cw1200_interface(
 		.exttrigger(ext_trigger),
 		.dcm_unlocked(Glitch_DCM_Unlock)
 		);
-	
+
 	reg_reconfig reg_reconfig(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),
@@ -371,14 +395,56 @@ module cw1200_interface(
 		.trig_out(apatt_trigger)
 	);
 	
-	 assign target_nRST = (enable_avrprog) ? USB_spare2 : 1'bZ;
-	 assign target_MOSI = (enable_avrprog) ? USB_TXD2 : 1'bZ;
-	 assign target_SCK = (enable_avrprog) ? USB_SCK2 : 1'bZ;
+			reg_decodeiotrigger registers_decodetrigger (
+		.reset_i(reg_rst),
+		.clk(clk_usb_buf),
+		.reg_address(reg_addr), 
+		.reg_bytecnt(reg_bcnt), 
+		.reg_datao(reg_datai_decode), 
+		.reg_datai(reg_datao), 
+		.reg_size(reg_size), 
+		.reg_read(reg_read), 
+		.reg_write(reg_write), 
+		.reg_addrvalid(reg_addrvalid), 
+		.reg_hypaddress(reg_hypaddr), 
+		.reg_hyplen(reg_hyplen_decode),
+		.reg_stream(),
+		
+		.ext_iomux(advio_trigger_line),
+		.sck(target_SCK),
+		.mosi(target_MOSI),
+		.miso(target_MISO),
+		.pdid_cs(target_PDIDRX),
+		.pdic(target_PDIC),
+				
+		.trig_out(decode_trigger)
+	);
+	
+	 wire target_highz = target_npower;
+								 
+	 assign target_nRST = (target_highz) ? 1'bZ :
+	                      (enable_avrprog) ? USB_spare2 :
+								 (enable_output_nrst) ? output_nrst :
+								 1'bZ;
+								 
+	 assign target_MOSI = (target_highz) ? 1'bZ:
+	                      (enable_avrprog) ? USB_TXD2 : 1'bZ;
+	 assign target_SCK = (target_highz) ? 1'bZ:
+							   (enable_avrprog) ? USB_SCK2 : 1'bZ;
 	 assign USB_RXD2 = (enable_avrprog) ? target_MISO : 1'b0;	
 	 
-	 assign target_PDIC = 1'bZ;
-	 assign target_PDIDTX = 1'bZ;
-	
+	 
+	 //XMEGA Programming uses spare pins to select direction
+	 assign target_PDIDTX = (target_highz) ? 1'bZ:
+	                        (enable_output_pdid) ? output_pdid :
+									(USB_PDID_WR) ? USB_TXD1 : 1'bZ;
+	 assign USB_RXD1 = target_PDIDRX;
+	 assign target_PDIC = (target_highz) ? 1'bZ:
+	                      (enable_output_pdic) ? output_pdic :
+								 (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
+	 	
+	 assign AUXOUT = ext_trigger;
+		
 	/*
 	wire [63:0] ila_trigbus;
 	wire [35:0] cs_control0;

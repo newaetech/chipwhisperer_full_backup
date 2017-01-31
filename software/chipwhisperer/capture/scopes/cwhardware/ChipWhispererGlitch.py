@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import zipfile
 import StringIO
 import base64
@@ -47,14 +47,15 @@ def SIGNEXT(x, b):
 
 class ChipWhispererGlitch(Parameterized):
     """
-    Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA module inserted into other systems.
+    Drives the Glitch Module inside the ChipWhisperer Capture Hardware Rev2, or can be used to drive this FPGA
+     module inserted into other systems.
     """
     CLKSOURCE0_BIT = 0b00000000
     CLKSOURCE1_BIT = 0b00000001
     CLKSOURCE_MASK = 0b00000011
     _name= 'Glitch Module'
 
-    def __init__(self, parentParam, cwtype, scope, oa):
+    def __init__(self, cwtype, scope, oa):
 
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
@@ -71,10 +72,10 @@ class ChipWhispererGlitch(Parameterized):
             {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
             {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
             {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
-            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': lambda _ : self.glitchManual()},
+            {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': self.glitchManual},
             {'name':'Output Mode', 'type':'list', 'values':{'Clock XORd':0, 'Clock ORd':1, 'Glitch Only':2, 'Clock Only':3, 'Enable Only':4}, 'set':self.setGlitchType, 'get':self.glitchType},
             {'name':'Read Status', 'type':'action', 'action':self.checkLocked},
-            {'name':'Reset DCM', 'type':'action', 'action':self.resetDCMs},
+            {'name':'Reset DCM', 'type':'action', 'action':self.actionResetDCMs},
         ])
 
         # Check if we've got partial reconfiguration stuff for this scope
@@ -86,6 +87,10 @@ class ChipWhispererGlitch(Parameterized):
             elif cwtype == "cwlite":
                 settingprefix = "cwlite"
                 partialbasename = "cwlite"
+                self.glitchPR = pr.PartialReconfigDataMulti()
+            elif cwtype == "cw1200":
+                settingprefix = "cw1200"
+                partialbasename = "cw1200"
                 self.glitchPR = pr.PartialReconfigDataMulti()
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
@@ -100,10 +105,10 @@ class ChipWhispererGlitch(Parameterized):
                     if zipfile.is_zipfile(fileloc):
                         zfile = zipfile.ZipFile(fileloc, "r")
                     else:
-                        print "Partial Reconfiguration DISABLED: no zip-file for FPGA"
+                        logging.warning('Partial Reconfiguration DISABLED: no zip-file for FPGA')
                         zfile = None
                 else:
-                    print "Partial Reconfiguration DISABLED: no PR data for FPGA"
+                    logging.warning('Partial Reconfiguration DISABLED: no PR data for FPGA')
                     zfile = None
                     raise ValueError("Unknown FPGA mode: %s"%scope.cwFirmwareConfig.loader._release_mode)
 
@@ -114,17 +119,17 @@ class ChipWhispererGlitch(Parameterized):
                 else:
                     self.prEnabled = False
             else:
-                print "Partial Reconfiguration DISABLED: Debug bitstream mode"
+                logging.warning('Partial Reconfiguration DISABLED: Debug bitstream mode')
                 self.prEnabled = False
 
         except IOError as e:
-            print str(e)
+            logging.error(str(e))
             self.prEnabled = False
         except ValueError as e:
-            print str(e)
+            logging.error(str(e))
             self.prEnabled = False
         except OSError as e:  # Also catches WindowsError
-            print str(e)
+            logging.error(str(e))
             self.prEnabled = False
 
         if self.prEnabled:
@@ -139,7 +144,6 @@ class ChipWhispererGlitch(Parameterized):
 
         self.setOpenADC(oa)
 
-
     def setOpenADC(self, oa):
         self.oa = None
         if self.prEnabled:
@@ -148,7 +152,7 @@ class ChipWhispererGlitch(Parameterized):
             # Check this is actually working
             if self.prCon.isPresent() == False:
                 self.prEnabled = False
-                print "WARNING: Partial Reconfiguration block not detected, PR disabled"
+                logging.warning('Partial Reconfiguration block not detected, PR disabled')
                 return
 
             # Reset FPGA back to defaults in case previous bitstreams loaded
@@ -160,7 +164,7 @@ class ChipWhispererGlitch(Parameterized):
         except TypeError:
             return
 
-    def updatePartialReconfig(self, anything=None):
+    def updatePartialReconfig(self, _=None):
         """
         Reads the values set via the GUI & updates the hardware settings for partial reconfiguration. Checks that PR
         is enabled with self.prEnabled.
@@ -172,11 +176,11 @@ class ChipWhispererGlitch(Parameterized):
         widthint = round((width / 100) * 256)
         offsetint = round((offset / 100) * 256)
 
-        if (widthint == 0):
-            print "WARNING: Partial reconfiguration for width = 0 may not work"
+        if widthint == 0:
+            logging.warning('Partial reconfiguration for width = 0 may not work')
 
-        if (offsetint == 0):
-            print "WARNING: Partial reconfiguration for width = 0 may not work"
+        if offsetint == 0:
+            logging.warning('Partial reconfiguration for width = 0 may not work')
 
         bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
 
@@ -243,7 +247,7 @@ class ChipWhispererGlitch(Parameterized):
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
 
         if current is None or len(current) < 8:
-            print "Glitch Module not present?"
+            logging.warning('Glitch Module not present?')
             return
 
         LSB = fine & 0x00FF
@@ -268,7 +272,7 @@ class ChipWhispererGlitch(Parameterized):
         current = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
 
         if current is None or len(current) < 8:
-            print "Glitch Module not present?"
+            logging.warning('Glitch Module not present?')
             return
 
         LSB = fine & 0x00FF
@@ -308,6 +312,10 @@ class ChipWhispererGlitch(Parameterized):
 
         return (phase1, phase2, dcm1Lock, dcm2Lock)
 
+    def actionResetDCMs(self, _=None):
+        """Action for parameter class"""
+        self.resetDCMs()
+
     def resetDCMs(self, keepPhase=False):
         """Reset the DCMs for the Glitch width & Glitch offset. Required after doing a PR operation"""
 
@@ -325,12 +333,12 @@ class ChipWhispererGlitch(Parameterized):
             self.findParam('widthfine').setValue(0)
             self.findParam('offsetfine').setValue(0)
 
-    def checkLocked(self):
+    def checkLocked(self, _=None):
         """Check if the DCMs are locked and print results """
 
         stat = self.getDCMStatus()
-        print "DCM1: Phase %d, Locked %r" % (stat[0], stat[2])
-        print "DCM2: Phase %d, Locked %r" % (stat[1], stat[3])
+        logging.info('DCM1: Phase %d, Locked %r' % (stat[0], stat[2]))
+        logging.info('DCM2: Phase %d, Locked %r' % (stat[1], stat[3]))
 
     @setupSetParam("Repeat")
     def setNumGlitches(self, num):
@@ -338,7 +346,7 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
 
         if resp is None or len(resp) < 8:
-            print "Glitch Module not present?"
+            logging.warning('Glitch Module not present?')
             return
 
         if num < 1:
@@ -374,7 +382,7 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[5] & 0x70) >> 4
 
-    def glitchManual(self):
+    def glitchManual(self, _=None):
         """
         Cause a single glitch event to occur. Depending on setting of numGlitches() this may mean
         multiple glitches in a row

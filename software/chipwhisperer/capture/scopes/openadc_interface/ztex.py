@@ -18,15 +18,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import sys
-
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWCRev2_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoaderGUI import FWLoaderConfigGUI
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized, Parameter
+from chipwhisperer.common.utils.parameter import Parameterized
 
 try:
     import usb
@@ -37,7 +36,7 @@ except ImportError:
 class OpenADCInterface_ZTEX(Parameterized, Plugin):
     _name = "ChipWhisperer Rev2"
 
-    def __init__(self, parentParam, oadcInstance):
+    def __init__(self, oadcInstance):
         self.getParams().addChildren([
             {'name':'CW Firmware Preferences','tip':'Configure ChipWhisperer FW Paths', 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI.show()},
             {'name':'Download CW Firmware','tip':'Download Firmware+FPGA To Hardware', 'type':"menu", "action":lambda _:self.getCwFirmwareConfig.loadRequired()},
@@ -55,13 +54,8 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
             self.scope = oadcInstance
             self.cwFirmwareConfig = FWLoaderConfig(CWCRev2_Loader())
 
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
     def con(self):
-        if self.ser == None:
-
+        if self.ser is None:
             # Download firmware if required
             self.cwFirmwareConfig.loadRequired()
 
@@ -84,19 +78,20 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
 
         try:
             self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
+            logging.info('OpenADC Found, Connecting')
         except IOError,e:
             exctype, value = sys.exc_info()[:2]
             raise IOError("OpenADC Error (FX2 Port): " + (str(exctype) + str(value)) + " - Did you download firmware/FPGA data to ChipWhisperer?")
 
     def dis(self):
-        if self.ser != None:
-            #self.ser.close()
-            self.ser = None
+        self.ser = None
+
+    def __del__(self):
+        pass
 
     def read(self, N=0, debug=False):
         try:
-            # self.interface removed from call for latest API compatability
+            # self.interface removed from call for latest API compatibility
             data = self.dev.read(self.readEP, N, timeout=100)
         except IOError:
             return []
@@ -116,14 +111,8 @@ class OpenADCInterface_ZTEX(Parameterized, Plugin):
             for b in data:
                 print "%02x "%b,
             print ""
-        # self.interface removed from call for latest API compatability
+        # self.interface removed from call for latest API compatibility
         self.dev.write(self.writeEP, data, timeout=500)
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"
 
     def getFwLoaderConfigGUI(self):
         if not hasattr(self, 'fwLoaderConfigGUI'):

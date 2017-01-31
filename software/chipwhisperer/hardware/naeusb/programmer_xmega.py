@@ -21,7 +21,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-
+import logging
 from naeusb import packuint32
 
 XMEGAMEM_TYPE_APP = 1
@@ -34,6 +34,21 @@ XMEGAMEM_TYPE_FACTORY_CALIBRATION = 7
 
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
+
+
+class XMEGA16A4(object):
+    signature = [0x1e, 0x94, 0x41]
+    name = "XMEGA16A4"
+
+    memtypes = {
+       "signature":{"offset":0x1000090, "size":3},
+       "flash":{"offset":0x0800000, "size":0x00005000, "pagesize":0x100, "type":XMEGAMEM_TYPE_APP},
+       "eeprom":{"offset":0x08c0000, "size":0x0400, "pagesize":0x20, "readsize":0x100, "type":XMEGAMEM_TYPE_EEPROM},
+       "fuse1":{"offset":0x8f0021, "size":1},
+       "fuse2":{"offset":0x8f0022, "size":1},
+       "fuse4":{"offset":0x8f0024, "size":1},
+       "fuse5":{"offset":0x8f0025, "size":1},
+     }
 
 class XMEGA128A4U(object):
     signature = [0x1e, 0x97, 0x46]
@@ -63,7 +78,7 @@ class XMEGA128D4(object):
        "fuse5":{"offset":0x8f0025, "size":1},
      }
 
-supported_xmega = [XMEGA128A4U(), XMEGA128D4()]
+supported_xmega = [XMEGA128A4U(), XMEGA128D4(), XMEGA16A4()]
 
 class XMEGAPDI(object):
     """
@@ -274,7 +289,7 @@ class XMEGAPDI(object):
         pagesize = memspec["pagesize"]
 
         if addr % pagesize:
-            print "WARNING: You appear to be writing to an address that is not page aligned, you will probably write the wrong data"
+            logging.warning('You appear to be writing to an address that is not page aligned, you will probably write the wrong data')
 
         while memwritten < len(data):
 

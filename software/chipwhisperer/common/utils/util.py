@@ -27,7 +27,8 @@ import ast
 import collections
 import os.path
 import shutil
-import sys
+import weakref
+import numpy as np
 
 try:
     # OrderedDict is new in 2.7
@@ -126,52 +127,110 @@ def convert_to_str(data):
 
 
 def hexStrToByteArray(hexStr):
-    ba = bytearray()
-    for s in hexStr.split():
-        ba.append(int(s, 16))
+    ba = bytearray(hexstr2list(hexStr))
     return ba
 
 
-def getPyFiles(dir):
+def binarylist2bytearray(bitlist, nrBits=8):
+    ret = []
+    pos = 0
+    while pos <= len(bitlist) - nrBits:
+        out = 0
+        for bit in range(nrBits):
+            out = (out << 1) | bitlist[pos + bit]
+        ret.append(out)
+        pos += nrBits
+    return ret
+
+
+def bytearray2binarylist(bytes, nrBits=8):
+    init = np.array([], dtype=bool)
+    for byte in bytes:
+        init = np.concatenate((init, np.unpackbits(np.uint8(byte))[8 - nrBits:]), axis=0)
+    return init
+
+
+def getPyFiles(dir, extension=False):
     scriptList = []
     if os.path.isdir(dir):
         for fn in os.listdir(dir):
             fnfull = dir + '/' + fn
             if os.path.isfile(fnfull) and fnfull.lower().endswith('.py') and (not fnfull.endswith('__init__.py')) and (not fn.startswith('_')):
-                scriptList.append(os.path.splitext(fn)[0])
+                if extension:
+                    scriptList.append(fn)
+                else:
+                    scriptList.append(os.path.splitext(fn)[0])
     return scriptList
+
+def _make_id(target):
+    if hasattr(target, '__func__'):
+        return (id(target.__self__))
+    return id(target)
 
 
 class Signal(object):
+    class Cleanup(object):
+        def __init__(self, key, d):
+            self.key = key
+            self.d = d
+
+        def __call__(self, wr):
+            del self.d[self.key]
+
     def __init__(self):
-        self.observers = []
+        self.callbacks = {}  #observing object ID -> weak ref, methodNames
 
     def connect(self, observer):
-        if observer not in self.observers:
-            self.observers.append(observer)
+        if not callable(observer):
+            raise TypeError('Expected a method, got %s' % observer.__class__)
+
+        ID = _make_id(observer)
+        if ID in self.callbacks:
+            s = self.callbacks[ID][1]
+        else:
+            try:
+                target = weakref.ref(observer.__self__, Signal.Cleanup(ID, self.callbacks))
+            except AttributeError:
+                target = None
+            s = set()
+            self.callbacks[ID] = (target, s)
+
+        if hasattr(observer, "__func__"):
+            method = observer.__func__
+        else:
+            method = observer
+        s.add(method)
 
     def disconnect(self, observer):
-        try:
-            self.observers.remove(observer)
-        except ValueError:
+        ID = _make_id(observer)
+        if ID in self.callbacks:
+            if hasattr(observer, "__func__"):
+                method = observer.__func__
+            else:
+                method = observer
+            self.callbacks[ID][1].discard(method)
+            if len(self.callbacks[ID][1]) == 0:
+                del self.callbacks[ID]
+        else:
             pass
 
-    def emit(self, *arg, **args):
-        for observer in self.observers:
-            try:
-                observer(*arg, **args)
-            except Exception as e:
-
-                #TODO - catch exception like TypeError("setThreshold() got an unexpected keyword argument 'blockSignal'")
-                #       and print a better message
-
-                etype, value, trace = sys.exc_info()
-                value = "Exceptions should not escape from observers.\nReceived %s(\"%s\") from %s with arguments: %s, %s" % \
-                        (type(e).__name__, e, observer, str(arg), str(args))
-                sys.excepthook(etype, value, trace)
-
     def disconnectAll(self):
-        self.observers = []
+        self.callbacks = {}  # observing object ID -> weak ref, methods
+
+    def emit(self, *args, **kwargs):
+        callbacks = self.callbacks.keys()
+        for ID in callbacks:
+            try:
+                target, methods = self.callbacks[ID]
+            except KeyError:
+                continue
+            for method in methods.copy():
+                if target is None:  # Lambda or partial
+                    method(*args, **kwargs)
+                else:
+                    targetObj = target()
+                    if targetObj is not None:
+                        method(targetObj, *args, **kwargs)
 
 
 class Observable(Signal):
@@ -197,3 +256,59 @@ def setUIupdateFunction(func):
 def updateUI():
     if _uiupdateFunction:
         _uiupdateFunction()
+
+
+class WeakMethod(object):
+    """A callable object. Takes one argument to init: 'object.method'.
+    Once created, call this object -- MyWeakMethod() --
+    and pass args/kwargs as you normally would.
+    """
+    def __init__(self, object_dot_method, callback=None):
+        try:
+            if callback is None:
+                self.target = weakref.ref(object_dot_method.__self__)
+            else:
+                self.target = weakref.ref(object_dot_method.__self__, callback)
+            self.method = object_dot_method.__func__
+        except AttributeError:
+            self.target = None
+            self.method = object_dot_method
+
+    def __call__(self, *args, **kwargs):
+        """Call the method with args and kwargs as needed."""
+        if self.is_dead():
+            raise TypeError('Method called on dead object')
+        if self.target is None:  # Lambda or partial
+            return self.method(*args, **kwargs)
+        else:
+            return self.method(self.target(), *args, **kwargs)
+
+    def is_dead(self):
+        '''Returns True if the referenced callable was a bound method and
+        the instance no longer exists. Otherwise, return False.
+        '''
+        return self.target is not None and self.target() is None
+
+
+class Command:
+    """Converts a method call with arguments to be ignored in a simple call with no/fixed arguments (replaces lambda)"""
+    def __init__(self, callback, *args, **kwargs):
+        self.callback = WeakMethod(callback)
+        self.args = args
+        self.kwargs = kwargs
+
+    def __call__(self, *args, **kwargs):
+        return apply(self.callback, self.args, self.kwargs)
+
+if __name__ == '__main__':
+    class test(object):
+        def m(self):
+            print "here"
+
+        def __del__(self):
+            print "deleted"
+
+    x = test()
+    y = x.m
+    x = None
+    y()

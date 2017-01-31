@@ -23,7 +23,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from datetime import datetime
 from functools import partial
@@ -33,6 +33,7 @@ from chipwhisperer.hardware.naeusb.naeusb import NAEUSB
 from chipwhisperer.hardware.naeusb.pll_cdce906 import PLLCDCE906
 from chipwhisperer.hardware.naeusb.fpga import FPGA
 from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.common.utils import util
 
 
 class CW305_USB(object):
@@ -47,8 +48,8 @@ class CW305_USB(object):
 class CW305(TargetTemplate):
     _name = "ChipWhisperer CW305 (Artix-7)"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
         self._naeusb = NAEUSB()
         self.pll = PLLCDCE906(self._naeusb, ref_freq = 12.0E6, parent=self)
         self.fpga = FPGA(self._naeusb)
@@ -89,7 +90,7 @@ class CW305(TargetTemplate):
             {'name':'Time CLKUSB Disabled for', 'key':'clksleeptime', 'type':'int', 'range':(1, 50000), 'value':50, 'suffix':'mS'},
             {'name':'CLKUSB Manual Setting', 'key':'clkusboff', 'type':'bool', 'value':True, 'action':self.usb_clk_setenabled_action},
             {'name':'Send Trigger', 'type':'action', 'action':self.usb_trigger_toggle},
-            {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'default':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get},
+            {'name':'VCC-INT', 'key':'vccint', 'type':'float', 'default':1.00, 'range':(0.6, 1.10), 'suffix':' V', 'decimals':3, 'set':self.vccint_set, 'get':self.vccint_get, 'step':0.01},
             {'name':'FPGA Bitstream', 'type':'group', 'children':[
                     {'name':'Bitstream File', 'key':'fpgabsfile', 'type':'file', 'value':"", "filter":'*.bit'},
                     {'name':'Program FPGA', 'type':'action', 'action':self.gui_programfpga},
@@ -108,7 +109,7 @@ class CW305(TargetTemplate):
         """ Read from address """
 
         if addr > self._woffset:
-            print "NOTE: Read from write address, confirm this is not an error"
+            logging.info('Read from write address, confirm this is not an error')
 
         data = self._naeusb.cmdReadMem(addr, readlen)
         return data
@@ -160,14 +161,18 @@ class CW305(TargetTemplate):
         if not os.path.isfile(bsfile):
             raise Warning("FPGA Bitstream not configured or %s not a file." % str(bsfile))
         starttime = datetime.now()
-        self.fpga.FPGAProgram(open(bsfile, "rb"))
+        result = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
         stoptime = datetime.now()
-        print "FPGA Config time: %s" % str(stoptime - starttime)
 
-    def con(self, scope = None, bsfile = None, force = False):
+        if result:
+            logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+        else:
+            logging.warning('FPGA Config failed: DONE pin did not go high. Check bitstream is for target device.')
+
+    def _con(self, scope=None, bsfile=None, force=False):
         """Connect to CW305 board, download bitstream"""
 
-        self._naeusb.con(idProduct=0xC305)
+        self._naeusb.con(idProduct=[0xC305])
         if self.fpga.isFPGAProgrammed() == False or force:
             if bsfile is None:
                 bsfile = self.params.getChild(['FPGA Bitstream',"fpgabsfile"]).getValue()
@@ -176,14 +181,20 @@ class CW305(TargetTemplate):
             else:
                 from datetime import datetime
                 starttime = datetime.now()
-                self.fpga.FPGAProgram(open(bsfile, "rb"))
+                status = self.fpga.FPGAProgram(open(bsfile, "rb"), exceptOnDoneFailure=False)
                 stoptime = datetime.now()
-                print "FPGA Config time: %s" % str(stoptime - starttime)
+                if status:
+                    logging.info('FPGA Config OK, time: %s' % str(stoptime - starttime))
+                else:
+                    logging.warning('FPGA Done pin failed to go high, check bitstream is for target device.')
         self.usb_clk_setenabled(True)
         self.fpga_write(0x100+self._woffset, [0])
         self.params.refreshAllParameters()
         self.pll.cdce906init()
-        self.connectStatus.setValue(True)
+
+    def _dis(self):
+        if self._naeusb:
+            self._naeusb.close()
 
     def checkEncryptionKey(self, key):
         """Validate encryption key"""
@@ -218,6 +229,7 @@ class CW305(TargetTemplate):
         """"Read output from FPGA"""
         data = self.fpga_read(0x200, 16)
         data = data[::-1]
+        self.newInputData.emit(util.list2hexstr(data))
         return data
 
     def go(self):
@@ -227,7 +239,6 @@ class CW305(TargetTemplate):
             
         #LED On
         self.fpga_write(0x10+self._woffset, [0x01])
-            
 
         time.sleep(0.01)
         self.usb_trigger_toggle()

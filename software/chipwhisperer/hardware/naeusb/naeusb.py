@@ -21,10 +21,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-
+import logging
 import time
 import usb.core
 import usb.util
+import math
+from threading import Condition, Thread
 
 
 def packuint32(data):
@@ -32,6 +34,14 @@ def packuint32(data):
 
     return [data & 0xff, (data >> 8) & 0xff, (data >> 16) & 0xff, (data >> 24) & 0xff]
 
+def unpackuint32(buf):
+    """"Converts an array into a 32-bit integer"""
+
+    pint = buf[0]
+    pint |= buf[1] << 8
+    pint |= buf[2] << 16
+    pint |= buf[3] << 24
+    return pint
 
 def packuint16(data):
     """Converts a 16-bit integer into format expected by USB firmware"""
@@ -43,6 +53,7 @@ def packuint16(data):
 NEWAE_VID = 0x2B3E
 NEWAE_PIDS = {
     0xACE2: "ChipWhisperer-Lite",
+    0xACE3: "ChipWHisperer-CW1200",
     0xC305: "CW305 Artix FPGA Board",
 }
 
@@ -58,6 +69,7 @@ class NAEUSB(object):
     CMD_WRITEMEM_BULK = 0x11
     CMD_READMEM_CTRL = 0x12
     CMD_WRITEMEM_CTRL = 0x13
+    CMD_MEMSTREAM = 0x14
 
     stream = False
 
@@ -66,12 +78,18 @@ class NAEUSB(object):
     def __init__(self):
         self._usbdev = None
 
-    def con(self, idProduct=0xACE2):
+    def con(self, idProduct=[0xACE2]):
         """
         Connect to device using default VID/PID
         """
 
-        dev = usb.core.find(idVendor=0x2B3E, idProduct=idProduct)
+        for id in idProduct:
+            dev = usb.core.find(idVendor=0x2B3E, idProduct=id)
+            foundId = id
+
+            #Found something
+            if dev:
+                break
 
         if not dev:
             raise Warning("Failed to find USB Device")
@@ -88,12 +106,12 @@ class NAEUSB(object):
             self.snum = usb.util.get_string(dev, length=256, index=3)
 
 
-        if idProduct in NEWAE_PIDS:
-            name = NEWAE_PIDS[idProduct]
+        if foundId in NEWAE_PIDS:
+            name = NEWAE_PIDS[foundId]
         else:
-            name = "Unknown (PID = %04x)"%idProduct
+            name = "Unknown (PID = %04x)"%foundId
 
-        print "Found %s, Serial Number = %s" % (name, self.snum)
+        logging.info('Found %s, Serial Number = %s' % (name, self.snum))
 
         self._usbdev = dev
         self.rep = 0x81
@@ -101,25 +119,24 @@ class NAEUSB(object):
         self._timeout = 200
 
         fwver = self.readFwVersion()
-        print "SAM3U Firmware version = %d.%d b%d" % (fwver[0], fwver[1], fwver[2])
+        logging.info('SAM3U Firmware version = %d.%d b%d' % (fwver[0], fwver[1], fwver[2]))
 
         if not (fwver[0] >= self.fwversion_latest[0] and fwver[1] >= self.fwversion_latest[1]):
-            print "**NOTE: Your firmware is outdated - latest is %d.%d" % (self.fwversion_latest[0], self.fwversion_latest[1])
-            print "**Suggested to update firmware, as you may experience errors"
+            logging.warning('Your firmware is outdated - latest is %d.%d' % (self.fwversion_latest[0], self.fwversion_latest[1]) +
+                            '. Suggested to update firmware, as you may experience errors')
+
+        return foundId
 
     def usbdev(self):
         if not self._usbdev: raise Warning("USB Device not found. Did you connect it first?")
         return self._usbdev
 
     def close(self):
-        """
-        Close USB connection
-        """
-        # self.usbdev().close()
+        """Close USB connection."""
         try:
             usb.util.dispose_resources(self.usbdev())
         except usb.USBError as e:
-            print "INFO: USB Failure calling dispose_resources: %s" % str(e)
+            logging.info('USB Failure calling dispose_resources: %s' % str(e))
 
     def readFwVersion(self):
         try:
@@ -196,6 +213,98 @@ class NAEUSB(object):
 
         return data
 
+    def cmdReadStream_getStatus(self):
+        """
+        Gets the status of the streaming mode capture, tells you samples left to stream out along
+        with overflow buffer status. When an overflow occurs the samples left to stream goes to
+        zero.
+
+        samples_left_to_stream is number of samples not yet streamed out of buffer.
+        overflow_lcoation is the value of samples_left_to_stream when a buffer overflow occured.
+        unknown_overflow is a flag indicating if an overflow occured at an unknown time.
+
+        Returns:
+            Tuple indicating (samples_left_to_stream, overflow_location, unknown_overflow)
+        """
+        data = self.readCtrl(self.CMD_MEMSTREAM, dlen=9)
+
+        status = data[0]
+        samples_left_to_stream = unpackuint32(data[1:5])
+        overflow_location = unpackuint32(data[5:9])
+
+        if status == 0:
+            unknown_overflow = False
+        else:
+            unknown_overflow = True
+
+        return (samples_left_to_stream, overflow_location, unknown_overflow)
+
+    def _cmdReadStream_blockSizes(self, dlen):
+        bsize_bytes = 16384
+        bsize_samples = (bsize_bytes / 4) * 3
+
+        # dlen_ceil now has number of samples you should request instead (rounded up)
+        dlen_ceil = int(math.ceil(float(dlen) / float(bsize_samples)) * bsize_samples)
+
+        # Each block of 4096 bytes has one byte missing due to sycn header, account for that in number of samples
+        blocks = (((dlen_ceil / bsize_samples) * 4 ) / 4) * 3
+
+        return (dlen_ceil  - blocks, bsize_samples, bsize_bytes)
+
+    def cmdReadStream_size_of_fpgablock(self):
+        """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
+            bytes will be located. These sync bytes must be removed in post-processing. """
+        return 4096
+
+    def cmdReadStream_bufferSize(self, dlen):
+        """
+        Args:
+            dlen: Number of samples to be requested (will be rounded to something else)
+
+        Returns:
+            Tuple: (Size of temporary buffer required, actual samples in buffer)
+        """
+
+        dlen, _ , _ = self._cmdReadStream_blockSizes(dlen)
+
+        # Make room for (4/3) * number of samples
+        blen = int((dlen * (4/3)))
+        tempbuf_len =  blen
+
+        return (tempbuf_len, dlen)
+
+    def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000):
+        #Enter streaming mode for requested number of samples
+        if hasattr(self, "streamModeCaptureStream"):
+            self.streamModeCaptureStream.join()
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(dlen))
+        self.streamModeCaptureStream = NAEUSB.StreamModeCaptureThread(self, dlen, dbuf_temp, timeout_ms)
+        self.streamModeCaptureStream.start()
+
+    def cmdReadStream_isDone(self):
+        return self.streamModeCaptureStream.isAlive() == False
+
+    def cmdReadStream(self):
+        """
+        Gets data acquired in streaming mode.
+        initStreamModeCapture should be called first in order to make it work.
+        """
+        self.streamModeCaptureStream.join()
+
+        # Flush input buffers in case anything was left
+        try:
+            self.usbdev().read(self.rep, 4096, timeout=10)
+            self.usbdev().read(self.rep, 4096, timeout=10)
+            self.usbdev().read(self.rep, 4096, timeout=10)
+            self.usbdev().read(self.rep, 4096, timeout=10)
+        except IOError:
+            pass
+
+        # Ensure stream mode disabled
+        self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
+
+        return self.streamModeCaptureStream.bsize_samples, self.streamModeCaptureStream.drx
+
     def enterBootloader(self, forreal=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
 
@@ -209,6 +318,64 @@ class NAEUSB(object):
             self.usbdev().read(self.rep, 1000, timeout=0.010)
         except:
             pass
+
+    class StreamModeCaptureThread(Thread):
+        def __init__(self, serial, dlen, dbuf_temp, timeout_ms=2000):
+            """
+            Reads from the FIFO in streaming mode. Requires the FPGA to be previously configured into
+            streaming mode and then arm'd, otherwise this may return incorrect information.
+
+            Args:
+                dlen: Number of samples to request.
+                dbuf_temp: Temporary data buffer, must be of size cmdReadStream_bufferSize(dlen) or bad things happen
+                timeout_ms: Timeout in ms to wait for stream to start, otherwise returns a zero-length buffer
+            Returns:
+                Tuple of (samples_per_block, total_bytes_rx)
+            """
+            Thread.__init__(self)
+            self.dlen = dlen
+            self.dbuf_temp = dbuf_temp
+            self.timeout_ms = timeout_ms
+            self.serial = serial
+            self.timeout = False
+
+        def run(self):
+            # Get block size of samples, bytes per block
+            _, self.bsize_samples, self.bsize_bytes = self.serial._cmdReadStream_blockSizes(self.dlen)
+
+            dlen = self.dlen
+            to = self.timeout_ms
+
+            self.drx = 0
+            while dlen > 0:
+                try:
+                    if dlen > 9216:
+                        bsize = self.bsize_bytes
+                    elif dlen >= 6122:
+                        bsize = 4096*3
+                    elif dlen >= 3072:
+                        bsize = 4096*2
+                    else:
+                        bsize = 4096
+
+                    #Commented out normally for performance
+                    #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
+
+                    self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
+                except IOError:
+                    self.timeout = True
+                    if self.drx == 0:
+                        logging.info("Timeout during stream mode with no data - assumed no trigger")
+                    else:
+                        logging.warning("Timeout during stream mode after %d bytes" % self.drx)
+                    break
+
+                #once we have a block of data, quicker timeout is OK
+                to = 50
+
+                dlen -= (bsize / 4) * 3
+                self.drx += bsize
+
 
 if __name__ == '__main__':
     from fpga import FPGA
@@ -355,5 +522,3 @@ if __name__ == '__main__':
     #        flog.flush()
     #    except usb.core.USBError:
     #        pass
-
-

@@ -21,6 +21,7 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -108,7 +109,16 @@ class GraphWidget(QWidget):
         self.colorDialog = ColorDialog()
 
         self.pw = pg.PlotWidget(name="Power Trace View")
+        # self.pw.setTitle(title= 'Power Trace View')
         self.pw.setLabel('top', 'Power Trace View')
+        try:
+            self.pw.getAxis('top').enableAutoSIPrefix(enable=False)
+        except AttributeError:
+            logging.warning("pyqtgraph window does not have SIPrefix API - probably you should upgrade pyqtgraph!")
+        try:
+            self.pw.getAxis('top').setStyle(showValues=False)
+        except TypeError:
+            logging.debug("Could not disable top axis labels")
         self.pw.setLabel('bottom', 'Samples')
         self.pw.setLabel('left', 'Data')
         self.pw.getPlotItem().setContentsMargins(5,5,10,1)
@@ -153,11 +163,11 @@ class GraphWidget(QWidget):
         clear = QAction(QIcon(self.imagepath+'clear.png'), 'Clear Display', self)
         clear.triggered.connect(self.clearPushed)
 
-        crossHair = QAction(QIcon(self.imagepath+'crosshair.png'), 'Show Crosshairs', self)
-        crossHair.setCheckable(True)
-        crossHair.setChecked(False)
-        self.setCrossHairs(crossHair.isChecked())
-        crossHair.triggered.connect(lambda: self.setCrossHairs(crossHair.isChecked()))
+        self.crossHair = QAction(QIcon(self.imagepath+'crosshair.png'), 'Show Crosshairs', self)
+        self.crossHair.setCheckable(True)
+        self.crossHair.setChecked(False)
+        self.setCrossHairs(self.crossHair.isChecked())
+        self.crossHair.triggered.connect(lambda: self.setCrossHairs(self.crossHair.isChecked()))
 
         grid = QAction(QIcon(self.imagepath+'grid.png'), 'Show Grid', self)
         grid.setCheckable(True)
@@ -186,7 +196,7 @@ class GraphWidget(QWidget):
         self.GraphToolbar.addAction(self.actionPersistance)
         self.GraphToolbar.addAction(setColour)
         self.GraphToolbar.addAction(clear)
-        self.GraphToolbar.addAction(crossHair)
+        self.GraphToolbar.addAction(self.crossHair)
         self.GraphToolbar.addAction(grid)
         self.GraphToolbar.addAction(mouseMode)
         self.GraphToolbar.addAction(help)
@@ -293,7 +303,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
-    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = ""):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = "", xaxis=None):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
@@ -318,12 +328,13 @@ class GraphWidget(QWidget):
             self.acolor = self.color
             self.pw.clear()
             
-        xaxis = range(startoffset, len(trace)+startoffset)
-            
+        if xaxis is None:
+            xaxis = range(startoffset, len(trace)+startoffset)
+
         if pen is None:
             pen = pg.mkPen(self.acolor)
 
-        p = self.pw.plot(xaxis, trace, pen=pen)
+        p = self.pw.plot(x=xaxis, y=trace, pen=pen)
         self.setupPlot(p, 0, True, idString)
 
         if ghostTrace is False:
@@ -372,6 +383,7 @@ class GraphWidget(QWidget):
     def setCrossHairs(self, enabled):
         self.vLine.setVisible(enabled)
         self.hLine.setVisible(enabled)
+        self.crossHair.setChecked(enabled)
 
     def selectTrace(self, trace):
         if self.selectedTrace:
@@ -381,7 +393,10 @@ class GraphWidget(QWidget):
             self.selection.setText("Selected Trace: None")
         else:
             self.selectedTrace = trace
-            self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=3, style=Qt.DashLine))
+            if self.selectedTrace.xData.size > 25000:
+                logging.warning("Trace highlighting (shadow pen) disabled: Trace is too large (>25k points).")
+            else:
+                self.selectedTrace.setShadowPen(pg.mkPen(0.5, width=2, style=Qt.SolidLine))
             self.selection.setText("Selected Trace: %s" % (self.selectedTrace.id if hasattr(self.selectedTrace, "id") else ""))
 
     def mouseMoved(self, evt):

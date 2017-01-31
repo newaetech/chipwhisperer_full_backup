@@ -28,6 +28,7 @@ from chipwhisperer.capture.targets.smartcard_readers import chipwhisperer_ser
 
 
 class ProtocolDPAv42(ProtocolTemplate):
+    _name = "DPAContestv4"
 
     def loadEncryptionKey(self, key):
         if len(key) != 16:

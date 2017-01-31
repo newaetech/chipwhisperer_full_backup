@@ -25,21 +25,20 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from _base import ScopeTemplate
+from .base import ScopeTemplate
 from chipwhisperer.capture.scopes.visascope_interface.mso54831D import VisaScopeInterface_MSO54831D
 from chipwhisperer.common.utils import pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
+from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.common.utils.pluginmanager import Plugin
 
 
-class VisaScopeInterface(ScopeTemplate):
+class VisaScopeInterface(ScopeTemplate, Plugin):
     _name = "VISA Scope"
 
-    def __init__(self, parentParam=None):
-        ScopeTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ScopeTemplate.__init__(self)
 
-        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False, self)
-        for scope in scopes.itervalues():
-            scope.dataUpdated.connect(self.passUpdated)
+        scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.visascope_interface", True, False)
 
         self.params.addChildren([
             {'name':'Scope Type', 'key':'type', 'type':'list', 'values':scopes, 'value':scopes[VisaScopeInterface_MSO54831D._name], 'set':self.setCurrentScope, 'childmode':'parent'},
@@ -54,14 +53,11 @@ class VisaScopeInterface(ScopeTemplate):
     def exampleString(self, newstr):
         self.findParam('connStr').setValue(newstr)
 
-    def passUpdated(self, lst, offset):
-        self.datapoints = lst
-        self.offset = offset
-        self.dataUpdated.emit(lst, offset)
-
     @setupSetParam("Scope Type")
     def setCurrentScope(self, scope, update=True):
         self.scopetype = scope
+        if scope is not None:
+            self.scopetype.dataUpdated.connect(self.newDataReceived)
 
     def _con(self):
         if self.scopetype is not None:
@@ -80,6 +76,6 @@ class VisaScopeInterface(ScopeTemplate):
             self.dis()
             raise
 
-    def capture(self, update=True, NumberPoints=None):
+    def capture(self):
         """Raises IOError if unknown failure, returns 'False' if successful, 'True' if timeout"""
-        return self.scopetype.capture(update, NumberPoints)
+        return self.scopetype.capture()

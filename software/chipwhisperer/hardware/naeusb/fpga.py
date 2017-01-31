@@ -24,6 +24,7 @@
 
 
 import time
+import logging
 from naeusb import packuint32
 
 class FPGA(object):
@@ -49,7 +50,7 @@ class FPGA(object):
         else:
             return False
 
-    def FPGAProgram(self, bitstream=None):
+    def FPGAProgram(self, bitstream=None, exceptOnDoneFailure=True):
         """
         Program FPGA with a bitstream, or if not bitstream passed just erases FPGA
         """
@@ -57,16 +58,17 @@ class FPGA(object):
         # Erase the FPGA by toggling PROGRAM pin, setup
         # NAEUSB chip for FPGA programming
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA0)
+        time.sleep(0.01)
         self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA1)
 
-        time.sleep(0.01)
+        time.sleep(0.05)
 
         # Download actual bitstream now if present
         if bitstream:
             # Run the download which should program FPGA
             self._FPGADownloadBitstream(bitstream)
 
-            wait = 4
+            wait = 5
             while wait > 0:
                 # Check the status a few times
                 programStatus = self.isFPGAProgrammed()
@@ -78,8 +80,8 @@ class FPGA(object):
             # Exit FPGA programming mode
             self.sendCtrl(self.CMD_FPGA_PROGRAM, 0xA2)
 
-            if programStatus == False:
-                raise IOError("FPGA Done pin failed to go high, bad bitstream?")
+            if programStatus == False and exceptOnDoneFailure:
+                raise IOError("FPGA Done pin failed to go high, bad bitstream?", bitstream)
 
             return programStatus
         else:

@@ -22,10 +22,12 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import sys
 from PySide.QtCore import *
 from PySide.QtGui import *
+
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 from chipwhisperer.common.utils.util import hexstr2list
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 
@@ -72,24 +74,24 @@ class APDUFilter(QObject):
                 
                 #Hmm... bad format!?
                 if (len(data)-5) < plen:
-                    print "ERROR: Header too short"
+                    logging.error('Header too short')
                     plen = len(data)-5
                 
                 payload = data[5:(5+plen)]
                 
                 htmlstr += payloadstart
                 for d in payload:
-                    htmlstr += "%02x "%d
+                    htmlstr += "%02x " % d
                 htmlstr += payloadend
                 
                 if (len(data)-5) > plen:
                     htmlstr += lenstart
-                    htmlstr += "%02x "%data[plen+5]
+                    htmlstr += "%02x " % data[plen+5]
                     htmlstr += lenend
                     
                     if (len(data)-5) != (plen+1):
-                        print "ERROR: Extra data"                  
-        
+                        logging.error('Extra data')
+
             widget.setHtml(htmlstr)
     
     def eventFilter(self, widget, event):
@@ -107,8 +109,8 @@ class APDUFilter(QObject):
 
 
 class SmartCardGUICard(QtFixes.QDialog):
-    def __init__(self, parent, smartCardAPI):
-        super(SmartCardGUICard, self).__init__(parent)
+    def __init__(self, smartCardAPI):
+        super(SmartCardGUICard, self).__init__(CWMainGUI.getInstance())
         self.setWindowTitle("Smartcard Explorer")
         self.smartCardAPI = smartCardAPI
         self.mainLayout = QVBoxLayout()

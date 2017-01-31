@@ -28,23 +28,25 @@ from chipwhisperer.common.utils import util
 from _base import AcqKeyTextPattern_Base
 from chipwhisperer.common.utils.parameter import setupSetParam
 
-
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     _name = "Basic"
 
-    def __init__(self, parentParam, target=None):
-        AcqKeyTextPattern_Base.__init__(self, parentParam, target)
+    def __init__(self, target=None):
+        AcqKeyTextPattern_Base.__init__(self)
         self._fixedKey = True
         self._fixedPlain = False
-        self.initkey = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
-        self.inittext = '2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'
+        self.inittext = '00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F'
+        self.initkey = '2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C'
+        self._key = util.hexStrToByteArray(self.initkey)
+        self._textin = util.hexStrToByteArray(self.inittext)
         self.types = {'Random': False, 'Fixed': True}
 
-        self.params.addChildren([
-            {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue())},
+        self.getParams().addChildren([
+            {'name':'Key', 'type':'list', 'values':self.types , 'get':self.getKeyType, 'set':self.setKeyType, 'action':lambda p:self.findParam("initkey").show(p.getValue()), 'linked':['initkey']},
+            # {'name':'Size', 'type':'int'},
             {'name':'Fixed Encryption Key', 'key':'initkey', 'type':'str', 'get':self.getInitialKey, 'set':self.setInitialKey, 'visible':self.getKeyType()},
-            {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue())},
-            {'name':'Fixed Plaintext Key', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
+            {'name':'Plaintext', 'type':'list', 'values':self.types , 'get':self.getPlainType, 'set':self.setPlainType, 'action':lambda p:self.findParam("inittext").show(p.getValue()), 'linked':['inittext']},
+            {'name':'Fixed Plaintext', 'key':'inittext', 'type':'str', 'get':self.getInitialText, 'set':self.setInitialText, 'visible':self.getPlainType()},
         ])
         self.setTarget(target)
 
@@ -62,12 +64,8 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     def setPlainType(self, t):
         self._fixedPlain = t
 
-    def _initPattern(self):
-        self.setInitialKey('2B 7E 15 16 28 AE D2 A6 AB F7 15 88 09 CF 4F 3C')
-        self.setInitialText('00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F')
-
     def getInitialKey(self):
-        return self.initkey
+        return " ".join(["%02X"%b for b in self._key])
 
     @setupSetParam("Fixed Encryption Key")
     def setInitialKey(self, initialKey, binaryKey=False):
@@ -84,9 +82,9 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
             self.initkey = keyStr
 
     def getInitialText(self):
-        return self.inittext
+        return " ".join(["%02X" % b for b in self._textin])
 
-    @setupSetParam("Fixed Plaintext Key")
+    @setupSetParam("Fixed Plaintext")
     def setInitialText(self, initialText, binaryText=False):
         if initialText:
             if binaryText:
@@ -110,20 +108,21 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
                 self._key[i] = random.randint(0, 255)
 
         if self._fixedPlain is False:
-            self._textin = bytearray(16)
-            for i in range(0, 16):
+            self._textin = bytearray(self.textLen())
+            for i in range(0, self.textLen()):
                 self._textin[i] = random.randint(0, 255)
 
-        # Check key works with target
+        # Check pair works with target
         self.validateKey()
+        self.validateText()
 
         return (self._key, self._textin)
 
     def __str__(self):
-        key = "Key=" + self.findParam("Key").getKey()
+        key = "Key=" + self.findParam("Key").getValueKey()
         if self._fixedKey:
             key = key + ":" + self.findParam("initkey").getValue()
-        plaintext = "Plaintext=" + self.findParam("Plaintext").getKey()
+        plaintext = "Plaintext=" + self.findParam("Plaintext").getValueKey()
         if self._fixedPlain:
             plaintext = plaintext + ":" + self.findParam("inittext").getValue()
 

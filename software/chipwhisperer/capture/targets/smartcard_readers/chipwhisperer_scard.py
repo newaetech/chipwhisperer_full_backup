@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from ._base import ReaderTemplate
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
@@ -30,8 +31,8 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 class ReaderChipWhispererSCard(ReaderTemplate):
     _name = "CWCR2-SCARD (obsolete)"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.params.addChildren([
             {'name':'Card Present', 'key':'statusStr', 'type':'bool', 'value':False, 'readonly':True},
@@ -65,7 +66,7 @@ class ReaderChipWhispererSCard(ReaderTemplate):
             status = (status[0] << 8) | status[1]
             payload = resp[0:rxdatalen]
 
-            print "%4x"%status
+            logging.info('%4x' % status)
 
             return (status, payload)
 

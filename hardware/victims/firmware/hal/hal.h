@@ -19,6 +19,8 @@
 #ifndef HAL_H_
 #define HAL_H_
 
+void platform_init(void);
+
 //PLATFORM Define Types
 #define CW301_AVR 1
 #define CW301_XMEGA 2
@@ -43,13 +45,6 @@
     #error "Unsupported HAL Type"
 #endif
 
-/*
-#if PLATFORM == CW301_XMEGA
-    #define HW_CRYPTO 1
-#else
-    #define HW_CRYPTO 0
-#endif
-*/
 
 #if PLATFORM == CW308_MEGARF
     #undef trigger_setup

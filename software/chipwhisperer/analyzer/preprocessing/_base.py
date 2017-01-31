@@ -24,6 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -34,16 +35,15 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     """
     Base Class for all preprocessing modules
-    Derivate Classes work like this:
-        - updateScript is used by the GUI to create the parameters list and generate the API scripts
+    Derivable Classes work like this:
+        - updateScript is called to update the scripts based on the current status of the object
         - the other methods are used by the API to apply the preprocessing filtering
-          You need to pass the getTraceSource reference in the constructor in order to apply the preprocessing step
     """
     _name = "None"
 
-    def __init__(self, parentParam=None, traceSource=None):
+    def __init__(self, traceSource=None):
         self.enabled = False
-        ActiveTraceObserver.__init__(self, parentParam=parentParam)
+        ActiveTraceObserver.__init__(self)
         TraceSource.__init__(self, self.getName())
         AutoScript.__init__(self)
         self.setTraceSource(traceSource, blockSignal=True)
@@ -54,16 +54,19 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         ])
         self.findParam('input').hide()
 
+        self.register()
+        if __debug__: logging.debug('Created: ' + str(self))
+
     def updateScript(self, ignored=None):
         pass
 
     def getEnabled(self):
-        """Turn on/off this preprocessing"""
+        """Return if it is enable or not"""
         return self.enabled
 
     @setupSetParam("Enabled")
     def setEnabled(self, enabled):
-        """Turn on/off this preprocessing"""
+        """Turn on/off this preprocessing module"""
         self.enabled = enabled
         self.updateScript()
 
@@ -88,8 +91,12 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         """Get known-key number n"""
         return self._traceSource.getKnownKey(n)
 
+    def getSampleRate(self):
+        """Get the Sample Rate"""
+        return self._traceSource.getSampleRate()
+
     def init(self):
-        """Do any initilization required once all traces are loaded"""
+        """Do any initialization required once all traces are loaded"""
         pass
 
     def getSegmentList(self):
@@ -98,11 +105,14 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     def getAuxData(self, n, auxDic):
         return self._traceSource.getAuxData(n, auxDic)
 
-    def findMappedTrace(self, n):
-        return self._traceSource.findMappedTrace(n)
+    def getSegment(self, n):
+        return self._traceSource.getSegment(n)
 
     def numTraces(self):
         return self._traceSource.numTraces()
 
     def numPoints(self):
         return self._traceSource.numPoints()
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))

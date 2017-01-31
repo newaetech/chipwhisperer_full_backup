@@ -22,6 +22,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
+
+from usb import USBError
 
 from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
@@ -32,17 +35,21 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class SimpleSerial(TargetTemplate):
     _name = "Simple Serial"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
 
-        ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False, self)
+        ser_cons = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.simpleserial_readers", True, False)
         self.ser = ser_cons[SimpleSerial_ChipWhispererLite._name]
 
-        self.keylength = 128
+        self.keylength = 16
+        self.textlength = 16
+        self.outputlength = 16
         self.input = ""
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
-            {'name':'Key Length', 'type':'list', 'values':[128, 256], 'get':self.keyLen, 'set':self.setKeyLen},
+            {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
+            {'name':'Input Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
+            {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -55,16 +62,34 @@ class SimpleSerial(TargetTemplate):
             #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
         ])
 
-        self.setConnection(self.ser)
+        self.setConnection(self.ser, blockSignal=True)
 
     @setupSetParam("Key Length")
     def setKeyLen(self, klen):
-        """ Set key length in BITS """
-        self.keylength = klen / 8
+        """ Set key length in bytes """
+        self.keylength = klen
 
     def keyLen(self):
-        """ Return key length in BYTES """
+        """ Return key length in bytes """
         return self.keylength
+
+    @setupSetParam("Input Length")
+    def setTextLen(self, tlen):
+        """ Set plaintext length. tlen given in bytes """
+        self.textlength = tlen
+
+    def textLen(self):
+        """ Return plaintext length in bytes """
+        return self.textlength
+
+    @setupSetParam("Output Length")
+    def setOutputLen(self, tlen):
+        """ Set plaintext length in bytes """
+        self.outputlength = tlen
+
+    def outputLen(self):
+        """ Return output length in bytes """
+        return self.outputlength
 
     def getConnection(self):
         return self.ser
@@ -76,14 +101,13 @@ class SimpleSerial(TargetTemplate):
         self.ser.connectStatus.connect(self.connectStatus.emit)
         self.ser.selectionChanged()
 
-    def con(self, scope = None):
+    def _con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.ser.con(scope)
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
-        self.connectStatus.setValue(True)
 
     def close(self):
         if self.ser != None:
@@ -131,9 +155,12 @@ class SimpleSerial(TargetTemplate):
             if flushInputBefore:
                 self.ser.flushInput()
             self.ser.write(newstr)
-        except Exception:
+        except USBError:
             self.dis()
-            raise
+            raise Warning("Error in the target. It may have been disconnected.")
+        except Exception as e:
+            self.dis()
+            raise e
 
     def loadEncryptionKey(self, key):
         self.key = key
@@ -148,7 +175,7 @@ class SimpleSerial(TargetTemplate):
         return True
 
     def readOutput(self):
-        dataLen= 32
+        dataLen= self.outputlength*2
 
         fmt = self.findParam('cmdout').getValue()
         #This is dumb
@@ -173,10 +200,10 @@ class SimpleSerial(TargetTemplate):
         expected = fmt.split("$RESPONSE$")
 
         #Read data from serial port
-        response = self.ser.read(dataLen)
+        response = self.ser.read(dataLen, timeout=500)
 
         if len(response) < dataLen:
-            print("WARNING: Response too short (len=%d): %s"%(len(response), response))
+            logging.warning('Response length from target shorter than expected (%d<%d): "%s".' % (len(response), dataLen, response))
             return None
 
         #Go through...skipping expected if applicable
@@ -192,12 +219,12 @@ class SimpleSerial(TargetTemplate):
         startindx = len(expected[0])
 
         #Is middle part?
-        data = bytearray(16)
+        data = bytearray(self.outputlength)
         if len(expected) == 2:
-            for i in range(0,16):
+            for i in range(0,self.outputlength):
                 data[i] = int(response[(i * 2 + startindx):(i * 2 + startindx + 2)], 16)
 
-            startindx += 32
+            startindx += self.outputlength*2
 
         #Is end part?
         if len(expected[1]) > 0:
@@ -214,12 +241,32 @@ class SimpleSerial(TargetTemplate):
         blen = self.keyLen()
 
         if len(kin) < blen:
-            print "note: Padding key..."
+            logging.warning('Padding key...')
             newkey = bytearray(kin)
             newkey += bytearray([0]*(blen - len(kin)))
             return newkey
         elif len(kin) > blen:
-            print "note: Truncating key..."
+            logging.warning('Truncating key...')
             return kin[0:blen]
 
         return kin
+
+    def checkPlaintext(self, text):
+        blen = self.textLen()
+
+        if len(text) < blen:
+            logging.warning('Padding plaintext...')
+            newtext = bytearray(text)
+            newtext += bytearray([0] * (blen - len(text)))
+            return newtext
+        elif len(text) > blen:
+            logging.warning('Truncating plaintext...')
+            return text[0:blen]
+        return text
+
+    def getExpected(self):
+        """Based on key & text get expected if known, otherwise returns None"""
+        if self.textLen() == 16:
+            return TargetTemplate.getExpected(self)
+        else:
+            return None

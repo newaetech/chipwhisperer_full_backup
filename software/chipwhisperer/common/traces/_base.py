@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
+import logging
 import re
 import numpy as np
 import _cfgfile
@@ -40,11 +41,11 @@ class TraceContainer(Parameterized, Plugin):
     """
     _name = "Trace Configuration"
     
-    def __init__(self, parentParam=None, configfile=None):
+    def __init__(self, configfile=None):
         self.configfile = configfile
         self.fmt = None
-        self.params = Parameter(name=self._name, type='group').register()
-        self.params.addChildren([
+        self.getParams().register()
+        self.getParams().addChildren([
                 {'name':'Config File', 'key':'cfgfile', 'type':'str', 'readonly':True, 'value':''},
                 {'name':'Format', 'key':'format', 'type':'str', 'readonly':True, 'value':''},
         ])
@@ -92,7 +93,9 @@ class TraceContainer(Parameterized, Plugin):
             self._numTraces = max(cfint, self._numTraces)
         return self._numTraces
 
-    def addTrace(self, trace, textin, textout, key, dtype=np.double):
+    def addTrace(self, trace, textin, textout, key, dtype=np.double, channelNum=0):
+        if channelNum!=0:
+            raise NotImplementedError
         self.addWave(trace, dtype)
         self.addTextin(textin)
         self.addTextout(textout)
@@ -123,14 +126,13 @@ class TraceContainer(Parameterized, Plugin):
                 #Validate traces fit - if too short warn & pad (prevents aborting long captures)
                 pad = self.traces.shape[1] - len(trace)
                 if pad > 0:
-                    print "WARNING: Trace too short - length = %d"%len(trace)
-                    print "         Padding with %d zero points"%pad
-                    print " ***** This MAY SUGGEST DATA CORRUPTION *****"
+                    logging.warning('Trace too short (length=%d)' % len(trace) + " *This MAY SUGGEST DATA CORRUPTION*")
+                    logging.warning('Padding with %d zero points' % pad)
                     trace.extend([0]*pad)
 
                 self.traces[self._numTraces][:] = trace
         except MemoryError:
-            raise MemoryError("Failed to allocate/resize array for %d x %d, if you have sufficient memory it may be fragmented. Use smaller segments and retry." % (self.tracehint, self.traces.shape[1]))
+            raise Warning("Failed to allocate/resize array for %d x %d, if you have sufficient memory it may be fragmented. Use smaller segments and retry." % (self.tracehint, self.traces.shape[1]))
             
         self._numTraces += 1
         self.setDirty(True)

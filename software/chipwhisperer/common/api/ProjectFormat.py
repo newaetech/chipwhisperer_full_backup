@@ -21,22 +21,24 @@
 #
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
-
-__author__ = "Colin O'Flynn"
-
+import logging
 import os
 import re
 import sys
+
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
 from chipwhisperer.common.api.settings import Settings
+from chipwhisperer.common.utils.parameter import Parameter
 
 try:
     from configobj import ConfigObj  # import the module
 except ImportError:
     print "ERROR: configobj (https://pypi.python.org/pypi/configobj/) is required for this program"
     sys.exit()
+
+__author__ = "Colin O'Flynn"
 
 
 class ConfigObjProj(ConfigObj):
@@ -46,11 +48,12 @@ class ConfigObjProj(ConfigObj):
     """
 
     def __init__(self, callback=None, *args, **kwargs):
-        self._callback = callback
-        super(ConfigObjProj, self).__init__(*args, **kwargs)
+        if callback is not None:
+            self._callback = util.WeakMethod(callback)
+        else:
+            self._callback = None
 
-    def setCallback(self, cb):
-        self._callback = cb
+        super(ConfigObjProj, self).__init__(*args, **kwargs)
 
     def __setitem__(self, key, value, unrepr=False):
         super(ConfigObjProj, self).__setitem__(key, value, unrepr)
@@ -67,12 +70,15 @@ class ProjectFormat(object):
         self.dirty = util.Observable(True)
 
         self.settingsDict = {'Project Name':"Untitled", 'Project File Version':"1.00", 'Project Author':"Unknown"}
-        self.paramListList = []        
         self.datadirectory = ""
         self.config = ConfigObjProj(callback=self.configObjChanged)
         self._traceManager = TraceManager().register()
-        self._traceManager.dirty.connect(lambda: self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value()))
+        self._traceManager.dirty.connect(self.__dirtyCallback)
         self.setFilename(ProjectFormat.untitledFileName)
+        if __debug__: logging.debug('Created: ' + str(self))
+
+    def __dirtyCallback(self):
+        self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())
 
     def configObjChanged(self, key):
         self.dirty.setValue(True)
@@ -97,9 +103,6 @@ class ProjectFormat(object):
     
     def setFileVersion(self, ver):
         self.settingsDict['Project File Version']=ver
-    
-    def addParamTree(self, pt):
-        self.paramListList.append(pt)
         
     def addWave(self, configfile):
         return       
@@ -126,6 +129,10 @@ class ProjectFormat(object):
         # Make analysis storage directory
         if not os.path.isdir(os.path.join(self.datadirectory, 'analysis')):
             os.mkdir(os.path.join(self.datadirectory, 'analysis'))
+
+        # Make glitchresults storage directory
+        if not os.path.isdir(os.path.join(self.datadirectory, 'glitchresults')):
+            os.mkdir(os.path.join(self.datadirectory, 'glitchresults'))
 
     def load(self, f = None):
         if f is not None:
@@ -198,7 +205,14 @@ class ProjectFormat(object):
                 self.config[cfgSectionName][k] = settings[k]
 
         return self.config[cfgSectionName]
-        
+
+    def saveAllSettings(self, fname=None, onlyVisibles=False):
+        """ Save registered parameters to a file, so it can be loaded again latter."""
+        if fname is None:
+            fname = os.path.join(self.datadirectory, 'settings.cwset')
+            logging.info('Saving settings to file: ' + fname)
+        Parameter.saveRegistered(fname, onlyVisibles)
+
     def saveTraceManager(self):
         #Waveform list is Universal across ALL types
         if 'Trace Management' not in self.config:
@@ -251,7 +265,7 @@ class ProjectFormat(object):
         return True
 
     def consolidate(self, keepOriginals = True):
-        for indx, t in enumerate(self._traceManager.traceSets):
+        for indx, t in enumerate(self._traceManager.traceSegments):
             destinationDir = os.path.normpath(self.datadirectory + "traces/")
             config = ConfigObj(t.config.configFilename())
             prefix = config['Trace Config']['prefix']
@@ -266,3 +280,6 @@ class ProjectFormat(object):
             util.copyFile(t.config.configFilename(), destinationDir, keepOriginals)
             t.config.setConfigFilename(os.path.normpath(destinationDir + "/" + os.path.split(t.config.configFilename())[1]))
         self.sigStatusChanged.emit()
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))

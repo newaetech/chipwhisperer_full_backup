@@ -29,6 +29,9 @@
 //! Flash Word Size
 extern uint8_t flash_word_size;
 
+void ccsetup(void);
+void ccdebuginit(void);
+
 //! Erase a chipcon chip.
 void cc_chip_erase(void);
 //! Write the configuration byte.

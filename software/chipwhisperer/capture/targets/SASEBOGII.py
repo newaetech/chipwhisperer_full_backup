@@ -104,7 +104,7 @@ class SaseboGIIDPAContest(object):
         elif mode == "decryption":
             self.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
@@ -177,7 +177,7 @@ class SaseboGIIAESRev1(object):
         elif mode == "decryption":
             self.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)
@@ -186,17 +186,17 @@ class SaseboGIIAESRev1(object):
 class SaseboGII(TargetTemplate):
     _name = "SASEBO GII"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
 
         self.getParams().addChildren([
         {'name': 'USB Serial #:', 'key': 'serno', 'type': 'list', 'values': ['Press Refresh'], 'value': 'Press Refresh'},
-        {'name': 'Enumerate Attached Devices', 'key': 'pushsno', 'type': 'action', 'action': lambda _: self.refreshSerial()},
+        {'name': 'Enumerate Attached Devices', 'key': 'pushsno', 'type': 'action', 'action': self.refreshSerial},
         ])
 
         self.sasebo = None
 
-    def refreshSerial(self):
+    def refreshSerial(self, _=None):
         serialnames = ft.listDevices()
         if serialnames == None:
             serialnames = [" No Connected Devices "]
@@ -212,16 +212,15 @@ class SaseboGII(TargetTemplate):
             i = 0
         self.findParam('serno').setValue(serialnames[i])
 
-    def con(self, scope = None):
+    def _con(self, scope=None):
         self._sn = self.findParam('serno').getValue()
         try:
             self.sasebo = ft.openEx(self._sn)
-        except ft.ftd2xx.DeviceError, e:
+        except ft.ftd2xx.DeviceError:
             self.sasebo = None
-            raise Warning("Failed to connect to FTDI device. Specificed serial number is '%s'. Check 'Target' tab to ensure correct serial-number selected."%self._sn)
+            raise Warning("Failed to connect to FTDI device (serial number: '%s'). Check 'Target' tab to ensure correct serial-number selected." % self._sn)
         
         self.sasebo.setTimeouts(1000, 1000)
-        self.connectStatus.setValue(True)
 
         #Init
         self.init()
@@ -237,7 +236,7 @@ class SaseboGII(TargetTemplate):
 
     def write(self, address, MSB, LSB):
         if self.connectStatus.value()==False:
-            raise Exception("Can't write to the target while disconected. Connect to it first.")
+            raise Exception("Can't write to the target while disconnected. Connect to it first.")
 
         msg = bytearray(5)
 
@@ -371,7 +370,7 @@ class SaseboGII(TargetTemplate):
         elif mode == "decryption":
             self.write(0x000C, 0x00, 0x01)
         else:
-            print "Wrong mode!!!!"
+            raise ValueError
 
     def go(self):
         self.write(0x0002, 0x00, 0x01)

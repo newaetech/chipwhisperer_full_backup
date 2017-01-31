@@ -31,16 +31,16 @@ from chipwhisperer.common.utils import serialport
 class SimpleSerial_serial(SimpleSerialTemplate):
     _name = "System Serial Port"
 
-    def __init__(self, parentParam=None):
-        SimpleSerialTemplate.__init__(self, parentParam)
+    def __init__(self):
+        SimpleSerialTemplate.__init__(self)
         self.ser = None
         self.params.addChildren([
             {'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
             {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
-            {'name':'Refresh', 'type':'action', 'action': lambda _ : self.updateSerial()}
+            {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
         ])
 
-    def updateSerial(self):
+    def updateSerial(self, _=None):
         serialnames = serialport.scan()
         self.findParam('port').setLimits(serialnames)
         if len(serialnames) > 0:

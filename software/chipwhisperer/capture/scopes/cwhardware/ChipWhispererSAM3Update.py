@@ -27,10 +27,19 @@
 import os.path
 from PySide.QtCore import *
 from PySide.QtGui import *
-import chipwhisperer.common.utils.serialport as scan
+try:
+    import chipwhisperer.common.utils.serialport as scan
+except ImportError:
+    class scan:
+        @staticmethod
+        def scan():
+            return ["pyserial not installed"]
 import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.bootloader_sam3u import Samba
+
+#The firmware files
+from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 
 
 class SAM3LoaderConfig(QtFixes.QDialog):
@@ -74,11 +83,14 @@ class SAM3LoaderConfig(QtFixes.QDialog):
 
         layoutFW = QHBoxLayout()
         self.firmwareLocation = QtFixes.QLineEdit()
-        firmwareButton = QPushButton("Find")
-        firmwareButton.clicked.connect(self.findFirmware)
+        self.firmwareButton = QPushButton("Find")
+        self.firmwareButton.clicked.connect(self.findFirmware)
         layoutFW.addWidget(QLabel("SAM3U Firmware"))
         layoutFW.addWidget(self.firmwareLocation)
-        layoutFW.addWidget(firmwareButton)
+        layoutFW.addWidget(self.firmwareButton)
+
+        self.firmwareButton.setEnabled(False)
+        self.firmwareLocation.setEnabled(False)
 
         self.serlist = QComboBox()
         serrefresh = QPushButton("Update List")
@@ -96,11 +108,21 @@ class SAM3LoaderConfig(QtFixes.QDialog):
                                        " Then hit 'Run Program' to update your device.")
         self.programStatus.setReadOnly(True)
 
+        self.rbBuiltin = QRadioButton("Built-in")
+        self.rbExternal = QRadioButton("External File")
+        self.rbBuiltin.setChecked(True)
+        FWModeRBLayout = QHBoxLayout()
+        FWModeRBLayout.addWidget(self.rbBuiltin)
+        FWModeRBLayout.addWidget(self.rbExternal)
+
+        self.rbExternal.clicked.connect(self.rbbuiltinchange)
+        self.rbBuiltin.clicked.connect(self.rbbuiltinchange)
+
+        layoutSAMGB.addLayout(FWModeRBLayout)
         layoutSAMGB.addLayout(layoutFW)
         layoutSAMGB.addLayout(layoutSerList)
         layoutSAMGB.addWidget(pbProgram)
         layoutSAMGB.addWidget(self.programStatus)
-        #layoutSAMGB.addWidget(self.bossaOut)
         gbSAMProgram.setLayout(layoutSAMGB)
         layout.addWidget(gbSAMProgram)
 
@@ -109,7 +131,7 @@ class SAM3LoaderConfig(QtFixes.QDialog):
         rootprefix = util.getRootDir() + "/"
 
         if not sam3uFWLoc:
-            defLocfwF = rootprefix + "../../../hardware/api/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"
+            defLocfwF = rootprefix + "../../../hardware/capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"
             if os.path.isfile(defLocfwF):
                 sam3uFWLoc = str(defLocfwF)
                 QSettings().setValue("cwlite-sam3u-firmware-location", sam3uFWLoc)
@@ -126,6 +148,15 @@ class SAM3LoaderConfig(QtFixes.QDialog):
         layout.addWidget(gbDone)
 
         self.setLayout(layout)
+
+    def rbbuiltinchange(self, _=None):
+        if self.rbExternal.isChecked():
+            self.firmwareButton.setEnabled(True)
+            self.firmwareLocation.setEnabled(True)
+
+        if self.rbBuiltin.isChecked():
+            self.firmwareButton.setEnabled(False)
+            self.firmwareLocation.setEnabled(False)
 
     def findFirmware(self):
         fname, _ = QFileDialog.getOpenFileName(self, 'Find Firmware',  QSettings().value("cwlite-sam3u-firmware-location"), '*.bin')
@@ -149,14 +180,21 @@ class SAM3LoaderConfig(QtFixes.QDialog):
     def runSamba(self):
         sam = Samba()
 
+        if self.rbExternal.isChecked():
+            fw_data = open(self.firmwareLocation.text(), 'rb').read()
+        else:
+            fw_data = cwlite_getsome("SAM3U_CW1173.bin", filelike=False)
+
         self.programStatus.setText("Attempting to connect to %s\n"%self.serlist.currentText())
         sam.con(self.serlist.currentText())
         self.programStatus.append("Erasing...\n")
         sam.erase()
-        self.programStatus.append("Programming %s\n"%(self.firmwareLocation.text()))
-        data = open(self.firmwareLocation.text(),'rb').read()
-        sam.write(data)
-        if sam.verify(data):
+        if self.rbExternal.isChecked():
+            self.programStatus.append("Programming %s\n"%(self.firmwareLocation.text()))
+        else:
+            self.programStatus.append("Using built-in firmware file")
+        sam.write(fw_data)
+        if sam.verify(fw_data):
             self.programStatus.append("Program OK (Verify Passed!)\n")
             sam.flash.setBootFlash(True)
         else:

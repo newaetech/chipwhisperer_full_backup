@@ -36,15 +36,15 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
     ADDR_LEN        = 34
     ADDR_BAUD       = 35
 
-    def __init__(self, parentParam=None):
-        SimpleSerialTemplate.__init__(self, parentParam)
+    def __init__(self):
+        SimpleSerialTemplate.__init__(self)
         self._regVer = 0
         self.params.addChildren([
             {'name':'TX Baud', 'key':'txbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.txBaud, 'set':self.setTxBaud},
             {'name':'RX Baud', 'key':'rxbaud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.rxBaud, 'set':self.setRxBaud},
-            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'default':0, 'get':self.stopBits,
+            {'name':'Stop-Bits', 'key':'stopbits', 'type':'list', 'values':{'1':1, '2':2}, 'default':1, 'get':self.stopBits,
                             'set':self.setStopBits, 'readonly':True},
-            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'default':0, 'get':self.parity,
+            {'name':'Parity', 'key':'parity', 'type':'list', 'values':{'None':'n', 'Even':'e'}, 'default':'n', 'get':self.parity,
                             'set':self.setParity, 'readonly':True},
         ])
 
@@ -206,7 +206,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
         self.oa = scope.qtadc.sc
-        scope.connectStatus.connect(self.dis())
+        scope.connectStatus.connect(self.dis)
         # Check first!
         self.checkVersion()
         self.params.refreshAllParameters()

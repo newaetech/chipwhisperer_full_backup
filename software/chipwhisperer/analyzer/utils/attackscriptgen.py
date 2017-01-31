@@ -23,20 +23,21 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import sys
 from datetime import *
 from PySide.QtCore import *
-
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
 from chipwhisperer.analyzer.utils.scripteditor import MainScriptEditor
 from chipwhisperer.common.results.base import ResultsBase
 from functools import partial
 
+from chipwhisperer.common.utils.tracesource import TraceSource
+
 
 class AttackScriptGen(Parameterized):
     _name = "Attack Script Generator"
 
-    def __init__(self, parentParam, cwGUI):
+    def __init__(self, cwGUI):
         self.cwGUI = cwGUI
 
         self.locked = False
@@ -67,15 +68,14 @@ class AttackScriptGen(Parameterized):
         self.attackParams = Parameter(name="Attack", type='group')
         self.params.getChild(['Attack','Module']).stealDynamicParameters(self.attackParams)
 
-        self.cwGUI.api.sigTracesChanged.connect(self.updateAttackTraceLimits)
+    def projectChanged(self):
+        if self.attack:
+            self.attack.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
 
     def flushTimer(self):
         """Flush all pending script updates"""
         [p.updateDelayTimer.flush() for p in self.preprocessingListGUI if p is not None]
         self.attack.updateDelayTimer.flush()
-
-    def updateAttackTraceLimits(self):
-        self.attack.setTraceLimits(self.cwGUI.api.project().traceManager().numTraces(), self.cwGUI.api.project().traceManager().numPoints())
 
     def editorControl(self, filename, filedesc, default=False, bringToFront=True):
         """This is the call-back from the script editor file list, which opens editors"""
@@ -113,7 +113,8 @@ class AttackScriptGen(Parameterized):
 
             # No previous dock, do setup
             if 'dock' not in script.keys():
-                script['widget'].editWindow.runFunction.connect(partial(self.runScriptFunction, filename=script['filename']))
+                self.__runScriptConverter = partial(self.runScriptFunction, filename=script['filename'])
+                script['widget'].editWindow.runFunction.connect(self.__runScriptConverter)
                 script['dock'] = self.cwGUI.addDock(script['widget'], name=dockname, area=Qt.BottomDockWidgetArea)
 
             script['dock'].setWindowTitle(dockname)
@@ -157,10 +158,10 @@ class AttackScriptGen(Parameterized):
     def setAttack(self, module):
         self.attack = module
         if module:
-            self.updateAttackTraceLimits()
             self.reloadScripts()
             self.attack.scriptsUpdated.connect(self.reloadScripts)
             self.attack.runScriptFunction.connect(self.runScriptFunction)
+            self.attack.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
 
     def runScriptFunction(self, funcName, filename=None):
         """Loads a given script and runs a specific function within it."""
@@ -182,11 +183,11 @@ class AttackScriptGen(Parameterized):
 
     def reloadScripts(self):
         """Rewrite the auto-generated analyzer script, using settings from the GUI"""
-        if self.cwGUI.api.busy.value():
-            self.cwGUI.api.busy.connect(self.reloadScripts)
+        if self.cwGUI.api.executingScripts.value():
+            self.cwGUI.api.executingScripts.connect(self.reloadScripts)
             return
 
-        self.cwGUI.api.busy.disconnect(self.reloadScripts)
+        self.cwGUI.api.executingScripts.disconnect(self.reloadScripts)
 
         # Auto-Generated is always first
         mse = self.scriptList[0]['widget']
@@ -195,10 +196,10 @@ class AttackScriptGen(Parameterized):
         mse.editWindow.clear()
 
         mse.append("# Date Auto-Generated: %s" % datetime.now().strftime('%Y.%m.%d-%H.%M.%S'), 0)
+        mse.append("from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI", 0)
         mse.append("from chipwhisperer.common.scripts.base import UserScriptBase", 0)
         # Get imports from preprocessing
         mse.append("# Imports from Preprocessing", 0)
-        mse.append("import chipwhisperer.analyzer.preprocessing as preprocessing", 0)
         for p in self.preprocessingListGUI:
             if p:
                 imports = p.getImportStatements()
@@ -220,8 +221,8 @@ class AttackScriptGen(Parameterized):
 
         # Add main class
         mse.append("class UserScript(UserScriptBase):", 0)
-        mse.append("name = \"Auto-generated\"",1)
-        mse.append("description = \"Auto-generated Attack Script\"",1)
+        mse.append("_name = \"Auto-generated\"",1)
+        mse.append("_description = \"Auto-generated Attack Script\"",1)
 
         mse.append("def __init__(self, api):", 1)
         mse.append("UserScriptBase.__init__(self, api)")
@@ -241,7 +242,7 @@ class AttackScriptGen(Parameterized):
             if p and p.getName() != "None":
                 classname = type(p).__name__
                 instname = "ppMod%d" % i
-                mse.append("%s = preprocessing.%s.%s(None, %s)" % (instname, classname, classname, lastOutput))
+                mse.append("%s = %s.%s(%s)" % (instname, sys.modules[p.__class__.__module__].__name__, classname, lastOutput))
                 for s in p.getStatements('init'):
                     mse.append(s.replace("self.", instname + ".").replace("UserScript.", "self."))
                 mse.append("%s.init()" % (instname))
@@ -298,18 +299,14 @@ class AttackScriptGen(Parameterized):
                             mse.append(s.replace("UserScript.", "self."))
 
         mse.append("if __name__ == '__main__':\n"
-                    "    import sys\n"
-                    "    from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI\n"
                     "    import chipwhisperer.analyzer.ui.CWAnalyzerGUI as cwa\n"
                     "    from chipwhisperer.common.utils.parameter import Parameter\n"
-                    "    app = cwa.makeApplication()     # Comment if you don't need the GUI\n"
-                    "    Parameter.usePyQtGraph = True   # Comment if you don't need the GUI\n"
-                    "    api = CWCoreAPI()               # Instantiate the API\n"
-                    "    gui = cwa.CWAnalyzerGUI(api)    # Comment if you don't need the GUI\n"
-                    "    gui.show()                      # Comment if you don't need the GUI\n"
-                    "    api.runScriptClass(UserScript)  # Run UserScript through the API\n"
-                    "\n"
-                    "    sys.exit(app.exec_())           # Comment if you don't need the GUI\n", 0)
+                    "    Parameter.usePyQtGraph = True            # Comment if you don't need the GUI\n"
+                    "    api = CWCoreAPI()                        # Instantiate the API\n"
+                    "    app = cwa.makeApplication(\"Analyzer\")    # Comment if you don't need the GUI\n"
+                    "    gui = cwa.CWAnalyzerGUI(api)             # Comment if you don't need the GUI\n"
+                    "    api.runScriptClass(UserScript)           # Run UserScript through the API\n"
+                    "    app.exec_()                              # Comment if you don't need the GUI\n", 0)
 
         mse.restoreSliderPosition()
         self.cwGUI.api.runScriptModule(self.setupScriptModule(), None)

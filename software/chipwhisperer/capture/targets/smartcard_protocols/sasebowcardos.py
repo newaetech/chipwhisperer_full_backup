@@ -27,6 +27,7 @@ from _base import ProtocolTemplate
 
 
 class ProtocolSASEBOWCardOS(ProtocolTemplate):
+    _name = "SASEBO-W SmartCard OS"
 
     def loadEncryptionKey(self, key):
         if len(key) != 16:

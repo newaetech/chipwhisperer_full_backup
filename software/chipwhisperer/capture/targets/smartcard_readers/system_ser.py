@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 import serial
@@ -30,10 +31,10 @@ from chipwhisperer.common.utils import serialport
 
 
 class ReaderSystemSER(ReaderTemplate):
-    _name = "System Serial (SASEBO-W)"
+    _name = "System Serial (SASEBO-W without OpenADC)"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
         self.ser = None
         self.params.addChildren([
@@ -43,7 +44,7 @@ class ReaderSystemSER(ReaderTemplate):
             {'name':'ATR', 'key':'atr', 'type':'str', 'value':""}
         ])
 
-    def updateSerial(self):
+    def updateSerial(self, _=None):
         serialnames = serialport.scan()
         self.findParam('port').setLimits(serialnames)
         if len(serialnames) > 0:
@@ -118,9 +119,9 @@ class ReaderSystemSER(ReaderTemplate):
         #print ""
 
         if len(ack) < 1:
-            print "ACK Error: not received?"
+            logging.error('ACK Error: not received?')
         elif ord(ack[0]) != ins:
-            print "ACK Error: %x != %x"%(ins, ord(ack[0]))
+            logging.error('ACK Error: %x != %x' % (ins, ord(ack[0])))
 
         if len(stat) < 2:
             raise IOError("Status too small: %d, %s" % (len(stat), " ".join(["%02x"%ord(t) for t in stat])))
@@ -148,7 +149,7 @@ class ReaderSystemSER(ReaderTemplate):
             self.ser.open()
         self.reset()
 
-    def reset(self):
+    def reset(self, _=None):
         """Reset card & save the ATR"""
 
         self.atr = [0]
@@ -174,7 +175,7 @@ class ReaderSystemSER(ReaderTemplate):
 
         self.atr = [ord(t) for t in atr]
         stratr = " ".join(["%02x"%ord(t) for t in atr])
-        print "ATR: %s"%stratr
+        logging.info('ATR: %s' % stratr)
         self.findParam('atr').setValue(stratr)
 
     def getATR(self):

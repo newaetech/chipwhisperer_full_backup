@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 
 import ConfigParser
+import logging
 import os.path
 import re
 
@@ -34,7 +35,7 @@ from chipwhisperer.common.utils.tracesource import TraceSource
 class TraceManager(TraceSource):
     """
     When using traces in ChipWhisperer, you may have remapped a bunch of trace files into one
-    block of traces. This class is used to handle the remapping and provide methods to save,
+    segment of traces. This class is used to handle the remapping and provide methods to save,
     load and manage the traces.
     """
 
@@ -44,23 +45,27 @@ class TraceManager(TraceSource):
         self.dirty = util.Observable(False)
         self._numTraces = 0
         self._numPoints = 0
-        self.lastMapped = None
-        self.traceSets = []
+        self._sampleRate = 0
+        self.lastUsedSegment = None
+        self.traceSegments = []
+        if __debug__: logging.debug('Created: ' + str(self))
 
     def newProject(self):
-        """Creates a new empty set of traces"""
-        self.traceSets = []
+        """Create a new empty set of traces."""
+        self.traceSegments = []
         self.dirty.setValue(False)
         self.sigTracesChanged.emit()
 
     def saveProject(self, config, configfilename):
+        """Save the trace segments information to a project file."""
         config[self.name].clear()
-        for indx, t in enumerate(self.traceSets):
+        for indx, t in enumerate(self.traceSegments):
             config[self.name]['tracefile%d' % indx] = os.path.normpath(os.path.relpath(t.config.configFilename(), os.path.split(configfilename)[0]))
             config[self.name]['enabled%d' % indx] = str(t.enabled)
         self.dirty.setValue(False)
 
     def loadProject(self, configfilename):
+        """Load the trace segments information from a project file."""
         config = ConfigParser.RawConfigParser()
         config.read(configfilename)
         alltraces = config.items(self.name)
@@ -77,26 +82,31 @@ class TraceManager(TraceSource):
                 try:
                     ti.config.loadTrace(fname)
                 except Exception, e:
-                    print e.message
-                self.traceSets.append(ti)
+                    logging.error(e.message)
+                self.traceSegments.append(ti)
             if t[0].startswith("enabled"):
                 tnum = re.findall(r'[0-9]+', t[0])
-                self.traceSets[int(tnum[0])].enabled = t[1] == "True"
-        self.setModified()
+                self.traceSegments[int(tnum[0])].enabled = t[1] == "True"
+        self._setModified()
         self.dirty.setValue(False)
 
-    def removeTraceSet(self, pos):
-        self.traceSets.pop(pos)
-        self.setModified()
+    def removeTraceSegments(self, positions):
+        """Remove a list of trace segments. Do not repeat numbers!!"""
+        if not isinstance(positions, list):
+            positions = [positions]
+        else:
+            positions.sort(reverse=True)
+        for pos in positions:
+            self.traceSegments.pop(pos)
+        self._setModified()
 
-    def setTraceSetStatus(self, pos, newStatus):
-        self.traceSets[pos].enabled = newStatus
-        self.setModified()
+    def setTraceSegmentStatus(self, pos, newStatus):
+        """Set a trace segment as enabled/disabled."""
+        self.traceSegments[pos].enabled = newStatus
+        self._setModified()
 
     def getSegmentList(self, start=0, end=-1):
-        """
-        Get a list of segments.
-        """
+        """Return a list of segments."""
         tnum = start
         if end == -1:
             end = self._numTraces
@@ -104,34 +114,36 @@ class TraceManager(TraceSource):
         dataDict = {'offsetList':[], 'lengthList':[]}
 
         while(tnum < end):
-            t = self.findMappedTrace(tnum)
+            t = self.getSegment(tnum)
             dataDict['offsetList'].append(t.mappedRange[0])
             dataDict['lengthList'].append(t.mappedRange[1] - t.mappedRange[0] + 1)
             tnum = t.mappedRange[1] + 1
 
         return dataDict
 
-    def findMappedTrace(self, n):
-        if self.lastMapped is not None:
-            if self.lastMapped.mappedRange is not None and n >= self.lastMapped.mappedRange[0] and n <= self.lastMapped.mappedRange[1]:
-                return self.lastMapped
+    def getSegment(self, traceIndex):
+        """Return the trace segment with the specified trace in the list with all enabled segments."""
+        if self.lastUsedSegment is not None:
+            if self.lastUsedSegment.mappedRange is not None and self.lastUsedSegment.mappedRange[0] <= traceIndex <= \
+                    self.lastUsedSegment.mappedRange[1]:
+                return self.lastUsedSegment
             else:
                 # Only load one segment at a time for memory reasons
-                self.lastMapped.unloadAllTraces()
-                self.lastMapped = None
+                self.lastUsedSegment.unloadAllTraces()
+                self.lastUsedSegment = None
 
-        for t in self.traceSets:
-            if t.mappedRange:
-                if n >= t.mappedRange[0] and n <= t.mappedRange[1]:
-                    if not t.isLoaded():
-                        t.loadAllTraces(None, None)
-                    self.lastMapped = t
-                    return t
+        for traceSegment in self.traceSegments:
+            if traceSegment.mappedRange and traceSegment.mappedRange[0] <= traceIndex <= traceSegment.mappedRange[1]:
+                if not traceSegment.isLoaded():
+                    traceSegment.loadAllTraces(None, None)
+                self.lastUsedSegment = traceSegment
+                return traceSegment
 
-        raise ValueError("Error: Trace %d is not in mapped range." % n)
+        raise ValueError("Error: Trace %d is not in mapped range." % traceIndex)
 
     def getAuxData(self, n, auxDic):
-        t = self.findMappedTrace(n)
+        """Return data about a segment"""
+        t = self.getSegment(n)
         cfg = t.getAuxDataConfig(auxDic)
         if cfg is not None:
             filedata = t.loadAuxData(cfg["filename"])
@@ -141,49 +153,86 @@ class TraceManager(TraceSource):
         return {'cfgdata':cfg, 'filedata':filedata}
 
     def getTrace(self, n):
-        t = self.findMappedTrace(n)
+        """Return the trace with index n in the list of enabled segments"""
+        t = self.getSegment(n)
         return t.getTrace(n - t.mappedRange[0])
 
     def getTextin(self, n):
-        t = self.findMappedTrace(n)
+        """Return the input text of trace with index n in the list of enabled segments"""
+        t = self.getSegment(n)
         return t.getTextin(n - t.mappedRange[0])
 
     def getTextout(self, n):
-        t = self.findMappedTrace(n)
+        """Return the output text of trace with index n in the list of enabled segments"""
+        t = self.getSegment(n)
         return t.getTextout(n - t.mappedRange[0])
 
     def getKnownKey(self, n):
+        """Return the known encryption key."""
         try:
-            t = self.findMappedTrace(n)
+            t = self.getSegment(n)
             return t.getKnownKey(n - t.mappedRange[0])
         except ValueError:
             return []
 
-    def updateRanges(self):
+    def _updateRanges(self):
+        """Update the trace range for each segments."""
         startTrace = 0
+        self._sampleRate = 0
         self._numPoints = 0
-        for t in self.traceSets:
+        for t in self.traceSegments:
             if t.enabled:
                 tlen = t.numTraces()
                 t.mappedRange = [startTrace, startTrace+tlen-1]
                 startTrace = startTrace + tlen
-                self._numPoints = max(self._numPoints, int(t.config.attr("numPoints")))
+                np = int(t.config.attr("numPoints"))
+                if self._numPoints != np and np != 0:
+                    if self._numPoints == 0:
+                        self._numPoints = np
+                    else:
+                        logging.warning("Selected trace segments have different number of points: %d!=%d" % (self._numPoints, np))
+                        self._numPoints = min(self._numPoints, np)
+
+                sr = int(float(t.config.attr("scopeSampleRate")))
+                if self._sampleRate != sr and sr != 0:
+                    if self._sampleRate == 0:
+                        self._sampleRate = sr
+                    else:
+                        logging.warning("Selected trace segments have different sample rates: %d!=%d" % (self._sampleRate, sr))
             else:
                 t.mappedRange = None
         self._numTraces = startTrace
 
     def numPoints(self):
+        """Return the number of points in traces of the selected segments."""
         return self._numPoints
 
     def numTraces(self):
+        """Return the number of traces in the current list of enabled segments."""
         return self._numTraces
 
-    def appendTraceSet(self, ti, enabled=True):
+    def appendSegment(self, ti, enabled=True):
+        """Append a new segment to the list of trace segments."""
         ti.enabled = enabled
-        self.traceSets.append(ti)
-        self.setModified()
+        self.traceSegments.append(ti)
+        self._setModified()
 
-    def setModified(self):
+    def _setModified(self):
+        """Notify passive and active observers to be updated."""
         self.dirty.setValue(True)
-        self.updateRanges()
+        self._updateRanges()
         self.sigTracesChanged.emit()
+
+    def getSampleRate(self, ):
+        return self._sampleRate
+
+    def changeSegmentAttribute(self, segmentNum, attribute, value):
+        """Change the value of a segment attribute. Changes are saved instantly."""
+        self.traceSegments[segmentNum].config.setAttr(attribute, value)
+        self.traceSegments[segmentNum].config.saveTrace()
+        logging.info('Trace attribute "%s" of segment %d changed to: %s' % (attribute, segmentNum, value))
+        self._updateRanges()
+        self.sigTracesChanged.emit()
+
+    def __del__(self):
+        if __debug__: logging.debug('Deleted: ' + str(self))

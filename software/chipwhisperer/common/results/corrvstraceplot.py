@@ -34,8 +34,8 @@ class CorrelationVsTrace(AttackResultPlot, Plugin):
     _name = 'Correlation vs Traces in Attack'
     _description = "Plots maximum correlation vs number of traces in attack."
 
-    def __init__(self, parentParam=None, name=None):
-        AttackResultPlot.__init__(self, parentParam, name)
+    def __init__(self, name=None):
+        AttackResultPlot.__init__(self, name)
         self.setLabels(self.getName(), "Traces", self.getName())
 
     def redrawPlot(self):

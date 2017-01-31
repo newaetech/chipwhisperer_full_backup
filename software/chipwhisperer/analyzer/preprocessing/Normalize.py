@@ -119,28 +119,24 @@ class Normalize(PreprocessingBase):
     Normalize traces by a variety of methods
     """
     _name = "Normalize"
-    _description = "Normalizes by standard deviation"
+    _description = "Normalize by standard deviation."
 
-    def __init__(self, parentParam=None, traceSource = None):
-        super(Normalize, self).__init__(parentParam, traceSource)
-        self.updateNormClass(NormMean)
-
-    def __init__(self, parentParam=None, traceSource=None):
-        PreprocessingBase.__init__(self, parentParam, traceSource)
+    def __init__(self, traceSource=None):
+        PreprocessingBase.__init__(self, traceSource)
         self.ptStart = 0
         self.ptEnd = 0
         self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
 
         self.params.addChildren([
-            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'value':NormMean, 'action':lambda _:self.updateNormClass()},
-            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'action':lambda _:self.updateScript()},
-            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'action':lambda _:self.updateScript()},
-            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'action':lambda _:self.updateScript()},
-            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':lambda _:self.updateScript()},
+            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'value':NormMean, 'action':self.updateNormClass},
+            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'action':self.updateScript},
+            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'action':self.updateScript},
+            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'action':self.updateScript},
+            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateScript},
         ])
         self.updateScript()
 
-    def updateScript(self, ignored=None):
+    def updateScript(self, _=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
         self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').getValue().__name__)
         
@@ -192,8 +188,8 @@ class Normalize(PreprocessingBase):
     def setNormFunc(self, cl):
         self.norm = cl()
 
-    def updateNormClass(self, cl):
-        self.norm = cl()
+    def updateNormClass(self, p):
+        self.norm = p.getValue()()
 
         if self.norm.UseF1Coeff:
             self.findParam('f1coeff').setValue(0)

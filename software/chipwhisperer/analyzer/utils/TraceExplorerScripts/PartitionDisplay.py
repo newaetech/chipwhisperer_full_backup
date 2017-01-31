@@ -55,30 +55,28 @@ class DifferenceModeTTest(object):
             pbDialog.setMinimum(0)
             pbDialog.setMaximum(numkeys * numparts)
 
-        # TODO: This is because we run through loop multiple times
-        # When numparts == 2 (default for rand vs. fixed), we actually
-        # run loop 4 times I think, but with all same data (i.e. part1 vs part2, part2 vs part1)
-        # need to verify this...
-        scalingFactor = 1.0 / (numparts * numparts)
+        #T-Test makes sense between 2 partitions, todo extend
+        if numparts != 2:
+            raise AttributeError("T-Test works on with 2-partition options")
 
         SADSeg = np.zeros((numkeys, numpoints))
         for bnum in range(0, numkeys):
-            for i in range(0, numparts):
-                if pbDialog:
-                    pbDialog.updateStatus(numparts * bnum + i)
-                    util.updateUI()
-                    if pbDialog.wasAborted():
-                        return SADSeg
-                for j in range(0, numparts):
-                    if means[bnum][i] is not None and means[bnum][j] is not None:
+            i = 0
+            j = 1
+            if pbDialog:
+                pbDialog.updateStatus(numparts * bnum + i)
+                util.updateUI()
+                if pbDialog.wasAborted():
+                    return SADSeg
 
-                        ttest = np.subtract(means[bnum][i], means[bnum][j])
-                        ttest /= np.sqrt((var[bnum][i]/num[bnum][i]) + (var[bnum][j]/num[bnum][j]))
+            if means[bnum][i] is not None and means[bnum][j] is not None:
+                ttest = np.subtract(means[bnum][i], means[bnum][j])
+                ttest /= np.sqrt((var[bnum][i]/num[bnum][i]) + (var[bnum][j]/num[bnum][j]))
 
-                        # if t-test is NaN indicates perhaps exact same data
-                        ttest = np.nan_to_num(ttest)
+                # if t-test is NaN indicates perhaps exact same data
+                ttest = np.nan_to_num(ttest)
 
-                        SADSeg[bnum] = np.add(SADSeg[bnum], np.abs(ttest) * scalingFactor)
+                SADSeg[bnum] = np.add(SADSeg[bnum], np.abs(ttest))
 
         if pbDialog:
             pbDialog.updateStatus(numkeys * numparts)
@@ -268,7 +266,7 @@ class PartitionDisplay(Parameterized, AutoScript):
         self.graphDock.hide()
 
     def defineName(self):
-        self.partObject = Partition(self)
+        self.partObject = Partition()
         partModeList = {}
         for a in self.partObject.supportedMethods:
             partModeList[a.partitionType] = a
@@ -302,7 +300,7 @@ class PartitionDisplay(Parameterized, AutoScript):
               ]},
         ])
 
-    def updatePOI(self, ignored=None):
+    def updatePOI(self, _=None):
         self.updateScript()
 
         if self._autoscript_init == False:

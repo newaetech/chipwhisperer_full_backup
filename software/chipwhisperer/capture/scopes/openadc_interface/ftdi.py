@@ -18,7 +18,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import sys
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.common.utils.pluginmanager import Plugin
@@ -32,13 +32,13 @@ except:
 class OpenADCInterface_FTDI(Parameterized, Plugin):
     _name = "FTDI (SASEBO-W/SAKURA-G)"
 
-    def __init__(self, parentParam, oadcInstance):
+    def __init__(self, oadcInstance):
         self.serialNumber = ''
         self._serialnumbers = ['']
 
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Refresh Device List', 'type':'action', 'action':lambda _ : self.serialRefresh()},
+            {'name':'Refresh Device List', 'type':'action', 'action':self.serialRefresh},
             {'name':'Device Serial Number', 'key':'snum', 'type':'list', 'values':[''], 'get':self.getSerialNumber, 'set':self.setSelectedDevice},
         ])
         self.ser = None
@@ -55,12 +55,8 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
     def setSelectedDevice(self, snum):
         self.serialNumber = snum
 
-    def __del__(self):
-        if self.ser != None:
-            self.ser.close()
-
     def con(self):
-        if self.ser == None:
+        if self.ser is None:
             try:
                 self.dev = ft.openEx(str(self.serialNumber), ft.ftd2xx.OPEN_BY_SERIAL_NUMBER)
                 self.dev.setBitMode(0x00, 0x40)
@@ -73,20 +69,21 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
 
         try:
             self.scope.con(self.ser)
-            print("OpenADC Found, Connecting")
-        except IOError,e:
+            logging.info('OpenADC Found, Connecting')
+        except IOError as e:
             exctype, value = sys.exc_info()[:2]
-            raise IOError("OpenADC Error: %s"%(str(exctype) + str(value)) + " - " + e.message)
-
-        #if self.cwAdvancedSettings:
-        #    self.cwAdvancedSettings.setOpenADC(self.scope)
+            raise IOError("OpenADC Error: %s" % (str(exctype) + str(value)) + " - " + e.message)
 
     def dis(self):
-        if self.ser != None:
-            self.ser.close()
-            self.ser = None
+        self.ser = None
+        if hasattr(self, 'dev'):
+            self.dev.close()
+            del self.dev
 
-    def serialRefresh(self):
+    def __del__(self):
+        self.dis()
+
+    def serialRefresh(self, _=None):
         serialnames = ft.listDevices()
         if serialnames == None:
             serialnames = [""]
@@ -94,7 +91,6 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
         self.findParam('snum').setValue(serialnames[0])
 
     def setSerialNumberLimits(self, newitems):
-
         for s in newitems:
             if s not in self._serialnumbers:
                 self._serialnumbers.append(s)
@@ -106,9 +102,3 @@ class OpenADCInterface_FTDI(Parameterized, Plugin):
 
     def write(self, data, debug=False):
         return self.dev.write(data)
-
-    def getTextName(self):
-        try:
-            return self.ser.name
-        except:
-            return "None?"

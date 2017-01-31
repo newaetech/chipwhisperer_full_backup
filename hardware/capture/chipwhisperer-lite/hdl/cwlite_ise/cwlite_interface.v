@@ -30,8 +30,8 @@ module cwlite_interface(
 	 output wire       amp_hilo,
 	 
 	 /* XMEGA Programming - not used, but need to ensure line is floating */
-	 input wire       target_PDID,
-	 input wire       target_PDIC,
+	 inout wire       target_PDID,
+	 inout wire       target_PDIC,
 	 
 	 /* Spare Lines - AVR Programming */
 	 output wire 		target_nRST,
@@ -168,6 +168,13 @@ module cwlite_interface(
 		.reg_hyplen_i(reg_hyplen_cw |  reg_hyplen_glitch | reg_hyplen_reconfig)
 		
 	);	
+	
+	wire enable_output_nrst;
+	wire output_nrst;
+	wire enable_output_pdid;
+	wire output_pdid;
+	wire enable_output_pdic;
+	wire output_pdic;
 		
 		reg_chipwhisperer reg_chipwhisperer(
 		.reset_i(reg_rst),
@@ -211,6 +218,13 @@ module cwlite_interface(
 		.hsglitchb_o(glitchout_lowpwr),
 		
 		.enable_avrprog(enable_avrprog),
+		
+		.enable_output_nrst(enable_output_nrst),
+	   .output_nrst(output_nrst),
+	   .enable_output_pdid(enable_output_pdid),
+	   .output_pdid(output_pdid),
+	   .enable_output_pdic(enable_output_pdic),
+	   .output_pdic(output_pdic),
 		
 		.uart_tx_i(USB_ser0_tx_i),
 		.uart_rx_o(USB_ser0_rx_o),
@@ -261,10 +275,25 @@ module cwlite_interface(
 	assign reg_hyplen_reconfig = 'd0;
 	assign reg_datai_reconfig = 'd0;
 `endif
-	
-	 assign target_nRST = (enable_avrprog) ? USB_treset_i : 1'bZ;
-	 assign target_MOSI = (enable_avrprog) ? USB_spi0_mosi_i : 1'bZ;
-	 assign target_SCK = (enable_avrprog) ? USB_spi0_sck_i : 1'bZ;
+
+	 wire target_highz = target_npower;
+	 	
+	 assign target_PDID = (target_highz) ? 1'bZ :
+		                   (enable_output_pdid) ? output_pdid :
+								 1'bZ;
+							
+	 assign target_PDIC = (target_highz) ? 1'bZ:
+	                      (enable_output_pdic) ? output_pdic :
+								 1'bZ;
+	                    
+	 assign target_nRST = (target_highz) ? 1'bZ :
+	                      (enable_avrprog) ? USB_treset_i :
+								 (enable_output_nrst) ? output_nrst :
+								 1'bZ;
+	 assign target_MOSI = (target_highz) ? 1'bZ :
+	                      (enable_avrprog) ? USB_spi0_mosi_i : 1'bZ;
+	 assign target_SCK = (target_highz) ? 1'bZ :
+	                      (enable_avrprog) ? USB_spi0_sck_i : 1'bZ;
 	 assign USB_spi0_miso_o = (enable_avrprog) ? target_MISO : ext_miso;	
 	 
 	 wire sc_enable = 1'b1;
@@ -280,7 +309,7 @@ module cwlite_interface(
 	 assign ext_mosi = USB_spi0_mosi_i;
 	 assign lcd_cs = USB_spi0_cs0;
 	 assign lcd_dc = USB_spare2;
-	 assign avr_cs = USB_spare1;
+	 assign avr_cs = USB_spare1; 
 			
 	/*
 	assign ila_trigbus[7:0] = USB_D;

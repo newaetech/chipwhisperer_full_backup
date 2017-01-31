@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhispererTargets
@@ -30,9 +31,9 @@ import chipwhisperer.capture.scopes.cwhardware.ChipWhispererTargets as ChipWhisp
 class ReaderChipWhispererUSI(ReaderTemplate):
     _name = "CWCR2-USI (obsolete)"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
-        self.params.addChildren([
+    def __init__(self):
+        ReaderTemplate.__init__(self)
+        self.getParams().addChildren([
             {'name':'Baud', 'type':'int', 'value':9600, 'action':lambda p: self.setBaud(p.getValue())}
         ])
         self.usi = ChipWhispererTargets.CWUniversalSerial()
@@ -79,9 +80,10 @@ class ReaderChipWhispererUSI(ReaderTemplate):
         temprx = bytearray(self.usi.read(2 + rxdatalen + txdatalen + proctime, waitonly=True))
 
         # Uncomment to print data stream on RX pin
-        print "APDU: ",
-        for t in temprx: print "%02x " % t,
-        print ""
+        stream = 'APDU: '
+        for t in temprx:
+            stream += "%02x " % t
+        logging.info(stream)
 
         # We've actually read entire sent + received data in
         # Strip header

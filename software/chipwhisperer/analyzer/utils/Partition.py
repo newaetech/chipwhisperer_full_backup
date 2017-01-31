@@ -26,15 +26,13 @@
 #=================================================
 
 import copy
-from PySide.QtCore import *
-from PySide.QtGui import *
-import numpy as np
+import logging
 import random
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import getHW
-from chipwhisperer.analyzer.attacks.models.AES128_8bit import INVSHIFT
-from chipwhisperer.analyzer.models.aes.key_schedule import keyScheduleRounds
-from chipwhisperer.analyzer.models.aes.funcs import sbox, inv_sbox
-import chipwhisperer.common.utils.qt_tweaks as QtFixes
+
+import numpy as np
+from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
+from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
+from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.parameter import Parameterized
 
 
@@ -60,9 +58,9 @@ class PartitionHDLastRound(object):
 
         guess = [0] * 16
         for i in range(0, 16):
-            st10 = ct[INVSHIFT[i]]
+            st10 = ct[AES128_8bit.INVSHIFT[i]]
             st9 = inv_sbox(ct[i] ^ key[i])
-            guess[i] = getHW(st9 ^ st10)
+            guess[i] = AES128_8bit.getHW(st9 ^ st10)
         return guess
 
 
@@ -80,7 +78,7 @@ class PartitionHWIntermediate(object):
 
         guess = [0] * 16
         for i in range(0, 16):
-            guess[i] = getHW(sbox(text[i] ^ key[i]))
+            guess[i] = AES128_8bit.getHW(sbox(text[i] ^ key[i]))
 
         return guess
 
@@ -124,34 +122,6 @@ class PartitionRandDebug(object):
         return [random.randint(0, self.numRand - 1)]
 
 
-class PartitionDialog(QtFixes.QDialog):
-    """Open dialog to run partioning"""
-
-    def __init__(self, parent, partInst):
-        super(PartitionDialog, self).__init__(parent)
-
-        self.part = partInst
-
-        self.setWindowTitle("Partition Traces")
-        self.setObjectName("Partition Traces")
-
-        layoutPart = QHBoxLayout()
-
-        pbStart = QPushButton("Generate Partitions")
-        pbStart.clicked.connect(self.runGenerate)
-        layoutPart.addWidget(pbStart)
-        self.setLayout(layoutPart)
-
-    def runGenerate(self):
-        pb = QProgressBar(self)
-
-        # TODO: Partition generation doesn't work
-        pb.setMinimum(0)
-        pb.setMaximum(self.part.getTraceSource.numTraces())
-
-        self.part.runPartitions(report=pb.updateStatus)
-
-
 class Partition(Parameterized):
     """
     Base Class for all partioning modules
@@ -172,7 +142,7 @@ class Partition(Parameterized):
 
     supportedMethods = [PartitionRandvsFixed, PartitionEncKey, PartitionRandDebug, PartitionHWIntermediate, PartitionHDLastRound]
 
-    def __init__(self, parent):
+    def __init__(self):
         self.setPartMethod(PartitionRandvsFixed)
         self.partDataCache = None
 
@@ -206,12 +176,12 @@ class Partition(Parameterized):
             end = self._traces.numTraces()
 
         # Generate blank partition table
-        partitionTable = self.createBlankTable(self._traces.findMappedTrace(start))
-        print np.shape(partitionTable)
+        partitionTable = self.createBlankTable(self._traces.getSegment(start))
+        logging.info(np.shape(partitionTable))
 
         tnum = start
         while tnum < end:
-            t = self._traces.findMappedTrace(tnum)
+            t = self._traces.getSegment(tnum)
             # Discover where this trace starts & ends
             tmapstart = t.mappedRange[0]
             tmapend = t.mappedRange[1]
@@ -254,7 +224,7 @@ class Partition(Parameterized):
         start = tRange[0]
         end = tRange[1]
 
-        num_keys=len(self.partMethod.getPartitionNum(self._traces.findMappedTrace(start), 0))
+        num_keys=len(self.partMethod.getPartitionNum(self._traces.getSegment(start), 0))
         num_parts=self.partMethod.getNumPartitions()
 
         if partitionTable is None:
@@ -265,7 +235,7 @@ class Partition(Parameterized):
 
             tnum = start
             while tnum < end:
-                t = self._traces.findMappedTrace(tnum)
+                t = self._traces.getSegment(tnum)
                 # Discover where this trace starts & ends
                 tmapstart = t.mappedRange[0]
                 tmapend = t.mappedRange[1]

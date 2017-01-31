@@ -26,23 +26,22 @@
 #=================================================
 
 import numpy as np
+
+from ..algorithmsbase import AlgorithmsBase
 from chipwhisperer.common.utils.pluginmanager import Plugin
-from chipwhisperer.common.utils.parameter import Parameterized
 
 
-class AttackCPA_Bayesian(Parameterized, Plugin):
+class AttackCPA_Bayesian(AlgorithmsBase):
     """
-    Bayesian CPA, as described in .
+    Bayesian CPA. NOT WORKING!!
     """
     _name = "Bayesian CPA"
 
-    def __init__(self, parentParam, targetModel, leakageFunction):
-        self.model = targetModel
+    def __init__(self):
+        AlgorithmsBase.__init__(self)
+        self.updateScript()
 
-    def setByteList(self, brange):
-        self.brange = brange
-
-    def addTraces(self, tracedata, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
+    def addTraces(self, traceSource, tracerange, progressBar=None, pointRange=None, algo="log", tracesLoop=None):
         keyround=self.keyround
         modeltype=self.modeltype
         brange=self.brange
@@ -65,10 +64,10 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
             # Handle Offset
             tnum = i + tracerange[0]
             try:
-                data.append(tracedata.getTrace(tnum))
-                textins.append(tracedata.getTextin(tnum))
-                textouts.append(tracedata.getTextout(tnum))
-                knownkeys.append(tracedata.getKnownKey(tnum))
+                data.append(traceSource.getTrace(tnum))
+                textins.append(traceSource.getTextin(tnum))
+                textouts.append(traceSource.getTextout(tnum))
+                knownkeys.append(traceSource.getKnownKey(tnum))
             except Exception, e:
                 progressBar.abort(e.message)
                 return
@@ -105,9 +104,9 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
 
                     #Generate the output of the SBOX
                     if modeltype == "Hamming Weight":
-                        hypint = self.model.HypHW(pt, ct, key, bnum);
+                        hypint = self.model.HypHW(pt, ct, key, bnum)
                     elif modeltype == "Hamming Distance":
-                        hypint = self.model.HypHD(pt, ct, key, bnum);
+                        hypint = self.model.HypHD(pt, ct, key, bnum)
                     else:
                         raise ValueError("modeltype invalid")
 
@@ -190,7 +189,7 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
     def _getResult(self, bnum, hyprange=None):
         if hyprange == None:
             hyprange = range(0,256)
-        return [self.all_diffs[bnum][i] for i in hyprange];
+        return [self.all_diffs[bnum][i] for i in hyprange]
 
     def getDiff(self, bnum, hyprange=None):
         if self.algo == "original":
@@ -205,6 +204,3 @@ class AttackCPA_Bayesian(Parameterized, Plugin):
         for i in self.brange:
             t[i] = self.getDiff(i)
         return t
-
-    def setStatsReadyCallback(self, sr):
-        pass

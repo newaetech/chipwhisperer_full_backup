@@ -24,7 +24,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-
+import logging
 import time
 from _base import AuxiliaryTemplate
 from chipwhisperer.common.utils import timer
@@ -35,11 +35,11 @@ from chipwhisperer.common.utils import util
 class GPIOToggle(AuxiliaryTemplate):
     _name = 'GPIO Toggle'
 
-    def __init__(self, parentParam=None):
-        AuxiliaryTemplate.__init__(self, parentParam)
+    def __init__(self):
+        AuxiliaryTemplate.__init__(self)
         self.pin = None
         self.lastPin = None
-        self.params.addChildren([
+        self.getParams().addChildren([
                  {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'action':self.settingsChanged},
                  {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'action':self.settingsChanged},
                  {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
@@ -82,7 +82,7 @@ class GPIOToggle(AuxiliaryTemplate):
             util.updateUI()
 
     def trigger(self, _=None):
-        print "AUXIO: Trigger pin %d" % self.pin
+        logging.info('AUXIO: Trigger pin %d' % self.pin)
         self.checkMode()
         CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
         self.nonblockingSleep(self.triglength)

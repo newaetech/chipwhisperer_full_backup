@@ -33,8 +33,8 @@ class OutputVsTime(AttackResultPlot, Plugin):
     _name = "Output vs Point Plot"
     _description = "Output vs Point Plot Description."
 
-    def __init__(self, parentParam=None, name=None):
-        AttackResultPlot.__init__(self, parentParam, name)
+    def __init__(self, name=None):
+        AttackResultPlot.__init__(self, name)
         self.setLabels("Attack Output vs. Sample for Subkey Guesses", "Sample Number", "Attack Output")
 
     def getPrange(self, bnum, diffs):

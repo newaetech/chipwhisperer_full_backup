@@ -23,18 +23,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import sys  # Do not remove!
-from chipwhisperer.capture.utils.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
+from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
+from chipwhisperer.capture.ui.GlitchExplorerDialog import GlitchExplorerDialog as GlitchExplorerDialog
 from chipwhisperer.capture.utils.SerialTerminalDialog import SerialTerminalDialog as SerialTerminalDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.results.base import ResultsBase
-from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
+from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from chipwhisperer.common.ui.ProgressBar import *
 from chipwhisperer.common.ui.ValidationDialog import ValidationDialog
-from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 from chipwhisperer.common.utils import pluginmanager
-from chipwhisperer.capture.ui.EncryptionStatusMonitor import EncryptionStatusMonitor
 from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 
 
 class CWCaptureGUI(CWMainGUI):
@@ -110,8 +109,9 @@ class CWCaptureGUI(CWMainGUI):
 
     def addToolbarItems(self, toolbar):
         # Capture
-        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.capture1))
-        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture Trace Set', self, triggered=lambda: self.doCapture(self.captureM))
+        self.capture1Act = QAction(QIcon(':/images/play1.png'), 'Capture 1', self, triggered=lambda: self.doCapture(self.api.capture1))
+        self.captureMAct = QAction(QIcon(':/images/playM.png'), 'Capture M', self, triggered=lambda: self.doCapture(self.captureM))
+        self.stopCaptureMAct = QAction(QIcon(':/images/stopM.png'), 'Stop Capture', self, triggered=lambda: self.capturingProgressBar.abort(), enabled=False)
 
         # Master
         self.captureStatus = QToolButton()
@@ -133,6 +133,7 @@ class CWCaptureGUI(CWMainGUI):
 
         toolbar.addAction(self.capture1Act)
         toolbar.addAction(self.captureMAct)
+        toolbar.addAction(self.stopCaptureMAct)
         toolbar.addSeparator()
         toolbar.addWidget(QLabel('Master:'))
         toolbar.addWidget(self.captureStatus)
@@ -146,27 +147,27 @@ class CWCaptureGUI(CWMainGUI):
     def doConDisScope(self):
         if self.scopeStatus.defaultAction() == self.scopeStatusActionDis:
             if self.api.connectScope():
-                self.updateStatusBar("Scope Connected")
+                logging.info("Scope Connected")
         else:
             self.api.disconnectScope()
-            self.updateStatusBar("Scope Disconnected")
+            logging.info("Scope Disconnected")
 
     def doConDisTarget(self):
         if self.targetStatus.defaultAction() == self.targetStatusActionDis:
             if self.api.connectTarget():
-                self.updateStatusBar("Target Connected")
+                logging.info("Target Connected")
         else:
             self.api.disconnectTarget()
-            self.updateStatusBar("Target Disconnected")
+            logging.info("Target Disconnected")
 
     def doConDis(self):
         """Toggle connect button pushed (master): attempts both target & scope connection"""
         if self.captureStatus.defaultAction() == self.captureStatusActionDis:
             if self.api.connect():
-                self.updateStatusBar("Target and Scope Connected")
+                logging.info("Target and Scope Connected")
         else:
             if self.api.disconnect():
-                self.updateStatusBar("Target and Scope Disconnected")
+                logging.info("Target and Scope Disconnected")
 
     def validateSettings(self, warnOnly=False):
         # Validate settings from all modules before starting multi-api
@@ -202,7 +203,7 @@ class CWCaptureGUI(CWMainGUI):
             vw.addMessage(*i)
 
         if self.api.project().isUntitled():
-            vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before api", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
+            vw.addMessage("info", "File Menu", "Project not saved, using default-data-dir", "Save project file before capture.", "8c9101ff-7553-4686-875d-b6a8a3b1d2ce")
 
         if vw.numWarnings() > 0 or warnOnly is False:
             return vw.exec_()
@@ -210,42 +211,41 @@ class CWCaptureGUI(CWMainGUI):
             return True
 
     def doCapture(self, callback):
+        self.clearFocus()
         try:
             self.capture1Act.setEnabled(False)
             self.captureMAct.setEnabled(False)
+            util.updateUI()  # Hide the buttons right away
             if callback():
-                self.updateStatusBar("Capture completed")
+                logging.info("Capture completed.")
         finally:
             self.capture1Act.setEnabled(True)
             self.captureMAct.setEnabled(True)
             self.capture1Act.setChecked(False)
             self.captureMAct.setChecked(False)
 
-    def capture1(self):
-        self.api.capture1()
-
     def captureM(self):
-        self.api.captureM(ProgressBar("Capture in Progress", "Capturing:"))
-
-
-def makeApplication():
-    # Create the Qt Application
-    app = QApplication(sys.argv)
-    app.setOrganizationName(CWCoreAPI.__organization__)
-    app.setApplicationName(CWCoreAPI.__name__ + " - Capture ")
-    return app
+        try:
+            self.stopCaptureMAct.setEnabled(True)
+            self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
+            ret = self.api.captureM(self.capturingProgressBar)
+        finally:
+            self.stopCaptureMAct.setEnabled(False)
+        return ret
 
 
 def main():
     # Create the Qt Application
-    app = makeApplication()
+    app = makeApplication("Capture")
     Parameter.usePyQtGraph = True
+
     # Create and show the GUI
     window = CWCaptureGUI(CWCoreAPI())
     window.show()
 
     # Run the main Qt loop
-    sys.exit(app.exec_())
+    app.exec_()
+
 
 if __name__ == '__main__':
     main()

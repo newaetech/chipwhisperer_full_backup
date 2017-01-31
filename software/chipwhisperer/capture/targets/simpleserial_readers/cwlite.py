@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import SimpleSerialTemplate
 from chipwhisperer.hardware.naeusb.serial import USART as CWL_USART
@@ -29,10 +30,11 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
-    _name = 'ChipWhisperer-Lite'
+    _name = 'NewAE USB (CWLite/CW1200)'
 
-    def __init__(self, parentParam=None):
-        SimpleSerialTemplate.__init__(self, parentParam)
+    def __init__(self):
+        SimpleSerialTemplate.__init__(self)
+        self._baud = 38400
         self.cwlite_usart = None
         self.params.addChildren([
             {'name':'baud', 'type':'int', 'key':'baud', 'limits':(500, 2000000), 'get':self.baud, 'set':self.setBaud, 'default':38400}
@@ -40,19 +42,23 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
 
     @setupSetParam("baud")
     def setBaud(self, baud):
+        self._baud = baud
         if self.cwlite_usart:
             self.cwlite_usart.init(baud)
         else:
-            print "Baud rate not set, need to connect first"
+            logging.error('Baud rate not set, need to connect first')
 
     def baud(self):
-        return 38400
+        return self._baud
 
     def write(self, string):
         self.cwlite_usart.write(string)
 
     def inWaiting(self):
-        return self.cwlite_usart.inWaiting()
+        bwait =  self.cwlite_usart.inWaiting()
+        if bwait == 127:
+            logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
+        return bwait
 
     def read(self, num=0, timeout=250):
         data = bytearray(self.cwlite_usart.read(num, timeout=timeout))

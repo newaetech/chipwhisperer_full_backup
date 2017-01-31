@@ -23,7 +23,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-from datetime import datetime
 
 from .base import ResultsBase
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
@@ -36,14 +35,14 @@ class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
     _name = 'Trace Recorder'
     _description = 'Saves the traces for a given input.'
 
-    def __init__(self, parentParam=None, name=None):
+    def __init__(self, name=None):
         PassiveTraceObserver.__init__(self)
 
         self.getParams().addChildren([
             {'name':'Trace Format', 'key':'tracefmt', 'type':'list', 'values':CWCoreAPI.getInstance().valid_traces, 'value':None},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"]},
-            {'name':'Save', 'type':'action', 'action':lambda _: self.processTraces()},
+            {'name':'Save', 'type':'action', 'action':self.processTraces},
         ])
 
         self.findParam('input').setValue(TraceSource.registeredObjects["Trace Management"])
@@ -70,15 +69,16 @@ class TraceRecorder(ResultsBase, PassiveTraceObserver, Plugin):
         self.findParam('pointrng').setLimits((0, lastPoint))
         self.findParam('pointrng').setValue((max(0, pointRange[0]), min(lastPoint,  pointRange[1] if pointRange[1] >= 0 else pointRange)))
 
-    def processTraces(self):
+    def processTraces(self, _=None):
         tstart = self.findParam('tracerng').getValue()[0]
         tend = self.findParam('tracerng').getValue()[1]
         pstart = self.findParam('pointrng').getValue()[0]
         pend = self.findParam('pointrng').getValue()[1]
 
         trace = CWCoreAPI.getInstance().getNewTrace(self.findParam('tracefmt').getValue())
-        trace.config.setAttr("notes", "Recorded from \"%s\" output: Traces (%s,%s). Points (%s,%s)" % (self.findParam('Input').getKey(), tstart, tend, pstart, pend))
+        trace.config.setAttr("scopeSampleRate", self._traceSource.getSampleRate())
+        trace.config.setAttr("notes", "Recorded from \"%s\" output: Traces (%s,%s). Points (%s,%s)" % (self.findParam('Input').getValueKey(), tstart, tend, pstart, pend))
         for tnum in range(tstart, tend+1):
             trace.addTrace(self.getTraceSource().getTrace(tnum)[pstart:pend+1], self.getTraceSource().getTextin(tnum), self.getTraceSource().getTextout(tnum), self.getTraceSource().getKnownKey(tnum))
         trace.closeAll()
-        CWCoreAPI.getInstance().project().traceManager().appendTraceSet(trace, enabled=False)
+        CWCoreAPI.getInstance().project().traceManager().appendSegment(trace, enabled=False)

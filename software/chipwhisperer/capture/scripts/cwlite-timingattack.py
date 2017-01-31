@@ -24,7 +24,6 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
-#
 
 """
 This script is an example of a timing attack on a simple password checker. 
@@ -34,11 +33,8 @@ Usage: ::
     python cwlite-timingattack.py
 """
 
-import sys
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
-import chipwhisperer.capture.ui.CWCaptureGUI as cwc       # Import the ChipWhispererCapture GUI
 from chipwhisperer.common.scripts.base import UserScriptBase
-from chipwhisperer.common.utils.parameter import Parameter
 
 
 class UserScript(UserScriptBase):
@@ -60,11 +56,11 @@ class UserScript(UserScriptBase):
         self.api.setParameter(['Generic Settings', 'Scope Module', 'ChipWhisperer/OpenADC'])
         self.api.setParameter(['Generic Settings', 'Target Module', 'Simple Serial'])
         self.api.setParameter(['Generic Settings', 'Trace Format', 'ChipWhisperer/Native'])
-        self.api.setParameter(['Simple Serial', 'Connection', 'ChipWhisperer-Lite'])
-        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'ChipWhisperer-Lite'])
+        self.api.setParameter(['Simple Serial', 'Connection', 'NewAE USB (CWLite/CW1200)'])
+        self.api.setParameter(['ChipWhisperer/OpenADC', 'Connection', 'NewAE USB (CWLite/CW1200)'])
+
         self.api.connect()
-        
-        
+
         # Next: set up everything we need to connect to the target
         # Put all of our commands in a list and execute them at the end
         lstexample = [
@@ -92,7 +88,7 @@ class UserScript(UserScriptBase):
                       ['Reset AVR/XMEGA via CW-Lite', 'Delay (Post-Arm)', 1200],
                       ]
         
-        #Download all hardware setup parameters
+        # Download all hardware setup parameters
         for cmd in lstexample: 
             self.api.setParameter(cmd)
                        
@@ -126,12 +122,11 @@ class UserScript(UserScriptBase):
 
 
 if __name__ == '__main__':
-    app = cwc.makeApplication()                     # Comment this line if you don't want to use the GUI
-    Parameter.usePyQtGraph = True                   # Comment this line if you don't want to use the GUI
-    api = CWCoreAPI()                               # Instantiate the API
-    # app.setApplicationName("Capture Scripted")    # If you DO NOT want to overwrite settings from the GUI
-    gui = cwc.CWCaptureGUI(api)                     # Comment this line if you don't want to use the GUI
-    gui.show()                                      # Comment this line if you don't want to use the GUI
-    api.runScriptClass(UserScript)                  # Run the User Script
-
-    sys.exit(app.exec_())                           # Comment this line if you don't want to use the GUI
+    import chipwhisperer.capture.ui.CWCaptureGUI as cwc         # Import the ChipWhispererCapture GUI
+    from chipwhisperer.common.utils.parameter import Parameter  # Comment this line if you don't want to use the GUI
+    Parameter.usePyQtGraph = True                               # Comment this line if you don't want to use the GUI
+    api = CWCoreAPI()                                           # Instantiate the API
+    app = cwc.makeApplication("Capture")                        # Change the name if you want a different settings scope
+    gui = cwc.CWCaptureGUI(api)                                 # Comment this line if you don't want to use the GUI
+    api.runScriptClass(UserScript)                              # Run the User Script (executes "run()" by default)
+    app.exec_()                                                 # Comment this line if you don't want to use the GUI

@@ -51,7 +51,8 @@ const int hamming_weight[] =
 /* Extracts a point from the passed 2-D NumPy array */
 #define trace_point(n,p) traces[tracedim_p * (traceoffset + t) + (pointoffset + p)]
 
-__declspec(dllexport) void oneSubkey(
+
+EXPORT void oneSubkey(
         double * traces,  /* double * */
         uint8_t * datain,  /* uint8_t * */
         uint8_t * dataout, /* uint8_t * */

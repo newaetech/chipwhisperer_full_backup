@@ -57,6 +57,7 @@ module reg_chipwhisperer(
 	/* Advanced IO Trigger Connections */
 	output			trigger_ext_o,	
 	input				trigger_advio_i, 
+	input          trigger_decodedio_i,
 	input				trigger_anapattern_i,
 	
 	/* Clock Sources */
@@ -73,6 +74,13 @@ module reg_chipwhisperer(
 	output			hsglitchb_o,
 	
 	output			enable_avrprog,
+	
+	output			enable_output_nrst,
+	output			output_nrst,
+	output			enable_output_pdid,
+	output			output_pdid,
+	output			enable_output_pdic,
+	output			output_pdic,
 	
 	input				uart_tx_i,
 	output			uart_rx_o,
@@ -198,11 +206,20 @@ module reg_chipwhisperer(
 				 10  :
 				 11  :
 		  
-		RESERVED:
-		  [ X X   X     X    X    X  X   X ]
+		EXTRA GPIO:
+		  [ X X   PC  PCE   PD   PDE  N  NE ]
+		  
+		  NE  =  nRST Enable as GPIO
+		  N   =   nRST state
+		  PDE = PDID Enable as GPIO
+		  PD  = PDID State
+		  PCE = PDIC Enable as GPIO
+		  PC  = PDIC State
+		  
 		  
 		RESERVED:
 		  [ X X   X     X    X    X  X   X ]
+		  
  */
     
 	 reg [7:0] registers_cwextclk;
@@ -210,6 +227,7 @@ module reg_chipwhisperer(
 	 reg [7:0] registers_cwtrigmod;
 	 reg [63:0] registers_iorouting;
   	 
+	 wire targetio_highz;
 	
 	 //Do to no assumed phase relationship we use regular old fabric for switching
 	 assign extclk_o =   (registers_cwextclk[2:0] == 3'b000) ? extclk_fpa_io : 
@@ -267,7 +285,8 @@ module reg_chipwhisperer(
 		.S(1'b0)    // 1-bit set input
 	);
 	*/
-	assign extclk_rearout_o = registers_cwextclk[6] ? rearclk : 1'bZ;
+	
+	assign extclk_rearout_o = (registers_cwextclk[6] & (~targetio_highz)) ? rearclk : 1'bZ;
 	
 	//Output clock using DDR2 block (recommended for Spartan-6 device)
 	ODDR2 #(
@@ -362,6 +381,8 @@ module reg_chipwhisperer(
 `else
 	 assign targetpower_off = reg_targetpower_off;
 `endif
+
+	 assign targetio_highz = targetpower_off;
 	
 	 //TODO: Should use a mux?
 	 /*
@@ -391,12 +412,16 @@ module reg_chipwhisperer(
 								 (registers_cwtrigsrc[5] & trigger_io4_i);	
 								 
 	 assign trigger_ext =  (registers_cwtrigsrc[7:6] == 2'b00) ? trigger_or :
-								  (registers_cwtrigsrc[7:6] == 2'b01) ? trigger_and : 1'b0;
+								  (registers_cwtrigsrc[7:6] == 2'b01) ? trigger_and : 
+								  (registers_cwtrigsrc[7:6] == 2'b10) ? (~trigger_and) :
+								  1'b0;
 	
 	 wire trigger;	 		  
 	 assign trigger = (registers_cwtrigmod[2:0] == 3'b000) ? trigger_ext :
 						   (registers_cwtrigmod[2:0] == 3'b001) ? trigger_advio_i : 
-							(registers_cwtrigmod[2:0] == 3'b010) ? trigger_anapattern_i : 1'b0;
+							(registers_cwtrigmod[2:0] == 3'b010) ? trigger_anapattern_i :
+							(registers_cwtrigmod[2:0] == 3'b011) ? trigger_decodedio_i
+							: 1'b0;
 							
 	 assign trigger_ext_o = trigger_ext;
 	 
@@ -440,24 +465,28 @@ module reg_chipwhisperer(
 	 
 	 /* IO Routing */
 	 
-	 assign targetio1_io = registers_iorouting[0 + 0] ? uart_tx_i :
+	 assign targetio1_io = targetio_highz ? 1'bZ :
+								  registers_iorouting[0 + 0] ? uart_tx_i :
 								  registers_iorouting[0 + 2] ? usi_out_i :
 								  registers_iorouting[0 + 7] ? registers_iorouting[0 + 6] :
 								  1'bZ;
 		
-	 assign targetio2_io = registers_iorouting[8 + 0] ? uart_tx_i :
+	 assign targetio2_io = targetio_highz ? 1'bZ :
+								  registers_iorouting[8 + 0] ? uart_tx_i :
 								  registers_iorouting[8 + 2] ? usi_out_i :
 								  registers_iorouting[8 + 7] ? registers_iorouting[8 + 6] :
 								  1'bZ;
 								  
-	 assign targetio3_io = registers_iorouting[16 + 0] ? uart_tx_i :
+	 assign targetio3_io = targetio_highz ? 1'bZ :
+								  registers_iorouting[16 + 0] ? uart_tx_i :
 								  registers_iorouting[16 + 2] ? usi_out_i :
 								  registers_iorouting[16 + 4] ? (usi_out_i ? 1'bZ : 1'b0) :
 								  registers_iorouting[16 + 5] ? (uart_tx_i ? 1'bZ : 1'b0) :
 								  registers_iorouting[16 + 7] ? registers_iorouting[16 + 6] :
 								  1'bZ;
 								  
-	 assign targetio4_io = registers_iorouting[24 + 0] ? uart_tx_i :
+	 assign targetio4_io = targetio_highz ? 1'bZ :
+								  registers_iorouting[24 + 0] ? uart_tx_i :
 								  registers_iorouting[24 + 7] ? registers_iorouting[24 + 6] :
 								  1'bZ;
 	 
@@ -471,6 +500,14 @@ module reg_chipwhisperer(
 							registers_iorouting[8 + 3] ? targetio2_io :
 							registers_iorouting[16 + 3] ? targetio3_io :
 							1'b1;	 
+	 
+	 
+	 assign enable_output_nrst = registers_iorouting[48];
+	 assign output_nrst = registers_iorouting[49];
+	 assign enable_output_pdid = registers_iorouting[50];
+	 assign output_pdid = registers_iorouting[51];
+	 assign enable_output_pdic = registers_iorouting[52];
+	 assign output_pdic = registers_iorouting[53];
 	 
 	 reg [15:0] reg_hyplen_reg;
 	 assign reg_hyplen = reg_hyplen_reg;

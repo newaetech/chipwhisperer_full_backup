@@ -22,6 +22,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+import logging
 
 from _base import ReaderTemplate
 from ..simpleserial_readers.cw import SimpleSerial_ChipWhisperer
@@ -31,25 +32,25 @@ import time
 class ReaderChipWhispererSER(ReaderTemplate):
     _name = "CWCR2-SER"
 
-    def __init__(self, parentParam=None):
-        ReaderTemplate.__init__(self, parentParam)
+    def __init__(self):
+        ReaderTemplate.__init__(self)
 
-        self.ser = SimpleSerial_ChipWhisperer(self)
-        self.params.addChildren([
+        self.ser = SimpleSerial_ChipWhisperer()
+        self.getParams().addChildren([
             {'name':'Reset Pin', 'type':'list', 'values':['GPIO1'], 'value':'GPIO1'},
             {'name':'Get ATR (Reset Card)', 'type':'action', 'action':self.reset},
             {'name':'ATR', 'key':'atr', 'type':'str', 'value':""}
         ])
-        self.params.append(self.ser.getParams())
+        self.getParams().append(self.ser.getParams())
 
     def waitEcho(self, data):
         rxdata = []
         while len(rxdata) < len(data):
             char = self.ser.read(1)
             if len(char) == 0:
-                print "SCARD TIMEOUT: Failed to echo data?"
-                print "  SENT: %s"%" ".join(["%02x"%t for t in data])
-                print "  RECEIVED: %s"%" ".join(["%02x"%ord(t) for t in rxdata])
+                logging.error('SCARD TIMEOUT: Failed to echo data? ')
+                logging.error('  SENT: %s' % " ".join(["%02x"%t for t in data]))
+                logging.error('  RECEIVED: %s' % " ".join(["%02x"%ord(t) for t in rxdata]))
                 raise IOError("SmartCard Line Stuck?")
             rxdata.extend(char)
 
@@ -110,9 +111,9 @@ class ReaderChipWhispererSER(ReaderTemplate):
         #print ""
 
         if len(ack) < 1:
-            print "ACK Error: not received?"
+            logging.error('ACK Error: not received?')
         elif ord(ack[0]) != ins:
-            print "ACK Error: %x != %x"%(ins, ord(ack[0]))
+            logging.error('ACK Error: %x != %x' % (ins, ord(ack[0])))
 
         if len(stat) < 2:
             raise IOError("Status too small: %d, %s" % (len(stat), " ".join(["%02x"%ord(t) for t in stat])))
@@ -154,7 +155,7 @@ class ReaderChipWhispererSER(ReaderTemplate):
         """Discard all input buffers"""
         self.ser.flush()
 
-    def reset(self):
+    def reset(self, _=None):
         """Reset card & save the ATR"""
 
         self.atr = [0]
@@ -180,7 +181,7 @@ class ReaderChipWhispererSER(ReaderTemplate):
         self.atr = [ord(t) for t in atr]
 
         stratr = " ".join(["%02x"%ord(t) for t in atr])
-        print "ATR: %s"%stratr
+        logging.info('ATR: %s' % stratr)
         self.ser.findParam('atr').setValue(stratr)
 
     def getATR(self):

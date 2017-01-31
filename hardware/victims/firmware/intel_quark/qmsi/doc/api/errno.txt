@@ -1,0 +1,26 @@
+
+/**
+ * @anchor errno
+ * @defgroup groupERRNO Error Codes
+ * @{
+
+<!--
+	Doxygen line to add a link to errno module:
+		@return Error code. See @ref ERRNO for more information about possible
+		        return codes.
+-->
+
+This project uses <errno.h> for error codes.
+
+The following return codes are used:
+
+@code
+-EINVAL   	/* Invalid parameters.  		*/
+-EIO      	/* Operation failed.    		*/
+-ECANCELED	/* User terminated the transaction. 	*/
+@endcode
+
+ * @}
+ */
+
+

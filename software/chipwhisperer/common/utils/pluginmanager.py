@@ -24,9 +24,14 @@
 
 import importlib
 import inspect
+import logging
 import os.path
 import traceback
+
+import imp
+
 import util
+from chipwhisperer.common.api.settings import Settings
 
 loadedItems = []
 
@@ -78,12 +83,24 @@ def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
 
 def importModulesInPackage(path):
     resp = []
-    for package_name in util.getPyFiles(os.path.join(util.getRootDir(), (os.path.normpath(path).replace(".", "/")))):#   (os.path.normpath(path).replace(".", "/"))):
+    normPath = (os.path.normpath(path).replace(".", "/"))
+    packages = util.getPyFiles(os.path.join(util.getRootDir(), normPath))
+    for package_name in packages:
         full_package_name = '%s.%s' % (path, package_name)
         try:
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
-            print "INFO: Could not import module: " + full_package_name + ": " + str(e)
+            logging.info('Could not import module: ' + full_package_name + ": " + str(e))
+            loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
+
+    files = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath), extension=True)
+    for file in files:
+        full_package_name = '%s.%s' % (path, os.path.splitext(file)[0])
+        full_file_path = os.path.join(Settings().value("project-home-dir"), normPath)+"/"+file
+        try:
+            resp.append(imp.load_source(full_package_name, full_file_path))
+        except Exception as e:
+            logging.info('Could not import user module: ' + full_file_path + ": " + str(e))
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
     return resp
 
@@ -110,11 +127,11 @@ def putInDict(items, instantiate, *args, **kwargs):
                 resp[item.getClassName()] = item
             loadedItems.append([str(c), True, "", ""])
         except Exception as e:
-            print "INFO: Could not instantiate module " + str(c) + ": " + str(e)
+            logging.info('Could not instantiate module ' + str(c) + ": " + str(e))
             loadedItems.append([str(c), False, str(e), traceback.format_exc()])
 
     if len(resp) == 0:
-        print "Warning: Dictionary contains zero modules"
+        logging.info('Dictionary contains zero modules')
     return resp
 
 

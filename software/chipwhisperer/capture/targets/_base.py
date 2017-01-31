@@ -23,6 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+from chipwhisperer.capture.api.programmers import Programmer
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
@@ -36,10 +37,10 @@ except ImportError:
 class TargetTemplate(Parameterized, Plugin):
     _name = 'Target Connection'
 
-    def __init__(self, parentParam=None):
+    def __init__(self):
         self.newInputData = util.Signal()
         self.connectStatus = util.Observable(False)
-        self.params = Parameter(name=self.getName(), type='group').register()
+        self.getParams().register()
 
     def setSomething(self):
         """Here you would send value to the reader hardware"""
@@ -57,10 +58,19 @@ class TargetTemplate(Parameterized, Plugin):
         self.close()
         self.connectStatus.setValue(False)
 
-    def con(self, scope = None):
+    def con(self, scope=None, **kwargs):
         """Connect to target"""
-        self.connectStatus.setValue(True)
-        # raise Warning("Target \"" + self.getName() + "\" does not implement method " + self.__class__.__name__ + ".con()")
+        Programmer.lastFlashedFile = "unknown"
+        try:
+            self.connectStatus.setValue(True)
+            self._con(scope, **kwargs)
+        except:
+            self.dis()
+            raise
+
+
+    def _con(self, scope=None):
+        raise NotImplementedError
 
     def flush(self):
         """Flush input/output buffers"""
@@ -89,6 +99,10 @@ class TargetTemplate(Parameterized, Plugin):
         """System 'suggests' encryption key, and target modifies it if required because e.g. hardware has fixed key"""
         return key
 
+    def checkPlaintext(self, text):
+        """System suggests plaintext; target modifies as required"""
+        return text
+
     def loadEncryptionKey(self, key):
         """Load desired encryption key"""        
         self.key = key
@@ -112,7 +126,11 @@ class TargetTemplate(Parameterized, Plugin):
     def keyLen(self):
         """Length of key system is using"""
         return 16
-    
+
+    def textLen(self):
+        """Length of the plaintext used by the system"""
+        return 16
+
     def getExpected(self):
         """Based on key & text get expected if known, otherwise returns None"""
         

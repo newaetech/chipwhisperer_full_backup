@@ -26,11 +26,12 @@
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 
+
 class AcqKeyTextPattern_Base(Parameterized, Plugin):
     _name = "Key/Text Pattern"
 
-    def __init__(self, parentParam, target=None):
-        self.params = Parameter(name=self.getName(), type='group')
+    def __init__(self):
+        self.getParams()
 
     def setTarget(self, target):
         self._target = target
@@ -42,12 +43,25 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
         else:
             return 16
 
+    def textLen(self):
+        if self._target:
+            return self._target.textLen()
+        else:
+            return 16
+
     def validateKey(self):
         if self._target:
             if len(self._key) != self._target.keyLen():
                 raise IOError("Key Length Wrong for Given Target, %d != %d" % (self._target.keyLen(), len(self.key)))
 
             self._key = self._target.checkEncryptionKey(self._key)
+
+    def validateText(self):
+        if self._target:
+            if len(self._textin) != self._target.textLen():
+                raise IOError("Plaintext Length Wrong for Given Target, %d != %d" % (self._target.textLen(), len(self.textin)))
+
+            self._textin = self._target.checkPlaintext(self._textin)
 
     def _initPattern(self):
         """Perform any extra init stuff required. Called at the end of main init() & when target changed."""

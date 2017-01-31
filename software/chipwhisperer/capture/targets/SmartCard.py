@@ -32,18 +32,18 @@ from chipwhisperer.common.utils.parameter import setupSetParam
 class SmartCard(TargetTemplate):
     _name = "Smart Card"
 
-    def __init__(self, parentParam=None):
-        TargetTemplate.__init__(self, parentParam)
+    def __init__(self):
+        TargetTemplate.__init__(self)
 
-        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, True, self)
-        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, True, self)
+        readers = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_readers", True, True)
+        protocols = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets.smartcard_protocols", True, True)
         self.driver = None
         self.protocol = None
 
         self.params.addChildren([
             {'name':'Reader Hardware', 'type':'list', 'values':readers, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'SmartCard Protocol', 'type':'list', 'values':protocols, 'get':self.getProtocol, 'set':self.setProtocol},
-            {'name':'SmartCard Explorer', 'type':'action', 'action':lambda _: self.getScgui().show()}
+            {'name':'SmartCard Explorer Dialog', 'type':'action', 'action':lambda _: self.getScgui().show()}
         ])
 
     def __del__(self):
@@ -72,11 +72,10 @@ class SmartCard(TargetTemplate):
             self.params.append(self.protocol.getParams())
             self.protocol.setReaderHardware(self.driver)
 
-    def con(self, scope = None):
+    def _con(self, scope = None):
         self.driver.con(scope)
         self.driver.flush()
         self.protocol.setReaderHardware(self.driver)
-        self.connectStatus.setValue(True)
 
     def close(self):
         if self.driver != None:
@@ -117,5 +116,5 @@ class SmartCard(TargetTemplate):
 
     def getScgui(self):
         if not hasattr(self, 'scgui'):
-            self.scgui = SmartCardGUICard(mainWindow, self)
+            self.scgui = SmartCardGUICard(self)
         return self.scgui
