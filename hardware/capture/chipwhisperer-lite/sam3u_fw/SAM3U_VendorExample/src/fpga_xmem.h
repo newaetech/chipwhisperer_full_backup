@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 
-typedef enum fpga_lockstatus_e {fpga_unlocked = 0, fpga_generic, fpga_blockin, fpga_blockout, fpga_ctrlmem} fpga_lockstatus_t;
+typedef enum fpga_lockstatus_e {fpga_unlocked = 0, fpga_generic, fpga_blockin, fpga_streamin, fpga_blockout, fpga_ctrlmem, fpga_usblocked} fpga_lockstatus_t;
 void FPGA_setlock(fpga_lockstatus_t lockstatus);
 fpga_lockstatus_t FPGA_lockstatus(void);
 
@@ -34,6 +34,9 @@ void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);
 void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);
 
 void FPGA_setaddr(uint32_t addr);
+
+void smc_fasttiming(void);
+void smc_normaltiming(void);
 
 /* Access pointer for FPGA Interface */
 #define PSRAM_BASE_ADDRESS         (0x60000000)

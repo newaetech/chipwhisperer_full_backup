@@ -79,3 +79,59 @@ void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data, int numBytes)
 	}
 }
 
+//Set timing for normal mode
+void smc_normaltiming(void){
+	smc_set_setup_timing(SMC, 0,
+	SMC_SETUP_NWE_SETUP(0) |
+	SMC_SETUP_NCS_WR_SETUP(1) |
+	SMC_SETUP_NRD_SETUP(0) |
+	SMC_SETUP_NCS_RD_SETUP(0)
+	);
+	
+	smc_set_pulse_timing(SMC, 0,
+	SMC_PULSE_NWE_PULSE(1) |
+	SMC_PULSE_NCS_WR_PULSE(1) |
+	SMC_PULSE_NRD_PULSE(4) |
+	SMC_PULSE_NCS_RD_PULSE(4)
+	);
+	
+	smc_set_cycle_timing(SMC, 0,
+	SMC_CYCLE_NWE_CYCLE(2) |
+	SMC_CYCLE_NRD_CYCLE(5)
+	);
+	
+	smc_set_mode(SMC, 0,
+	SMC_MODE_READ_MODE_NRD_CTRL |
+	SMC_MODE_WRITE_MODE_NWE_CTRL |
+	SMC_MODE_DBW_BIT_8
+	);
+}
+
+void smc_fasttiming(void){
+	
+	
+	smc_set_setup_timing(SMC, 0,
+	SMC_SETUP_NWE_SETUP(0) |
+	SMC_SETUP_NCS_WR_SETUP(1) |
+	SMC_SETUP_NRD_SETUP(0) |
+	SMC_SETUP_NCS_RD_SETUP(0)
+	);
+	
+	smc_set_pulse_timing(SMC, 0,
+	SMC_PULSE_NWE_PULSE(1) |
+	SMC_PULSE_NCS_WR_PULSE(1) |
+	SMC_PULSE_NRD_PULSE(3) |
+	SMC_PULSE_NCS_RD_PULSE(3)
+	);
+	
+	smc_set_cycle_timing(SMC, 0,
+	SMC_CYCLE_NWE_CYCLE(2) |
+	SMC_CYCLE_NRD_CYCLE(4)
+	);
+	
+	smc_set_mode(SMC, 0,
+	SMC_MODE_READ_MODE_NRD_CTRL |
+	SMC_MODE_WRITE_MODE_NWE_CTRL |
+	SMC_MODE_DBW_BIT_8
+	);
+}

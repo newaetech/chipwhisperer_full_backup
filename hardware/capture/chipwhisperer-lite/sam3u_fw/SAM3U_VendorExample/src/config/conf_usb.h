@@ -53,8 +53,8 @@
  */
 
 //! Device definition (mandatory)
-#error   "Must define USB VID Before Building"
-#define  USB_DEVICE_VENDOR_ID             0x0000
+//#error   "Must define USB VID Before Building"
+#define  USB_DEVICE_VENDOR_ID             0x2B3E
 #define  USB_DEVICE_PRODUCT_ID            0xACE2
 
 #define  USB_DEVICE_MAJOR_VERSION         1
