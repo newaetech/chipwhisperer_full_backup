@@ -80,11 +80,14 @@ class CW_Loader(object):
             if not os.path.isfile(self._bsZipLoc):
                 raise IOError("FPGA Zip-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsZipLoc)
             zfile = zipfile.ZipFile(self._bsZipLoc, "r")
+            logging.debug("FPGA: Using file %s"%self._bsZipLoc)
             return zfile.open(self._bsZipLoc_filename)
         elif self._release_mode == "debug":
             logging.debug('FPGA: Raw bitstream mode')
             if not os.path.isfile(self._bsLoc):
                 raise IOError("FPGA bit-File NOT set to valid value - check paths or reconfigure. Path='%s'"%self._bsLoc)
+
+            logging.debug("FPGA: Using file %s"%self._bsLoc)
             return open(self._bsLoc, "rb")
         else:
             raise ValueError("Internal Error - self._release_mode set to invalid value: %s"%str(self._release_mode))
@@ -252,7 +255,7 @@ class FWLoaderConfig(object):
         if self.loader.fpga_bitstream_date():
             strdate = self.loader.fpga_bitstream_date()
             logging.info('FPGA: DEBUG MODE: Using .bit file, date: %s' % strdate)
-        
+
         self.loader.loadFPGA()
         logging.info('FPGA programmed')
 
