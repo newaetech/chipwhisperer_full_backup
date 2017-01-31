@@ -28,6 +28,7 @@
  * DAMAGE.
  */
 #include "circbuffer.h"
+#include <asf.h>
 
 /*
     @brief Initializes the circular buffer.
@@ -49,6 +50,7 @@ void init_circ_buf(tcirc_buf *cbuf)
 void add_to_circ_buf(tcirc_buf *cbuf, uint8_t ch, bool block)
 {
     // Add char to buffer
+	cpu_irq_disable();
     unsigned int newhead = cbuf->head;
     newhead++;
     if (newhead >= CIRCBUFSIZE)
@@ -58,15 +60,18 @@ void add_to_circ_buf(tcirc_buf *cbuf, uint8_t ch, bool block)
         if (!block)
         {
             cbuf->dropped++;
+			cpu_irq_enable();
             return;
         }
         
-        //Add processing here?
+        //TODO: Need to add processing here if you want a blocking
+		//      function.
         
     }
 
     cbuf->buf[cbuf->head] = ch;
     cbuf->head = newhead;
+	cpu_irq_enable();
 }
 
 /*
@@ -81,11 +86,14 @@ uint8_t get_from_circ_buf(tcirc_buf *cbuf)
 {
     // Get char from buffer
     // Be sure to check first that there is a char in buffer
+	cpu_irq_disable();
     unsigned int newtail = cbuf->tail;
     uint8_t retval = cbuf->buf[newtail];
 
-    if (newtail == cbuf->head)
+    if (newtail == cbuf->head) {
+		cpu_irq_enable();
         return SERIAL_ERR;
+	}
 
     newtail++;
     if (newtail >= CIRCBUFSIZE)
@@ -93,6 +101,7 @@ uint8_t get_from_circ_buf(tcirc_buf *cbuf)
         newtail = 0;
     cbuf->tail = newtail;
 
+	cpu_irq_enable();
     return retval;
 }
 
@@ -122,10 +131,13 @@ unsigned int circ_buf_count(tcirc_buf *cbuf)
 {
     int count;
 
+	cpu_irq_disable();
     count = cbuf->head;
     count -= cbuf->tail;
     if (count < 0)
         count += CIRCBUFSIZE;
+		
+	cpu_irq_enable();
     return (unsigned int)count;
 }
 
