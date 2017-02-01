@@ -807,7 +807,7 @@ class SpinBoxWithSetItem(WidgetParameterItem):
             'value': 0, 'min': None, 'max': None, 'int': True,
             'step': 1.0, 'minStep': 1.0, 'dec': False,
             'siPrefix': False, 'suffix': '',
-            'decimals': 10
+            'decimals': 10, 'visible':True
         }
 
     def makeWidget(self):
