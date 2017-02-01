@@ -74,7 +74,7 @@ uint8_t ct[16];   	// Ciphertext
 
 void encrypt(uint8_t* pt)
 {
-	static uint8_t input[16];
+	static uint8_t input[16] = {0b01001011};
 	static uint8_t output[16];
 	
 	// Find input 

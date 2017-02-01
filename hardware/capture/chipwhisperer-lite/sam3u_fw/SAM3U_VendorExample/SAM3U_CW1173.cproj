@@ -221,7 +221,7 @@
         <documentation help="http://asf.atmel.com/docs/3.20.1/common.services.usb.class.vendor.device.example.sam3u_ek/html/index.html" />
         <offline-documentation help="" />
         <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.20.1" />
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.22.0" />
         </dependencies>
         <project id="common.services.usb.class.vendor.device.example.sam3u_ek" value="Add" config="" content-id="Atmel.ASF" />
         <board id="board.sam3u_ek" value="Add" config="" content-id="Atmel.ASF" />

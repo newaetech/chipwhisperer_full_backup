@@ -1,6 +1,10 @@
 /*
     This file is part of the ChipWhisperer Example Targets
-    Copyright (C) 2014-2015 NewAE Technology Inc <coflynn@newae.com>
+    Copyright (C) 2014-2016 NewAE Technology Inc 
+	
+	Authors:
+		Colin O'Flynn <coflynn@newae.com>
+		Greg d'Eon    <gdeon@newae.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
