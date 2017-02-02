@@ -38,6 +38,7 @@
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
+static bool active = false;
 
 COMPILER_WORD_ALIGNED
 		static uint8_t main_buf_loopback[MAIN_LOOPBACK_SIZE];
@@ -49,6 +50,7 @@ void main_vendor_bulk_out_received(udd_ep_status_t status,
 
 void main_suspend_action(void)
 {
+	active = false;
 	ui_powerdown();
 }
 
@@ -67,6 +69,7 @@ void main_sof_action(void)
 bool main_vendor_enable(void)
 {
 	main_b_vendor_enable = true;
+	active = true;
 	// Start data reception on OUT endpoints
 #if UDI_VENDOR_EPS_SIZE_BULK_FS
 	//main_vendor_bulk_in_received(UDD_EP_TRANSFER_OK, 0, 0);
@@ -81,6 +84,11 @@ bool main_vendor_enable(void)
 void main_vendor_disable(void)
 {
 	main_b_vendor_enable = false;
+}
+
+bool usb_is_enabled(void)
+{
+	return active;
 }
 
 #define REQ_MEMREAD_BULK 0x10
