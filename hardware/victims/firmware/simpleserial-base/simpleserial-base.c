@@ -69,14 +69,14 @@ int main
 	trigger_setup();
 	
  	/* Uncomment this to get a HELLO message for debug */
-	
+	/*
 	putch('h');
 	putch('e');
 	putch('l');
 	putch('l');
 	putch('o');
 	putch('\n');
-	
+	*/
 			
 	/* Super-Crappy Protocol works like this:
 	
