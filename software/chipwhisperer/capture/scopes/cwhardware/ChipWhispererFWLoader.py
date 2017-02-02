@@ -58,7 +58,13 @@ class CW_Loader(object):
 
         fullsettingname = self.name + "-" + settingname
         Settings().setValue(fullsettingname, value)
-    
+
+    def save_bsLoc(self):
+        self.write_setting('debugbitstream-location', self._bsLoc)
+
+    def save_bsZipLoc(self):
+        self.write_setting('zipbitstream-location', self._bsZipLoc)
+
     def fpga_bitstream_date(self):
         """ In 'debug' mode returns date bitstream was modified, returns 'None' in release mode """
         
@@ -155,8 +161,8 @@ class CWCRev2_Loader(CW_Loader):
         self.driver.probe()
 
     def loadFPGA(self):
-        self.write_setting('debugbitstream-location', self._bsLoc)
-        self.write_setting('zipbitstream-location', self._bsZipLoc)
+        self.save_bsLoc()
+        self.save_bsZipLoc()
         self.driver.configureFpgaLS(self.fpga_bitstream())
 
 class CWLite_Loader(CW_Loader):
@@ -179,9 +185,8 @@ class CWLite_Loader(CW_Loader):
         callback()
 
     def loadFPGA(self):
-        #Save settings
-        self.write_setting('debugbitstream-location', self._bsLoc)
-        self.write_setting('zipbitstream-location', self._bsZipLoc)
+        self.save_bsLoc()
+        self.save_bsZipLoc()
 
         if self.driver.isFPGAProgrammed() == False:
             self.driver.FPGAProgram(self.fpga_bitstream())
@@ -206,18 +211,24 @@ class CW1200_Loader(CW_Loader):
         self._bsZipLoc_filename = "cw1200_interface.bit"
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
+        # TODO: add final CW1200 release bitstream
         #self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
         self._bsBuiltinData = None
-        #self.setFPGAMode("zipfile")
+        logging.info("Setting CW1200 firmware to use zip file by default...")
+        self.setFPGAMode("zipfile")
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
 
     def loadFPGA(self):
-        #Save settings
-        self.write_setting('debugbitstream-location', self._bsLoc)
-        self.write_setting('zipbitstream-location', self._bsZipLoc)
-        self.driver.FPGAProgram(self.fpga_bitstream())
+        self.save_bsLoc()
+        self.save_bsZipLoc()
+
+        # TODO: when CW1200 release is finalized, allow builtin bitstream to be used
+        if self._release_mode == 'builtin':
+            raise Warning("Could not program CW1200 - no built-in bitstream available.")
+        else:
+            self.driver.FPGAProgram(self.fpga_bitstream())
 
     def setInterface(self, driver):
         self.driver = driver
@@ -225,7 +236,7 @@ class CW1200_Loader(CW_Loader):
 class FWLoaderConfig(object):
     def __init__(self, loader):
         self.loader = loader
-        self.firmware_mode = "builtin"
+        self.firmware_mode = self.loader._release_mode #"builtin"
 
     def loadRequired(self, forceFirmware=False):
         """Load firmware file or FPGA file only as required, skip otherwise"""

@@ -109,6 +109,4 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.ser.close()
 
     def getFwLoaderConfigGUI(self):
-        if not hasattr(self, 'fwLoaderConfigGUI'):
-            self.fwLoaderConfigGUI = FWLoaderConfigGUI(self.cwFirmwareConfig)
-        return self.fwLoaderConfigGUI
+        return FWLoaderConfigGUI(self.cwFirmwareConfig, self.ser is not None)
