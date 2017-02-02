@@ -180,7 +180,7 @@ int main(void){
 		
         
     while(1){
-        glitch_infinite();
+        glitch1();
     }
         
 	return 1;

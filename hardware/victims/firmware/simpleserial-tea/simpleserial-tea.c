@@ -89,6 +89,20 @@ int main
 	putch('o');
 	putch('\n');
 	*/
+			
+	/* Super-Crappy Protocol works like this:
+	
+	Send kKEY
+	Send pPLAINTEXT
+	*** Encryption Occurs ***
+	receive rRESPONSE
+	
+	e.g.:
+	
+    kE8E9EAEBEDEEEFF0F2F3F4F5F7F8F9FA\n
+	p014BAF2278A69D331D5180103643E99A\n
+	r6743C3D1519AB4F2CD9A78AB09A511BD\n
+    */
 		
 	char c;
 	int ptr = 0;

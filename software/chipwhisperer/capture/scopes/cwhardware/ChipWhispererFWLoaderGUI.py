@@ -33,7 +33,7 @@ import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
 
 class FWLoaderConfigGUI(QtFixes.QDialog):
-    def __init__(self, fwLoaderConfig):
+    def __init__(self, fwLoaderConfig, allowProgram=True):
         super(FWLoaderConfigGUI, self).__init__(CWMainGUI.getInstance())
         self.fwLoaderConfig = fwLoaderConfig
         self.setWindowTitle("ChipWhisperer (%s) Firmware Loader Configuration " % self.fwLoaderConfig.loader.name)
@@ -85,6 +85,7 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
 
         layoutProgramNow = QHBoxLayout()
         self.programNow = QPushButton("Program FPGA (MUST be connected already)")
+        self.programNow.setEnabled(allowProgram)
         self.programNow.clicked.connect(self.loadFPGA)
         layoutProgramNow.addWidget(self.programNow)
         layout.addLayout(layoutProgramNow)
@@ -138,6 +139,7 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         if fname:
             self.bitDebugLocation.setText(fname)
             self.fwLoaderConfig.loader._bsLoc = fname
+            self.fwLoaderConfig.loader.save_bsLoc()
             QSettings().setValue("%s-debugbitstream-location" % self.fwLoaderConfig.loader.name, fname)
 
     def findZipBitstream(self):
@@ -145,6 +147,7 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         if fname:
             self.bitZipLocation.setText(fname)
             self.fwLoaderConfig.loader._bsZipLoc = fname
+            self.fwLoaderConfig.loader.save_bsZipLoc()
             QSettings().setValue("%s-zipbitstream-location" % self.fwLoaderConfig.loader.name, fname)
 
     def findFirmware(self):

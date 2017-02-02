@@ -55,7 +55,8 @@ class CWLiteUSB(Parameterized):
     #     print "here"
 
     def dis(self):
-        self.getParams().delete()
+        if self.params is not None:
+            self.getParams().delete()
         self.params = None
         # gc.collect()
         # print sys.getrefcount(self)
