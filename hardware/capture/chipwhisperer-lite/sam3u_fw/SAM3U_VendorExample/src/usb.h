@@ -22,6 +22,7 @@
 /* Size of loopback */
 #define  MAIN_LOOPBACK_SIZE    1024
 
+bool usb_is_enabled(void);
 bool stream_dumpread(uint16_t bytes_to_stream);
 
 #endif /* USB_H_ */
