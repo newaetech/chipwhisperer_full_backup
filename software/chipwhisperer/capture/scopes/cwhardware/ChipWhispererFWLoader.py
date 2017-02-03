@@ -214,8 +214,9 @@ class CW1200_Loader(CW_Loader):
         # TODO: add final CW1200 release bitstream
         #self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
         self._bsBuiltinData = None
-        logging.info("Setting CW1200 firmware to use zip file by default...")
-        self.setFPGAMode("zipfile")
+        if self._release_mode == 'builtin':
+            logging.info("Setting CW1200 firmware to use zip file by default...")
+            self.setFPGAMode("zipfile")
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
