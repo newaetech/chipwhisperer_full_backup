@@ -45,6 +45,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             {'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
+            {'name':'Downsampling Mode', 'key':'dsmode', 'type':'list', 'values':{'None':None, 'Subsample':'subsample', 'Mean':'mean', 'Peak':'peak'},
+                'value':'peak', 'action':self.plotInputTrace},
             {'name':'Y Axis', 'type':'group', 'expanded':False, 'children':[
                 {'name':'Unity', 'type':'list', 'values':{"None":"", "Voltage":"V", "Current":"A"}, 'value':"", 'action':self.plotInputTrace},
                 {'name':'Scale Factor', 'type':'float', 'limits':(1E-9, 1E9), 'value':1.0, 'action':self.plotInputTrace},
@@ -85,6 +87,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         tend = self.findParam('tracerng').getValue()[1]
         pstart = self.findParam('pointrng').getValue()[0]
         pend = self.findParam('pointrng').getValue()[1]
+        dsmode = self.findParam('dsmode').getValue()
         yaxisScaleFactor = self.findParam(['Y Axis', 'Scale Factor']).getValue()
         yaxisOffsetFactor = self.findParam(['Y Axis', 'Offset Factor']).getValue()
 
@@ -114,7 +117,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
                     if yaxisScaleFactor != 1.0 or yaxisOffsetFactor != 0.0:
                         trace = [yaxisOffsetFactor + x * yaxisScaleFactor for x in trace]
                     #TODO - Not sure if should add _traceSource.offset() or not?
-                    self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum), xaxis=xaxis)
+                    self.passTrace(trace[pstart:pend+1], pstart + self._traceSource.offset(), idString = str(tnum), xaxis=xaxis, dsmode=dsmode)
 
                     if self.findParam('Redraw after Each').getValue():
                         util.updateUI()
