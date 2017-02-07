@@ -268,7 +268,7 @@ class NAEUSB(object):
         dlen, _ , _ = self._cmdReadStream_blockSizes(dlen)
 
         # Make room for (4/3) * number of samples
-        blen = int((dlen * (4/3)))
+        blen = int((dlen * 4/3))
         tempbuf_len =  blen
 
         return (tempbuf_len, dlen)
@@ -303,7 +303,7 @@ class NAEUSB(object):
         # Ensure stream mode disabled
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
 
-        return self.streamModeCaptureStream.bsize_samples, self.streamModeCaptureStream.drx
+        return self.streamModeCaptureStream.bsize_samples, self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
 
     def enterBootloader(self, forreal=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
@@ -362,12 +362,12 @@ class NAEUSB(object):
                     #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
 
                     self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
-                except IOError:
+                except IOError as e:
                     self.timeout = True
                     if self.drx == 0:
-                        logging.info("Timeout during stream mode with no data - assumed no trigger")
+                        logging.debug("Timeout during stream mode with no data - assumed no trigger")
                     else:
-                        logging.warning("Timeout during stream mode after %d bytes" % self.drx)
+                        logging.debug("Timeout during stream mode after %d bytes" % self.drx)
                     break
 
                 #once we have a block of data, quicker timeout is OK
