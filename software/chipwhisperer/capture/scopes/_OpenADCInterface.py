@@ -1240,18 +1240,18 @@ class OpenADCInterface(object):
                 # Give the UI a chance to update (does nothing if not using UI)
                 util.updateUI()
 
-            _, self._stream_rx_bytes = self.serial.cmdReadStream()
-            timeout |= self.serial.streamModeCaptureStream.timeout
+            _, self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
+            timeout |= stream_timeout
             #Check the status now
             bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
             logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
-            if overflow_bytes_left == (self._stream_len - 3072):
-                logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
-                timeout = True
-            elif unknown_overflow:
-                logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
+            if stream_timeout:
+                if self._stream_rx_bytes == 0: # == (self._stream_len - 3072):
+                    logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
+                else:
+                    logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
                 timeout = True
         else:
             status = self.getStatus()
