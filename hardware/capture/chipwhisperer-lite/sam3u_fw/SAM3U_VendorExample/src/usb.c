@@ -427,13 +427,17 @@ bool main_setup_out_received(void)
 				FPGA_setlock(fpga_usblocked);
 				udd_g_ctrlreq.callback = ctrl_readmem_bulk;
 				return true;
-			}			
+			}		
+			break;
+				
 		case REQ_MEMREAD_CTRL:
 			if (FPGA_lockstatus() == fpga_unlocked){
 				FPGA_setlock(fpga_usblocked);
 				udd_g_ctrlreq.callback = ctrl_readmem_ctrl;
 				return true;	
-			}
+			}		
+			break;
+			
 			
 		/* Memory Write */
 		case REQ_MEMWRITE_BULK:
@@ -441,14 +445,18 @@ bool main_setup_out_received(void)
 				FPGA_setlock(fpga_usblocked);
 				udd_g_ctrlreq.callback = ctrl_writemem_bulk;
 				return true;
-			}
+			}		
+			break;
+			
 			
 		case REQ_MEMWRITE_CTRL:
 			if (FPGA_lockstatus() == fpga_unlocked){
 				FPGA_setlock(fpga_usblocked);
 				udd_g_ctrlreq.callback = ctrl_writemem_ctrl;
 				return true;
-			}
+			}		
+			break;
+			
 			
 #if BOARD == CW1200
 		/* Enable streaming mode */
@@ -517,7 +525,10 @@ bool main_setup_out_received(void)
 			
 		default:
 			return false;
-	}					
+	}			
+	
+	// If any of the above failed...
+	return false;		
 }
 
 
