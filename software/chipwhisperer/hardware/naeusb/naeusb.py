@@ -95,7 +95,10 @@ class NAEUSB(object):
         if not dev:
             raise Warning("Failed to find USB Device")
 
-        dev.set_configuration()
+        try:
+            dev.set_configuration()
+        except ValueError:
+            raise IOError("NAEUSB: Could not configure USB device")
 
         # Get serial number
         try:

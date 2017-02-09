@@ -30,7 +30,7 @@ from _base import AcqKeyTextPattern_Base
 try:
     from Crypto.Cipher import AES
 except ImportError:
-    logging.warn('No AES Module, Using rand() instead!')
+    logging.warn('T-test inputs: no AES module found. Using pseudorandom plaintexts instead')
     AES = None
 
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
