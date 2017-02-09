@@ -13,7 +13,6 @@ import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 import array
-import pprofile
 import numpy as np
 
 ADDR_GAIN       = 0
@@ -1320,10 +1319,7 @@ class OpenADCInterface(object):
             logging.debug("Stream mode: read %d bytes"%len(data))
 
             # Turn raw bytes into samples
-            pr = pprofile.Profile()
-            with pr():
-                datapoints = self.processData(data, 0.0)
-            pr.dump_stats("profile.txt")
+            datapoints = self.processData(data, 0.0)
 
             if datapoints is not None and len(datapoints):
                 logging.debug("Stream mode: done, %d samples processed"%len(datapoints))
