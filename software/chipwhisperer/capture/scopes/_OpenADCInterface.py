@@ -12,6 +12,8 @@ import time
 import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
+import array
+import numpy as np
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -1124,7 +1126,7 @@ class OpenADCInterface(object):
             bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
 
         #Generate the buffer to save buffer
-        self._sbuf = [0] * bufsizebytes
+        self._sbuf = array.array('B', [0]) * bufsizebytes
 
     def numSamples(self):
         """Return the number of samples captured in one go. Returns max after resetting the hardware"""
@@ -1240,7 +1242,7 @@ class OpenADCInterface(object):
                 # Give the UI a chance to update (does nothing if not using UI)
                 util.updateUI()
 
-            _, self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
+            self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
             timeout |= stream_timeout
             #Check the status now
             bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
@@ -1294,12 +1296,14 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, None)
 
     def readData(self, NumberPoints=None, progressDialog=None):
-
+        logging.debug("Reading data fromm OpenADC...")
         if self._streammode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
+            num_bytes, num_samples = self.serial.cmdReadStream_bufferSize(self._stream_len)
 
-            data = [0] * self.serial.cmdReadStream_bufferSize(self._stream_len)[0]
+            # Remove sync bytes from trace
+            data = np.zeros(num_bytes, dtype=np.uint8)
             data[0] = self._sbuf[0]
             dbuf2_idx = 1
             for i in range(0, self._stream_rx_bytes, bsize):
@@ -1312,9 +1316,12 @@ class OpenADCInterface(object):
                 # Write to next section
                 dbuf2_idx += (bsize - 1)
 
-            logging.debug("Stream mode: done, %d bytes ready for processing"%len(data))
+            logging.debug("Stream mode: read %d bytes"%len(data))
+
+            # Turn raw bytes into samples
             datapoints = self.processData(data, 0.0)
-            if datapoints:
+
+            if datapoints is not None and len(datapoints):
                 logging.debug("Stream mode: done, %d samples processed"%len(datapoints))
             else:
                 logging.warning("Stream mode: done, no samples resulted from processing")
@@ -1392,8 +1399,9 @@ class OpenADCInterface(object):
                 # for p in data:
                 #       print "%x "%p,
 
-                if data:
-                    datapoints = datapoints + self.processData(data, 0.0)
+                if data is not None:
+                    data = np.array(data)
+                    datapoints = self.processData(data, 0.0)
 
                 if progressDialog:
                     progressDialog.setValue(status)
@@ -1413,52 +1421,83 @@ class OpenADCInterface(object):
 
             return datapoints
 
-    def processData(self, data, pad=float('NaN'), pretrigger_out=None):
-        fpData = []
-        lastpt = -100
-
+    def processData(self, data, pad=float('NaN'), debug=False):
         if data[0] != 0xAC:
-            logging.warning('Unexpected sync byte: 0x%x' % data[0])
+            logging.warning('Unexpected sync byte in processData(): 0x%x' % data[0])
             return None
 
-        trigfound = False
-        trigsamp = 0
+        if debug:
+            fpData = []
+            # Slow, verbose processing method
+            # Useful for fixing issues in ADC read
+            for i in xrange(1, len(data) - 3, 4):
+                # Convert
+                temppt = (data[i + 3] << 0) | (data[i + 2] << 8) | (data[i + 1] << 16) | (data[i + 0] << 24)
 
-        for i in range(1, len(data) - 3, 4):
-            #Convert
-            temppt = (data[i + 3]<<0) | (data[i + 2]<<8) | (data[i + 1]<<16) | (data[i + 0]<<24)
+                # print("%2x "%data[i])
 
-            #print("%2x "%data[i])
+                # print "%x %x %x %x"%(data[i +0], data[i +1], data[i +2], data[i +3]);
+                # print "%x"%temppt
 
-            #print "%x %x %x %x"%(data[i +0], data[i +1], data[i +2], data[i +3]);
-            #print "%x"%temppt
+                intpt1 = temppt & 0x3FF
+                intpt2 = (temppt >> 10) & 0x3FF
+                intpt3 = (temppt >> 20) & 0x3FF
 
-            intpt1 = temppt & 0x3FF
-            intpt2 = (temppt >> 10) & 0x3FF
-            intpt3 = (temppt >> 20) & 0x3FF
+                # print "%x %x %x" % (intpt1, intpt2, intpt3)
 
-            # print "%x %x %x" % (intpt1, intpt2, intpt3)
+                if trigfound == False:
+                    mergpt = temppt >> 30
+                    if (mergpt != 3):
+                        trigfound = True
+                        trigsamp = trigsamp + mergpt
+                        # print "Trigger found at %d"%trigsamp
+                    else:
+                        trigsamp += 3
 
-            if trigfound == False:
-                mergpt = temppt >> 30
-                if (mergpt != 3):
-                       trigfound = True
-                       trigsamp = trigsamp + mergpt
-                       #print "Trigger found at %d"%trigsamp
+                # input validation test: uncomment following and use
+                # ramp input on FPGA
+                ##if (intpt != lastpt + 1) and (lastpt != 0x3ff):
+                ##    print "intpt: %x lstpt %x\n"%(intpt, lastpt)
+                ##lastpt = intpt;
+
+                # print "%x %x %x"%(intpt1, intpt2, intpt3)
+
+                fpData.append(float(intpt1) / 1024.0 - self.offset)
+                fpData.append(float(intpt2) / 1024.0 - self.offset)
+                fpData.append(float(intpt3) / 1024.0 - self.offset)
+        else:
+            # Fast, efficient NumPy implementation
+
+            # Figure out how many bytes we're going to process
+            # Cut off some bytes at the end: we need the length to be a multiple of 4, and we probably have extra data
+            numbytes = len(data) - 1
+            extralen = (len(data) - 1) % 4
+
+            # Copy the data into a NumPy array. For long traces this is the longest part
+            data = data[1:1+numbytes-extralen]
+
+            # Split data into groups of 4 bytes and combine into words
+            data = np.reshape(data, (-1, 4))
+            data = np.left_shift(data, [24, 16, 8, 0])
+            data = np.sum(data, 1)
+
+            # Split words into samples and trigger bytes
+            data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
+            fpData = np.reshape(data[:, [0, 1, 2]], (-1))
+            trigger = data[:, 3] % 4
+            fpData = fpData / 1024.0 - self.offset
+
+            # Search for the trigger signal
+            trigfound = False
+            trigsamp = 0
+            for t in trigger:
+                if(t != 3):
+                    trigfound = True
+                    trigsamp = trigsamp + (t & 0x3)
+                    #print "Trigger found at %d"%trigsamp
+                    break
                 else:
-                   trigsamp += 3
-
-            #input validation test: uncomment following and use
-            #ramp input on FPGA
-            ##if (intpt != lastpt + 1) and (lastpt != 0x3ff):
-            ##    print "intpt: %x lstpt %x\n"%(intpt, lastpt)
-            ##lastpt = intpt;
-
-            #print "%x %x %x"%(intpt1, intpt2, intpt3)
-
-            fpData.append(float(intpt1) / 1024.0 - self.offset)
-            fpData.append(float(intpt2) / 1024.0 - self.offset)
-            fpData.append(float(intpt3) / 1024.0 - self.offset)
+                    trigsamp += 3
 
         #print len(fpData)
 
