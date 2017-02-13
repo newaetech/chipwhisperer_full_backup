@@ -21,3 +21,4 @@ default-data-dir/
 *.d
 *.lst
 *.npy
+README.md

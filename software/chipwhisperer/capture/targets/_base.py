@@ -58,12 +58,12 @@ class TargetTemplate(Parameterized, Plugin):
         self.close()
         self.connectStatus.setValue(False)
 
-    def con(self, scope=None):
+    def con(self, scope=None, **kwargs):
         """Connect to target"""
         Programmer.lastFlashedFile = "unknown"
         try:
             self.connectStatus.setValue(True)
-            self._con(scope)
+            self._con(scope, **kwargs)
         except:
             self.dis()
             raise

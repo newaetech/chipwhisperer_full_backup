@@ -38,6 +38,7 @@
 #define FW_VER_DEBUG 0
 
 static volatile bool main_b_vendor_enable = true;
+static bool active = false;
 
 COMPILER_WORD_ALIGNED
 		static uint8_t main_buf_loopback[MAIN_LOOPBACK_SIZE];
@@ -49,6 +50,7 @@ void main_vendor_bulk_out_received(udd_ep_status_t status,
 
 void main_suspend_action(void)
 {
+	active = false;
 	ui_powerdown();
 }
 
@@ -67,6 +69,7 @@ void main_sof_action(void)
 bool main_vendor_enable(void)
 {
 	main_b_vendor_enable = true;
+	active = true;
 	// Start data reception on OUT endpoints
 #if UDI_VENDOR_EPS_SIZE_BULK_FS
 	//main_vendor_bulk_in_received(UDD_EP_TRANSFER_OK, 0, 0);
@@ -83,10 +86,16 @@ void main_vendor_disable(void)
 	main_b_vendor_enable = false;
 }
 
+bool usb_is_enabled(void)
+{
+	return active;
+}
+
 #define REQ_MEMREAD_BULK 0x10
 #define REQ_MEMWRITE_BULK 0x11
 #define REQ_MEMREAD_CTRL 0x12
 #define REQ_MEMWRITE_CTRL 0x13
+#define REQ_MEMSTREAM 0x14
 #define REQ_FPGA_STATUS 0x15
 #define REQ_FPGA_PROGRAM 0x16
 #define REQ_FW_VERSION 0x17
@@ -118,6 +127,7 @@ void ctrl_readmem_bulk(void);
 void ctrl_readmem_ctrl(void);
 void ctrl_writemem_bulk(void);
 void ctrl_writemem_ctrl(void);
+void ctrl_streammem_ctrl(void);
 void ctrl_progfpga_bulk(void);
 bool ctrl_xmega_program(void);
 void ctrl_xmega_program_void(void);
@@ -178,6 +188,9 @@ void ctrl_readmem_bulk(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);	
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
 	
+	/* Potential to block */
+	while (FPGA_lockstatus() != fpga_usblocked);
+	
 	FPGA_setlock(fpga_blockin);
 	
 	/* Set address */
@@ -194,6 +207,9 @@ void ctrl_readmem_bulk(void){
 void ctrl_readmem_ctrl(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
+	
+	/* Potential to block */
+	while (FPGA_lockstatus() != fpga_usblocked);
 	
 	FPGA_setlock(fpga_ctrlmem);
 	
@@ -217,6 +233,9 @@ void ctrl_writemem_ctrl(void){
 	
 	//printf("Writing to %x, %d\n", address, buflen);
 	
+	/* Potential to block */
+	while (FPGA_lockstatus() != fpga_usblocked);
+	
 	FPGA_setlock(fpga_generic);
 	
 	/* Set address */
@@ -236,6 +255,9 @@ void ctrl_writemem_bulk(void){
 	//uint32_t buflen = *(CTRLBUFFER_WORDPTR);
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
 	
+	/* Potential to block */
+	while (FPGA_lockstatus() != fpga_usblocked);
+	
 	FPGA_setlock(fpga_blockout);
 	
 	/* Set address */
@@ -243,6 +265,42 @@ void ctrl_writemem_bulk(void){
 	
 	/* Transaction done in generic callback */
 }
+
+#if BOARD == CW1200
+extern uint32_t stream_samplesLeft;
+extern uint32_t stream_samplesOverflowLocation;
+extern uint8_t stream_status;
+
+void ctrl_streammem_ctrl(void){
+	stream_samplesLeft = *(CTRLBUFFER_WORDPTR);
+	
+	if(stream_samplesLeft){
+		stream_samplesOverflowLocation = 0;
+	}
+}
+
+bool stream_dumpread(uint16_t bytes_to_stream){
+	
+	/* Potential to block */
+	while (FPGA_lockstatus() != fpga_unlocked);
+	
+    FPGA_setlock(fpga_streamin);
+    			
+    /* Set address */
+    FPGA_setaddr(3); //ADDR_ADCREAD defined in FPGA
+	
+	//Switch to faster timing for dumping data back
+	smc_fasttiming();
+    			
+    /* Do memory read */
+    return udi_vendor_bulk_in_run(
+    		(uint8_t *) PSRAM_BASE_ADDRESS,
+    		bytes_to_stream,
+    		main_vendor_bulk_in_received
+    );
+}
+#endif
+    			
 
 void ctrl_xmega_program_void(void)
 {
@@ -365,20 +423,47 @@ bool main_setup_out_received(void)
 	switch(udd_g_ctrlreq.req.bRequest){
 		/* Memory Read */
 		case REQ_MEMREAD_BULK:
-			udd_g_ctrlreq.callback = ctrl_readmem_bulk;
-			return true;
+			if (FPGA_lockstatus() == fpga_unlocked){
+				FPGA_setlock(fpga_usblocked);
+				udd_g_ctrlreq.callback = ctrl_readmem_bulk;
+				return true;
+			}		
+			break;
+				
 		case REQ_MEMREAD_CTRL:
-			udd_g_ctrlreq.callback = ctrl_readmem_ctrl;
-			return true;	
+			if (FPGA_lockstatus() == fpga_unlocked){
+				FPGA_setlock(fpga_usblocked);
+				udd_g_ctrlreq.callback = ctrl_readmem_ctrl;
+				return true;	
+			}		
+			break;
+			
 			
 		/* Memory Write */
 		case REQ_MEMWRITE_BULK:
-			udd_g_ctrlreq.callback = ctrl_writemem_bulk;
-			return true;
+			if (FPGA_lockstatus() == fpga_unlocked){
+				FPGA_setlock(fpga_usblocked);
+				udd_g_ctrlreq.callback = ctrl_writemem_bulk;
+				return true;
+			}		
+			break;
+			
 			
 		case REQ_MEMWRITE_CTRL:
-			udd_g_ctrlreq.callback = ctrl_writemem_ctrl;
-			return true;		
+			if (FPGA_lockstatus() == fpga_unlocked){
+				FPGA_setlock(fpga_usblocked);
+				udd_g_ctrlreq.callback = ctrl_writemem_ctrl;
+				return true;
+			}		
+			break;
+			
+			
+#if BOARD == CW1200
+		/* Enable streaming mode */
+		case REQ_MEMSTREAM:
+			udd_g_ctrlreq.callback = ctrl_streammem_ctrl;
+			return true;
+#endif
 			
 		/* Target serial */
 		case REQ_USART0_CONFIG:
@@ -440,7 +525,10 @@ bool main_setup_out_received(void)
 			
 		default:
 			return false;
-	}					
+	}			
+	
+	// If any of the above failed...
+	return false;		
 }
 
 
@@ -484,8 +572,12 @@ bool main_setup_in_received(void)
 			sizeof(main_buf_loopback) );
 	*/
 	
-	static uint8_t  respbuf[64];
+	static uint8_t  respbuf[128];
 	unsigned int cnt;
+	
+	if (udd_g_ctrlreq.req.wLength > sizeof(respbuf)){
+		return false;
+	}
 
 	switch(udd_g_ctrlreq.req.bRequest){
 		case REQ_MEMREAD_CTRL:
@@ -499,6 +591,28 @@ bool main_setup_in_received(void)
 			
 			return true;
 			break;
+
+#if BOARD == CW1200
+		/* Enable streaming mode */
+		case REQ_MEMSTREAM:
+			//Return two 32-bit number (stream_bytesLeft, stream_samplesOverflowLocation)
+			respbuf[0] = stream_status;
+			
+			respbuf[1] = LSB0W(stream_samplesLeft);
+			respbuf[2] = LSB1W(stream_samplesLeft);
+			respbuf[3] = LSB2W(stream_samplesLeft);
+			respbuf[4] = LSB3W(stream_samplesLeft);
+			
+			respbuf[5] = LSB0W(stream_samplesOverflowLocation);
+			respbuf[6] = LSB1W(stream_samplesOverflowLocation);
+			respbuf[7] = LSB2W(stream_samplesOverflowLocation);
+			respbuf[8] = LSB3W(stream_samplesOverflowLocation);
+			
+			udd_g_ctrlreq.payload = respbuf;
+			udd_g_ctrlreq.payload_size = 9;
+			return true;
+			break;
+#endif			
 			
 		case REQ_FPGA_STATUS:
 			respbuf[0] = FPGA_ISDONE();
@@ -570,13 +684,18 @@ void main_vendor_bulk_in_received(udd_ep_status_t status,
 {
 	UNUSED(nb_transfered);
 	UNUSED(ep);
-	if (UDD_EP_TRANSFER_OK != status) {
-		return; // Transfer aborted/error
-	}	
 	
 	if (FPGA_lockstatus() == fpga_blockin){		
 		FPGA_setlock(fpga_unlocked);
+	} else 	if (FPGA_lockstatus() == fpga_streamin) {
+		smc_normaltiming();
+		FPGA_setlock(fpga_unlocked);
 	}
+
+	if (UDD_EP_TRANSFER_OK != status) {
+		return; // Transfer aborted/error
+	}	
+
 }
 
 void main_vendor_bulk_out_received(udd_ep_status_t status,

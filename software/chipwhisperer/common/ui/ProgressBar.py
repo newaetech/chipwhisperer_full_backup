@@ -24,7 +24,6 @@
 #=================================================
 import logging
 from datetime import *
-from ..utils import qt_tweaks
 from ..utils import util
 
 
@@ -119,6 +118,7 @@ class ProgressBarText(object):
 try:
     from PySide.QtCore import *
     from PySide.QtGui import *
+    from ..utils import qt_tweaks
 
     class ProgressBarGUI(qt_tweaks.QDialog, ProgressBarText):
         def __init__(self, title="Progress", text=None, statusMask="Initializing...", textValues=None, show=True, parent=None):

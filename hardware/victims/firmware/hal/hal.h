@@ -66,7 +66,7 @@ void platform_init(void);
                                   \
                                 AES_CTRL |= 1<<AES_REQUEST; \
                                   \
-                                //Wait for done \
+                                /*Wait for done  */ \
                                 while ((AES_STATUS & (1<<AES_DONE)) == 0){ \
                                     ; \
                                 } \

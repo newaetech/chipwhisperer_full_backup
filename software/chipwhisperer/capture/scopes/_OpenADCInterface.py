@@ -12,6 +12,8 @@ import time
 import datetime
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
+import array
+import numpy as np
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -263,10 +265,10 @@ class TriggerSettings(Parameterized):
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
                             'recording samples BEFORE the trigger event.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
+            {'name': 'Total Samples', 'type':'int', 'limits':(129, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
                      'help':'%namehdr%'+
-                            'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples.'+
-                            'If using the ChipWhisperer-Lite/ChipWhisperer-Pro (CW1173/CW1200) this is no longer the case, and can be set to almost any number.'},
+                            'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples. '+
+                            'For the CW-Lite/Pro, the current lower limit is 128 samples due to interactions with the SAD trigger module. '},
         ]
 
         if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
@@ -475,6 +477,7 @@ class ClockSettings(Parameterized):
     def __init__(self, oaiface, hwinfo=None):
         self.oa = oaiface
         self._hwinfo = hwinfo
+        self._freqExt = 10e6
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
             {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
@@ -510,20 +513,22 @@ class ClockSettings(Parameterized):
                 {'name': 'Phase Adjust', 'type':'int', 'limits':(-255, 255), 'set':self.setPhase, 'get':self.phase, 'help':'%namehdr%' +
                          'Makes small amount of adjustment to sampling point compared to the clock source. This can be used to improve the stability ' +
                          'of the measurement. Total phase adjustment range is < 5nS regardless of input frequency.'},
-                {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self.adcFrequency},
+                {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self.adcFrequency, 'decimals': 5},
                 {'name': 'DCM Locked', 'type':'bool', 'get':self.dcmADCLocked, 'readonly':True},
                 {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.resetDcms(True, False), 'linked':['Phase Adjust']},
             ]},
             {'name': 'Freq Counter', 'type': 'float', 'readonly':True, 'get':self.extFrequency, 'siPrefix':True, 'suffix':'Hz'},
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self.setFreqSrc, 'get':self.freqSrc},
             {'name': 'CLKGEN Settings', 'type':'group', 'children': [
-                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc},
+                {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self.setClkgenSrc, 'get':self.clkgenSrc, 'linked':['Desired Frequency', 'Current Frequency']},
+                {'name':'Input Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
+                    'set':self.setFreqExt, 'get':self.freqExt, 'linked':['Desired Frequency', 'Current Frequency'], 'visible': True},
                 {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
                 {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self.getClkgen, 'linked':['Multiply', 'Divide']},
-                {'name':'Current Frequency', 'type':'str', 'default':0, 'readonly':True,
-                                            'get':self._getClkgenStr},
+                {'name':'Current Frequency', 'type':'float', 'default':0, 'readonly':True, 'siPrefix':True, 'suffix':'Hz', 
+                                            'get':self.getClkgen},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.resetDcms(False, True), 'linked':['Multiply', 'Divide']},
             ]}
@@ -544,15 +549,22 @@ class ClockSettings(Parameterized):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         return (result[3] & 0x08) >> 3
 
-    def _getClkgenStr(self):
-        return str(self.getClkgen()) + " Hz"
+    #def _getClkgenStr(self):
+    #    return str(self.getClkgen()) + " Hz"
 
     def getClkgen(self):
-        return (self._hwinfo.sysFrequency() * self.clkgenMul()) / self.clkgenDiv()
+        if self.clkgenSrc() == "extclk":
+            inpfreq = self.freqExt()
+        else:
+            inpfreq = self._hwinfo.sysFrequency()
+        return (inpfreq * self.clkgenMul()) / self.clkgenDiv()
 
     @setupSetParam(['CLKGEN Settings', 'Desired Frequency'])
     def autoMulDiv(self, freq):
-        inpfreq = self._hwinfo.sysFrequency()
+        if self.clkgenSrc() == "extclk":
+            inpfreq = self.freqExt()
+        else:
+            inpfreq = self._hwinfo.sysFrequency()
         sets = self.calculateClkGenMulDiv(freq, inpfreq)
         self.setClkgenMul(sets[0])
         self.setClkgenDiv(sets[1])
@@ -733,12 +745,26 @@ class ClockSettings(Parameterized):
             raise ValueError("source must be 'system' or 'extclk'")
 
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        
+        par = self.findParam(['CLKGEN Settings', 'EXTCLK Frequency'])
+        if par is not None:
+            if source == "extclk":
+                par.show()
+            else:
+                par.hide()
 
     def clkgenSrc(self):
         if self.oa is not None and self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)[0] & 0x08:
             return "extclk"
         else:
             return "system"
+            
+    @setupSetParam(['CLKGEN Settings', 'Input Frequency'])
+    def setFreqExt(self, freq):
+        self._freqExt = freq
+    
+    def freqExt(self):
+        return self._freqExt
 
     @setupSetParam(['ADC Clock', 'Phase Adjust'])
     def setPhase(self, phase):
@@ -1100,7 +1126,7 @@ class OpenADCInterface(object):
             bufsizebytes, self._stream_len_act = nae.cmdReadStream_bufferSize(self._stream_len)
 
         #Generate the buffer to save buffer
-        self._sbuf = [0] * bufsizebytes
+        self._sbuf = array.array('B', [0]) * bufsizebytes
 
     def numSamples(self):
         """Return the number of samples captured in one go. Returns max after resetting the hardware"""
@@ -1216,18 +1242,18 @@ class OpenADCInterface(object):
                 # Give the UI a chance to update (does nothing if not using UI)
                 util.updateUI()
 
-            _, self._stream_rx_bytes = self.serial.cmdReadStream()
-            timeout |= self.serial.streamModeCaptureStream.timeout
+            self._stream_rx_bytes, stream_timeout = self.serial.cmdReadStream()
+            timeout |= stream_timeout
             #Check the status now
             bytes_left, overflow_bytes_left, unknown_overflow = self.serial.cmdReadStream_getStatus()
             logging.debug("Streaming done, results: rx_bytes = %d, bytes_left = %d, overflow_bytes_left = %d"%(self._stream_rx_bytes, bytes_left, overflow_bytes_left))
             self.arm(False)
 
-            if overflow_bytes_left == (self._stream_len - 3072):
-                logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
-                timeout = True
-            elif unknown_overflow:
-                logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
+            if stream_timeout:
+                if self._stream_rx_bytes == 0: # == (self._stream_len - 3072):
+                    logging.warning("Streaming mode OVERFLOW occured as trigger too fast - Adjust offset upward (suggest = 200 000)")
+                else:
+                    logging.warning("Streaming mode OVERFLOW occured during capture - ADC sample clock probably too fast for stream mode (keep ADC Freq < 10 MHz)")
                 timeout = True
         else:
             status = self.getStatus()
@@ -1270,12 +1296,14 @@ class OpenADCInterface(object):
         self.sendMessage(CODE_READ, ADDR_ADCDATA, None, False, None)
 
     def readData(self, NumberPoints=None, progressDialog=None):
-
+        logging.debug("Reading data fromm OpenADC...")
         if self._streammode:
             # Process data
             bsize = self.serial.cmdReadStream_size_of_fpgablock()
+            num_bytes, num_samples = self.serial.cmdReadStream_bufferSize(self._stream_len)
 
-            data = [0] * self.serial.cmdReadStream_bufferSize(self._stream_len)[0]
+            # Remove sync bytes from trace
+            data = np.zeros(num_bytes, dtype=np.uint8)
             data[0] = self._sbuf[0]
             dbuf2_idx = 1
             for i in range(0, self._stream_rx_bytes, bsize):
@@ -1288,9 +1316,12 @@ class OpenADCInterface(object):
                 # Write to next section
                 dbuf2_idx += (bsize - 1)
 
-            logging.debug("Stream mode: done, %d bytes ready for processing"%len(data))
+            logging.debug("Stream mode: read %d bytes"%len(data))
+
+            # Turn raw bytes into samples
             datapoints = self.processData(data, 0.0)
-            if datapoints:
+
+            if datapoints is not None and len(datapoints):
                 logging.debug("Stream mode: done, %d samples processed"%len(datapoints))
             else:
                 logging.warning("Stream mode: done, no samples resulted from processing")
@@ -1368,8 +1399,9 @@ class OpenADCInterface(object):
                 # for p in data:
                 #       print "%x "%p,
 
-                if data:
-                    datapoints = datapoints + self.processData(data, 0.0)
+                if data is not None:
+                    data = np.array(data)
+                    datapoints = self.processData(data, 0.0)
 
                 if progressDialog:
                     progressDialog.setValue(status)
@@ -1389,52 +1421,83 @@ class OpenADCInterface(object):
 
             return datapoints
 
-    def processData(self, data, pad=float('NaN'), pretrigger_out=None):
-        fpData = []
-        lastpt = -100
-
+    def processData(self, data, pad=float('NaN'), debug=False):
         if data[0] != 0xAC:
-            logging.warning('Unexpected sync byte: 0x%x' % data[0])
+            logging.warning('Unexpected sync byte in processData(): 0x%x' % data[0])
             return None
 
-        trigfound = False
-        trigsamp = 0
+        if debug:
+            fpData = []
+            # Slow, verbose processing method
+            # Useful for fixing issues in ADC read
+            for i in xrange(1, len(data) - 3, 4):
+                # Convert
+                temppt = (data[i + 3] << 0) | (data[i + 2] << 8) | (data[i + 1] << 16) | (data[i + 0] << 24)
 
-        for i in range(1, len(data) - 3, 4):
-            #Convert
-            temppt = (data[i + 3]<<0) | (data[i + 2]<<8) | (data[i + 1]<<16) | (data[i + 0]<<24)
+                # print("%2x "%data[i])
 
-            #print("%2x "%data[i])
+                # print "%x %x %x %x"%(data[i +0], data[i +1], data[i +2], data[i +3]);
+                # print "%x"%temppt
 
-            #print "%x %x %x %x"%(data[i +0], data[i +1], data[i +2], data[i +3]);
-            #print "%x"%temppt
+                intpt1 = temppt & 0x3FF
+                intpt2 = (temppt >> 10) & 0x3FF
+                intpt3 = (temppt >> 20) & 0x3FF
 
-            intpt1 = temppt & 0x3FF
-            intpt2 = (temppt >> 10) & 0x3FF
-            intpt3 = (temppt >> 20) & 0x3FF
+                # print "%x %x %x" % (intpt1, intpt2, intpt3)
 
-            # print "%x %x %x" % (intpt1, intpt2, intpt3)
+                if trigfound == False:
+                    mergpt = temppt >> 30
+                    if (mergpt != 3):
+                        trigfound = True
+                        trigsamp = trigsamp + mergpt
+                        # print "Trigger found at %d"%trigsamp
+                    else:
+                        trigsamp += 3
 
-            if trigfound == False:
-                mergpt = temppt >> 30
-                if (mergpt != 3):
-                       trigfound = True
-                       trigsamp = trigsamp + mergpt
-                       #print "Trigger found at %d"%trigsamp
+                # input validation test: uncomment following and use
+                # ramp input on FPGA
+                ##if (intpt != lastpt + 1) and (lastpt != 0x3ff):
+                ##    print "intpt: %x lstpt %x\n"%(intpt, lastpt)
+                ##lastpt = intpt;
+
+                # print "%x %x %x"%(intpt1, intpt2, intpt3)
+
+                fpData.append(float(intpt1) / 1024.0 - self.offset)
+                fpData.append(float(intpt2) / 1024.0 - self.offset)
+                fpData.append(float(intpt3) / 1024.0 - self.offset)
+        else:
+            # Fast, efficient NumPy implementation
+
+            # Figure out how many bytes we're going to process
+            # Cut off some bytes at the end: we need the length to be a multiple of 4, and we probably have extra data
+            numbytes = len(data) - 1
+            extralen = (len(data) - 1) % 4
+
+            # Copy the data into a NumPy array. For long traces this is the longest part
+            data = data[1:1+numbytes-extralen]
+
+            # Split data into groups of 4 bytes and combine into words
+            data = np.reshape(data, (-1, 4))
+            data = np.left_shift(data, [24, 16, 8, 0])
+            data = np.sum(data, 1)
+
+            # Split words into samples and trigger bytes
+            data = np.right_shift(np.reshape(data, (-1, 1)), [0, 10, 20, 30]) & 0x3FF
+            fpData = np.reshape(data[:, [0, 1, 2]], (-1))
+            trigger = data[:, 3] % 4
+            fpData = fpData / 1024.0 - self.offset
+
+            # Search for the trigger signal
+            trigfound = False
+            trigsamp = 0
+            for t in trigger:
+                if(t != 3):
+                    trigfound = True
+                    trigsamp = trigsamp + (t & 0x3)
+                    #print "Trigger found at %d"%trigsamp
+                    break
                 else:
-                   trigsamp += 3
-
-            #input validation test: uncomment following and use
-            #ramp input on FPGA
-            ##if (intpt != lastpt + 1) and (lastpt != 0x3ff):
-            ##    print "intpt: %x lstpt %x\n"%(intpt, lastpt)
-            ##lastpt = intpt;
-
-            #print "%x %x %x"%(intpt1, intpt2, intpt3)
-
-            fpData.append(float(intpt1) / 1024.0 - self.offset)
-            fpData.append(float(intpt2) / 1024.0 - self.offset)
-            fpData.append(float(intpt3) / 1024.0 - self.offset)
+                    trigsamp += 3
 
         #print len(fpData)
 

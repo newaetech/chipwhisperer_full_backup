@@ -27,6 +27,7 @@ import usb.core
 import usb.util
 import math
 from threading import Condition, Thread
+import array
 
 
 def packuint32(data):
@@ -94,7 +95,10 @@ class NAEUSB(object):
         if not dev:
             raise Warning("Failed to find USB Device")
 
-        dev.set_configuration()
+        try:
+            dev.set_configuration()
+        except ValueError:
+            raise IOError("NAEUSB: Could not configure USB device")
 
         # Get serial number
         try:
@@ -239,18 +243,6 @@ class NAEUSB(object):
 
         return (samples_left_to_stream, overflow_location, unknown_overflow)
 
-    def _cmdReadStream_blockSizes(self, dlen):
-        bsize_bytes = 16384
-        bsize_samples = (bsize_bytes / 4) * 3
-
-        # dlen_ceil now has number of samples you should request instead (rounded up)
-        dlen_ceil = int(math.ceil(float(dlen) / float(bsize_samples)) * bsize_samples)
-
-        # Each block of 4096 bytes has one byte missing due to sycn header, account for that in number of samples
-        blocks = (((dlen_ceil / bsize_samples) * 4 ) / 4) * 3
-
-        return (dlen_ceil  - blocks, bsize_samples, bsize_bytes)
-
     def cmdReadStream_size_of_fpgablock(self):
         """ Asks the hardware how many BYTES are read in one go from FPGA, which indicates where the sync
             bytes will be located. These sync bytes must be removed in post-processing. """
@@ -264,14 +256,12 @@ class NAEUSB(object):
         Returns:
             Tuple: (Size of temporary buffer required, actual samples in buffer)
         """
+        num_samplebytes = int(math.ceil(float(dlen) * 4 / 3))
+        num_blocks = int(math.ceil(float(num_samplebytes) / 4096))
+        num_totalbytes = num_samplebytes + num_blocks
+        num_totalbytes = int(math.ceil(float(num_totalbytes) / 4096) * 4096)
+        return (num_totalbytes, num_samplebytes)
 
-        dlen, _ , _ = self._cmdReadStream_blockSizes(dlen)
-
-        # Make room for (4/3) * number of samples
-        blen = int((dlen * (4/3)))
-        tempbuf_len =  blen
-
-        return (tempbuf_len, dlen)
 
     def initStreamModeCapture(self, dlen, dbuf_temp, timeout_ms=1000):
         #Enter streaming mode for requested number of samples
@@ -303,7 +293,7 @@ class NAEUSB(object):
         # Ensure stream mode disabled
         self.sendCtrl(NAEUSB.CMD_MEMSTREAM, data=packuint32(0))
 
-        return self.streamModeCaptureStream.bsize_samples, self.streamModeCaptureStream.drx
+        return self.streamModeCaptureStream.drx, self.streamModeCaptureStream.timeout
 
     def enterBootloader(self, forreal=False):
         """Erase the SAM3U contents, forcing bootloader mode. Does not screw around."""
@@ -338,43 +328,65 @@ class NAEUSB(object):
             self.timeout_ms = timeout_ms
             self.serial = serial
             self.timeout = False
+            self.drx = 0
 
         def run(self):
-            # Get block size of samples, bytes per block
-            _, self.bsize_samples, self.bsize_bytes = self.serial._cmdReadStream_blockSizes(self.dlen)
+            logging.debug("Streaming: starting USB read")
+            start = time.time()
+            try:
+                self.drx = self.serial.usbdev().read(self.serial.rep, self.dbuf_temp, timeout=self.timeout_ms)
+            except IOError as e:
+                logging.warning('Streaming: USB stream read timed out')
+            diff = time.time() - start
+            logging.debug("Streaming: Received %d bytes in time %.20f)" % (self.drx, diff))
 
-            dlen = self.dlen
-            to = self.timeout_ms
+            #while(self.drx < num_totalbytes):
+            #    bytesread = self.serial.usbdev().read(self.serial.rep, buf, timeout=to)
+            #    self.dbuf_temp[self.drx:self.drx+bytesread] = buf[:]
+            #    self.drx += bytesread
+            #    to = 50
 
-            self.drx = 0
-            while dlen > 0:
-                try:
-                    if dlen > 9216:
-                        bsize = self.bsize_bytes
-                    elif dlen >= 6122:
-                        bsize = 4096*3
-                    elif dlen >= 3072:
-                        bsize = 4096*2
-                    else:
-                        bsize = 4096
 
-                    #Commented out normally for performance
-                    #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
-
-                    self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
-                except IOError:
-                    self.timeout = True
-                    if self.drx == 0:
-                        logging.info("Timeout during stream mode with no data - assumed no trigger")
-                    else:
-                        logging.warning("Timeout during stream mode after %d bytes" % self.drx)
-                    break
-
-                #once we have a block of data, quicker timeout is OK
-                to = 50
-
-                dlen -= (bsize / 4) * 3
-                self.drx += bsize
+            # # Get block size of samples, bytes per block
+            # _, self.bsize_samples, self.bsize_bytes = self.serial._cmdReadStream_blockSizes(self.dlen)
+            #
+            # dlen = self.dlen
+            # to = self.timeout_ms
+            #
+            # self.drx = 0
+            #
+            # start = time.time()
+            # while dlen > 0:
+            #     try:
+            #         if dlen > 9216:
+            #             bsize = self.bsize_bytes
+            #         elif dlen >= 6122:
+            #             bsize = 4096*3
+            #         elif dlen >= 3072:
+            #             bsize = 4096*2
+            #         else:
+            #             bsize = 4096
+            #
+            #         #Commented out normally for performance
+            #         #logging.debug("USB Read Request: %d bytes, %d samples left"%(bsize, dlen))
+            #         diff = time.time() - start
+            #         logging.debug("Sending USB read request at %.20f" % diff)
+            #
+            #         #self.dbuf_temp[self.drx:(self.drx+bsize)] = (self.serial.usbdev().read(self.serial.rep, bsize, timeout=to))
+            #         self.serial.usbdev().read(self.serial.rep, bsize, timeout=to)
+            #     except IOError as e:
+            #         self.timeout = True
+            #         if self.drx == 0:
+            #             logging.debug("Timeout during stream mode with no data - assumed no trigger")
+            #         else:
+            #             logging.debug("Timeout during stream mode after %d bytes" % self.drx)
+            #         break
+            #
+            #     #once we have a block of data, quicker timeout is OK
+            #     to = 50
+            #
+            #     dlen -= (bsize / 4) * 3
+            #     self.drx += bsize
 
 
 if __name__ == '__main__':
