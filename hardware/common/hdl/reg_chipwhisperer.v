@@ -382,7 +382,7 @@ module reg_chipwhisperer(
 	 assign targetpower_off = reg_targetpower_off;
 `endif
 
-	 assign targetio_highz = targetpower_off;
+	 assign targetio_highz = reg_targetpower_off;
 	
 	 //TODO: Should use a mux?
 	 /*

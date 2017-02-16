@@ -27,6 +27,7 @@ module fifo_top(
 	 input wire  [31:0]	max_samples_i,
 	 output wire [31:0]	max_samples_o,
 	 output wire [31:0] samples_o,
+	 input wire	 [12:0] downsample_i, //Ignores this many samples inbetween captured measurements
 	 
 	 output wire      fifo_overflow, //If overflow happens (bad during stream mode)
 	 input wire       stream_mode //1=Enable stream mode, 0=Normal
@@ -78,6 +79,33 @@ module fifo_top(
 		
 	assign reset_o = reset_i;
 	
+	//Counter for downsampling (NOT proper decimation)
+	reg sample_wr_en;
+	reg [12:0] downsample_ctr;
+	
+	wire downsample_max;
+	
+	assign downsample_max = (downsample_ctr == downsample_i) ? 1'b1 : 'b0;
+	
+	always @(posedge adc_sampleclk) begin
+		if (downsample_max) begin
+			sample_wr_en <= 1'b1;
+		end else begin
+			sample_wr_en <= 1'b0;
+		end				
+	end
+	
+	always @(posedge adc_sampleclk) begin
+		if ((fifo_rst == 1'b1) || (adc_capture_go == 1'b0)) begin
+			downsample_ctr <= 13'd0;
+		end else begin
+			if (downsample_max)
+				downsample_ctr <= 13'd0;
+			else
+				downsample_ctr <= downsample_ctr + 13'd1;
+		end
+	end
+	
 	//3 samples per 4 bytes
 	assign max_samples_o = FIFO_FULL_SIZE ;
 	 
@@ -86,7 +114,7 @@ module fifo_top(
 	always@(posedge adc_sampleclk) begin
 		if (fifo_rst == 1) begin
 			adcfifo_merge_cnt <= 'b00;
-		end else begin		
+		end else if (sample_wr_en == 1'b1) begin	
 			if (adcfifo_merge_cnt == 'b00)
 				adcfifo_adcsample0 <= adc_datain;
 			else if (adcfifo_merge_cnt == 'b01)
@@ -103,7 +131,8 @@ module fifo_top(
 		if (~adc_capture_go)
 			presample_counter <= FIFO_FULL_SIZE-6; //max_samples_i
 		else 
-			presample_counter <= presample_counter - 32'd1;		
+			if (downsample_max == 1'b1)
+				presample_counter <= presample_counter - 32'd1;		
 	end
 	
 	always@(posedge adc_sampleclk) begin
@@ -124,7 +153,7 @@ module fifo_top(
 		if (fifo_capture_en == 0) begin
 			adcfifo_wr_en <= 0;
 		end else begin						
-			if (adcfifo_merge_cnt == 'b10) begin
+			if ((adcfifo_merge_cnt == 'b10) && (downsample_max == 1'b1)) begin
 				adcfifo_wr_en <= 1;
 			end else begin
 				adcfifo_wr_en <= 0;
