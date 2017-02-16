@@ -7,8 +7,8 @@ or the codebase at http://www.assembla.com/spaces/openadc .
 
 This file is the ChipWhisperer Clock Glitcher registers
 
-Copyright (c) 2013, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
-This project (and file) is released under the 2-Clause BSD License:
+Copyright (c) 2013-2017, Colin O'Flynn <coflynn@newae.com>. All rights reserved.
+This file is released under the 2-Clause BSD License:
 
 Redistribution and use in source and binary forms, with or without 
 modification, are permitted provided that the following conditions are met:
@@ -93,6 +93,8 @@ module reg_clockglitch(
 	 `define CLOCKGLITCH_OFFSET_LEN 8
 	 
 `ifdef SUPPORT_GLITCH_READBACK
+	 `define GLITCHCYCLES_CNT 19
+	 `define GLITCHCYCLES_CNT_LEN 4
 	 `define GLITCH_RECONFIG_RB_ADDR 56
 	 `define GLITCH_RECONFIG_RB_LEN 16
 	  reg [127:0] clockglitch_readback_reg;
@@ -126,6 +128,7 @@ module reg_clockglitch(
             `CLOCKGLITCH_SETTINGS: reg_hyplen_reg <= `CLOCKGLITCH_LEN;
 				`CLOCKGLITCH_OFFSET: reg_hyplen_reg <= `CLOCKGLITCH_OFFSET_LEN;
 `ifdef SUPPORT_GLITCH_READBACK
+				`GLITCHCYCLES_CNT: reg_hyplen_reg <= `GLITCHCYCLES_CNT_LEN;
 				`GLITCH_RECONFIG_RB_ADDR: reg_hyplen_reg <= `GLITCH_RECONFIG_RB_LEN;
 `endif
 				default: reg_hyplen_reg<= 0;
@@ -192,9 +195,9 @@ module reg_clockglitch(
 	       00 = Source 0
 			 01 = Source 1
 			 
-	 [62..58] (Byte 7, Bits [6..2]) = Unused
+	 [63..58] (Byte 7, Bits [7..2]) = Unused
 	 
-	 [63] (Byte 7, Bit 7) = Manual Glitch. Set to 1 then 0, glitch on rising edge			 
+	 
 */	
 	 
 	 wire [2:0] glitch_type;
@@ -248,7 +251,7 @@ module reg_clockglitch(
 			oneshot <= 1'b0;		
 	 end
 	
-	 reg [8:0] glitch_cnt;
+	 reg [7:0] glitch_cnt;
 	 reg glitch_go;
 	 always @(posedge sourceclk) begin
 		if (glitch_trigger)
@@ -263,6 +266,15 @@ module reg_clockglitch(
 		else
 			glitch_cnt <= 0;
 	 end
+	 	 
+	 reg [31:0] clockglitch_cnt;
+	 reg clockglitch_cnt_rst;
+	 always @(posedge sourceclk) begin
+		/*if ((clockglitch_cnt_rst == 1'b1) || (reset == 1'b1))
+				clockglitch_cnt <= 32'd0;
+		else*/ if (glitch_go)
+				clockglitch_cnt <= clockglitch_cnt + 32'd1;
+		end
 	 
 	 assign clockglitch_settings_read[18:0] = clockglitch_settings_reg[18:0];
 	 assign clockglitch_settings_read[36:19] = {phase2_actual, phase1_actual};
@@ -297,6 +309,7 @@ module reg_clockglitch(
 				`CLOCKGLITCH_OFFSET: begin reg_datao_reg <= clockglitch_offset_read_reg[reg_bytecnt*8 +: 8]; end
 `ifdef SUPPORT_GLITCH_READBACK
 				`GLITCH_RECONFIG_RB_ADDR: begin reg_datao_reg <= clockglitch_readback_reg[reg_bytecnt*8 +: 8]; end
+				`GLITCHCYCLES_CNT: begin reg_datao_reg <= clockglitch_cnt[reg_bytecnt*8 +: 8]; end
 `endif
 				default: begin reg_datao_reg <= 0; end
 			endcase
@@ -323,7 +336,10 @@ module reg_clockglitch(
 		if (reset) begin
 			clockglitch_settings_reg <= 0;
 			clockglitch_offset_reg <= 0;
-			
+			clockglitch_cnt_rst <= 0;
+`ifdef SUPPORT_GLITCH_READBACK
+			clockglitch_readback_reg <= {8'd10, 8'd0, 8'd10, 8'd0, 16'd0, 16'd0};
+`endif
 		end else if (clockglitch_settings_reg[18]) begin
 			clockglitch_settings_reg[18] <= 0;
 			
@@ -332,6 +348,7 @@ module reg_clockglitch(
 				`CLOCKGLITCH_SETTINGS: clockglitch_settings_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
 				`CLOCKGLITCH_OFFSET: clockglitch_offset_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
 `ifdef SUPPORT_GLITCH_READBACK
+				`GLITCHCYCLES_CNT: clockglitch_cnt_rst <= reg_datai[0];
 				`GLITCH_RECONFIG_RB_ADDR: clockglitch_readback_reg[reg_bytecnt*8 +: 8] <= reg_datai;	
 `endif
 				default: ;
