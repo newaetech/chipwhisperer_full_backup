@@ -12,7 +12,7 @@ typedef struct ss_cmd
 } ss_cmd;
 
 #define MAX_SS_CMDS 10
-ss_cmd commands[MAX_SS_CMDS];
+static ss_cmd commands[MAX_SS_CMDS];
 static int num_commands = 0;
 
 #define MAX_SS_LEN 64
@@ -23,7 +23,7 @@ static char hex_lookup[16] =
 	'8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
 };
 
-int hex_decode(int len, char* ascii_buf, char* data_buf)
+int hex_decode(int len, char* ascii_buf, uint8_t* data_buf)
 {
 	for(int i = 0; i < len; i++)
 	{
@@ -71,10 +71,10 @@ int simpleserial_addcmd(char c, unsigned int len, void (*fp)(uint8_t*))
 void simpleserial_get(void)
 {
 	char ascii_buf[2*MAX_SS_LEN];
-	char data_buf[MAX_SS_LEN];
-
-	// Step 1: find which command we're receiving
+	uint8_t data_buf[MAX_SS_LEN];
 	char c;
+
+	// Find which command we're receiving
 	c = getch();
 
 	int cmd;
@@ -84,10 +84,11 @@ void simpleserial_get(void)
 			break;
 	}
 
+	// If we didn't find a match, give up right away
 	if(cmd == num_commands)
 		return;
 
-	// Step 2: receive characters until we fill the ASCII buffer
+	// Receive characters until we fill the ASCII buffer
 	for(int i = 0; i < 2*commands[cmd].len; i++)
 	{
 		c = getch();
@@ -95,33 +96,36 @@ void simpleserial_get(void)
 		// Check for early \n
 		if(c == '\n' || c == '\r')
 			return;
-		
-		// Check for characters out of bounds
-		if(!((c >= '0' && c <= '9') || (c >= 'A' && c <= 'F')))
-			return;
 
 		ascii_buf[i] = c;
 	}
 
-	// Step 3: assert that last character is \n or \r
+	// Assert that last character is \n or \r
 	c = getch();
 	if(c != '\n' && c != '\r')
 		return;
 
-	// ASCII buffer is full: convert to bytes and run callback
+	// ASCII buffer is full: convert to bytes 
+	// Check for illegal characters here
 	if(hex_decode(commands[cmd].len, ascii_buf, data_buf))
 		return;
 
+	// Callback
 	commands[cmd].fp(data_buf);
 }
 
 void simpleserial_put(char c, int size, uint8_t* output)
 {
+	// Write first character
 	putch(c);
+
+	// Write each byte as two nibbles
 	for(int i = 0; i < size; i++)
 	{
 		putch(hex_lookup[output[i] >> 4 ]);
 		putch(hex_lookup[output[i] & 0xF]);
 	}
+
+	// Write trailing '\n'
 	putch('\n');
 }
