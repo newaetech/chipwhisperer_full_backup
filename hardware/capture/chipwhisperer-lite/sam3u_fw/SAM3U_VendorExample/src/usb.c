@@ -188,10 +188,11 @@ void ctrl_readmem_bulk(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);	
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
 	
-	/* Potential to block */
-	while (FPGA_lockstatus() != fpga_usblocked);
-	
-	FPGA_setlock(fpga_blockin);
+	// Earlier, we locked the FPGA
+	// Relock it for our specific purpose
+	// This should never block
+	FPGA_releaselock();
+	while(!FPGA_setlock(fpga_blockin));
 	
 	/* Set address */
 	FPGA_setaddr(address);
@@ -208,10 +209,8 @@ void ctrl_readmem_ctrl(void){
 	uint32_t buflen = *(CTRLBUFFER_WORDPTR);
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
 	
-	/* Potential to block */
-	while (FPGA_lockstatus() != fpga_usblocked);
-	
-	FPGA_setlock(fpga_ctrlmem);
+	FPGA_releaselock();
+	while(!FPGA_setlock(fpga_ctrlmem));
 	
 	/* Set address */
 	FPGA_setaddr(address);
@@ -233,10 +232,8 @@ void ctrl_writemem_ctrl(void){
 	
 	//printf("Writing to %x, %d\n", address, buflen);
 	
-	/* Potential to block */
-	while (FPGA_lockstatus() != fpga_usblocked);
-	
-	FPGA_setlock(fpga_generic);
+	FPGA_releaselock();
+	while(!FPGA_setlock(fpga_generic));
 	
 	/* Set address */
 	FPGA_setaddr(address);
@@ -248,17 +245,16 @@ void ctrl_writemem_ctrl(void){
 		xram[i] = ctrlbuf_payload[i];
 	}
 	
-	FPGA_setlock(fpga_unlocked);
+	FPGA_releaselock();
 }
 
 void ctrl_writemem_bulk(void){
 	//uint32_t buflen = *(CTRLBUFFER_WORDPTR);
 	uint32_t address = *(CTRLBUFFER_WORDPTR + 1);
 	
-	/* Potential to block */
-	while (FPGA_lockstatus() != fpga_usblocked);
-	
-	FPGA_setlock(fpga_blockout);
+	// TODO: see block in
+	FPGA_releaselock();
+	while(!FPGA_setlock(fpga_blockout));
 	
 	/* Set address */
 	FPGA_setaddr(address);
@@ -281,10 +277,9 @@ void ctrl_streammem_ctrl(void){
 
 bool stream_dumpread(uint16_t bytes_to_stream){
 	
-	/* Potential to block */
-	while (FPGA_lockstatus() != fpga_unlocked);
-	
-    FPGA_setlock(fpga_streamin);
+	// TODO: see block in
+	FPGA_releaselock();
+	while(!FPGA_setlock(fpga_streamin));
     			
     /* Set address */
     FPGA_setaddr(3); //ADDR_ADCREAD defined in FPGA
@@ -423,16 +418,14 @@ bool main_setup_out_received(void)
 	switch(udd_g_ctrlreq.req.bRequest){
 		/* Memory Read */
 		case REQ_MEMREAD_BULK:
-			if (FPGA_lockstatus() == fpga_unlocked){
-				FPGA_setlock(fpga_usblocked);
+			if (FPGA_setlock(fpga_usblocked)){
 				udd_g_ctrlreq.callback = ctrl_readmem_bulk;
 				return true;
 			}		
 			break;
 				
 		case REQ_MEMREAD_CTRL:
-			if (FPGA_lockstatus() == fpga_unlocked){
-				FPGA_setlock(fpga_usblocked);
+			if (FPGA_setlock(fpga_usblocked)){
 				udd_g_ctrlreq.callback = ctrl_readmem_ctrl;
 				return true;	
 			}		
@@ -441,8 +434,7 @@ bool main_setup_out_received(void)
 			
 		/* Memory Write */
 		case REQ_MEMWRITE_BULK:
-			if (FPGA_lockstatus() == fpga_unlocked){
-				FPGA_setlock(fpga_usblocked);
+			if (FPGA_setlock(fpga_usblocked)){
 				udd_g_ctrlreq.callback = ctrl_writemem_bulk;
 				return true;
 			}		
@@ -450,8 +442,7 @@ bool main_setup_out_received(void)
 			
 			
 		case REQ_MEMWRITE_CTRL:
-			if (FPGA_lockstatus() == fpga_unlocked){
-				FPGA_setlock(fpga_usblocked);
+			if (FPGA_setlock(fpga_usblocked)){
 				udd_g_ctrlreq.callback = ctrl_writemem_ctrl;
 				return true;
 			}		
@@ -585,9 +576,7 @@ bool main_setup_in_received(void)
 			udd_g_ctrlreq.payload_size = ctrlmemread_size;
 			ctrlmemread_size = 0;
 			
-			if (FPGA_lockstatus() == fpga_ctrlmem){
-				FPGA_setlock(fpga_unlocked);
-			}
+			FPGA_releaselock();
 			
 			return true;
 			break;
@@ -686,10 +675,10 @@ void main_vendor_bulk_in_received(udd_ep_status_t status,
 	UNUSED(ep);
 	
 	if (FPGA_lockstatus() == fpga_blockin){		
-		FPGA_setlock(fpga_unlocked);
+		FPGA_releaselock();
 	} else 	if (FPGA_lockstatus() == fpga_streamin) {
 		smc_normaltiming();
-		FPGA_setlock(fpga_unlocked);
+		FPGA_releaselock();
 	}
 
 	if (UDD_EP_TRANSFER_OK != status) {
@@ -720,11 +709,12 @@ void main_vendor_bulk_out_received(udd_ep_status_t status,
 		}
 		
 		if (FPGA_lockstatus() == fpga_blockout){
-			FPGA_setlock(fpga_unlocked);
+			FPGA_releaselock();
 		}
 	} else if (blockendpoint_usage == bep_fpgabitstream){
 
-		/* Send byte to FPGA - this could eventually be done via SPI */		
+		/* Send byte to FPGA - this could eventually be done via SPI */	
+		// TODO: is this dangerous?	
 		for(unsigned int i = 0; i < nb_transfered; i++){
 			fpga_program_sendbyte(main_buf_loopback[i]);
 		}

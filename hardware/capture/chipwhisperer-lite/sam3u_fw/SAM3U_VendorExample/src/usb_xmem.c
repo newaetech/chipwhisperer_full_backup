@@ -23,14 +23,45 @@ uint8_t volatile *xram = (uint8_t *) PSRAM_BASE_ADDRESS;
 
 static volatile fpga_lockstatus_t _fpga_locked = fpga_unlocked;
 
-void FPGA_setlock(fpga_lockstatus_t lockstatus)
+int FPGA_setlock(fpga_lockstatus_t lockstatus)
 {
-	_fpga_locked = lockstatus;
+	int ret = 0;
+	cpu_irq_enter_critical();
+	if (_fpga_locked == fpga_unlocked)
+	{
+		ret = 1;
+		_fpga_locked = lockstatus;	
+	}
+	cpu_irq_leave_critical();
+	return ret;
+}
+
+void FPGA_releaselock(void)
+{
+	_fpga_locked = fpga_unlocked;
 }
 
 fpga_lockstatus_t FPGA_lockstatus(void)
 {
 	return _fpga_locked;
+}
+
+int try_enter_cs(void)
+{
+	// Try to get the lock
+	cpu_irq_enter_critical();
+	if(FPGA_setlock(fpga_generic))
+		return 1;
+	
+	// If we didn't get it, revert back
+	cpu_irq_leave_critical();
+	return 0;
+}
+
+void exit_cs(void)
+{
+	FPGA_releaselock();
+	cpu_irq_leave_critical();
 }
 
 void FPGA_setaddr(uint32_t addr)
@@ -57,6 +88,27 @@ uint32_t unsafe_readuint32(uint16_t fpgaaddr)
 	return data;
 }
 
+uint32_t safe_readuint32(uint16_t fpgaaddr)
+{	
+	//TODO - This timeout to make GUI responsive in case of USB errors, but data will be invalid
+	uint32_t timeout = 10000;
+	do{
+		timeout--;
+		if(timeout == 0){return 0xffffffff;};
+	}while(!try_enter_cs());
+	uint32_t data;
+	
+	FPGA_setaddr(fpgaaddr);
+	data = *xram;
+	data |= *(xram+1) << 8;
+	data |= *(xram+2) << 16;
+	data |= *(xram+3) << 24;
+	exit_cs();
+	return data;
+}
+
+
+
 // Read numBytes bytes from memory
 void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes)
 {
@@ -66,6 +118,26 @@ void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes)
 	{
 		data[i] = *(xram+i);
 	}
+}
+
+// Safely read bytes from memory by disabling interrupts first
+// Blocks until able to read
+void safe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes)
+{
+	//TODO - This timeout to make GUI responsive in case of USB errors, but data will be invalid
+	uint32_t timeout = 10000;
+	do{
+		timeout--;
+		if(timeout == 0){*data = 0xFF; return;};
+	}while(!try_enter_cs());
+	
+	FPGA_setaddr(fpgaaddr);
+	
+	for(int i = 0; i < numBytes; i++)
+	{
+		data[i] = *(xram+i);
+	}
+	exit_cs();
 }
 
 // Write 4 bytes to memory
