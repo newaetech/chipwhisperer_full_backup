@@ -67,7 +67,7 @@ TARGET = simpleserial-base
 OBJDIR = objdir
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c $(HALSRC)
+SRC = $(TARGET).c $(HALSRC) simpleserial.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC = 
@@ -85,7 +85,7 @@ ASRC =
 ##########################################################################
 ##########################################################################
 
-VPATH += :./
+VPATH += :../simpleserial/:./
 
 # Optimization level, can be [0, 1, 2, 3, s]. 
 #     0 = turn off optimization. s = optimize for size.
@@ -104,7 +104,7 @@ DEBUG = dwarf-2
 #     Each directory must be seperated by a space.
 #     Use forward slashes for directory separators.
 #     For a directory that has spaces, enclose it in quotes.
-EXTRAINCDIRS += ../hal
+EXTRAINCDIRS += ../hal ../simpleserial
 
 
 # Compiler flag to set the C Standard level.

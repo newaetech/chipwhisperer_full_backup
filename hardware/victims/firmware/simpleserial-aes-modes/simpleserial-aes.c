@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "aes-independant.h"
+#include "simpleserial.h"
 
 #define ECB 0	// Electronic code book
 #define CBC 1	// Cipher block chaining
@@ -29,51 +30,19 @@
 #define CTR 4	// Counter
 
 // Change this mode to pick block cipher mode
-#define BLOCK_MODE CTR
-
-#define IDLE 0
-#define KEY 1
-#define PLAIN 2
-
-char hex_lookup[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
-
-uint8_t* hex_decode(const char *in, int len,uint8_t *out)
-{
-        unsigned int i, t, hn, ln;
-
-        for (t = 0,i = 0; i < len; i+=2,++t) {
-
-                hn = in[i] > '9' ? (in[i]|32) - 'a' + 10 : in[i] - '0';
-                ln = in[i+1] > '9' ? (in[i+1]|32) - 'a' + 10 : in[i+1] - '0';
-                out[t] = (hn << 4 ) | ln;
-        }
-
-        return out;
-}
-
-void hex_print(const uint8_t * in, int len, char *out)
-{
-		unsigned int i,j;
-		j=0;
-		for (i=0; i < len; i++) {
-			out[j++] = hex_lookup[in[i] >> 4];
-			out[j++] = hex_lookup[in[i] & 0x0F];			
-		}
-		
-		out[j] = 0;
-}
-
-#define BUFLEN KEY_LENGTH*4
-
-uint8_t memory[BUFLEN];
-char asciibuf[BUFLEN];
+#define BLOCK_MODE ECB
 
 uint8_t pt[16];   	// Plaintext
 uint8_t ct[16];   	// Ciphertext
 
+void update_key(uint8_t* k)
+{
+	aes_indep_key(k);
+}
 
 void encrypt(uint8_t* pt)
 {
+	trigger_high();
 	static uint8_t input[16];
 	static uint8_t output[16];
 	
@@ -127,16 +96,20 @@ void encrypt(uint8_t* pt)
 				ct[i] = output[i] ^ pt[i];
 			break;
 	}
+	trigger_low();
+	
+	simpleserial_put('r', 16, ct);
+}
+
+void no_op(uint8_t* x)
+{
 }
 
 //Default key
 uint8_t tmp[KEY_LENGTH] = {DEFAULT_KEY};
 
-int main
-	(
-	void
-	)
-	{
+int main(void)
+{
     platform_init();
 	init_uart();	
 	trigger_setup();
@@ -151,94 +124,13 @@ int main
 	putch('\n');
 	*/
 			
-	/* Super-Crappy Protocol works like this:
-	
-	Send kKEY
-	Send pPLAINTEXT
-	*** Encryption Occurs ***
-	receive rRESPONSE
-	
-	e.g.:
-	
-    kE8E9EAEBEDEEEFF0F2F3F4F5F7F8F9FA\n
-	p014BAF2278A69D331D5180103643E99A\n
-	r6743C3D1519AB4F2CD9A78AB09A511BD\n
-    */
-		
-	char c;
-	int ptr = 0;
-    
 	//Initial key
 	aes_indep_init();
 	aes_indep_key(tmp);
 
-	char state = 0;
-	 
-	while(1){
-	
-		c = getch();
-		
-		if (c == 'x') {
-			ptr = 0;
-			state = IDLE;
-			continue;		
-		}
-		
-		if (c == 'k') {
-			ptr = 0;
-			state = KEY;			
-			continue;
-		}
-		
-		else if (c == 'p') {
-			ptr = 0;
-			state = PLAIN;
-			continue;
-		}
-		
-		
-		else if (state == KEY) {
-			if ((c == '\n') || (c == '\r')) {
-				asciibuf[ptr] = 0;
-				hex_decode(asciibuf, ptr, tmp);
-				aes_indep_key(tmp);
-				state = IDLE;
-			} else {
-				asciibuf[ptr++] = c;
-			}
-		}
-		
-		else if (state == PLAIN) {
-			if ((c == '\n') || (c == '\r')) {
-				asciibuf[ptr] = 0;
-				hex_decode(asciibuf, ptr, pt);
-
-				/* Do Encryption */					
-				trigger_high();
-				encrypt(pt);
-				trigger_low();
-				               
-				/* Print Results */
-				hex_print(ct, 16, asciibuf);
-				
-				putch('r');
-				for(int i = 0; i < 32; i++){
-					putch(asciibuf[i]);
-				}
-				putch('\n');
-				
-				state = IDLE;
-			} else {
-                if (ptr >= BUFLEN){
-                    state = IDLE;
-                } else {
-                    asciibuf[ptr++] = c;
-                }
-			}
-		}
-	}
-		
-	return 1;
-	}
-	
-	
+	simpleserial_addcmd('k', 16, update_key);
+    simpleserial_addcmd('p', 16, encrypt);
+    simpleserial_addcmd('x', 0, no_op);
+    while(1)
+        simpleserial_get();
+}
