@@ -105,6 +105,15 @@ module cwlite_interface(
 	.O(clk_usb_buf),
 	.I(clk_usb) );
 	
+	//Change in ICAP - clock now generated outside. 
+	//TODO: Check skew is OK still
+	wire clk_slow;
+	reg [2:0] slowcnt;
+	always @(posedge clk_usb) begin
+		slowcnt <= slowcnt + 3'd1;
+	end
+	assign clk_slow = slowcnt[2];
+	
 	wire reg_rst;
 	wire [5:0] reg_addr;
 	wire [15:0] reg_bcnt;
@@ -259,6 +268,7 @@ module cwlite_interface(
 	reg_reconfig reg_reconfig(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),
+		.icap_clk(clk_slow),
 		.reg_address(reg_addr), 
 		.reg_bytecnt(reg_bcnt), 
 		.reg_datao(reg_datai_reconfig), 
