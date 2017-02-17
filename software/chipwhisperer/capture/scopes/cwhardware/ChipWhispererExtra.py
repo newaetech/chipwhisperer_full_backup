@@ -112,14 +112,17 @@ class CWExtraSettings(Parameterized):
             hasFPAFPB = True
             hasGlitchOut = False
             hasPLL = True
+            hasAux=False
         elif cwtype == "cwlite":
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
+            hasAux=False
         elif cwtype == "cw1200":
             hasFPAFPB=False
             hasGlitchOut=True
             hasPLL=False
+            hasAux=True
         else:
             raise ValueError("Unknown ChipWhisperer: %s" % cwtype)
 
@@ -127,6 +130,7 @@ class CWExtraSettings(Parameterized):
         self.hasFPAFPB = hasFPAFPB
         self.hasGlitchOut = hasGlitchOut
         self.hasPLL = hasPLL
+        self.hasAux = hasAux
 
         ret = []
         # Generate list of input pins present on the hardware
@@ -137,6 +141,9 @@ class CWExtraSettings(Parameterized):
             ]
         else:
             tpins = []
+
+        if self.hasAux:
+            tpins.append({'name': 'Aux SMA', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_FPA), 'set':partial(self.setPin, pin=self.PIN_FPA)})
 
         tpins.extend([
             {'name': 'Target IO1 (Serial TXD)', 'type':'bool', 'get':partial(self.getPin, pin=self.PIN_RTIO1), 'set':partial(self.setPin, pin=self.PIN_RTIO1)},
@@ -171,6 +178,11 @@ class CWExtraSettings(Parameterized):
         if self.hasFPAFPB:
             ret.append({'name': 'Trigger Out on FPA', 'type':'bool', 'set':self.setTrigOut, 'get':self.getTrigOut})
             clksrc = {'Front Panel A':self.CLOCK_FPA, 'Front Panel B':self.CLOCK_FPB}
+        else:
+            clksrc = {}
+
+        if self.hasAux:
+            ret.append({'name': 'Trigger Out on Aux', 'type':'bool', 'set':self.setTrigOutAux, 'get':self.getTrigOut})
         else:
             clksrc = {}
 
@@ -461,6 +473,14 @@ class CWExtraSettings(Parameterized):
     def getTriggerModule(self):
         resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
         return resp[0]
+
+    @setupSetParam("Trigger Out on Aux")
+    def setTrigOutAux(self, enabled):
+        resp = self.oa.sendMessage(CODE_READ, ADDR_TRIGMOD, Validate=False, maxResp=1)
+        resp[0] &= 0xE7
+        if enabled:
+            resp[0] |= 0x08
+        self.oa.sendMessage(CODE_WRITE, ADDR_TRIGMOD, resp)
 
     @setupSetParam("Trigger Out on FPA")
     def setTrigOut(self, enabled):
