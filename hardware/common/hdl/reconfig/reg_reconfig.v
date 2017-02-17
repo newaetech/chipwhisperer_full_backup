@@ -36,6 +36,7 @@ POSSIBILITY OF SUCH DAMAGE.
 module reg_reconfig(
 	input 			reset_i,
 	input 			clk,
+	input          icap_clk,
 	input [5:0]    reg_address,  // Address of register
 	input [15:0]   reg_bytecnt,  // Current byte count
 	input [7:0]    reg_datai,    // Data to write
@@ -50,7 +51,6 @@ module reg_reconfig(
 	output [15:0]  reg_hyplen
     );
 
-	wire icap_clk;
 	wire icap_ce;
 	wire icap_wr;
 	wire [15:0] icap_in;
@@ -179,12 +179,6 @@ module reg_reconfig(
 		icap_cfg <= icap_cfg2;
 	end
 	
-	reg [2:0] cnt;	
-	always @(posedge clk)
-		cnt <= cnt + 3'b1;
-		
-	assign icap_clk = cnt[2];
-
 	// ICAP_SPARTAN6: Internal Configuration Access Port
 	// Spartan-6
 	ICAP_SPARTAN6 #(

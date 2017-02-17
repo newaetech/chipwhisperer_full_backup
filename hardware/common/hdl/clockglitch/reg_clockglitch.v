@@ -53,7 +53,8 @@ module reg_clockglitch(
 	output wire    glitchclk,
 	input wire     exttrigger,
 	
-	output wire		dcm_unlocked
+	output wire		dcm_unlocked,
+	output wire    led_glitch
    );
 	 
 	 wire	  reset;
@@ -338,7 +339,7 @@ module reg_clockglitch(
 			clockglitch_offset_reg <= 0;
 			clockglitch_cnt_rst <= 0;
 `ifdef SUPPORT_GLITCH_READBACK
-			clockglitch_readback_reg <= {8'd10, 8'd0, 8'd10, 8'd0, 16'd0, 16'd0};
+			clockglitch_readback_reg <= {8'd0, 8'd10, 8'd0, 8'd10, 16'd0, 16'd0};
 `endif
 		end else if (clockglitch_settings_reg[18]) begin
 			clockglitch_settings_reg[18] <= 0;
@@ -386,6 +387,28 @@ module reg_clockglitch(
 		.phase2_done(phase2_done),
 		.dcm2_locked(dcm2_locked)
 	);
+	
+	/* LED lighty up thing */
+	reg [7:0] led_extend;
+	reg led_on;
+	always @(posedge sourceclk) begin
+		if (glitch_go) begin
+			led_extend <= 0;			
+		end else if (led_on == 1'b1) begin
+			led_extend <= led_extend + 8'b1;
+		end
+	end
+	
+	always@(posedge sourceclk) begin
+		if (glitch_go)
+			led_on <= 1'b1;
+		else if (led_extend == 8'hFF)
+			led_on <= 1'b0;
+	end
+	
+	assign led_glitch = led_on;
+		
+		
 	
 endmodule
 
