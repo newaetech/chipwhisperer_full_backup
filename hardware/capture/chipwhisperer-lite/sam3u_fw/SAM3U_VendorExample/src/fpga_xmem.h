@@ -21,14 +21,28 @@
 #include <stdint.h>
 
 typedef enum fpga_lockstatus_e {fpga_unlocked = 0, fpga_generic, fpga_blockin, fpga_streamin, fpga_blockout, fpga_ctrlmem, fpga_usblocked} fpga_lockstatus_t;
-void FPGA_setlock(fpga_lockstatus_t lockstatus);
+// Try to get the FPGA lock. Returns 1 if it's ours and 0 if we cannot proceed.
+// lockstatus: the lock we're trying to apply
+// interrupts_on: should interrupts be enabled 
+int FPGA_setlock(fpga_lockstatus_t lockstatus);
+
+// Release the lock.
+void FPGA_releaselock(void);
+
+// Check the lock status. Useful in the USB stack
 fpga_lockstatus_t FPGA_lockstatus(void);
+
+// Useful functions for entering/exiting critical sections
+int try_enter_cs(void);
+void exit_cs(void);
 
 // Read 4 bytes into a single uint32_t
 uint32_t unsafe_readuint32(uint16_t fpgaaddr);
+uint32_t safe_readuint32(uint16_t fpgaaddr);
 
 // Read a number of bytes into a byte array
 void unsafe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);
+void safe_readbytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);
 
 // Write a number of bytes to the FPGA
 void unsafe_writebytes(uint16_t fpgaaddr, uint8_t* data, int numBytes);

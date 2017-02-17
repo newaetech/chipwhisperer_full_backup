@@ -1,3 +1,24 @@
+/***********************************************************************
+This file is part of the ChipWhisperer Project. See www.newae.com for more
+details, or the codebase at http://www.chipwhisperer.com
+
+Copyright (c) 2016-2017, NewAE Technology Inc. All rights reserved.
+Author: Colin O'Flynn <coflynn@newae.com>
+
+  chipwhisperer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  chipwhisperer is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
+*************************************************************************/
+
 //`include "includes.v"
 `default_nettype none
 
@@ -5,6 +26,7 @@ module cw1200_interface(
     input wire         clk_usb,
       
     output wire        LED_TRIGGERED,
+	 output wire        LED_GLITCHTRIGGERED,
     output wire        LED_ADCR,
 	 output wire        LED_ADCG,
 	 output wire        LED_CLKGENR,
@@ -12,7 +34,9 @@ module cw1200_interface(
 	 output wire        LED_GLITCHR,
 	 output wire        LED_GLITCHG,
 	 
-	 output wire 		  AUXOUT,
+	 output wire        LED_AUXI,
+	 output wire        LED_AUXO,
+	 inout wire 		  SMAAUX,
 	 
 	 /* FPGA - USB Interface */
 	 inout wire [7:0]	USB_D,
@@ -124,12 +148,13 @@ module cw1200_interface(
    wire        pll_locked_unused;
    wire        pll_clkfbout;
    wire        pll_clkfbout_buf;
-	wire        pll_clkout1_unused;
+	wire        pll_clkout_12mhz;
    wire        pll_clkout2_unused;
    wire        pll_clkout3_unused;
    wire        pll_clkout4_unused;
    wire        pll_clkout5_unused;
    wire		   pll_clkin1, pll_clkout0;
+	wire			clk_usb_12mhz;
   
   	IBUFG clkin1_buf
    (.O (pll_clkin1), // clk_usb_buf0
@@ -145,7 +170,7 @@ module cw1200_interface(
 	 .CLKOUT0_DIVIDE         (5),
 	 .CLKOUT0_PHASE          (0.000),
 	 .CLKOUT0_DUTY_CYCLE     (0.500),
-	 .CLKOUT1_DIVIDE         (5),
+	 .CLKOUT1_DIVIDE         (40),
 	 .CLKOUT1_PHASE          (0.000),
 	 .CLKOUT1_DUTY_CYCLE     (0.500),
 	 .CLKIN_PERIOD           (10.41667),
@@ -154,7 +179,7 @@ module cw1200_interface(
 	 // Output clocks
 	(.CLKFBOUT              (pll_clkfbout),
 	 .CLKOUT0               (pll_clkout0),
-	 .CLKOUT1               (pll_clkout1_unused),
+	 .CLKOUT1               (pll_clkout_12mhz),
 	 .CLKOUT2               (pll_clkout2_unused),
 	 .CLKOUT3               (pll_clkout3_unused),
 	 .CLKOUT4               (pll_clkout4_unused),
@@ -175,12 +200,21 @@ module cw1200_interface(
 	//as allows placement in pair site with
 	//"oadc/genclocks/clkgenfx_mux"
 	 BUFGMUX
-		clkout1_buf (
+		clkout0_buf (
 		.O(clk_usb_buf0), // 1-bit output: Clock buffer output
 	//	.I0(1'b0), // 1-bit input: Clock buffer input (S=0)
 		.I1(pll_clkout0), // 1-bit input: Clock buffer input (S=1)
 		.S(1'b1) // 1-bit input: Clock buffer select
-	); 
+	);
+	
+	/*
+	BUFG
+	  clkout1_buf (
+	   .O(clk_usb_12mhz),
+		.I(pll_clkout_12mhz)
+	);
+	*/
+	assign clk_usb_12mhz = pll_clkout_12mhz;
 
 	//Pass raw output as this goes to a BUFGMUX
 	assign clk_usb_buf1 = pll_clkout0;
@@ -293,7 +327,7 @@ module cw1200_interface(
 		.reg_hypaddress(reg_hypaddr), 
 		.reg_hyplen(reg_hyplen_cw),
 		.reg_stream(),
-		//.extclk_fpa_io(),
+		.extclk_fpa_io(SMAAUX),
 		//.extclk_fpb_i(1'b0),
 		.extclk_pll_i(1'b0),
 		.extclk_rearin_i(target_hs1),
@@ -336,7 +370,9 @@ module cw1200_interface(
 		.usi_in_o(),
 		.targetpower_off(target_npower),
 				
-		.trigger_o(ext_trigger)
+		.trigger_o(ext_trigger),
+		.led_auxi(LED_AUXI),
+		.led_auxo(LED_AUXO)
 	);
 
 	reg_clockglitch reg_clockglitch(
@@ -357,12 +393,14 @@ module cw1200_interface(
 		.sourceclk1(clkgen),
 		.glitchclk(glitchclk),
 		.exttrigger(ext_trigger),
-		.dcm_unlocked(Glitch_DCM_Unlock)
+		.dcm_unlocked(Glitch_DCM_Unlock),
+		.led_glitch(LED_GLITCHTRIGGERED)
 		);
 
 	reg_reconfig reg_reconfig(
 		.reset_i(reg_rst),
 		.clk(clk_usb_buf),
+		.icap_clk(clk_usb_12mhz),
 		.reg_address(reg_addr), 
 		.reg_bytecnt(reg_bcnt), 
 		.reg_datao(reg_datai_reconfig), 
@@ -442,8 +480,6 @@ module cw1200_interface(
 	 assign target_PDIC = (target_highz) ? 1'bZ:
 	                      (enable_output_pdic) ? output_pdic :
 								 (USB_PDIC_EN) ? USB_SCK1 : 1'bZ;
-	 	
-	 assign AUXOUT = ext_trigger;
 		
 	/*
 	wire [63:0] ila_trigbus;

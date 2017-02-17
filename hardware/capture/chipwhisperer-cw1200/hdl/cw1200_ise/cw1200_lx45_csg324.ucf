@@ -4,12 +4,16 @@ CONFIG VCCAUX=3.3;
  NET target_npower  LOC=B4 | IOSTANDARD=LVCMOS33;
 
  NET LED_TRIGGERED  	LOC=E13 | IOSTANDARD=LVCMOS33;
+ NET LED_GLITCHTRIGGERED  	LOC=C11 | IOSTANDARD=LVCMOS33;
  NET LED_ADCR      	LOC=B12 | IOSTANDARD=LVCMOS33;
  NET LED_ADCG      	LOC=D9  | IOSTANDARD=LVCMOS33;
  NET LED_GLITCHR    	LOC=F9  | IOSTANDARD=LVCMOS33;
  NET LED_GLITCHG    	LOC=C10 | IOSTANDARD=LVCMOS33;
  NET LED_CLKGENR    	LOC=G9  | IOSTANDARD=LVCMOS33;
  NET LED_CLKGENG    	LOC=D8  | IOSTANDARD=LVCMOS33;
+ 
+ NET LED_AUXI     	LOC=D6  | IOSTANDARD=LVCMOS33;
+ NET LED_AUXO    	   LOC=C7  | IOSTANDARD=LVCMOS33;
  
  NET sc_rst      LOC=B14 | IOSTANDARD=LVCMOS33;
  NET sc_clk      LOC=C13 | IOSTANDARD=LVCMOS33;
@@ -18,7 +22,7 @@ CONFIG VCCAUX=3.3;
  NET sc_io       LOC=D14 | IOSTANDARD=LVCMOS33;
  NET sc_aux2     LOC=F13 | IOSTANDARD=LVCMOS33;
  
- NET AUXOUT  LOC=D11 | DRIVE=12 | IOSTANDARD=LVCMOS33 | SLEW=FAST;
+ NET SMAAUX  LOC=D11 | DRIVE=12 | IOSTANDARD=LVCMOS33 | SLEW=FAST;
 
  NET target_MISO    LOC=A2  | IOSTANDARD=LVCMOS33;
  NET target_MOSI    LOC=A3  | IOSTANDARD=LVCMOS33;
@@ -191,10 +195,10 @@ INST "reg_clockglitch/gc/DCM_extclock_gen" LOC="DCM_X0Y6";
 INST "reg_clockglitch/gc/DCM_extclock_gen2" LOC="DCM_X0Y7";
 
 #Place these two into a site which allows this pair to work together
-INST "clkout1_buf" LOC="BUFGMUX_X2Y3";
+INST "clkout0_buf" LOC="BUFGMUX_X2Y3";
 INST "oadc/genclocks/clkgenfx_mux" LOC="BUFGMUX_X2Y4";
-
 INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X2Y1";
+
 
 
 
@@ -204,19 +208,20 @@ INST "reg_chipwhisperer/clkgenfx_mux" LOC="BUFGMUX_X2Y1";
 #INST "clkusb_ibufg" LOC="BUFGMUX_X2Y1";
 
 PIN "reg_chipwhisperer/clkgenfx_mux.O" CLOCK_DEDICATED_ROUTE = FALSE;
+//PIN "reg_chipwhisperer/clkauxline_mux.O" CLOCK_DEDICATED_ROUTE = FALSE;
 
 #Note: ISE generates a too-strict derived constraints... ADC signals only good up to 100 MHz due
 #to ADC requirements. But if the input is 100 MHz, this signal would be at 400 MHz. The
 #user knows they can't use the 4x clock then so we don't need such a high constraint...
 NET "oadc/genclocks/dcm_clk_in" TNM_NET = "TN_DCMInput";
 NET "oadc/genclocks/clkgenfx_in" TNM_NET = "TN_DCMInput";
-TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 10 ns HIGH 50% PRIORITY 0;
+TIMESPEC "TS_DCMInput" = PERIOD "TN_DCMInput" 10 ns HIGH 50% PRIORITY -1;
 
 NET "oadc/genclocks/out_from_dcmmux" TNM_NET = "TN_ADCSampleClock";
 #NET "oadc/ADC_clk_sample" TNM_NET = "TN_ADCSampleClock";
-TIMESPEC "TS_ADCSampleClock" = PERIOD "TN_ADCSampleClock" 12 ns HIGH 50% PRIORITY 0;
-NET "oadc/genclocks/ADC_clk_times4" TIG;
-
+NET "oadc/genclocks/ADC_clk_times4"  TNM_NET = "TN_ADCSampleClock";
+#NET "oadc/genclocks/clkgenfx_out" TNM_NET = "TN_ADCSampleClock";
+TIMESPEC "TS_ADCSampleClock" = PERIOD "TN_ADCSampleClock" 9.5 ns HIGH 50% PRIORITY 0;
 
 
 ##(2/2) If disabling glitch generation block (sometimes required during debug), comment out following
