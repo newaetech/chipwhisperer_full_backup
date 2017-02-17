@@ -27,6 +27,7 @@ ADDR_ADCFREQ    = 8
 ADDR_PHASE      = 9
 ADDR_VERSIONS   = 10
 ADDR_OFFSET     = 26
+ADDR_DECIMATE   = 15
 ADDR_SAMPLES    = 16
 ADDR_PRESAMPLES = 17
 ADDR_BYTESTORX  = 18
@@ -269,6 +270,10 @@ class TriggerSettings(Parameterized):
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples. '+
                             'For the CW-Lite/Pro, the current lower limit is 128 samples due to interactions with the SAD trigger module. '},
+            {'name':'Downsample Factor', 'type':'int', 'limits':(1, 8192), 'set':self.setDecimate, 'get':self.decimate,
+                    'help':'%namehdr%'+
+                            'Downsamples incomming ADC data by throwing away the specified number of samples between captures. Synchronous to the trigger so presample '+
+                            'mode is DISABLED when this value is greater than 1.'},
         ]
 
         if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
@@ -310,6 +315,13 @@ class TriggerSettings(Parameterized):
 
     def fifoOverflow(self):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK
+
+    @setupSetParam("Downsample Factor")
+    def setDecimate(self, decsamples):
+        self.oa.setDecimate(decsamples)
+
+    def decimate(self):
+        return self.oa.decimate()
 
     @setupSetParam("Total Samples")
     def setNumSamples(self, samples):
@@ -480,7 +492,7 @@ class ClockSettings(Parameterized):
         self._freqExt = 10e6
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
+            {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('ADC Clock', 'ADC Sample Rate'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
                      'help':'%namehdr%' +
                             'Update if the Digital Clock Manager (DCM) are "locked" and their operating frequency.'},
             {'name':'Reset DCMs', 'type':'action', 'action':self.resetDcms, 'linked':[('CLKGEN Settings', 'Multiply'), ('CLKGEN Settings', 'Divide')],
@@ -514,6 +526,7 @@ class ClockSettings(Parameterized):
                          'Makes small amount of adjustment to sampling point compared to the clock source. This can be used to improve the stability ' +
                          'of the measurement. Total phase adjustment range is < 5nS regardless of input frequency.'},
                 {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self.adcFrequency, 'decimals': 5},
+                {'name': 'ADC Sample Rate', 'type': 'int', 'siPrefix': True, 'suffix': 'S/s', 'readonly': True, 'get': self.adcSampleRate, 'decimals': 5},
                 {'name': 'DCM Locked', 'type':'bool', 'get':self.dcmADCLocked, 'readonly':True},
                 {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.resetDcms(True, False), 'linked':['Phase Adjust']},
             ]},
@@ -895,6 +908,10 @@ class ClockSettings(Parameterized):
 
         return long(measured)
 
+    def adcSampleRate(self):
+        """Return the sample rate, takes account of decimation factor (if set)"""
+        return self.adcFrequency() / self.oa.decimate()
+
 
 class OpenADCInterface(object):
 
@@ -1127,6 +1144,25 @@ class OpenADCInterface(object):
 
         #Generate the buffer to save buffer
         self._sbuf = array.array('B', [0]) * bufsizebytes
+
+
+    def setDecimate(self, decsamples):
+        cmd = bytearray(2)
+        if decsamples <= 0:
+            raise ValueError("Decsamples is <= 0 (%d), makes no sense" % decsamples)
+        decsamples -= 1
+        cmd[0] = ((decsamples >> 0) & 0xFF)
+        cmd[1] = ((decsamples >> 8) & 0xFF)
+        self.sendMessage(CODE_WRITE, ADDR_DECIMATE, cmd)
+
+
+    def decimate(self):
+        decnum = 0x00000000
+        temp = self.sendMessage(CODE_READ, ADDR_DECIMATE, maxResp=2)
+        decnum |= temp[0] << 0
+        decnum |= temp[1] << 8
+        decnum += 1
+        return decnum
 
     def numSamples(self):
         """Return the number of samples captured in one go. Returns max after resetting the hardware"""
@@ -1507,8 +1543,10 @@ class OpenADCInterface(object):
         #Ensure that the trigger point matches the requested by padding/chopping
         diff = self.presamples_desired - trigsamp
         if diff > 0:
-               fpData = [pad]*diff + fpData
-               logging.warning('Pretrigger not met. Increase presampleTempMargin (in the code).')
+               #fpData = [pad]*diff + fpData
+               fpData = np.append([pad]*diff, fpData)
+               logging.warning('Pretrigger not met: Do not use downsampling and pretriggering at same time.')
+               logging.debug('Pretrigger not met: can attempt to increase presampleTempMargin(in the code).')
         else:
                fpData = fpData[-diff:]
 
