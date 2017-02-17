@@ -30,7 +30,7 @@
 #define CTR 4	// Counter
 
 // Change this mode to pick block cipher mode
-#define BLOCK_MODE CTR
+#define BLOCK_MODE ECB
 
 uint8_t pt[16];   	// Plaintext
 uint8_t ct[16];   	// Ciphertext
@@ -97,6 +97,8 @@ void encrypt(uint8_t* pt)
 			break;
 	}
 	trigger_low();
+	
+	simpleserial_put('r', 16, ct);
 }
 
 void no_op(uint8_t* x)
