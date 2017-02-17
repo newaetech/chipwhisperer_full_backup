@@ -27,12 +27,22 @@ void get_key(uint8_t* k)
 	// Load key here
 }
 
-void get_pt(uint8_t* p)
+void get_pt(uint8_t* pt)
 {
+	/**********************************
+	* Start user-specific code here. */
 	trigger_high();
-	// Perform encryption here
+	
+	//16 hex bytes held in 'pt' were sent
+	//from the computer. Store your response
+	//back into 'pt', which will send 16 bytes
+	//back to computer. Can ignore of course if
+	//not needed
+	
 	trigger_low();
-	simpleserial_put('r', 16, p);
+	/* End user-specific code here. *
+	********************************/
+	simpleserial_put('r', 16, pt);
 }
 
 void reset(uint8_t* x)
