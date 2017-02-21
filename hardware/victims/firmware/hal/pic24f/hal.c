@@ -98,20 +98,24 @@ void platform_init(void)
     return;
 }
 
-/* AES Hardware Peripheral */
+#if HWCRYPTO
 
+/* AES Hardware Peripheral */
 void HW_AES128_Init(void)
 {
+    //TODO: Following assumes reset state - possibly should write all bits instead
+
     CRYCONLbits.CRYON = 1;
     CRYCONLbits.OPMOD = 0x0; // Encrypt
     CRYCONLbits.CPHRSEL = 1;
     CRYCONLbits.CPHRMOD = 0;    
-    CRYCONHbits.KEYSRC = 0;
+    CRYCONHbits.KEYSRC = 0; //Key source - this is just SRAM
 }
 
 void HW_AES128_LoadKey(uint8_t * key)
 {
-    memcpy((void *)&CRYKEY0, key, 16); //Load the key into CRYKEY
+    //Load the key into CRYKEY
+    memcpy((void *)&CRYKEY0, key, 16);
 }
 
 
@@ -125,6 +129,8 @@ void HW_AES128_Enc(uint8_t * pt)
             ;
     memcpy(pt, (void*)&CRYTXTB0, 16);   
 }
+
+#endif
 
 
 
