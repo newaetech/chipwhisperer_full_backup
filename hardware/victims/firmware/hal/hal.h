@@ -27,10 +27,12 @@ void platform_init(void);
 #define CW303 3
 #define CW304 4
 #define CW308_MEGARF  8
+#define CW308_PIC24FJ 10
 
 //HAL_TYPE Define Types
 #define HAL_avr 1
 #define HAL_xmega 2
+#define HAL_pic24f 3
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -41,6 +43,10 @@ void platform_init(void);
     #include <util/delay.h>
     #include "xmega/xmega_hal.h"
     #include "xmega/avr_compiler.h"
+#elif HAL_TYPE == HAL_pic24f
+    #include <xc.h>
+    #include "pic24f/pic24f_hal.h"
+    #include "pic24f/uart.h"
 #else
     #error "Unsupported HAL Type"
 #endif
