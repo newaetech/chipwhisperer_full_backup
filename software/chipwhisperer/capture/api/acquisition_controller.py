@@ -94,6 +94,9 @@ class AcquisitionController():
                 if aux:
                     aux.traceArm()
 
+        if self.target:
+            self.target.reinit()
+
         if self.scope:
             self.scope.arm()
 
@@ -108,7 +111,7 @@ class AcquisitionController():
             self.key = data[0]
             self.textin = data[1]
 
-            self.target.reinit()
+            #self.target.reinit()
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
             self.target.loadInput(self.textin)
