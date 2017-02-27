@@ -229,11 +229,17 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
 
     def inTextChanged(self, _=None):
         try:
-            key = util.hexstr2list(self.indata.text())
-            key = [int(d) for d in key]
-
             #Read settings
             inpround = self.inprnd.itemData(self.inprnd.currentIndex())
+
+            keytext = self.indata.text()
+            key = util.hexstr2list(keytext)
+            key = [int(d) for d in key]
+
+            if (inpround == 0 and len(key) != 8) or (inpround != 0 and len(key) != 6):
+                err = "ERR: Len=%d: %s" % (len(key), key)
+                self.keysched.setText(err)
+                return
 
             # Get entire key schedule
             totalrndstr = ""
@@ -251,5 +257,5 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
 
             self.keysched.setText(totalrndstr)
 
-        except:
+        except NotImplementedError as e:
             self.keysched.clear()

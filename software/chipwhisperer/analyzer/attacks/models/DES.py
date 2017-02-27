@@ -161,7 +161,7 @@ class DESLeakageHelper(object):
             inputkey = bytearray2binarylist(inputkey,8)
             key = self.__permutate(self.__pc1, inputkey)
         else:
-            inputkey = bytearray2binarylist(inputkey,6)
+            inputkey = bytearray2binarylist(inputkey,8)
             key = self.__permutate(self.__pc2_inv, inputkey)
         i = inputround
         L = key[:28]
@@ -317,6 +317,9 @@ class DES(ModelsBase, Plugin):
                 else:
                     wrong.append(i)
         return (unknown, wrong)
+
+    def keyScheduleRounds(self, inputkey, inputround, desiredround, returnSubkeys=True):
+        return self.modelobj.keyScheduleRounds(inputkey, inputround, desiredround, returnSubkeys)
 
 
 if __name__ == "__main__":

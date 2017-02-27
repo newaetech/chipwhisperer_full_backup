@@ -104,7 +104,7 @@ class ModelsBase(Parameterized):
         return self.model
 
     def keyScheduleRounds(self, inputkey, inputround, desiredround, returnSubkeys=True):
-        pass
+        raise NotImplementedError()
 
     def getRoundKeys(self, key, iniRound):
         ret = []
