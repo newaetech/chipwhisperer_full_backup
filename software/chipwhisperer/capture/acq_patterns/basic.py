@@ -28,6 +28,7 @@ from chipwhisperer.common.utils import util
 from _base import AcqKeyTextPattern_Base
 from chipwhisperer.common.utils.parameter import setupSetParam
 
+
 class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
     _name = "Basic"
 
@@ -116,7 +117,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
         self.validateKey()
         self.validateText()
 
-        return (self._key, self._textin)
+        return self._key, self._textin
 
     def __str__(self):
         key = "Key=" + self.findParam("Key").getValueKey()

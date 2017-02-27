@@ -27,67 +27,49 @@ import time
 from chipwhisperer.common.utils import util
 
 
-class AcquisitionController():
+class AcquisitionController:
 
     def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
         self.sigTraceDone = util.Signal()
         self.sigNewTextResponse = util.Signal()
 
+        self.currentTrace = 0
+        self.maxtraces = 1
+
+        self.key = [0]
+        self.textin = [0]
+        self.textout = [0]
+
         self.target = target
         self.scope = scope
         self.writer = writer
         self.auxList = auxList
-        self.setKeyTextPattern(keyTextPattern)
-        keyTextPattern.setTarget(target)
-
-        self.maxtraces = 1
+        self.keyTextPattern = keyTextPattern
+        self.keyTextPattern.setTarget(target)
 
         if self.auxList is not None:
             for aux in auxList:
                 if aux:
                     aux.captureInit()
 
-    def setKeyTextPattern(self, pat):
-        self._keyTextPattern = pat
-        if pat:
-            self._keyTextPattern.initPair()
-
-    def targetDoTrace(self, plaintext, key=None):
-        if self.target is None or self.target.getName()== "None":
+    def targetDoTrace(self):
+        if self.target is None or self.target.getName() == "None":
             return []
 
-        if key:
-            self.target.loadEncryptionKey(key)
-        self.target.loadInput(plaintext)
         self.target.go()
-
         timeout = 50
-        while self.target.isDone() == False and timeout:
+        while self.target.isDone() is False and timeout:
             timeout -= 1
             time.sleep(0.01)
 
         if timeout == 0:
             logging.warning('Target timeout')
 
-        # print "DEBUG: Target go()"
+        self.textout = self.target.readOutput()
+        logging.debug("PlainText: " + ''.join(format(x, '02x') for x in self.textin))
+        logging.debug("CipherText: " + ''.join(format(x, '02x') for x in self.textout))
 
-        resp = self.target.readOutput()
-        # print "DEBUG: Target readOutput()"
-
-        # print "pt:",
-        # for i in plaintext:
-        #    print " %02X"%i,
-        # print ""
-
-        # print "sc:",
-        # for i in resp:
-        #    print " %02X"%i,
-        # print ""
-
-        self.sigNewTextResponse.emit(self.key, plaintext, resp, self.target.getExpected())
-        return resp
-
-    def doSingleReading(self, numPoints=None):
+    def doSingleReading(self):
         # Set mode
         if self.auxList:
             for aux in self.auxList:
@@ -107,18 +89,14 @@ class AcquisitionController():
 
         if self.target:
             # Get key / plaintext now
-            data = self._keyTextPattern.newPair()
-            self.key = data[0]
-            self.textin = data[1]
+            self.key, self.textin = self.keyTextPattern.newPair()
 
-            #self.target.reinit()
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
             self.target.loadInput(self.textin)
-            # Load input, start encryption, get output. Key was set already, don't resend
-            self.textout = self.targetDoTrace(self.textin, key=None)
-        else:
-            self.textout = [0]
+            # Load input, start encryption, get output
+            self.targetDoTrace()
+            self.sigNewTextResponse.emit(self.key, self.textin, self.textout, self.target.getExpected())
 
         # Get ADC reading
         if self.scope:
@@ -141,15 +119,14 @@ class AcquisitionController():
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
 
-    def doReadings(self, channelNumbers=[0], tracesDestination=None, progressBar=None):
-        self._keyTextPattern.initPair()
-        data = self._keyTextPattern.newPair()
-        self.key = data[0]
-        self.textin = data[1]
+    def doReadings(self, channelNumbers=None, tracesDestination=None, progressBar=None):
+        if channelNumbers is None:
+            channelNumbers = [0]
+
+        self.keyTextPattern.initPair()
 
         if self.writer:
             self.writer.prepareDisk()
-            self.writer.setKnownKey(self.key)
 
         if self.auxList:
             for aux in self.auxList:
@@ -164,8 +141,10 @@ class AcquisitionController():
             if self.doSingleReading():
                 try:
                     if self.writer:
+                        self.writer.setKnownKey(self.key)
                         for channelNum in channelNumbers:
-                            self.writer.addTrace(self.scope.channels[channelNum].getTrace(), self.textin, self.textout, self.key, channelNum=channelNum)
+                            self.writer.addTrace(self.scope.channels[channelNum].getTrace(), self.textin, self.textout,
+                                                 self.key, channelNum=channelNum)
                 except ValueError as e:
                     logging.warning('Exception caught in adding trace %d, trace skipped.' % self.currentTrace)
                     logging.debug(str(e))
@@ -183,7 +162,7 @@ class AcquisitionController():
                 if aux:
                     aux.captureComplete()
 
-        if self.writer and self.writer.numTraces()>0:
+        if self.writer and self.writer.numTraces() > 0:
             # Don't clear trace as we re-use the buffer
             self.writer.config.setAttr("scopeSampleRate", self.scope.channels[channelNumbers[0]].getSampleRate())
             self.writer.closeAll(clearTrace=False)
