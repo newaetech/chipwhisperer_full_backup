@@ -258,4 +258,7 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
             self.keysched.setText(totalrndstr)
 
         except NotImplementedError as e:
-            self.keysched.clear()
+            self.keysched.setText("ERR: Key schedule calculation not implemented")
+
+        except ValueError as e:
+            self.keysched.setText("ERR: could not decode key string %s" % keytext)
