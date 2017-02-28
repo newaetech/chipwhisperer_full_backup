@@ -33,6 +33,7 @@ except ImportError:
     logging.warn('T-test inputs: no AES module found. Using pseudorandom plaintexts instead')
     AES = None
 
+
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     _name = "CRI T-Test"
     _description = "Welsch T-Test with random/fixed plaintext."
@@ -93,4 +94,4 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
         # Check key works with target
         self.validateKey()
 
-        return (self._key, self._textin)
+        return self._key, self._textin
