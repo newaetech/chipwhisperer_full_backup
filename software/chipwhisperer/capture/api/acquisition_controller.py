@@ -46,6 +46,7 @@ class AcquisitionController:
         self.auxList = auxList
         self.keyTextPattern = keyTextPattern
         self.keyTextPattern.setTarget(target)
+        self.keyTextPattern.initPair()
 
         if self.auxList is not None:
             for aux in auxList:
