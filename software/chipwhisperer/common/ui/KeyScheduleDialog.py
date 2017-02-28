@@ -236,7 +236,7 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
             key = util.hexstr2list(keytext)
             key = [int(d) for d in key]
 
-            if (inpround == 0 and len(key) != 8) or (inpround != 0 and len(key) != 6):
+            if len(key) != 8:
                 err = "ERR: Len=%d: %s" % (len(key), key)
                 self.keysched.setText(err)
                 return
