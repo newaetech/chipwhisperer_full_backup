@@ -215,6 +215,9 @@ class GraphWidget(QWidget):
         self.setLayout(layout)
         self.setDefaults()
 
+        if not hasattr(self.pw, "setDownsampling"):
+            logging.warning("pyqtgraph version too old, no DOWNSAMPLING support. Long traces will slow down / crash software. Upgrade pyqtgraph to fix.")
+
     def setDefaults(self):
         self.setPersistance(False)
         self.color = 0
@@ -335,7 +338,9 @@ class GraphWidget(QWidget):
             enableds = False
         else:
             enableds = True
-        self.pw.setDownsampling(ds=enableds, auto=True, mode=dsmode)
+
+        if hasattr(self.pw, 'setDownsampling'):
+            self.pw.setDownsampling(ds=enableds, auto=True, mode=dsmode)
 
         if pen is None:
             pen = pg.mkPen(self.acolor)
