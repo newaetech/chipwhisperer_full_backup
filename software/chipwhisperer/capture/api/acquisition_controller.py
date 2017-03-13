@@ -67,8 +67,17 @@ class AcquisitionController:
             logging.warning('Target timeout')
 
         self.textout = self.target.readOutput()
-        logging.debug("PlainText: " + ''.join(format(x, '02x') for x in self.textin))
-        logging.debug("CipherText: " + ''.join(format(x, '02x') for x in self.textout))
+        try:
+            logging.debug("PlainText: " + ''.join(format(x, '02x') for x in self.textin))
+        except:
+            pass
+
+        try:
+            logging.debug("CipherText: " + ''.join(format(x, '02x') for x in self.textout))
+        except:
+            pass
+
+
 
     def doSingleReading(self):
         # Set mode
