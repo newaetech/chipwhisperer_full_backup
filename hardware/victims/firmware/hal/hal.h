@@ -22,17 +22,23 @@
 void platform_init(void);
 
 //PLATFORM Define Types
-#define CW301_AVR 1
-#define CW301_XMEGA 2
-#define CW303 3
-#define CW304 4
-#define CW308_MEGARF  8
-#define CW308_PIC24FJ 10
+#define CW301_AVR      1
+#define CW301_XMEGA    2
+#define CW303          3
+#define CW304          4
+#define CW308_MEGARF   8
+#define CW308_PIC24FJ  10
+#define CW308_SAM4L    11
+#define CW308_SI4010   12
+#define CW308_MPC5748G 13
+#define CW308_STM32F4  14
 
 //HAL_TYPE Define Types
-#define HAL_avr 1
-#define HAL_xmega 2
-#define HAL_pic24f 3
+#define HAL_avr     1
+#define HAL_xmega   2
+#define HAL_pic24f  3
+#define HAL_sam4l   4
+#define HAL_stm32f4 5
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -47,6 +53,8 @@ void platform_init(void);
     #include <xc.h>
     #include "pic24f/pic24f_hal.h"
     #include "pic24f/uart.h"
+#elif HAL_TYPE == HAL_sam4l
+    #include "sam4l/sam4l_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif

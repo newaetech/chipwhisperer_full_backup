@@ -20,8 +20,12 @@ else ifeq ($(PLATFORM),CW304)
  PLTNAME = CW-Lite NOTDUINO
 else ifeq ($(PLATFORM),CW308_MEGARF)
  MCU = atmega128rfa1
+# MCU = atmega2564rfr2
  HAL = avr
- PLTNAME = 802.15.4 Test Board, MegaRF Target
+ PLTNAME = CW308T: ATMegaRF Target
+else ifeq ($(PLATFORM),CW308_SAM4L)
+ HAL = sam4l
+ PLTNAME = CW308T: SAM4L Target
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM))
 endif
