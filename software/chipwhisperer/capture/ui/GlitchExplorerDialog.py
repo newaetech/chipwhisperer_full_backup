@@ -331,7 +331,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
             for i, v in enumerate(newdata["settings"]):
                 self.table.setItem(0, 4 + i, QTableWidgetItem(str(v)))
 
-            self.table.resizeRowsToContents()
+            self.table.resizeRowToContents(0)
 
             widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
             if widget is not None:
