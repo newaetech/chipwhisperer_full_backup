@@ -24,8 +24,8 @@ void aes_init(void)
 	//Use with debugger to check PARAMETER register value
 	//volatile uint32_t param = AESA->AESA_PARAMETER;
 	
-    /* Defaults */   
-    AESA->AESA_MODE |= AESA_MODE_ENCRYPT | AESA_MODE_CTYPE_Msk; /* Encrypt Mode, with countermeasures */    
+    /* AES Mode */
+    AESA->AESA_MODE = AESA_MODE_ENCRYPT | (AESA_MODE_CTYPE(0x0F)); /* Encrypt Mode, with all countermeasures */    
 	//AESA->AESA_MODE = AESA_MODE_ENCRYPT; /* Encrypt Mode, without countermeasures */   
         
 }
