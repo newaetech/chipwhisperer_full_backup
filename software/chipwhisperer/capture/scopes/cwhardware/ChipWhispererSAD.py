@@ -25,6 +25,8 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
+import struct
+import base64
 
 import numpy as np
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
@@ -69,6 +71,7 @@ class ChipWhispererSAD(Parameterized):
             {'name':'SAD Ref From Captured', 'key':'sad', 'type':'group', 'children':[
                 rangewidget,
                 {'name':'Set SAD Reference from Current Trace', 'key':'docopyfromcapture', 'type':'action', 'action':self.copyFromCaptureTrace},
+                {'name':'SAD Reference Trace', 'key':'sadref', 'type':'str', 'value':'', 'visible':False, 'action':self.setTrace},
                 {'name':'SAD Reference vs. Cursor', 'key':'sadrefcur', 'type':'int', 'value':0, 'limits':(-1, 100E6), 'readonly':True},
             ]},
             {'name':'SAD Threshold', 'type':'int', 'limits':(0, 100000), 'default':0, 'set':self.setThreshold, 'get':self.getThreshold}
@@ -103,6 +106,36 @@ class ChipWhispererSAD(Parameterized):
         data = (data + 0.5) * 1024
         return data
 
+    def packTrace(self, data):
+        # Pack a reference trace into a struct
+        # Returns a base64 string
+        if(len(data) != 128):
+            logging.error("SAD trigger: expected length 128 reference; got %d"%len(data))
+            return None
+
+        packed = base64.b64encode(struct.pack("f"*128, *data))
+        return packed
+
+    def unpackTrace(self, savedData):
+        # Unpack a base64-encoded trace
+        try:
+            data = struct.unpack("f"*128, base64.b64decode(savedData))
+        except struct.error:
+            logging.error("SAD trigger: could not unpack saved trace")
+            return None
+        return np.array(data)
+
+    def setTrace(self, param=None):
+        # Update the trace with a new base64-encoded value
+        # Unpack the trace
+        packedData = param.getValue()
+        data = self.unpackTrace(packedData)
+
+        # Use the unpacked trace as the new waveform
+        self.sadref = data.copy()
+        self.setRefWaveform(data)
+
+
     def copyFromCaptureTrace(self, _=None):
         """ Send reference data to hardware from the trace window """
         ds_param = Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Downsample Factor'])
@@ -114,8 +147,7 @@ class ChipWhispererSAD(Parameterized):
         if len(data) != 128:
             logging.warning('Reference IS NOT 128 samples long, got %d' % len(data))
 
-        self.sadref = data.copy()
-        self.setRefWaveform(data)
+        self.findParam(['sad', 'sadref']).setValue(self.packTrace(data))
         
     def updateSADTraceRef(self, ignored=None):
         """ Update the calculated SAD value parameter """
