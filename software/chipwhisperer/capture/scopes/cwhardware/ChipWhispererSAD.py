@@ -105,6 +105,9 @@ class ChipWhispererSAD(Parameterized):
 
     def copyFromCaptureTrace(self, _=None):
         """ Send reference data to hardware from the trace window """
+        ds_param = Parameter.findParameter(['OpenADC', 'Trigger Setup', 'Downsample Factor'])
+        if ds_param is not None and ds_param.getValue() != 1:
+            logging.warning("OpenADC downsampling is enabled - SAD trigger will not work")
 
         data = self.getCaptueTraceRef()
 
