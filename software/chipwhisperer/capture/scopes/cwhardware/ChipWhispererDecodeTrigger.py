@@ -47,7 +47,7 @@ class ChipWhispererDecodeTrigger(Parameterized):
             {'name': 'Decode Type', 'type': 'list', 'values': {'USART': 1, 'SPI': 2, 'Unknown':0}, 'get':self.get_decodetype, 'set':self.set_decodetype},
             #{'name':'Data Line Source', 'type':'list', 'values':{'Ext-Trigger Mux':0, 'MOSI':1, 'MOSI':2, 'PDID':3}, 'get':self.get_dataline_src, 'set':self.set_dataline_src},
             {'name':'Trigger Data', 'key':'trigpatt', 'type':'str', 'get':self.get_triggerpattern, 'set':self.set_triggerpattern},
-            {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(0, 1E6), 'default':38400, 'get':self.get_rxbaud, 'set':self.set_rxbaud},
+            {'name':'Baud', 'key':'baud', 'type':'int', 'limits':(0, 1E6), 'get':self.get_rxbaud, 'set':self.set_rxbaud},
             #{'name': 'Stop-Bits', 'key': 'stopbits', 'type': 'list', 'values': {'1': 1, '2': 2}, 'default': 1, 'get': self.stopBits, 'set': self.setStopBits, 'readonly': True},
             #{'name': 'Parity', 'key': 'parity', 'type': 'list', 'values': {'None': 'n', 'Even': 'e'}, 'default': 'n', 'get': self.parity, 'set': self.setParity, 'readonly': True},
         ])
