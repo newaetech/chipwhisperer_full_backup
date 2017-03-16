@@ -26,6 +26,7 @@
 #=================================================
 
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
+import logging
 
 CODE_READ       = 0x80
 CODE_WRITE      = 0xC0
@@ -79,23 +80,46 @@ class ChipWhispererDecodeTrigger(Parameterized):
 
     @setupSetParam("Trigger Data")
     def set_triggerpattern(self, tp):
-        """ Set the trigger pattern - expects to be passed a string which will be evaluated, or a list directly """
+        """
+        Set the trigger pattern - expects to be passed a string which will be evaluated, or a list directly
+
+        tp should be a string which evaluates to a list, like "['r', 0x00, 0x12, 'a']
+        """
+
+
         if isinstance(tp, basestring):
-            tl = eval(tp)
+            # If we can't evaluate the string, give up now
+            try:
+                tl = eval(tp)
+            except Exception:
+                logging.error("IO Decode Trigger: could not evaluate string %s"%tp)
+                return
         else:
             tl = tp
 
+        # If we didn't get a list or it's too long, we can't use this trigger pattern
+        if type(tl) is not list:
+            logging.error("Trigger pattern must be a list")
+            return
         if len(tl) > 8:
-            raise ValueError("Trigger Pattern is of length %d, too long (max is 8)"%len(tl))
+            logging.error("Trigger pattern is of length %d, too long (max is 8)"%len(tl))
+            return
 
         #Reverse order
         tl = tl[::-1]
 
+        # Bitmap: 0s indicate "don't care" bytes in tdata
         bm = 0
         tdata = [0]*8
         for i in range(0, len(tl)):
-            if tl[i] == "XX" or tl[i] == "xx":
+            tli = tl[i]
+            # "XX" and "xx" are don't care signals
+            if tli == "XX" or tli == "xx":
                 pass
+            # Other strings need to be length 1
+            elif (isinstance(tli, basestring)) and (len(tli) != 1):
+                logging.error("Trigger pattern with list of strings must have length = 1 for each string")
+                return
             else:
                 tdata[i] = tl[i]
                 bm = bm | (1<<i)
