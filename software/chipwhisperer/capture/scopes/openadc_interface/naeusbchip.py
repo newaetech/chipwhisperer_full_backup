@@ -60,6 +60,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
             self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
+            self.cwFirmwareConfig1200 = FWLoaderConfig(CW1200_Loader())
             self.scope = oadcInstance
 
     def con(self):
@@ -76,7 +77,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
                 logging.warning('Found CW1200. FPGA dialog being switched, if you made changes they are lost. '
                                 'If you need a different bitstream loaded, edit the dialog now and reconnect.')
 
-                self.cwFirmwareConfig = FWLoaderConfig(CW1200_Loader())
+                self.cwFirmwareConfig = self.cwFirmwareConfig1200
 
             self.cwFirmwareConfig.setInterface(self.dev.fpga)
             try:
