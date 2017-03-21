@@ -55,6 +55,8 @@ void platform_init(void);
     #include "pic24f/uart.h"
 #elif HAL_TYPE == HAL_sam4l
     #include "sam4l/sam4l_hal.h"
+#elif HAL_TYPE == HAL_stm32f4
+	#include "stm32f4/stm32f4_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif

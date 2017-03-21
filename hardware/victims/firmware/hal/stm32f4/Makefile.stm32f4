@@ -1,0 +1,26 @@
+VPATH += :$(HALPATH)/stm32f4
+SRC += stm32f4_hal.c stm32f4_hal_lowlevel.c stm32f4_sysmem.c
+EXTRAINCDIRS += $(HALPATH)/stm32f4 $(HALPATH)/stm32f4/CMSIS $(HALPATH)/stm32f4/CMSIS/core $(HALPATH)/stm32f4/CMSIS/device $(HALPATH)/stm32f4/Legacy
+
+ASRC += stm32f4_startup.S
+
+MCU_FLAGS = -mcpu=cortex-m4
+
+CC = arm-none-eabi-gcc
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+AR = arm-none-eabi-ar rcs
+NM = arm-none-eabi-nm
+
+#Output Format = Binary for this target
+FORMAT = binary
+
+CFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunction-sections
+CPPFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunction-sections
+ASFLAGS += -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 -fmessage-length=0 -ffunction-sections
+
+CDEFS += -DSTM32F415RGTx -DSTM32F4 -DSTM32 -DDEBUG
+CPPDEFS += -DSTM32F415RGTx -DSTM32F4 -DSTM32 -DDEBUG
+
+LDFLAGS += -T $(HALPATH)/stm32f4/LinkerScript.ld -Wl,--gc-sections -lm
