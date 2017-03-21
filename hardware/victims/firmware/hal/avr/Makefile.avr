@@ -1,3 +1,15 @@
 VPATH += :$(HALPATH)/avr
 SRC += uart.c
 EXTRAINCDIRS += $(HALPATH)/avr
+
+MCU_FLAGS = -mmcu=$(MCU)
+
+CC = avr-gcc
+OBJCOPY = avr-objcopy
+OBJDUMP = avr-objdump
+SIZE = avr-size
+AR = avr-ar rcs
+NM = avr-nm
+
+#Fancy AVR Size formatting
+ELFSIZE = --mcu=$(MCU) --format=avr

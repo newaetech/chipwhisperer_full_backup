@@ -38,18 +38,14 @@ else ifeq ($(PLATFORM),CW308_MEGARF)
 else ifeq ($(PLATFORM),CW308_SAM4L)
  HAL = sam4l
  PLTNAME = CW308T: SAM4L Target
+else ifeq ($(PLATFORM),CW308_STM32F4)
+ HAL = stm32f4
+ PLTNAME = CW308T: STM32F4 Target
 else
   $(error Invalid or empty PLATFORM: $(PLATFORM))
 endif
 
-ifeq ($(HAL),avr)
- include $(HALPATH)/avr/Makefile.avr
-else ifeq ($(HAL),xmega)
- include $(HALPATH)/xmega/Makefile.xmega
-else
- $(error: Unknown HAL: $(HAL))
-endif
-
+include $(HALPATH)/$(HAL)/Makefile.$(HAL)
 
 CDEFS += -DHAL_TYPE=HAL_$(HAL) -DPLATFORM=$(PLATFORM)
 
