@@ -1,4 +1,11 @@
-
+##
+## This is the OLD file included by the build process. It will be removed at some point in time.
+##
+$(warning ########################  WARNING  ################################## )
+$(warning ## You are using old build system with PLATFORM_INCLUDE.mk - you   ## )
+$(warning ## should update your app to use the new build system, see         ## )
+$(warning ## http://wiki.newae.com/Target_Firmware_Build_System              ## )
+$(warning ##################################################################### )
 PLTNAME = Unknown Platform
 
 ifeq ($(PLATFORM),CW301_AVR)

@@ -51,18 +51,6 @@ void init_uart(void)
 	HAL_UART_Init(&UartHandle);
 }
 
-void aes_indep_init(void){
-	return;
-}
-void aes_indep_key(uint8_t * key){
-	return;
-}
-
-void aes_indep_enc(uint8_t * key){
-	return;
-}
-
-
 void trigger_setup(void)
 {
 	GPIO_InitTypeDef GpioInit;

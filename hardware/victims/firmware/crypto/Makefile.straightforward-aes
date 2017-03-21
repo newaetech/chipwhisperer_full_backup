@@ -1,5 +1,7 @@
 ########
 #From http://cs.ucsb.edu/~koc/cs178/projects/JT/avr_aes.html modified to be timing-independant
 CRYPTO_LIB = straightforward-aes
-SRC += aes.c
+SRC += aes.c aes-independant.c
 CDEFS += -DSIMPLEAES
+VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
+EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)
