@@ -1,0 +1,5 @@
+########
+#From http://cs.ucsb.edu/~koc/cs178/projects/JT/avr_aes.html modified to be timing-independant
+CRYPTO_LIB = straightforward-aes
+SRC += aes.c
+CDEFS += -DSIMPLEAES

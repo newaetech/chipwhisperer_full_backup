@@ -1,0 +1,33 @@
+
+CRYPTO_LIB = avrcryptolib/
+
+ifeq ($(CRYPTO_OPTIONS),AES128C)
+ SRC += aes-independant.c
+
+ #######
+ #From http://avrcryptolib.das-labor.org, C Version
+ #*This is the recommended first version to test* 
+ SRC += aes_enc.c aes_keyschedule.c aes_sbox.c aes128_enc.c
+ ASRC += gf256mul.S
+ CDEFS += -DAVRCRYPTOLIB
+ VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/aes:$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/gf256mul
+ EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/aes $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/gf256mul    
+    
+else ifeq ($(CRYPTO_OPTIONS),AES128ASM)
+ SRC += aes-independant.c
+ 
+ ########
+ #From http://avrcryptolib.das-labor.org, ASM Version
+ ASRC += aes_enc-asm.S \
+        aes_keyschedule-asm.S \
+ 	   aes_sbox-asm.S
+ CDEFS += -DAVRCRYPTOLIB  
+ VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/aes:$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/gf256mul:$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/
+ EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB) $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/aes $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/gf256mul
+
+else
+
+ $(error: Unknown or blank CRYPTO_OPTIONS: $(CRYPTO_OPTIONS). CRYPTO_OPTIONS is required for this CRYPTO_TARGET)
+endif #AVRCRYPTOLIB
+
+

@@ -1,0 +1,3 @@
+SRC += simpleserial.c
+VPATH += :$(FIRMWAREPATH)/simpleserial/
+EXTRAINCDIRS += $(FIRMWAREPATH)/simpleserial/

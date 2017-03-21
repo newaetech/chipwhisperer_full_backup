@@ -1,0 +1,3 @@
+VPATH += :$(HALPATH)/avr
+SRC += uart.c
+EXTRAINCDIRS += $(HALPATH)/avr

@@ -1,0 +1,35 @@
+
+########################################
+########################################
+#### Default Options
+
+EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/
+VPATH += :$(FIRMWAREPATH)/crypto/
+
+########################################
+########################################
+#### Select the Crypto Library
+
+# avr-crypto-lib fom daslabor.de
+# Crypto Target: AVRCRYPTOLIB
+# Crypto Options:
+#    AES128C = AES128 in C
+#    AES128ASM = AES128 in Assembly
+# Notes:
+#
+ifeq ($(CRYPTO_TARGET),AVRCRYPTOLIB)
+  include $(FIRMWAREPATH)/crypto/Makefile.avrcryptolib
+#
+# Crypto Target: AESSIMPLE
+# Crypto Options:
+#    None
+# Notes:
+#
+else ifeq ($(CRYPTO_TARGET),AESSIMPLE)
+  include $(FIRMWAREPATH)/crypto/Makefile.straightforward-aes
+
+else ifeq ($(CRYPTO_TARGET),NONE)
+  #Nothing to do :)
+else
+ $(error: Unknown or blank CRYPTO_TARGET: $(CRYPTO_TARGET). If supposed to be blank set to NONE to continue.)
+endif
