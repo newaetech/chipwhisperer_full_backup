@@ -50,7 +50,8 @@
 #include <stdio.h>
 
 /* Variables */
-extern int errno;
+//Uncomment following if needed - commented out for now as not used and causes warning
+//extern int errno;
 register char * stack_ptr asm("sp");
 
 /* Functions */

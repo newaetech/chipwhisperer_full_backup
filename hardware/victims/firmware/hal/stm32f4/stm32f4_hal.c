@@ -1,5 +1,6 @@
 
 #include "stm32f4_hal.h"
+#include "stm32f4_hal_lowlevel.h"
 #include "stm32f4xx_hal_rcc.h"
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_dma.h"
@@ -60,6 +61,27 @@ void aes_indep_key(uint8_t * key){
 void aes_indep_enc(uint8_t * key){
 	return;
 }
+
+
+void trigger_setup(void)
+{
+	GPIO_InitTypeDef GpioInit;
+	GpioInit.Pin       = GPIO_PIN_11;
+	GpioInit.Mode      = GPIO_MODE_OUTPUT_PP;
+	GpioInit.Pull      = GPIO_NOPULL;
+	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(GPIOA, &GpioInit);
+}
+
+void trigger_high(void)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, SET);
+}
+
+void trigger_low(void)
+{
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, RESET);
+}   
 
 char getch(void)
 {
