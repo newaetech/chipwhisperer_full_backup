@@ -537,3 +537,9 @@ clean_list :
 .PHONY : all begin finish end sizebefore sizeafter gccversion \
 build elf hex eep lss sym coff extcoff \
 clean clean_list clean_print clean_objs program debug gdb-config
+
+# saveplatform: Save the platform into the file Makefile.target
+saveplatform:
+	-@rm -f Makefile.platform
+	@echo "Saving Makefile.platform"
+	@echo >Makefile.platform "PLATFORM = $(PLATFORM)"
