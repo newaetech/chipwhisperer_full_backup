@@ -47,7 +47,7 @@ include $(FIRMWAREPATH)/crypto/Makefile.crypto
 OBJDIR = objdir
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC += $(TARGET).c
+SRC += 
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC += 
