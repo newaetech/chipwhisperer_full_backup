@@ -31,7 +31,7 @@
 ifeq ($(PLATFORM),)
   -include Makefile.platform
   ifeq ($(PLATFORM),)
-    ${error PLATFORM not defined, specify like PLATFORM=CW303 or save to Makefile.platform}
+    PLATFORM=NONE
   else
     ${info using saved PLATFORM '$(PLATFORM)'}
   endif
