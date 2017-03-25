@@ -31,6 +31,13 @@ define KNOWN_PLATFORMS
 | CW308_STM32F4 | CW308T-STM32F4 (ST Micro STM32F4)|
 +--------------------------------------------------+
 
+Options to define platform:
+(1) Run make with PLATFORM specified as follows:
+make PLATFORM=CW304
+
+(2) Save a file called Makefile.platform with contents:
+PLATFORM=CW304
+
 endef
 
 PLTNAME = Unknown Platform
