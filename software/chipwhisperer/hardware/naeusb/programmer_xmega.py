@@ -37,6 +37,13 @@ XMEGAMEM_TYPE_FACTORY_CALIBRATION = 7
 # NOTE: These objects are currently manually maintained. Eventually it will be automatically created
 #      from avrdude.conf, but I'd like to test with a few more devices before doing that.
 
+class XMEGADummy(object):
+    signature = [0x00, 0x00, 0x00]
+    name = "Unknown XMEGA device"
+
+    memtypes = {
+        "signature":{"offset":0x1000090, "size":3},
+    }
 
 class XMEGA16A4(object):
     signature = [0x1e, 0x94, 0x41]
@@ -145,7 +152,7 @@ class XMEGAPDI(object):
         self._usb = usb
         self._timeout = timeout
         self._pdienabled = False
-        self._chip = None
+        self._chip = XMEGADummy()
         self.lastFlashedFile = "unknown"
 
 #### HIGH LEVEL FUNCTIONS
@@ -180,7 +187,7 @@ class XMEGAPDI(object):
 
 
     def autoProgram(self, hexfile, erase=True, verify=True, logfunc=print_fun, waitfunc=None):
-        """Helper funciton for GUI, auto-programs XMEGA device while printing messages to different options. Returns true/face."""
+        """Helper funciton for GUI, auto-programs XMEGA device while printing messages to different options. Returns true/false."""
 
         status = "FAILED"
 
