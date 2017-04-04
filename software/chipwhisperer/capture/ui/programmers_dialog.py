@@ -299,49 +299,8 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
         pass
 
     def writeFlash(self, erase=True, verify=True):
-        status = "FAILED"
+        self.xmega.xmega.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText, QCoreApplication.processEvents)
 
-        fname = self.flashLocation.text()
-        self.statusLine.appendPlainText("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
-        if (os.path.isfile(fname)):
-            self.statusLine.appendPlainText("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
-            QCoreApplication.processEvents()
-
-            try:
-                self.statusLine.appendPlainText("Entering Programming Mode")
-                QCoreApplication.processEvents()
-                self.readSignature(close=False)
-
-                if erase:
-                    try:
-                        self.xmega.erase()
-                    except IOError:
-                        self.statusLine.appendPlainText("**chip-erase timeout, erasing application only**")
-                        QCoreApplication.processEvents()
-                        self.xmega.xmega.enablePDI(False)
-                        self.xmega.xmega.enablePDI(True)
-                        self.xmega.erase("app")
-
-                QCoreApplication.processEvents()
-                self.xmega.program(self.flashLocation.text(), memtype="flash", verify=verify)
-                QCoreApplication.processEvents()
-                self.statusLine.appendPlainText("Exiting programming mode")
-                self.xmega.close()
-                QCoreApplication.processEvents()
-
-                status = "SUCCEEDED"
-
-            except IOError, e:
-                self.statusLine.appendPlainText("FAILED: %s" % str(e))
-                try:
-                    self.xmega.close()
-                except IOError:
-                    pass
-
-        else:
-            self.statusLine.appendPlainText("%s does not appear to be a file, check path" % fname)
-
-        self.statusLine.appendPlainText("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
 
     def setUSBInterface(self, iface):
         self.xmega.setUSBInterface(iface)

@@ -21,8 +21,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-import logging
+import logging, os, time
+from datetime import datetime
 from naeusb import packuint32
+from chipwhisperer.capture.utils.programming_files import FileReader
 
 XMEGAMEM_TYPE_APP = 1
 XMEGAMEM_TYPE_BOOT = 2
@@ -80,9 +82,12 @@ class XMEGA128D4(object):
 
 supported_xmega = [XMEGA128A4U(), XMEGA128D4(), XMEGA16A4()]
 
+def print_fun(s):
+    print s
+
 class XMEGAPDI(object):
     """
-    Class for programming an XMEGA device using the NAEUSB Firmware in the ChipWhisperer-Lite
+    Class for programming an XMEGA device using the NAEUSB Firmware in the ChipWhisperer 1173/1200.
     """
 
     CMD_XMEGA_PROGRAM = 0x20
@@ -139,28 +144,122 @@ class XMEGAPDI(object):
 
         self._usb = usb
         self._timeout = timeout
+        self._pdienabled = False
+        self._chip = None
+        self.lastFlashedFile = "unknown"
 
-    def _xmegaDoWrite(self, cmd, data=[], checkStatus=True):
-        """
-        Send a command to the PDI programming interface, optionally check if command executed OK, and if not
-        raise IOError()
-        """
+#### HIGH LEVEL FUNCTIONS
+    def find(self):
+        self.setParamTimeout(400)
+        self.enablePDI(True)
 
-        # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_XMEGA_PROGRAM, cmd, 0, data, timeout=self._timeout)
+        # Read signature bytes
+        data = self.readMemory(0x01000090, 3, "signature")
 
-        # Check status
-        if checkStatus:
-            status = self._xmegaDoRead(cmd=0x0020, dlen=3)
-            if status[1] != 0x00:
-                raise IOError("XMEGA Command %x failed: err=%x, timeout=%d" % (status[0], status[1], status[2]))
+        # Check if it's one we know about?
+        for t in supported_xmega:
+            if ((data[0] == t.signature[0]) and
+                (data[1] == t.signature[1]) and
+                (data[2] == t.signature[2])):
 
-    def _xmegaDoRead(self, cmd, dlen=1):
-        """
-        Read the result of some command.
-        """
-        # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
+                logging.debug("Detected known XMEGA: %s"%t.name)
+                self.setChip(t)
+                return data, t
+
+        #No known chip found?
+        logging.debug("Detected unknown XMEGA: %02x %02x %02x"%(data[0], data[1], data[2]))
+        return data, None
+
+    def erase(self, memtype="chip"):
+        if memtype == "app":
+            self.eraseApp()
+        elif memtype == "chip":
+            self.eraseChip()
+        else:
+            raise ValueError("Invalid memtype: %s" % memtype)
+
+
+    def autoProgram(self, hexfile, erase=True, verify=True, logfunc=print_fun, waitfunc=None):
+        """Helper funciton for GUI, auto-programs XMEGA device while printing messages to different options. Returns true/face."""
+
+        status = "FAILED"
+
+        fname = hexfile
+        if logfunc: logfunc("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
+        if waitfunc: waitfunc()
+        if os.path.isfile(fname):
+            if logfunc: logfunc("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+
+            try:
+                if logfunc: logfunc("Entering Programming Mode")
+                if waitfunc: waitfunc()
+                self.find()
+
+                if erase:
+                    try:
+                        self.erase()
+                    except IOError:
+                        if logfunc: logfunc("**chip-erase timeout, erasing application only**")
+                        if waitfunc: waitfunc()
+                        self.enablePDI(False)
+                        self.enablePDI(True)
+                        self.erase("app")
+
+                if waitfunc: waitfunc()
+                self.program(hexfile, memtype="flash", verify=verify, logfunc=logfunc, waitfunc=waitfunc)
+                if waitfunc: waitfunc()
+                if logfunc: logfunc("Exiting programming mode")
+                self.close()
+                if waitfunc: waitfunc()
+
+                status = "SUCCEEDED"
+
+            except IOError, e:
+                if logfunc: logfunc("FAILED: %s" % str(e))
+                try:
+                    self.close()
+                except IOError:
+                    pass
+
+        else:
+            if logfunc: logfunc("%s does not appear to be a file, check path" % fname)
+
+        if logfunc: logfunc("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
+
+        return status == "SUCCEEDED"
+
+    def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None):
+        """Programs memory type, dealing with opening filename as either .hex or .bin file"""
+        self.lastFlashedFile = filename
+
+        fdata, fsize = FileReader(filename)
+
+        startaddr = self._chip.memtypes[memtype]["offset"]
+        maxsize = self._chip.memtypes[memtype]["size"]
+
+        if fsize > maxsize:
+            raise IOError("File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
+
+        logfunc("XMEGA Programming %s..." % memtype)
+        if waitfunc: waitfunc()
+        self.writeMemory(startaddr, fdata, memtype)  # , erasePage=True
+
+        logfunc("XMEGA Reading %s..." % memtype)
+        if waitfunc: waitfunc()
+        # Do verify run
+        rdata = self.readMemory(startaddr, len(fdata), memtype)
+
+        for i in range(0, len(fdata)):
+            if fdata[i] != rdata[i]:
+                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
+
+        logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
+
+#### LOW LEVEL FUNCTIONS
+
+    def close(self):
+        self.enablePDI(False)
+
 
     def setParamTimeout(self, timeoutMS):
         """
@@ -182,11 +281,18 @@ class XMEGAPDI(object):
         Raises IOError() if an error occurs (such as no chip found).
         """
 
+        self._pdienabled = False
+
         if status:
             # self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
             self._xmegaDoWrite(self.XPROG_CMD_ENTER_PROGMODE)
+            self._pdienabled = True
         else:
             self._xmegaDoWrite(self.XPROG_CMD_LEAVE_PROGMODE)
+
+    def validate_mode(self):
+        if not self._pdienabled:
+            raise IOError("Enable PDI mode first")
 
     def readMemory(self, addr, dlen, memname="flash"):
         """
@@ -203,6 +309,8 @@ class XMEGAPDI(object):
         Raises:
             IOError
         """
+
+        self.validate_mode()
 
         memspec = self._chip.memtypes[memname]
 
@@ -277,6 +385,8 @@ class XMEGAPDI(object):
             IOError
         """
 
+        self.validate_mode()
+
         PAGEMODE_WRITE = (1 << 1)
         PAGEMODE_ERASE = (1 << 0)
 
@@ -344,10 +454,37 @@ class XMEGAPDI(object):
             memwritten += epwritten
 
     def eraseChip(self):
+        self.validate_mode()
         self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_CHIP, 0, 0, 0, 0])
 
     def eraseApp(self):
+        self.validate_mode()
         self._xmegaDoWrite(self.XPROG_CMD_ERASE, data=[self.XPROG_ERASE_APP, 0, 0, 0, 0])
 
     def setChip(self, chiptype):
         self._chip = chiptype
+
+
+#### INTERNAL FUNCTIONS
+
+    def _xmegaDoWrite(self, cmd, data=[], checkStatus=True):
+        """
+        Send a command to the PDI programming interface, optionally check if command executed OK, and if not
+        raise IOError()
+        """
+
+        # windex selects interface
+        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_XMEGA_PROGRAM, cmd, 0, data, timeout=self._timeout)
+
+        # Check status
+        if checkStatus:
+            status = self._xmegaDoRead(cmd=0x0020, dlen=3)
+            if status[1] != 0x00:
+                raise IOError("XMEGA Command %x failed: err=%x, timeout=%d" % (status[0], status[1], status[2]))
+
+    def _xmegaDoRead(self, cmd, dlen=1):
+        """
+        Read the result of some command.
+        """
+        # windex selects interface, set to 0
+        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_XMEGA_PROGRAM, cmd, 0, dlen, timeout=self._timeout)

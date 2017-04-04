@@ -139,64 +139,22 @@ class XMEGAProgrammer(Programmer):
         self.xmega.setChip(self.supported_chips[0])
 
     def find(self):
-        self._foundchip = False
-        self.xmega.setParamTimeout(400)
-        self.xmega.enablePDI(True)
-
-        # Read signature bytes
-        data = self.xmega.readMemory(0x01000090, 3, "signature")
-
-        # Check if it's one we know about?
-        for t in self.supported_chips:
-            if ((data[0] == t.signature[0]) and
-                (data[1] == t.signature[1]) and
-                (data[2] == t.signature[2])):
-
-                self._foundchip = True
-
-                self.log("Detected %s" % t.name)
-                self.xmega.setChip(t)
-                break
+        sig, chip = self.xmega.find()
 
         # Print signature of unknown device
-        if self._foundchip == False:
-            self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (data[0], data[1], data[2]))
+        if chip is None:
+            self.log("Detected Unknown Chip, sig=%2x %2x %2x" % (sig[0], sig[1], sig[2]))
+        else:
+             self.log("Detected %s" % chip.name)
 
     def erase(self, memtype="chip"):
         self.log("Erasing Chip")
-        if memtype == "app":
-            self.xmega.eraseApp()
-        elif memtype == "chip":
-            self.xmega.eraseChip()
-        else:
-            raise ValueError("Invalid memtype: %s" % memtype)
+        self.xmega.erase(memtype)
+
 
     def program(self, filename, memtype="flash", verify=True):
         Programmer.lastFlashedFile = filename
-        f = IntelHex(filename)
-
-        startaddr = self.xmega._chip.memtypes[memtype]["offset"]
-        maxsize = self.xmega._chip.memtypes[memtype]["size"]
-        fsize = f.maxaddr() - f.minaddr()
-
-        if fsize > maxsize:
-            raise IOError("File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
-
-        self.log("XMEGA Programming %s..." % memtype)
-        util.updateUI()
-        fdata = f.tobinarray(start=0)
-        self.xmega.writeMemory(startaddr, fdata, memtype)  # , erasePage=True
-
-        self.log("XMEGA Reading %s..." % memtype)
-        util.updateUI()
-        # Do verify run
-        rdata = self.xmega.readMemory(startaddr, len(fdata), memtype)
-
-        for i in range(0, len(fdata)):
-            if fdata[i] != rdata[i]:
-                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
-
-        self.log("Verified %s OK, %d bytes" % (memtype, fsize))
+        self.xmega.program(filename, memtype, verify)
 
     def close(self):
         self.xmega.enablePDI(False)
