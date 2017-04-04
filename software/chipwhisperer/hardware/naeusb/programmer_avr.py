@@ -21,9 +21,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #==========================================================================
-import logging
-import time
+import logging, os, time
+from datetime import datetime
 from chipwhisperer.common.utils import util
+from chipwhisperer.capture.utils.IntelHex import IntelHex
 
 from naeusb import packuint32
 
@@ -141,6 +142,9 @@ class ATMega2564RFR2(AVRBase):
 
 supported_avr = [ATMega328P(), ATMega328(), ATMega168A(), ATMega168PA(), ATMega88A(), ATMega88PA(), ATMega48A(), ATMega48PA(), ATMega128RFA1(), ATMega2564RFR2()]
 
+def print_fun(s):
+    print s
+
 class AVRISP(object):
 
     CMD_AVR_PROGRAM = 0x21
@@ -213,12 +217,113 @@ class AVRISP(object):
 
     MAX_BUFFER_SIZE = 256
 
-    def __init__(self, usb, timeout = 200):
+    def __init__(self, usb, timeout = 400):
         self._usb = usb
         self._timeout = timeout
 
         # TEMP, user should select correct one
         self._chip = supported_avr[0]
+
+    # High-level interface
+    def find(self):
+        # Attempts to find a connected AVR device
+        # Returns a pair of (signature, device)
+        #   Signature: list of 3 bytes
+        #   Device: an AVR device class or None (if unknown device found)
+
+        # Read signature
+        self.enableISP(True)
+        sig = self.readSignature()
+
+        # Compare to our known signatures
+        for t in supported_avr:
+            if ((sig[0] == t.signature[0]) and
+                    (sig[1] == t.signature[1]) and
+                    (sig[2] == t.signature[2])):
+                self.setChip(t)
+                return sig, t
+
+        # If we get here, the device is an unknown type
+        return sig, None
+
+    def erase(self):
+        # Erase the flash memory on the AVR
+        self.eraseChip()
+
+    def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None):
+
+        f = IntelHex(filename)
+
+        maxsize = self._chip.memtypes[memtype]["size"]
+        fsize = f.maxaddr() - f.minaddr()
+
+        if fsize > maxsize:
+            raise IOError(
+                "File %s appears to be %d bytes, larger than %s size of %d" % (filename, fsize, memtype, maxsize))
+
+        logfunc("AVR Programming %s..." % memtype)
+        util.updateUI()
+        fdata = f.tobinarray(start=0)
+        self.writeMemory(0, fdata, memtype)
+
+        logfunc("AVR Reading %s..." % memtype)
+        util.updateUI()
+        # Do verify run
+        rdata = self.readMemory(0, len(fdata))  # memtype ?
+
+        for i in range(0, len(fdata)):
+            if fdata[i] != rdata[i]:
+                raise IOError("Verify failed at 0x%04x, %x != %x" % (i, fdata[i], rdata[i]))
+
+        logfunc("Verified %s OK, %d bytes" % (memtype, fsize))
+
+    def autoProgram(self, hexfile, erase=True, verify=True, logfunc=print_fun, waitfunc=None):
+        # Helper function for programmer UI
+        # Automatically program device with some error checking
+
+        status = "FAILED"
+
+        fname = hexfile
+        if logfunc: logfunc("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
+        if waitfunc: waitfunc()
+        if os.path.isfile(fname):
+            if logfunc: logfunc("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
+            if waitfunc: waitfunc()
+
+            try:
+                if logfunc: logfunc("Entering Programming Mode")
+                if waitfunc: waitfunc()
+                self.find()
+
+                if erase:
+                    self.erase()
+                    self.enableISP(False)
+                    self.find()
+
+                if waitfunc: waitfunc()
+                self.program(hexfile, memtype="flash", verify=verify, logfunc=logfunc, waitfunc=waitfunc)
+                if waitfunc: waitfunc()
+                if logfunc: logfunc("Exiting programming mode")
+                self.enableISP(False)
+                if waitfunc: waitfunc()
+
+                status = "SUCCEEDED"
+
+            except IOError, e:
+                if logfunc: logfunc("FAILED: %s" % str(e))
+                try:
+                    self.enableISP(False)
+                except IOError:
+                    pass
+
+        else:
+            if logfunc: logfunc("%s does not appear to be a file, check path" % fname)
+
+        if logfunc: logfunc("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
+
+        return status == "SUCCEEDED"
+
+    # Low-low-level functions
 
     def _avrDoWrite(self, cmd, data=[], checkStatus=True):
         """
@@ -245,6 +350,8 @@ class AVRISP(object):
         """
         # windex selects interface, set to 0
         return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_AVR_PROGRAM, cmd, 0, dlen, timeout=self._timeout)
+
+    # Low-level functions
 
     def enableISP(self, status):
         """

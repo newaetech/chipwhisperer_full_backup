@@ -194,43 +194,8 @@ class AVRProgrammerDialog(QtFixes.QDialog):
         self.statusLine.appendPlainText("Verify not implemented")
 
     def writeFlash(self, erase=True, verify=True):
-        status = "FAILED"
-        fname = self.flashLocation.text()
-        self.statusLine.appendPlainText("***Starting FLASH program process at %s***" % datetime.now().strftime('%H:%M:%S'))
-        if (os.path.isfile(fname)):
-            self.statusLine.appendPlainText("File %s last changed on %s" % (fname, time.ctime(os.path.getmtime(fname))))
-            QCoreApplication.processEvents()
-
-            try:
-                self.statusLine.appendPlainText("Entering Programming Mode")
-                QCoreApplication.processEvents()
-                self.readSignature(close=False)
-
-                if erase:
-                    self.avr.erase()
-                    self.avr.close()
-                    self.readSignature(close=False)
-
-                QCoreApplication.processEvents()
-                self.avr.program(self.flashLocation.text(), memtype="flash", verify=verify)
-                QCoreApplication.processEvents()
-                self.statusLine.appendPlainText("Exiting programming mode")
-                self.avr.close()
-                QCoreApplication.processEvents()
-
-                status = "SUCCEEDED"
-
-            except IOError as e:
-                self.statusLine.appendPlainText("FAILED: %s" % str(e))
-                try:
-                    self.avr.close()
-                except IOError:
-                    pass
-
-        else:
-            self.statusLine.appendPlainText("%s does not appear to be a file, check path" % fname)
-
-        self.statusLine.appendPlainText("***FLASH Program %s at %s***" % (status, datetime.now().strftime('%H:%M:%S')))
+        self.avr.avr.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText,
+                                     QCoreApplication.processEvents)
 
     def setUSBInterface(self, iface):
         self.avr.setUSBInterface(iface)
