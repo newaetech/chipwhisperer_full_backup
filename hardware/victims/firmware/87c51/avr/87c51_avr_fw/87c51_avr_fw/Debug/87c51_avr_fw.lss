@@ -1,0 +1,1132 @@
+
+87c51_avr_fw.elf:     file format elf32-avr
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .data         00000010  00800100  00000550  000005e4  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  1 .text         00000550  00000000  00000000  00000094  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  2 .bss          00000035  00800110  00800110  000005f4  2**0
+                  ALLOC
+  3 .comment      00000030  00000000  00000000  000005f4  2**0
+                  CONTENTS, READONLY
+  4 .note.gnu.avr.deviceinfo 00000040  00000000  00000000  00000624  2**2
+                  CONTENTS, READONLY
+  5 .debug_aranges 00000140  00000000  00000000  00000664  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  6 .debug_info   00000b03  00000000  00000000  000007a4  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  7 .debug_abbrev 00000589  00000000  00000000  000012a7  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  8 .debug_line   00000904  00000000  00000000  00001830  2**0
+                  CONTENTS, READONLY, DEBUGGING
+  9 .debug_frame  000002b8  00000000  00000000  00002134  2**2
+                  CONTENTS, READONLY, DEBUGGING
+ 10 .debug_str    000003db  00000000  00000000  000023ec  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 11 .debug_loc    00000777  00000000  00000000  000027c7  2**0
+                  CONTENTS, READONLY, DEBUGGING
+ 12 .debug_ranges 00000110  00000000  00000000  00002f3e  2**0
+                  CONTENTS, READONLY, DEBUGGING
+
+Disassembly of section .text:
+
+00000000 <__vectors>:
+   0:	0c 94 2c 00 	jmp	0x58	; 0x58 <__ctors_end>
+   4:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+   8:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+   c:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  10:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  14:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  18:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  1c:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  20:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  24:	0c 94 8a 01 	jmp	0x314	; 0x314 <__vector_9>
+  28:	0c 94 e9 01 	jmp	0x3d2	; 0x3d2 <__vector_10>
+  2c:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  30:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  34:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  38:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  3c:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  40:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  44:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  48:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  4c:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  50:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+  54:	0c 94 49 00 	jmp	0x92	; 0x92 <__bad_interrupt>
+
+00000058 <__ctors_end>:
+  58:	11 24       	eor	r1, r1
+  5a:	1f be       	out	0x3f, r1	; 63
+  5c:	cf ef       	ldi	r28, 0xFF	; 255
+  5e:	d8 e0       	ldi	r29, 0x08	; 8
+  60:	de bf       	out	0x3e, r29	; 62
+  62:	cd bf       	out	0x3d, r28	; 61
+
+00000064 <__do_copy_data>:
+  64:	11 e0       	ldi	r17, 0x01	; 1
+  66:	a0 e0       	ldi	r26, 0x00	; 0
+  68:	b1 e0       	ldi	r27, 0x01	; 1
+  6a:	e0 e5       	ldi	r30, 0x50	; 80
+  6c:	f5 e0       	ldi	r31, 0x05	; 5
+  6e:	02 c0       	rjmp	.+4      	; 0x74 <__do_copy_data+0x10>
+  70:	05 90       	lpm	r0, Z+
+  72:	0d 92       	st	X+, r0
+  74:	a0 31       	cpi	r26, 0x10	; 16
+  76:	b1 07       	cpc	r27, r17
+  78:	d9 f7       	brne	.-10     	; 0x70 <__do_copy_data+0xc>
+
+0000007a <__do_clear_bss>:
+  7a:	21 e0       	ldi	r18, 0x01	; 1
+  7c:	a0 e1       	ldi	r26, 0x10	; 16
+  7e:	b1 e0       	ldi	r27, 0x01	; 1
+  80:	01 c0       	rjmp	.+2      	; 0x84 <.do_clear_bss_start>
+
+00000082 <.do_clear_bss_loop>:
+  82:	1d 92       	st	X+, r1
+
+00000084 <.do_clear_bss_start>:
+  84:	a5 34       	cpi	r26, 0x45	; 69
+  86:	b2 07       	cpc	r27, r18
+  88:	e1 f7       	brne	.-8      	; 0x82 <.do_clear_bss_loop>
+  8a:	0e 94 54 00 	call	0xa8	; 0xa8 <main>
+  8e:	0c 94 a6 02 	jmp	0x54c	; 0x54c <_exit>
+
+00000092 <__bad_interrupt>:
+  92:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
+
+00000096 <sleep_avr>:
+
+
+void sleep_avr()
+{
+	// Go to sleep
+	set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+  96:	83 b7       	in	r24, 0x33	; 51
+  98:	81 7f       	andi	r24, 0xF1	; 241
+  9a:	84 60       	ori	r24, 0x04	; 4
+  9c:	83 bf       	out	0x33, r24	; 51
+	sleep_enable();
+  9e:	83 b7       	in	r24, 0x33	; 51
+  a0:	81 60       	ori	r24, 0x01	; 1
+  a2:	83 bf       	out	0x33, r24	; 51
+	sleep_cpu();
+  a4:	88 95       	sleep
+  a6:	08 95       	ret
+
+000000a8 <main>:
+}
+
+int main(void)
+{
+  a8:	cf 93       	push	r28
+  aa:	df 93       	push	r29
+  ac:	1f 92       	push	r1
+  ae:	cd b7       	in	r28, 0x3d	; 61
+  b0:	de b7       	in	r29, 0x3e	; 62
+	// First, check if we're supposed to be asleep
+	uint8_t mode_verify = PINE & (1 << PINE2);
+	if(!mode_verify)
+  b2:	62 9b       	sbis	0x0c, 2	; 12
+	{
+		sleep_avr();
+  b4:	0e 94 4b 00 	call	0x96	; 0x96 <sleep_avr>
+	}
+	
+	// Then, we can set up everything else
+	utilities_init();
+  b8:	0e 94 7f 01 	call	0x2fe	; 0x2fe <utilities_init>
+	uart_init(F_CPU/16/UART_BAUD - 1);
+  bc:	8f e5       	ldi	r24, 0x5F	; 95
+  be:	90 e0       	ldi	r25, 0x00	; 0
+  c0:	0e 94 64 01 	call	0x2c8	; 0x2c8 <uart_init>
+	verify_init();
+  c4:	0e 94 1d 02 	call	0x43a	; 0x43a <verify_init>
+	
+	led2_low();
+  c8:	0e 94 88 01 	call	0x310	; 0x310 <led2_low>
+	trigger_low();
+  cc:	0e 94 b0 01 	call	0x360	; 0x360 <trigger_low>
+		
+	target_enable();
+  d0:	0e 94 b2 01 	call	0x364	; 0x364 <target_enable>
+	verify_byte(0xFFFF);
+  d4:	8f ef       	ldi	r24, 0xFF	; 255
+  d6:	9f ef       	ldi	r25, 0xFF	; 255
+  d8:	0e 94 85 02 	call	0x50a	; 0x50a <verify_byte>
+	
+	sei();
+  dc:	78 94       	sei
+
+    while (1) 
+    {
+		// Let the user know we're waiting
+		heartbeat_enable();
+  de:	0e 94 9c 01 	call	0x338	; 0x338 <heartbeat_enable>
+		
+		if(simpleserial_get(2))
+  e2:	82 e0       	ldi	r24, 0x02	; 2
+  e4:	0e 94 04 01 	call	0x208	; 0x208 <simpleserial_get>
+  e8:	89 2b       	or	r24, r25
+  ea:	c9 f3       	breq	.-14     	; 0xde <main+0x36>
+		{	
+			heartbeat_disable();
+  ec:	0e 94 a8 01 	call	0x350	; 0x350 <heartbeat_disable>
+			uint8_t* address = simpleserial_getaddress();
+  f0:	0e 94 8c 00 	call	0x118	; 0x118 <simpleserial_getaddress>
+			
+			uint16_t addr_16 = (address[0] << 8) | (address[1]);
+  f4:	fc 01       	movw	r30, r24
+  f6:	20 81       	ld	r18, Z
+  f8:	30 e0       	ldi	r19, 0x00	; 0
+  fa:	32 2f       	mov	r19, r18
+  fc:	22 27       	eor	r18, r18
+  fe:	81 81       	ldd	r24, Z+1	; 0x01
+			
+			// Verify code at this address
+			uint8_t response[1];
+			response[0] = verify_byte(addr_16);
+ 100:	a9 01       	movw	r20, r18
+ 102:	48 2b       	or	r20, r24
+ 104:	ca 01       	movw	r24, r20
+ 106:	0e 94 85 02 	call	0x50a	; 0x50a <verify_byte>
+ 10a:	89 83       	std	Y+1, r24	; 0x01
+			
+			simpleserial_put(response, 1);	
+ 10c:	61 e0       	ldi	r22, 0x01	; 1
+ 10e:	ce 01       	movw	r24, r28
+ 110:	01 96       	adiw	r24, 0x01	; 1
+ 112:	0e 94 49 01 	call	0x292	; 0x292 <simpleserial_put>
+ 116:	e3 cf       	rjmp	.-58     	; 0xde <main+0x36>
+
+00000118 <simpleserial_getaddress>:
+uint8_t address[DATA_LENGTH];
+
+uint8_t* simpleserial_getaddress(void)
+{
+	return address;
+}
+ 118:	80 e1       	ldi	r24, 0x10	; 16
+ 11a:	91 e0       	ldi	r25, 0x01	; 1
+ 11c:	08 95       	ret
+
+0000011e <simpleserial_encode>:
+
+// Encode this byte array into the 34 byte ASCII buffer
+// ASCII format: "r0123456789ABCDEF\n"
+void simpleserial_encode(uint8_t* data, uint8_t size)
+{
+ 11e:	cf 93       	push	r28
+ 120:	df 93       	push	r29
+	int i;
+	
+	ascii_buffer[0] = 'r';
+ 122:	22 e7       	ldi	r18, 0x72	; 114
+ 124:	20 93 20 01 	sts	0x0120, r18
+	for(i = 0; i < size; i++)
+ 128:	46 2f       	mov	r20, r22
+ 12a:	50 e0       	ldi	r21, 0x00	; 0
+ 12c:	14 16       	cp	r1, r20
+ 12e:	15 06       	cpc	r1, r21
+ 130:	f4 f4       	brge	.+60     	; 0x16e <simpleserial_encode+0x50>
+ 132:	9c 01       	movw	r18, r24
+ 134:	c2 e2       	ldi	r28, 0x22	; 34
+ 136:	d1 e0       	ldi	r29, 0x01	; 1
+ 138:	86 0f       	add	r24, r22
+ 13a:	91 1d       	adc	r25, r1
+	{
+		unsigned char n_hi = (data[i] >> 4) & 0x0f;
+ 13c:	d9 01       	movw	r26, r18
+ 13e:	ed 91       	ld	r30, X+
+ 140:	9d 01       	movw	r18, r26
+ 142:	be 01       	movw	r22, r28
+ 144:	61 50       	subi	r22, 0x01	; 1
+ 146:	71 09       	sbc	r23, r1
+ 148:	ae 2f       	mov	r26, r30
+ 14a:	a2 95       	swap	r26
+ 14c:	af 70       	andi	r26, 0x0F	; 15
+		unsigned char n_lo =  data[i]       & 0x0f;
+		ascii_buffer[2*i+1] = hex_lookup[n_hi];
+ 14e:	b0 e0       	ldi	r27, 0x00	; 0
+ 150:	a0 50       	subi	r26, 0x00	; 0
+ 152:	bf 4f       	sbci	r27, 0xFF	; 255
+ 154:	fc 91       	ld	r31, X
+ 156:	db 01       	movw	r26, r22
+ 158:	fc 93       	st	X, r31
+	
+	ascii_buffer[0] = 'r';
+	for(i = 0; i < size; i++)
+	{
+		unsigned char n_hi = (data[i] >> 4) & 0x0f;
+		unsigned char n_lo =  data[i]       & 0x0f;
+ 15a:	ef 70       	andi	r30, 0x0F	; 15
+		ascii_buffer[2*i+1] = hex_lookup[n_hi];
+		ascii_buffer[2*i+2] = hex_lookup[n_lo];
+ 15c:	f0 e0       	ldi	r31, 0x00	; 0
+ 15e:	e0 50       	subi	r30, 0x00	; 0
+ 160:	ff 4f       	sbci	r31, 0xFF	; 255
+ 162:	60 81       	ld	r22, Z
+ 164:	68 83       	st	Y, r22
+ 166:	22 96       	adiw	r28, 0x02	; 2
+void simpleserial_encode(uint8_t* data, uint8_t size)
+{
+	int i;
+	
+	ascii_buffer[0] = 'r';
+	for(i = 0; i < size; i++)
+ 168:	28 17       	cp	r18, r24
+ 16a:	39 07       	cpc	r19, r25
+ 16c:	39 f7       	brne	.-50     	; 0x13c <simpleserial_encode+0x1e>
+		unsigned char n_hi = (data[i] >> 4) & 0x0f;
+		unsigned char n_lo =  data[i]       & 0x0f;
+		ascii_buffer[2*i+1] = hex_lookup[n_hi];
+		ascii_buffer[2*i+2] = hex_lookup[n_lo];
+	}
+	ascii_buffer[2*size+1] = '\n';
+ 16e:	44 0f       	add	r20, r20
+ 170:	55 1f       	adc	r21, r21
+ 172:	fa 01       	movw	r30, r20
+ 174:	e0 5e       	subi	r30, 0xE0	; 224
+ 176:	fe 4f       	sbci	r31, 0xFE	; 254
+ 178:	8a e0       	ldi	r24, 0x0A	; 10
+ 17a:	81 83       	std	Z+1, r24	; 0x01
+}
+ 17c:	df 91       	pop	r29
+ 17e:	cf 91       	pop	r28
+ 180:	08 95       	ret
+
+00000182 <simpleserial_decode>:
+
+// Decode the ASCII buffer into a byte array
+void simpleserial_decode(uint8_t* data, uint8_t size)
+{
+ 182:	cf 93       	push	r28
+ 184:	df 93       	push	r29
+ 186:	fc 01       	movw	r30, r24
+ 188:	a2 e2       	ldi	r26, 0x22	; 34
+ 18a:	b1 e0       	ldi	r27, 0x01	; 1
+ 18c:	86 0f       	add	r24, r22
+ 18e:	91 1d       	adc	r25, r1
+	int i;
+	
+	for(i = 0; i < size; i++)
+ 190:	35 c0       	rjmp	.+106    	; 0x1fc <simpleserial_decode+0x7a>
+ 192:	ed 01       	movw	r28, r26
+ 194:	21 97       	sbiw	r28, 0x01	; 1
+	{
+		unsigned char n_hi = ascii_buffer[2*i + 1];
+ 196:	28 81       	ld	r18, Y
+		unsigned char n_lo = ascii_buffer[2*i + 2];
+ 198:	3c 91       	ld	r19, X
+		
+		if(n_lo <= '9')
+ 19a:	3a 33       	cpi	r19, 0x3A	; 58
+ 19c:	18 f4       	brcc	.+6      	; 0x1a4 <simpleserial_decode+0x22>
+			data[i] = n_lo - '0';
+ 19e:	30 53       	subi	r19, 0x30	; 48
+ 1a0:	30 83       	st	Z, r19
+ 1a2:	07 c0       	rjmp	.+14     	; 0x1b2 <simpleserial_decode+0x30>
+		else if(n_lo <= 'F')
+ 1a4:	37 34       	cpi	r19, 0x47	; 71
+ 1a6:	18 f4       	brcc	.+6      	; 0x1ae <simpleserial_decode+0x2c>
+			data[i] = n_lo - 'A' + 10;
+ 1a8:	37 53       	subi	r19, 0x37	; 55
+ 1aa:	30 83       	st	Z, r19
+ 1ac:	02 c0       	rjmp	.+4      	; 0x1b2 <simpleserial_decode+0x30>
+		else
+			data[i] = n_lo - 'a' + 10;
+ 1ae:	37 55       	subi	r19, 0x57	; 87
+ 1b0:	30 83       	st	Z, r19
+		
+		if(n_hi <= '9')
+ 1b2:	2a 33       	cpi	r18, 0x3A	; 58
+ 1b4:	30 f4       	brcc	.+12     	; 0x1c2 <simpleserial_decode+0x40>
+			data[i] |= (n_hi - '0') << 4;
+ 1b6:	22 95       	swap	r18
+ 1b8:	20 7f       	andi	r18, 0xF0	; 240
+ 1ba:	30 81       	ld	r19, Z
+ 1bc:	23 2b       	or	r18, r19
+ 1be:	20 83       	st	Z, r18
+ 1c0:	1b c0       	rjmp	.+54     	; 0x1f8 <simpleserial_decode+0x76>
+		else if(n_hi <= 'F')
+ 1c2:	27 34       	cpi	r18, 0x47	; 71
+ 1c4:	68 f4       	brcc	.+26     	; 0x1e0 <simpleserial_decode+0x5e>
+			data[i] |= (n_hi - 'A' + 10) << 4;
+ 1c6:	30 e0       	ldi	r19, 0x00	; 0
+ 1c8:	27 53       	subi	r18, 0x37	; 55
+ 1ca:	31 09       	sbc	r19, r1
+ 1cc:	22 95       	swap	r18
+ 1ce:	32 95       	swap	r19
+ 1d0:	30 7f       	andi	r19, 0xF0	; 240
+ 1d2:	32 27       	eor	r19, r18
+ 1d4:	20 7f       	andi	r18, 0xF0	; 240
+ 1d6:	32 27       	eor	r19, r18
+ 1d8:	30 81       	ld	r19, Z
+ 1da:	23 2b       	or	r18, r19
+ 1dc:	20 83       	st	Z, r18
+ 1de:	0c c0       	rjmp	.+24     	; 0x1f8 <simpleserial_decode+0x76>
+		else
+			data[i] |= (n_hi - 'a' + 10) << 4;
+ 1e0:	30 e0       	ldi	r19, 0x00	; 0
+ 1e2:	27 55       	subi	r18, 0x57	; 87
+ 1e4:	31 09       	sbc	r19, r1
+ 1e6:	22 95       	swap	r18
+ 1e8:	32 95       	swap	r19
+ 1ea:	30 7f       	andi	r19, 0xF0	; 240
+ 1ec:	32 27       	eor	r19, r18
+ 1ee:	20 7f       	andi	r18, 0xF0	; 240
+ 1f0:	32 27       	eor	r19, r18
+ 1f2:	30 81       	ld	r19, Z
+ 1f4:	23 2b       	or	r18, r19
+ 1f6:	20 83       	st	Z, r18
+ 1f8:	31 96       	adiw	r30, 0x01	; 1
+ 1fa:	12 96       	adiw	r26, 0x02	; 2
+// Decode the ASCII buffer into a byte array
+void simpleserial_decode(uint8_t* data, uint8_t size)
+{
+	int i;
+	
+	for(i = 0; i < size; i++)
+ 1fc:	e8 17       	cp	r30, r24
+ 1fe:	f9 07       	cpc	r31, r25
+ 200:	41 f6       	brne	.-112    	; 0x192 <simpleserial_decode+0x10>
+		else if(n_hi <= 'F')
+			data[i] |= (n_hi - 'A' + 10) << 4;
+		else
+			data[i] |= (n_hi - 'a' + 10) << 4;
+	}
+}
+ 202:	df 91       	pop	r29
+ 204:	cf 91       	pop	r28
+ 206:	08 95       	ret
+
+00000208 <simpleserial_get>:
+
+int simpleserial_get(uint8_t size)
+{	
+ 208:	ff 92       	push	r15
+ 20a:	0f 93       	push	r16
+ 20c:	1f 93       	push	r17
+ 20e:	cf 93       	push	r28
+ 210:	df 93       	push	r29
+ 212:	08 2f       	mov	r16, r24
+				continue;
+			}
+		}
+		else // state == STATE_READ
+		{
+			uint8_t length_limit = 2*size + 1;
+ 214:	d8 2f       	mov	r29, r24
+ 216:	dd 0f       	add	r29, r29
+ 218:	df 5f       	subi	r29, 0xFF	; 255
+ 21a:	c0 e0       	ldi	r28, 0x00	; 0
+	}
+}
+
+int simpleserial_get(uint8_t size)
+{	
+	unsigned char state = STATE_IDLE;
+ 21c:	10 e0       	ldi	r17, 0x00	; 0
+		{
+			// If we're in idle mode, check for 'a' to break us out
+			// Any other character will fall through and return
+			if(ascii_buffer[ascii_pos] == 'a')
+			{
+				state = STATE_READ;
+ 21e:	ff 24       	eor	r15, r15
+ 220:	f3 94       	inc	r15
+ 222:	02 c0       	rjmp	.+4      	; 0x228 <simpleserial_get+0x20>
+ 224:	1f 2d       	mov	r17, r15
+ 226:	cf 5f       	subi	r28, 0xFF	; 255
+
+	// Repeat reading loop until done
+	while(1)
+	{
+		// Get character
+		ascii_buffer[ascii_pos] = uart_rx_byte();
+ 228:	0e 94 77 01 	call	0x2ee	; 0x2ee <uart_rx_byte>
+ 22c:	ec 2f       	mov	r30, r28
+ 22e:	f0 e0       	ldi	r31, 0x00	; 0
+ 230:	e0 5e       	subi	r30, 0xE0	; 224
+ 232:	fe 4f       	sbci	r31, 0xFE	; 254
+ 234:	80 83       	st	Z, r24
+
+		if(state == STATE_IDLE)
+ 236:	11 11       	cpse	r17, r1
+ 238:	05 c0       	rjmp	.+10     	; 0x244 <simpleserial_get+0x3c>
+		{
+			// If we're in idle mode, check for 'a' to break us out
+			// Any other character will fall through and return
+			if(ascii_buffer[ascii_pos] == 'a')
+ 23a:	81 36       	cpi	r24, 0x61	; 97
+ 23c:	99 f3       	breq	.-26     	; 0x224 <simpleserial_get+0x1c>
+			}
+		}
+		
+		// If we get here, something was wrong with the message
+		// (Could be a message like "x\n")
+		return 0;
+ 23e:	80 e0       	ldi	r24, 0x00	; 0
+ 240:	90 e0       	ldi	r25, 0x00	; 0
+ 242:	21 c0       	rjmp	.+66     	; 0x286 <simpleserial_get+0x7e>
+		else // state == STATE_READ
+		{
+			uint8_t length_limit = 2*size + 1;
+			
+			// If we're in the message body, check that characters are [0-9A-F]
+			if(ascii_pos < length_limit)
+ 244:	cd 17       	cp	r28, r29
+ 246:	60 f4       	brcc	.+24     	; 0x260 <simpleserial_get+0x58>
+			{
+				if((ascii_buffer[ascii_pos] >= '0' && ascii_buffer[ascii_pos] <= '9')
+ 248:	90 ed       	ldi	r25, 0xD0	; 208
+ 24a:	98 0f       	add	r25, r24
+ 24c:	9a 30       	cpi	r25, 0x0A	; 10
+ 24e:	58 f3       	brcs	.-42     	; 0x226 <simpleserial_get+0x1e>
+				|| (ascii_buffer[ascii_pos] >= 'A' && ascii_buffer[ascii_pos] <= 'F')
+ 250:	98 2f       	mov	r25, r24
+ 252:	9f 7d       	andi	r25, 0xDF	; 223
+ 254:	91 54       	subi	r25, 0x41	; 65
+ 256:	96 30       	cpi	r25, 0x06	; 6
+ 258:	30 f3       	brcs	.-52     	; 0x226 <simpleserial_get+0x1e>
+			}
+		}
+		
+		// If we get here, something was wrong with the message
+		// (Could be a message like "x\n")
+		return 0;
+ 25a:	80 e0       	ldi	r24, 0x00	; 0
+ 25c:	90 e0       	ldi	r25, 0x00	; 0
+ 25e:	13 c0       	rjmp	.+38     	; 0x286 <simpleserial_get+0x7e>
+					continue;
+				}
+			}
+			
+			// Otherwise, for the last character, check for '\n' or '\r'
+			else if((ascii_pos == length_limit)
+ 260:	dc 13       	cpse	r29, r28
+ 262:	0c c0       	rjmp	.+24     	; 0x27c <simpleserial_get+0x74>
+			&& ((ascii_buffer[ascii_pos] == '\n') || (ascii_buffer[ascii_pos] == '\r')))
+ 264:	8a 30       	cpi	r24, 0x0A	; 10
+ 266:	11 f0       	breq	.+4      	; 0x26c <simpleserial_get+0x64>
+ 268:	8d 30       	cpi	r24, 0x0D	; 13
+ 26a:	59 f4       	brne	.+22     	; 0x282 <simpleserial_get+0x7a>
+			{
+				simpleserial_decode(address, size);
+ 26c:	60 2f       	mov	r22, r16
+ 26e:	80 e1       	ldi	r24, 0x10	; 16
+ 270:	91 e0       	ldi	r25, 0x01	; 1
+ 272:	0e 94 c1 00 	call	0x182	; 0x182 <simpleserial_decode>
+				return 1;
+ 276:	81 e0       	ldi	r24, 0x01	; 1
+ 278:	90 e0       	ldi	r25, 0x00	; 0
+ 27a:	05 c0       	rjmp	.+10     	; 0x286 <simpleserial_get+0x7e>
+			}
+		}
+		
+		// If we get here, something was wrong with the message
+		// (Could be a message like "x\n")
+		return 0;
+ 27c:	80 e0       	ldi	r24, 0x00	; 0
+ 27e:	90 e0       	ldi	r25, 0x00	; 0
+ 280:	02 c0       	rjmp	.+4      	; 0x286 <simpleserial_get+0x7e>
+ 282:	80 e0       	ldi	r24, 0x00	; 0
+ 284:	90 e0       	ldi	r25, 0x00	; 0
+	}
+}
+ 286:	df 91       	pop	r29
+ 288:	cf 91       	pop	r28
+ 28a:	1f 91       	pop	r17
+ 28c:	0f 91       	pop	r16
+ 28e:	ff 90       	pop	r15
+ 290:	08 95       	ret
+
+00000292 <simpleserial_put>:
+
+void simpleserial_put(uint8_t* output, uint8_t size)
+{
+ 292:	0f 93       	push	r16
+ 294:	1f 93       	push	r17
+ 296:	cf 93       	push	r28
+ 298:	df 93       	push	r29
+	uint8_t size_ascii = 2*size+2;
+ 29a:	06 2f       	mov	r16, r22
+ 29c:	00 0f       	add	r16, r16
+ 29e:	0e 5f       	subi	r16, 0xFE	; 254
+	
+	simpleserial_encode(output, size);
+ 2a0:	0e 94 8f 00 	call	0x11e	; 0x11e <simpleserial_encode>
+	for(int i = 0; i < size_ascii; i++)
+ 2a4:	00 23       	and	r16, r16
+ 2a6:	59 f0       	breq	.+22     	; 0x2be <simpleserial_put+0x2c>
+ 2a8:	c0 e2       	ldi	r28, 0x20	; 32
+ 2aa:	d1 e0       	ldi	r29, 0x01	; 1
+ 2ac:	10 e0       	ldi	r17, 0x00	; 0
+ 2ae:	00 5e       	subi	r16, 0xE0	; 224
+ 2b0:	1e 4f       	sbci	r17, 0xFE	; 254
+	{
+		uart_tx_byte(ascii_buffer[i]);
+ 2b2:	89 91       	ld	r24, Y+
+ 2b4:	0e 94 6f 01 	call	0x2de	; 0x2de <uart_tx_byte>
+void simpleserial_put(uint8_t* output, uint8_t size)
+{
+	uint8_t size_ascii = 2*size+2;
+	
+	simpleserial_encode(output, size);
+	for(int i = 0; i < size_ascii; i++)
+ 2b8:	c0 17       	cp	r28, r16
+ 2ba:	d1 07       	cpc	r29, r17
+ 2bc:	d1 f7       	brne	.-12     	; 0x2b2 <simpleserial_put+0x20>
+	{
+		uart_tx_byte(ascii_buffer[i]);
+	}
+}
+ 2be:	df 91       	pop	r29
+ 2c0:	cf 91       	pop	r28
+ 2c2:	1f 91       	pop	r17
+ 2c4:	0f 91       	pop	r16
+ 2c6:	08 95       	ret
+
+000002c8 <uart_init>:
+
+#include <avr/io.h>
+
+void uart_init(unsigned int baud)
+{
+	UBRR0H = (unsigned char) (baud >> 8);
+ 2c8:	90 93 c5 00 	sts	0x00C5, r25
+	UBRR0L = (unsigned char) baud;
+ 2cc:	80 93 c4 00 	sts	0x00C4, r24
+	UCSR0B = (1 << RXEN0) | (1 << TXEN0);
+ 2d0:	88 e1       	ldi	r24, 0x18	; 24
+ 2d2:	80 93 c1 00 	sts	0x00C1, r24
+	UCSR0C = (3 << UCSZ00);
+ 2d6:	86 e0       	ldi	r24, 0x06	; 6
+ 2d8:	80 93 c2 00 	sts	0x00C2, r24
+ 2dc:	08 95       	ret
+
+000002de <uart_tx_byte>:
+}
+
+void uart_tx_byte(uint8_t data)
+{
+	while( !(UCSR0A & (1 << UDRE0)));
+ 2de:	e0 ec       	ldi	r30, 0xC0	; 192
+ 2e0:	f0 e0       	ldi	r31, 0x00	; 0
+ 2e2:	90 81       	ld	r25, Z
+ 2e4:	95 ff       	sbrs	r25, 5
+ 2e6:	fd cf       	rjmp	.-6      	; 0x2e2 <uart_tx_byte+0x4>
+	UDR0 = data;
+ 2e8:	80 93 c6 00 	sts	0x00C6, r24
+ 2ec:	08 95       	ret
+
+000002ee <uart_rx_byte>:
+}
+
+uint8_t uart_rx_byte(void)
+{
+	while( !(UCSR0A & (1 << RXC0)));
+ 2ee:	e0 ec       	ldi	r30, 0xC0	; 192
+ 2f0:	f0 e0       	ldi	r31, 0x00	; 0
+ 2f2:	80 81       	ld	r24, Z
+ 2f4:	88 23       	and	r24, r24
+ 2f6:	ec f7       	brge	.-6      	; 0x2f2 <uart_rx_byte+0x4>
+	return UDR0;
+ 2f8:	80 91 c6 00 	lds	r24, 0x00C6
+ 2fc:	08 95       	ret
+
+000002fe <utilities_init>:
+	PORTA &= ~(1 << PORTA2);
+}
+
+void led2_toggle()
+{
+	PORTA ^= (1 << PORTA2);
+ 2fe:	0a 9a       	sbi	0x01, 2	; 1
+ 300:	6b 9a       	sbi	0x0d, 3	; 13
+ 302:	85 b7       	in	r24, 0x35	; 53
+ 304:	80 68       	ori	r24, 0x80	; 128
+ 306:	85 bf       	out	0x35, r24	; 53
+ 308:	85 b7       	in	r24, 0x35	; 53
+ 30a:	80 68       	ori	r24, 0x80	; 128
+ 30c:	85 bf       	out	0x35, r24	; 53
+ 30e:	08 95       	ret
+
+00000310 <led2_low>:
+ 310:	12 98       	cbi	0x02, 2	; 2
+ 312:	08 95       	ret
+
+00000314 <__vector_9>:
+}
+
+ISR(TIMER1_OVF_vect)
+{
+ 314:	1f 92       	push	r1
+ 316:	0f 92       	push	r0
+ 318:	0f b6       	in	r0, 0x3f	; 63
+ 31a:	0f 92       	push	r0
+ 31c:	11 24       	eor	r1, r1
+ 31e:	8f 93       	push	r24
+ 320:	9f 93       	push	r25
+	// Toggle LED3
+	PORTF ^= (1 << PORTF0);
+ 322:	91 b3       	in	r25, 0x11	; 17
+ 324:	81 e0       	ldi	r24, 0x01	; 1
+ 326:	89 27       	eor	r24, r25
+ 328:	81 bb       	out	0x11, r24	; 17
+}
+ 32a:	9f 91       	pop	r25
+ 32c:	8f 91       	pop	r24
+ 32e:	0f 90       	pop	r0
+ 330:	0f be       	out	0x3f, r0	; 63
+ 332:	0f 90       	pop	r0
+ 334:	1f 90       	pop	r1
+ 336:	18 95       	reti
+
+00000338 <heartbeat_enable>:
+
+void heartbeat_enable()
+{
+	// Enable PF0 as output
+	DDRF |= (1 << DDRF0);
+ 338:	80 9a       	sbi	0x10, 0	; 16
+	
+	// Turn on timer 1 with 1/256 prescaling
+	TCCR1B |= (1 << CS10) | (1 << CS11);
+ 33a:	e1 e8       	ldi	r30, 0x81	; 129
+ 33c:	f0 e0       	ldi	r31, 0x00	; 0
+ 33e:	80 81       	ld	r24, Z
+ 340:	83 60       	ori	r24, 0x03	; 3
+ 342:	80 83       	st	Z, r24
+	
+	// Enable OVF interrupts	
+	TIMSK1 |= (1 << TOIE1);
+ 344:	ef e6       	ldi	r30, 0x6F	; 111
+ 346:	f0 e0       	ldi	r31, 0x00	; 0
+ 348:	80 81       	ld	r24, Z
+ 34a:	81 60       	ori	r24, 0x01	; 1
+ 34c:	80 83       	st	Z, r24
+ 34e:	08 95       	ret
+
+00000350 <heartbeat_disable>:
+}
+
+void heartbeat_disable()
+{
+	// Disable OVF interrupts
+	TIMSK1 &= ~(1 << TOIE1);
+ 350:	ef e6       	ldi	r30, 0x6F	; 111
+ 352:	f0 e0       	ldi	r31, 0x00	; 0
+ 354:	80 81       	ld	r24, Z
+ 356:	8e 7f       	andi	r24, 0xFE	; 254
+ 358:	80 83       	st	Z, r24
+ 35a:	08 95       	ret
+
+0000035c <trigger_high>:
+}
+
+void trigger_high()
+{
+	PORTE |= (1 << PORTE3);
+ 35c:	73 9a       	sbi	0x0e, 3	; 14
+ 35e:	08 95       	ret
+
+00000360 <trigger_low>:
+}
+
+void trigger_low()
+{
+	PORTE &= ~(1 << PORTE3);
+ 360:	73 98       	cbi	0x0e, 3	; 14
+ 362:	08 95       	ret
+
+00000364 <target_enable>:
+}
+
+void target_enable()
+{
+	// Enable address pins
+	DDRD = 0xFF;	// A0-7
+ 364:	9f ef       	ldi	r25, 0xFF	; 255
+ 366:	9a b9       	out	0x0a, r25	; 10
+	DDRF |= 0xC0;	// A8-9
+ 368:	80 b3       	in	r24, 0x10	; 16
+ 36a:	80 6c       	ori	r24, 0xC0	; 192
+ 36c:	80 bb       	out	0x10, r24	; 16
+	DDRA |= 0x03;	// A10-11
+ 36e:	81 b1       	in	r24, 0x01	; 1
+ 370:	83 60       	ori	r24, 0x03	; 3
+ 372:	81 b9       	out	0x01, r24	; 1
+	DDRA |= 0x0C;	// A12-13
+ 374:	81 b1       	in	r24, 0x01	; 1
+ 376:	8c 60       	ori	r24, 0x0C	; 12
+ 378:	81 b9       	out	0x01, r24	; 1
+	// A14-15: not used
+
+	// Turn on data pullups
+	PORTC = 0xFF;
+ 37a:	98 b9       	out	0x08, r25	; 8
+	
+	// Enable control pins
+	DDRF  |= (1 << 1) | (1 << 4) | (1 << 5);
+ 37c:	80 b3       	in	r24, 0x10	; 16
+ 37e:	82 63       	ori	r24, 0x32	; 50
+ 380:	80 bb       	out	0x10, r24	; 16
+	DDRA  |= (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7);
+ 382:	81 b1       	in	r24, 0x01	; 1
+ 384:	80 6f       	ori	r24, 0xF0	; 240
+ 386:	81 b9       	out	0x01, r24	; 1
+	
+	// Set control levels (for verify)
+	PORTF |=  (1 << 1);		// RST = 1
+ 388:	89 9a       	sbi	0x11, 1	; 17
+	PORTF |=  (1 << 4);		// P3.6 = 1
+ 38a:	8c 9a       	sbi	0x11, 4	; 17
+	PORTF |=  (1 << 5);		// P3.7 = 1
+ 38c:	8d 9a       	sbi	0x11, 5	; 17
+	PORTA |=  (1 << 7);		// ALE/PROG = 1
+ 38e:	17 9a       	sbi	0x02, 7	; 2
+	PORTA &= ~(1 << 6);		// PSEN = 0;
+ 390:	16 98       	cbi	0x02, 6	; 2
+	PORTA &= ~(1 << 4);		// P2.6 = 0
+ 392:	14 98       	cbi	0x02, 4	; 2
+ 394:	08 95       	ret
+
+00000396 <load_address>:
+uint8_t last_data;
+
+void load_address(uint16_t address)
+{
+	// Move address onto A0-A13
+	PORTD = (address & 0xFF);									// A0-A7
+ 396:	8b b9       	out	0x0b, r24	; 11
+	PORTF = (PORTF & ~0xC0) | (((address >> 8) & 0x03) << 6);	// A8-A9
+ 398:	81 b3       	in	r24, 0x11	; 17
+ 39a:	29 2f       	mov	r18, r25
+ 39c:	22 95       	swap	r18
+ 39e:	22 0f       	add	r18, r18
+ 3a0:	22 0f       	add	r18, r18
+ 3a2:	20 7c       	andi	r18, 0xC0	; 192
+ 3a4:	8f 73       	andi	r24, 0x3F	; 63
+ 3a6:	82 2b       	or	r24, r18
+ 3a8:	81 bb       	out	0x11, r24	; 17
+	PORTA = (PORTA & ~0x0F) | (((address >> 10) & 0x0F) << 0);	// A10-A13
+ 3aa:	82 b1       	in	r24, 0x02	; 2
+ 3ac:	96 95       	lsr	r25
+ 3ae:	96 95       	lsr	r25
+ 3b0:	9f 70       	andi	r25, 0x0F	; 15
+ 3b2:	80 7f       	andi	r24, 0xF0	; 240
+ 3b4:	98 2b       	or	r25, r24
+ 3b6:	92 b9       	out	0x02, r25	; 2
+ 3b8:	08 95       	ret
+
+000003ba <read_byte>:
+}
+
+uint8_t read_byte(uint16_t address)
+{
+	// Load address and enable
+	load_address(address);
+ 3ba:	0e 94 cb 01 	call	0x396	; 0x396 <load_address>
+	PORTA &= ~(1 << 5);
+ 3be:	15 98       	cbi	0x02, 5	; 2
+    can be achieved.
+*/
+void
+_delay_loop_1(uint8_t __count)
+{
+	__asm__ volatile (
+ 3c0:	90 e1       	ldi	r25, 0x10	; 16
+ 3c2:	89 2f       	mov	r24, r25
+ 3c4:	8a 95       	dec	r24
+ 3c6:	f1 f7       	brne	.-4      	; 0x3c4 <read_byte+0xa>
+	
+	// Wait until data is valid
+	_delay_loop_1(16);
+	
+	// Read byte off data bus
+	uint8_t ret = PINC;
+ 3c8:	86 b1       	in	r24, 0x06	; 6
+	
+	// Disable and ensure that data is floating
+	PORTA |= (1 << 5);
+ 3ca:	15 9a       	sbi	0x02, 5	; 2
+ 3cc:	9a 95       	dec	r25
+ 3ce:	f1 f7       	brne	.-4      	; 0x3cc <read_byte+0x12>
+	_delay_loop_1(16);
+	
+	return ret;
+}
+ 3d0:	08 95       	ret
+
+000003d2 <__vector_10>:
+
+// ISR to sync the read to the 1/6 clock
+ISR(TIMER0_COMP_vect)
+{
+ 3d2:	1f 92       	push	r1
+ 3d4:	0f 92       	push	r0
+ 3d6:	0f b6       	in	r0, 0x3f	; 63
+ 3d8:	0f 92       	push	r0
+ 3da:	11 24       	eor	r1, r1
+ 3dc:	2f 93       	push	r18
+ 3de:	3f 93       	push	r19
+ 3e0:	4f 93       	push	r20
+ 3e2:	5f 93       	push	r21
+ 3e4:	6f 93       	push	r22
+ 3e6:	7f 93       	push	r23
+ 3e8:	8f 93       	push	r24
+ 3ea:	9f 93       	push	r25
+ 3ec:	af 93       	push	r26
+ 3ee:	bf 93       	push	r27
+ 3f0:	ef 93       	push	r30
+ 3f2:	ff 93       	push	r31
+	// Disable additional timer interrupts
+	TIMSK0 = 0;
+ 3f4:	10 92 6e 00 	sts	0x006E, r1
+	
+	// Read the byte that we're interested in
+	trigger_high();
+ 3f8:	0e 94 ae 01 	call	0x35c	; 0x35c <trigger_high>
+	last_data = read_byte(next_address);
+ 3fc:	80 91 42 01 	lds	r24, 0x0142
+ 400:	90 91 43 01 	lds	r25, 0x0143
+ 404:	0e 94 dd 01 	call	0x3ba	; 0x3ba <read_byte>
+ 408:	80 93 44 01 	sts	0x0144, r24
+	trigger_low();
+ 40c:	0e 94 b0 01 	call	0x360	; 0x360 <trigger_low>
+	
+	// Put the 87C51 in a known state
+	read_byte(0xFFFF);
+ 410:	8f ef       	ldi	r24, 0xFF	; 255
+ 412:	9f ef       	ldi	r25, 0xFF	; 255
+ 414:	0e 94 dd 01 	call	0x3ba	; 0x3ba <read_byte>
+}
+ 418:	ff 91       	pop	r31
+ 41a:	ef 91       	pop	r30
+ 41c:	bf 91       	pop	r27
+ 41e:	af 91       	pop	r26
+ 420:	9f 91       	pop	r25
+ 422:	8f 91       	pop	r24
+ 424:	7f 91       	pop	r23
+ 426:	6f 91       	pop	r22
+ 428:	5f 91       	pop	r21
+ 42a:	4f 91       	pop	r20
+ 42c:	3f 91       	pop	r19
+ 42e:	2f 91       	pop	r18
+ 430:	0f 90       	pop	r0
+ 432:	0f be       	out	0x3f, r0	; 63
+ 434:	0f 90       	pop	r0
+ 436:	1f 90       	pop	r1
+ 438:	18 95       	reti
+
+0000043a <verify_init>:
+	trigger_high();
+}
+*/
+
+void verify_init()
+{
+ 43a:	cf 93       	push	r28
+ 43c:	df 93       	push	r29
+ 43e:	cd b7       	in	r28, 0x3d	; 61
+ 440:	de b7       	in	r29, 0x3e	; 62
+ 442:	c6 54       	subi	r28, 0x46	; 70
+ 444:	d1 09       	sbc	r29, r1
+ 446:	0f b6       	in	r0, 0x3f	; 63
+ 448:	f8 94       	cli
+ 44a:	de bf       	out	0x3e, r29	; 62
+ 44c:	0f be       	out	0x3f, r0	; 63
+ 44e:	cd bf       	out	0x3d, r28	; 61
+	// Start the timer
+	TCCR0A = (1 << WGM01)   // CTC mode
+ 450:	89 e0       	ldi	r24, 0x09	; 9
+ 452:	84 bd       	out	0x24, r24	; 36
+	       | (1 << CS00);   // x1 clock
+	OCR0A = 23;             // Overflow every nth clock cycle
+ 454:	87 e1       	ldi	r24, 0x17	; 23
+ 456:	87 bd       	out	0x27, r24	; 39
+
+	// Reset 8051
+	DDRF |= (1 << DDRF1);
+ 458:	81 9a       	sbi	0x10, 1	; 16
+	PORTF |= (1 << PORTF1);
+ 45a:	89 9a       	sbi	0x11, 1	; 17
+	#else
+		//round up by default
+		__ticks_dc = (uint32_t)(ceil(fabs(__tmp)));
+	#endif
+
+	__builtin_avr_delay_cycles(__ticks_dc);
+ 45c:	83 ed       	ldi	r24, 0xD3	; 211
+ 45e:	90 e3       	ldi	r25, 0x30	; 48
+ 460:	01 97       	sbiw	r24, 0x01	; 1
+ 462:	f1 f7       	brne	.-4      	; 0x460 <verify_init+0x26>
+ 464:	00 c0       	rjmp	.+0      	; 0x466 <verify_init+0x2c>
+ 466:	00 00       	nop
+	_delay_ms(50);
+	PORTF &= ~(1 << PORTF1);
+ 468:	89 98       	cbi	0x11, 1	; 17
+ 46a:	83 ed       	ldi	r24, 0xD3	; 211
+ 46c:	90 e3       	ldi	r25, 0x30	; 48
+ 46e:	01 97       	sbiw	r24, 0x01	; 1
+ 470:	f1 f7       	brne	.-4      	; 0x46e <verify_init+0x34>
+ 472:	00 c0       	rjmp	.+0      	; 0x474 <verify_init+0x3a>
+ 474:	00 00       	nop
+	
+	// Sync to 1/6 clock
+	// Make a lookup table with 6 entries - this is kinda dumb, but it should work
+	// Need to do it this way so our sync operation is constant time
+	uint8_t delay_lookup[64];
+	delay_lookup[0b000011] = 0;
+ 476:	1c 82       	std	Y+4, r1	; 0x04
+	delay_lookup[0b000110] = 5;
+ 478:	85 e0       	ldi	r24, 0x05	; 5
+ 47a:	8f 83       	std	Y+7, r24	; 0x07
+	delay_lookup[0b001100] = 4;
+ 47c:	84 e0       	ldi	r24, 0x04	; 4
+ 47e:	8d 87       	std	Y+13, r24	; 0x0d
+	delay_lookup[0b011000] = 3;
+ 480:	83 e0       	ldi	r24, 0x03	; 3
+ 482:	89 8f       	std	Y+25, r24	; 0x19
+	delay_lookup[0b110000] = 2;
+ 484:	82 e0       	ldi	r24, 0x02	; 2
+ 486:	89 ab       	std	Y+49, r24	; 0x31
+	delay_lookup[0b100001] = 1;
+ 488:	81 e0       	ldi	r24, 0x01	; 1
+ 48a:	8a a3       	std	Y+34, r24	; 0x22
+
+	// Get ready to store six bytes in an array
+	uint8_t arr[6];
+	// Time-sensitive: read PINA 6 times in 6 clock cycles
+	// and put the 6 results into the array
+	asm volatile(
+ 48c:	50 b1       	in	r21, 0x00	; 0
+ 48e:	40 b1       	in	r20, 0x00	; 0
+ 490:	30 b1       	in	r19, 0x00	; 0
+ 492:	20 b1       	in	r18, 0x00	; 0
+ 494:	90 b1       	in	r25, 0x00	; 0
+ 496:	80 b1       	in	r24, 0x00	; 0
+ 498:	22 96       	adiw	r28, 0x02	; 2
+ 49a:	5f af       	std	Y+63, r21	; 0x3f
+ 49c:	22 97       	sbiw	r28, 0x02	; 2
+ 49e:	23 96       	adiw	r28, 0x03	; 3
+ 4a0:	4f af       	std	Y+63, r20	; 0x3f
+ 4a2:	23 97       	sbiw	r28, 0x03	; 3
+ 4a4:	24 96       	adiw	r28, 0x04	; 4
+ 4a6:	3f af       	std	Y+63, r19	; 0x3f
+ 4a8:	24 97       	sbiw	r28, 0x04	; 4
+ 4aa:	25 96       	adiw	r28, 0x05	; 5
+ 4ac:	2f af       	std	Y+63, r18	; 0x3f
+ 4ae:	25 97       	sbiw	r28, 0x05	; 5
+ 4b0:	26 96       	adiw	r28, 0x06	; 6
+ 4b2:	9f af       	std	Y+63, r25	; 0x3f
+ 4b4:	26 97       	sbiw	r28, 0x06	; 6
+ 4b6:	27 96       	adiw	r28, 0x07	; 7
+ 4b8:	8f af       	std	Y+63, r24	; 0x3f
+ 4ba:	27 97       	sbiw	r28, 0x07	; 7
+ 4bc:	fe 01       	movw	r30, r28
+ 4be:	ef 5b       	subi	r30, 0xBF	; 191
+ 4c0:	ff 4f       	sbci	r31, 0xFF	; 255
+ 4c2:	20 e0       	ldi	r18, 0x00	; 0
+ 4c4:	30 e0       	ldi	r19, 0x00	; 0
+	: [pina] "I" (0) // PINA register is at 0x00
+	);
+	
+	
+	// Figure out which delay we are
+	uint8_t samples = 0;
+ 4c6:	40 e0       	ldi	r20, 0x00	; 0
+	for(uint8_t i = 0; i < 6; i++)
+	{
+		arr[i] = (arr[i] >> 7) & 0x01;
+ 4c8:	80 81       	ld	r24, Z
+ 4ca:	88 1f       	adc	r24, r24
+ 4cc:	88 27       	eor	r24, r24
+ 4ce:	88 1f       	adc	r24, r24
+ 4d0:	81 93       	st	Z+, r24
+		samples |= (arr[i] << i);
+ 4d2:	90 e0       	ldi	r25, 0x00	; 0
+ 4d4:	02 2e       	mov	r0, r18
+ 4d6:	02 c0       	rjmp	.+4      	; 0x4dc <verify_init+0xa2>
+ 4d8:	88 0f       	add	r24, r24
+ 4da:	99 1f       	adc	r25, r25
+ 4dc:	0a 94       	dec	r0
+ 4de:	e2 f7       	brpl	.-8      	; 0x4d8 <verify_init+0x9e>
+ 4e0:	48 2b       	or	r20, r24
+ 4e2:	2f 5f       	subi	r18, 0xFF	; 255
+ 4e4:	3f 4f       	sbci	r19, 0xFF	; 255
+	);
+	
+	
+	// Figure out which delay we are
+	uint8_t samples = 0;
+	for(uint8_t i = 0; i < 6; i++)
+ 4e6:	26 30       	cpi	r18, 0x06	; 6
+ 4e8:	31 05       	cpc	r19, r1
+ 4ea:	71 f7       	brne	.-36     	; 0x4c8 <verify_init+0x8e>
+		arr[i] = (arr[i] >> 7) & 0x01;
+		samples |= (arr[i] << i);
+	}
+	
+	// Sync up our timer
+	TCNT0 = delay_lookup[samples];
+ 4ec:	fe 01       	movw	r30, r28
+ 4ee:	e4 0f       	add	r30, r20
+ 4f0:	f1 1d       	adc	r31, r1
+ 4f2:	81 81       	ldd	r24, Z+1	; 0x01
+ 4f4:	86 bd       	out	0x26, r24	; 38
+}
+ 4f6:	ca 5b       	subi	r28, 0xBA	; 186
+ 4f8:	df 4f       	sbci	r29, 0xFF	; 255
+ 4fa:	0f b6       	in	r0, 0x3f	; 63
+ 4fc:	f8 94       	cli
+ 4fe:	de bf       	out	0x3e, r29	; 62
+ 500:	0f be       	out	0x3f, r0	; 63
+ 502:	cd bf       	out	0x3d, r28	; 61
+ 504:	df 91       	pop	r29
+ 506:	cf 91       	pop	r28
+ 508:	08 95       	ret
+
+0000050a <verify_byte>:
+
+uint8_t verify_byte(uint16_t address)
+{	
+	// Set up the ISR
+	next_address = address;
+ 50a:	90 93 43 01 	sts	0x0143, r25
+ 50e:	80 93 42 01 	sts	0x0142, r24
+	
+	// Sync ourselves to the timer
+	TIFR0 |= (1 << OCF0A);
+ 512:	a9 9a       	sbi	0x15, 1	; 21
+	while(!(TIFR0 & (1 << OCF0A)));
+ 514:	a9 9b       	sbis	0x15, 1	; 21
+ 516:	fe cf       	rjmp	.-4      	; 0x514 <verify_byte+0xa>
+	
+	// Let the timer cause interrupts
+	TIFR0 |= (1 << OCF0A);
+ 518:	a9 9a       	sbi	0x15, 1	; 21
+	TIMSK0 = 0x02;
+ 51a:	82 e0       	ldi	r24, 0x02	; 2
+ 51c:	80 93 6e 00 	sts	0x006E, r24
+	...
+			
+	// Wait for the ISR to get a return value
+	// Also, make sure we only use instructions that take 1 cycle...
+	asm volatile(
+ 544:	00 00       	nop
+		"nop\n"
+	);
+	
+	// The data byte is in the shared variable
+	return last_data;
+ 546:	80 91 44 01 	lds	r24, 0x0144
+ 54a:	08 95       	ret
+
+0000054c <_exit>:
+ 54c:	f8 94       	cli
+
+0000054e <__stop_program>:
+ 54e:	ff cf       	rjmp	.-2      	; 0x54e <__stop_program>

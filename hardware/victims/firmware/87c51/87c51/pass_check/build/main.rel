@@ -1,0 +1,132 @@
+XH3
+H 1B areas 1B global symbols
+M main
+O -mmcs51 --model-small
+S _SIO_TR1 Def00008E
+S _SIO_RI Def000098
+S _SIO_TI Def000099
+S __mcs51_genRAMCLEAR Ref000000
+S __mcs51_genXINIT Ref000000
+S _SIO_REN Def00009C
+S _SIO_PCON Def000087
+S _SIO_SBUF Def000099
+S _SIO_SCON Def000098
+S _SIO_TMOD Def000089
+S .__.ABS. Def000000
+S __mcs51_genXRAMCLEAR Ref000000
+S _check_password Ref000000
+S _SIO_RB8 Def00009A
+S _SIO_TH1 Def00008D
+S _SIO_TB8 Def00009B
+S _SIO_SM0 Def00009F
+S __sdcc_gsinit_startup Ref000000
+S _SIO_TL1 Def00008B
+S _SIO_SM1 Def00009E
+S _SIO_SM2 Def00009D
+A _CODE size 0 flags 0 addr 0
+A RSEG size 0 flags 8 addr 0
+A RSEG0 size 0 flags 8 addr 0
+A RSEG1 size 0 flags 8 addr 0
+A REG_BANK_0 size 8 flags 4 addr 0
+A DSEG size 0 flags 0 addr 0
+A SSEG size 1 flags 0 addr 0
+S __start__stack Def000000
+A ISEG size 0 flags 0 addr 0
+A IABS size 0 flags 8 addr 0
+A BSEG size 0 flags 80 addr 0
+A PSEG size 0 flags 50 addr 0
+A XSEG size 0 flags 40 addr 0
+A XABS size 0 flags 48 addr 0
+A XISEG size 0 flags 40 addr 0
+A HOME size 6 flags 20 addr 0
+S __sdcc_program_startup Def000003
+A GSINIT0 size 0 flags 20 addr 0
+A GSINIT1 size 0 flags 20 addr 0
+A GSINIT2 size 0 flags 20 addr 0
+A GSINIT3 size 0 flags 20 addr 0
+A GSINIT4 size 0 flags 20 addr 0
+A GSINIT5 size 0 flags 20 addr 0
+A GSINIT size 0 flags 20 addr 0
+A GSFINAL size 3 flags 20 addr 0
+A CSEG size 64 flags 20 addr 0
+S _main Def000053
+S _inituart Def000000
+S _putchar Def000019
+S _getchar Def00003E
+A CONST size 0 flags 20 addr 0
+A XINIT size 0 flags 20 addr 0
+A CABS size 0 flags 28 addr 0
+T 00 00 00
+R 00 00 00 02
+T 00 00 00
+R 00 00 00 03
+T 00 00 00
+R 00 00 00 04
+T 00 00 00
+R 00 00 00 06
+T 00 00 00
+R 00 00 00 06
+T 00 00 00
+R 00 00 00 0E
+T 00 00 00 02 00 00
+R 00 00 00 0E 02 04 00 11
+T 00 00 00 02 00 03
+R 00 00 00 16 00 04 00 0E
+T 00 00 03
+R 00 00 00 0E
+T 00 00 03 02 00 53
+R 00 00 00 0E 00 04 00 17
+T 00 00 00
+R 00 00 00 17
+T 00 00 00 AF 82 C2 8E 74 0F 55 89 44 20 F5 89 43
+R 00 00 00 17
+T 00 00 0D 87 80 8F 8B 8F 8D D2 8E 75 98 52 22
+R 00 00 00 17
+T 00 00 19
+R 00 00 00 17
+T 00 00 19 AF 82 20 9F 0D 20 9E 0A 75 82 FF C0 07
+R 00 00 00 17
+T 00 00 26 12 00 00 D0 07
+R 00 00 00 17 00 04 00 17
+T 00 00 2B
+R 00 00 00 17
+T 00 00 2B BF 0A 08
+R 00 00 00 17
+T 00 00 2E
+R 00 00 00 17
+T 00 00 2E 10 99 02 80 FB
+R 00 00 00 17
+T 00 00 33
+R 00 00 00 17
+T 00 00 33 75 99 0D
+R 00 00 00 17
+T 00 00 36
+R 00 00 00 17
+T 00 00 36 10 99 02 80 FB
+R 00 00 00 17
+T 00 00 3B
+R 00 00 00 17
+T 00 00 3B 8F 99 22
+R 00 00 00 17
+T 00 00 3E
+R 00 00 00 17
+T 00 00 3E 20 9F 09 20 9E 06 75 82 FF 12 00 00
+R 00 00 00 17 00 0D 00 17
+T 00 00 4A
+R 00 00 00 17
+T 00 00 4A 10 98 02 80 FB
+R 00 00 00 17
+T 00 00 4F
+R 00 00 00 17
+T 00 00 4F 85 99 82 22
+R 00 00 00 17
+T 00 00 53
+R 00 00 00 17
+T 00 00 53 75 82 F8 12 00 00 75 82 0A 12 00 19 12
+R 00 00 00 17 00 07 00 17 00 0D 00 17
+T 00 00 60 00 00
+R 00 00 00 17 02 03 00 0C
+T 00 00 62
+R 00 00 00 17
+T 00 00 62 80 FE
+R 00 00 00 17

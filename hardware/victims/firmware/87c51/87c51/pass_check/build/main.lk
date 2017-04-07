@@ -1,0 +1,22 @@
+-muwx
+-i build/main.hex
+-M
+-I 0x0080
+-X 0x0000
+-C 0x4000
+-b HOME = 0x0000
+-b XSEG = 0x0100
+-b PSEG = 0x0100
+-b ISEG = 0x0000
+-b BSEG = 0x0000
+-b SSEG = 0x0030
+-k C:\Program Files (x86)\SDCC\bin\..\lib\small-stack-auto
+-l mcs51
+-l libsdcc
+-l libint
+-l liblong
+-l libfloat
+build/main.rel
+build/pass_check.rel
+
+-e
