@@ -102,7 +102,8 @@ class FWLoaderConfigGUI(QtFixes.QDialog):
         gbSAMFW.setLayout(layoutSAMFW)
         self.readFirmwareVersion()
 
-        if isinstance(self.fwLoaderConfig.loader, ChipWhispererFWLoader.CWLite_Loader):
+        if (isinstance(self.fwLoaderConfig.loader, ChipWhispererFWLoader.CWLite_Loader) or
+            isinstance(self.fwLoaderConfig.loader, ChipWhispererFWLoader.CW1200_Loader)):
             layout.addWidget(gbSAMFW)
 
         self.setFPGAMode(QSettings().value("%s-fpga-bitstream-mode" % self.fwLoaderConfig.loader.name))
