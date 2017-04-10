@@ -112,6 +112,26 @@ void aes_indep_enc(uint8_t * pt)
 	aes256_enc(j, pt, &ctx, 1);
 }
 
+#elif defined(TINYAES128C)
+
+#include "aes.h"
+
+uint8_t enckey[16];
+
+void aes_indep_init(void)
+{
+	;
+}
+
+void aes_indep_key(uint8_t * key)
+{
+    AES128_ECB_indp_setkey(key);
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+	AES128_ECB_indp_crypto(pt);
+}
 
 #else
 
