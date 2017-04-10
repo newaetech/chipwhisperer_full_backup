@@ -389,20 +389,20 @@ module reg_clockglitch(
 	);
 	
 	/* LED lighty up thing */
-	reg [7:0] led_extend;
+	reg [18:0] led_extend;
 	reg led_on;
 	always @(posedge sourceclk) begin
 		if (glitch_go) begin
 			led_extend <= 0;			
 		end else if (led_on == 1'b1) begin
-			led_extend <= led_extend + 8'b1;
+			led_extend <= led_extend + 19'b1;
 		end
 	end
 	
 	always@(posedge sourceclk) begin
 		if (glitch_go)
 			led_on <= 1'b1;
-		else if (led_extend == 8'hFF)
+		else if (led_extend == 19'h7FFFF)
 			led_on <= 1'b0;
 	end
 	

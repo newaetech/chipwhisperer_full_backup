@@ -92,6 +92,7 @@ module reg_chipwhisperer(
 	
 	/* Main trigger connections */
 	output			trigger_o, /* Trigger signal to capture system */
+	input				adccapture_i, /* ADC capture in progress */
 	output			led_auxi,
 	output			led_auxo
     ); 
@@ -245,7 +246,7 @@ module reg_chipwhisperer(
 	 //TODO: Should use a mux?
 	 //The glitch-clock comes from the fabric anyway, but the clkgen comes from the DCM. Either way we are jumping back
 	 //and forth a lot.
-	 assign extclk_fpa_io = (registers_cwextclk[4:3] == 2'b00) ? fpa_trigger_int :
+	 assign extclk_fpa_io = (registers_cwextclk[4:3] == 2'b00) ? trigger : /* adccapture_i */
                            (registers_cwextclk[4:3] == 2'b01) ? clkgen_i :
 	 							   (registers_cwextclk[4:3] == 2'b10) ? glitchclk_i :
 	 							    1'bZ;
