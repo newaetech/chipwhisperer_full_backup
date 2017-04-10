@@ -23,6 +23,7 @@
 #==========================================================================
 import logging
 import time
+import usb.backend.libusb0 as libusb0
 import usb.core
 import usb.util
 import math
@@ -89,7 +90,7 @@ class NAEUSB(object):
         """
 
         for id in idProduct:
-            dev = usb.core.find(idVendor=0x2B3E, idProduct=id)
+            dev = usb.core.find(idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend())
             foundId = id
 
             #Found something
