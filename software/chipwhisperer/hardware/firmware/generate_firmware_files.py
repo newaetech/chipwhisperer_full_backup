@@ -20,13 +20,14 @@ cwlite_files = [("cwlite_firmware.zip", os.path.join(hwdir, r"capture/chipwhispe
                 ("SAM3U_CW1173.bin", os.path.join(hwdir, r"capture/chipwhisperer-lite/sam3u_fw/SAM3U_VendorExample/Debug/SAM3U_CW1173.bin"))]
 
 cw1200_v = [1, 0]
-cw1200_files = []
+cw1200_files = [("cw1200_firmware.zip", os.path.join(hwdir, r"capture/chipwhisperer-cw1200/cw1200_firmware.zip")),
+                ]
 
 #List of files to generate
 file_list = [
-    ("cw305.py" , cw305_v , cw305_files),
-    ("cwcr2.py" , cwcr2_v , cwcr2_files),
-    ("cwlite.py", cwlite_v, cwlite_files),
+#    ("cw305.py" , cw305_v , cw305_files),
+#    ("cwcr2.py" , cwcr2_v , cwcr2_files),
+#    ("cwlite.py", cwlite_v, cwlite_files),
     ("cw1200.py", cw1200_v, cw1200_files),
 ]
 

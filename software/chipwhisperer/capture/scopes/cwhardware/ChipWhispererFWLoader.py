@@ -32,6 +32,7 @@ from chipwhisperer.capture.scopes.cwhardware.ztex_fwloader import Ztex1v1, IhxFi
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.firmware.cwlite import getsome as cwlite_getsome
 from chipwhisperer.hardware.firmware.cwcr2 import getsome as cwcr2_getsome
+from chipwhisperer.hardware.firmware.cw1200 import getsome as cw1200_getsome
 
 from chipwhisperer.common.api.settings import Settings
 
@@ -211,12 +212,8 @@ class CW1200_Loader(CW_Loader):
         self._bsZipLoc_filename = "cw1200_interface.bit"
         self._bsLoc = self.read_setting('debugbitstream-location', def_bsLoc)
         self._fwFLoc = ""
-        # TODO: add final CW1200 release bitstream
-        #self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
-        self._bsBuiltinData = None
-        if self._release_mode == 'builtin':
-            logging.info("Setting CW1200 firmware to use zip file by default...")
-            self.setFPGAMode("zipfile")
+        self._bsBuiltinData = cw1200_getsome("cw1200_firmware.zip", filelike=True)
+
 
     def loadRequired(self, callback, forceFirmware=False):
         callback()
@@ -225,11 +222,10 @@ class CW1200_Loader(CW_Loader):
         self.save_bsLoc()
         self.save_bsZipLoc()
 
-        # TODO: when CW1200 release is finalized, allow builtin bitstream to be used
-        if self._release_mode == 'builtin':
-            raise Warning("Could not program CW1200 - no built-in bitstream available.")
-        else:
+        if self.driver.isFPGAProgrammed() == False:
             self.driver.FPGAProgram(self.fpga_bitstream())
+        else:
+            logging.info("FPGA Configuration skipped - detected already programmed")
 
     def setInterface(self, driver):
         self.driver = driver
