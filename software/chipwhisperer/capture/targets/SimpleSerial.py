@@ -51,6 +51,7 @@ class SimpleSerial(TargetTemplate):
             {'name':'Input Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
             {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
+            {'name':'Protocol Version', 'key':'protver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
             {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
@@ -104,10 +105,13 @@ class SimpleSerial(TargetTemplate):
     def _con(self, scope = None):
         if not scope or not hasattr(scope, "qtadc"): Warning("You need a scope with OpenADC connected to use this Target")
 
+        self.outstanding_ack = False
+
         self.ser.con(scope)
         # 'x' flushes everything & sets system back to idle
-        self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+        self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
+        self.setVersion(self.findParam('protver').getValue())
 
     def close(self):
         if self.ser != None:
@@ -115,6 +119,33 @@ class SimpleSerial(TargetTemplate):
 
     def init(self):
         self.runCommand(self.findParam('cmdinit').getValue())
+
+    def setVersion(self, ver='auto'):
+
+        if ver == 'auto' or ver == '1.1':
+            logging.debug("SimpleSerial: Auto Protocol Detection")
+
+            self.ser.flush()
+            self.ser.write("v01\n")
+
+            data = self.ser.read(2, timeout=200)
+
+            if len(data) > 1 and data[0] == 'z':
+                self.findParam('protver').setValue('1.1')
+                logging.info("SimpleSerial: protocol V1.1 detected")
+            else:
+                self.findParam('protver').setValue('1.0')
+                logging.info("SimpleSerial: protocol V1.0 detected")
+
+            self.ser.flush()
+
+        else:
+            self.findParam('protver').setValue('1.0')
+
+            #Should we reset hardware version too?
+            #Might not be failsafe as old 1.0 may not handle command...
+            #self.ser.write("v00\n")
+
 
     def setModeEncrypt(self):
         pass
@@ -136,6 +167,19 @@ class SimpleSerial(TargetTemplate):
 
         if cmdstr is None or len(cmdstr) == 0:
             return
+
+        #Protocol version 1.1 waits for ACK - if we have outstanding ACK, wait now
+        if self.findParam('protver').getValue() == '1.1':
+
+            if self.outstanding_ack:
+                #TODO - Should be user-defined maybe
+                data = self.ser.read(2, timeout=500)
+                if len(data) > 1:
+                    if data[0] != 'z':
+                        logging.error("SimpleSerial: ACK ERROR, read %02x"%data[0])
+                else:
+                    logging.error("SimpleSerial: ACK ERROR, did not see anything - TIMEOUT possible!")
+                self.outstanding_ack = False
 
         varList = [("$KEY$",self.key, "Hex Encryption Key"),
                    ("$TEXT$",self.input, "Input Plaintext")]
@@ -161,6 +205,9 @@ class SimpleSerial(TargetTemplate):
         except Exception as e:
             self.dis()
             raise e
+
+        self.outstanding_ack = True
+
 
     def loadEncryptionKey(self, key):
         self.key = key
@@ -214,6 +261,11 @@ class SimpleSerial(TargetTemplate):
             if response[0:len(expected[0])] != expected[0]:
                 print("Sync Error: %s"%response)
                 print("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
+
+                if response[0] == 'z':
+                    logging.warning("Looks like SimpleSerial V1.1 protocol - switching automatically")
+                    self.setVersion('1.1')
+
                 return None
 
         startindx = len(expected[0])
