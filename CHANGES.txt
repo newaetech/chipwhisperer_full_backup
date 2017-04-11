@@ -1,3 +1,11 @@
+V3.3.0:
+-CW1200 support added (bitstream built-in, various fixes for CW1200)
+-New firmware build system supports targets beyond AVR/XMEGA (now can build for STM32F, etc)
+-Add downsample mode for CWLite, CW1200 (make better use of sample buffer by downsampling ADC to get very slow sampler rates)
+-New simple AES crypto library for firmware targets
+-Huge speed-up to waveform data processing on capture
+-Support automatic downsampling of waveform display (requires recent version of pyqtgraph)
+
 V3.2.0:
 -Updated HW model system, breaks some old APIs but makes it easier to add custom leakage models
 -Fixed bug where unplugging CW-Lite with terminal open caused flood of close messages
