@@ -29,7 +29,7 @@
 #----------------------------------------------------------------------------
 
 # Target file name (without extension). 
-# This is the name of the compiled .hex file.
+# This is the base name of the compiled .hex file.
 TARGET = simpleserial-aes
 
 # List C source files here.

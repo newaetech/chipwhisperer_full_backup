@@ -10,7 +10,9 @@ VPATH += :$(HALPATH)
 #Default stuff
 EXTRAINCDIRS += $(HALPATH)
 
-#Manually have to update this list...
+#Manually have to update these lists...
+PLATFORM_LIST = CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L CW308_STM32F4
+
 define KNOWN_PLATFORMS
 
 +--------------------------------------------------+

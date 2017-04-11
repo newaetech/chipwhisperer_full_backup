@@ -41,6 +41,12 @@ include $(FIRMWAREPATH)/hal/Makefile.hal
 
 include $(FIRMWAREPATH)/crypto/Makefile.crypto
 
+# Add the platform to the output filenames
+TARGET-PLAT = $(TARGET)-$(PLATFORM)
+
+# Also get target names for all platforms (for make clean)
+TARGET-ALL = $(foreach PLAT,$(PLATFORM_LIST), $(TARGET)-$(PLAT))
+
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
@@ -240,7 +246,7 @@ EXTMEMOPTS =
 #  -Wl,...:     tell GCC to pass this to linker.
 #    -Map:      create map file
 #    --cref:    add cross reference to  map file
-LDFLAGS += -Wl,-Map=$(TARGET).map,--cref
+LDFLAGS += -Wl,-Map=$(TARGET-PLAT).map,--cref
 LDFLAGS += $(EXTMEMOPTS)
 LDFLAGS += $(patsubst %,-L%,$(EXTRALIBDIRS))
 LDFLAGS += $(MATH_LIB)
@@ -311,12 +317,12 @@ build: elf hex eep lss sym
 #build: lib
 
 
-elf: $(TARGET).elf
-hex: $(TARGET).hex
-eep: $(TARGET).eep
-lss: $(TARGET).lss
-sym: $(TARGET).sym
-LIBNAME=lib$(TARGET).a
+elf: $(TARGET-PLAT).elf
+hex: $(TARGET-PLAT).hex
+eep: $(TARGET-PLAT).eep
+lss: $(TARGET-PLAT).lss
+sym: $(TARGET-PLAT).sym
+LIBNAME=lib$(TARGET-PLAT).a
 lib: $(LIBNAME)
 
 
@@ -336,18 +342,18 @@ end:
 
 
 # Display size of file.
-HEXSIZE = $(SIZE) --target=ihex $(TARGET).hex
+HEXSIZE = $(SIZE) --target=ihex $(TARGET-PLAT).hex
 
 ifeq ($(ELFSIZE),)
-  ELFSIZE = $(SIZE) $(TARGET).elf
+  ELFSIZE = $(SIZE) $(TARGET-PLAT).elf
 endif
 
 sizebefore:
-	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
+	@if test -f $(TARGET-PLAT).elf; then echo; echo $(MSG_SIZE_BEFORE); $(ELFSIZE); \
 	2>/dev/null; echo; fi
 
 sizeafter:
-	@if test -f $(TARGET).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
+	@if test -f $(TARGET-PLAT).elf; then echo; echo $(MSG_SIZE_AFTER); $(ELFSIZE); \
 	2>/dev/null; fi
 
 $(OBJDIR):
@@ -363,7 +369,7 @@ gccversion :
 
 
 # Program the device.  
-program: $(TARGET).hex $(TARGET).eep
+program: $(TARGET-PLAT).hex $(TARGET-PLAT).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
 
 
@@ -375,18 +381,18 @@ gdb-config:
 	@echo define reset >> $(GDBINIT_FILE)
 	@echo SIGNAL SIGHUP >> $(GDBINIT_FILE)
 	@echo end >> $(GDBINIT_FILE)
-	@echo file $(TARGET).elf >> $(GDBINIT_FILE)
+	@echo file $(TARGET-PLAT).elf >> $(GDBINIT_FILE)
 	@echo target remote $(DEBUG_HOST):$(DEBUG_PORT)  >> $(GDBINIT_FILE)
 ifeq ($(DEBUG_BACKEND),simulavr)
 	@echo load  >> $(GDBINIT_FILE)
 endif
 	@echo break main >> $(GDBINIT_FILE)
 
-debug: gdb-config $(TARGET).elf
+debug: gdb-config $(TARGET-PLAT).elf
 ifeq ($(DEBUG_BACKEND), avarice)
 	@echo Starting AVaRICE - Press enter when "waiting to connect" message displays.
 	@$(WINSHELL) /c start avarice --jtag $(JTAG_DEV) --erase --program --file \
-	$(TARGET).elf $(DEBUG_HOST):$(DEBUG_PORT)
+	$(TARGET-PLAT).elf $(DEBUG_HOST):$(DEBUG_PORT)
 	@$(WINSHELL) /c pause
 
 else
@@ -407,16 +413,16 @@ COFFCONVERT += --change-section-address .eeprom-0x810000
 
 
 
-coff: $(TARGET).elf
+coff: $(TARGET-PLAT).elf
 	@echo
-	@echo $(MSG_COFF) $(TARGET).cof
-	$(COFFCONVERT) -O coff-avr $< $(TARGET).cof
+	@echo $(MSG_COFF) $(TARGET-PLAT).cof
+	$(COFFCONVERT) -O coff-avr $< $(TARGET-PLAT).cof
 
 
-extcoff: $(TARGET).elf
+extcoff: $(TARGET-PLAT).elf
 	@echo
-	@echo $(MSG_EXTENDED_COFF) $(TARGET).cof
-	$(COFFCONVERT) -O coff-ext-avr $< $(TARGET).cof
+	@echo $(MSG_EXTENDED_COFF) $(TARGET-PLAT).cof
+	$(COFFCONVERT) -O coff-ext-avr $< $(TARGET-PLAT).cof
 
 
 
@@ -448,7 +454,7 @@ extcoff: $(TARGET).elf
 
 
 # Create library from object files.
-.SECONDARY : $(TARGET).a
+.SECONDARY : $(TARGET-PLAT).a
 .PRECIOUS : $(OBJ)
 %.a: $(OBJ)
 	@echo
@@ -457,7 +463,7 @@ extcoff: $(TARGET).elf
 
 
 # Link: create ELF output file from object files.
-.SECONDARY : $(TARGET).elf
+.SECONDARY : $(TARGET-PLAT).elf
 .PRECIOUS : $(OBJ)
 %.elf: $(OBJ)
 	@echo
@@ -500,22 +506,37 @@ $(OBJDIR)/%.o : %.S
 %.i : %.c
 	$(CC) -E $(MCU_FLAGS) -I. $(CFLAGS) $< -o $@ 
 
+# Clean all object files specific to this platform
+clean_objs :
+	$(REMOVE) $(TARGET-PLAT).hex
+	$(REMOVE) $(TARGET-PLAT).eep
+	$(REMOVE) $(TARGET-PLAT).cof
+	$(REMOVE) $(TARGET-PLAT).elf
+	$(REMOVE) $(TARGET-PLAT).map
+	$(REMOVE) $(TARGET-PLAT).sym
+	$(REMOVE) $(TARGET-PLAT).lss
+	-$(REMOVE) $(OBJDIR)/*.o
+	-$(REMOVE) $(OBJDIR)/*.lst
+	$(REMOVE) $(SRC:.c=.s)
+	$(REMOVE) $(SRC:.c=.d)
+	$(REMOVE) $(SRC:.c=.i)
 
 # Target: clean project.
-clean: begin clean_print clean_objs clean_list end
+clean: begin clean_print clean_all_objs clean_list end
 
 clean_print :
 	@echo
 	@echo $(MSG_CLEANING)
-	
-clean_objs :
-	$(REMOVE) $(TARGET).hex
-	$(REMOVE) $(TARGET).eep
-	$(REMOVE) $(TARGET).cof
-	$(REMOVE) $(TARGET).elf
-	$(REMOVE) $(TARGET).map
-	$(REMOVE) $(TARGET).sym
-	$(REMOVE) $(TARGET).lss
+
+# Clean all object files related to any of the platforms	
+clean_all_objs :
+	$(REMOVE) $(addsuffix .hex,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .eep,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .cof,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .elf,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .map,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .sym,$(TARGET-ALL))
+	$(REMOVE) $(addsuffix .lss,$(TARGET-ALL))
 	-$(REMOVE) $(OBJDIR)/*.o
 	-$(REMOVE) $(OBJDIR)/*.lst
 	$(REMOVE) $(SRC:.c=.s)
