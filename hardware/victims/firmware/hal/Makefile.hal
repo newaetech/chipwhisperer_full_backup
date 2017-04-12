@@ -11,7 +11,8 @@ VPATH += :$(HALPATH)
 EXTRAINCDIRS += $(HALPATH)
 
 #Manually have to update these lists...
-PLATFORM_LIST = CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L CW308_STM32F4
+PLATFORM_LIST = CW301_AVR CW303 CW304 CW308_MEGARF CW308_SAM4L CW308_STM32F3 \
+	CW308_STM32F4
 
 define KNOWN_PLATFORMS
 
@@ -29,6 +30,8 @@ define KNOWN_PLATFORMS
 | CW308_MEGARF  | ATMega2564RFR2 Target for CW308T |
 +--------------------------------------------------+
 | CW308_SAM4L   | CW308T-SAM4L (Atmel SAM4L)       |
++--------------------------------------------------+
+| CW308_STM32F3 | CW308T-STM32F3 (ST Micro STM32F3)|
 +--------------------------------------------------+
 | CW308_STM32F4 | CW308T-STM32F4 (ST Micro STM32F4)|
 +--------------------------------------------------+
@@ -69,6 +72,9 @@ else ifeq ($(PLATFORM),CW308_MEGARF)
 else ifeq ($(PLATFORM),CW308_SAM4L)
  HAL = sam4l
  PLTNAME = CW308T: SAM4L Target
+else ifeq ($(PLATFORM),CW308_STM32F3)
+ HAL = stm32f3
+ PLTNAME = CW308T: STM32F3 Target
 else ifeq ($(PLATFORM),CW308_STM32F4)
  HAL = stm32f4
  PLTNAME = CW308T: STM32F4 Target
