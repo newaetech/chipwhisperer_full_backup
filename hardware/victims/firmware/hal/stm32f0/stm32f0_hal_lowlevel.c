@@ -35,13 +35,13 @@
 */ 
 
 
-#include "stm32f3_hal.h"
-#include "stm32f3_hal_lowlevel.h"
-#include "stm32f3xx_hal_rcc.h"
-#include "stm32f3xx_hal_gpio.h"
-#include "stm32f3xx_hal_dma.h"
-#include "stm32f3xx_hal_uart.h"
-#include "stm32f3xx_hal_flash.h"
+#include "stm32f0_hal.h"
+#include "stm32f0_hal_lowlevel.h"
+#include "stm32f0xx_hal_rcc.h"
+#include "stm32f0xx_hal_gpio.h"
+#include "stm32f0xx_hal_dma.h"
+#include "stm32f0xx_hal_uart.h"
+#include "stm32f0xx_hal_flash.h"
 
 #define assert_param(expr) ((void)0U)
 
@@ -51,10 +51,11 @@ uint32_t HAL_GetTick(void)
 	return tick++;;
 }
 
-#define RCC_CFGR_HPRE_BITNUMBER           POSITION_VAL(RCC_CFGR_HPRE)
-
 #define UART_CR1_FIELDS  ((uint32_t)(USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | \
                                      USART_CR1_TE | USART_CR1_RE | USART_CR1_OVER8)) /*!< UART or USART CR1 fields of parameters set by UART_SetConfig API */
+									 
+uint32_t SystemCoreClock = 8000000;
+
 
 uint32_t HAL_RCC_GetSysClockFreq(void)
 {
@@ -64,6 +65,19 @@ uint32_t HAL_RCC_GetSysClockFreq(void)
 uint32_t HAL_RCC_GetPCLK1Freq(void)
 {
 	return 7372800U;
+}
+
+/**
+  * @brief  Returns the PCLK2 frequency
+  * @note   Each time PCLK2 changes, this function must be called to update the
+  *         right PCLK2 value. Otherwise, any configuration based on this function will be incorrect.
+  * @retval PCLK2 frequency
+  */
+uint32_t HAL_RCC_GetPCLK2Freq(void)
+{
+  /* Get HCLK source and Compute PCLK2 frequency ---------------------------*/
+  //return (HAL_RCC_GetHCLKFreq()>> APBPrescTable[(RCC->CFGR & RCC_CFGR_PPRE2)>> POSITION_VAL(RCC_CFGR_PPRE2)]);
+  return 7372800;
 }
 
 /**
@@ -108,10 +122,6 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
       /* Set the new HSE configuration ---------------------------------------*/
       __HAL_RCC_HSE_CONFIG(RCC_OscInitStruct->HSEState);
       
-#if defined(RCC_CFGR_PLLSRC_HSI_DIV2)
-      /* Configure the HSE predivision factor --------------------------------*/
-      __HAL_RCC_HSE_PREDIV_CONFIG(RCC_OscInitStruct->HSEPredivValue);
-#endif /* RCC_CFGR_PLLSRC_HSI_DIV2 */
 
        /* Check the HSE State */
       if(RCC_OscInitStruct->HSEState != RCC_HSE_OFF)
@@ -323,6 +333,124 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
     }
   }
 
+  /*----------------------------- HSI14 Configuration --------------------------*/
+  if(((RCC_OscInitStruct->OscillatorType) & RCC_OSCILLATORTYPE_HSI14) == RCC_OSCILLATORTYPE_HSI14)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_HSI14(RCC_OscInitStruct->HSI14State));
+    assert_param(IS_RCC_CALIBRATION_VALUE(RCC_OscInitStruct->HSI14CalibrationValue));
+
+    /* Check the HSI14 State */
+    if(RCC_OscInitStruct->HSI14State == RCC_HSI14_ON)
+    {
+      /* Disable ADC control of the Internal High Speed oscillator HSI14 */
+      __HAL_RCC_HSI14ADC_DISABLE();
+
+      /* Enable the Internal High Speed oscillator (HSI). */
+      __HAL_RCC_HSI14_ENABLE();
+
+      /* Get Start Tick */
+      tickstart = HAL_GetTick();
+      
+      /* Wait till HSI is ready */  
+      while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI14RDY) == RESET)
+      {
+        if((HAL_GetTick() - tickstart) > HSI14_TIMEOUT_VALUE)
+        {
+          return HAL_TIMEOUT;
+        }      
+      } 
+
+      /* Adjusts the Internal High Speed oscillator 14Mhz (HSI14) calibration value. */
+      __HAL_RCC_HSI14_CALIBRATIONVALUE_ADJUST(RCC_OscInitStruct->HSI14CalibrationValue);
+    }
+    else if(RCC_OscInitStruct->HSI14State == RCC_HSI14_ADC_CONTROL)
+    {
+      /* Enable ADC control of the Internal High Speed oscillator HSI14 */
+      __HAL_RCC_HSI14ADC_ENABLE();
+
+      /* Adjusts the Internal High Speed oscillator 14Mhz (HSI14) calibration value. */
+      __HAL_RCC_HSI14_CALIBRATIONVALUE_ADJUST(RCC_OscInitStruct->HSI14CalibrationValue);
+    }
+    else
+    {
+      /* Disable ADC control of the Internal High Speed oscillator HSI14 */
+      __HAL_RCC_HSI14ADC_DISABLE();
+
+      /* Disable the Internal High Speed oscillator (HSI). */
+      __HAL_RCC_HSI14_DISABLE();
+
+      /* Get Start Tick */
+      tickstart = HAL_GetTick();
+      
+      /* Wait till HSI is ready */  
+      while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI14RDY) != RESET)
+      {
+        if((HAL_GetTick() - tickstart) > HSI14_TIMEOUT_VALUE)
+        {
+          return HAL_TIMEOUT;
+        }
+      }
+    }
+  }
+
+#if defined(RCC_HSI48_SUPPORT)
+  /*----------------------------- HSI48 Configuration --------------------------*/
+  if(((RCC_OscInitStruct->OscillatorType) & RCC_OSCILLATORTYPE_HSI48) == RCC_OSCILLATORTYPE_HSI48)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_HSI48(RCC_OscInitStruct->HSI48State));
+
+    /* When the HSI48 is used as system clock it is not allowed to be disabled */
+    if((__HAL_RCC_GET_SYSCLK_SOURCE() == RCC_SYSCLKSOURCE_STATUS_HSI48) ||
+       ((__HAL_RCC_GET_SYSCLK_SOURCE() == RCC_SYSCLKSOURCE_STATUS_PLLCLK) && (__HAL_RCC_GET_PLL_OSCSOURCE() == RCC_PLLSOURCE_HSI48)))
+    {
+      if((__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY) != RESET) && (RCC_OscInitStruct->HSI48State != RCC_HSI48_ON))
+      {
+        return HAL_ERROR;
+      }
+    }
+    else
+    {
+      /* Check the HSI48 State */
+      if(RCC_OscInitStruct->HSI48State != RCC_HSI48_OFF)
+      {
+        /* Enable the Internal High Speed oscillator (HSI48). */
+        __HAL_RCC_HSI48_ENABLE();
+
+        /* Get Start Tick */
+        tickstart = HAL_GetTick();
+      
+        /* Wait till HSI48 is ready */  
+        while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY) == RESET)
+        {
+          if((HAL_GetTick() - tickstart) > HSI48_TIMEOUT_VALUE)
+          {
+            return HAL_TIMEOUT;
+          }
+        } 
+      }
+      else
+      {
+        /* Disable the Internal High Speed oscillator (HSI48). */
+        __HAL_RCC_HSI48_DISABLE();
+
+        /* Get Start Tick */
+        tickstart = HAL_GetTick();
+      
+        /* Wait till HSI48 is ready */  
+        while(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY) != RESET)
+        {
+          if((HAL_GetTick() - tickstart) > HSI48_TIMEOUT_VALUE)
+          {
+            return HAL_TIMEOUT;
+          }
+        }
+      }
+    }
+  }
+#endif /* RCC_HSI48_SUPPORT */
+       
   /*-------------------------------- PLL Configuration -----------------------*/
   /* Check the parameters */
   assert_param(IS_RCC_PLL(RCC_OscInitStruct->PLL.PLLState));
@@ -336,9 +464,7 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
         /* Check the parameters */
         assert_param(IS_RCC_PLLSOURCE(RCC_OscInitStruct->PLL.PLLSource));
         assert_param(IS_RCC_PLL_MUL(RCC_OscInitStruct->PLL.PLLMUL));
-#if   defined(RCC_CFGR_PLLSRC_HSI_PREDIV)
         assert_param(IS_RCC_PREDIV(RCC_OscInitStruct->PLL.PREDIV));
-#endif
   
         /* Disable the main PLL. */
         __HAL_RCC_PLL_DISABLE();
@@ -355,16 +481,10 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
           }
         }
 
-#if defined(RCC_CFGR_PLLSRC_HSI_PREDIV)
         /* Configure the main PLL clock source, predivider and multiplication factor. */
         __HAL_RCC_PLL_CONFIG(RCC_OscInitStruct->PLL.PLLSource,
                              RCC_OscInitStruct->PLL.PREDIV,
                              RCC_OscInitStruct->PLL.PLLMUL);
-#else
-      /* Configure the main PLL clock source and multiplication factor. */
-      __HAL_RCC_PLL_CONFIG(RCC_OscInitStruct->PLL.PLLSource,
-                           RCC_OscInitStruct->PLL.PLLMUL);
-#endif /* RCC_CFGR_PLLSRC_HSI_PREDIV */
         /* Enable the main PLL. */
         __HAL_RCC_PLL_ENABLE();
         
@@ -406,7 +526,6 @@ HAL_StatusTypeDef HAL_RCC_OscConfig(RCC_OscInitTypeDef  *RCC_OscInitStruct)
   
   return HAL_OK;
 }
-
 
 /**
   * @brief  Initializes the CPU, AHB and APB buses clocks according to the specified 
@@ -488,6 +607,17 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
         return HAL_ERROR;
       }
     }
+#if defined(RCC_CFGR_SWS_HSI48)
+    /* HSI48 is selected as System Clock Source */
+    else if(RCC_ClkInitStruct->SYSCLKSource == RCC_SYSCLKSOURCE_HSI48)
+    {
+      /* Check the HSI48 ready flag */
+      if(__HAL_RCC_GET_FLAG(RCC_FLAG_HSI48RDY) == RESET)
+      {
+        return HAL_ERROR;
+      }
+    }
+#endif /* RCC_CFGR_SWS_HSI48 */
     /* HSI is selected as System Clock Source */
     else
     {
@@ -522,6 +652,18 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
         }
       }
     }
+#if defined(RCC_CFGR_SWS_HSI48)
+    else if(RCC_ClkInitStruct->SYSCLKSource == RCC_SYSCLKSOURCE_HSI48)
+    {
+      while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_HSI48)
+      {
+        if((HAL_GetTick() - tickstart) > CLOCKSWITCH_TIMEOUT_VALUE)
+        {
+          return HAL_TIMEOUT;
+        }
+      }
+    }
+#endif /* RCC_CFGR_SWS_HSI48 */
     else
     {
       while (__HAL_RCC_GET_SYSCLK_SOURCE() != RCC_SYSCLKSOURCE_STATUS_HSI)
@@ -551,37 +693,20 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
   if(((RCC_ClkInitStruct->ClockType) & RCC_CLOCKTYPE_PCLK1) == RCC_CLOCKTYPE_PCLK1)
   {
     assert_param(IS_RCC_PCLK(RCC_ClkInitStruct->APB1CLKDivider));
-    MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE1, RCC_ClkInitStruct->APB1CLKDivider);
+    MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE, RCC_ClkInitStruct->APB1CLKDivider);
   }
   
-  /*-------------------------- PCLK2 Configuration ---------------------------*/ 
-  if(((RCC_ClkInitStruct->ClockType) & RCC_CLOCKTYPE_PCLK2) == RCC_CLOCKTYPE_PCLK2)
-  {
-    assert_param(IS_RCC_PCLK(RCC_ClkInitStruct->APB2CLKDivider));
-    MODIFY_REG(RCC->CFGR, RCC_CFGR_PPRE2, ((RCC_ClkInitStruct->APB2CLKDivider) << 3U));
-  }
- 
   /* Update the SystemCoreClock global variable */
   //SystemCoreClock = HAL_RCC_GetSysClockFreq() >> AHBPrescTable[(RCC->CFGR & RCC_CFGR_HPRE)>> RCC_CFGR_HPRE_BITNUMBER];
-
+  SystemCoreClock = 7372800;
+  
   /* Configure the source of time base considering new system clocks settings*/
   //HAL_InitTick (TICK_INT_PRIORITY);
   
   return HAL_OK;
 }
 
-/**
-  * @brief  Returns the PCLK2 frequency
-  * @note   Each time PCLK2 changes, this function must be called to update the
-  *         right PCLK2 value. Otherwise, any configuration based on this function will be incorrect.
-  * @retval PCLK2 frequency
-  */
-uint32_t HAL_RCC_GetPCLK2Freq(void)
-{
-  /* Get HCLK source and Compute PCLK2 frequency ---------------------------*/
-  //return (HAL_RCC_GetHCLKFreq()>> APBPrescTable[(RCC->CFGR & RCC_CFGR_PPRE2)>> POSITION_VAL(RCC_CFGR_PPRE2)]);
-  return 7372800;
-}
+
 
 
 
@@ -598,21 +723,27 @@ uint32_t HAL_RCC_GetPCLK2Freq(void)
 #define __HAL_RCC_GPIOA_CLK_ENABLE()   do { \
                                         __IO uint32_t tmpreg; \
                                         SET_BIT(RCC->AHBENR, RCC_AHBENR_GPIOAEN);\
-                                        /* Delay after an RCC peripheral clock enabling */ \
+                                        /* Delay after an RCC peripheral clock enabling */\
                                         tmpreg = READ_BIT(RCC->AHBENR, RCC_AHBENR_GPIOAEN);\
                                         UNUSED(tmpreg); \
-                                      } while(0U)
-
+                                      } while(0)
+#define __HAL_RCC_USART1_CLK_ENABLE()   do { \
+                                        __IO uint32_t tmpreg; \
+                                        SET_BIT(RCC->APB2ENR, RCC_APB2ENR_USART1EN);\
+                                        /* Delay after an RCC peripheral clock enabling */\
+                                        tmpreg = READ_BIT(RCC->APB2ENR, RCC_APB2ENR_USART1EN);\
+                                        UNUSED(tmpreg); \
+                                      } while(0)
 
 /**
   * @brief  Initialize the GPIOx peripheral according to the specified parameters in the GPIO_Init.
-  * @param  GPIOx: where x can be (A..F) to select the GPIO peripheral for STM32F3 family devices
+  * @param  GPIOx: where x can be (A..F) to select the GPIO peripheral for STM32F0 family
   * @param  GPIO_Init: pointer to a GPIO_InitTypeDef structure that contains
   *         the configuration information for the specified GPIO peripheral.
   * @retval None
   */
 void HAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
-{
+{ 
   uint32_t position = 0x00U;
   uint32_t iocurrent = 0x00U;
   uint32_t temp = 0x00U;
@@ -621,126 +752,125 @@ void HAL_GPIO_Init(GPIO_TypeDef  *GPIOx, GPIO_InitTypeDef *GPIO_Init)
   assert_param(IS_GPIO_ALL_INSTANCE(GPIOx));
   assert_param(IS_GPIO_PIN(GPIO_Init->Pin));
   assert_param(IS_GPIO_MODE(GPIO_Init->Mode));
-  assert_param(IS_GPIO_PULL(GPIO_Init->Pull));
+  assert_param(IS_GPIO_PULL(GPIO_Init->Pull)); 
 
   /* Configure the port pins */
   while (((GPIO_Init->Pin) >> position) != RESET)
   {
     /* Get current io position */
     iocurrent = (GPIO_Init->Pin) & (1U << position);
-
+    
     if(iocurrent)
     {
       /*--------------------- GPIO Mode Configuration ------------------------*/
       /* In case of Alternate function mode selection */
-      if((GPIO_Init->Mode == GPIO_MODE_AF_PP) || (GPIO_Init->Mode == GPIO_MODE_AF_OD))
+      if((GPIO_Init->Mode == GPIO_MODE_AF_PP) || (GPIO_Init->Mode == GPIO_MODE_AF_OD)) 
       {
         /* Check the Alternate function parameters */
         assert_param(IS_GPIO_AF_INSTANCE(GPIOx));
         assert_param(IS_GPIO_AF(GPIO_Init->Alternate));
         
-        /* Configure Alternate function mapped with the current IO */
+        /* Configure Alternate function mapped with the current IO */ 
         temp = GPIOx->AFR[position >> 3];
-        temp &= ~(0xFU << ((uint32_t)(position & 0x07U) * 4U)) ;
-        temp |= ((uint32_t)(GPIO_Init->Alternate) << (((uint32_t)position & 0x07U) * 4U));
-        GPIOx->AFR[position >> 3] = temp;
+        CLEAR_BIT(temp, 0xFU << ((uint32_t)(position & 0x07U) * 4U)) ;      
+        SET_BIT(temp, (uint32_t)(GPIO_Init->Alternate) << (((uint32_t)position & 0x07U) * 4U));       
+        GPIOx->AFR[position >> 3U] = temp;
       }
 
       /* Configure IO Direction mode (Input, Output, Alternate or Analog) */
       temp = GPIOx->MODER;
-      temp &= ~(GPIO_MODER_MODER0 << (position * 2U));
-      temp |= ((GPIO_Init->Mode & GPIO_MODE) << (position * 2U));
+      CLEAR_BIT(temp, GPIO_MODER_MODER0 << (position * 2U));   
+      SET_BIT(temp, (GPIO_Init->Mode & GPIO_MODE) << (position * 2U));
       GPIOx->MODER = temp;
 
       /* In case of Output or Alternate function mode selection */
-      if((GPIO_Init->Mode == GPIO_MODE_OUTPUT_PP) || (GPIO_Init->Mode == GPIO_MODE_AF_PP) ||
-         (GPIO_Init->Mode == GPIO_MODE_OUTPUT_OD) || (GPIO_Init->Mode == GPIO_MODE_AF_OD))
+      if ((GPIO_Init->Mode == GPIO_MODE_OUTPUT_PP) || (GPIO_Init->Mode == GPIO_MODE_AF_PP) ||
+          (GPIO_Init->Mode == GPIO_MODE_OUTPUT_OD) || (GPIO_Init->Mode == GPIO_MODE_AF_OD))
       {
         /* Check the Speed parameter */
         assert_param(IS_GPIO_SPEED(GPIO_Init->Speed));
         /* Configure the IO Speed */
-        temp = GPIOx->OSPEEDR;
-        temp &= ~(GPIO_OSPEEDER_OSPEEDR0 << (position * 2U));
-        temp |= (GPIO_Init->Speed << (position * 2U));
+        temp = GPIOx->OSPEEDR; 
+        CLEAR_BIT(temp, GPIO_OSPEEDER_OSPEEDR0 << (position * 2U));
+        SET_BIT(temp, GPIO_Init->Speed << (position * 2U));
         GPIOx->OSPEEDR = temp;
 
         /* Configure the IO Output Type */
         temp = GPIOx->OTYPER;
-        temp &= ~(GPIO_OTYPER_OT_0 << position) ;
-        temp |= (((GPIO_Init->Mode & GPIO_OUTPUT_TYPE) >> 4U) << position);
+        CLEAR_BIT(temp, GPIO_OTYPER_OT_0 << position) ;
+        SET_BIT(temp, ((GPIO_Init->Mode & GPIO_OUTPUT_TYPE) >> 4U) << position);
         GPIOx->OTYPER = temp;
       }
 
       /* Activate the Pull-up or Pull down resistor for the current IO */
       temp = GPIOx->PUPDR;
-      temp &= ~(GPIO_PUPDR_PUPDR0 << (position * 2U));
-      temp |= ((GPIO_Init->Pull) << (position * 2U));
+      CLEAR_BIT(temp, GPIO_PUPDR_PUPDR0 << (position * 2U));
+      SET_BIT(temp, (GPIO_Init->Pull) << (position * 2U));
       GPIOx->PUPDR = temp;
 
       /*--------------------- EXTI Mode Configuration ------------------------*/
       /* Configure the External Interrupt or event for the current IO */
-      if((GPIO_Init->Mode & EXTI_MODE) == EXTI_MODE)
+      if((GPIO_Init->Mode & EXTI_MODE) == EXTI_MODE) 
       {
         /* Enable SYSCFG Clock */
         __HAL_RCC_SYSCFG_CLK_ENABLE();
-
+  
         temp = SYSCFG->EXTICR[position >> 2];
-        temp &= ~((0x0FU) << (4U * (position & 0x03U)));
-        temp |= (GPIO_GET_INDEX(GPIOx) << (4U * (position & 0x03U)));
+        CLEAR_BIT(temp, (0x0FU) << (4U * (position & 0x03U)));
+        SET_BIT(temp, (GPIO_GET_INDEX(GPIOx)) << (4U * (position & 0x03U)));
         SYSCFG->EXTICR[position >> 2] = temp;
-
+                  
         /* Clear EXTI line configuration */
         temp = EXTI->IMR;
-        temp &= ~((uint32_t)iocurrent);
+        CLEAR_BIT(temp, (uint32_t)iocurrent);
         if((GPIO_Init->Mode & GPIO_MODE_IT) == GPIO_MODE_IT)
         {
-          temp |= iocurrent;
+          SET_BIT(temp, iocurrent); 
         }
         EXTI->IMR = temp;
 
         temp = EXTI->EMR;
-        temp &= ~((uint32_t)iocurrent);
+        CLEAR_BIT(temp, (uint32_t)iocurrent);      
         if((GPIO_Init->Mode & GPIO_MODE_EVT) == GPIO_MODE_EVT)
-        {
-          temp |= iocurrent;
+        { 
+          SET_BIT(temp, iocurrent); 
         }
         EXTI->EMR = temp;
-
+  
         /* Clear Rising Falling edge configuration */
         temp = EXTI->RTSR;
-        temp &= ~((uint32_t)iocurrent);
+        CLEAR_BIT(temp, (uint32_t)iocurrent); 
         if((GPIO_Init->Mode & RISING_EDGE) == RISING_EDGE)
         {
-          temp |= iocurrent;
+          SET_BIT(temp, iocurrent); 
         }
         EXTI->RTSR = temp;
 
         temp = EXTI->FTSR;
-        temp &= ~((uint32_t)iocurrent);
+        CLEAR_BIT(temp, (uint32_t)iocurrent); 
         if((GPIO_Init->Mode & FALLING_EDGE) == FALLING_EDGE)
         {
-          temp |= iocurrent;
+          SET_BIT(temp, iocurrent); 
         }
         EXTI->FTSR = temp;
       }
     }
     
     position++;
-  }
+  } 
 }
 
 /**
   * @brief  Set or clear the selected data port bit.
-  *
   * @note   This function uses GPIOx_BSRR and GPIOx_BRR registers to allow atomic read/modify
   *         accesses. In this way, there is no risk of an IRQ occurring between
   *         the read and the modify access.
   *
-  * @param  GPIOx: where x can be (A..F) to select the GPIO peripheral for STM32F3 family
+  * @param  GPIOx: where x can be (A..H) to select the GPIO peripheral for STM32F0 family
   * @param  GPIO_Pin: specifies the port bit to be written.
-  *         This parameter can be one of GPIO_PIN_x where x can be (0..15).
+  *          This parameter can be one of GPIO_PIN_x where x can be (0..15).
   * @param  PinState: specifies the value to be written to the selected bit.
-  *         This parameter can be one of the GPIO_PinState enum values:
+  *          This parameter can be one of the GPIO_PinState enum values:
   *            @arg GPIO_PIN_RESET: to clear the port pin
   *            @arg GPIO_PIN_SET: to set the port pin
   * @retval None
@@ -751,7 +881,7 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
   assert_param(IS_GPIO_PIN(GPIO_Pin));
   assert_param(IS_GPIO_PIN_ACTION(PinState));
 
-  if(PinState != GPIO_PIN_RESET)
+  if (PinState != GPIO_PIN_RESET)
   {
     GPIOx->BSRR = (uint32_t)GPIO_Pin;
   }
@@ -759,14 +889,100 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
   {
     GPIOx->BRR = (uint32_t)GPIO_Pin;
   }
-}
-
+}										  
 
 /**
-  * @brief Configure the UART peripheral.
-  * @param huart: UART handle.
+  * @brief  Handle UART Communication Timeout.
+  * @param  huart UART handle.
+  * @param  Flag Specifies the UART flag to check
+  * @param  Status Flag status (SET or RESET)
+  * @param  Tickstart Tick start value
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
+HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout)
+{
+  /* Wait until flag is set */
+  while((__HAL_UART_GET_FLAG(huart, Flag) ? SET : RESET) == Status)
+  {
+    /* Check for the Timeout */
+    if(Timeout != HAL_MAX_DELAY)
+    {
+      if((Timeout == 0U) || ((HAL_GetTick()-Tickstart) > Timeout))
+      {
+        /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
+        CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE));
+        CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
+
+        huart->gState  = HAL_UART_STATE_READY;
+        huart->RxState = HAL_UART_STATE_READY;
+
+        /* Process Unlocked */
+        __HAL_UNLOCK(huart);
+        return HAL_TIMEOUT;
+      }
+    }
+  }
+  return HAL_OK;
+}
+
+/**
+  * @brief Check the UART Idle State.
+  * @param huart UART handle.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef UART_CheckIdleState(UART_HandleTypeDef *huart)
+{
+#if !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC)
+  uint32_t tickstart = 0U;
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC) */
+
+  /* Initialize the UART ErrorCode */
+  huart->ErrorCode = HAL_UART_ERROR_NONE;
+
+#if !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC)
+  /* Init tickstart for timeout managment*/
+  tickstart = HAL_GetTick();
+
+  /* TEACK and REACK bits in ISR are checked only when available (not available on all F0 devices).
+     Bits are defined for some specific devices, and are available only for UART instances supporting WakeUp from Stop Mode feature. 
+  */
+  if (IS_UART_WAKEUP_FROMSTOP_INSTANCE(huart->Instance))
+  {
+    /* Check if the Transmitter is enabled */
+    if((huart->Instance->CR1 & USART_CR1_TE) == USART_CR1_TE)
+    {
+      /* Wait until TEACK flag is set */
+      if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_TEACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
+      {
+        /* Timeout occurred */
+        return HAL_TIMEOUT;
+      }
+    }
+
+    /* Check if the Receiver is enabled */
+    if((huart->Instance->CR1 & USART_CR1_RE) == USART_CR1_RE)
+    {
+      /* Wait until REACK flag is set */
+      if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_REACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
+      {
+        /* Timeout occurred */
+        return HAL_TIMEOUT;
+      }
+    }
+  }
+#endif /* !defined(STM32F030x6) && !defined(STM32F030x8)&& !defined(STM32F070xB)&& !defined(STM32F070x6)&& !defined(STM32F030xC) */
+
+  /* Initialize the UART State */
+  huart->gState  = HAL_UART_STATE_READY;
+  huart->RxState = HAL_UART_STATE_READY;
+
+  /* Process Unlocked */
+  __HAL_UNLOCK(huart);
+
+  return HAL_OK;
+}
+
 HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
 {
   uint32_t tmpreg                     = 0x00000000U;
@@ -812,7 +1028,7 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
 
   /*-------------------------- USART BRR Configuration -----------------------*/
   UART_GETCLOCKSOURCE(huart, clocksource);
-
+  
   /* Check UART Over Sampling to set Baud Rate Register */
   if (huart->Init.OverSampling == UART_OVERSAMPLING_8)
   {
@@ -820,9 +1036,6 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
     {
       case UART_CLOCKSOURCE_PCLK1:
         usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
-        break;
-      case UART_CLOCKSOURCE_PCLK2:
-        usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate));
         break;
       case UART_CLOCKSOURCE_HSI:
         usartdiv = (uint16_t)(UART_DIV_SAMPLING8(HSI_VALUE, huart->Init.BaudRate));
@@ -850,9 +1063,6 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
       case UART_CLOCKSOURCE_PCLK1:
         huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetPCLK1Freq(), huart->Init.BaudRate));
         break;
-      case UART_CLOCKSOURCE_PCLK2:
-        huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HAL_RCC_GetPCLK2Freq(), huart->Init.BaudRate));
-        break;
       case UART_CLOCKSOURCE_HSI:
         huart->Instance->BRR = (uint16_t)(UART_DIV_SAMPLING16(HSI_VALUE, huart->Init.BaudRate));
         break;
@@ -872,55 +1082,6 @@ HAL_StatusTypeDef UART_SetConfig(UART_HandleTypeDef *huart)
   return ret;
 
 }
-
-
-/**
-  * @brief Check the UART Idle State.
-  * @param huart UART handle.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef UART_CheckIdleState(UART_HandleTypeDef *huart)
-{
-  uint32_t tickstart = 0U;
-
-  /* Initialize the UART ErrorCode */
-  huart->ErrorCode = HAL_UART_ERROR_NONE;
-
-  /* Init tickstart for timeout managment*/
-  tickstart = HAL_GetTick();
-
-  /* Check if the Transmitter is enabled */
-  if((huart->Instance->CR1 & USART_CR1_TE) == USART_CR1_TE)
-  {
-    /* Wait until TEACK flag is set */
-    if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_TEACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
-    {
-      /* Timeout Occured */
-      return HAL_TIMEOUT;
-    }
-  }
-  /* Check if the Receiver is enabled */
-  if((huart->Instance->CR1 & USART_CR1_RE) == USART_CR1_RE)
-  {
-    /* Wait until REACK flag is set */
-    if(UART_WaitOnFlagUntilTimeout(huart, USART_ISR_REACK, RESET, tickstart, HAL_UART_TIMEOUT_VALUE) != HAL_OK)
-    {
-      /* Timeout Occured */
-      return HAL_TIMEOUT;
-    }
-  }
-
-  /* Initialize the UART State */
-  huart->gState  = HAL_UART_STATE_READY;
-  huart->RxState = HAL_UART_STATE_READY;
-
-  /* Process Unlocked */
-  __HAL_UNLOCK(huart);
-
-  return HAL_OK;
-}
-
-
 
 /**
   * @brief Initialize the UART mode according to the specified
@@ -973,125 +1134,33 @@ HAL_StatusTypeDef HAL_UART_Init(UART_HandleTypeDef *huart)
   }
 
   /* In asynchronous mode, the following bits must be kept cleared:
-  - LINEN and CLKEN bits in the USART_CR2 register,
-  - SCEN, HDSEL and IREN  bits in the USART_CR3 register.*/
+  - LINEN (if LIN is supported) and CLKEN bits in the USART_CR2 register,
+  - SCEN (if Smartcard is supported), HDSEL and IREN (if IrDA is supported)  bits in the USART_CR3 register. */
+#if defined (USART_CR2_LINEN)
   CLEAR_BIT(huart->Instance->CR2, (USART_CR2_LINEN | USART_CR2_CLKEN));
+#else
+  CLEAR_BIT(huart->Instance->CR2, USART_CR2_CLKEN);
+#endif
+#if defined (USART_CR3_SCEN)
+#if defined (USART_CR3_IREN)
   CLEAR_BIT(huart->Instance->CR3, (USART_CR3_SCEN | USART_CR3_HDSEL | USART_CR3_IREN));
+#else
+  CLEAR_BIT(huart->Instance->CR3, (USART_CR3_SCEN | USART_CR3_HDSEL));
+#endif
+#else
+#if defined (USART_CR3_IREN)
+  CLEAR_BIT(huart->Instance->CR3, (USART_CR3_HDSEL | USART_CR3_IREN));
+#else
+  CLEAR_BIT(huart->Instance->CR3, USART_CR3_HDSEL);
+#endif
+#endif
 
   /* Enable the Peripheral */
   __HAL_UART_ENABLE(huart);
 
   /* TEACK and/or REACK to check before moving huart->gState and huart->RxState to Ready */
-  return UART_CheckIdleState(huart);
+  return (UART_CheckIdleState(huart));
 }
-
-/**
-  * @brief  Handle UART Communication Timeout.
-  * @param  huart UART handle.
-  * @param  Flag Specifies the UART flag to check
-  * @param  Status Flag status (SET or RESET)
-  * @param  Tickstart Tick start value
-  * @param  Timeout Timeout duration
-  * @retval HAL status
-  */
-HAL_StatusTypeDef UART_WaitOnFlagUntilTimeout(UART_HandleTypeDef *huart, uint32_t Flag, FlagStatus Status, uint32_t Tickstart, uint32_t Timeout)
-{
-  /* Wait until flag is set */
-  while((__HAL_UART_GET_FLAG(huart, Flag) ? SET : RESET) == Status)
-  {
-    /* Check for the Timeout */
-    if(Timeout != HAL_MAX_DELAY)
-    {
-      if((Timeout == 0U) || ((HAL_GetTick()-Tickstart) > Timeout))
-      {
-        /* Disable TXE, RXNE, PE and ERR (Frame error, noise error, overrun error) interrupts for the interrupt process */
-        CLEAR_BIT(huart->Instance->CR1, (USART_CR1_RXNEIE | USART_CR1_PEIE | USART_CR1_TXEIE));
-        CLEAR_BIT(huart->Instance->CR3, USART_CR3_EIE);
-
-        huart->gState  = HAL_UART_STATE_READY;
-        huart->RxState = HAL_UART_STATE_READY;
-
-        /* Process Unlocked */
-        __HAL_UNLOCK(huart);
-        return HAL_TIMEOUT;
-      }
-    }
-  }
-  return HAL_OK;
-}
-
-
-
-/**
-  * @brief Send an amount of data in blocking mode.
-  * @param huart: UART handle.
-  * @param pData: Pointer to data buffer.
-  * @param Size: Amount of data to be sent.
-  * @param Timeout: Timeout duration.
-  * @retval HAL status
-  */
-HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout)
-{
-  uint16_t* tmp;
-  uint32_t tickstart = 0U;
-
-  /* Check that a Tx process is not already ongoing */
-  if(huart->gState == HAL_UART_STATE_READY)
-  {
-    if((pData == NULL ) || (Size == 0U))
-    {
-      return  HAL_ERROR;
-    }
-
-    /* Process Locked */
-    __HAL_LOCK(huart);
-
-    huart->ErrorCode = HAL_UART_ERROR_NONE;
-    huart->gState = HAL_UART_STATE_BUSY_TX;
-
-    /* Init tickstart for timeout managment*/
-    tickstart = HAL_GetTick();
-
-    huart->TxXferSize = Size;
-    huart->TxXferCount = Size;
-    while(huart->TxXferCount > 0U)
-    {
-      huart->TxXferCount--;
-      if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, tickstart, Timeout) != HAL_OK)
-      {
-        return HAL_TIMEOUT;
-      }
-      if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE))
-      {
-        tmp = (uint16_t*) pData;
-        huart->Instance->TDR = (*tmp & (uint16_t)0x01FFU);
-        pData += 2U;
-      }
-      else
-      {
-        huart->Instance->TDR = (*pData++ & (uint8_t)0xFFU);
-      }
-    }
-    if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TC, RESET, tickstart, Timeout) != HAL_OK)
-    {
-      return HAL_TIMEOUT;
-    }
-
-    /* At end of Tx process, restore huart->gState to Ready */
-    huart->gState = HAL_UART_STATE_READY;
-
-    /* Process Unlocked */
-    __HAL_UNLOCK(huart);
-
-    return HAL_OK;
-  }
-  else
-  {
-    return HAL_BUSY;
-  }
-}
-
-
 
 /**
   * @brief Receive an amount of data in blocking mode.
@@ -1099,13 +1168,17 @@ HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, u
   * @param pData: pointer to data buffer.
   * @param Size: amount of data to be received.
   * @param Timeout: Timeout duration.
+  * @note   When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *         address of user data buffer for storing data to be received, should be aligned on a half word frontier (16 bits)
+  *         (as received data will be handled using u16 pointer cast). Depending on compilation chain,
+  *         use of specific alignment compilation directives or pragmas might be required to ensure proper alignment for pData.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout)
 {
   uint16_t* tmp;
   uint16_t uhMask;
-  uint32_t tickstart = 0U;
+  uint32_t tickstart = 0;
 
   /* Check that a Rx process is not already ongoing */
   if(huart->RxState == HAL_UART_STATE_READY)
@@ -1113,6 +1186,17 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
     if((pData == NULL ) || (Size == 0U))
     {
       return  HAL_ERROR;
+    }
+
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
+       should be aligned on a u16 frontier, as data to be received from RDR will be 
+       handled through a u16 cast. */
+    if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE))
+    {
+      if((((uint32_t)pData)&1U) != 0U)
+      {
+        return  HAL_ERROR;
+      }
     }
 
     /* Process Locked */
@@ -1164,3 +1248,89 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
     return HAL_BUSY;
   }
 }
+
+/**
+  * @brief Send an amount of data in blocking mode.
+  * @param huart: UART handle.
+  * @param pData: Pointer to data buffer.
+  * @param Size: Amount of data to be sent.
+  * @param Timeout: Timeout duration.
+  * @note   When UART parity is not enabled (PCE = 0), and Word Length is configured to 9 bits (M1-M0 = 01),
+  *         address of user data buffer containing data to be sent, should be aligned on a half word frontier (16 bits)
+  *         (as sent data will be handled using u16 pointer cast). Depending on compilation chain,
+  *         use of specific alignment compilation directives or pragmas might be required to ensure proper alignment for pData.
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_UART_Transmit(UART_HandleTypeDef *huart, uint8_t *pData, uint16_t Size, uint32_t Timeout)
+{
+  uint16_t* tmp;
+  uint32_t tickstart = 0U;
+
+  /* Check that a Tx process is not already ongoing */
+  if(huart->gState == HAL_UART_STATE_READY)
+  {
+    if((pData == NULL ) || (Size == 0U))
+    {
+      return  HAL_ERROR;
+    }
+
+    /* In case of 9bits/No Parity transfer, pData buffer provided as input paramter 
+       should be aligned on a u16 frontier, as data to be filled into TDR will be 
+       handled through a u16 cast. */
+    if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE))
+    {
+      if((((uint32_t)pData)&1U) != 0U)
+      {
+        return  HAL_ERROR;
+      }
+    }
+
+    /* Process Locked */
+    __HAL_LOCK(huart);
+
+    huart->ErrorCode = HAL_UART_ERROR_NONE;
+    huart->gState = HAL_UART_STATE_BUSY_TX;
+
+    /* Init tickstart for timeout managment*/
+    tickstart = HAL_GetTick();
+
+    huart->TxXferSize = Size;
+    huart->TxXferCount = Size;
+    while(huart->TxXferCount > 0)
+    {
+      huart->TxXferCount--;
+      if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TXE, RESET, tickstart, Timeout) != HAL_OK)
+      {
+        return HAL_TIMEOUT;
+      }
+      if ((huart->Init.WordLength == UART_WORDLENGTH_9B) && (huart->Init.Parity == UART_PARITY_NONE))
+      {
+        tmp = (uint16_t*) pData;
+        huart->Instance->TDR = (*tmp & (uint16_t)0x01FFU);
+        pData += 2;
+      }
+      else
+      {
+        huart->Instance->TDR = (*pData++ & (uint8_t)0xFFU);
+      }
+    }
+    if(UART_WaitOnFlagUntilTimeout(huart, UART_FLAG_TC, RESET, tickstart, Timeout) != HAL_OK)
+    {
+      return HAL_TIMEOUT;
+    }
+
+    /* At end of Tx process, restore huart->gState to Ready */
+    huart->gState = HAL_UART_STATE_READY;
+
+    /* Process Unlocked */
+    __HAL_UNLOCK(huart);
+
+    return HAL_OK;
+  }
+  else
+  {
+    return HAL_BUSY;
+  }
+}
+
+
