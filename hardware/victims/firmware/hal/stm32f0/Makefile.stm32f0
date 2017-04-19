@@ -16,11 +16,11 @@ NM = arm-none-eabi-nm
 #Output Format = Binary for this target
 FORMAT = binary
 
-CFLAGS += -mthumb -ffunction-sections
-CPPFLAGS += -mthumb -ffunction-sections
-ASFLAGS += -mthumb -ffunction-sections
+CFLAGS +=   -mthumb -mfloat-abi=soft -ffunction-sections
+CPPFLAGS += -mthumb -mfloat-abi=soft -ffunction-sections
+ASFLAGS +=  -mthumb -mfloat-abi=soft -ffunction-sections
 
-CDEFS += -DSTM32F051R8TX -DSTM32F0 -DSTM32 -DDEBUG
+CDEFS   += -DSTM32F051R8TX -DSTM32F0 -DSTM32 -DDEBUG
 CPPDEFS += -DSTM32F051R8TX -DSTM32F0 -DSTM32 -DDEBUG
 
 LDFLAGS += -T $(HALPATH)/stm32f0/LinkerScript.ld -Wl,--gc-sections -lm

@@ -3,6 +3,7 @@ SRC += uart.c
 EXTRAINCDIRS += $(HALPATH)/avr
 
 MCU_FLAGS = -mmcu=$(MCU)
+CFLAGS += -fpack-struct
 
 CC = avr-gcc
 OBJCOPY = avr-objcopy

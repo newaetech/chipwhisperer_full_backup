@@ -3,6 +3,7 @@ SRC += XMEGA_AES_driver.c uart.c usart_driver.c xmega_hal.c
 EXTRAINCDIRS += $(HALPATH)/xmega
 
 MCU_FLAGS = -mmcu=$(MCU)
+CFLAGS += -fpack-struct
 
 CC = avr-gcc
 OBJCOPY = avr-objcopy

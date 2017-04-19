@@ -706,7 +706,163 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
   return HAL_OK;
 }
 
+HAL_StatusTypeDef HAL_RCCEx_PeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
+{
+  uint32_t tickstart = 0U;
+  uint32_t temp_reg = 0U;
 
+  /* Check the parameters */
+  assert_param(IS_RCC_PERIPHCLOCK(PeriphClkInit->PeriphClockSelection));
+  
+  /*---------------------------- RTC configuration -------------------------------*/
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_RTC) == (RCC_PERIPHCLK_RTC))
+  {
+    /* check for RTC Parameters used to output RTCCLK */
+    assert_param(IS_RCC_RTCCLKSOURCE(PeriphClkInit->RTCClockSelection));
+    
+    FlagStatus       pwrclkchanged = RESET;
+
+    /* As soon as function is called to change RTC clock source, activation of the 
+       power domain is done. */
+    /* Requires to enable write access to Backup Domain of necessary */
+    if(__HAL_RCC_PWR_IS_CLK_DISABLED())
+    {
+    __HAL_RCC_PWR_CLK_ENABLE();
+      pwrclkchanged = SET;
+    }
+    
+    if(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
+    {
+      /* Enable write access to Backup domain */
+      SET_BIT(PWR->CR, PWR_CR_DBP);
+      
+      /* Wait for Backup domain Write protection disable */
+      tickstart = HAL_GetTick();
+      
+      while(HAL_IS_BIT_CLR(PWR->CR, PWR_CR_DBP))
+      {
+        if((HAL_GetTick() - tickstart) > RCC_DBP_TIMEOUT_VALUE)
+        {
+          return HAL_TIMEOUT;
+        }
+      }
+    }
+    
+    /* Reset the Backup domain only if the RTC Clock source selection is modified from reset value */ 
+    temp_reg = (RCC->BDCR & RCC_BDCR_RTCSEL);
+    if((temp_reg != 0x00000000U) && (temp_reg != (PeriphClkInit->RTCClockSelection & RCC_BDCR_RTCSEL)))
+    {
+      /* Store the content of BDCR register before the reset of Backup Domain */
+      temp_reg = (RCC->BDCR & ~(RCC_BDCR_RTCSEL));
+      /* RTC Clock selection can be changed only if the Backup Domain is reset */
+      __HAL_RCC_BACKUPRESET_FORCE();
+      __HAL_RCC_BACKUPRESET_RELEASE();
+      /* Restore the Content of BDCR register */
+      RCC->BDCR = temp_reg;
+      
+      /* Wait for LSERDY if LSE was enabled */
+      if (HAL_IS_BIT_SET(temp_reg, RCC_BDCR_LSEON))
+      {
+        /* Get Start Tick */
+        tickstart = HAL_GetTick();
+        
+        /* Wait till LSE is ready */  
+        while(__HAL_RCC_GET_FLAG(RCC_FLAG_LSERDY) == RESET)
+        {
+          if((HAL_GetTick() - tickstart) > RCC_LSE_TIMEOUT_VALUE)
+          {
+            return HAL_TIMEOUT;
+          }
+        }
+      }
+    }
+    __HAL_RCC_RTC_CONFIG(PeriphClkInit->RTCClockSelection);
+
+    /* Require to disable power clock if necessary */
+    if(pwrclkchanged == SET)
+    {
+      __HAL_RCC_PWR_CLK_DISABLE();
+    }
+  }
+
+  /*------------------------------- USART1 Configuration ------------------------*/ 
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USART1) == RCC_PERIPHCLK_USART1)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_USART1CLKSOURCE(PeriphClkInit->Usart1ClockSelection));
+    
+    /* Configure the USART1 clock source */
+    __HAL_RCC_USART1_CONFIG(PeriphClkInit->Usart1ClockSelection);
+  }
+  
+#if defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx)\
+ || defined(STM32F091xC) || defined(STM32F098xx)
+  /*----------------------------- USART2 Configuration --------------------------*/ 
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USART2) == RCC_PERIPHCLK_USART2)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_USART2CLKSOURCE(PeriphClkInit->Usart2ClockSelection));
+    
+    /* Configure the USART2 clock source */
+    __HAL_RCC_USART2_CONFIG(PeriphClkInit->Usart2ClockSelection);
+  }
+#endif /* STM32F071xB || STM32F072xB || STM32F078xx || */
+       /* STM32F091xC || STM32F098xx */
+
+#if defined(STM32F091xC) || defined(STM32F098xx)
+  /*----------------------------- USART3 Configuration --------------------------*/ 
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USART3) == RCC_PERIPHCLK_USART3)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_USART3CLKSOURCE(PeriphClkInit->Usart3ClockSelection));
+    
+    /* Configure the USART3 clock source */
+    __HAL_RCC_USART3_CONFIG(PeriphClkInit->Usart3ClockSelection);
+  }
+#endif /* STM32F091xC || STM32F098xx */  
+
+  /*------------------------------ I2C1 Configuration ------------------------*/ 
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_I2C1) == RCC_PERIPHCLK_I2C1)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_I2C1CLKSOURCE(PeriphClkInit->I2c1ClockSelection));
+    
+    /* Configure the I2C1 clock source */
+    __HAL_RCC_I2C1_CONFIG(PeriphClkInit->I2c1ClockSelection);
+  }
+
+#if defined(STM32F042x6) || defined(STM32F048xx) || defined(STM32F072xB) || defined(STM32F078xx) || defined(STM32F070xB) || defined(STM32F070x6)
+  /*------------------------------ USB Configuration ------------------------*/ 
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_USB) == RCC_PERIPHCLK_USB)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_USBCLKSOURCE(PeriphClkInit->UsbClockSelection));
+    
+    /* Configure the USB clock source */
+    __HAL_RCC_USB_CONFIG(PeriphClkInit->UsbClockSelection);
+  }
+#endif /* STM32F042x6 || STM32F048xx || STM32F072xB || STM32F078xx || STM32F070xB || STM32F070x6 */
+
+#if defined(STM32F042x6) || defined(STM32F048xx)\
+ || defined(STM32F051x8) || defined(STM32F058xx)\
+ || defined(STM32F071xB) || defined(STM32F072xB) || defined(STM32F078xx)\
+ || defined(STM32F091xC) || defined(STM32F098xx)
+  /*------------------------------ CEC clock Configuration -------------------*/ 
+  if(((PeriphClkInit->PeriphClockSelection) & RCC_PERIPHCLK_CEC) == RCC_PERIPHCLK_CEC)
+  {
+    /* Check the parameters */
+    assert_param(IS_RCC_CECCLKSOURCE(PeriphClkInit->CecClockSelection));
+    
+    /* Configure the CEC clock source */
+    __HAL_RCC_CEC_CONFIG(PeriphClkInit->CecClockSelection);
+  }
+#endif /* STM32F042x6 || STM32F048xx ||                */
+       /* STM32F051x8 || STM32F058xx ||                */
+       /* STM32F071xB || STM32F072xB || STM32F078xx || */
+       /* STM32F091xC || STM32F098xx */
+  
+  return HAL_OK;
+}
 
 
 

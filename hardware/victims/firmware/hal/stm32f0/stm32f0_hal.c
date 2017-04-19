@@ -5,6 +5,7 @@
 #include "stm32f0xx_hal_gpio.h"
 #include "stm32f0xx_hal_dma.h"
 #include "stm32f0xx_hal_uart.h"
+#include "stm32f0xx_hal_flash.h"
 
 UART_HandleTypeDef UartHandle;
 
@@ -25,8 +26,7 @@ void platform_init(void)
 	RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_HSE;
 	RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-	uint32_t flash_latency = 5;
-	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, flash_latency);
+	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0);
 }
 
 void init_uart(void)
@@ -35,12 +35,13 @@ void init_uart(void)
 	GPIO_InitTypeDef GpioInit;
 	GpioInit.Pin       = GPIO_PIN_9 | GPIO_PIN_10;
 	GpioInit.Mode      = GPIO_MODE_AF_PP;
-	GpioInit.Pull      = GPIO_NOPULL;
+	GpioInit.Pull      = GPIO_PULLUP;
 	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
-	GpioInit.Alternate = GPIO_AF0_USART1;
+	GpioInit.Alternate = GPIO_AF1_USART1;
 	HAL_GPIO_Init(GPIOA, &GpioInit);
 
 	__HAL_RCC_USART1_CLK_ENABLE();
+	__HAL_RCC_USART1_CONFIG(RCC_USART1CLKSOURCE_SYSCLK);
 	UartHandle.Instance        = USART1;
 	UartHandle.Init.BaudRate   = 38400;
 	UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
@@ -78,7 +79,7 @@ void trigger_low(void)
 char getch(void)
 {
 	uint8_t d;
-	HAL_UART_Receive(&UartHandle, &d, 1, 5000);
+	while(HAL_UART_Receive(&UartHandle, &d, 1, 5000) != HAL_OK);
 	return d;
 }
 

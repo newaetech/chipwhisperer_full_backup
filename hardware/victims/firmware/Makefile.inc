@@ -132,7 +132,8 @@ CFLAGS += $(CDEFS)
 CFLAGS += -O$(OPT)
 CFLAGS += -funsigned-char
 CFLAGS += -funsigned-bitfields
-CFLAGS += -fpack-struct
+# Note: -fpack-struct is dangerous! This is only included in XMEGA/AVR HAL
+#CFLAGS += -fpack-struct
 CFLAGS += -fshort-enums
 CFLAGS += -Wall
 CFLAGS += -Wstrict-prototypes
