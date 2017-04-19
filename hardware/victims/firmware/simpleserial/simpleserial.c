@@ -9,6 +9,7 @@ typedef struct ss_cmd
 	char c;
 	unsigned int len;
 	void (*fp)(uint8_t*);
+	int ack;
 } ss_cmd;
 
 #define MAX_SS_CMDS 10
@@ -16,6 +17,10 @@ static ss_cmd commands[MAX_SS_CMDS];
 static int num_commands = 0;
 
 #define MAX_SS_LEN 64
+
+#define SS_VER_1_0 0
+#define SS_VER_1_1 1
+static int version = SS_VER_1_1;
 
 static char hex_lookup[16] =
 {
@@ -52,7 +57,31 @@ int hex_decode(int len, char* ascii_buf, uint8_t* data_buf)
 	return 0;
 }
 
-int simpleserial_addcmd(char c, unsigned int len, void (*fp)(uint8_t*))
+void set_version(uint8_t* v)
+{
+	switch(v[1])
+	{
+		case '0':
+			version = SS_VER_1_0;
+			break;
+		case '1':
+			version = SS_VER_1_1;
+			break;
+		default:
+			// If we don't recognize the version, don't change anything
+			break;
+	}
+	
+	uint8_t d[] = {version + '0'};
+	simpleserial_put('d', 1, d);
+}
+
+void simpleserial_init()
+{
+	simpleserial_addcmd('v', 2, set_version, 1);
+}
+
+int simpleserial_addcmd(char c, unsigned int len, void (*fp)(uint8_t*), int ack)
 {
 	if(num_commands > MAX_SS_CMDS)
 		return 1;
@@ -63,6 +92,7 @@ int simpleserial_addcmd(char c, unsigned int len, void (*fp)(uint8_t*))
 	commands[num_commands].c   = c;
 	commands[num_commands].len = len;
 	commands[num_commands].fp  = fp;
+	commands[num_commands].ack = ack;
 	num_commands++;
 
 	return 0;
@@ -112,6 +142,10 @@ void simpleserial_get(void)
 
 	// Callback
 	commands[cmd].fp(data_buf);
+	
+	// Acknowledge (if version is 1.1)
+	if(version == SS_VER_1_1 && commands[cmd].ack)
+		simpleserial_put('z', 0, 0);
 }
 
 void simpleserial_put(char c, int size, uint8_t* output)
