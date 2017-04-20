@@ -121,7 +121,6 @@ class SimpleSerial(TargetTemplate):
         self.runCommand(self.findParam('cmdinit').getValue())
 
     def setVersion(self, ver='auto'):
-
         if ver == 'auto' or ver == '1.1':
             logging.debug("SimpleSerial: Auto Protocol Detection")
 
@@ -144,8 +143,9 @@ class SimpleSerial(TargetTemplate):
 
             #Should we reset hardware version too?
             #Might not be failsafe as old 1.0 may not handle command...
-            #self.ser.write("v00\n")
-
+            self.ser.write("v00\n")
+            self.ser.flush()
+            self.outstanding_ack = False
 
     def setModeEncrypt(self):
         pass
@@ -168,15 +168,14 @@ class SimpleSerial(TargetTemplate):
         if cmdstr is None or len(cmdstr) == 0:
             return
 
-        #Protocol version 1.1 waits for ACK - if we have outstanding ACK, wait now
+        # Protocol version 1.1 waits for ACK - if we have outstanding ACK, wait now
         if self.findParam('protver').getValue() == '1.1':
-
             if self.outstanding_ack:
-                #TODO - Should be user-defined maybe
+                # TODO - Should be user-defined maybe
                 data = self.ser.read(2, timeout=500)
                 if len(data) > 1:
                     if data[0] != 'z':
-                        logging.error("SimpleSerial: ACK ERROR, read %02x"%data[0])
+                        logging.error("SimpleSerial: ACK ERROR, read %02x" % data[0])
                 else:
                     logging.error("SimpleSerial: ACK ERROR, did not see anything - TIMEOUT possible!")
                 self.outstanding_ack = False
@@ -205,9 +204,8 @@ class SimpleSerial(TargetTemplate):
         except Exception as e:
             self.dis()
             raise e
-
-        self.outstanding_ack = True
-
+        if self.findParam('protver').getValue() == '1.1':
+            self.outstanding_ack = True
 
     def loadEncryptionKey(self, key):
         self.key = key
