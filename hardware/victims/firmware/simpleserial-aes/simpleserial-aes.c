@@ -22,25 +22,25 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
-
-
-void get_key(uint8_t* k)
+uint8_t get_key(uint8_t* k)
 {
 	aes_indep_key(k);
+	return 0x00;
 }
 
-void get_pt(uint8_t* pt)
+uint8_t get_pt(uint8_t* pt)
 {
-    trigger_high();
+	trigger_high();
 	aes_indep_enc(pt); /* encrypting the data block */
-    trigger_low();
-    simpleserial_put('r', 16, pt);
+	trigger_low();
+	simpleserial_put('r', 16, pt);
+	return 0x00;
 }
 
-void reset(uint8_t* x)
+uint8_t reset(uint8_t* x)
 {
     // Reset key here if needed
+	return 0x00;
 }
 
 int main(void)
@@ -55,18 +55,18 @@ int main(void)
 	aes_indep_key(tmp);
 
     /* Uncomment this to get a HELLO message for debug */
-    /*
+
     putch('h');
     putch('e');
     putch('l');
     putch('l');
     putch('o');
     putch('\n');
-    */
 
+	simpleserial_init();
     simpleserial_addcmd('k', 16, get_key);
-    simpleserial_addcmd('p', 16, get_pt);
-    simpleserial_addcmd('x', 0, reset);
+    simpleserial_addcmd('p', 16,  get_pt);
+    simpleserial_addcmd('x',  0,   reset);
     while(1)
         simpleserial_get();
 }
