@@ -32,9 +32,10 @@ void platform_init(void);
 #define CW308_SI4010   12
 #define CW308_MPC5748G 13
 #define CW308_STM32F0  14
-#define CW308_STM32F2  15
-#define CW308_STM32F3  16
-#define CW308_STM32F4  17
+#define CW308_STM32F1  15
+#define CW308_STM32F2  16
+#define CW308_STM32F3  17
+#define CW308_STM32F4  18
 
 //HAL_TYPE Define Types
 #define HAL_avr     1
@@ -42,9 +43,10 @@ void platform_init(void);
 #define HAL_pic24f  3
 #define HAL_sam4l   4
 #define HAL_stm32f0 5
-#define HAL_stm32f2 6
-#define HAL_stm32f3 7
-#define HAL_stm32f4 8
+#define HAL_stm32f1 6
+#define HAL_stm32f2 7
+#define HAL_stm32f3 8
+#define HAL_stm32f4 9
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -63,6 +65,8 @@ void platform_init(void);
     #include "sam4l/sam4l_hal.h"
 #elif HAL_TYPE == HAL_stm32f0
 	#include "stm32f0/stm32f0_hal.h"
+#elif HAL_TYPE == HAL_stm32f1
+	#include "stm32f1/stm32f1_hal.h"
 #elif HAL_TYPE == HAL_stm32f2
 	#include "stm32f2/stm32f2_hal.h"
 #elif HAL_TYPE == HAL_stm32f3
