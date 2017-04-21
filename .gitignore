@@ -22,3 +22,5 @@ default-data-dir/
 *.lst
 *.npy
 README.md
+hardware/victims/firmware/simpleserial-aes/simpleserial-aes-CW*
+hardware/victims/firmware/basic-passwdcheck/basic-passwdcheck-CW*
