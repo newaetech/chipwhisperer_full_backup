@@ -128,7 +128,7 @@ void simpleserial_get(void)
 		return;
 
 	// Callback
-	uint8_t* ret[1];
+	uint8_t ret[1];
 	ret[0] = commands[cmd].fp(data_buf);
 	
 	// Acknowledge (if version is 1.1)
