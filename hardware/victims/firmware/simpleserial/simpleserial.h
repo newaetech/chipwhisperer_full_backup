@@ -6,6 +6,10 @@
 
 #include <stdint.h>
 
+// Set up the SimpleSerial module
+// This prepares any internal commands
+void simpleserial_init(void);
+
 // Add a command to the SimpleSerial module
 // Args:
 // - c:   The character designating this command
@@ -18,7 +22,9 @@
 // - Maximum of 10 active commands
 // - Maximum length of 64 bytes
 // - Returns 1 if either of these fail; otherwise 0
-int simpleserial_addcmd(char c, unsigned int len, void (*fp)(uint8_t*));
+// - The callback function returns a number in [0x00, 0xFF] as a status code;
+//   in protocol v1.1, this status code is returned through a "z" message
+int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*));
 
 // Attempt to process a command 
 // If a full string is found, the relevant callback function is called

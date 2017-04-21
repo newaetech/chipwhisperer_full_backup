@@ -8,7 +8,7 @@ typedef struct ss_cmd
 {
 	char c;
 	unsigned int len;
-	void (*fp)(uint8_t*);
+	uint8_t (*fp)(uint8_t*);
 } ss_cmd;
 
 #define MAX_SS_CMDS 10
@@ -16,6 +16,9 @@ static ss_cmd commands[MAX_SS_CMDS];
 static int num_commands = 0;
 
 #define MAX_SS_LEN 64
+
+#define SS_VER_1_0 0
+#define SS_VER_1_1 1
 
 static char hex_lookup[16] =
 {
@@ -52,7 +55,21 @@ int hex_decode(int len, char* ascii_buf, uint8_t* data_buf)
 	return 0;
 }
 
-int simpleserial_addcmd(char c, unsigned int len, void (*fp)(uint8_t*))
+// Callback function for "v" command.
+// This can exist in v1.0 as long as we don't actually send back an ack ("z")
+uint8_t check_version(uint8_t* v)
+{
+	return 0x00;
+}
+
+// Set up the SimpleSerial module by preparing internal commands
+// This just adds the "v" command for now...
+void simpleserial_init()
+{
+	simpleserial_addcmd('v', 0, check_version);
+}
+
+int simpleserial_addcmd(char c, unsigned int len, uint8_t (*fp)(uint8_t*))
 {
 	if(num_commands > MAX_SS_CMDS)
 		return 1;
@@ -111,7 +128,13 @@ void simpleserial_get(void)
 		return;
 
 	// Callback
-	commands[cmd].fp(data_buf);
+	uint8_t ret[1];
+	ret[0] = commands[cmd].fp(data_buf);
+	
+	// Acknowledge (if version is 1.1)
+#if SS_VER == SS_VER_1_1
+	simpleserial_put('z', 1, ret);
+#endif
 }
 
 void simpleserial_put(char c, int size, uint8_t* output)

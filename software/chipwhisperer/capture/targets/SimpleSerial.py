@@ -45,6 +45,7 @@ class SimpleSerial(TargetTemplate):
         self.textlength = 16
         self.outputlength = 16
         self.input = ""
+        self.protver = ''
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
@@ -111,41 +112,34 @@ class SimpleSerial(TargetTemplate):
         # 'x' flushes everything & sets system back to idle
         self.ser.write("xxxxxxxxxxxxxxxxxxxxxxxx")
         self.ser.flush()
-        self.setVersion(self.findParam('protver').getValue())
+
 
     def close(self):
         if self.ser != None:
             self.ser.close()
 
-    def init(self):
-        self.runCommand(self.findParam('cmdinit').getValue())
+    def getVersion(self):
+        self.ser.flush()
+        self.ser.write("v\n")
 
-    def setVersion(self, ver='auto'):
+        data = self.ser.read(2, timeout=200)
 
-        if ver == 'auto' or ver == '1.1':
-            logging.debug("SimpleSerial: Auto Protocol Detection")
-
-            self.ser.flush()
-            self.ser.write("v01\n")
-
-            data = self.ser.read(2, timeout=200)
-
-            if len(data) > 1 and data[0] == 'z':
-                self.findParam('protver').setValue('1.1')
-                logging.info("SimpleSerial: protocol V1.1 detected")
-            else:
-                self.findParam('protver').setValue('1.0')
-                logging.info("SimpleSerial: protocol V1.0 detected")
-
-            self.ser.flush()
-
+        if len(data) > 1 and data[0] == 'z':
+            self.protver = '1.1'
+            logging.info("SimpleSerial: protocol V1.1 detected")
         else:
-            self.findParam('protver').setValue('1.0')
+            self.protver = '1.0'
+            logging.info("SimpleSerial: protocol V1.0 detected")
 
-            #Should we reset hardware version too?
-            #Might not be failsafe as old 1.0 may not handle command...
-            #self.ser.write("v00\n")
+    def init(self):
+        ver = self.findParam('protver').getValue()
+        if ver == 'auto':
+            self.getVersion()
+        else:
+            self.protver = ver
+        self.outstanding_ack = False
 
+        self.runCommand(self.findParam('cmdinit').getValue())
 
     def setModeEncrypt(self):
         pass
@@ -168,15 +162,14 @@ class SimpleSerial(TargetTemplate):
         if cmdstr is None or len(cmdstr) == 0:
             return
 
-        #Protocol version 1.1 waits for ACK - if we have outstanding ACK, wait now
-        if self.findParam('protver').getValue() == '1.1':
-
+        # Protocol version 1.1 waits for ACK - if we have outstanding ACK, wait now
+        if self.protver == '1.1':
             if self.outstanding_ack:
-                #TODO - Should be user-defined maybe
+                # TODO - Should be user-defined maybe
                 data = self.ser.read(2, timeout=500)
                 if len(data) > 1:
                     if data[0] != 'z':
-                        logging.error("SimpleSerial: ACK ERROR, read %02x"%data[0])
+                        logging.error("SimpleSerial: ACK ERROR, read %02x" % data[0])
                 else:
                     logging.error("SimpleSerial: ACK ERROR, did not see anything - TIMEOUT possible!")
                 self.outstanding_ack = False
@@ -205,9 +198,8 @@ class SimpleSerial(TargetTemplate):
         except Exception as e:
             self.dis()
             raise e
-
-        self.outstanding_ack = True
-
+        if self.protver == '1.1':
+            self.outstanding_ack = True
 
     def loadEncryptionKey(self, key):
         self.key = key
@@ -261,10 +253,6 @@ class SimpleSerial(TargetTemplate):
             if response[0:len(expected[0])] != expected[0]:
                 print("Sync Error: %s"%response)
                 print("Hex Version: %s" % (" ".join(["%02x" % ord(t) for t in response])))
-
-                if response[0] == 'z':
-                    logging.warning("Looks like SimpleSerial V1.1 protocol - switching automatically")
-                    self.setVersion('1.1')
 
                 return None
 
