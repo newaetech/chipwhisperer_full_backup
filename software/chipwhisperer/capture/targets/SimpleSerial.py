@@ -175,13 +175,15 @@ class SimpleSerial(TargetTemplate):
                 self.outstanding_ack = False
 
         varList = [("$KEY$",self.key, "Hex Encryption Key"),
-                   ("$TEXT$",self.input, "Input Plaintext")]
+                   ("$TEXT$",self.input, "Input Plaintext"),
+                   ("$EXPECTED$", self.getExpected(), "Expected Ciphertext")]
 
         newstr = cmdstr
 
         #Find variables to insert
         for v in varList:
-            newstr = newstr.replace(v[0], self.convertVarToString(v[1]))
+            if v[1] is not None:
+                newstr = newstr.replace(v[0], self.convertVarToString(v[1]))
 
         #This is dumb
         newstr = newstr.replace("\\n", "\n")
