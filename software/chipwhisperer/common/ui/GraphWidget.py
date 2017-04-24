@@ -306,7 +306,7 @@ class GraphWidget(QWidget):
         """Lock Y axis, such it doesn't change with new data"""
         self.pw.getPlotItem().getViewBox().enableAutoRange(pg.ViewBox.YAxis, not enabled)
         
-    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = "", xaxis=None, dsmode=None):
+    def passTrace(self, trace, startoffset=0, ghostTrace=False, pen=None, idString = "", xaxis=None, dsmode=None, color=None):
         """Plot a new trace, where X-Axis is simply 'sample number' (e.g. integer counting 0,1,2,...N-1).
         
         :param startoffset: Offset of X-Axis, such that zero point is marked as this number
@@ -315,21 +315,25 @@ class GraphWidget(QWidget):
         :param ghostTrace: By default the last plotted trace is stored for use with stuff such as an overlay that
                            selects data off the graph. If ghostTrace is set to 'true' the passed data is NOT stored.
         :type ghostTrace: bool
+
+        :param color: If this is not set to None, force this trace to be a certain color
+        :type color: see PyQtGraph.mkpen
         """
 
         if ghostTrace is False:
             self.lastTraceData = trace
             self.lastStartOffset = startoffset
 
-        if self.persistant:
-            if self.autocolor:
-                nc = (self.acolor + 1) % 8
-                self.acolor = nc
-            else:
-                self.acolor = self.color
+        if not self.persistant:
+            self.pw.clear()
+
+        if color is not None:
+            self.acolor = color
+        elif self.persistant and self.autocolor:
+            nc = (self.acolor + 1) % 8
+            self.acolor = nc
         else:
             self.acolor = self.color
-            self.pw.clear()
             
         if xaxis is None:
             xaxis = range(startoffset, len(trace)+startoffset)

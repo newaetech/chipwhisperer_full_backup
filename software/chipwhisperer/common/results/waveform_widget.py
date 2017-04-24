@@ -29,6 +29,7 @@ from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
+import numpy as np
 
 
 class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
@@ -53,6 +54,10 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
                 {'name':'Offset Factor', 'type':'float', 'limits':(-1E9, 1E9), 'value':0.0, 'action':self.plotInputTrace},
             ]},
             {'name':'X Axis', 'type':'list', 'values':{"Sample":"Pts.", "Time":"s"}, 'value':"Pts.", 'action':self.plotInputTrace},
+            {'name':'T-Statistic', 'key':'tstat', 'type':'group', 'expanded':True, 'children':[
+                {'name':'Enable', 'key': 'enable', 'type': 'bool', 'value': False},
+                {'name':'Trace Range', 'key':'range', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
+            ]},
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
         ])
 
@@ -77,6 +82,9 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         self.findParam('pointrng').setLimits((0, lastPoint))
         self.findParam('pointrng').setValue((0, lastPoint))
 
+        self.findParam(['tstat', 'range']).setLimits((0, lastTrace))
+        self.findParam(['tstat', 'range']).setValue((max(0, traceRange[0]), min(lastTrace, traceRange[1] if traceRange[1] >= 0 else 7)))
+
     def plotInputTrace(self, _=None):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
         initialPersist = self.persistant
@@ -91,11 +99,15 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         yaxisScaleFactor = self.findParam(['Y Axis', 'Scale Factor']).getValue()
         yaxisOffsetFactor = self.findParam(['Y Axis', 'Offset Factor']).getValue()
 
+        tstat_enabled = self.findParam(['tstat', 'enable']).getValue()
+        ttstart = self.findParam(['tstat', 'range']).getValue()[0]
+        ttend = self.findParam(['tstat', 'range']).getValue()[1]
+
         if tend < tstart or pend < pstart:
             return
 
         try:
-            if tend - tstart + 1 > 1:
+            if tend - tstart + 1 > 1 or tstat_enabled:
                 self.setPersistance(True)
 
             yUnit = self.findParam(['Y Axis','Unity']).getValue()
@@ -121,6 +133,34 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
                     if self.findParam('Redraw after Each').getValue():
                         util.updateUI()
+
+            if tstat_enabled:
+                ttrace = [0] * (pend - pstart + 1)
+                pt_list = np.array([self._traceSource.getTextin(tnum)[0] for tnum in range(ttstart, ttend+1)])
+                x_list = np.array([bin(x).count('1') for x in pt_list])
+                s_x = np.sum(x_list)
+                mu_x = s_x / len(x_list)
+                for i in range(pstart, pend+1):
+                    y_list = np.array([self._traceSource.getTrace(tnum)[i] for tnum in range(ttstart, ttend+1)])
+                    s_y = np.sum(y_list)
+                    mu_y = s_y / len(y_list)
+                    s_xx = np.sum(np.dot(x_list, x_list))
+                    s_xy = np.sum(np.dot(x_list, y_list))
+
+                    b_1 = (s_xy - mu_y * s_x) / (s_xx - s_x**2 / len(x_list))
+                    b_0 = mu_y - b_1 * mu_x
+
+                    y_est = b_0 + b_1 * x_list
+                    err = y_est - y_list
+                    s_ee = np.sum(np.dot(err, err))
+                    se = np.sqrt(s_ee / (len(x_list) - 2) / (s_xx - s_x**2 / len(x_list)))
+
+                    t_stat = b_1 / se
+                    ttrace[i] = t_stat
+                self.passTrace(ttrace[pstart:pend + 1], pstart + self._traceSource.offset(), idString='ttest', xaxis=xaxis, dsmode=dsmode, color=0.0)
+        except NotImplementedError as e:
+            # This happens if we can't get text in/out or key from a trace source
+            pass
         finally:
             self.setPersistance(initialPersist)
 
