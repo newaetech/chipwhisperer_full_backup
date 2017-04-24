@@ -46,6 +46,19 @@ class SimpleSerial(TargetTemplate):
         self.outputlength = 16
         self.input = ""
         self.protver = ''
+
+        # Preset lists are in the form
+        # {'Dropdown Name':['Init Command', 'Load Key Command', 'Load Input Command', 'Go Command', 'Output Format']}
+        # If a command is None, it's left unchanged and the text field is editable;
+        # Otherwise, it's loaded with the value and set to readonly
+        self.presets = {
+            'Custom':[None, None, None, None, None],
+            'SimpleSerial Encryption':['','k$KEY$\\n', '', 'p$TEXT$\\n', 'r$RESPONSE$\\n'],
+            'SimpleSerial Authentication':['','k$KEY$\\n', 't$EXPECTED$\\n', 'p$TEXT$\\n', 'r$RESPONSE$\\n'],
+            'Glitching':[None, None, None, None, '$GLITCH$\\n'],
+        }
+        self._preset = 'Custom'
+
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
@@ -53,6 +66,7 @@ class SimpleSerial(TargetTemplate):
             {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Protocol Version', 'key':'protver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
+            {'name':'Preset Mode', 'key': 'preset', 'type': 'list', 'values': self.presets, 'get': self.getPreset, 'set': self.setPreset},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
             {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
@@ -92,6 +106,27 @@ class SimpleSerial(TargetTemplate):
     def outputLen(self):
         """ Return output length in bytes """
         return self.outputlength
+
+    @setupSetParam("Preset")
+    def setPreset(self, mode):
+        self._preset = mode
+        settings = ['cmdinit', 'cmdkey', 'cmdinput', 'cmdgo', 'cmdout']
+        values = mode
+        for i in range(len(settings)):
+            try:
+                if values[i] is None:
+                    self.findParam(settings[i]).setReadonly(False)
+                else:
+                    self.findParam(settings[i]).setReadonly(False)
+                    self.findParam(settings[i]).setValue(values[i])
+                    self.findParam(settings[i]).setReadonly(True)
+            except KeyError as e:
+                # This happens at startup when this parameter is being loaded before the text settings are ready
+                logging.debug("SimpleSerial: could not find parameters for preset settings")
+                pass
+
+    def getPreset(self):
+        return self._preset
 
     def getConnection(self):
         return self.ser
