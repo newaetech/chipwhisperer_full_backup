@@ -180,7 +180,7 @@ class ChipWhispererGlitch(Parameterized):
             logging.warning('Partial reconfiguration for width = 0 may not work')
 
         if offsetint == 0:
-            logging.warning('Partial reconfiguration for width = 0 may not work')
+            logging.warning('Partial reconfiguration for offset = 0 may not work')
 
         bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
 

@@ -157,7 +157,7 @@ class SimpleSerial(TargetTemplate):
         self.ser.flush()
         self.ser.write("v\n")
 
-        data = self.ser.read(2, timeout=200)
+        data = self.ser.read(2, timeout=20)
 
         if len(data) > 1 and data[0] == 'z':
             self.protver = '1.1'
