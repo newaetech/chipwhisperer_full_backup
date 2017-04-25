@@ -65,7 +65,10 @@ class SimpleSerial(TargetTemplate):
             {'name':'Input Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
             {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
-            {'name':'Protocol Version', 'key':'protver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
+            {'name':'Protocol Version', 'key':'proto', 'type':'group', 'expanded':True, 'children':[
+                {'name':'Version', 'key':'ver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
+                {'name':'Timeout (ms)', 'key':'timeout', 'type':'int', 'value':20, 'range':(0, 500), 'step':1},
+            ]},
             {'name':'Preset Mode', 'key': 'preset', 'type': 'list', 'values': self.presets, 'get': self.getPreset, 'set': self.setPreset},
             {'name':'Init Command', 'key':'cmdinit', 'type':'str', 'value':''},
             {'name':'Load Key Command', 'key':'cmdkey', 'type':'str', 'value':'k$KEY$\\n'},
@@ -156,8 +159,8 @@ class SimpleSerial(TargetTemplate):
     def getVersion(self):
         self.ser.flush()
         self.ser.write("v\n")
-
-        data = self.ser.read(2, timeout=20)
+        t_ms = ver = self.findParam(['proto', 'timeout']).getValue()
+        data = self.ser.read(2, timeout=t_ms)
 
         if len(data) > 1 and data[0] == 'z':
             self.protver = '1.1'
@@ -167,7 +170,7 @@ class SimpleSerial(TargetTemplate):
             logging.info("SimpleSerial: protocol V1.0 detected")
 
     def init(self):
-        ver = self.findParam('protver').getValue()
+        ver = self.findParam(['proto', 'ver']).getValue()
         if ver == 'auto':
             self.getVersion()
         else:
