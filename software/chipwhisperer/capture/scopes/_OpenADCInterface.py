@@ -923,6 +923,7 @@ class OpenADCInterface(object):
         self._streammode = False
         self._sbuf = []
         self.settings()
+        self._support_decimate = True
 
         # Send clearing function if using streaming mode
         if hasattr(self.serial, "stream") and self.serial.stream == False:
@@ -1056,7 +1057,7 @@ class OpenADCInterface(object):
                 # Check for timeout, if so abort
                 if len(result) < 1:
                     self.flushInput()
-                    logging.warning('Timeout in read: %d' % len(result))
+                    logging.warning('Timeout in read: %d (address: 0x%02x)' % (len(result), address))
                     return None
 
                 rb = bytearray(result)
@@ -1157,11 +1158,19 @@ class OpenADCInterface(object):
 
 
     def decimate(self):
-        decnum = 0x00000000
-        temp = self.sendMessage(CODE_READ, ADDR_DECIMATE, maxResp=2)
-        decnum |= temp[0] << 0
-        decnum |= temp[1] << 8
-        decnum += 1
+        if self._support_decimate:
+            decnum = 0x00000000
+            temp = self.sendMessage(CODE_READ, ADDR_DECIMATE, maxResp=2)
+            #If we don't support decimate just return 1 in the future to avoid
+            if temp:
+                decnum |= temp[0] << 0
+                decnum |= temp[1] << 8
+                decnum += 1
+            else:
+                self._support_decimate = False
+                decnum = 1
+        else:
+            decnum = 1
         return decnum
 
     def numSamples(self):
@@ -1191,6 +1200,11 @@ class OpenADCInterface(object):
             return
 
     def devicePresent(self):
+
+        #Re-init these settings:
+        self._support_decimate = True
+
+        #Send "ping" message, wait for pong
         msgin = bytearray([])
         msgin.append(0xAC)
 
