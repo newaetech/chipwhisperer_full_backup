@@ -30,7 +30,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
 import numpy as np
-
+import logging
 
 class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
     _name = 'Trace Output Plot'
@@ -56,6 +56,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             {'name':'X Axis', 'type':'list', 'values':{"Sample":"Pts.", "Time":"s"}, 'value':"Pts.", 'action':self.plotInputTrace},
             {'name':'T-Statistic', 'key':'tstat', 'type':'group', 'expanded':True, 'children':[
                 {'name':'Enable', 'key': 'enable', 'type': 'bool', 'value': False},
+                {'name':'Leakage Type', 'key':'type', 'type':'list', 'values':['Text In', 'Text Out', 'Key', 'None'], 'value':'Text In'},
                 {'name':'Trace Range', 'key':'range', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
             ]},
             {'name':'Redraw', 'type':'action', 'action':self.plotInputTrace},
@@ -136,8 +137,16 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
             if tstat_enabled:
                 ttrace = [0] * (pend - pstart + 1)
-                pt_list = np.array([self._traceSource.getTextin(tnum)[0] for tnum in range(ttstart, ttend+1)])
-                x_list = np.array([bin(x).count('1') for x in pt_list])
+                tstat_leakage = self.findParam(['tstat', 'type']).getValue()
+                if tstat_leakage == 'Text In':
+                    b_list = np.array([self._traceSource.getTextin(tnum)[0] for tnum in range(ttstart, ttend+1)])
+                elif tstat_leakage == 'Text Out':
+                    b_list = np.array([self._traceSource.getTextout(tnum)[0] for tnum in range(ttstart, ttend + 1)])
+                elif tstat_leakage == 'Key':
+                    b_list = np.array([self._traceSource.getKnownKey(tnum)[0] for tnum in range(ttstart, ttend + 1)])
+                else:
+                    raise NotImplementedError("Can't calculate t-statistics against input type %s" % tstat_leakage)
+                x_list = np.array([bin(x).count('1') for x in b_list])
                 s_x = np.sum(x_list)
                 mu_x = s_x / len(x_list)
                 for i in range(pstart, pend+1):
@@ -160,6 +169,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
                 self.passTrace(ttrace[pstart:pend + 1], pstart + self._traceSource.offset(), idString='ttest', xaxis=xaxis, dsmode=dsmode, color=0.0)
         except NotImplementedError as e:
             # This happens if we can't get text in/out or key from a trace source
+            logging.info("Couldn't plot t-statistic; error message:%s" % e)
             pass
         finally:
             self.setPersistance(initialPersist)
