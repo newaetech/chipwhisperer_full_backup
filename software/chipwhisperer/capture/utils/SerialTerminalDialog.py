@@ -172,19 +172,23 @@ class SerialTerminalDialog(QtFixes.QDialog):
         self.addTextOut(toSend, Qt.blue)
         
         if self.timerRead.isActive():
-            self.driver.write(toSend)
+            self.driver.terminal_write(toSend)
 
     def checkRead(self):
         try:
-            bavail = self.driver.inWaiting()
+            bavail = self.driver.terminal_inWaiting()
         except IOError, e:
             logging.error("IOError in read (%s), serial port disabled"%str(e))
             self.tryDis()
             return
 
         while bavail > 0:
-            s = self.driver.read(bavail)
-            self.addTextOut(s)
+            s = self.driver.terminal_read(bavail)
+            if len(s) > 0:
+                if s[0] == 'out':
+                    self.addTextOut(s[1], color=Qt.blue)
+                else:
+                    self.addTextOut(s[1])
             QCoreApplication.processEvents()
             bavail = self.driver.inWaiting()
 
