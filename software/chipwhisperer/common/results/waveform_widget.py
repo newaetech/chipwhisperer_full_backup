@@ -82,8 +82,7 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         mintrace = min(self.getPlotList()[0])
         maxtrace = max(self.getPlotList()[0])
 
-        tnumstr = "%d - %d"%(max(0, mintrace), min(lastTrace, (maxtrace+1) if maxtrace >= 0 else 7))
-
+        tnumstr = "%d - %d"%(max(0, mintrace), min(lastTrace, (maxtrace) if maxtrace >= 0 else 7))
 
         #self.findParam('tracerng').setLimits((0, lastTrace))
         #self.findParam('tracerng').setValue(
@@ -167,8 +166,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
                     raise ValueError("Failed to parse: %s" % cmd_tracenum)
                 start = int(cmd_tracenumint[0])
                 end = int(cmd_tracenumint[1])
-                plotlist.extend(range(start, end))
-                plotinfo.extend([cmdtracedict] * (end-start))
+                plotlist.extend(range(start, end+1))
+                plotinfo.extend([cmdtracedict] * ((end+1)-start))
             else:
                 plotlist.append(int(cmd_tracenumint[0]))
                 plotinfo.append(cmdtracedict)
