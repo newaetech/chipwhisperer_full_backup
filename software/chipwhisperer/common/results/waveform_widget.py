@@ -29,6 +29,7 @@ from chipwhisperer.common.ui.GraphWidget import GraphWidget
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.ui.ProgressBar import *
 import numpy as np
 import logging
 
@@ -108,6 +109,8 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             return
 
         try:
+            progress_bar = None
+
             if tend - tstart + 1 > 1 or tstat_enabled:
                 self.setPersistance(True)
 
@@ -149,6 +152,11 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
                 x_list = np.array([bin(x).count('1') for x in b_list])
                 s_x = np.sum(x_list)
                 mu_x = s_x / len(x_list)
+
+                progress_bar = ProgressBarGUI("Computing T-Statistics", "Calculating T-Statistic:")
+                progress_bar.setStatusMask("Current Point = %d", 0)
+                progress_bar.setMaximum(pend+1 - pstart)
+                progress_bar.show()
                 for i in range(pstart, pend+1):
                     y_list = np.array([self._traceSource.getTrace(tnum)[i] for tnum in range(ttstart, ttend+1)])
                     s_y = np.sum(y_list)
@@ -166,13 +174,20 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
                     t_stat = b_1 / se
                     ttrace[i] = t_stat
+
+                    prog = i+1 - pstart
+                    progress_bar.updateStatus(prog, prog)
+                    if progress_bar.wasAborted():
+                        break
+
                 self.passTrace(ttrace[pstart:pend + 1], pstart + self._traceSource.offset(), idString='ttest', xaxis=xaxis, dsmode=dsmode, color=0.0)
         except NotImplementedError as e:
             # This happens if we can't get text in/out or key from a trace source
             logging.info("Couldn't plot t-statistic; error message:%s" % e)
-            pass
         finally:
             self.setPersistance(initialPersist)
+            if progress_bar is not None:
+                progress_bar.close()
 
     def processTraces(self):
         self.resetTraceLimits()
