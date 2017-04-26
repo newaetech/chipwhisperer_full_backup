@@ -79,15 +79,20 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
             lastTrace = -1
             lastPoint = -1
 
-        #traceRange = self.findParam('tracerng').getValue()
+        mintrace = min(self.getPlotList()[0])
+        maxtrace = max(self.getPlotList()[0])
+
+        tnumstr = "%d - %d"%(max(0, mintrace), min(lastTrace, (maxtrace+1) if maxtrace >= 0 else 7))
+
+
         #self.findParam('tracerng').setLimits((0, lastTrace))
-        #self.findParam('tracerng').setValue((max(0, traceRange[0]), min(lastTrace, traceRange[1] if traceRange[1] >= 0 else 7)))
-        self.findParam('tracecmd').setValue("0")
+        #self.findParam('tracerng').setValue(
+        self.findParam('tracecmd').setValue(tnumstr)
         self.findParam('pointrng').setLimits((0, lastPoint))
         self.findParam('pointrng').setValue((0, lastPoint))
 
-        mintrace = min(self.getPlotList())
-        maxtrace = max(self.getPlotList())
+        mintrace = min(self.getPlotList()[0])
+        maxtrace = max(self.getPlotList()[0])
 
         self.findParam(['tstat', 'range']).setLimits((0, lastTrace))
         self.findParam(['tstat', 'range']).setValue((max(0, mintrace), min(lastTrace, maxtrace) if maxtrace >= 0 else 7))

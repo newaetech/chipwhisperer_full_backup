@@ -344,7 +344,7 @@ class GraphWidget(QWidget):
         if hasattr(self.pw, 'setDownsampling'):
             self.pw.setDownsampling(ds=enableds, auto=True, mode=dsmode)
 
-        if color:
+        if color is not None:
             pen = pg.mkPen(color)
 
         if pen is None:
