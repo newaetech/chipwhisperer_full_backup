@@ -20,8 +20,8 @@ CFLAGS +=   -mthumb -mfloat-abi=soft -ffunction-sections
 CPPFLAGS += -mthumb -mfloat-abi=soft -ffunction-sections
 ASFLAGS +=  -mthumb -mfloat-abi=soft -ffunction-sections
 
-CDEFS   += -DSTM32F051R8TX -DSTM32F0 -DSTM32 -DDEBUG
-CPPDEFS += -DSTM32F051R8TX -DSTM32F0 -DSTM32 -DDEBUG
+CDEFS   += -DSTM32F071RBTX -DSTM32F0 -DSTM32 -DDEBUG
+CPPDEFS += -DSTM32F071RBTX -DSTM32F0 -DSTM32 -DDEBUG
 
 LDFLAGS += -T $(HALPATH)/stm32f0/LinkerScript.ld -Wl,--gc-sections -lm
 LDFLAGS += -mthumb -mcpu=cortex-m0 
