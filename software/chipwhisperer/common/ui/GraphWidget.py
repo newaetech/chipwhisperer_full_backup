@@ -327,9 +327,7 @@ class GraphWidget(QWidget):
         if not self.persistant:
             self.pw.clear()
 
-        if color is not None:
-            self.acolor = color
-        elif self.persistant and self.autocolor:
+        if self.persistant and self.autocolor:
             nc = (self.acolor + 1) % 8
             self.acolor = nc
         else:
@@ -345,6 +343,9 @@ class GraphWidget(QWidget):
 
         if hasattr(self.pw, 'setDownsampling'):
             self.pw.setDownsampling(ds=enableds, auto=True, mode=dsmode)
+
+        if color:
+            pen = pg.mkPen(color)
 
         if pen is None:
             pen = pg.mkPen(self.acolor)
