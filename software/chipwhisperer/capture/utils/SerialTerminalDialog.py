@@ -183,14 +183,14 @@ class SerialTerminalDialog(QtFixes.QDialog):
             return
 
         while bavail > 0:
-            s = self.driver.terminal_read(bavail)
-            if len(s) > 0:
+            data = self.driver.terminal_read(bavail)
+            for s in data:
                 if s[0] == 'out':
                     self.addTextOut(s[1], color=Qt.blue)
                 else:
                     self.addTextOut(s[1])
             QCoreApplication.processEvents()
-            bavail = self.driver.inWaiting()
+            bavail = self.driver.terminal_inWaiting()
 
     def handleConButton(self):
         if self.conPB.isChecked():

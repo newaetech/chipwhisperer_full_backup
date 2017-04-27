@@ -207,7 +207,7 @@ class SimpleSerial(TargetTemplate):
                 data = self.ser.read(2, timeout=500)
                 if len(data) > 1:
                     if data[0] != 'z':
-                        logging.error("SimpleSerial: ACK ERROR, read %02x" % data[0])
+                        logging.error("SimpleSerial: ACK ERROR, read %02x" % ord(data[0]))
                 else:
                     logging.error("SimpleSerial: ACK ERROR, did not see anything - TIMEOUT possible!")
                 self.outstanding_ack = False

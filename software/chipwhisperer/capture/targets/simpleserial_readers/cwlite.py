@@ -65,7 +65,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
 
     def read(self, num=0, timeout=250):
         # Try to read from queue
-        ret = u''
+        ret = ''
         while num > 0 and self.target_count > 0:
             ret += self.target_queue.popleft()
             self.target_count -= 1
@@ -75,7 +75,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
             return ret
 
         # If we didn't get enough data, try to read more from the hardware
-        data = bytearray(self.cwlite_usart.read(num, timeout=timeout)).decode('latin-1')
+        data = str(bytearray(self.cwlite_usart.read(num, timeout=timeout)))
         for c in data:
             self.terminal_queue.append(['in', c])
             if self.terminal_count < self.max_queue_size:
@@ -85,22 +85,26 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         ret += data
         return ret
 
-    def inWaiting(self):
-        bwait =  self.cwlite_usart.inWaiting()
-        bbuf = self.target_count
+    def hardware_inWaiting(self):
+        bwait = self.cwlite_usart.inWaiting()
         if bwait == 127:
             logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
+        return bwait
+
+    def inWaiting(self):
+        bbuf = self.target_count
         if bbuf == self.max_queue_size:
             logging.warning('Python SimpleSerial reader buffer OVERRUN - data loss has occurred.')
-        return bwait + bbuf
+        return self.hardware_inWaiting() + bbuf
 
     def flush(self):
-        waiting = self.inWaiting()
+        waiting = self.hardware_inWaiting()
         while waiting > 0:
             self.cwlite_usart.read(waiting)
-            waiting = self.inWaiting()
+            waiting = self.hardware_inWaiting()
         #self.terminal_queue.clear()
         self.target_queue.clear()
+        self.target_count = 0
 
     def flushInput(self):
         self.flush()
@@ -113,7 +117,7 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         # Try to read from queue
         ret = []
         while num > 0 and self.terminal_count > 0:
-            ret += self.terminal_queue.popleft()
+            ret.append(self.terminal_queue.popleft())
             self.terminal_count -= 1
             num -= 1
 
@@ -121,24 +125,23 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
             return ret
 
         # If we didn't get enough data, try to read more from the hardware
-        data = bytearray(self.cwlite_usart.read(num, timeout=timeout)).decode('latin-1')
+        data = self.cwlite_usart.read(num, timeout=timeout)
+        data = bytearray(data)
+        data = str(data)
         for c in data:
-            self.target_queue.append(['in', c])
+            self.target_queue.append(str(c))
             if self.target_count < self.max_queue_size:
                 self.target_count += 1
             else:
                 self.target_count.popleft()
-        ret += data
+            ret.append(['in', c])
         return ret
 
     def terminal_inWaiting(self):
-        bwait =  self.cwlite_usart.inWaiting()
         bbuf = self.terminal_count
-        if bwait == 127:
-            logging.warning('SAM3U Serial buffers OVERRUN - data loss has occurred.')
         if bbuf == self.max_queue_size:
             logging.warning('Python SimpleSerial reader buffer OVERRUN - data loss has occurred.')
-        return bwait + bbuf
+        return self.hardware_inWaiting() + bbuf
 
     def close(self):
         pass
