@@ -52,7 +52,7 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         self.terminal_queue = collections.deque()
         self.terminal_count = 0
 
-        self.max_queue_size = 100
+        self.max_queue_size = 384
 
     def selectionChanged(self):
         pass
@@ -141,7 +141,6 @@ class SimpleSerialTemplate(Parameterized, Plugin):
 
         Returns:
             None
-
         """
         pass
 
@@ -161,6 +160,15 @@ class SimpleSerialTemplate(Parameterized, Plugin):
 
         Returns:
             A list of ['in'/'out', char] pairs
+        """
+        pass
+
+    def terminal_flush(self):
+        """
+        Remove all data waiting for the terminal. Don't remove data currently waiting in the hardware.
+
+        Returns:
+            None
         """
         pass
 

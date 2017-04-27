@@ -102,7 +102,6 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
         while waiting > 0:
             self.cwlite_usart.read(waiting)
             waiting = self.hardware_inWaiting()
-        #self.terminal_queue.clear()
         self.target_queue.clear()
         self.target_count = 0
 
@@ -136,6 +135,10 @@ class SimpleSerial_ChipWhispererLite(SimpleSerialTemplate):
                 self.target_count.popleft()
             ret.append(['in', c])
         return ret
+
+    def terminal_flush(self):
+        self.terminal_queue.clear()
+        self.terminal_count = 0
 
     def terminal_inWaiting(self):
         bbuf = self.terminal_count

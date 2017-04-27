@@ -160,7 +160,7 @@ class SimpleSerial(TargetTemplate):
         self.ser.flush()
         self.ser.write("v\n")
         t_ms = ver = self.findParam(['proto', 'timeout']).getValue()
-        data = self.ser.read(2, timeout=t_ms)
+        data = self.ser.read(4, timeout=t_ms)
 
         if len(data) > 1 and data[0] == 'z':
             self.protver = '1.1'
@@ -204,7 +204,7 @@ class SimpleSerial(TargetTemplate):
         if self.protver == '1.1':
             if self.outstanding_ack:
                 # TODO - Should be user-defined maybe
-                data = self.ser.read(2, timeout=500)
+                data = self.ser.read(4, timeout=500)
                 if len(data) > 1:
                     if data[0] != 'z':
                         logging.error("SimpleSerial: ACK ERROR, read %02x" % ord(data[0]))
