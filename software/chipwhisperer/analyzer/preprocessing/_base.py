@@ -57,8 +57,11 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         self.register()
         if __debug__: logging.debug('Created: ' + str(self))
 
-    def updateScript(self, ignored=None):
-        pass
+        #Old attribute dict
+        self._attrdict = None
+
+    def updateScript(self, _=None):
+        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
 
     def getEnabled(self):
         """Return if it is enable or not"""
@@ -113,6 +116,28 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def numPoints(self):
         return self._traceSource.numPoints()
+
+    def attrSettings(self):
+        """Return user-added attributes, used in determining cache settings"""
+
+        if self.__dict__ == self._attrdict:
+            return self._attrdict_trimmed
+
+        self._attrdict = self.__dict__.copy()
+        attrdict = self.__dict__.copy()
+
+        del attrdict["_attrdict"]
+        if hasattr(attrdict, "_attrdict_trimmed"): del attrdict["_attrdict_trimmed"]
+        del attrdict["runScriptFunction"]
+        del attrdict["sigTracesChanged"]
+        del attrdict["_smartstatements"]
+        del attrdict["_traceSource"]
+        attrdict["params"] = str(attrdict["params"])
+        del attrdict["scriptsUpdated"]
+        del attrdict["updateDelayTimer"]
+
+        self._attrdict_trimmed = attrdict
+        return self._attrdict_trimmed
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
