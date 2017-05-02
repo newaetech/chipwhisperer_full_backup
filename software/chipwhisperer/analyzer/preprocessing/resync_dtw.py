@@ -25,11 +25,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-
-import numpy as np
-import time
-import pprofile
-
 from ._base import PreprocessingBase
 from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
 
