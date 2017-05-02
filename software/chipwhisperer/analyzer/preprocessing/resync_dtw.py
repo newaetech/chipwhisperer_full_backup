@@ -25,18 +25,17 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
+
 import numpy as np
+import time
+import pprofile
 
-from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
+from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
 
-
-class ResyncSAD(PreprocessingBase):
-    _name = "Resync: Sum-of-Difference"
-    _description = "Minimizes the 'Sum of Absolute Difference' (SAD), also known as 'Sum of Absolute Error'. Uses "\
-                  "a portion of one of the traces as the 'reference'. This reference is then slid over the 'input "\
-                  "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
-                  "as the shift amount for that trace."
+class ResyncDTW(PreprocessingBase):
+    _name = "Resync: Dynamic Time Warp"
+    _description = "Aligns traces to match a reference trace using the Fast Dynamic Time Warp algorithm."
 
     def __init__(self, traceSource=None):
         PreprocessingBase.__init__(self, traceSource)
@@ -49,102 +48,43 @@ class ResyncSAD(PreprocessingBase):
 
         self.params.addChildren([
             {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
-            {'name':'Reference Points', 'key':'refpts', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"],
-                                                                     'action':self.updateScript, 'value':(0, 0), 'default':(0, 0)},
-
-            {'name':'Input Window', 'key':'windowpt', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"],
-                                                                     'action':self.updateScript, 'value':(0, 0), 'default':(0, 0)},
-            # {'name':'Valid Limit', 'type':'float', 'value':0, 'step':0.1, 'limits':(0, 10), 'set':self.setValidLimit},
-            # {'name':'Output SAD (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputSad}
+            {'name':'Radius', 'key':'radius', 'type':'int', 'value':3}
         ])
         self.updateScript()
-        self.updateLimits()
-        self.sigTracesChanged.connect(self.updateLimits)
-
-    def updateLimits(self):
-        if self._traceSource:
-            self.findParam('refpts').setLimits((0, self._traceSource.numPoints()-1))
-            self.findParam('windowpt').setLimits((0, self._traceSource.numPoints()-1))
 
     def updateScript(self, _=None):
         self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+        self.addFunction("init", "setReference", "rtraceno=%d" % (self.findParam('reftrace').getValue()))
 
-        refpt = self.findParam('refpts').getValue()
-        windowpt = self.findParam('windowpt').getValue()
-        windowpt = (min(windowpt[0],refpt[0]), max(windowpt[1],refpt[1]))
-        self.findParam('windowpt').setValue(windowpt, blockAction=True)
-
-        self.addFunction("init", "setReference", "rtraceno=%d, refpoints=(%d,%d), inputwindow=(%d,%d)" %
-                         (self.findParam('reftrace').getValue(), refpt[0], refpt[1], windowpt[0], windowpt[1]))
-
-        self.updateLimits()
-
-    def setReference(self, rtraceno=0, refpoints=(0, 0), inputwindow=(0, 0)):
+    def setReference(self, rtraceno=0):
         self.rtrace = rtraceno
-        self.wdStart = inputwindow[0]
-        self.wdEnd = inputwindow[1]
-        self.ccStart = refpoints[0]
-        self.ccEnd = refpoints[1]
-        self.init()
-
-    def setOutputSad(self, enabled):
-        self.debugReturnSad = enabled
    
     def getTrace(self, n):
-        if self.enabled:
-            trace = self._traceSource.getTrace(n)
-            if trace is None:
-                return None
-            sad = self.findSAD(trace)
-            
-            if self.debugReturnSad:
-                return sad
-            
-            if len(sad) == 0:
-                return None            
-            
-            newmaxloc = np.argmin(sad)
-            maxval = min(sad)
-            #if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
-            #    return None
-            
-            if maxval > self.maxthreshold:
-                return None
-            
-            diff = newmaxloc-self.refmaxloc
-            if diff < 0:
-                trace = np.append(np.zeros(-diff), trace[:diff])
-            elif diff > 0:
-                trace = np.append(trace[diff:], np.zeros(diff))
-            return trace
-        else:
+        if not self.enabled:
             return self._traceSource.getTrace(n)
-   
-    def init(self):
-        try:
-            self.calcRefTrace(self.rtrace)
-        #Probably shouldn't do this, but deals with user enabling preprocessing
-        #before trace management setup
-        except ValueError:
-            pass
+
+        trace = self._traceSource.getTrace(n)
+        ref_trace = self._traceSource.getTrace(self.rtrace)
+        if trace is None or ref_trace is None:
+            return None
+
+        aligned = self.alignTraces(ref_trace, trace)
+        return aligned
         
-    def findSAD(self, inputtrace):
-        reflen = self.ccEnd-self.ccStart
-        sadlen = self.wdEnd-self.wdStart
-        sadarray = np.empty(sadlen-reflen)
-        
-        for ptstart in range(self.wdStart, self.wdEnd-reflen):
-            #Find SAD        
-            sadarray[ptstart-self.wdStart] = np.sum(np.abs(inputtrace[ptstart:(ptstart+reflen)] - self.reftrace))
-            
-        return sadarray
-        
-    def calcRefTrace(self, tnum):
-        if self.enabled == False:
-            return
-        
-        self.reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
-        sad = self.findSAD(self._traceSource.getTrace(tnum))
-        self.refmaxloc = np.argmin(sad)
-        self.refmaxsize = min(sad)
-        self.maxthreshold = np.mean(sad)
+    def alignTraces(self, ref, trace):
+        N = self._traceSource.numPoints()
+        r = self.findParam('radius').getValue()
+        #try:
+        dist, path = fastdtw(ref, trace, radius=r, dist=None)
+        #except:
+        #    return None
+        px = [x for x, y in path]
+        py = [y for x, y in path]
+        n = [0] * N
+        s = [0.0] * N
+        for x, y in path:
+            s[x] += trace[y]
+            n[x] += 1
+
+        ret = [s[i] / n[i] for i in range(N)]
+        return ret
