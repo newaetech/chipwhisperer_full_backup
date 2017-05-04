@@ -27,6 +27,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 import collections
+import logging
 
 class SimpleSerialTemplate(Parameterized, Plugin):
 
@@ -38,6 +39,11 @@ class SimpleSerialTemplate(Parameterized, Plugin):
     2. A buffer for sent and received data to go to the serial terminal. This buffer contains ['in'/'out', char] pairs.
     These two structures are queues with a fixed maximum size: when they overflow, the oldest data must be removed
     from the queues.
+
+    Note that child classes should only need to implement the following:
+    - hw_read()
+    - hw_write()
+    - hw_in_waiting()
     """
 
     _name= 'Simple Serial Reader'
@@ -70,7 +76,7 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         self.connectStatus.setValue(False)
 
     def flushInput(self):
-        pass
+        self.flush()
 
     def write(self, string):
         """
@@ -87,7 +93,17 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             None
         """
-        pass
+
+        # Write to hardware
+        self.hardware_write(string)
+
+        # Update terminal buffer
+        for c in string:
+            self.terminal_queue.append(['out', c])
+            if self.terminal_count < self.max_queue_size:
+                self.terminal_count += 1
+            else:
+                self.terminal_queue.popleft()
 
     def read(self, num=0, timeout=250):
         """
@@ -107,7 +123,27 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             String of received data (possibly shorter than num characters)
         """
-        return None
+
+        # Try to read from queue
+        ret = ''
+        while num > 0 and self.target_count > 0:
+            ret += self.target_queue.popleft()
+            self.target_count -= 1
+            num -= 1
+
+        if num == 0:
+            return ret
+
+        # If we didn't get enough data, try to read more from the hardware
+        data = str(bytearray(self.hardware_read(num, timeout=timeout)))
+        for c in data:
+            self.terminal_queue.append(['in', c])
+            if self.terminal_count < self.max_queue_size:
+                self.terminal_count += 1
+            else:
+                self.terminal_queue.popleft()
+        ret += data
+        return ret
 
     def flush(self):
         """
@@ -116,7 +152,12 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             None
         """
-        pass
+        waiting = self.hardware_inWaiting()
+        while waiting > 0:
+            self.hardware_read(waiting)
+            waiting = self.hardware_inWaiting()
+        self.target_queue.clear()
+        self.target_count = 0
 
     def inWaiting(self):
         """
@@ -127,7 +168,10 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             int: the number of bytes waiting to be read
         """
-        pass
+        bbuf = self.target_count
+        if bbuf == self.max_queue_size:
+            logging.warning('Python SimpleSerial reader buffer OVERRUN - data loss has occurred.')
+        return self.hardware_inWaiting() + bbuf
 
     def terminal_write(self, string):
         """
@@ -142,7 +186,8 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             None
         """
-        pass
+        # Write to hardware
+        self.hardware_write(string)
 
     def terminal_read(self, num=0, timeout=250):
         """
@@ -161,7 +206,29 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             A list of ['in'/'out', char] pairs
         """
-        pass
+
+        # Try to read from queue
+        ret = []
+        while num > 0 and self.terminal_count > 0:
+            ret.append(self.terminal_queue.popleft())
+            self.terminal_count -= 1
+            num -= 1
+
+        if num == 0:
+            return ret
+
+        # If we didn't get enough data, try to read more from the hardware
+        data = self.hardware_read(num, timeout=timeout)
+        data = bytearray(data)
+        data = str(data)
+        for c in data:
+            self.target_queue.append(str(c))
+            if self.target_count < self.max_queue_size:
+                self.target_count += 1
+            else:
+                self.target_queue.popleft()
+            ret.append(['in', c])
+        return ret
 
     def terminal_flush(self):
         """
@@ -170,7 +237,9 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             None
         """
-        pass
+
+        self.terminal_queue.clear()
+        self.terminal_count = 0
 
     def terminal_inWaiting(self):
         """
@@ -181,4 +250,45 @@ class SimpleSerialTemplate(Parameterized, Plugin):
         Returns:
             int: the number of bytes waiting to be read
         """
-        pass
+
+        bbuf = self.terminal_count
+        if bbuf == self.max_queue_size:
+            logging.warning('Python SimpleSerial reader buffer OVERRUN - data loss has occurred.')
+        return self.hardware_inWaiting() + bbuf
+
+    def hardware_inWaiting(self):
+        """
+        Check how many bytes are in waiting on the device's hardware buffer.
+
+        This function needs to be implemented in child classes.
+
+        Returns:
+            int: number of bytes waiting to be read
+        """
+        raise NotImplementedError
+
+    def hardware_write(self, string):
+        """
+        Write a string to the target.
+
+        This function needs to be implemented in child classes.
+
+        Returns:
+            None
+        """
+        raise NotImplementedError
+
+    def hardware_read(self, num, timeout=250):
+        """
+        Read a number of bytes from the hardware.
+
+        This function needs to be implemented in child classes.
+
+        Args:
+            num: The number of bytes to be read. If 0, read all data available.
+            timeout: How long to wait before returning, in ms. If 0, block until data received.
+
+        Returns:
+            String of received data (possibly shorter than num characters)
+        """
+        raise NotImplementedError
