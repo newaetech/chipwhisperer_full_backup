@@ -170,6 +170,7 @@ class SimpleSerial(TargetTemplate):
             logging.info("SimpleSerial: protocol V1.0 detected")
 
     def init(self):
+        self.ser.flush()
         ver = self.findParam(['proto', 'ver']).getValue()
         if ver == 'auto':
             self.getVersion()
