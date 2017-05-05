@@ -11,6 +11,7 @@
 #define STATE_IDLE   0
 #define STATE_PT     1
 #define STATE_KEY    2
+#define STATE_EXP    3
 
 static const char hex_lookup[16] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -57,7 +58,7 @@ void simpleserial_decode(uint8_t* ascii, uint8_t* data, uint8_t size)
 	}
 }
 
-int simpleserial_get(uint8_t* input, uint8_t* key, uint8_t size_input, uint8_t size_key)
+int simpleserial_get(uint8_t* input, uint8_t* key, uint8_t* exp, uint8_t size_input, uint8_t size_key)
 {
 	// Make a buffer for the incoming ASCII chars
 	char ascii_buffer[ASCII_LENGTH];
@@ -74,7 +75,7 @@ int simpleserial_get(uint8_t* input, uint8_t* key, uint8_t size_input, uint8_t s
 
 		if(state == STATE_IDLE)
 		{
-			// If we're in idle mode, check for 'k' or 'p' to break us out
+			// If we're in idle mode, check for 'k', 'p', or 't' to break us out
 			// Any other character will fall through and return
 			if(ascii_buffer[ascii_pos] == 'k')
 			{
@@ -88,11 +89,17 @@ int simpleserial_get(uint8_t* input, uint8_t* key, uint8_t size_input, uint8_t s
 				ascii_pos++;
 				continue;
 			}
+			else if(ascii_buffer[ascii_pos] == 't')
+			{
+				state = STATE_PT;
+				ascii_pos++;
+				continue;
+			}
 		}
 		else // state == STATE_PT or state == STATE_KEY
 		{
 			uint8_t length_limit;
-			if(state == STATE_PT)
+			if(state == STATE_PT || state == STATE_EXP)
 				length_limit = size_input;
 			else // STATE_KEY
 				length_limit = size_key;
@@ -119,19 +126,24 @@ int simpleserial_get(uint8_t* input, uint8_t* key, uint8_t size_input, uint8_t s
 				if(state == STATE_PT)
 				{
 					simpleserial_decode(ascii_buffer, input, size_input);
-					return 1;
+					return ss_get_enc;
 				}
-				else // state == STATE_KEY
+				else if(state == STATE_KEY)
 				{
 					simpleserial_decode(ascii_buffer, key, size_key);
-					return 0;
+					return ss_get_ok;
+				}
+				else // state == STATE_EXP
+				{
+					simpleserial_decode(ascii_buffer, exp, size_input);
+					return ss_get_ok;
 				}
 			}
 		}
 	
 		// If we get here, something was wrong with the message
 		// (Could be a message like "x\n")
-		return 0;
+		return ss_get_bad;
 	}
 }
 
@@ -147,4 +159,12 @@ void simpleserial_put(uint8_t* output, uint8_t size)
 	{
 		putchar(ascii_buffer[ascii_pos]);
 	}
+}
+// Acknowledge a command by sending "z00\n"
+void simpleserial_ack(void)
+{
+	putchar('z');
+	putchar('0');
+	putchar('0');
+	putchar('\n');
 }

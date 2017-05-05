@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <8052.h>
 #include <stdint.h>
+#include <setjmp.h>
 
 // Useful things
 #include "utility.h"
@@ -58,13 +59,13 @@ void main(void)
 			main_glitchloop();
 			
 		case MODE_XOR:
-			main_xor();
+			main_ss(SS_XOR);
 			
 		case MODE_AES:
-			main_aes();
+			main_ss(SS_AES);
 			
 		case MODE_TEA:
-			main_tea();
+			main_ss(SS_TEA);
 			
 		// Default:
 		// Fall through to the end

@@ -1,5 +1,5 @@
 // tea.c
-// Use SimpleSerial protocol and encrypt with TEA (ECB)
+// Implementation of crypto with TEA (ECB)
 
 // test:
 // k000102030405060708090A0B0C0D0E0F  \r
@@ -12,9 +12,6 @@
 #include <stdint.h>
 #include <8052.h>
 
-#include "simpleserial.h"
-#include "utility.h"
-
 #define TEA_BLOCK_SIZE 8
 #define TEA_KEY_SIZE   16
 
@@ -23,7 +20,8 @@ void tea_encrypt(uint8_t* v, uint8_t* k)
 	uint32_t vp[2];
 	uint32_t kp[4];
 	
-    uint32_t sum=0, i, j;                             /* set up */
+	uint8_t i, j;
+    uint32_t sum=0;                             /* set up */
     uint32_t delta=0x9e3779b9;                     /* a key schedule constant */
 	
 	// Move 8 bit arrays into 32 bits
@@ -65,23 +63,16 @@ void tea_encrypt(uint8_t* v, uint8_t* k)
 	}
 }
 
-void main_tea(void) 
+void tea_auth(uint8_t* v, uint8_t* k, uint8_t* e)
 {
-	// Arrays for input (plaintext) and key
-	uint8_t input[8];
-	uint8_t key  [16];
-	
-	// Let the SimpleSerial module fill in the input and key arrays
-	while(1)
+	uint8_t res = 0x10;
+	uint8_t i;
+	tea_encrypt(v, k);
+	for(i = 0; i < TEA_BLOCK_SIZE; i++)
 	{
-		// Read data from SimpleSerial
-		if(simpleserial_get(input, key, TEA_BLOCK_SIZE, TEA_KEY_SIZE))
-		{
-			// We're done reading an input: encrypt in place and send back
-			trigger_high();
-			tea_encrypt(input, key);
-			trigger_low();
-			simpleserial_put(input, TEA_BLOCK_SIZE);
-		}
+		if(v[i] != e[i])
+			res = 0;
+		v[i] = 0;
 	}
+	v[0] = res;
 }

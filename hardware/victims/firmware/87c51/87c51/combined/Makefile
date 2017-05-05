@@ -1,6 +1,6 @@
 CC = sdcc
-CC_FLAGS = -mmcs51 --std-sdcc99
-LD_FLAGS = --iram-size 128 --xram-size 0 --code-size 16384 --out-fmt-ihx
+CC_FLAGS = -mmcs51 --std-sdcc99 --opt-code-speed
+LD_FLAGS = --iram-size 256 --xram-size 0 --code-size 8192 --out-fmt-ihx
 SHARED_FLAGS = --stack-auto
 
 SRC_MAIN = main.c
