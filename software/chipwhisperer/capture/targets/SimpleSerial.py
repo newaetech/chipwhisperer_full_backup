@@ -138,6 +138,8 @@ class SimpleSerial(TargetTemplate):
     def setConnection(self, con):
         self.ser = con
         self.params.append(self.ser.getParams())
+
+        self.ser.connectStatus.setValue(False)
         self.ser.connectStatus.connect(self.connectStatus.emit)
         self.ser.selectionChanged()
 
