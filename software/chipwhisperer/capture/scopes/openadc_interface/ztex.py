@@ -18,6 +18,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
+
+raise DeprecationWarning("ChipWhisperer Rev2 is no longer supported")
+
 import logging
 import sys
 import chipwhisperer.capture.scopes._qt as openadc_qt

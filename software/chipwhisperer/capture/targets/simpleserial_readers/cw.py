@@ -149,7 +149,7 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
         #    self.debugLog(lastTx, lastRx)
         pass
 
-    def write(self, string):
+    def hardware_write(self, string):
         for s in string:
             if isinstance(string, basestring):
                 d = bytearray(s, 'latin-1')
@@ -160,13 +160,13 @@ class SimpleSerial_ChipWhisperer(SimpleSerialTemplate):
 
             self.debugInfo(s)
 
-    def inWaiting(self):
+    def hardware_inWaiting(self):
         resp = self.oa.sendMessage(self.CODE_READ, self.ADDR_LEN, Validate=False, maxResp=2)
         resp = resp[1]
         # print "%d waiting"%resp
         return resp
 
-    def read(self, num=0, timeout=100):
+    def hardware_read(self, num=0, timeout=100):
         waiting = self.inWaiting()
         data = bytearray()
 

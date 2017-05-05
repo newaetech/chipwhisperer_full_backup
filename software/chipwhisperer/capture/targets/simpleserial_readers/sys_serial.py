@@ -52,17 +52,14 @@ class SimpleSerial_serial(SimpleSerialTemplate):
     def debugInfo(self, lastTx=None, lastRx=None, logInfo=None):
         pass
 
-    def write(self, string):
-        return self.ser.write(string)
+    def hardware_write(self, string):
+        return self.ser.write(bytearray(string.encode('utf-8')))
 
-    def read(self, num=0, timeout=100):
+    def hardware_read(self, num, timeout=100):
         return self.ser.read(num)
 
-    def flush(self):
-        self.ser.flushInput()
-
-    def flushInput(self):
-        self.ser.flushInput()
+    def hardware_inWaiting(self):
+        return self.ser.in_waiting
 
     def close(self):
         if self.ser is not None:

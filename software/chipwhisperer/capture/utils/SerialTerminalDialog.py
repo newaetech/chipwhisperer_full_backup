@@ -172,21 +172,25 @@ class SerialTerminalDialog(QtFixes.QDialog):
         self.addTextOut(toSend, Qt.blue)
         
         if self.timerRead.isActive():
-            self.driver.write(toSend)
+            self.driver.terminal_write(toSend)
 
     def checkRead(self):
         try:
-            bavail = self.driver.inWaiting()
+            bavail = self.driver.terminal_inWaiting()
         except IOError, e:
             logging.error("IOError in read (%s), serial port disabled"%str(e))
             self.tryDis()
             return
 
         while bavail > 0:
-            s = self.driver.read(bavail)
-            self.addTextOut(s)
+            data = self.driver.terminal_read(bavail)
+            for s in data:
+                if s[0] == 'out':
+                    self.addTextOut(s[1], color=Qt.blue)
+                else:
+                    self.addTextOut(s[1])
             QCoreApplication.processEvents()
-            bavail = self.driver.inWaiting()
+            bavail = self.driver.terminal_inWaiting()
 
     def handleConButton(self):
         if self.conPB.isChecked():
@@ -202,6 +206,7 @@ class SerialTerminalDialog(QtFixes.QDialog):
 
     def _tryCon(self):
         self.driver = self.cwAPI.getTarget().ser
+        self.driver.terminal_flush()
         #self.driver.con()
 
         self.textIn.setEnabled(True)
