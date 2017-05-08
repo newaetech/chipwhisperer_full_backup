@@ -81,8 +81,12 @@ class AVRProgrammer(Programmer):
         self.avr.program(filename, memtype, verify)
     
     def close(self):
-        if self.avr is not None:
-            self.avr.enableISP(False)
+        try:
+            if self.avr is not None:
+                self.avr.enableISP(False)
+        except AttributeError as e:
+            logging.info("AVR programmer: could not disable ISP - USB might be disconnected!")
+            self.avr = None
 
 
 class XMEGAProgrammer(Programmer):
