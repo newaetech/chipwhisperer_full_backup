@@ -95,13 +95,13 @@ class ChipWhispererGlitch(Parameterized):
             else:
                 raise ValueError("Invalid ChipWhisperer Mode: %s" % cwtype)
 
-            if scope.cwFirmwareConfig.loader._release_mode != "debug":
+            if scope.getFWConfig().loader._release_mode != "debug":
 
-                if scope.cwFirmwareConfig.loader._release_mode == "builtin":
-                    filelike = scope.cwFirmwareConfig.loader._bsBuiltinData
+                if scope.getFWConfig().loader._release_mode == "builtin":
+                    filelike = scope.getFWConfig().loader._bsBuiltinData
                     zfile = zipfile.ZipFile(filelike)
-                elif scope.cwFirmwareConfig.loader._release_mode == "zipfile":
-                    fileloc = scope.cwFirmwareConfig.loader._bsZipLoc
+                elif scope.getFWConfig().loader._release_mode == "zipfile":
+                    fileloc = scope.getFWConfig().loader._bsZipLoc
                     if zipfile.is_zipfile(fileloc):
                         zfile = zipfile.ZipFile(fileloc, "r")
                     else:
@@ -110,7 +110,7 @@ class ChipWhispererGlitch(Parameterized):
                 else:
                     logging.warning('Partial Reconfiguration DISABLED: no PR data for FPGA')
                     zfile = None
-                    raise ValueError("Unknown FPGA mode: %s"%scope.cwFirmwareConfig.loader._release_mode)
+                    raise ValueError("Unknown FPGA mode: %s"%scope.getFWConfig().loader._release_mode)
 
                 if zfile:
                     self.glitchPR.load(zfile.open("%s-glitchwidth.p" % partialbasename))

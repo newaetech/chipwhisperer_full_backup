@@ -45,10 +45,11 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         self.ser = None
         self.dev = None
         self.scope = None
+        self.last_id = None
 
         self.getParams().addChildren([
             {'name':"CW Firmware Preferences", 'tip':"Configure ChipWhisperer FW Paths", 'type':"menu", "action":lambda _:self.getFwLoaderConfigGUI().show()}, # Can' use Config... name with MacOS
-            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"menu", "action":lambda _:self.cwFirmwareConfig.loadRequired()},
+            {'name':"Download CW Firmware", 'tip':"Download Firmware+FPGA To Hardware", 'type':"menu", "action":lambda _:self.cwFirmwareConfig[self.last_id].loadRequired()},
         ])
 
         if (openadc_qt is None) or (usb is None):
@@ -59,8 +60,10 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
                 missingInfo += " usb"
             raise ImportError("Needed imports for ChipWhisperer missing: %s" % missingInfo)
         else:
-            self.cwFirmwareConfig = FWLoaderConfig(CWLite_Loader())
-            self.cwFirmwareConfig1200 = FWLoaderConfig(CW1200_Loader())
+            self.cwFirmwareConfig = {
+                0xACE2:FWLoaderConfig(CWLite_Loader()),
+                0xACE3:FWLoaderConfig(CW1200_Loader())
+            }
             self.scope = oadcInstance
 
     def con(self):
@@ -73,15 +76,16 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             except IOError:
                 raise Warning('Could not connect to "%s". It may have been disconnected or is being used by another tool.' % self.getName())
 
+            self.last_id = found_id
+
             if (found_id == 0xACE3):
+                # TODO: is this warning needed?
                 logging.warning('Found CW1200. FPGA dialog being switched, if you made changes they are lost. '
                                 'If you need a different bitstream loaded, edit the dialog now and reconnect.')
 
-                self.cwFirmwareConfig = self.cwFirmwareConfig1200
-
-            self.cwFirmwareConfig.setInterface(self.dev.fpga)
+            self.getFWConfig().setInterface(self.dev.fpga)
             try:
-                self.cwFirmwareConfig.loadRequired()
+                self.getFWConfig().loadRequired()
             except:
                 self.dev.dis()
                 self.dev.usbdev().close()
@@ -97,7 +101,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
 
     def dis(self):
         if self.ser is not None:
-            self.cwFirmwareConfig.setInterface(None)
+            self.getFWConfig().setInterface(None)
             self.scope.close()
             self.ser.close()
             self.ser = None
@@ -109,5 +113,8 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         if self.ser is not None:
             self.ser.close()
 
+    def getFWConfig(self):
+        return self.cwFirmwareConfig[self.last_id]
+
     def getFwLoaderConfigGUI(self):
-        return FWLoaderConfigGUI(self.cwFirmwareConfig, self.ser is not None)
+        return FWLoaderConfigGUI(self.getFWConfig(), self.ser is not None)
