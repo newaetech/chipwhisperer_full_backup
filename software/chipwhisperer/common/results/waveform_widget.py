@@ -72,12 +72,12 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         self.YDefault()
 
     def resetTraceLimits(self):
-        if self._traceSource:
+        # Workaround: if source is set to None, leave Traces To Plot as it is
+        if self._traceSource is None:
+            return
+        else:
             lastTrace = self._traceSource.numTraces()-1
             lastPoint = self._traceSource.numPoints()-1
-        else:
-            lastTrace = -1
-            lastPoint = -1
 
         mintrace = min(self.getPlotList()[0])
         maxtrace = max(self.getPlotList()[0])
@@ -179,6 +179,12 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
 
     def plotInputTrace(self, _=None):
         #print "Plotting %d-%d for points %d-%d"%(params[0].value(), params[1].value(), params[2].value(), params[3].value())
+
+        # Workaround: if source is set to None, don't plot anything
+        if self._traceSource is None:
+            self.clearPushed()
+            return
+
         initialPersist = self.persistant
         if not self.persistant:
             self.clearPushed()
