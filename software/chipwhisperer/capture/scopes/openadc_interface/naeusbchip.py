@@ -76,12 +76,9 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             except IOError:
                 raise Warning('Could not connect to "%s". It may have been disconnected or is being used by another tool.' % self.getName())
 
+            if found_id != self.last_id:
+                logging.info("Detected ChipWhisperer with USB ID %x - switching firmware loader" % found_id)
             self.last_id = found_id
-
-            if (found_id == 0xACE3):
-                # TODO: is this warning needed?
-                logging.warning('Found CW1200. FPGA dialog being switched, if you made changes they are lost. '
-                                'If you need a different bitstream loaded, edit the dialog now and reconnect.')
 
             self.getFWConfig().setInterface(self.dev.fpga)
             try:
@@ -114,7 +111,10 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
             self.ser.close()
 
     def getFWConfig(self):
-        return self.cwFirmwareConfig[self.last_id]
+        try:
+            return self.cwFirmwareConfig[self.last_id]
+        except KeyError as e:
+            raise Warning("No ChipWhisperer connected yet - can't download firmware")
 
     def getFwLoaderConfigGUI(self):
         return FWLoaderConfigGUI(self.getFWConfig(), self.ser is not None)
