@@ -25,7 +25,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import numpy as np
-
+import os.path
 from ._base import PreprocessingBase
 from chipwhisperer.common.api import CWCoreAPI
 
@@ -37,7 +37,6 @@ class CacheTraces(PreprocessingBase):
     _description = "Caches traces into giant file."
 
     def __init__(self, traceSource=None):
-
         #TODO: Where is project file?
         self.trace_cache_file = CWCoreAPI.CWCoreAPI.getInstance().project().getDataFilepath("tempcache.npy")['abs']
         self.tracehash_cache_file = CWCoreAPI.CWCoreAPI.getInstance().project().getDataFilepath("tempcachehash.npy")['abs']
@@ -70,8 +69,14 @@ class CacheTraces(PreprocessingBase):
 
         #Get number of trace + points, make cache now
         if self.cache_shape != (self.numTraces(), self.numPoints()):
-            self.trace_cache = np.memmap(self.trace_cache_file, dtype="float32", mode="r+", shape=(self.numTraces(), self.numPoints()))
-            self.tracehash_cache = np.memmap(self.tracehash_cache_file, dtype="int64", mode="r+", shape=(self.numTraces(), 1))
+
+            if os.path.isfile(self.trace_cache_file):
+                fmode = "r+"
+            else:
+                fmode = "w+"
+
+            self.trace_cache = np.memmap(self.trace_cache_file, dtype="float32", mode=fmode, shape=(self.numTraces(), self.numPoints()))
+            self.tracehash_cache = np.memmap(self.tracehash_cache_file, dtype="int64", mode=fmode, shape=(self.numTraces(), 1))
 
     def getTrace(self, n):
         """Get trace number n"""
