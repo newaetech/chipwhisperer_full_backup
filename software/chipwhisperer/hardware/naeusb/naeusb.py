@@ -90,7 +90,17 @@ class NAEUSB(object):
         """
 
         for id in idProduct:
-            dev = usb.core.find(idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend())
+            try:
+                # Connect to device (attempt #1)
+                dev = usb.core.find(idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend())
+            except usb.core.NoBackendError:
+                try:
+                    # An error in the previous one is often caused by Windows 64-bit not detecting the correct library, attempt to force this with paths
+                    # that often work so user isn't aware
+                    dev = usb.core.find(idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll"))
+                except usb.core.NoBackendError:
+                    raise IOError("Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
+
             foundId = id
 
             #Found something
