@@ -147,9 +147,14 @@ class ActiveTraceObserver(PassiveTraceObserver):
 
     @setupSetParam('Input')
     def setTraceSource(self, traceSource):
+        #Avoid doing processing when set to same value
+        if self._traceSource == traceSource:
+            return
+
         if self._traceSource:
             self._traceSource.sigTracesChanged.disconnect(self.processTraces)
         if traceSource:
             traceSource.sigTracesChanged.connect(self.processTraces)
         self._traceSource = traceSource
+
         self.processTraces()
