@@ -15,6 +15,9 @@ First time using ChipWhisperer? All of the documentation is available on the Wik
 * [Installing ChipWhisperer](https://wiki.newae.com/Installing_ChipWhisperer) if you're trying to set up this software package
 * [Tutorial B1](https://wiki.newae.com/Tutorial_B1_Building_a_SimpleSerial_Project) once everything is set up
 
+## GIT Source
+Note all development occurs on the [develop](https://github.com/newaetech/chipwhisperer/tree/develop) branch. If you are looking for bleeding edge it's NOT on master - we push each release (and possibly any critical changes) to master. This means that "master" always gives you the latest known-working branch, but there may be new features on the "develop" branch.
+
 ## Help!
 Stuck? If you need a hand, there are a few places you can ask for help:
 * The [NewAE Forum](https://www.newae.com/forum/) is full of helpful people that can point you in the right direction
