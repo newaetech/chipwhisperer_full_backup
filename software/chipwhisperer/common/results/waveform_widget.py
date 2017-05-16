@@ -46,7 +46,28 @@ class WaveFormWidget(GraphWidget, ResultsBase, ActiveTraceObserver, Plugin):
         self.params.addChildren([
             {'name':'Redraw after Each', 'type':'bool', 'value':False},
             #{'name':'Trace Range', 'key':'tracerng', 'type':'range', 'limits':(0, 0), 'value':(0, 0)},
-            {'name':'Trace(s) to Plot', 'key':'tracecmd', 'type':'str', 'value':'0'},
+            {'name':'Trace(s) to Plot', 'key':'tracecmd', 'type':'str', 'value':'0', 'help': '%namehdr%'+
+                     "Selects a trace or two to plot. You can specify ranges, individual traces, and colours. Example commands:\n" +
+                     " ==================== ========================================================== \n" +
+                     "  Plot Command          Result"
+                     "  0                     Plots trace #0\n"+
+                     "  0-10                  Plots trace #0 - #10 inclusive\n"+
+                     "  0, 2-5, 9             Plots trace #0, #2-5 inclusive, and #9\n"+
+                     "  0(r), 3-6(g), 22(b)   Plots trace #0 in red, #3-#6 in green, and #22 in blue\n"+
+                     "  2(#F005)              Plots trace #2 in red (RGB=F00) with Alpha of 0.3125\n"+
+                     "  3(#B0171F)            Plots trace #3 in 'india red'\n\n" +
+                     " ==================== ========================================================== \n" +
+                     "Colour strings are passed to pyqtgraph.mkPen as a string. This means you can specify the following:\n"+
+                     " =============== ========================================== \n" +
+                     "  Colour String    Description                             \n" +
+                     " =============== ========================================== \n" +
+                     "     c              One of  r, g, b, c, m, y, k, w         \n" +
+                     "     RGB            Hexadecimal string, may begin with #   \n" +
+                     "     RGBA           Hexadecimal string with alpha value    \n" +
+                     "     RRGGBB                                                \n" +
+                     "     RRGGBBAA                                              \n" +
+                     " =============== ========================================== \n"
+             },
             {'name':'Point Range', 'key':'pointrng', 'type':'rangegraph', 'limits':(0, 0), 'value':(0, 0), 'graphwidget':self},
             {'name':'Downsampling Mode', 'key':'dsmode', 'type':'list', 'values':{'None':None, 'Subsample':'subsample', 'Mean':'mean', 'Peak':'peak'},
                 'value':'peak', 'action':self.plotInputTrace},
