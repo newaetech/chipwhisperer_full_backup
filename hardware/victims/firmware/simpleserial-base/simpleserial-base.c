@@ -22,12 +22,13 @@
 
 #include "simpleserial.h"
 
-void get_key(uint8_t* k)
+uint8_t get_key(uint8_t* k)
 {
 	// Load key here
+	return 0x00;
 }
 
-void get_pt(uint8_t* pt)
+uint8_t get_pt(uint8_t* pt)
 {
 	/**********************************
 	* Start user-specific code here. */
@@ -43,11 +44,13 @@ void get_pt(uint8_t* pt)
 	/* End user-specific code here. *
 	********************************/
 	simpleserial_put('r', 16, pt);
+	return 0x00;
 }
 
-void reset(uint8_t* x)
+uint8_t reset(uint8_t* x)
 {
 	// Reset key here if needed
+	return 0x00;
 }
 
 int main(void)
@@ -65,7 +68,8 @@ int main(void)
 	putch('o');
 	putch('\n');
 	*/
-			
+		
+	simpleserial_init();		
 	simpleserial_addcmd('k', 16, get_key);
 	simpleserial_addcmd('p', 16, get_pt);
 	simpleserial_addcmd('x', 0, reset);
