@@ -84,13 +84,14 @@ def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
 def importModulesInPackage(path):
     resp = []
     normPath = (os.path.normpath(path).replace(".", "/"))
-    packages = util.getPyFiles(os.path.join(util.getRootDir(), normPath))
+    mod_dir = os.path.join(util.getRootDir(), normPath)
+    packages = util.getPyFiles(mod_dir)
     for package_name in packages:
         full_package_name = '%s.%s' % (path, package_name)
         try:
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
-            logtype = get_module_logtype(full_package_name)
+            logtype = get_module_logtype(mod_dir, package_name, full_package_name)
             logtype('Could not import module: ' + full_package_name + ": " + str(e))
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
 
@@ -128,7 +129,7 @@ def putInDict(items, instantiate, *args, **kwargs):
                 resp[item.getClassName()] = item
             loadedItems.append([str(c), True, "", ""])
         except Exception as e:
-            logtype = get_module_logtype(c)
+            logtype = get_class_logtype(c)
             logtype('Could not instantiate module ' + str(c) + ": " + str(e))
             loadedItems.append([str(c), False, str(e), traceback.format_exc()])
 
@@ -146,7 +147,25 @@ def module_reorder(resp):
     newresp.update(sorted(resp.items(), key=lambda t: t[0]))
     return newresp
 
-def get_module_logtype(name):
-    """Given a class or module name, returns the logging function that should be used for logging errors."""
-    #return logging.info
+def get_module_logtype(module_dir, module_name, module_full_name):
+    """Given a module name, returns the logging function that should be used for logging errors."""
+    logfunc = logging.info
+    with open(os.path.join(module_dir, module_name + ".py"), "r") as failedmodule:
+        modulestart = failedmodule.read(64)
+        if "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_ERROR" in modulestart:
+            logfunc = logging.error
+        elif "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN" in modulestart:
+            logfunc = logging.warn
+        elif "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_INFO" in modulestart:
+            logfunc = logging.info
+        elif "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_DEBUG" in modulestart:
+            logfunc = logging.debug
+
+    return logfunc
+
+def get_class_logtype(c):
+    """Given a class returns the logging function that should be used for logging errors."""
+    if hasattr(c, "HIGHLEVEL_CLASSLOAD_FAIL_FUNC"):
+        return c.HIGHLEVEL_CLASSLOAD_FAIL_FUNC
     return logging.debug
+
