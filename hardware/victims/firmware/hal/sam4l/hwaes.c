@@ -27,6 +27,9 @@ void aes_init(void)
     /* AES Mode */
     AESA->AESA_MODE = AESA_MODE_ENCRYPT | (AESA_MODE_CTYPE(0x0F)); /* Encrypt Mode, with all countermeasures */    
 	//AESA->AESA_MODE = AESA_MODE_ENCRYPT; /* Encrypt Mode, without countermeasures */   
+    
+    /* Setup random seed for countermeasures to work */
+    AESA->AESA_DRNGSEED = 0xDEADBEEF; //A very random number
         
 }
 
