@@ -90,7 +90,8 @@ def importModulesInPackage(path):
         try:
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
-            logging.info('Could not import module: ' + full_package_name + ": " + str(e))
+            logtype = get_module_logtype(full_package_name)
+            logtype('Could not import module: ' + full_package_name + ": " + str(e))
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
 
     files = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath), extension=True)
@@ -127,7 +128,8 @@ def putInDict(items, instantiate, *args, **kwargs):
                 resp[item.getClassName()] = item
             loadedItems.append([str(c), True, "", ""])
         except Exception as e:
-            logging.info('Could not instantiate module ' + str(c) + ": " + str(e))
+            logtype = get_module_logtype(c)
+            logtype('Could not instantiate module ' + str(c) + ": " + str(e))
             loadedItems.append([str(c), False, str(e), traceback.format_exc()])
 
     if len(resp) == 0:
@@ -143,3 +145,8 @@ def module_reorder(resp):
         del resp['None']
     newresp.update(sorted(resp.items(), key=lambda t: t[0]))
     return newresp
+
+def get_module_logtype(name):
+    """Given a class or module name, returns the logging function that should be used for logging errors."""
+    #return logging.info
+    return logging.debug
