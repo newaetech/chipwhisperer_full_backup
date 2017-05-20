@@ -50,15 +50,21 @@ try:
             super(PluginStatusDialog, self).__init__(len(loadedItems), 4, parent=parent)
             self.setWindowFlags(Qt.Window)
             self.setWindowTitle("Plugin Status")
-            self.setHorizontalHeaderLabels(["Module", "Enabled", "Error Message", "Details (full stack)"])
+            self.setHorizontalHeaderLabels(["Module", "Enabled", "Error Message", "Details"])
 
             for indx, itm in enumerate(loadedItems):
+                showstackpb = QPushButton("Stack Trace")
+                mbdia = QMessageBox(self, QMessageBox.Information, "Stack Trace")
+                mbdia.setText(itm[3])
+                showstackpb.clicked.connect(mbdia.show)
+
                 self.setItem(indx, 0, QTableWidgetItem(itm[0]))
                 self.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
                 self.setItem(indx, 2, QTableWidgetItem(itm[2]))
-                self.setItem(indx, 3, QTableWidgetItem(itm[3]))
+                if itm[1] == False:
+                    self.setCellWidget(indx, 3, showstackpb)
             for y in range(0, len(loadedItems)):
-                for x in (0,1,2,3):
+                for x in (0,1,2):
                     self.item(y, x).setFlags(self.item(y, x).flags() ^ Qt.ItemIsEditable)
 
             self.resize(950, 400)
