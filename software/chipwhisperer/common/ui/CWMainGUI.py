@@ -567,6 +567,9 @@ def makeApplication(name="Other", doDeleteLater=True):
     if name=="Other":
         QSettings().clear()
 
+    #Style sheet information we use
+    app.setStyleSheet("QMessageBox { messagebox-text-interaction-flags: 5; }");
+
     return app
 
 
