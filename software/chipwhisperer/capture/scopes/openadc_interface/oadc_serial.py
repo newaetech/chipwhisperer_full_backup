@@ -1,4 +1,5 @@
 # Authors: Colin O'Flynn
+# HIGHLEVEL_CLASSLOAD_FAIL_FUNC_DEBUG
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer

@@ -567,6 +567,17 @@ def makeApplication(name="Other", doDeleteLater=True):
     if name=="Other":
         QSettings().clear()
 
+    #Style sheet information we use
+    ss = """
+    QTabBar::tab:selected {
+         font: italic;
+    }
+
+    QMessageBox { messagebox-text-interaction-flags: 5; }
+
+    """
+    app.setStyleSheet(ss);
+
     return app
 
 
