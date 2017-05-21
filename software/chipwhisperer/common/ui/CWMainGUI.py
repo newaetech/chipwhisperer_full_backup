@@ -568,7 +568,15 @@ def makeApplication(name="Other", doDeleteLater=True):
         QSettings().clear()
 
     #Style sheet information we use
-    app.setStyleSheet("QMessageBox { messagebox-text-interaction-flags: 5; }");
+    ss = """
+    QTabBar::tab:selected {
+         font: italic;
+    }
+
+    QMessageBox { messagebox-text-interaction-flags: 5; }
+
+    """
+    app.setStyleSheet(ss);
 
     return app
 
