@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN
 # -*- coding: utf-8 -*-
 #
 # Copyright (c) 2013-2014, NewAE Technology Inc
