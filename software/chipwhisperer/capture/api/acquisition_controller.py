@@ -89,8 +89,8 @@ class AcquisitionController:
         if self.target:
             self.target.reinit()
 
-        if self.scope:
-            self.scope.arm()
+        ##if self.scope:
+        ##    self.scope.arm()
 
         if self.auxList:
             for aux in self.auxList:
@@ -104,6 +104,11 @@ class AcquisitionController:
             self.target.setModeEncrypt()
             self.target.loadEncryptionKey(self.key)
             self.target.loadInput(self.textin)
+
+        if self.scope:
+            self.scope.arm()
+
+        if self.target:
             # Load input, start encryption, get output
             self.targetDoTrace()
             self.sigNewTextResponse.emit(self.key, self.textin, self.textout, self.target.getExpected())
