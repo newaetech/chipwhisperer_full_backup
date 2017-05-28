@@ -140,7 +140,9 @@ class CPAProgressiveOneSubkey(object):
         if (pointRange[0] != 0):
             raise NotImplementedError("C-Accel only works with full point range on current version.")
 
-        npoints = np.shape(traces)[1]
+        #TODO: Captured traces seem to have extra point, this is temp fix as need to figure out why this is
+        #      happening!?
+        npoints = np.shape(traces)[1]+1
 
         if self.anstate is None:
             self.anstate = analysis_state_t(npoints, numtraces)
