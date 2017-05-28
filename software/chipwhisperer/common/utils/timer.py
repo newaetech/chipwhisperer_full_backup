@@ -58,14 +58,18 @@ class FakeQTimer(object):
 try:
     from PySide.QtCore import QTimer
 
-    if Parameter.usePyQtGraph:
-        class Timer(QTimer):
-            def flush(self):
-                if self.isActive():
-                    self.timeout.emit()
-                    self.stop()
-    else:
-        Timer = FakeQTimer
+    class PatchedQTimer(QTimer):
+        def flush(self):
+            if self.isActive():
+                self.timeout.emit()
+                self.stop()
+
+    def Timer():
+        if Parameter.usePyQtGraph:
+            return PatchedQTimer()
+        else:
+            return FakeQTimer()
+
 
 except ImportError:
     Timer = FakeQTimer
