@@ -63,7 +63,7 @@ except ImportError, ex1:
     ext = platform.system() in ('Windows', 'Microsoft') and '.dll' or '.so'
     try:
         fdir = os.path.dirname(__file__)
-        if platform.architecture() == '64bit':
+        if sys.maxsize > 2 ** 32:
             fname = 'aardvark_x64'
         else:
             fname = 'aardvark'

@@ -27,7 +27,7 @@
 
 import numpy as np
 import os
-import platform
+import sys
 from ctypes import *
 
 from ..algorithmsbase import AlgorithmsBase
@@ -102,14 +102,16 @@ class CPAProgressiveOneSubkey(object):
         dir = os.path.dirname(__file__)
         
         #Determine correct library to load for 64-bit vs. 32-bit
-        
+
+        is_64bits = sys.maxsize > 2 ** 32
+
         if os.name == 'nt':
-            if platform.architecture() == '64bit':                
+            if is_64bits:
                 libname = 'libcpa_x64.dll'
             else:
                 libname = 'libcpa.dll'
         elif os.name == 'posix':
-            if platform.architecture() == '64bit':
+            if is_64bits:
                 libname = 'libcpa_x64.so'
             else:
                 libname = 'libcpa.so'
