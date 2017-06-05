@@ -4,13 +4,13 @@ from setuptools import setup
 
 setup(
     name = 'chipwhisperer',
-    version = '3.4.2',
+    version = '3.4.3',
     description = "ChipWhisperer Side-Channel Analysis Tool",
     author = "Colin O'Flynn",
     author_email = 'coflynn@newae.com',
     license = 'GPLv3',
     url = 'http://www.ChipWhisperer.com',
-    download_url='https://github.com/newaetech/chipwhisperer/archive/3.4.2.tar.gz',
+    download_url='https://github.com/newaetech/chipwhisperer/archive/3.4.3.tar.gz',
     packages = ['chipwhisperer',
                 'chipwhisperer.capture',
                 'chipwhisperer.capture.acq_patterns',
