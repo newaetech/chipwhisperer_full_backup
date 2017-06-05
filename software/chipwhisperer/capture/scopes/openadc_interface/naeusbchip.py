@@ -114,7 +114,7 @@ class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
         try:
             return self.cwFirmwareConfig[self.last_id]
         except KeyError as e:
-            raise Warning("No ChipWhisperer connected yet - can't download firmware")
+            return FWLoaderConfig(CWLite_Loader())
 
     def getFwLoaderConfigGUI(self):
         return FWLoaderConfigGUI(self.getFWConfig(), self.ser is not None)
