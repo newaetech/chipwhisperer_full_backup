@@ -30,12 +30,14 @@ def FileReader(filename):
         f = IntelHex(filename)
         fdata = f.tobinarray(0)
         fsize = f.maxaddr() - f.minaddr()
+        minaddr = f.minaddr()
     elif filename.lower().endswith(".bin"):
         f = open(filename, "rb")
         fdata = bytearray(f.read())
         fsize = len(fdata)
+        minaddr  = 0
         f.close()
     else:
         raise IOError("Unknown file extension for file %s"%filename)
 
-    return fdata, fsize
+    return fdata, fsize, minaddr

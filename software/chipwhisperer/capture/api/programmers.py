@@ -27,6 +27,7 @@ import logging
 from chipwhisperer.common.utils import util
 from chipwhisperer.hardware.naeusb.programmer_avr import supported_avr
 from chipwhisperer.hardware.naeusb.programmer_xmega import supported_xmega
+from chipwhisperer.hardware.naeusb.programmer_stm32fserial import supported_stm32f
 
 
 class Programmer(object):
@@ -120,3 +121,28 @@ class XMEGAProgrammer(Programmer):
 
     def close(self):
         self.xmega.enablePDI(False)
+
+
+class STM32FProgrammer(Programmer):
+
+    def __init__(self):
+        super(STM32FProgrammer, self).__init__()
+        self.stm32 = None
+        self.supported_chips = supported_stm32f
+
+    def setUSBInterface(self, iface):
+        self.stm32 = iface
+        self.stm32.setChip(self.supported_chips[0])
+
+    def open_and_find(self):
+        self.stm32.open_port()
+        sig, chip = self.stm32.find()
+
+        # Print signature of unknown device
+        if chip is None:
+            self.log("Detected Unknown Chip, sig=%3x"% (sig))
+        else:
+             self.log("Detected %s" % chip.name)
+
+    def close(self):
+        self.stm32.close_port()

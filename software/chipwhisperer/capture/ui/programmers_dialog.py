@@ -32,7 +32,7 @@ from PySide.QtGui import *
 from PySide.QtGui import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QPlainTextEdit, QFileDialog
 
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI
-from chipwhisperer.capture.api.programmers import AVRProgrammer, XMEGAProgrammer
+from chipwhisperer.capture.api.programmers import AVRProgrammer, XMEGAProgrammer, STM32FProgrammer
 from chipwhisperer.common.utils import qt_tweaks as QtFixes
 
 
@@ -269,3 +269,75 @@ class XMEGAProgrammerDialog(QtFixes.QDialog):
 
     def setUSBInterface(self, iface):
         self.xmega.setUSBInterface(iface)
+
+
+class STM32FProgrammerDialog(QtFixes.QDialog):
+    def __init__(self):
+        super(STM32FProgrammerDialog, self).__init__(CWMainGUI.getInstance())
+        # self.setWindowFlags(self.windowFlags() | Qt.WindowStaysOnTopHint)
+        self.stm32f = STM32FProgrammer()
+
+        self.setWindowTitle("Serial STM32F Programmer")
+        layout = QVBoxLayout()
+
+        layoutFW = QHBoxLayout()
+        self.flashLocation = QtFixes.QLineEdit()
+        flashFileButton = QPushButton("Find")
+        flashFileButton.clicked.connect(self.findFlash)
+        layoutFW.addWidget(QLabel("FLASH File"))
+        layoutFW.addWidget(self.flashLocation)
+        layoutFW.addWidget(flashFileButton)
+        layout.addLayout(layoutFW)
+
+        self.flashLocation.setText(QSettings().value("stm32f-flash-location"))
+
+        # Add buttons
+        readSigBut = QPushButton("Check Signature")
+        readSigBut.clicked.connect(self.readSignature)
+        verifyFlashBut = QPushButton("Verify FLASH")
+        verifyFlashBut.clicked.connect(self.verifyFlash)
+        verifyFlashBut.setEnabled(False)
+        progFlashBut = QPushButton("Erase/Program/Verify FLASH")
+        progFlashBut.clicked.connect(self.writeFlash)
+
+        layoutBut = QHBoxLayout()
+        layoutBut.addWidget(readSigBut)
+        layoutBut.addWidget(verifyFlashBut)
+        layoutBut.addWidget(progFlashBut)
+        layout.addLayout(layoutBut)
+
+        # Add status stuff
+        self.statusLine = QPlainTextEdit()
+        self.statusLine.setReadOnly(True)
+        # self.statusLine.setFixedHeight(QFontMetrics(self.statusLine.font()).lineSpacing() * 5 + 10)
+        self.stm32f.newTextLog.connect(self.append)
+        layout.addWidget(self.statusLine)
+
+        # Set dialog layout
+        self.setLayout(layout)
+
+    def append(self, text):
+        self.statusLine.appendPlainText(text)
+
+    def findFlash(self):
+        fname, _ = QFileDialog.getOpenFileName(self, 'Find FLASH File', QSettings().value("stm32f-flash-location"),
+                                               '*.hex')
+        if fname:
+            self.flashLocation.setText(fname)
+            QSettings().setValue("stm32f-flash-location", fname)
+
+    def readSignature(self, close=True):
+        self.stm32f.open_and_find()
+        if close:
+            self.stm32f.close()
+
+    def verifyFlash(self):
+        pass
+
+    def writeFlash(self, erase=True, verify=True):
+        self.stm32f.stm32.autoProgram(self.flashLocation.text(), erase, verify, self.statusLine.appendPlainText,
+                    QCoreApplication.processEvents)
+
+    def setUSBInterface(self, iface):
+        self.stm32f.setUSBInterface(iface)
+

@@ -20,6 +20,7 @@
 #=================================================
 import logging
 import sys
+import traceback
 import chipwhisperer.capture.scopes._qt as openadc_qt
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import CWLite_Loader, CW1200_Loader
 from chipwhisperer.capture.scopes.cwhardware.ChipWhispererFWLoader import FWLoaderConfig
@@ -32,11 +33,13 @@ try:
     import chipwhisperer.capture.scopes.cwhardware.ChipWhispererLite as CWL
 except ImportError:
     CWL = None
+    logging.error("Could not import ChipWhispererLite\n" + traceback.format_exc())
 
 try:
     import usb
 except ImportError:
     usb = None
+    logging.error("Could not import USB\n" + traceback.format_exc())
 
 
 class OpenADCInterface_NAEUSBChip(Parameterized, Plugin):
