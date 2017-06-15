@@ -51,7 +51,7 @@ class TuningParameter(Parameterized):
         self.getParams().addChildren([
             {'name':'Name', 'type':'str', 'key':'humanname', 'value':'Param #%d' % num, 'action':lambda p:self.nameChange(p.getValue())},
             {'name':'Parameter Path', 'type':'str', 'key':'parampath', 'value':'[]', 'action':self.updateParams},
-            {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int},
+            {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int, 'action':self.updateParams},
             {'name':'Range', 'type':'range', 'key':'range', 'limits':(-1E6, 1E6), 'value':(0, 10), 'default':(0, 10), 'action':self.updateParams},
             {'name':'Value', 'type':'float', 'key':'curval', 'value':1.0},
             {'name':'Step', 'type':'float', 'key':'step', 'value':1.0, 'action':self.updateParams},

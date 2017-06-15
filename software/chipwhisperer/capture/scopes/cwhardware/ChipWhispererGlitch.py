@@ -224,6 +224,7 @@ class ChipWhispererGlitch(Parameterized):
 
     @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):
+        offset = int(offset)
         """Set offset between trigger event and glitch in clock cycles"""
         cmd = bytearray(4)
         cmd[0] = ((offset >> 0) & 0xFF)
@@ -343,6 +344,7 @@ class ChipWhispererGlitch(Parameterized):
     @setupSetParam("Repeat")
     def setNumGlitches(self, num):
         """Set number of glitches to occur after a trigger"""
+        num = int(num)
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
 
         if resp is None or len(resp) < 8:
