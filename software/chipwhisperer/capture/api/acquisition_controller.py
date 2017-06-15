@@ -34,7 +34,7 @@ class AcquisitionController:
         self.sigNewTextResponse = util.Signal()
 
         self.currentTrace = 0
-        self.maxtraces = 1
+        self.maxtraces = 0
 
         self.key = [0]
         self.textin = [0]
@@ -46,7 +46,7 @@ class AcquisitionController:
         self.auxList = auxList
         self.keyTextPattern = keyTextPattern
         self.keyTextPattern.setTarget(target)
-        self.keyTextPattern.initPair()
+        self.keyTextPattern.initPair(self.maxtraces)
 
         if self.auxList is not None:
             for aux in auxList:
@@ -138,7 +138,7 @@ class AcquisitionController:
         if channelNumbers is None:
             channelNumbers = [0]
 
-        self.keyTextPattern.initPair()
+        self.keyTextPattern.initPair(self.maxtraces)
 
         if self.writer:
             self.writer.prepareDisk()
