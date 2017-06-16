@@ -62,8 +62,8 @@ class SimpleSerial(TargetTemplate):
         self.params.addChildren([
             {'name':'Connection', 'type':'list', 'key':'con', 'values':ser_cons, 'get':self.getConnection, 'set':self.setConnection},
             {'name':'Key Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'get':self.keyLen, 'set':self.setKeyLen},
-            {'name':'Input Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
-            {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
+            {'name':'Input Length (Bytes)', 'type':'list', 'values':[1, 2, 4, 8, 16, 32], 'default':16, 'get':self.textLen, 'set':self.setTextLen},
+            {'name':'Output Length (Bytes)', 'type':'list', 'values':[8, 16, 32], 'default':16, 'get':self.outputLen, 'set':self.setOutputLen},
             # {'name':'Plaintext Command', 'key':'ptcmd', 'type':'list', 'values':['p', 'h'], 'value':'p'},
             {'name':'Protocol Version', 'key':'proto', 'type':'group', 'expanded':True, 'children':[
                 {'name':'Version', 'key':'ver', 'type':'list', 'values':['1.0', '1.1', 'auto'], 'value':'auto'},
