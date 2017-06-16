@@ -23,7 +23,7 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
+from chipwhisperer.common.utils.parameter import Parameter
 
 class FakeQTimer(object):
     """ Replicates basic QTimer() API but does nothing """
@@ -35,13 +35,13 @@ class FakeQTimer(object):
         self._callback = callback
 
     def setInterval(self, ms_timeout):
-        pass
+        self.timeoutms = ms_timeout
 
     def start(self):
         if self._single_shot:
-            logging.info('Timer: Not using Qt, calling callback immediatly')
+            logging.debug('Timer: Not using Qt, calling callback immediatly (%d ms)'%self.timeoutms)
             self._callback()
-        logging.warning('Timer: Not using Qt, timer disabled')
+        logging.debug('Timer: Not using Qt, timer disabled (%d ms)'%self.timeoutms)
 
     def stop(self):
         pass
@@ -57,11 +57,19 @@ class FakeQTimer(object):
 
 try:
     from PySide.QtCore import QTimer
-    class Timer(QTimer):
+
+    class PatchedQTimer(QTimer):
         def flush(self):
             if self.isActive():
                 self.timeout.emit()
                 self.stop()
+
+    def Timer():
+        if Parameter.usePyQtGraph:
+            return PatchedQTimer()
+        else:
+            return FakeQTimer()
+
 
 except ImportError:
     Timer = FakeQTimer

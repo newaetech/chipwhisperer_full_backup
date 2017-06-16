@@ -40,7 +40,7 @@ class GPIOToggle(AuxiliaryTemplate):
         self.pin = None
         self.lastPin = None
         self.getParams().addChildren([
-                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3}, 'value':2, 'action':self.settingsChanged},
+                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3, 'nRST':100, 'PDID':101, 'PDIC':102}, 'value':2, 'action':self.settingsChanged},
                  {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'action':self.settingsChanged},
                  {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
                  {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
@@ -57,15 +57,20 @@ class GPIOToggle(AuxiliaryTemplate):
         self.triglocation = self.findParam('triggerloc').getValue()
 
     def checkMode(self):
+
         cwa = CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA
 
         if self.pin != self.lastPin:
             # Turn off last used pin
             if self.lastPin:
-                cwa.setTargetIOMode(IONumber=self.lastPin, setting=0)
+                if self.lastPin < 4:
+                    cwa.setTargetIOMode(IONumber=self.lastPin, setting=0)
+                else:
+                    self.setPin(self.lastPin, None)
 
-            # Setup new pin
-            cwa.setTargetIOMode(IONumber=self.pin, setting=cwa.IOROUTE_GPIOE)
+            # Setup new pin (GPIO1-4 only need this)
+            if self.pin < 4:
+                cwa.setTargetIOMode(IONumber=self.pin, setting=cwa.IOROUTE_GPIOE)
 
             # Don't do this again
             self.lastPin = self.pin
@@ -75,23 +80,54 @@ class GPIOToggle(AuxiliaryTemplate):
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer().singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
             util.updateUI()
 
+    def setPin(self, state, pin=None):
+
+        if pin is None:
+            pin = self.pin
+
+        if state != True and state != False and state != None:
+            raise ValueError("Invalid State %s"%str(state))
+
+        if pin < 4:
+            CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=state, IONumber=pin)
+        elif pin == 100 or pin == 101 or pin == 102:
+            if state == True:
+                strstate = "High"
+            elif state == False:
+                strstate = "Low"
+            else:
+                strstate = "Disabled"
+
+            if pin == 100:
+                pinname = 'nRST'
+            elif pin == 101:
+                pinname = 'PDID'
+            elif pin == 102:
+                pinname = 'PDIC'
+
+            CWCoreAPI.getInstance().setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', '%s: GPIO'%pinname, strstate])
+        else:
+            raise ValueError("Invalid Pin %d" % pin)
+
     def trigger(self, _=None):
+
         logging.info('AUXIO: Trigger pin %d' % self.pin)
         self.checkMode()
-        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=(not self.standby), IONumber=self.pin)
+
+        self.setPin(state=(not self.standby))
         self.nonblockingSleep(self.triglength)
-        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        self.setPin(state=self.standby)
         self.nonblockingSleep(self.postdelay)
 
     def captureInit(self):
         self.checkMode()
-        CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=self.standby, IONumber=self.pin)
+        self.setPin(self.standby)
 
         if self.triglocation == 0:
             self.trigger()

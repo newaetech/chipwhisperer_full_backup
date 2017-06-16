@@ -79,7 +79,7 @@ class AcqKeyTextPattern_DPA(AcqKeyTextPattern_Base):
 
             self.initmask = maskStr
 
-    def initPair(self):
+    def initPair(self, maxtraces):
         pass
 
     def newPair(self):

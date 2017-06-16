@@ -60,7 +60,7 @@ def packuint16(data):
 NEWAE_VID = 0x2B3E
 NEWAE_PIDS = {
     0xACE2: {'name': "ChipWhisperer-Lite",     'fwver': fw_cwlite.fwver},
-    0xACE3: {'name': "ChipWHisperer-CW1200",   'fwver': fw_cw1200.fwver},
+    0xACE3: {'name': "ChipWhisperer-CW1200",   'fwver': fw_cw1200.fwver},
     0xC305: {'name': "CW305 Artix FPGA Board", 'fwver': fw_cw305.fwver},
 }
 
@@ -84,32 +84,64 @@ class NAEUSB(object):
     def __init__(self):
         self._usbdev = None
 
-    def con(self, idProduct=[0xACE2]):
+    def get_possible_devices(self, idProduct):
         """
-        Connect to device using default VID/PID
+        Get a list of matching devices being based a list of PIDs. Returns list of usbdev that match (or empty if none)
         """
+
+        devlist = []
 
         for id in idProduct:
             try:
                 # Connect to device (attempt #1)
-                dev = usb.core.find(idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend())
+                dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend()))
             except usb.core.NoBackendError:
                 try:
                     # An error in the previous one is often caused by Windows 64-bit not detecting the correct library, attempt to force this with paths
                     # that often work so user isn't aware
-                    dev = usb.core.find(idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend(find_library=lambda x: r"c:\Windows\System32\libusb0.dll"))
+                    dev = list(usb.core.find(find_all=True, idVendor=0x2B3E, idProduct=id, backend=libusb0.get_backend(
+                        find_library=lambda x: r"c:\Windows\System32\libusb0.dll")))
                 except usb.core.NoBackendError:
-                    raise IOError("Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
+                    raise IOError(
+                        "Failed to find USB backend. Check libusb drivers installed, check for path issues on library, and check for 32 vs 64-bit issues.")
+            # Found something
+            if len(dev) > 0:
+                devlist.extend(dev)
 
-            foundId = id
+        return devlist
 
-            #Found something
-            if dev:
-                break
+    def con(self, idProduct=[0xACE2], connect_to_first=False, serial_number=None):
+        """
+        Connect to device using default VID/PID
+        """
 
-        if not dev:
+        devlist = self.get_possible_devices(idProduct)
+        snlist = [d.serial_number + " (" + d.product + ")\n" for d in devlist]
+        snlist = "".join(snlist)
+
+        if len(devlist) == 0:
             raise Warning("Failed to find USB Device")
 
+        elif serial_number:
+            dev = None
+            for d in devlist:
+                if d.serial_number == serial_number:
+                    dev = d
+                    break
+
+            if dev is None:
+                raise Warning("Failed to find USB device with S/N %s\n. Found S/N's:\n" + snlist)
+
+
+        elif len(devlist) == 1:
+            dev = devlist[0]
+
+        else:
+            if connect_to_first:
+                dev = devlist[0]
+            else:
+                #User did not help us out - throw it in their face
+                raise Warning("Found multiple potential USB devices. Please specify device to use. Possible S/Ns:\n" + snlist)
         try:
             dev.set_configuration()
         except ValueError:
@@ -124,6 +156,7 @@ class NAEUSB(object):
             # Old calling syntax
             self.snum = usb.util.get_string(dev, length=256, index=3)
 
+        foundId = dev.idProduct
 
         if foundId in NEWAE_PIDS:
             name = NEWAE_PIDS[foundId]['name']

@@ -15,12 +15,12 @@ import platform
 import glob
 import serial
 
-def scan():
+def scan(max_range=256):
     """scan for available ports. return a list of names"""
     system_name = platform.system()
     if system_name == 'Windows':
       available = []
-      for i in range(64):
+      for i in range(max_range):
           try:
               s = serial.Serial("COM%d" % i)
               available.append(s.portstr)

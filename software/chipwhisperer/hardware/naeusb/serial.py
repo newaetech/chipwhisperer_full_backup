@@ -45,12 +45,20 @@ class USART(object):
         """
 
         self._usb = usb
-        self._timeout = timeout
+        self.timeout = timeout
+
+        self._baud = 38400
+        self._stopbits = 1
+        self._parity = "none"
 
     def init(self, baud=115200, stopbits=1, parity="none"):
         """
         Open the serial port, set baud rate, parity, etc.
         """
+
+        self._baud = baud
+        self._stopbits = stopbits
+        self._parity = parity
 
         if stopbits == 1:
             stopbits = 0
@@ -102,8 +110,17 @@ class USART(object):
         while datasent < len(data):
             datatosend = len(data) - datasent
             datatosend = min(datatosend, 58)
-            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data[datasent:(datasent + datatosend)], timeout=self._timeout)
+            self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_DATA, 0, 0, data[datasent:(datasent + datatosend)], timeout=self.timeout)
             datasent += datatosend
+
+    def flush(self):
+        """
+        Flush all input buffers
+        """
+        inwait = self.inWaiting()
+        while(inwait):
+            self.read(inwait)
+            inwait = self.inWaiting()
 
     def inWaiting(self):
         """
@@ -114,7 +131,7 @@ class USART(object):
         # print data
         return data[0]
 
-    def read(self, dlen=0, timeout=50):
+    def read(self, dlen=0, timeout=0):
         """
         Read data from input buffer, if 'dlen' is 0 everything present is read. If timeout is non-zero
         system will block for a while until data is present in buffer.
@@ -126,7 +143,7 @@ class USART(object):
             dlen = waiting
 
         if timeout == 0:
-            timeout = self._timeout
+            timeout = self.timeout
 
 
         resp = []
@@ -149,7 +166,7 @@ class USART(object):
         """
 
         # windex selects interface
-        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_CONFIG, cmd, 0, data, timeout=self._timeout)
+        self._usb.usbdev().ctrl_transfer(0x41, self.CMD_USART0_CONFIG, cmd, 0, data, timeout=self.timeout)
 
 
     def _usartRxCmd(self, cmd, dlen=1):
@@ -157,4 +174,4 @@ class USART(object):
         Read the result of some command (internal function).
         """
         # windex selects interface, set to 0
-        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_CONFIG, cmd, 0, dlen, timeout=self._timeout)
+        return self._usb.usbdev().ctrl_transfer(0xC1, self.CMD_USART0_CONFIG, cmd, 0, dlen, timeout=self.timeout)

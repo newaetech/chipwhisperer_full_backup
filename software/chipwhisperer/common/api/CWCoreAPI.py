@@ -47,7 +47,7 @@ class CWCoreAPI(Parameterized):
 
     __name__ = "ChipWhisperer"
     __organization__ = "NewAE Technology Inc."
-    __version__ = "V3.4.3"
+    __version__ = "V3.5.0"
     _name = 'Generic Settings'
     instance = None
 
@@ -377,8 +377,7 @@ class CWCoreAPI(Parameterized):
             classes = pluginmanager.getPluginClassesFromModules([mod])
             if len(classes) == 0:
                 raise Warning("No UserScriptBase class found")
-            for c in classes:
-                self.runScriptClass(c, funcName)
+            return [self.runScriptClass(c, funcName) for c in classes]
         except Exception as e:
             sys.excepthook(Warning, "Could not execute Script Module %s: '%s:%s'" %
                              (str(mod),
@@ -392,7 +391,7 @@ class CWCoreAPI(Parameterized):
             self.executingScripts.setValue(True)
             m = scriptClass(self)
             if funcName is not None:
-                eval('m.%s()' % funcName)
+                return eval('m.%s()' % funcName)
         except Exception as e:
                 sys.excepthook(Warning, "Could not execute method %s in script class %s: '%s:%s'" %
                                (funcName,

@@ -239,7 +239,7 @@ class SBox_output(DESLeakageHelper):
         return self.sbox_out_first_fbox(pt, key[bnum], bnum)
 
 class SBox_input(DESLeakageHelper):
-    name = 'HW: SBoxes Output, First Round'
+    name = 'HW: SBoxes Input, First Round'
     c_model_enum_value = 1
     c_model_enum_name = 'LEAK_HW_SBOXIN_FIRSTROUND'
     def leakage(self, pt, ct, key, bnum):

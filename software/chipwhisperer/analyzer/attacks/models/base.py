@@ -60,7 +60,7 @@ class ModelsBase(Parameterized):
           5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6,
           7, 7, 8]
 
-    def __init__(self, numSubKeys, permPerSubkey, model=None):
+    def __init__(self, numSubKeys=None, permPerSubkey=None, model=None):
         self.sigParametersChanged = util.Signal()
         self.numSubKeys = numSubKeys
         self.permPerSubkey = permPerSubkey
@@ -76,10 +76,14 @@ class ModelsBase(Parameterized):
             self.hwModels[model.name] = model
 
         self.getParams().addChildren([
-            {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel, 'addToList':True},
-            {'name':'Number of SubKeys', 'type':'int', 'get':self.getNumSubKeys, 'readonly':True},
-            {'name':'Number of Permutations', 'type':'int', 'get':self.getPermPerSubkey, 'readonly':True},
+            {'name':'Hardware Model', 'type':'list', 'values':self.hwModels, 'get':self.getHwModel, 'set':self.setHwModel, 'addToList':True}
         ])
+
+        if numSubKeys:
+            self.getParams().addChildren([{'name':'Number of SubKeys', 'type':'int', 'get':self.getNumSubKeys, 'readonly':True}])
+
+        if permPerSubkey:
+            self.getParams().addChildren([{'name':'Number of Permutations', 'type':'int', 'get':self.getPermPerSubkey, 'readonly':True}])
 
     @classmethod
     def getHW(cls, n):

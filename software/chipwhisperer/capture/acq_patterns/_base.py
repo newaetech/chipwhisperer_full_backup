@@ -73,7 +73,7 @@ class AcqKeyTextPattern_Base(Parameterized, Plugin):
     def setInitialText(self, initialText, binaryText=False):
         pass
 
-    def initPair(self):
+    def initPair(self, maxtraces):
         """Called before a capture run, does not return anything"""
         raise AttributeError("This needs to be reimplemented")
 

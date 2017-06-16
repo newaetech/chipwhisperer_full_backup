@@ -99,7 +99,7 @@ class AcqKeyTextPattern_Basic(AcqKeyTextPattern_Base):
 
             self.inittext = textStr
 
-    def initPair(self):
+    def initPair(self, maxtraces):
         pass
 
     def newPair(self):

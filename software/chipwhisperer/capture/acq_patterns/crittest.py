@@ -36,7 +36,7 @@ except ImportError:
 
 class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     _name = "CRI T-Test"
-    _description = "Welsch T-Test with random/fixed plaintext."
+    _description = "Welsh T-Test with random/fixed plaintext."
 
     def __init__(self, target=None):
         AcqKeyTextPattern_Base.__init__(self)
@@ -53,7 +53,7 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
     def _initPattern(self):
         pass
 
-    def initPair(self):
+    def initPair(self, maxtraces):
         length = self.keyLen()
         if length <= 32:
             self._key = util.hexStrToByteArray("01 23 45 67 89 ab cd ef 12 34 56 78 9a bc de f0 23 45 67 89 ab cd ef 01 34 56 78 9a bc de f0 12")[:length]
@@ -73,11 +73,19 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
             raise ValueError("Invalid key length: %d bytes" % length)
         self.findParam("text").setValue(" ".join(["%02X" % b for b in self._interleavedPlaintext]), init=True)
 
-        self.group1 = True
+        self.num_group1 = int(maxtraces/2)
+        self.num_group2 = int(maxtraces - self.num_group1)
 
     def newPair(self):
-        if self.group1:
-            self.group1 = False
+        rand = random.random()
+        num_tot = self.num_group1 + self.num_group2
+        if num_tot == 0:
+            group1 = (rand < 0.5)
+        else:
+            cutoff = float(self.num_group1) / num_tot
+            group1 = (rand < cutoff)
+
+        if group1:
             self._textin = self._textin1
 
             if AES is not None:
@@ -87,9 +95,12 @@ class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
                 self._textin1 = bytearray(16)
                 for i in range(0, 16):
                     self._textin1[i] = random.randint(0, 255)
+                if self.num_group1 > 0:
+                    self.num_group1 -= 1
         else:
-            self.group1 = True
             self._textin = self._interleavedPlaintext
+            if self.num_group2 > 0:
+                self.num_group2 -= 1
 
         # Check key works with target
         self.validateKey()

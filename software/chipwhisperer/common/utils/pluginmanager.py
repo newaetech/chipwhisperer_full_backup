@@ -50,15 +50,21 @@ try:
             super(PluginStatusDialog, self).__init__(len(loadedItems), 4, parent=parent)
             self.setWindowFlags(Qt.Window)
             self.setWindowTitle("Plugin Status")
-            self.setHorizontalHeaderLabels(["Module", "Enabled", "Error Message", "Details (full stack)"])
+            self.setHorizontalHeaderLabels(["Module", "Enabled", "Error Message", "Details"])
 
             for indx, itm in enumerate(loadedItems):
+                showstackpb = QPushButton("Stack Trace")
+                mbdia = QMessageBox(self, QMessageBox.Information, "Stack Trace")
+                mbdia.setText(itm[3])
+                showstackpb.clicked.connect(mbdia.show)
+
                 self.setItem(indx, 0, QTableWidgetItem(itm[0]))
                 self.setItem(indx, 1, QTableWidgetItem(str(itm[1])))
                 self.setItem(indx, 2, QTableWidgetItem(itm[2]))
-                self.setItem(indx, 3, QTableWidgetItem(itm[3]))
+                if itm[1] == False:
+                    self.setCellWidget(indx, 3, showstackpb)
             for y in range(0, len(loadedItems)):
-                for x in (0,1,2,3):
+                for x in (0,1,2):
                     self.item(y, x).setFlags(self.item(y, x).flags() ^ Qt.ItemIsEditable)
 
             self.resize(950, 400)
@@ -84,13 +90,15 @@ def getPluginsInDictFromPackage(path, instantiate, addNone, *args, **kwargs):
 def importModulesInPackage(path):
     resp = []
     normPath = (os.path.normpath(path).replace(".", "/"))
-    packages = util.getPyFiles(os.path.join(util.getRootDir(), normPath))
+    mod_dir = os.path.join(util.getRootDir(), normPath)
+    packages = util.getPyFiles(mod_dir)
     for package_name in packages:
         full_package_name = '%s.%s' % (path, package_name)
         try:
             resp.append(importlib.import_module(full_package_name))
         except Exception as e:
-            logging.info('Could not import module: ' + full_package_name + ": " + str(e))
+            logtype = get_module_logtype(mod_dir, package_name, full_package_name)
+            logtype('Could not import module: ' + full_package_name + ": " + str(e))
             loadedItems.append([full_package_name, False, str(e), traceback.format_exc()])
 
     files = util.getPyFiles(os.path.join(Settings().value("project-home-dir"), normPath), extension=True)
@@ -127,7 +135,8 @@ def putInDict(items, instantiate, *args, **kwargs):
                 resp[item.getClassName()] = item
             loadedItems.append([str(c), True, "", ""])
         except Exception as e:
-            logging.info('Could not instantiate module ' + str(c) + ": " + str(e))
+            logtype = get_class_logtype(c)
+            logtype('Could not instantiate module ' + str(c) + ": " + str(e))
             loadedItems.append([str(c), False, str(e), traceback.format_exc()])
 
     if len(resp) == 0:
@@ -143,3 +152,26 @@ def module_reorder(resp):
         del resp['None']
     newresp.update(sorted(resp.items(), key=lambda t: t[0]))
     return newresp
+
+def get_module_logtype(module_dir, module_name, module_full_name):
+    """Given a module name, returns the logging function that should be used for logging errors."""
+    logfunc = logging.info
+    with open(os.path.join(module_dir, module_name + ".py"), "r") as failedmodule:
+        modulestart = failedmodule.read(64)
+        if "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_ERROR" in modulestart:
+            logfunc = logging.error
+        elif "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_WARN" in modulestart:
+            logfunc = logging.warn
+        elif "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_INFO" in modulestart:
+            logfunc = logging.info
+        elif "HIGHLEVEL_CLASSLOAD_FAIL_FUNC_DEBUG" in modulestart:
+            logfunc = logging.debug
+
+    return logfunc
+
+def get_class_logtype(c):
+    """Given a class returns the logging function that should be used for logging errors."""
+    if hasattr(c, "HIGHLEVEL_CLASSLOAD_FAIL_FUNC"):
+        return c.HIGHLEVEL_CLASSLOAD_FAIL_FUNC
+    return logging.debug
+
