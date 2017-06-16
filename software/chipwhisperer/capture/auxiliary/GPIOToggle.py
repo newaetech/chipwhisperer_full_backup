@@ -40,7 +40,7 @@ class GPIOToggle(AuxiliaryTemplate):
         self.pin = None
         self.lastPin = None
         self.getParams().addChildren([
-                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3, 'nRST':100}, 'value':2, 'action':self.settingsChanged},
+                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3, 'nRST':100, 'PDID':101, 'PDIC':102}, 'value':2, 'action':self.settingsChanged},
                  {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'action':self.settingsChanged},
                  {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
                  {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
@@ -96,14 +96,22 @@ class GPIOToggle(AuxiliaryTemplate):
 
         if pin < 4:
             CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=state, IONumber=pin)
-        elif pin == 100:
+        elif pin == 100 or pin == 101 or pin == 102:
             if state == True:
                 strstate = "High"
             elif state == False:
                 strstate = "Low"
             else:
                 strstate = "Disabled"
-            CWCoreAPI.getInstance().setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'nRST: GPIO', strstate])
+
+            if pin == 100:
+                pinname = 'nRST'
+            elif pin == 101:
+                pinname = 'PDID'
+            elif pin == 102:
+                pinname = 'PDIC'
+
+            CWCoreAPI.getInstance().setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', '%s: GPIO'%pinname, strstate])
         else:
             raise ValueError("Invalid Pin %d" % pin)
 
