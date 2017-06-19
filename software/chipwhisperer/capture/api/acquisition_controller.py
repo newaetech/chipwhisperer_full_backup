@@ -119,17 +119,17 @@ class AcquisitionController:
                 ret = self.scope.capture()
                 if ret:
                     logging.debug('Timeout happened during acquisition.')
-                return not ret
+                capture_ok = not ret
             except IOError as e:
                 logging.error('IOError: %s' % str(e))
-                return False
+                capture_ok = False
 
         if self.auxList:
             for aux in self.auxList:
                 if aux:
                     aux.traceDone()
 
-        return True
+        return capture_ok
 
     def setMaxtraces(self, maxtraces):
         self.maxtraces = maxtraces
