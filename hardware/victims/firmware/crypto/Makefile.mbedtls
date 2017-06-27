@@ -1,0 +1,21 @@
+CRYPTO_LIB = mbedtls/
+
+ifeq ($(CRYPTO_OPTIONS),AES128C)
+ SRC += aes-independant.c
+
+ #######
+ #*This is the recommended first version to test* 
+ SRC += aes.c
+ CDEFS += -DMBEDTLS -DMBEDTLS_AES_C
+ 
+ #CDEFS += -DMBEDTLS_AES_ROM_TABLES
+ 
+ VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/library
+ EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/include
+    
+else
+
+ $(error: Unknown or blank CRYPTO_OPTIONS: $(CRYPTO_OPTIONS). CRYPTO_OPTIONS is required for this CRYPTO_TARGET)
+endif #AVRCRYPTOLIB
+
+

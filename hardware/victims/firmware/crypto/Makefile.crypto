@@ -41,6 +41,15 @@ else ifeq ($(CRYPTO_TARGET),TINYAES128C)
   include $(FIRMWAREPATH)/crypto/Makefile.tinyaes128c
 
 
+else ifeq ($(CRYPTO_TARGET),MBEDTLS)
+#
+# Crypto Target: MBEDTLS
+# Crypto Options:
+#    AES128 = AES128
+# Notes:
+#
+  include $(FIRMWAREPATH)/crypto/Makefile.mbedtls
+
 else ifeq ($(CRYPTO_TARGET),NONE)
   #Nothing to do :)
 
