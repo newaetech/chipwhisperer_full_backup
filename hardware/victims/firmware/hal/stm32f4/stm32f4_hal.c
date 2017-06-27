@@ -54,7 +54,7 @@ void init_uart(void)
 void trigger_setup(void)
 {
 	GPIO_InitTypeDef GpioInit;
-	GpioInit.Pin       = GPIO_PIN_11;
+	GpioInit.Pin       = GPIO_PIN_12;
 	GpioInit.Mode      = GPIO_MODE_OUTPUT_PP;
 	GpioInit.Pull      = GPIO_NOPULL;
 	GpioInit.Speed     = GPIO_SPEED_FREQ_HIGH;
@@ -63,12 +63,12 @@ void trigger_setup(void)
 
 void trigger_high(void)
 {
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, SET);
 }
 
 void trigger_low(void)
 {
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_11, RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, RESET);
 }   
 
 char getch(void)
