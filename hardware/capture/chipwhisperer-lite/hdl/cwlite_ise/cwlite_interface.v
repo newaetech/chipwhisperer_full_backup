@@ -109,7 +109,7 @@ module cwlite_interface(
 	//TODO: Check skew is OK still
 	wire clk_slow;
 	reg [2:0] slowcnt;
-	always @(posedge clk_usb) begin
+	always @(posedge clk_usb_buf) begin
 		slowcnt <= slowcnt + 3'd1;
 	end
 	assign clk_slow = slowcnt[2];
