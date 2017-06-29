@@ -31,7 +31,7 @@ ADDR_DECIMATE   = 15
 ADDR_SAMPLES    = 16
 ADDR_PRESAMPLES = 17
 ADDR_BYTESTORX  = 18
-ADDR_DDR        = 20
+ADDR_TRIGGERDUR = 20
 ADDR_MULTIECHO  = 34
 
 CODE_READ       = 0x80
@@ -231,7 +231,7 @@ class TriggerSettings(Parameterized):
 
         self.params = Parameter(name=self.getName(), type='group')
         child_list = [
-            {'name': 'Refresh Status', 'type':'action', 'linked':['Trigger Pin State'], 'visible':False,
+            {'name': 'Refresh Status', 'type':'action', 'linked':['Trigger Pin State', 'Trigger Active Count'], 'visible':False,
                      'help':'%namehdr%'+
                             'Refreshes the "Trigger Pin State" status.'},
             #{'name': 'Source', 'type': 'list', 'values':["digital", "analog"], 'set':self.setSource, 'get':self.source,
@@ -274,6 +274,11 @@ class TriggerSettings(Parameterized):
                     'help':'%namehdr%'+
                             'Downsamples incomming ADC data by throwing away the specified number of samples between captures. Synchronous to the trigger so presample '+
                             'mode is DISABLED when this value is greater than 1.'},
+            {'name':'Trigger Active Count', 'type':'int',  'limits':(0, 4294967294), 'get':self.duration,
+                   'help':'%namehdr$'+
+                            'Measures number of ADC clock cycles during which the trigger was active. If trigger toggles more than once' +
+                            'this may not be valid.'
+             },
         ]
 
         if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
@@ -480,6 +485,21 @@ class TriggerSettings(Parameterized):
             return True
         else:
             return False
+
+    def duration(self):
+        """Returns previous trigger duration. Cleared by arm automatically. Invalid if trigger is currently active."""
+        if self.oa is None:
+            return 0
+
+        samples = 0x00000000
+
+        temp = self.oa.sendMessage(CODE_READ, ADDR_TRIGGERDUR, maxResp=4)
+        samples = samples | (temp[0] << 0)
+        samples = samples | (temp[1] << 8)
+        samples = samples | (temp[2] << 16)
+        samples = samples | (temp[3] << 24)
+
+        return samples
 
 
 class ClockSettings(Parameterized):
