@@ -132,5 +132,5 @@ class FrequencyMeasure(AuxiliaryTemplate):
         freq = self.fm.measure()
         self.data.append(freq)
 
-    def captureComplete(self):
+    def captureComplete(self, writer):
         np.save("frequency-%s.npy" % self.prefix, self.data)

@@ -63,12 +63,6 @@ class ResetCW1173Read(AuxiliaryTemplate):
             {'name':'Test Reset', 'type':'action', 'action':self.testReset}
         ])
 
-    def captureInit(self):
-        pass
-
-    def captureComplete(self):
-        pass
-
     def traceArm(self):
         # Before we arm the scope, possibly reset the device and wait for a bit
         resettiming = self.findParam('resettiming').getValue()
