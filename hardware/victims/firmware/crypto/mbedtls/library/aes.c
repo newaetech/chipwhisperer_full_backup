@@ -389,8 +389,15 @@ static int aes_init_done = 0;
 static void aes_gen_tables( void )
 {
     int i, x, y, z;
-    int pow[256];
-    int log[256];
+    
+    /*int pow[256];*/
+    /*int log[256];*/
+    
+    /* Avoid allocating huge temporary tables onto stack, causes
+       possible overflow on certain targets
+     */
+    int * pow = (int *) RT2;
+    int * log = (int *) RT3;
 
     /*
      * compute pow and log tables over GF(2^8)
