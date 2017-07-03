@@ -51,7 +51,7 @@ class AuxiliaryTemplate(Parameterized, Plugin):
         """Called once before each api grouping, do connect etc"""
         pass
 
-    def captureComplete(self):
+    def captureComplete(self, trace_writer):
         """Called once complete api is complete"""
         pass
 
