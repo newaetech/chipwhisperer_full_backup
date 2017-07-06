@@ -102,7 +102,7 @@ class ResetCW1173Read(AuxiliaryTemplate):
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer().singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)
