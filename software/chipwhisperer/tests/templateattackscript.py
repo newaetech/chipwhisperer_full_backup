@@ -13,6 +13,7 @@ from chipwhisperer.analyzer.utils.Partition import PartitionHWIntermediate
 from chipwhisperer.analyzer.utils.TraceExplorerScripts.PartitionDisplay import DifferenceModeSAD
 from chipwhisperer.analyzer.ui.CWAnalyzerGUI import CWAnalyzerGUI
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
+import chipwhisperer.tests
 
 
 class Capture(UserScriptBase):
@@ -41,7 +42,8 @@ class Capture(UserScriptBase):
         xmega._logging = None
         xmega.find()
         xmega.erase()
-        xmega.program(r"simpleserial-aes-xmega.hex", memtype="flash", verify=True)
+        xmega_firmware_file = os.path.join(os.path.dirname(chipwhisperer.tests.__file__), r"simpleserial-aes-xmega.hex")
+        xmega.program(xmega_firmware_file, memtype="flash", verify=True)
         xmega.close()
 
         # Setup the capture parameters
