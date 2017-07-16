@@ -176,11 +176,11 @@ int main(void){
 	putch('l');
 	putch('o');
 	putch('\n');
-    _delay_ms(20);
+    //_delay_ms(20);
 		
         
     while(1){
-        glitch1();
+        glitch_infinite();
     }
         
 	return 1;

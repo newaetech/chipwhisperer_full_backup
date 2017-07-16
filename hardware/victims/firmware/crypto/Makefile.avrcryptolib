@@ -30,6 +30,13 @@ else ifeq ($(CRYPTO_OPTIONS), DES)
  CDEFS += -DAVRCRYPTOLIB
  VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/des
  EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/des
+
+else ifeq ($(CRYPTO_OPTIONS), RSA)
+ SRC += rsa_basic.c bigint.c
+ CDEFS += -DAVRCRYPTOLIB -DPRINT_STATUS=1
+ VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/rsa:$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/bigint
+ EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/rsa $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/bigint
+
 else
 
  $(error: Unknown or blank CRYPTO_OPTIONS: $(CRYPTO_OPTIONS). CRYPTO_OPTIONS is required for this CRYPTO_TARGET)
