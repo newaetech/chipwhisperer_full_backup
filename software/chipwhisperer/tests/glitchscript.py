@@ -80,7 +80,7 @@ class UserScript(UserScriptBase):
         print "Software Setup - 3.4. Flashing test firmware"
         xmega_firmware_file = os.path.join(os.path.dirname(chipwhisperer.tests.__file__), r"glitchsimple.hex")
         programmer = self.api.getScope().scopetype.dev.xmega
-        xmega.autoProgram(xmega_firmware_file)
+        programmer.autoProgram(xmega_firmware_file)
 
         print "Manual Glitch Trigger"
         lstexample = [

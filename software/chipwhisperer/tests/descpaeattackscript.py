@@ -37,7 +37,7 @@ class Capture(UserScriptBase):
         # Flash the firmware
         xmega_firmware_file = os.path.join(os.path.dirname(chipwhisperer.tests.__file__), r"simpleserial-des-xmega.hex")
         programmer = self.api.getScope().scopetype.dev.xmega
-        programmer.autoProgram(r'simpleserial-des-xmega.hex')
+        programmer.autoProgram(xmega_firmware_file)
 
 
         # Setup the capture parameters
