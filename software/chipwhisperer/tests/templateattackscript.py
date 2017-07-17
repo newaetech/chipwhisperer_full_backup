@@ -36,13 +36,8 @@ class Capture(UserScriptBase):
         self.api.connect()
 
         # Flash the firmware
-        xmega = XMEGAProgrammer()
-        xmega.setUSBInterface(self.api.getScope().scopetype.dev.xmega)
-        xmega._logging = None
-        xmega.find()
-        xmega.erase()
-        xmega.program(r"simpleserial-aes-xmega.hex", memtype="flash", verify=True)
-        xmega.close()
+        programmer = self.api.getScope().scopetype.dev.xmega
+        programmer.autoProgram(r'simpleserial-aes-xmega.hex')
 
         # Setup the capture parameters
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],

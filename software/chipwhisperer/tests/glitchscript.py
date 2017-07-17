@@ -78,13 +78,8 @@ class UserScript(UserScriptBase):
         for cmd in lstexample: self.api.setParameter(cmd)
 
         print "Software Setup - 3.4. Flashing test firmware"
-        xmega = XMEGAProgrammer()
-        xmega.setUSBInterface(self.api.getScope().scopetype.dev.xmega)
-        xmega._logging = None
-        xmega.find()
-        xmega.erase()
-        xmega.program(r"glitchsimple.hex", memtype="flash", verify=True)
-        xmega.close()
+        programmer = self.api.getScope().scopetype.dev.xmega
+        programmer.autoProgram('glitchsimple.hex')
 
         print "Manual Glitch Trigger"
         lstexample = [

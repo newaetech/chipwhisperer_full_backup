@@ -32,10 +32,10 @@ class Capture(UserScriptBase):
 
         # Conect both: scope and target
         self.api.connect()
-        
+
         # Flash the firmware
         programmer = self.api.getScope().scopetype.dev.xmega
-        programmer.autoProgram('simpleserial-des-xmega.hex')
+        programmer.autoProgram(r'simpleserial-des-xmega.hex')
 
         # Setup the capture parameters
         lstexample = [
