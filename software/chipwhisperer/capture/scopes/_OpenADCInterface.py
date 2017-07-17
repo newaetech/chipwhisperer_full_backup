@@ -274,7 +274,7 @@ class TriggerSettings(Parameterized):
                     'help':'%namehdr%'+
                             'Downsamples incomming ADC data by throwing away the specified number of samples between captures. Synchronous to the trigger so presample '+
                             'mode is DISABLED when this value is greater than 1.'},
-            {'name':'Trigger Active Count', 'type':'int',  'limits':(0, 4294967294), 'get':self.duration,
+            {'name':'Trigger Active Count', 'type':'int', 'readonly': True, 'limits':(0, 4294967294), 'get':self.duration,
                    'help':'%namehdr$'+
                             'Measures number of ADC clock cycles during which the trigger was active. If trigger toggles more than once' +
                             'this may not be valid.'
