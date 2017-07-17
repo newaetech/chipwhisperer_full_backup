@@ -13,6 +13,7 @@ from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgres
 import chipwhisperer.analyzer.attacks.models.AES128_8bit
 # Imports from utilList
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
+import chipwhisperer.tests
 
 
 class Capture(UserScriptBase):
@@ -34,8 +35,10 @@ class Capture(UserScriptBase):
         self.api.connect()
 
         # Flash the firmware
+        xmega_firmware_file = os.path.join(os.path.dirname(chipwhisperer.tests.__file__), r"simpleserial-des-xmega.hex")
         programmer = self.api.getScope().scopetype.dev.xmega
         programmer.autoProgram(r'simpleserial-des-xmega.hex')
+
 
         # Setup the capture parameters
         lstexample = [

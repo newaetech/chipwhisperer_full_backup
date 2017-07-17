@@ -33,7 +33,7 @@ from chipwhisperer.capture.api.programmers import XMEGAProgrammer
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI  # Import the ChipWhisperer API
 from chipwhisperer.common.scripts.base import UserScriptBase
 from chipwhisperer.common.utils.parameter import Parameter
-
+import chipwhisperer.tests
 
 # Wiki: https://wiki.newae.com/Tutorial_A2_Introduction_to_Glitch_Attacks_(including_Glitch_Explorer)
 
@@ -78,8 +78,9 @@ class UserScript(UserScriptBase):
         for cmd in lstexample: self.api.setParameter(cmd)
 
         print "Software Setup - 3.4. Flashing test firmware"
+        xmega_firmware_file = os.path.join(os.path.dirname(chipwhisperer.tests.__file__), r"glitchsimple.hex")
         programmer = self.api.getScope().scopetype.dev.xmega
-        programmer.autoProgram('glitchsimple.hex')
+        xmega.autoProgram(xmega_firmware_file)
 
         print "Manual Glitch Trigger"
         lstexample = [
