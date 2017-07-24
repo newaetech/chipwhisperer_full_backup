@@ -404,7 +404,7 @@ class CWMainGUI(QMainWindow):
     def updateTitleBar(self):
         """Update filename shown in title bar"""
         fname = os.path.basename(self.api.project().getFilename())
-        self.setWindowTitle("%s - %s[*]" %(self.name, fname))
+        self.setWindowTitle("%s - %s" %(self.name, fname))
         self.setWindowModified(True)
 
     def projectStatusChanged(self):
