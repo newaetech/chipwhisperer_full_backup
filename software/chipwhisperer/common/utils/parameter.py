@@ -249,11 +249,15 @@ class Parameter(object):
 
     def getValue(self, default=None):
         """Return the internal or external value of the parameter"""
-        val = self.opts.get("get", None)
-        if val is None:
-            return self.opts.get("value", default)
-        else:
-            return val()
+        try:
+            val = self.opts.get("get", None)
+            if val is None:
+                return self.opts.get("value", default)
+            else:
+                return val()
+        except Exception as e:
+            raise type(e), type(e)(e.message +
+                                   ' happens on parameter "%s"' % self.getName()), sys.exc_info()[2]
 
     def getKeyFromValue(self, value):
         """Return the key used to set list type parameters"""

@@ -38,7 +38,6 @@ from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
-
 class OpenADC(ScopeTemplate, Plugin):
     """ Common API to OpenADC Hardware"""
 
@@ -134,6 +133,10 @@ class OpenADC(ScopeTemplate, Plugin):
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
                     self.params.append(self.digitalPattern.getParams())
 
+            self.trigger = self.qtadc.parm_trigger
+            self.gain = self.qtadc.parm_gain
+            self.clock = self.qtadc.parm_clock
+
             return True
         return False
 
@@ -185,3 +188,4 @@ class OpenADC(ScopeTemplate, Plugin):
         finally:
             self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
         return ret
+

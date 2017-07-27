@@ -165,10 +165,18 @@ class GainSettings(Parameterized):
                      'help':'%namehdr%'+
                             'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
                             ' The resulting gain in dB is given in the "calculated" output.'},
-            {'name': 'Result', 'type': 'float', 'suffix':'dB', 'readonly':True, 'get':self.gainDB,
+            {'name': 'Result', 'type': 'float', 'suffix':'dB', 'readonly':True, 'get':self._get_gain_db,
                      'help':'%namehdr%'+
                             'Gives the gain the AD8331 should have, based on the "High/Low" setting and the "gain setting".'},
         ])
+
+    @property
+    def db(self):
+        return self._get_gain_db()
+
+    @db.setter
+    def db(self, val):
+        return self._set_gain_db(val)
 
     @setupSetParam("Mode")
     def setMode(self, gainmode):
@@ -203,7 +211,7 @@ class GainSettings(Parameterized):
 
         return self.gain_cached
 
-    def gainDB(self):
+    def _get_gain_db(self):
         #GAIN (dB) = 50 (dB/V) * VGAIN - 6.5 dB, (HILO = LO)
         # GAIN (dB) = 50 (dB/V) * VGAIN + 5.5 dB, (HILO = HI)
 
@@ -216,11 +224,38 @@ class GainSettings(Parameterized):
 
         return gaindb
 
+    def _set_gain_db(self, gain):
+        if gain < -6.5 or gain > 56:
+            raise ValueError("Gain " + gain + "out of range. Valid range: -6.5 to 56 dB")
+
+        use_low = False
+
+        if gain < 5.5:
+            use_low = True
+
+        if use_low:
+            gv = (float(gain) - (-6.5)) / 50.0
+        else:
+            gv = (float(gain) - (5.5) ) / 50.0
+        g = (gv / 3.3) * 256.0
+        g = round(g)
+        g = int(g)
+        if g < 0:
+            g = 0
+        if g > 0xFF:
+            g = 0xFF
+
+        if use_low:
+            self.setMode("low")
+        else:
+            self.setMode("high")
+        self.setGain(g)
 
 class TriggerSettings(Parameterized):
     _name = 'Trigger Setup'
 
     def __init__(self, oaiface):
+        self._new_attributes_disabled = False
         self.oa = oaiface
         self._numSamples = 0
         self.presamples_desired = 0
@@ -240,7 +275,7 @@ class TriggerSettings(Parameterized):
             {'name': 'Trigger Pin State', 'type':'bool', 'readonly':True, 'get':self.extTriggerPin,
                      'help':'%namehdr%'+
                             'Gives the status of the digital signal being used as the trigger signal, either high or low.'},
-            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'default':"low", 'set':self.setMode, 'get':self.mode,
+            {'name': 'Mode', 'type':'list', 'values':["rising edge", "falling edge", "low", "high"], 'default':"low", 'set':self._set_mode, 'get':self._get_mode,
                      'help':'%namehdr%'+
                             'When using a digital system, sets the trigger mode:\n\n'
                             '  =============== ==============================\n' +
@@ -255,26 +290,26 @@ class TriggerSettings(Parameterized):
                             'If using STREAM mode (CW-Pro only), the trigger should use a rising or falling edge. Using a constant level is possible, but ' +
                             'normally requires additional delay added via "offset" (see stream mode help for details).'
             },
-            {'name': 'Timeout (secs)', 'type':'float', 'step':1, 'limits':(0, 1E99), 'set':self.setTimeout, 'get':self.timeout,
+            {'name': 'Timeout (secs)', 'type':'float', 'step':1, 'limits':(0, 1E99), 'set':self._set_timeout, 'get':self._get_timeout,
                      'help':'%namehdr%'+
                             'If no trigger occurs in this many seconds, force the trigger.'},
-            {'name': 'Offset', 'type':'int', 'limits':(0, 4294967294), 'set':self.setOffset, 'get':self.offset,
+            {'name': 'Offset', 'type':'int', 'limits':(0, 4294967294), 'set':self._set_offset, 'get':self._get_offset,
                      'help':'%namehdr%'+
                             'Delays this many samples after the trigger event before recording samples. Based on the ADC clock cycles. ' +
                             'If using a 4x mode for example, an offset of "1000" would mean we skip 250 cycles of the target device.'},
-            {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self.setPresamples, 'get':self.presamples,
+            {'name': 'Pre-Trigger Samples', 'type':'int', 'limits':(0, self.oa.hwMaxSamples), 'set':self._set_presamples, 'get':self._get_presamples,
                      'help':'%namehdr%'+
                             'Record a certain number of samples before the main samples are captured. If "offset" is set to 0, this means ' +
                             'recording samples BEFORE the trigger event.'},
-            {'name': 'Total Samples', 'type':'int', 'limits':(129, self.oa.hwMaxSamples), 'set':self.setNumSamples, 'get':self.numSamples,
+            {'name': 'Total Samples', 'type':'int', 'limits':(129, self.oa.hwMaxSamples), 'set':self._set_num_samples, 'get':self._get_num_samples,
                      'help':'%namehdr%'+
                             'Total number of samples to record. Note the capture system has an upper limit. Older FPGA bitstreams had a lower limit of about 256 samples. '+
                             'For the CW-Lite/Pro, the current lower limit is 128 samples due to interactions with the SAD trigger module. '},
-            {'name':'Downsample Factor', 'type':'int', 'limits':(1, 8192), 'set':self.setDecimate, 'get':self.decimate,
+            {'name':'Downsample Factor', 'type':'int', 'limits':(1, 8192), 'set':self._set_decimate, 'get':self._get_decimate,
                     'help':'%namehdr%'+
                             'Downsamples incomming ADC data by throwing away the specified number of samples between captures. Synchronous to the trigger so presample '+
                             'mode is DISABLED when this value is greater than 1.'},
-            {'name':'Trigger Active Count', 'type':'int', 'readonly': True, 'limits':(0, 4294967294), 'get':self.duration,
+            {'name':'Trigger Active Count', 'type':'int', 'readonly': True, 'limits':(0, 4294967294), 'get':self._get_duration,
                    'help':'%namehdr$'+
                             'Measures number of ADC clock cycles during which the trigger was active. If trigger toggles more than once' +
                             'this may not be valid.'
@@ -283,8 +318,8 @@ class TriggerSettings(Parameterized):
 
         if self.oa.hwInfo and self.oa.hwInfo.is_cw1200():
             child_list.append(
-            {'name': 'Stream Mode', 'type': 'bool', 'default': self._stream_mode, 'set': self.setStreamMode,
-             'get': self.getStreamMode,
+            {'name': 'Stream Mode', 'type': 'bool', 'default': self._stream_mode, 'set': self._set_stream_mode,
+             'get': self._get_stream_mode,
              'help': '%namehdr%' +
                      'Streams data over high-speed USB allowing to capture more samples (the exact max sample value and '
                      'sample rate is unknown since it depends on how fast your computer can read from the buffer).'
@@ -292,8 +327,71 @@ class TriggerSettings(Parameterized):
                      'This feature is currently in BETA.'})
         self.params.addChildren(child_list)
 
+        self._new_attributes_disabled = True
+
+    def __setattr__(self, name, value):
+        if hasattr(self, '_new_attributes_disabled') and self._new_attributes_disabled and not hasattr(self, name):  # would this create a new attribute?
+            raise AttributeError("Attempt to set unknown attribute.", name)
+        super(TriggerSettings, self).__setattr__(name, value)
+
+    @property
+    def stream_mode(self):
+        return self._get_stream_mode()
+
+    @stream_mode.setter
+    def stream_mode(self, enabled):
+        self._set_stream_mode(enabled)
+
+    @property
+    def decimate(self):
+        return self._get_decimate()
+
+    @decimate.setter
+    def decimate(self, decfactor):
+        return self._set_decimate(decfactor)
+
+    @property
+    def samples(self):
+        return self._get_num_samples()
+
+    @samples.setter
+    def samples(self, samples):
+        return self._set_num_samples(samples)
+
+    @property
+    def timeout(self):
+        return self._get_timeout()
+
+    @timeout.setter
+    def timeout(self, timeout):
+        return self._set_timeout(timeout)
+
+    @property
+    def offset(self):
+        return self._get_offset()
+
+    @offset.setter
+    def offset(self, setting):
+        return self._set_offset(setting)
+
+    @property
+    def presamples(self):
+        return self._get_presamples()
+
+    @presamples.setter
+    def presamples(self, setting):
+        return self._set_presamples(setting)
+
+    @property
+    def mode(self):
+        return self._get_mode()
+
+    @mode.setter
+    def mode(self, mode):
+        return self._set_mode(mode)
+
     @setupSetParam("Stream Mode")
-    def setStreamMode(self, enabled):
+    def _set_stream_mode(self, enabled):
         self._stream_mode = enabled
 
         if enabled:
@@ -315,25 +413,25 @@ class TriggerSettings(Parameterized):
         #Notify capture system
         self.oa.setStreamMode(enabled)
 
-    def getStreamMode(self):
+    def _get_stream_mode(self):
         return self._stream_mode
 
     def fifoOverflow(self):
         return self.oa.getStatus() & STATUS_OVERFLOW_MASK
 
     @setupSetParam("Downsample Factor")
-    def setDecimate(self, decsamples):
+    def _set_decimate(self, decsamples):
         self.oa.setDecimate(decsamples)
 
-    def decimate(self):
+    def _get_decimate(self):
         return self.oa.decimate()
 
     @setupSetParam("Total Samples")
-    def setNumSamples(self, samples):
+    def _set_num_samples(self, samples):
         self._numSamples = samples
         self.oa.setNumSamples(samples)
 
-    def numSamples(self, cached=False):
+    def _get_num_samples(self, cached=False):
         if self.oa is None:
             return 0
 
@@ -343,16 +441,16 @@ class TriggerSettings(Parameterized):
             return self.oa.numSamples()
 
     @setupSetParam("Timeout (secs)")
-    def setTimeout(self, timeout):
+    def _set_timeout(self, timeout):
         self._timeout = timeout
         if self.oa:
             self.oa.setTimeout(timeout)
 
-    def timeout(self):
+    def _get_timeout(self):
         return self._timeout
 
     @setupSetParam("Offset")
-    def setOffset(self,  offset):
+    def _set_offset(self,  offset):
         cmd = bytearray(4)
         cmd[0] = ((offset >> 0) & 0xFF)
         cmd[1] = ((offset >> 8) & 0xFF)
@@ -360,7 +458,7 @@ class TriggerSettings(Parameterized):
         cmd[3] = ((offset >> 24) & 0xFF)
         self.oa.sendMessage(CODE_WRITE, ADDR_OFFSET, cmd)
 
-    def offset(self):
+    def _get_offset(self):
         if self.oa is None:
             return 0
 
@@ -372,7 +470,7 @@ class TriggerSettings(Parameterized):
         return offset
 
     @setupSetParam("Pre-Trigger Samples")
-    def setPresamples(self, samples):
+    def _set_presamples(self, samples):
 
         self.presamples_desired = samples
 
@@ -409,7 +507,7 @@ class TriggerSettings(Parameterized):
 
         return self.presamples_actual
 
-    def presamples(self, cached=False):
+    def _get_presamples(self, cached=False):
         """If cached returns DESIRED presamples"""
         if self.oa is None:
             return 0
@@ -434,15 +532,8 @@ class TriggerSettings(Parameterized):
 
         return self.presamples_actual
 
-    #@setupSetParam("Source")
-    #def setSource(self,  src):
-    #    return
-
-    #def source(self):
-    #    return "digital"
-
     @setupSetParam("Mode")
-    def setMode(self,  mode):
+    def _set_mode(self,  mode):
         """ Input to trigger module options: 'rising edge', 'falling edge', 'high', 'low' """
         if mode == 'rising edge':
             trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES
@@ -462,7 +553,7 @@ class TriggerSettings(Parameterized):
         cur = self.oa.settings() & ~(SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
         self.oa.setSettings(cur | trigmode)
 
-    def mode(self):
+    def _get_mode(self):
         if self.oa is None:
             return 'low'
 
@@ -486,7 +577,7 @@ class TriggerSettings(Parameterized):
         else:
             return False
 
-    def duration(self):
+    def _get_duration(self):
         """Returns previous trigger duration. Cleared by arm automatically. Invalid if trigger is currently active."""
         if self.oa is None:
             return 0
