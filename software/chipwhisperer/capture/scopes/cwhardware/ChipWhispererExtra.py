@@ -29,6 +29,7 @@ import time
 from functools import partial
 import ChipWhispererGlitch
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.utils import util
 
 CODE_READ = 0x80
 CODE_WRITE = 0xC0
@@ -41,6 +42,293 @@ ADDR_TRIGMOD = 40
 ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
+
+
+class GPIOMuxSettings(util.DisableNewAttr):
+    def __init__(self, cwextra):
+        self.cwe = cwextra
+
+        self.TIO_VALID = [
+            {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX, 'USI-Out': self.cwe.IOROUTE_USIO,
+             'USI-In': self.cwe.IOROUTE_USII, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
+
+            {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX, 'USI-Out': self.cwe.IOROUTE_USIO,
+             'USI-In': self.cwe.IOROUTE_USII, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
+
+            {'Serial TXD': self.cwe.IOROUTE_STX, 'Serial RXD': self.cwe.IOROUTE_SRX,
+             'Serial-TX/RX': self.cwe.IOROUTE_STXRX,
+             'USI-Out': self.cwe.IOROUTE_USIO, 'USI-In': self.cwe.IOROUTE_USII, 'USI-IN/OUT': self.cwe.IOROUTE_USINOUT,
+             'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ},
+
+            {'Serial TXD': self.cwe.IOROUTE_STX, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ}
+        ]
+
+
+        self.HS2_VALID = {'disabled': 0, 'clkout': 2, 'glitchout': 3}
+
+        self.disable_newattr()
+
+    @property
+    def tio1(self):
+        return self.tio(1)
+
+    @tio1.setter
+    def tio1(self, state):
+        self.tio_set(1, state)
+
+    @property
+    def tio2(self):
+        return self.tio(2)
+
+    @tio2.setter
+    def tio2(self, state):
+        self.tio_set(2, state)
+
+    @property
+    def tio3(self):
+        return self.tio(3)
+
+    @tio3.setter
+    def tio3(self, state):
+        self.tio_set(3, state)
+
+    @property
+    def tio4(self):
+        return self.tio(4)
+
+    @tio4.setter
+    def tio4(self, state):
+        self.tio_set(4, state)
+
+    def tio(self, pinnum):
+        if pinnum < 1 or pinnum > 4:
+            raise ValueError("Invalid PIN: %d. Valid range = 1-4." % pinnum, pinnum)
+
+        pnum = pinnum - 1
+        mode = self.cwe.getTargetIOMode(pnum)
+
+        # Find string
+        if mode != self.cwe.IOROUTE_GPIOE:
+            for s, bmask in self.TIO_VALID[pnum].iteritems():
+                if mode == bmask:
+                    return s
+            raise IOError("Invalid IO Mode returned by FPGA", mode)
+        else:
+            self.cwe.getGPIOState(pnum)
+
+    def tio_set(self, pinnum, mode):
+
+        if mode is None:
+            mode = "High-Z"
+
+        if pinnum < 1 or pinnum > 4:
+            raise ValueError("Invalid PIN: %d. Valid range = 1-4." % pinnum, pinnum)
+
+        valid_modes = self.TIO_VALID[pinnum-1].keys()
+
+        if isinstance(mode, int):
+            gpio_mode = True
+            gpio_setting = mode
+            mode = "GPIO"
+        else:
+            gpio_mode = False
+            gpio_setting = False
+
+        try:
+            iomode = self.TIO_VALID[pinnum - 1][mode]
+        except KeyError:
+            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum, mode, valid_modes))
+
+        self.cwe.setTargetIOMode(iomode, pinnum - 1)
+
+        if gpio_mode:
+            self.cwe.setGPIOState(gpio_setting, pinnum - 1)
+
+    def sck(self):
+        pass
+
+    def mosi(self):
+        pass
+
+    def miso(self):
+        pass
+
+    def cs(self):
+        pass
+
+    def pdic(self):
+        pass
+
+    def pdid(self):
+        pass
+
+    def nrst(self):
+        pass
+
+    @property
+    def hs2(self):
+        """Gets the HS2 (High-Speed Output) pin function. Returns a string of 'clkout', 'glitchout', or None """
+        mode = self.cwe.targetClkOut()
+        for k, v in self.HS2_VALID.iteritems():
+            if mode == v:
+                if k == 'disabled':
+                    return None
+                else:
+                    return k
+
+        raise IOError("Hardware returned known HS2 mode: %02x"%mode)
+
+    @hs2.setter
+    def hs2(self, mode):
+        """Sets the HS2 (High-Speed Output) pin on the ChipWhisperer function. Usually either 'clkout' or 'glitchout'
+        :param mode: Output mode, must be one of ['clkout', 'glitchout', or None]
+        """
+
+        if mode is None:
+            mode = 'disabled'
+
+        if mode not in self.HS2_VALID:
+            raise ValueError("Unknown mode for HS2 pin: '%s'. Valid modes: [%s]"%(mode, self.HS2_VALID.keys()), mode)
+
+        self.cwe.setTargetCLKOut(self.HS2_VALID[mode])
+
+
+class Crowbar(util.DisableNewAttr):
+    def highpower_enabled(self):
+        pass
+
+    def lowpower_enabled(self):
+        pass
+
+
+class TriggerMux(util.DisableNewAttr):
+
+    def __init__(self, cwextra):
+        self.cwe = cwextra
+
+        self.supported_tpins = {
+            'tio1':self.cwe.PIN_RTIO1,
+            'tio2': self.cwe.PIN_RTIO2,
+            'tio3': self.cwe.PIN_RTIO3,
+            'tio4': self.cwe.PIN_RTIO4,
+        }
+
+        if self.cwe.hasAux:
+            self.supported_tpins['sma'] = self.cwe.PIN_FPA
+
+        self.disable_newattr()
+
+    @property
+    def triggers(self):
+        #Get pin logic + combo mode
+        pins, mode = self.cwe.getPins()
+
+        tstring = []
+        if mode == self.cwe.MODE_OR: modes = "OR"
+        elif mode ==  self.cwe.MODE_AND: modes = "AND"
+        elif mode == self.cwe.MODE_NAND: modes = "NAND"
+        else: raise IOError("Unknown mode reported by hardware: %02x", mode)
+
+        if pins & self.cwe.PIN_RTIO1:
+            tstring.append("tio1")
+            tstring.append(modes)
+
+
+        if pins & self.cwe.PIN_RTIO2:
+            tstring.append("tio2")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_RTIO3:
+            tstring.append("tio3")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_RTIO4:
+            tstring.append("tio4")
+            tstring.append(modes)
+
+        if pins & self.cwe.PIN_FPA:
+            tstring.append("sma")
+            tstring.append(modes)
+
+        #Remove last useless combination mode
+        if len(tstring) > 1:
+            tstring = tstring[0:-1]
+
+        #Return a string indicating trigger mode
+        return " ".join(tstring)
+
+    @triggers.setter
+    def triggers(self, s):
+
+        s = s.lower()
+
+        #Split up string
+        triggers = s.split()
+
+        #Check there is only one type of combination mode
+        triggerset = set(triggers)
+        numcombined = int('and' in triggerset) + int('or' in triggerset) + int('nand' in triggerset)
+        if numcombined > 1:
+           raise ValueError("Combining multiple triggers requires same logic between each combination", s)
+
+        if numcombined == 0 and len(triggers) > 1:
+            raise ValueError("Detected more than 1 trigger pin specified, but no combination logic.", s)
+
+        enablelogic = 0
+
+        #Figure out enabled triggers
+        for t in self.supported_tpins.keys():
+            if t in triggers:
+                if triggers.count(t) != 1:
+                    raise ValueError("Pin '%s' appears %d times, only 1 apperance supported" % (t, triggers.count(t)), s)
+                enablelogic |= self.supported_tpins[t]
+
+        #Find mode
+        if ('or' in triggerset) or (len(triggerset) == 1):
+            mode = self.cwe.MODE_OR
+            modes = "or"
+        elif 'and' in triggerset:
+            mode = self.cwe.MODE_AND
+            modes = "and"
+        elif 'nand' in triggerset:
+            mode = self.cwe.MODE_NAND
+            modes = "nand"
+
+        #Check mode operations in correct order, no unknown things
+        expect_tpin = True
+        for t in triggers:
+            if expect_tpin:
+                if t not in self.supported_tpins.keys():
+                    raise ValueError("Error processing string at expected pin '%s'. Valid pins: %s"%(t, self.supported_tpins.keys()), s)
+            else:
+                if t != modes:
+                    raise ValueError("Unexpected combination mode '%s'. Expected %s."%(t, modes), s)
+            expect_tpin ^= True
+
+        #Finally set this thing, guess we're looking HOT
+        self.cwe.setPins(enablelogic, mode)
+
+    def test(self):
+        #Self-test for development
+        self.triggers("tio1 OR tio2 AND tio3")
+        self.triggers("tio1 OR tio2")
+        self.triggers("tio1")
+        self.triggers("tio4 AND tio2 AND tio1")
+        self.triggers("tio1 NAND tio3")
+        self.triggers("tio1 NAND tio2 NAND")
+        self.triggers("tio1 AND tio1")
+
+
+class GlitchGenerator(util.DisableNewAttr):
+    pass
+
+
+class SADTrigger(util.DisableNewAttr):
+    pass
+
+
+class DataTrigger(util.DisableNewAttr):
+    pass
 
 
 class ChipWhispererExtra(Parameterized):
@@ -255,6 +543,10 @@ class CWExtraSettings(Parameterized):
             ])
 
         self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
+
+        #Add special single-class items used as higher-level API
+        self.gpiomux = GPIOMuxSettings(self)
+        self.triggermux = TriggerMux(self)
 
     @setupSetParam("")
     def setGPIOState(self, state, IONumber):

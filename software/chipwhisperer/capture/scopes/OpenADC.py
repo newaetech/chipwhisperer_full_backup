@@ -136,6 +136,8 @@ class OpenADC(ScopeTemplate, Plugin):
             self.trigger = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
+            self.gpiomux = self.advancedSettings.cwEXTRA.gpiomux
+            self.triggermux = self.advancedSettings.cwEXTRA.triggermux
 
             return True
         return False

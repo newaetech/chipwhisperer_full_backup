@@ -312,3 +312,20 @@ if __name__ == '__main__':
     y = x.m
     x = None
     y()
+
+class DisableNewAttr(object):
+    """Provides an ability to disable setting new attributes in a class, useful to prevent typos. """
+
+    def __init__(self):
+        self.disable_newattr()
+
+    def disable_newattr(self):
+        self._new_attributes_disabled = True
+
+    def enable_newattr(self):
+        self._new_attributes_disabled = False
+
+    def __setattr__(self, name, value):
+        if hasattr(self, '_new_attributes_disabled') and self._new_attributes_disabled and not hasattr(self, name):  # would this create a new attribute?
+            raise AttributeError("Attempt to set unknown attribute in %s"%str(self), name)
+        super(DisableNewAttr, self).__setattr__(name, value)
