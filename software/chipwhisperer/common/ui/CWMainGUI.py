@@ -174,8 +174,14 @@ class CWMainGUI(QMainWindow):
         # tmp = locals()
         # tmp.update({'self':self})
         # wid = pyqtgraph.console.ConsoleWidget(namespace=tmp, text="")
-        wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
+
+        #wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(self, locals())
+        wid = chipwhisperer.common.ui.PythonConsole.QSplitConsole(self, locals())
+        #wid = chipwhisperer.common.ui.PythonConsole.QPythonConsole(None, locals())
         return self.addDock(wid, name, area=Qt.BottomDockWidgetArea, visible=visible)
+
+    def addPythonScriptRunner(self, name="Setup Scripts", visible=False):
+        pass
 
     def reloadGuiActions(self):
         # Remove all old actions that don't apply for new selection
@@ -366,6 +372,7 @@ class CWMainGUI(QMainWindow):
         Parameter.scriptingOutput = self.paramScriptingDock.widget()  # set as the default paramenter scripting log output
         self.loggingDock = self.addLoggingDock()
         self.pythonConsoleDock = self.addPythonConsole()
+        self.pythonScriptDock = self.addPythonScriptRunner()
         self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.loggingDock])
         self.setBaseSize(800,600)
 

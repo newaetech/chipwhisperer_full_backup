@@ -10,6 +10,7 @@ embedded in your GUI.
 
 """
 
+import os
 import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
@@ -79,14 +80,14 @@ class _QPythonConsoleUI(object):
 class QPythonConsole(QtGui.QWidget):
     """A simple python console to embed in your GUI.
 
-This widget provides a simple interactive python console that you can
-embed in your GUI (e.g. for debugging purposes). Use it like so:
+    This widget provides a simple interactive python console that you can
+    embed in your GUI (e.g. for debugging purposes). Use it like so:
 
-self.debug_window.layout().addWidget(QPythonConsole())
+    self.debug_window.layout().addWidget(QPythonConsole())
 
-You can customize the variables that are available in the shell by
-passing a dict as the "locals" argument.
-"""
+    You can customize the variables that are available in the shell by
+    passing a dict as the "locals" argument.
+    """
 
     def __init__(self, parent=None, locals=None):
         super(QPythonConsole,self).__init__(parent)
@@ -135,6 +136,92 @@ passing a dict as the "locals" argument.
         self.ui.input.setText(line)
         self.ui.input.end(False)
 
+class QPythonScriptRunner(QtGui.QWidget):
+    def __init__(self, parent=None):
+        super(QPythonScriptRunner,self).__init__(parent)
+
+        self.file_view = QtGui.QTreeView()
+
+        # Only show users the ChipWhisperer directory
+        # TODO: don't hard-code this path
+        # TODO: make it clear where the root path is
+        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
+        model = QtGui.QFileSystemModel()
+        model.setRootPath(scripts_folder)
+
+        # Only display Python files
+        model.setNameFilters(["*.py"])
+        model.setNameFilterDisables(False)
+
+        self.file_view.setModel(model)
+        self.file_view.setRootIndex(model.index(scripts_folder))
+
+        # Hide size/type/date columns
+        self.file_view.hideColumn(1)
+        self.file_view.hideColumn(2)
+        self.file_view.hideColumn(3)
+
+        self.file_preview = QtGui.QTextEdit()
+        self.file_preview.setReadOnly(True)
+        # Warning: this signal connection crashes
+        #self.file_view.selectionModel().selectionChanged.connect(self.viewScript)
+
+        self.run_button = QtGui.QPushButton("Run")
+        self.run_button.clicked.connect(self.runScript)
+
+        self.edit_button = QtGui.QPushButton("Edit")
+        self.edit_button.clicked.connect(self.editScript)
+
+        #self.view_button = QtGui.QPushButton("View")
+        #self.view_button.clicked.connect(self.viewScript)
+
+        grid_layout = QtGui.QGridLayout(self)
+        grid_layout.addWidget(self.file_view, 0, 0, 1, 3)
+        grid_layout.addWidget(self.file_preview, 0, 3, 1, 2)
+        grid_layout.addWidget(self.run_button, 1, 0)
+        grid_layout.addWidget(self.edit_button, 1, 1)
+        #grid_layout.addWidget(self.view_button, 1, 2)
+        self.setLayout(grid_layout)
+
+    def getSelectedPath(self):
+        file_index = self.file_view.currentIndex()
+        if not file_index.isValid():
+            return None
+        return self.file_view.model().filePath(file_index)
+
+    def runScript(self):
+        """Run the currently selected script"""
+        print "TODO: Run script"
+        print "Selected file: %s" % self.getSelectedPath()
+
+    def editScript(self):
+        """Edit the currently selected script"""
+        path = self.getSelectedPath()
+        if path is None:
+            return
+        if os.path.isfile(path):
+            os.startfile(path)
+
+    def viewScript(self, x, y=None):
+        """Edit the currently selected script"""
+        path = self.getSelectedPath()
+        if path is None or not os.path.isfile(path):
+            self.file_preview.setText("")
+        else:
+            with open(path, 'r') as script_file:
+                file_contents = script_file.read()
+            self.file_preview.setText(file_contents)
+
+class QSplitConsole(QtGui.QSplitter):
+    def __init__(self, parent=None, locals=None):
+        super(QSplitConsole,self).__init__(parent)
+        self.console = QPythonConsole(parent, locals)
+        self.addWidget(self.console)
+
+        self.script_runner = QPythonScriptRunner(parent)
+        self.addWidget(self.script_runner)
+
+#        self.setLayout(QtGui.QHBoxLayout(self))
 
 if __name__ == "__main__":
     import sys

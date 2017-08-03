@@ -233,6 +233,17 @@ class CWCaptureGUI(CWMainGUI):
             self.stopCaptureMAct.setEnabled(False)
         return ret
 
+    # Helpful properties for the Python console
+    @property
+    def scope(self):
+        return self.api.getScope()
+
+    @property
+    def target(self):
+        return self.api.getTarget()
+
+
+
 
 def main():
     # Create the Qt Application
