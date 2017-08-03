@@ -180,8 +180,13 @@ class GPIOMuxSettings(util.DisableNewAttr):
 
     @hs2.setter
     def hs2(self, mode):
-        """Sets the HS2 (High-Speed Output) pin on the ChipWhisperer function. Usually either 'clkout' or 'glitchout'
-        :param mode: Output mode, must be one of ['clkout', 'glitchout', or None]
+        """Sets the HS2 (High-Speed Output) pin on the ChipWhisperer function ('clkout' or 'glitchout').
+
+        Args:
+            mode: The output mode of the string. Must be one of ['clkout', 'glitchout', None]
+                  'clkout': The output from the internal CLKGEN module.
+                  'glitchout': The output from the GLITCH module. You must configure this module as appropriate.
+                  None: Disable the output, normally drives it low.
         """
 
         if mode is None:
@@ -192,12 +197,34 @@ class GPIOMuxSettings(util.DisableNewAttr):
 
         self.cwe.setTargetCLKOut(self.HS2_VALID[mode])
 
-
-class Crowbar(util.DisableNewAttr):
-    def highpower_enabled(self):
+    def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
         pass
 
-    def lowpower_enabled(self):
+    @property
+    def extclk_src(self):
+        raise NotImplemented()
+
+    @extclk_src.setter
+    def extclk_src(self, src):
+        raise NotImplemented()
+
+
+class Crowbar(util.DisableNewAttr):
+
+    @property
+    def highpower(self):
+        pass
+
+    @highpower.setter
+    def highpower(self, enabled):
+        pass
+
+    @property
+    def lowpower(self):
+        pass
+
+    @lowpower.setter
+    def lowpower(self, enabled):
         pass
 
 
@@ -232,7 +259,6 @@ class TriggerMux(util.DisableNewAttr):
         if pins & self.cwe.PIN_RTIO1:
             tstring.append("tio1")
             tstring.append(modes)
-
 
         if pins & self.cwe.PIN_RTIO2:
             tstring.append("tio2")
