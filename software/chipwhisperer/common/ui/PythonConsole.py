@@ -163,8 +163,8 @@ class QPythonScriptRunner(QtGui.QWidget):
 
         self.file_preview = QtGui.QTextEdit()
         self.file_preview.setReadOnly(True)
-        # Warning: this signal connection crashes
-        #self.file_view.selectionModel().selectionChanged.connect(self.viewScript)
+        #New style signals causes crashes on at least some platforms, so need to use old style
+        self.connect(self.file_view.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"), self, QtCore.SLOT("viewScript(QItemSelection, QItemSelection)"))
 
         self.run_button = QtGui.QPushButton("Run")
         self.run_button.clicked.connect(self.runScript)
