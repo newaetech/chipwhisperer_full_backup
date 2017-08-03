@@ -5,8 +5,11 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_dma.h"
 #include "stm32f4xx_hal_uart.h"
+#include "stm32f4xx_hal_cryp.h"
 
 UART_HandleTypeDef UartHandle;
+
+uint8_t hw_key[16];
 
 
 void platform_init(void)
@@ -27,6 +30,8 @@ void platform_init(void)
 	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 	HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_ACR_LATENCY_5WS);
+	
+	__HAL_RCC_CRYP_CLK_ENABLE();
 }
 
 void init_uart(void)
@@ -84,3 +89,19 @@ void putch(char c)
 	HAL_UART_Transmit(&UartHandle,  &d, 1, 5000);
 }
 
+void HW_AES128_Init()
+{
+}
+
+void HW_AES128_LoadKey(uint8_t* key)
+{
+	for(int i = 0; i < 16; i++)
+	{
+		hw_key[i] = key[i];
+	}
+}
+
+void HW_AES128_Enc(uint8_t* pt)
+{
+	uint8_t ret = CRYP_AES_ECB(MODE_ENCRYPT, hw_key, 128, pt, 16, pt);
+}

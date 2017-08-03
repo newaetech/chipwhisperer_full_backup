@@ -27,15 +27,13 @@
 
 #include <string.h> /* memcpy & co */
 #include <stdint.h>
-#include "config.h"
-#include "debug.h"
 #include "sha1.h"
 
 #ifdef DEBUG
 #  undef DEBUG
 #endif
 
-#include "cli.h"
+#define DEBUG_S(x)
 
 #define LITTLE_ENDIAN
 
