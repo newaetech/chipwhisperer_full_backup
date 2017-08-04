@@ -141,37 +141,128 @@ class QPythonConsole(QtGui.QWidget):
         self.ui.input.setText(line)
         self.ui.input.end(False)
 
+class CWPythonFileTree(QtGui.QTreeView):
+    """Customized QTreeView that only displays Python files.
+
+    Optional parameter in __init__: root sets up base directory for file tree
+    """
+
+    def __init__(self, root=None, parent=None):
+        super(CWPythonFileTree, self).__init__(parent)
+        model = QtGui.QFileSystemModel()
+        if root is not None:
+            model.setRootPath(root)
+        else:
+            # TODO: unsure if this works on all operating systems.
+            # Amazingly, it works on Windows.
+            model.setRootPath('/')
+
+        # Only display Python files
+        model.setNameFilters(["*.py"])
+        model.setNameFilterDisables(False)
+
+        self.setModel(model)
+        if root is not None:
+            self.setRootIndex(model.index(root))
+        else:
+            # It seems like this is unnecessary. Not sure why...
+            # self.setRootIndex(model.index('/'))
+            pass
+
+        self.hideColumn(1)
+        self.hideColumn(2)
+        self.hideColumn(3)
+
+    def getSelectedPath(self):
+        file_index = self.currentIndex()
+        if not file_index.isValid():
+            return None
+        return self.model().filePath(file_index)
+
+class QPythonScriptBrowser(QtGui.QWidget):
+    """A script browser with 3 tabs to help find Python files:
+    1. ChipWhisperer directory
+    2. Root of file system
+    3. Recent file list with options to pin files
+    """
+
+    # Note that this signal needs to be defined at the class level
+    # See https://stackoverflow.com/a/2971426/3817091 for details
+    sigSelectionChanged = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        super(QPythonScriptBrowser,self).__init__(parent)
+
+        self.tab_bar = QtGui.QTabBar()
+        self.tab_bar.addTab("ChipWhisperer")
+        self.tab_bar.addTab("File System")
+        self.tab_bar.addTab("Recent")
+        self.tab_bar.currentChanged.connect(self.tabChanged)
+
+        # TODO: don't hard-code this path
+        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
+        self.file_view_cw = CWPythonFileTree(scripts_folder)
+        self.file_view_all = CWPythonFileTree()
+        # TODO: implement this table
+        self.file_view_recent = QtGui.QTableView()
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.tab_bar)
+        layout.addWidget(self.file_view_cw)
+        layout.addWidget(self.file_view_all)
+        layout.addWidget(self.file_view_recent)
+
+        self.setLayout(layout)
+
+        self.tabChanged(0)
+
+        # New style signals causes crashes on at least some platforms, so need to use old style
+        self.connect(self.file_view_cw.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+        self.connect(self.file_view_all.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+
+    def tabChanged(self, newTab):
+        self.file_view_cw.hide()
+        self.file_view_all.hide()
+        self.file_view_recent.hide()
+        if newTab == 0: # ChipWhisperer
+            self.file_view_cw.show()
+        elif newTab == 1: # File system
+            self.file_view_all.show()
+        else: # Recent
+            self.file_view_recent.show()
+
+        self.selectionChanged()
+
+    def getSelectedPath(self):
+        active_tab = self.tab_bar.currentIndex()
+        if active_tab == 0: # ChipWhisperer
+            return self.file_view_cw.getSelectedPath()
+        elif active_tab == 1: # File system
+            return self.file_view_all.getSelectedPath()
+        elif active_tab == 2: # Recent
+            return None
+            # TODO
+            #return self.file_view_recent.getSelectedPath()
+        else:
+            return None
+
+    def selectionChanged(self, x=None, y=None):
+        self.sigSelectionChanged.emit()
+
 class QPythonScriptRunner(QtGui.QWidget):
     def __init__(self, console, parent=None):
         super(QPythonScriptRunner,self).__init__(parent)
         self.console = console
         self.api = parent.api
 
-        self.file_view = QtGui.QTreeView()
-
-        # Only show users the ChipWhisperer directory
-        # TODO: don't hard-code this path
-        # TODO: make it clear where the root path is
-        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
-        model = QtGui.QFileSystemModel()
-        model.setRootPath(scripts_folder)
-
-        # Only display Python files
-        model.setNameFilters(["*.py"])
-        model.setNameFilterDisables(False)
-
-        self.file_view.setModel(model)
-        self.file_view.setRootIndex(model.index(scripts_folder))
-
-        # Hide size/type/date columns
-        self.file_view.hideColumn(1)
-        self.file_view.hideColumn(2)
-        self.file_view.hideColumn(3)
+        self.browser = QPythonScriptBrowser()
 
         self.file_preview = QtGui.QTextEdit()
         self.file_preview.setReadOnly(True)
-        #New style signals causes crashes on at least some platforms, so need to use old style
-        self.connect(self.file_view.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"), self, QtCore.SLOT("viewScript(QItemSelection, QItemSelection)"))
+
+        self.browser.sigSelectionChanged.connect(self.viewScript)
 
         self.run_button = QtGui.QPushButton("Run")
         self.run_button.clicked.connect(self.runScript)
@@ -179,29 +270,23 @@ class QPythonScriptRunner(QtGui.QWidget):
         self.edit_button = QtGui.QPushButton("Edit")
         self.edit_button.clicked.connect(self.editScript)
 
-        self.hide_button = QtGui.QPushButton(">")
         # TODO
+        self.hide_button = QtGui.QPushButton(">")
 
         #self.view_button = QtGui.QPushButton("View")
         #self.view_button.clicked.connect(self.viewScript)
 
         grid_layout = QtGui.QGridLayout(self)
-        grid_layout.addWidget(self.file_view, 0, 0, 1, 3)
+        grid_layout.addWidget(self.browser, 0, 0, 1, 3)
         grid_layout.addWidget(self.file_preview, 0, 3, 1, 2)
         grid_layout.addWidget(self.run_button, 1, 0)
         grid_layout.addWidget(self.edit_button, 1, 1)
         #grid_layout.addWidget(self.view_button, 1, 2)
         self.setLayout(grid_layout)
 
-    def getSelectedPath(self):
-        file_index = self.file_view.currentIndex()
-        if not file_index.isValid():
-            return None
-        return self.file_view.model().filePath(file_index)
-
     def runScript(self):
         """Run the currently selected script"""
-        path = self.getSelectedPath()
+        path = self.browser.getSelectedPath()
         if path is None or not os.path.isfile(path):
             error_dialog = QtGui.QMessageBox()
             error_dialog.warning(
@@ -216,7 +301,7 @@ class QPythonScriptRunner(QtGui.QWidget):
 
     def editScript(self):
         """Edit the currently selected script"""
-        path = self.getSelectedPath()
+        path = self.browser.getSelectedPath()
         if path is None:
             return
         if os.path.isfile(path):
@@ -242,9 +327,9 @@ class QPythonScriptRunner(QtGui.QWidget):
             if open_with_default:
                 os.startfile(path)
 
-    def viewScript(self, x, y=None):
+    def viewScript(self):
         """Edit the currently selected script"""
-        path = self.getSelectedPath()
+        path = self.browser.getSelectedPath()
         if path is None or not os.path.isfile(path):
             self.file_preview.setText("")
         else:
