@@ -62,7 +62,12 @@ class GeneralTab(QWidget, Parameterized):
         self.settings = settings
 
         self.getParams().addChildren([
-            {'name':"Project Folder", 'type':"file", "filter":"dir", "get": lambda: self.settings.value("project-home-dir"), "set": lambda v: self.settings.setValue("project-home-dir", v), 'psync':False}
+            {'name': "Project Folder", 'type': "file", "filter": "dir",
+             "get": lambda: self.settings.value("project-home-dir"),
+             "set": lambda v: self.settings.setValue("project-home-dir", v), 'psync': False},
+            {'name': "External Text Editor", 'type': "file",
+             "get": lambda: self.settings.value("text-editor"),
+             "set": lambda v: self.settings.setValue("text-editor", v), 'psync': False}
         ])
 
         parameterTree = ParameterTree()

@@ -10,7 +10,9 @@ embedded in your GUI.
 
 """
 
+import logging
 import os
+import subprocess
 import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
@@ -98,9 +100,7 @@ class QPythonConsole(QtGui.QWidget):
         self.history = []
         self.history_pos = 0
 
-    def _on_enter_line(self):
-        line = self.ui.input.text()
-        self.ui.input.setText("")
+    def runLine(self, line):
         self.interpreter.write(self.ui.prompt.text() + line)
         more = self.interpreter.push(line)
         if line:
@@ -113,6 +113,11 @@ class QPythonConsole(QtGui.QWidget):
             self.ui.prompt.setText("... ")
         else:
             self.ui.prompt.setText(">>> ")
+
+    def _on_enter_line(self):
+        line = self.ui.input.text()
+        self.ui.input.setText("")
+        self.runLine(line)
         
     def eventFilter(self, obj, event):
         if hasattr(event, "type") and event.type() == QtCore.QEvent.KeyPress:
@@ -137,8 +142,10 @@ class QPythonConsole(QtGui.QWidget):
         self.ui.input.end(False)
 
 class QPythonScriptRunner(QtGui.QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, console, parent=None):
         super(QPythonScriptRunner,self).__init__(parent)
+        self.console = console
+        self.api = parent.api
 
         self.file_view = QtGui.QTreeView()
 
@@ -172,6 +179,9 @@ class QPythonScriptRunner(QtGui.QWidget):
         self.edit_button = QtGui.QPushButton("Edit")
         self.edit_button.clicked.connect(self.editScript)
 
+        self.hide_button = QtGui.QPushButton(">")
+        # TODO
+
         #self.view_button = QtGui.QPushButton("View")
         #self.view_button.clicked.connect(self.viewScript)
 
@@ -191,8 +201,18 @@ class QPythonScriptRunner(QtGui.QWidget):
 
     def runScript(self):
         """Run the currently selected script"""
-        print "TODO: Run script"
-        print "Selected file: %s" % self.getSelectedPath()
+        path = self.getSelectedPath()
+        if path is None or not os.path.isfile(path):
+            error_dialog = QtGui.QMessageBox()
+            error_dialog.warning(
+                self,
+                "Python Console",
+                "Error in Python Console: Selected path %s is not a file" % path,
+                QtGui.QMessageBox.Ok,
+                QtGui.QMessageBox.NoButton
+            )
+        else:
+            self.console.runLine("execfile('%s')" % path)
 
     def editScript(self):
         """Edit the currently selected script"""
@@ -200,7 +220,27 @@ class QPythonScriptRunner(QtGui.QWidget):
         if path is None:
             return
         if os.path.isfile(path):
-            os.startfile(path)
+            text_editor = self.api.settings.value('text-editor')
+            open_with_default = False
+
+            if len(text_editor) == 0:
+                open_with_default = True
+            else: # len > 0\
+                if not os.path.isfile(text_editor):
+                    logging.warning("Python Console: Can't open text files with %s - using system default instead" % text_editor)
+                    open_with_default = True
+                else:
+                    try:
+                        subprocess.Popen([text_editor, path])
+                    # TODO: I'm not sure which exceptions to catch here to detect a failed Popen?
+                    # On Windows, WindowsError works.
+                    # Need to test on Linux/Mac
+                    except BaseException as e:
+                        logging.warning("Python Console: Failed to open text file with %s - using system default instead" % text_editor)
+                        open_with_default = True
+
+            if open_with_default:
+                os.startfile(path)
 
     def viewScript(self, x, y=None):
         """Edit the currently selected script"""
@@ -218,7 +258,7 @@ class QSplitConsole(QtGui.QSplitter):
         self.console = QPythonConsole(parent, locals)
         self.addWidget(self.console)
 
-        self.script_runner = QPythonScriptRunner(parent)
+        self.script_runner = QPythonScriptRunner(self.console, parent)
         self.addWidget(self.script_runner)
 
 #        self.setLayout(QtGui.QHBoxLayout(self))
