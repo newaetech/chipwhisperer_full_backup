@@ -1,12 +1,15 @@
-import chipwhisperer as cw
+# Setup code
+# Uncomment this to use on the command line
+#import chipwhisperer as cw
 #from chipwhisperer.acq_controller import basic
-
-project = cw.create_project(r'c:\temp\aes.cwp', overwrite=True)
-
+#gui = cw.gui()
+#project = cw.create_project(r'c:\temp\aes.cwp', overwrite=True)
 #scope = target.api
+#scope = cw.scope()
 
-scope = cw.scope()
-
+# From GUI:
+if self is not None:
+    scope = self.scope
 
 scope.gain_db = 20
 scope.trigger.basic_mode = "rising edge"
