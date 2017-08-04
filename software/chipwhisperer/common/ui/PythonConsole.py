@@ -10,6 +10,7 @@ embedded in your GUI.
 
 """
 
+import chipwhisperer
 import logging
 import os
 import subprocess
@@ -179,6 +180,169 @@ class CWPythonFileTree(QtGui.QTreeView):
             return None
         return self.model().filePath(file_index)
 
+class CWPythonRecentTable(QtGui.QTableWidget):
+    """A table view that stores a list of recently run files
+
+    Also allows files to be pinned
+    """
+
+    num_scripts = 10
+    regular_color = QtGui.QColor(255, 255, 255)
+    pinned_color = QtGui.QColor(160, 220, 240)
+
+    def __init__(self, parent=None):
+        super(CWPythonRecentTable, self).__init__(parent)
+
+        self.pinned = []
+        self.unpinned = []
+
+        self.setRowCount(self.num_scripts)
+        self.setColumnCount(1)
+        self.setHorizontalHeaderLabels([
+            'Recent Files',
+        ])
+        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Stretch)
+
+        self._listsUpdated()
+
+    def _listsUpdated(self, selected_idx=None):
+        """Helper function for whenever the file lists are updated.
+
+        Saves the new lists to persistent settings and redraws the table.
+
+        If <selected_idx> is not None, change the selected row to this one
+        """
+        # TODO: save settings
+        num_pinned = len(self.pinned)
+        num_unpinned = len(self.unpinned)
+        num_empty = self.num_scripts - num_pinned - num_unpinned
+        for row in range(self.num_scripts):
+            if row < num_pinned:
+                idx = row
+                bg_color = self.pinned_color
+                path = self.pinned[idx]
+            elif row < num_pinned + num_unpinned:
+                idx = row - num_pinned
+                bg_color = self.regular_color
+                path = self.unpinned[idx]
+            else:
+                bg_color = self.regular_color
+                path = ""
+
+            short_path = os.path.basename(path)
+            item = QtGui.QTableWidgetItem(short_path)
+            item.setToolTip(path)
+            item.setBackground(bg_color)
+            self.setItem(row, 0, item)
+
+        if selected_idx is not None:
+            self.selectRow(selected_idx)
+
+    def addScript(self, path):
+        """Add a script path to the recent file list.
+
+        3 possible cases:
+        1. Script is pinned. Do nothing.
+        2. Script is unpinned. Put it at the top of the unpinned list.
+        3. Script is not in lists. Put it at the top of the unpinned list and remove an old script if needed.
+        Redraw the table and save settings if necessary.
+        """
+        selected_idx = None
+        if path in self.pinned:
+            selected_idx = self.pinned.index(path)
+
+        elif path in self.unpinned:
+            self.unpinned.remove(path)
+            self.unpinned.insert(0, path)
+            selected_idx = len(self.pinned)
+        else:
+            self.unpinned.insert(0, path)
+            if len(self.pinned) + len(self.unpinned) > self.num_scripts:
+                del self.unpinned[-1]
+
+            # Select this row only if it wasn't removed immediately
+            if len(self.unpinned) > 0:
+                selected_idx = len(self.pinned)
+
+
+        self._listsUpdated(selected_idx)
+
+    def _pinScript(self, idx):
+        """Take an unpinned script and add it to the list of pinned scripts
+
+        Cases:
+        1. Script is unpinned. Move it from unpinned list to pinned.
+        2. Script is not unpinned. Do nothing.
+        Redraw the table and save settings if necessary.
+        """
+        unpinned_idx = idx - len(self.pinned)
+        if unpinned_idx < 0 or unpinned_idx >= len(self.unpinned):
+            selected_idx = idx
+        else:
+            path = self.unpinned[unpinned_idx]
+            del self.unpinned[unpinned_idx]
+            self.pinned.append(path)
+            selected_idx = len(self.pinned) - 1
+        self._listsUpdated(selected_idx)
+
+    def _unpinScript(self, idx):
+        """Take a pinned script and move it to the unpinned script list.
+
+        Cases:
+        1. Script is not pinned. Do nothing.
+        2. Script is pinned. Remove from pinned list and add to top of unpinned list.
+        Redraw the table and save settings if necessary.
+        """
+        if idx < len(self.pinned):
+            path = self.pinned[idx]
+            del self.pinned[idx]
+            self.unpinned.insert(0, path)
+            selected_idx = len(self.pinned)
+        else:
+            selected_idx = idx
+
+        self._listsUpdated(selected_idx)
+
+    def contextMenuEvent(self, event):
+        idx = self.rowAt(event.pos().y())
+        num_pinned = len(self.pinned)
+        num_unpinned = len(self.unpinned)
+
+        if idx < num_pinned:
+            item_pinned = True
+        elif idx < num_pinned + num_unpinned:
+            item_pinned = False
+        else:
+            return
+
+        menu = QtGui.QMenu(self)
+        if item_pinned:
+            action_name = "Unpin From Top"
+        else:
+            action_name = "Pin To Top"
+
+        modify_pin = menu.addAction(action_name)
+        action = menu.exec_(self.mapToGlobal(event.pos()))
+
+        if action == modify_pin:
+            if item_pinned:
+                self._unpinScript(idx)
+            else:
+                self._pinScript(idx)
+
+    def getSelectedPath(self):
+        idx_list = self.selectedIndexes()
+        if len(idx_list) == 0:
+            return None
+        row = idx_list[0].row()
+        if row < len(self.pinned):
+            return self.pinned[row]
+        elif row < len(self.pinned) + len(self.unpinned):
+            return self.unpinned[row - len(self.pinned)]
+        return None
+
 class QPythonScriptBrowser(QtGui.QWidget):
     """A script browser with 3 tabs to help find Python files:
     1. ChipWhisperer directory
@@ -199,12 +363,11 @@ class QPythonScriptBrowser(QtGui.QWidget):
         self.tab_bar.addTab("Recent")
         self.tab_bar.currentChanged.connect(self.tabChanged)
 
-        # TODO: don't hard-code this path
-        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
+        scripts_folder = os.path.dirname(chipwhisperer.__file__)
+#        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
         self.file_view_cw = CWPythonFileTree(scripts_folder)
         self.file_view_all = CWPythonFileTree()
-        # TODO: implement this table
-        self.file_view_recent = QtGui.QTableView()
+        self.file_view_recent = CWPythonRecentTable()
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.tab_bar)
@@ -220,6 +383,8 @@ class QPythonScriptBrowser(QtGui.QWidget):
         self.connect(self.file_view_cw.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
                  self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
         self.connect(self.file_view_all.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+        self.connect(self.file_view_recent.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
                  self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
 
     def tabChanged(self, newTab):
@@ -242,14 +407,15 @@ class QPythonScriptBrowser(QtGui.QWidget):
         elif active_tab == 1: # File system
             return self.file_view_all.getSelectedPath()
         elif active_tab == 2: # Recent
-            return None
-            # TODO
-            #return self.file_view_recent.getSelectedPath()
+            return self.file_view_recent.getSelectedPath()
         else:
             return None
 
     def selectionChanged(self, x=None, y=None):
         self.sigSelectionChanged.emit()
+
+    def addRecentFile(self, path):
+        self.file_view_recent.addScript(path)
 
 class QPythonScriptRunner(QtGui.QWidget):
     def __init__(self, console, parent=None):
@@ -298,6 +464,7 @@ class QPythonScriptRunner(QtGui.QWidget):
             )
         else:
             self.console.runLine("execfile('%s')" % path)
+            self.browser.addRecentFile(path)
 
     def editScript(self):
         """Edit the currently selected script"""
@@ -317,7 +484,7 @@ class QPythonScriptRunner(QtGui.QWidget):
                 else:
                     try:
                         subprocess.Popen([text_editor, path])
-                    # TODO: I'm not sure which exceptions to catch here to detect a failed Popen?
+                    # Catching BaseException here might be a bit dangerous
                     # On Windows, WindowsError works.
                     # Need to test on Linux/Mac
                     except BaseException as e:
