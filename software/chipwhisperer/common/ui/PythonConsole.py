@@ -189,12 +189,19 @@ class CWPythonRecentTable(QtGui.QTableWidget):
     num_scripts = 10
     regular_color = QtGui.QColor(255, 255, 255)
     pinned_color = QtGui.QColor(160, 220, 240)
+    pinned_setting = 'pinned-scripts'
+    unpinned_setting = 'unpinned-scripts'
 
     def __init__(self, parent=None):
         super(CWPythonRecentTable, self).__init__(parent)
 
-        self.pinned = []
-        self.unpinned = []
+        self.pinned = QtCore.QSettings().value(self.pinned_setting)
+        self.unpinned = QtCore.QSettings().value(self.unpinned_setting)
+
+        if self.pinned is None or not isinstance(self.pinned, list) \
+            or self.unpinned is None or not isinstance(self.unpinned, list):
+            self.pinned = []
+            self.unpinned = []
 
         self.setRowCount(self.num_scripts)
         self.setColumnCount(1)
@@ -214,7 +221,9 @@ class CWPythonRecentTable(QtGui.QTableWidget):
 
         If <selected_idx> is not None, change the selected row to this one
         """
-        # TODO: save settings
+        QtCore.QSettings().setValue(self.pinned_setting, self.pinned)
+        QtCore.QSettings().setValue(self.unpinned_setting, self.unpinned)
+
         num_pinned = len(self.pinned)
         num_unpinned = len(self.unpinned)
         num_empty = self.num_scripts - num_pinned - num_unpinned
@@ -265,7 +274,6 @@ class CWPythonRecentTable(QtGui.QTableWidget):
             # Select this row only if it wasn't removed immediately
             if len(self.unpinned) > 0:
                 selected_idx = len(self.pinned)
-
 
         self._listsUpdated(selected_idx)
 
@@ -436,19 +444,29 @@ class QPythonScriptRunner(QtGui.QWidget):
         self.edit_button = QtGui.QPushButton("Edit")
         self.edit_button.clicked.connect(self.editScript)
 
-        # TODO
-        self.hide_button = QtGui.QPushButton(">")
+        self.hide_button = QtGui.QPushButton("<")
+        self.hide_button.setFixedWidth(20)
+        self.hide_button.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
+        self.hide_button.clicked.connect(self.toggleBrowser)
 
-        #self.view_button = QtGui.QPushButton("View")
-        #self.view_button.clicked.connect(self.viewScript)
+        button_layout = QtGui.QHBoxLayout()
+        button_layout.addWidget(self.run_button)
+        button_layout.addSpacing(20)
+        button_layout.addWidget(self.edit_button)
+        button_layout.addStretch()
 
-        grid_layout = QtGui.QGridLayout(self)
-        grid_layout.addWidget(self.browser, 0, 0, 1, 3)
-        grid_layout.addWidget(self.file_preview, 0, 3, 1, 2)
-        grid_layout.addWidget(self.run_button, 1, 0)
-        grid_layout.addWidget(self.edit_button, 1, 1)
-        #grid_layout.addWidget(self.view_button, 1, 2)
-        self.setLayout(grid_layout)
+        preview_layout = QtGui.QVBoxLayout()
+        preview_layout.addWidget(self.file_preview)
+        preview_layout.addSpacing(10)
+        preview_layout.addItem(button_layout)
+        preview_box = QtGui.QGroupBox("Script Preview (Read Only)")
+        preview_box.setLayout(preview_layout)
+
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(self.browser)
+        layout.addWidget(self.hide_button)
+        layout.addWidget(preview_box)
+        self.setLayout(layout)
 
     def runScript(self):
         """Run the currently selected script"""
@@ -503,6 +521,16 @@ class QPythonScriptRunner(QtGui.QWidget):
             with open(path, 'r') as script_file:
                 file_contents = script_file.read()
             self.file_preview.setText(file_contents)
+
+    def toggleBrowser(self):
+        hidden = self.browser.isHidden()
+        if hidden:
+            self.browser.show()
+            button_text = "<"
+        else:
+            self.browser.hide()
+            button_text = ">"
+        self.hide_button.setText(button_text)
 
 class QSplitConsole(QtGui.QSplitter):
     def __init__(self, parent=None, locals=None):
