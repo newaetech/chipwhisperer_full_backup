@@ -10,7 +10,10 @@ embedded in your GUI.
 
 """
 
+import chipwhisperer
+import logging
 import os
+import subprocess
 import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
@@ -98,9 +101,7 @@ class QPythonConsole(QtGui.QWidget):
         self.history = []
         self.history_pos = 0
 
-    def _on_enter_line(self):
-        line = self.ui.input.text()
-        self.ui.input.setText("")
+    def runLine(self, line):
         self.interpreter.write(self.ui.prompt.text() + line)
         more = self.interpreter.push(line)
         if line:
@@ -113,6 +114,11 @@ class QPythonConsole(QtGui.QWidget):
             self.ui.prompt.setText("... ")
         else:
             self.ui.prompt.setText(">>> ")
+
+    def _on_enter_line(self):
+        line = self.ui.input.text()
+        self.ui.input.setText("")
+        self.runLine(line)
         
     def eventFilter(self, obj, event):
         if hasattr(event, "type") and event.type() == QtCore.QEvent.KeyPress:
@@ -136,35 +142,301 @@ class QPythonConsole(QtGui.QWidget):
         self.ui.input.setText(line)
         self.ui.input.end(False)
 
-class QPythonScriptRunner(QtGui.QWidget):
-    def __init__(self, parent=None):
-        super(QPythonScriptRunner,self).__init__(parent)
+class CWPythonFileTree(QtGui.QTreeView):
+    """Customized QTreeView that only displays Python files.
 
-        self.file_view = QtGui.QTreeView()
+    Optional parameter in __init__: root sets up base directory for file tree
+    """
 
-        # Only show users the ChipWhisperer directory
-        # TODO: don't hard-code this path
-        # TODO: make it clear where the root path is
-        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
+    def __init__(self, root=None, parent=None):
+        super(CWPythonFileTree, self).__init__(parent)
         model = QtGui.QFileSystemModel()
-        model.setRootPath(scripts_folder)
+        if root is not None:
+            model.setRootPath(root)
+        else:
+            # TODO: unsure if this works on all operating systems.
+            # Amazingly, it works on Windows.
+            model.setRootPath('/')
 
         # Only display Python files
         model.setNameFilters(["*.py"])
         model.setNameFilterDisables(False)
 
-        self.file_view.setModel(model)
-        self.file_view.setRootIndex(model.index(scripts_folder))
+        self.setModel(model)
+        if root is not None:
+            self.setRootIndex(model.index(root))
+        else:
+            # It seems like this is unnecessary. Not sure why...
+            # self.setRootIndex(model.index('/'))
+            pass
 
-        # Hide size/type/date columns
-        self.file_view.hideColumn(1)
-        self.file_view.hideColumn(2)
-        self.file_view.hideColumn(3)
+        self.hideColumn(1)
+        self.hideColumn(2)
+        self.hideColumn(3)
+
+    def getSelectedPath(self):
+        file_index = self.currentIndex()
+        if not file_index.isValid():
+            return None
+        return self.model().filePath(file_index)
+
+class CWPythonRecentTable(QtGui.QTableWidget):
+    """A table view that stores a list of recently run files
+
+    Also allows files to be pinned
+    """
+
+    num_scripts = 10
+    regular_color = QtGui.QColor(255, 255, 255)
+    pinned_color = QtGui.QColor(160, 220, 240)
+    pinned_setting = 'pinned-scripts'
+    unpinned_setting = 'unpinned-scripts'
+
+    def __init__(self, parent=None):
+        super(CWPythonRecentTable, self).__init__(parent)
+
+        self.pinned = QtCore.QSettings().value(self.pinned_setting)
+        self.unpinned = QtCore.QSettings().value(self.unpinned_setting)
+
+        if self.pinned is None or not isinstance(self.pinned, list) \
+            or self.unpinned is None or not isinstance(self.unpinned, list):
+            self.pinned = []
+            self.unpinned = []
+
+        self.setRowCount(self.num_scripts)
+        self.setColumnCount(1)
+        self.setHorizontalHeaderLabels([
+            'Recent Files',
+        ])
+        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.Stretch)
+
+        self._listsUpdated()
+
+    def _listsUpdated(self, selected_idx=None):
+        """Helper function for whenever the file lists are updated.
+
+        Saves the new lists to persistent settings and redraws the table.
+
+        If <selected_idx> is not None, change the selected row to this one
+        """
+        QtCore.QSettings().setValue(self.pinned_setting, self.pinned)
+        QtCore.QSettings().setValue(self.unpinned_setting, self.unpinned)
+
+        num_pinned = len(self.pinned)
+        num_unpinned = len(self.unpinned)
+        num_empty = self.num_scripts - num_pinned - num_unpinned
+        for row in range(self.num_scripts):
+            if row < num_pinned:
+                idx = row
+                bg_color = self.pinned_color
+                path = self.pinned[idx]
+            elif row < num_pinned + num_unpinned:
+                idx = row - num_pinned
+                bg_color = self.regular_color
+                path = self.unpinned[idx]
+            else:
+                bg_color = self.regular_color
+                path = ""
+
+            short_path = os.path.basename(path)
+            item = QtGui.QTableWidgetItem(short_path)
+            item.setToolTip(path)
+            item.setBackground(bg_color)
+            self.setItem(row, 0, item)
+
+        if selected_idx is not None:
+            self.selectRow(selected_idx)
+
+    def addScript(self, path):
+        """Add a script path to the recent file list.
+
+        3 possible cases:
+        1. Script is pinned. Do nothing.
+        2. Script is unpinned. Put it at the top of the unpinned list.
+        3. Script is not in lists. Put it at the top of the unpinned list and remove an old script if needed.
+        Redraw the table and save settings if necessary.
+        """
+        selected_idx = None
+        if path in self.pinned:
+            selected_idx = self.pinned.index(path)
+
+        elif path in self.unpinned:
+            self.unpinned.remove(path)
+            self.unpinned.insert(0, path)
+            selected_idx = len(self.pinned)
+        else:
+            self.unpinned.insert(0, path)
+            if len(self.pinned) + len(self.unpinned) > self.num_scripts:
+                del self.unpinned[-1]
+
+            # Select this row only if it wasn't removed immediately
+            if len(self.unpinned) > 0:
+                selected_idx = len(self.pinned)
+
+        self._listsUpdated(selected_idx)
+
+    def _pinScript(self, idx):
+        """Take an unpinned script and add it to the list of pinned scripts
+
+        Cases:
+        1. Script is unpinned. Move it from unpinned list to pinned.
+        2. Script is not unpinned. Do nothing.
+        Redraw the table and save settings if necessary.
+        """
+        unpinned_idx = idx - len(self.pinned)
+        if unpinned_idx < 0 or unpinned_idx >= len(self.unpinned):
+            selected_idx = idx
+        else:
+            path = self.unpinned[unpinned_idx]
+            del self.unpinned[unpinned_idx]
+            self.pinned.append(path)
+            selected_idx = len(self.pinned) - 1
+        self._listsUpdated(selected_idx)
+
+    def _unpinScript(self, idx):
+        """Take a pinned script and move it to the unpinned script list.
+
+        Cases:
+        1. Script is not pinned. Do nothing.
+        2. Script is pinned. Remove from pinned list and add to top of unpinned list.
+        Redraw the table and save settings if necessary.
+        """
+        if idx < len(self.pinned):
+            path = self.pinned[idx]
+            del self.pinned[idx]
+            self.unpinned.insert(0, path)
+            selected_idx = len(self.pinned)
+        else:
+            selected_idx = idx
+
+        self._listsUpdated(selected_idx)
+
+    def contextMenuEvent(self, event):
+        idx = self.rowAt(event.pos().y())
+        num_pinned = len(self.pinned)
+        num_unpinned = len(self.unpinned)
+
+        if idx < num_pinned:
+            item_pinned = True
+        elif idx < num_pinned + num_unpinned:
+            item_pinned = False
+        else:
+            return
+
+        menu = QtGui.QMenu(self)
+        if item_pinned:
+            action_name = "Unpin From Top"
+        else:
+            action_name = "Pin To Top"
+
+        modify_pin = menu.addAction(action_name)
+        action = menu.exec_(self.mapToGlobal(event.pos()))
+
+        if action == modify_pin:
+            if item_pinned:
+                self._unpinScript(idx)
+            else:
+                self._pinScript(idx)
+
+    def getSelectedPath(self):
+        idx_list = self.selectedIndexes()
+        if len(idx_list) == 0:
+            return None
+        row = idx_list[0].row()
+        if row < len(self.pinned):
+            return self.pinned[row]
+        elif row < len(self.pinned) + len(self.unpinned):
+            return self.unpinned[row - len(self.pinned)]
+        return None
+
+class QPythonScriptBrowser(QtGui.QWidget):
+    """A script browser with 3 tabs to help find Python files:
+    1. ChipWhisperer directory
+    2. Root of file system
+    3. Recent file list with options to pin files
+    """
+
+    # Note that this signal needs to be defined at the class level
+    # See https://stackoverflow.com/a/2971426/3817091 for details
+    sigSelectionChanged = QtCore.Signal()
+
+    def __init__(self, parent=None):
+        super(QPythonScriptBrowser,self).__init__(parent)
+
+        self.tab_bar = QtGui.QTabBar()
+        self.tab_bar.addTab("ChipWhisperer")
+        self.tab_bar.addTab("File System")
+        self.tab_bar.addTab("Recent")
+        self.tab_bar.currentChanged.connect(self.tabChanged)
+
+        scripts_folder = os.path.dirname(chipwhisperer.__file__)
+#        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
+        self.file_view_cw = CWPythonFileTree(scripts_folder)
+        self.file_view_all = CWPythonFileTree()
+        self.file_view_recent = CWPythonRecentTable()
+
+        layout = QtGui.QVBoxLayout()
+        layout.addWidget(self.tab_bar)
+        layout.addWidget(self.file_view_cw)
+        layout.addWidget(self.file_view_all)
+        layout.addWidget(self.file_view_recent)
+
+        self.setLayout(layout)
+
+        self.tabChanged(0)
+
+        # New style signals causes crashes on at least some platforms, so need to use old style
+        self.connect(self.file_view_cw.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+        self.connect(self.file_view_all.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+        self.connect(self.file_view_recent.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+
+    def tabChanged(self, newTab):
+        self.file_view_cw.hide()
+        self.file_view_all.hide()
+        self.file_view_recent.hide()
+        if newTab == 0: # ChipWhisperer
+            self.file_view_cw.show()
+        elif newTab == 1: # File system
+            self.file_view_all.show()
+        else: # Recent
+            self.file_view_recent.show()
+
+        self.selectionChanged()
+
+    def getSelectedPath(self):
+        active_tab = self.tab_bar.currentIndex()
+        if active_tab == 0: # ChipWhisperer
+            return self.file_view_cw.getSelectedPath()
+        elif active_tab == 1: # File system
+            return self.file_view_all.getSelectedPath()
+        elif active_tab == 2: # Recent
+            return self.file_view_recent.getSelectedPath()
+        else:
+            return None
+
+    def selectionChanged(self, x=None, y=None):
+        self.sigSelectionChanged.emit()
+
+    def addRecentFile(self, path):
+        self.file_view_recent.addScript(path)
+
+class QPythonScriptRunner(QtGui.QWidget):
+    def __init__(self, console, parent=None):
+        super(QPythonScriptRunner,self).__init__(parent)
+        self.console = console
+        self.api = parent.api
+
+        self.browser = QPythonScriptBrowser()
 
         self.file_preview = QtGui.QTextEdit()
         self.file_preview.setReadOnly(True)
-        #New style signals causes crashes on at least some platforms, so need to use old style
-        self.connect(self.file_view.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"), self, QtCore.SLOT("viewScript(QItemSelection, QItemSelection)"))
+
+        self.browser.sigSelectionChanged.connect(self.viewScript)
 
         self.run_button = QtGui.QPushButton("Run")
         self.run_button.clicked.connect(self.runScript)
@@ -172,39 +444,77 @@ class QPythonScriptRunner(QtGui.QWidget):
         self.edit_button = QtGui.QPushButton("Edit")
         self.edit_button.clicked.connect(self.editScript)
 
-        #self.view_button = QtGui.QPushButton("View")
-        #self.view_button.clicked.connect(self.viewScript)
+        self.hide_button = QtGui.QPushButton("<")
+        self.hide_button.setFixedWidth(20)
+        self.hide_button.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
+        self.hide_button.clicked.connect(self.toggleBrowser)
 
-        grid_layout = QtGui.QGridLayout(self)
-        grid_layout.addWidget(self.file_view, 0, 0, 1, 3)
-        grid_layout.addWidget(self.file_preview, 0, 3, 1, 2)
-        grid_layout.addWidget(self.run_button, 1, 0)
-        grid_layout.addWidget(self.edit_button, 1, 1)
-        #grid_layout.addWidget(self.view_button, 1, 2)
-        self.setLayout(grid_layout)
+        button_layout = QtGui.QHBoxLayout()
+        button_layout.addWidget(self.run_button)
+        button_layout.addSpacing(20)
+        button_layout.addWidget(self.edit_button)
+        button_layout.addStretch()
 
-    def getSelectedPath(self):
-        file_index = self.file_view.currentIndex()
-        if not file_index.isValid():
-            return None
-        return self.file_view.model().filePath(file_index)
+        preview_layout = QtGui.QVBoxLayout()
+        preview_layout.addWidget(self.file_preview)
+        preview_layout.addSpacing(10)
+        preview_layout.addItem(button_layout)
+        preview_box = QtGui.QGroupBox("Script Preview (Read Only)")
+        preview_box.setLayout(preview_layout)
+
+        layout = QtGui.QHBoxLayout()
+        layout.addWidget(self.browser)
+        layout.addWidget(self.hide_button)
+        layout.addWidget(preview_box)
+        self.setLayout(layout)
 
     def runScript(self):
         """Run the currently selected script"""
-        print "TODO: Run script"
-        print "Selected file: %s" % self.getSelectedPath()
+        path = self.browser.getSelectedPath()
+        if path is None or not os.path.isfile(path):
+            error_dialog = QtGui.QMessageBox()
+            error_dialog.warning(
+                self,
+                "Python Console",
+                "Error in Python Console: Selected path %s is not a file" % path,
+                QtGui.QMessageBox.Ok,
+                QtGui.QMessageBox.NoButton
+            )
+        else:
+            self.console.runLine("execfile('%s')" % path)
+            self.browser.addRecentFile(path)
 
     def editScript(self):
         """Edit the currently selected script"""
-        path = self.getSelectedPath()
+        path = self.browser.getSelectedPath()
         if path is None:
             return
         if os.path.isfile(path):
-            os.startfile(path)
+            text_editor = self.api.settings.value('text-editor')
+            open_with_default = False
 
-    def viewScript(self, x, y=None):
+            if len(text_editor) == 0:
+                open_with_default = True
+            else: # len > 0\
+                if not os.path.isfile(text_editor):
+                    logging.warning("Python Console: Can't open text files with %s - using system default instead" % text_editor)
+                    open_with_default = True
+                else:
+                    try:
+                        subprocess.Popen([text_editor, path])
+                    # Catching BaseException here might be a bit dangerous
+                    # On Windows, WindowsError works.
+                    # Need to test on Linux/Mac
+                    except BaseException as e:
+                        logging.warning("Python Console: Failed to open text file with %s - using system default instead" % text_editor)
+                        open_with_default = True
+
+            if open_with_default:
+                os.startfile(path)
+
+    def viewScript(self):
         """Edit the currently selected script"""
-        path = self.getSelectedPath()
+        path = self.browser.getSelectedPath()
         if path is None or not os.path.isfile(path):
             self.file_preview.setText("")
         else:
@@ -212,13 +522,23 @@ class QPythonScriptRunner(QtGui.QWidget):
                 file_contents = script_file.read()
             self.file_preview.setText(file_contents)
 
+    def toggleBrowser(self):
+        hidden = self.browser.isHidden()
+        if hidden:
+            self.browser.show()
+            button_text = "<"
+        else:
+            self.browser.hide()
+            button_text = ">"
+        self.hide_button.setText(button_text)
+
 class QSplitConsole(QtGui.QSplitter):
     def __init__(self, parent=None, locals=None):
         super(QSplitConsole,self).__init__(parent)
         self.console = QPythonConsole(parent, locals)
         self.addWidget(self.console)
 
-        self.script_runner = QPythonScriptRunner(parent)
+        self.script_runner = QPythonScriptRunner(self.console, parent)
         self.addWidget(self.script_runner)
 
 #        self.setLayout(QtGui.QHBoxLayout(self))
