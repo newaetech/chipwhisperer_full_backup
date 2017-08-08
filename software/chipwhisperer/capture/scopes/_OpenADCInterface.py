@@ -14,6 +14,7 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 import array
 import numpy as np
+from collections import OrderedDict
 
 ADDR_GAIN       = 0
 ADDR_SETTINGS   = 1
@@ -157,12 +158,12 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         self.gain_cached = 0
         self.params = Parameter(name=self.getName(), type='group')
         self.params.addChildren([
-            {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.mode, 'linked':['Result'],
+            {'name': 'Mode', 'type': 'list', 'values': {"high", "low"}, 'default': 'low', 'set':self.setMode, 'get':self.getMode, 'linked':['Result'],
                      'help': '%namehdr%'+
                              'Sets the AD8331 Low Noise Amplifier into to "High" or "Low" gain mode. Low mode ranges from ' +
                              '-4.5dB to +43.5dB, and High mode ranges from +7.5dB to +55.5dB. Better performance is found ' +
                              'using the "High" gain mode typically.'},
-            {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'default': 0, 'set':self.setGain, 'get':self.gain, 'linked':['Result'],
+            {'name': 'Setting', 'type': 'int', 'limits': (0, 78), 'default': 0, 'set':self.setGain, 'get':self.getGain, 'linked':['Result'],
                      'help':'%namehdr%'+
                             'Sets the AD8331 gain value. This is a unitless number which ranges from 0 (minimum) to 78 (maximum).' +
                             ' The resulting gain in dB is given in the "calculated" output.'},
@@ -173,8 +174,40 @@ class GainSettings(Parameterized, util.DisableNewAttr):
 
         self.disable_newattr()
 
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['mode'] = self.mode
+        dict['level'] = self.gain
+        dict['db'] = self.db
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
     @property
     def db(self):
+        """The gain of the ChipWhisperer's low-noise amplifier in dB. Ranges
+        from -6.5 dB to 56 dB, depending on the amplifier settings.
+
+        Getter:
+            Return the current gain as a floating point number.
+
+        Setter:
+            Attempt to set the gain level.
+
+            Args:
+                val: The new gain level in dB
+
+            Raises:
+                ValueError: If new gain is outside of [-6.5, 56]
+
+        Examples:
+        >>> gain_db = scope.gain.db
+        >>> scope.gain.db = 20
+        """
         return self._get_gain_db()
 
     @db.setter
@@ -193,8 +226,15 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         else:
             raise ValueError, "Invalid Gain Mode, only 'low' or 'high' allowed"
 
-    def mode(self):
+    def getMode(self):
         return "low" #TODO: Read it from hardware!
+
+    @property
+    def mode(self):
+        """The current mode of the LNA. This is either "low" or "high". Read-only
+        from command line - use gain.db instead.
+        """
+        return self.getMode()
 
     @setupSetParam("Setting")
     def setGain(self, gain):
@@ -208,11 +248,18 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         cmd[0] = gain
         self.oa.sendMessage(CODE_WRITE, ADDR_GAIN, cmd)
 
-    def gain(self, cached=False):
+    def getGain(self, cached=False):
         if cached == False:
             self.gain_cached = self.oa.sendMessage(CODE_READ, ADDR_GAIN)[0]
 
         return self.gain_cached
+
+    @property
+    def gain(self):
+        """The current LNA gain setting. This is a dimensionless number from
+        0 to 79. Read-only from command line - use gain.db instead.
+        """
+        return self.getGain()
 
     def _get_gain_db(self):
         #GAIN (dB) = 50 (dB/V) * VGAIN - 6.5 dB, (HILO = LO)

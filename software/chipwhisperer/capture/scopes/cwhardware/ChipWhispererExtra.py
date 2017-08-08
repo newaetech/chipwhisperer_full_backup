@@ -82,15 +82,8 @@ class GPIOMuxSettings(util.DisableNewAttr):
 
         return dict
 
-    def _str_repr(self, indent="", width=5):
-        s = ""
-        d = self._dict_repr()
-        for n in d:
-            s += indent + "%5s = %s" % (n, d[n])
-        return s
-
     def __repr__(self):
-        return self._str_repr()
+        return util.dict_to_str(self._dict_repr())
 
     def __str__(self):
         return self.__repr__()
