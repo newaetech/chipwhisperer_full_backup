@@ -39,7 +39,18 @@ from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 from chipwhisperer.common.utils.pluginmanager import Plugin
 
 class OpenADC(ScopeTemplate, Plugin):
-    """ Common API to OpenADC Hardware"""
+    """OpenADC scope object.
+
+    This class contains the public API for the OpenADC hardware, including the ChipWhisperer Lite/CW1200/Rev 2 boards.
+    It includes specific settings for each of these devices.
+
+    To connect to one of these devices, the easiest method is
+
+    >>> import chipwhisperer as cw
+    >>> scope = cw.scope()
+
+    This code will automatically detect an attached ChipWhisperer device and connect to it.
+    """
 
     _name = "ChipWhisperer/OpenADC"
 
