@@ -37,6 +37,7 @@ from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInt
 from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from collections import OrderedDict
 
 class OpenADC(ScopeTemplate, Plugin):
     """OpenADC scope object.
@@ -202,3 +203,20 @@ class OpenADC(ScopeTemplate, Plugin):
             self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
         return ret
 
+    def _dict_repr(self):
+        dict = OrderedDict()
+
+        return dict
+
+    def _str_repr(self, indent="", width=5):
+        s = ""
+        d = self._dict_repr()
+        for n in d:
+            s += indent + "%5s = %s" % (n, d[n])
+        return s
+
+    def __repr__(self):
+        return self._str_repr()
+
+    def __str__(self):
+        return self.__repr__()

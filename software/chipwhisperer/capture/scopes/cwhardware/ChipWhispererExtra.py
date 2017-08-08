@@ -26,6 +26,7 @@
 #=================================================
 import logging
 import time
+from collections import OrderedDict
 from functools import partial
 import ChipWhispererGlitch
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
@@ -67,6 +68,32 @@ class GPIOMuxSettings(util.DisableNewAttr):
         self.HS2_VALID = {'disabled': 0, 'clkout': 2, 'glitchout': 3}
 
         self.disable_newattr()
+
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['tio1'] = self.tio1
+        dict['tio2'] = self.tio2
+        dict['tio3'] = self.tio3
+        dict['tio4'] = self.tio4
+        dict['pdid'] = self.pdid
+        dict['pdic'] = self.pdic
+        dict['nrst'] = self.nrst
+
+        return dict
+
+    def _str_repr(self, indent="", width=5):
+        s = ""
+        d = self._dict_repr()
+        for n in d:
+            s += indent + "%5s = %s" % (n, d[n])
+        return s
+
+    def __repr__(self):
+        return self._str_repr()
+
+    def __str__(self):
+        return self.__repr__()
 
     @property
     def tio1(self):
@@ -156,14 +183,35 @@ class GPIOMuxSettings(util.DisableNewAttr):
     def cs(self):
         pass
 
+    @property
     def pdic(self):
-        pass
+        return self.cwe.getGPIOState(102)
 
+    @pdic.setter
+    def pdic(self, state):
+        if (state == "Disabled") or (state == "High-Z") or (state == "Default"):
+            state = None
+        self.cwe.setGPIOStatepdic(state)
+
+    @property
     def pdid(self):
-        pass
+        return self.cwe.getGPIOState(101)
 
+    @pdid.setter
+    def pdid(self, state):
+        if (state == "Disabled") or (state == "High-Z") or (state == "Default"):
+            state = None
+        self.cwe.setGPIOStatepdid(state)
+
+    @property
     def nrst(self):
-        pass
+        return self.cwe.getGPIOState(100)
+
+    @nrst.setter
+    def nrst(self, state):
+        if (state == "Disabled") or (state == "High-Z") or (state == "Default"):
+            state = None
+        self.cwe.setGPIOStatenrst(state)
 
     @property
     def hs2(self):
@@ -532,33 +580,33 @@ class CWExtraSettings(Parameterized):
             {'name':'Target IOn Pins', 'type':'group', 'children':[
                 {'name': 'Target IO1', 'key':'gpio1mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
                                                                 'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':partial(self.setTargetIOMode, IONumber=0), 'get':partial(self.getTargetIOMode, IONumber=0)},
+                                       'set':self.setTargetIOMode1, 'get':partial(self.getTargetIOMode, IONumber=0)},
                 {'name': 'Target IO2', 'key':'gpio2mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'USI-Out':self.IOROUTE_USIO,
                                                                 'USI-In':self.IOROUTE_USII, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':partial(self.setTargetIOMode, IONumber=1), 'get':partial(self.getTargetIOMode, IONumber=1)},
+                                       'set':self.setTargetIOMode2, 'get':partial(self.getTargetIOMode, IONumber=1)},
                 {'name': 'Target IO3', 'key':'gpio3mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'Serial RXD':self.IOROUTE_SRX, 'Serial-TX/RX':self.IOROUTE_STXRX,
                                                                 'USI-Out':self.IOROUTE_USIO, 'USI-In':self.IOROUTE_USII, 'USI-IN/OUT':self.IOROUTE_USINOUT,
                                                                 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':partial(self.setTargetIOMode, IONumber=2), 'get':partial(self.getTargetIOMode, IONumber=2)},
+                                       'set':self.setTargetIOMode3, 'get':partial(self.getTargetIOMode, IONumber=2)},
                 {'name': 'Target IO4', 'key':'gpio4mode', 'type':'list', 'values':{'Serial TXD':self.IOROUTE_STX, 'GPIO':self.IOROUTE_GPIOE, 'High-Z':self.IOROUTE_HIGHZ},
-                                       'set':partial(self.setTargetIOMode, IONumber=3), 'get':partial(self.getTargetIOMode, IONumber=3)},
+                                       'set':self.setTargetIOMode4, 'get':partial(self.getTargetIOMode, IONumber=3)},
             ]},
 
             {'name':'Target IOn GPIO Mode', 'type':'group', 'children':[
                 {'name':'Target IO1: GPIO', 'key':'gpiostate1', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=0), 'set':partial(self.setGPIOState, IONumber=0)},
+                                       'get':partial(self.getGPIOState, IONumber=0), 'set':self.setGPIOState1},
                 {'name':'Target IO2: GPIO', 'key':'gpiostate2', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=1), 'set':partial(self.setGPIOState, IONumber=1)},
+                                       'get':partial(self.getGPIOState, IONumber=1), 'set':self.setGPIOState2},
                 {'name':'Target IO3: GPIO', 'key':'gpiostate3', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=2), 'set':partial(self.setGPIOState, IONumber=2)},
+                                       'get':partial(self.getGPIOState, IONumber=2), 'set':self.setGPIOState3},
                 {'name':'Target IO4: GPIO', 'key':'gpiostate4', 'type':'list', 'values':{'Low':False, 'High':True, 'Disabled':None},
-                                       'get':partial(self.getGPIOState, IONumber=3), 'set':partial(self.setGPIOState, IONumber=3)},
+                                       'get':partial(self.getGPIOState, IONumber=3), 'set':self.setGPIOState4},
                 {'name':'nRST: GPIO', 'key':'gpiostatenrst', 'type':'list', 'values':{'Low':False, 'High':True, 'Default':None},
-                                       'get':partial(self.getGPIOState, IONumber=100), 'set':partial(self.setGPIOState, IONumber=100)},
+                                       'get':partial(self.getGPIOState, IONumber=100), 'set':self.setGPIOStatenrst},
                 {'name': 'PDID: GPIO', 'key': 'gpiostatepdid', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
-                                       'get': partial(self.getGPIOState, IONumber=101), 'set': partial(self.setGPIOState, IONumber=101)},
+                                       'get': partial(self.getGPIOState, IONumber=101), 'set':self.setGPIOStatepdid},
                 {'name': 'PDIC: GPIO', 'key': 'gpiostatepdic', 'type': 'list', 'values': {'Low': False, 'High': True, 'Default': None},
-                                       'get': partial(self.getGPIOState, IONumber=102), 'set': partial(self.setGPIOState, IONumber=102)},
+                                       'get': partial(self.getGPIOState, IONumber=102), 'set':self.setGPIOStatepdic},
             ]},
         ])
 
@@ -574,38 +622,37 @@ class CWExtraSettings(Parameterized):
         self.gpiomux = GPIOMuxSettings(self)
         self.triggermux = TriggerMux(self)
 
-    @setupSetParam("")
-    def setGPIOState(self, state, IONumber):
 
+    def _setGPIOState(self, state, IONumber):
         # Special GPIO nRST, PDID, PDIC
         if IONumber >= 100:
-            if IONumber == 100: # nRST IO Number
+            if IONumber == 100:  # nRST IO Number
                 bitnum = 0
-            elif IONumber == 101: # PDID IO Number
+            elif IONumber == 101:  # PDID IO Number
                 bitnum = 2
-            elif IONumber == 102: # PDIC IO Number
+            elif IONumber == 102:  # PDIC IO Number
                 bitnum = 4
             else:
-                raise ValueError("Invalid special IO Number: %d"%IONumber)
+                raise ValueError("Invalid special IO Number: %d" % IONumber)
 
             data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
 
             if state is None:
-                #Disable GPIO mode
-                data[6] &= ~(1<<bitnum)
+                # Disable GPIO mode
+                data[6] &= ~(1 << bitnum)
             else:
-                #Enable GPIO mode
-                data[6] |= (1<<bitnum)
+                # Enable GPIO mode
+                data[6] |= (1 << bitnum)
 
-                #Set pin high/low
+                # Set pin high/low
                 if state:
-                    data[6] |= (1<<(bitnum+1))
+                    data[6] |= (1 << (bitnum + 1))
                 else:
-                    data[6] &= ~(1<<(bitnum + 1))
+                    data[6] &= ~(1 << (bitnum + 1))
 
             self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
 
-        #Regular GPIO1-4
+        # Regular GPIO1-4
         elif state is not None:
             data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
 
@@ -618,6 +665,52 @@ class CWExtraSettings(Parameterized):
                 data[IONumber] &= ~(self.IOROUTE_GPIO)
 
             self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'Target IO1: GPIO'])
+    def setGPIOState1(self, state):
+        self._setGPIOState(state, 0)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'Target IO2: GPIO'])
+    def setGPIOState2(self, state):
+        self._setGPIOState(state, 1)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'Target IO3: GPIO'])
+    def setGPIOState3(self, state):
+        self._setGPIOState(state, 2)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'Target IO4: GPIO'])
+    def setGPIOState4(self, state):
+        self._setGPIOState(state, 3)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'nRST: GPIO'])
+    def setGPIOStatenrst(self, state):
+        self._setGPIOState(state, 100)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'PDID: GPIO'])
+    def setGPIOStatepdid(self, state):
+        self._setGPIOState(state, 101)
+
+    @setupSetParam(['Target IOn GPIO Mode', 'PDIC: GPIO'])
+    def setGPIOStatepdic(self, state):
+        self._setGPIOState(state, 102)
+
+    def setGPIOState(self, state, IONumber):
+        if IONumber == 0:
+            self.setGPIOState1(state)
+        elif IONumber == 1:
+            self.setGPIOState2(state)
+        elif IONumber == 2:
+            self.setGPIOState3(state)
+        elif IONumber == 3:
+            self.setGPIOState4(state)
+        elif IONumber == 100:
+            self.setGPIOStatenrst(state)
+        elif IONumber == 101:
+            self.setGPIOStatepdid(state)
+        elif IONumber == 102:
+            self.setGPIOStatepdic(state)
+        else:
+            raise ValueError("Invalid GPIO State")
 
     def getGPIOState(self, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
@@ -643,11 +736,41 @@ class CWExtraSettings(Parameterized):
 
         return data[IONumber] == self.IOROUTE_GPIO
 
-    @setupSetParam("")
-    def setTargetIOMode(self, setting, IONumber):
+    @setupSetParam(['Target IOn Pins', 'Target IO1'])
+    def setTargetIOMode1(self, setting):
+        self._setTargetIOMode(setting, 0)
+
+    @setupSetParam(['Target IOn Pins', 'Target IO2'])
+    def setTargetIOMode2(self, setting):
+        self._setTargetIOMode(setting, 1)
+
+    @setupSetParam(['Target IOn Pins', 'Target IO3'])
+    def setTargetIOMode3(self, setting):
+        self._setTargetIOMode(setting, 2)
+
+    @setupSetParam(['Target IOn Pins', 'Target IO4'])
+    def setTargetIOMode4(self, setting):
+        self._setTargetIOMode(setting, 3)
+
+    def _setTargetIOMode(self, setting, IONumber):
+        #Sends actual IO mode to FPGA
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
         data[IONumber] = setting
         self.oa.sendMessage(CODE_WRITE, ADDR_IOROUTE, data)
+
+    def setTargetIOMode(self, setting, IONumber):
+        #To keep parameters syncronized, we need ot call individual set functions
+        if IONumber == 0:
+            self.setTargetIOMode1(setting)
+        elif IONumber == 1:
+            self.setTargetIOMode2(setting)
+        elif IONumber == 2:
+            self.setTargetIOMode3(setting)
+        elif IONumber == 3:
+            self.setTargetIOMode4(setting)
+        else:
+            raise ValueError("Invalid IO Number, valide range is 0,1,2,3", IONumber)
+
 
     def getTargetIOMode(self, IONumber):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
