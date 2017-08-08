@@ -342,7 +342,7 @@ class DisableNewAttr(object):
 
     def __setattr__(self, name, value):
         if hasattr(self, '_new_attributes_disabled') and self._new_attributes_disabled and not hasattr(self, name):  # would this create a new attribute?
-            raise AttributeError("Attempt to set unknown attribute in %s"%str(self), name)
+            raise AttributeError("Attempt to set unknown attribute in %s"%self.__class__, name)
         super(DisableNewAttr, self).__setattr__(name, value)
 
 

@@ -40,7 +40,7 @@ from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.util import dict_to_str
 from collections import OrderedDict
 
-class OpenADC(ScopeTemplate, Plugin):
+class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     """OpenADC scope object.
 
     This class contains the public API for the OpenADC hardware, including the ChipWhisperer Lite/CW1200/Rev 2 boards.
@@ -106,6 +106,26 @@ class OpenADC(ScopeTemplate, Plugin):
     def setCurrentScope(self, scope):
         self.scopetype = scope
 
+    def _getCWType(self):
+        """Find out which type of ChipWhisperer this device is.
+
+        Returns:
+            One of the following:
+            - ""
+            - "cwlite"
+            - "cw1200"
+            - "cwrev2"
+        """
+        hwInfoVer = self.qtadc.sc.hwInfo.versions()[2]
+        if "ChipWhisperer" in hwInfoVer:
+            if "Lite" in hwInfoVer:
+                return "cwlite"
+            elif "CW1200" in hwInfoVer:
+                return "cw1200"
+            else:
+                return "cwrev2"
+        return ""
+
     def _con(self):
         if self.scopetype is not None:
             self.scopetype.con()
@@ -114,14 +134,8 @@ class OpenADC(ScopeTemplate, Plugin):
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
                 self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
-            if "ChipWhisperer" in self.qtadc.sc.hwInfo.versions()[2]:
-
-                if "Lite" in self.qtadc.sc.hwInfo.versions()[2]:
-                    cwtype = "cwlite"
-                elif "CW1200" in self.qtadc.sc.hwInfo.versions()[2]:
-                    cwtype = "cw1200"
-                else:
-                    cwtype = "cwrev2"
+            cwtype = self._getCWType()
+            if cwtype != "":
 
                 #For OpenADC: If we have CW Stuff, add that now
                 #TODO FIXME - this shouldn't be needed, but if you connect/disconnect you can no longer
@@ -207,12 +221,16 @@ class OpenADC(ScopeTemplate, Plugin):
     def _dict_repr(self):
         dict = OrderedDict()
         dict['gain'] = self.gain._dict_repr()
+        dict['trigger'] = self.trigger._dict_repr()
         dict['gpiomux'] = self.gpiomux._dict_repr()
+        # TODO: add remaining parameter objects
 
         return dict
 
     def __repr__(self):
-        return dict_to_str(self._dict_repr())
+        # Add some extra information about ChipWhisperer type here
+        ret = "%s Device\n" % self._getCWType()
+        return ret + dict_to_str(self._dict_repr())
 
     def __str__(self):
         return self.__repr__()

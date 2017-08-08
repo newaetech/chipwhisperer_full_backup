@@ -378,8 +378,53 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         self.params.addChildren(child_list)
         self.disable_newattr()
 
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['state']      = self.state
+        dict['basic_mode'] = self.basic_mode
+        dict['timeout']    = self.timeout
+        dict['offset']     = self.offset
+        dict['presamples'] = self.presamples
+        dict['samples']    = self.samples
+        dict['decimate']   = self.decimate
+        dict['trig_count'] = self.trig_count
+
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    @property
+    def state(self):
+        """The current state of the trigger input.
+
+        This is a digital value (ie: high or low), which is some combination
+        of the pins in the triggermux object. Read-only.
+
+        Getter: Return the current state (True or False).
+        """
+        return self.extTriggerPin()
+
     @property
     def stream_mode(self):
+        """The ChipWhisperer's streaming status. Only available on CW1200.
+
+        When stream mode is enabled, the ChipWhisperer sends back ADC data as
+        soon as it is recorded. In this mode, there is no hardware limit on the
+        maximum number of samples per trace (although Python may run out of
+        memory when recording billions of points). However, there is a
+        maximum streaming data rate, which is approximately 10 Msamp/s.
+
+        Note that no pre-trigger samples can be recorded when stream mode
+        is enabled.
+
+        Getter: Return True if stream mode is enabled and False otherwise
+
+        Setter: Enable or disable stream mode
+        """
         return self._get_stream_mode()
 
     @stream_mode.setter
@@ -388,51 +433,142 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
     @property
     def decimate(self):
+        """The ADC downsampling factor.
+
+        This value instructs the ChipWhisperer to only record 1 sample in
+        every <decimate>. In other words, if this value is set to 10, the
+        sampling rate is set to 1/10th of the sampling clock.
+
+        This setting is helpful for recording very long operations or for
+        reducing the sampling rate for streaming mode.
+
+        Getter: Return an integer with the current decimation factor
+
+        Setter: Set the decimation factor
+            Raises: ValueError if the new factor is not positive
+        """
         return self._get_decimate()
 
     @decimate.setter
     def decimate(self, decfactor):
-        return self._set_decimate(decfactor)
+        self._set_decimate(decfactor)
 
     @property
     def samples(self):
+        """The number of ADC samples to record in a single capture.
+
+        The maximum number of samples is hardware-dependent:
+        - cwlite: 24400
+        - cw1200: 96000
+
+        Getter: Return the current number of total samples (integer)
+
+        Setter: Set the number of samples to capture
+            Raises: ValueError if number of samples is negative
+        """
         return self._get_num_samples()
 
     @samples.setter
     def samples(self, samples):
-        return self._set_num_samples(samples)
+        self._set_num_samples(samples)
 
     @property
     def timeout(self):
+        """The number of seconds to wait before aborting a capture.
+
+        If no trigger event is detected before this time limit is up, the
+        capture fails and no data is returned.
+
+        Getter: Return the number of seconds before a timeout (float)
+
+        Setter: Set the timeout in seconds
+        """
         return self._get_timeout()
 
     @timeout.setter
     def timeout(self, timeout):
-        return self._set_timeout(timeout)
+        self._set_timeout(timeout)
 
     @property
     def offset(self):
+        """The number of samples to before recording data after seeing a
+        trigger event.
+
+        This offset is useful for long operations. For instance, if an
+        encryption is 1 million samples long, it's difficult to capture the
+        entire power trace, but an offset can be used to skip to the end of
+        the encryption.
+
+        The offset must be a 32 bit unsigned integer.
+
+        Getter: Return the current offset (integer)
+
+        Setter: Set a new offset
+            Raises: ValueError if offset outside of range [0, 2**32)
+        """
         return self._get_offset()
 
     @offset.setter
     def offset(self, setting):
-        return self._set_offset(setting)
+        self._set_offset(setting)
 
     @property
     def presamples(self):
+        """The number of samples to record from before the trigger event.
+
+        This setting must be a positive integer, and it cannot be larger than
+        the number of samples. When streaming mode is enabled, this value is
+        set to 0.
+
+        Getter: Return the current number of presamples
+
+        Setter: Set the number of presamples.
+            Raises: ValueError if presamples is outside of range [0, samples]
+        """
         return self._get_presamples()
 
     @presamples.setter
     def presamples(self, setting):
-        return self._set_presamples(setting)
+        self._set_presamples(setting)
 
     @property
     def basic_mode(self):
+        """The type of event to use as a trigger.
+
+        There are four possible types of trigger events:
+        - "low": triggers when line is low (logic 0)
+        - "high": triggers when line is high (logic 1)
+        - "rising edge": triggers when line transitions from low to high
+        - "falling edge:" triggers when line transitions from high to low
+
+        This setting is only used if the trigger module in use is the "Basic
+        Edge/Level" module - UART/SPI/SAD triggers ignore this value.
+
+        Getter: Return the current trigger mode (one of the 4 above strings)
+
+        Setter: Set the trigger mode
+            Raises: ValueError if value is not one of the allowed strings
+        """
         return self._get_mode()
 
     @basic_mode.setter
     def basic_mode(self, mode):
-        return self._set_mode(mode)
+        self._set_mode(mode)
+
+    @property
+    def trig_count(self):
+        """The number of samples that the trigger input was active.
+
+        This value indicates how long the trigger was high or low last time
+        a trace was captured. It is the number of samples where the input was
+        low (in "low" or "falling edge" modes) or high (in "high" or "rising
+        edge" modes). Read-only.
+
+        This counter is not meaningful if the trigger is still active.
+
+        Getter: Return the last trigger duration (integer)
+        """
+        return self._get_duration()
 
     @setupSetParam("Stream Mode")
     def _set_stream_mode(self, enabled):
@@ -472,6 +608,10 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
     @setupSetParam("Total Samples")
     def _set_num_samples(self, samples):
+        if samples < 0:
+            raise ValueError("Can't use negative number of samples")
+        # TODO: raise ValueError or round down for sample counts too high
+        # TODO: raise TypeError for non-integers
         self._numSamples = samples
         self.oa.setNumSamples(samples)
 
@@ -495,6 +635,11 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
     @setupSetParam("Offset")
     def _set_offset(self,  offset):
+        if offset < 0:
+            raise ValueError("Offset must be a non-negative integer")
+        if offset >= 2**32:
+            raise ValueError("Offset must fit into a 32-bit unsigned integer")
+
         cmd = bytearray(4)
         cmd[0] = ((offset >> 0) & 0xFF)
         cmd[1] = ((offset >> 8) & 0xFF)
@@ -515,6 +660,10 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
     @setupSetParam("Pre-Trigger Samples")
     def _set_presamples(self, samples):
+        if samples < 0:
+            raise ValueError("Number of pre-trigger samples must be non-negative")
+        if samples > self.samples:
+            raise ValueError("Number of pre-trigger samples cannot be larger than total number of samples")
 
         self.presamples_desired = samples
 
