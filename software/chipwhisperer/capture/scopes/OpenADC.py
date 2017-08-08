@@ -43,15 +43,27 @@ from collections import OrderedDict
 class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     """OpenADC scope object.
 
-    This class contains the public API for the OpenADC hardware, including the ChipWhisperer Lite/CW1200/Rev 2 boards.
-    It includes specific settings for each of these devices.
+    This class contains the public API for the OpenADC hardware, including the
+    ChipWhisperer Lite/CW1200/Rev 2 boards. It includes specific settings for
+    each of these devices.
 
     To connect to one of these devices, the easiest method is
 
     >>> import chipwhisperer as cw
     >>> scope = cw.scope()
 
-    This code will automatically detect an attached ChipWhisperer device and connect to it.
+    This code will automatically detect an attached ChipWhisperer device and
+    connect to it.
+
+    For more help about scope settings, try help() on each of the ChipWhisperer
+    scope submodules:
+        scope.gain
+        scope.trigger
+        scope.clock
+        scope.triggermux
+        scope.gpiomux
+        scope.crowbar
+        scope.glitch
     """
 
     _name = "ChipWhisperer/OpenADC"
@@ -166,6 +178,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.gpiomux = self.advancedSettings.cwEXTRA.gpiomux
             self.triggermux = self.advancedSettings.cwEXTRA.triggermux
 
+            self.disable_newattr()
             return True
         return False
 
@@ -188,6 +201,8 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         # TODO Fix this hack
         if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
             self.qtadc.sc.usbcon = None
+
+        self.enable_newattr()
         return True
 
     def arm(self):
@@ -220,10 +235,14 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
-        dict['gain'] = self.gain._dict_repr()
-        dict['trigger'] = self.trigger._dict_repr()
-        dict['gpiomux'] = self.gpiomux._dict_repr()
-        # TODO: add remaining parameter objects
+        dict['gain']       = self.gain._dict_repr()
+        dict['trigger']    = self.trigger._dict_repr()
+        dict['clock']      = self.clock._dict_repr()
+        dict['triggermux'] = 'todo'
+        dict['gpiomux']    = self.gpiomux._dict_repr()
+        dict['target_pwr'] = 'todo'
+        dict['crowbar']    = 'todo'
+        dict['glitch']     = 'todo'
 
         return dict
 

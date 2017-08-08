@@ -96,7 +96,7 @@ class OpenADCQt(Parameterized):
         except IndexError, e:
             raise IOError("Error reading data: %s" % str(e))
 
-        self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger._get_presamples(True), self.parm_clock.adcSampleRate())
+        self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger._get_presamples(True), self.parm_clock._adcSampleRate())
 
 
     def trigger_duration(self):

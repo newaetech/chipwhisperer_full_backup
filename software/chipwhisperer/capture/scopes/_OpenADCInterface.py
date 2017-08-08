@@ -812,7 +812,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
                                                             "EXTCLK x1 via DCM":("dcm", 1, "extclk"),
                                                             "CLKGEN x4 via DCM":("dcm", 4, "clkgen"),
                                                             "CLKGEN x1 via DCM":("dcm", 1, "clkgen")},
-                          'set':self.setAdcSource, 'get':self.adcSource,
+                          'set':self._setAdcSource, 'get':self._getAdcSource,
                           'help':'%namehdr%' +
                                 'The ADC sample clock is generated from this source. Options are either an external input (which input set elsewhere) or an internal clock generator. Details of each option:\n\n' +
                                 '=================== ====================== =================== ===============\n' +
@@ -829,8 +829,8 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
                 {'name': 'Phase Adjust', 'type':'int', 'limits':(-255, 255), 'set':self._set_phase, 'get':self._get_phase, 'help': '%namehdr%' +
                          'Makes small amount of adjustment to sampling point compared to the clock source. This can be used to improve the stability ' +
                          'of the measurement. Total phase adjustment range is < 5nS regardless of input frequency.'},
-                {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self._adc_frequency, 'decimals': 5},
-                {'name': 'ADC Sample Rate', 'type': 'int', 'siPrefix': True, 'suffix': 'S/s', 'readonly': True, 'get': self.adcSampleRate, 'decimals': 5},
+                {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self._getAdcFrequency, 'decimals': 5},
+                {'name': 'ADC Sample Rate', 'type': 'int', 'siPrefix': True, 'suffix': 'S/s', 'readonly': True, 'get': self._adcSampleRate, 'decimals': 5},
                 {'name': 'DCM Locked', 'type':'bool', 'get':self._get_adcclk_locked, 'readonly':True},
                 {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.adc_reset(True, False), 'linked':['Phase Adjust']},
             ]},
@@ -840,59 +840,157 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self._set_clkgen_src, 'get':self._get_clkgen_src, 'linked':['Desired Frequency', 'Current Frequency']},
                 {'name':'Input Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                     'set':self._set_extclk_freq, 'get':self._get_extclk_freq, 'linked':['Desired Frequency', 'Current Frequency'], 'visible': True},
-                {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self.clkgenMul, 'linked':['Current Frequency']},
-                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self.clkgenDiv, 'linked':['Current Frequency']},
+                {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self._getClkgenMul, 'linked':['Current Frequency']},
+                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self._getClkgenDiv, 'linked':['Current Frequency']},
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                                             'set':self.autoMulDiv, 'get':self._get_clkgen_freq, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'float', 'default':0, 'readonly':True, 'siPrefix':True, 'suffix':'Hz', 
                                             'get':self._get_clkgen_freq},
-                {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self.clkgenLocked, 'readonly':True},
+                {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self._getClkgenLocked, 'readonly':True},
                 {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.adc_reset(False, True), 'linked':['Multiply', 'Divide']},
             ]}
         ])
         self.params.refreshAllParameters()
         self.disable_newattr()
 
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['adc_src']    = self.adc_src
+        dict['adc_phase']  = self.adc_phase
+        dict['adc_freq']   = self.adc_freq
+        dict['adc_rate']   = self.adc_rate
+        dict['adc_locked'] = self.adc_locked
+
+        dict['freq_ctr']     = self.freq_ctr
+        dict['freq_ctr_src'] = self.freq_ctr_src
+
+        dict['clkgen_src']    = self.clkgen_src
+        dict['extclk_freq']   = self.extclk_freq
+        dict['clkgen_mul']    = self.clkgen_mul
+        dict['clkgen_div']    = self.clkgen_div
+        dict['clkgen_freq']   = self.clkgen_freq
+        dict['clkgen_locked'] = self.clkgen_locked
+
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
     @property
     def adc_src(self):
-        return self.adcSource()
+        """The clock source for the ADC module.
+
+        The ADC can be clocked by one of five possible sources:
+        - "clkgen_x1": CLKGEN output via DCM
+        - "clkgen_x4": CLKGEN output via DCM with x4 clk multiplier
+        - "extclk_x1": External clock input via DCM
+        - "extclk_x4": External clock input via DCM with x4 clk multiplier
+        - "extclk_dir": External clock input with no DCM
+
+        Getter: Return the current ADC clock source (one of five strings above)
+
+        Setter: Set the ADC clock source
+            Raises: ValueError if string not in valid settings
+        """
+        return self._getAdcSource()
 
     @adc_src.setter
     def adc_src(self, src):
-
         if src == "clkgen_x4":
-            self.setAdcSource(("dcm", 4, "clkgen"))
+            self._setAdcSource("dcm", 4, "clkgen")
         elif src == "clkgen_x1":
-            self.setAdcSource(("dcm", 1, "clkgen"))
+            self._setAdcSource("dcm", 1, "clkgen")
         elif src == "extclk_x4":
-            self.setAdcSource(("dcm", 4, "extclk"))
+            self._setAdcSource("dcm", 4, "extclk")
         elif src == "extclk_x1":
-            self.setAdcSource(("dcm", 1, "extclk"))
+            self._setAdcSource("dcm", 1, "extclk")
+        elif src == "extclk_dir":
+            self._setAdcSource("extclk", 1, "extclk")
         else:
-            raise ValueError("Invalid value, valid values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1'")
+            raise ValueError("Invalid ADC source (possible values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1', 'extclk_dir'")
 
     @property
     def adc_phase(self):
+        """Fine adjustment for the ADC sampling point.
+
+        This setting moves the sampling point approximately 5 ns forward or
+        backward, regardless of the sampling frequency. It may be helpful to
+        improve the stability of the measurement.
+
+        The value of this setting is dimensionless and has a non-linear
+        effect on the phase adjustment.
+
+        Getter: Return the current phase setting (integer)
+
+        Setter: Set a new phase offset
+            Raises:
+                ValueError if offset not in [-255, 255]
+                TypeError if offset not integer
+        """
         return self._get_phase()
 
     @adc_phase.setter
     def adc_phase(self, phase):
-        return self._set_phase(phase)
+        self._set_phase(phase)
 
     @property
-    def adc_frequency(self):
-        return self._get_adc_frequency()
+    def adc_freq(self):
+        """The current frequency of the ADC clock in MHz. Read-only.
+
+        This clock frequency is derived from one of the ADC clock sources as
+        described in adc_src.
+
+        Getter: Return the current frequency in MHz (float)
+        """
+        return self._getAdcFrequency()
+
+    @property
+    def adc_rate(self):
+        """The current sampling rate of the ADC clock in MS/s. Read-only.
+
+        Note that the sampling rate may be less than the clock frequency if
+        the downsampling factor is greater than 1.
+
+        Getter: Return the current sampling rate in MS/s (float)
+        """
+        return self._adcSampleRate()
 
     @property
     def adc_locked(self):
+        """The current status of the ADC DCM. Read-only.
+
+        Getter: Return whether the ADC DCM is locked (True or False)
+        """
         return self._get_adcclk_locked()
 
     @property
-    def freq_counter(self):
+    def freq_ctr(self):
+        """The current frequency at the frequency counter in MHz. Read-only.
+
+        The frequency counter can be used to check the speed of the CLKGEN
+        output or the EXTCLK input. This value shows the current frequency
+        reading.
+
+        Getter: Return the current frequency in MHz (float)
+        """
         return self._get_extfrequency()
 
     @property
-    def freq_counter_src(self):
+    def freq_ctr_src(self):
+        """The current input to the frequency counter.
+
+        There are two possible inputs to the frequency counter:
+        - "clkgen": The CLKGEN DCM output
+        - "extclk": The external input clock signal
+
+        Getter: Return the frequency counter input (one of the above strings)
+
+        Setter: Set the frequency counter source
+            Raises: ValueError if source is not "clkgen" or "extclk"
+        """
         src = self._get_freqcounter_src()
         if src == 1:
             return "clkgen"
@@ -901,39 +999,88 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         else:
             raise IOError("Invalid clock source reported by hardware: %d"%src)
 
-    @freq_counter_src.setter
-    def freq_counter_src(self, src):
+    @freq_ctr_src.setter
+    def freq_ctr_src(self, src):
         if src == "clkgen":
             s = 1
         elif src == "extclk":
             s = 0
         else:
             raise ValueError("Invalid clock source for frequency counter. Valid values: 'clkgen', 'extclk'.", src)
-        return self._set_freqcounter_src(s)
-
+        self._set_freqcounter_src(s)
 
     @property
-    def clkgen_input_src(self):
-        return self._get_clkgen_freq()
+    def clkgen_src(self):
+        """The input source for the CLKGEN DCM.
 
-    @clkgen_input_src.setter
-    def clkgen_input_src(self, src, src_freq=None):
+        This DCM can receive input from one of two places:
+        - "extclk": The external clock input
+        - "system" or "internal": The system clock (96 MHz)
+
+        Getter: Return the current CLKGEN input (either "extclk" or "system")
+
+        Setter: Change the CLKGEN source
+            Raises: ValueError if source is not one of three strings above
+        """
+        return self._get_clkgen_src()
+
+    @clkgen_src.setter
+    def clkgen_src(self, src):
         if src == "extclk":
-            if src_freq is None:
-                raise ValueError("Setting clkgen input as EXTCLK requires specifying external frequency too.")
-            self._set_extclk_freq(src_freq)
+            self._set_clkgen_src("extclk")
         elif src == "system" or src == "internal":
-            src = "system"
+            self._set_clkgen_src("system")
         else:
-            raise ValueError("Invalid setting for CLKGEN source, valid values: 'system', 'extclk'")
+            raise ValueError("Invalid setting for CLKGEN source (valid values: 'system', 'extclk')")
+
+    @property
+    def extclk_freq(self):
+        """The input frequency from the EXTCLK source in MHz.
+
+        This value is used to help calculate the correct CLKGEN settings to
+        obtain a desired output frequency when using EXTCLK as CLKGEN input.
+        It is not a frequency counter - it is only helpful if the EXTCLK
+        frequency is already known.
+
+        Getter: Return the last set EXTCLK frequency in MHz (float)
+
+        Setter: Update the EXTCLK frequency
+        """
+        return self._get_extclk_freq()
+
+    @extclk_freq.setter
+    def extclk_freq(self, freq):
+        self._set_extclk_freq(freq)
 
     @property
     def clkgen_freq(self):
+        """The CLKGEN output frequency in MHz.
+
+        The CLKGEN module takes the input source and multiplies/divides it to
+        get a faster or slower clock as desired.
+
+        Getter: Return the current calculated CLKGEN output frequency in MHz
+        (float). Note that this is the theoretical frequency - use the freq
+        counter to determine the actual output.
+
+        Setter: Attempt to set a new CLKGEN frequency in MHz. When this value
+        is set, all possible DCM multiply/divide settings are tested to find
+        which is closest to the desired output speed. If EXTCLK is the CLKGEN
+        source, the EXTCLK frequency must be properly set for this to work.
+        """
         return self._get_clkgen_freq()
 
     @clkgen_freq.setter
     def clkgen_freq(self, freq):
-        return self.autoMulDiv(freq)
+        self.autoMulDiv(freq)
+
+    @property
+    def clkgen_locked(self):
+        """The current status of the CLKGEN DCM. Read-only.
+
+        Getter: Return whether the CLKGEN DCM is locked (True or False)
+        """
+        return self._getClkgenLocked()
 
     @setupSetParam("Freq Counter Src")
     def _set_freqcounter_src(self, src):
@@ -957,7 +1104,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             inpfreq = self._get_extclk_freq()
         else:
             inpfreq = self._hwinfo.sysFrequency()
-        return (inpfreq * self.clkgenMul()) / self.clkgenDiv()
+        return (inpfreq * self._getClkgenMul()) / self._getClkgenDiv()
 
     @setupSetParam(['CLKGEN Settings', 'Desired Frequency'])
     def autoMulDiv(self, freq):
@@ -965,12 +1112,12 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             inpfreq = self._get_extclk_freq()
         else:
             inpfreq = self._hwinfo.sysFrequency()
-        sets = self.calculateClkGenMulDiv(freq, inpfreq)
+        sets = self._calculateClkGenMulDiv(freq, inpfreq)
         self.setClkgenMul(sets[0])
         self.setClkgenDiv(sets[1])
         self.adc_reset(False, True)
 
-    def calculateClkGenMulDiv(self, freq, inpfreq=30E6):
+    def _calculateClkGenMulDiv(self, freq, inpfreq=30E6):
         """Calculate Multiply & Divide settings based on input frequency"""
 
         #Max setting for divide is 60 (see datasheet)
@@ -995,27 +1142,24 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         return best
 
-    @setupSetParam(['CLKGEN Settings', 'Multiply'])
-    def setClkgenMul(self, mul):
-        if mul < 2:
-            mul = 2
-        self._setClkgenMul(mul)
+    @property
+    def clkgen_mul(self):
+        """The multiplier in the CLKGEN DCM.
 
-    def _setClkgenMul(self, mul):
-        result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-        mul -= 1
-        result[1] = mul
-        result[3] |= 0x01
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
-        result[3] &= ~(0x01)
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        This multiplier must be in the range [2, 256].
 
-    def clkgenMul(self):
+        Getter: Return the current CLKGEN multiplier (integer)
+
+        Setter: Set a new CLKGEN multiplier.
+        """
+        return self._getClkgenMul()
+
+    def _getClkgenMul(self):
         timeout = 2
         while timeout > 0:
             result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-            val =  result[1]
-            if val==0:
+            val = result[1]
+            if val == 0:
                 val = 1  # Fix incorrect initialization on FPGA
                 self._setClkgenMul(2)
             val += 1
@@ -1030,8 +1174,66 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         # raise IOError("clkgen never loaded value?")
         return 0
 
+    @clkgen_mul.setter
+    def clkgen_mul(self, mul):
+        self.setClkgenMul(mul)
+
+    @setupSetParam(['CLKGEN Settings', 'Multiply'])
+    def setClkgenMul(self, mul):
+        # TODO: raise ValueError?
+        if mul < 2:
+            mul = 2
+        self._setClkgenMul(mul)
+
+    def _setClkgenMul(self, mul):
+        result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+        mul -= 1
+        result[1] = mul
+        result[3] |= 0x01
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        result[3] &= ~(0x01)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+
+    @property
+    def clkgen_div(self):
+        return self._getClkgenDiv()
+
+    def _getClkgenDiv(self):
+        """The divider in the CLKGEN DCM.
+
+        This divider must be in the range [1, 256].
+
+        Getter: Return the current CLKGEN divider (integer)
+
+        Setter: Set a new CLKGEN divider.
+        """
+        if self.oa is None:
+            return 2
+        timeout = 2
+        while timeout > 0:
+            result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
+            val = result[2]
+            val += 1
+
+            if (result[3] & 0x02):
+                # Done loading value yet
+                return val
+
+            self.clkgenLoad()
+
+            timeout -= 1
+
+        logging.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
+                      " source settings. CLKGEN clock results are currently invalid.")
+        return 1
+
+    @clkgen_div.setter
+    def clkgen_div(self, div):
+        self.setClkgenDiv(div)
+
     @setupSetParam(['CLKGEN Settings', 'Divide'])
     def setClkgenDiv(self, div):
+        # TODO: valueerror
         if div < 1:
             div = 1
 
@@ -1050,28 +1252,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         result[3] &= ~(0x01)
         self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
 
-    def clkgenDiv(self):
-        if self.oa is None:
-            return 2
-        timeout = 2
-        while timeout > 0:
-            result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
-            val =  result[2]
-            val += 1
-
-            if (result[3] & 0x02):
-                # Done loading value yet
-                return val
-
-            self.clkgenLoad()
-
-            timeout -= 1
-
-        logging.error("CLKGEN Failed to load divider value. Most likely clock input to CLKGEN is stopped, check CLKGEN"
-                      " source settings. CLKGEN clock results are currently invalid.")
-        return 1
-
-    def adcSource(self):
+    def _getAdcSource(self):
         if self.oa is None:
             return ("dcm", 1, "extclk")
 
@@ -1096,7 +1277,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         return (source, dcmout, dcminput)
 
     @setupSetParam(['ADC Clock', 'Source'])
-    def setAdcSource(self, source="dcm", dcmout=4, dcminput="clkgen"):
+    def _setAdcSource(self, source="dcm", dcmout=4, dcminput="clkgen"):
 
         #Deal with being passed tuple with all 3 arguments
         if isinstance(source, (list, tuple)):
@@ -1169,9 +1350,16 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
     @setupSetParam(['ADC Clock', 'Phase Adjust'])
     def _set_phase(self, phase):
         '''Set the phase adjust, range -255 to 255'''
+        try:
+            phase_int = int(phase)
+        except ValueError:
+            raise TypeError("Can't convert %s to int" % phase)
 
-        LSB = phase & 0x00FF
-        MSB = (phase & 0x0100) >> 8
+        if phase_int < -255 or phase_int > 255:
+            raise ValueError("Phase %d is outside range [-255, 255]" % phase_int)
+
+        LSB = phase_int & 0x00FF
+        MSB = (phase_int & 0x0100) >> 8
 
         cmd = bytearray(2)
         cmd[0] = LSB
@@ -1206,7 +1394,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         result = self.DCMStatus()
         return result[0]
 
-    def clkgenLocked(self):
+    def _getClkgenLocked(self):
         result = self.DCMStatus()
         return result[1]
 
@@ -1275,7 +1463,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         measured = freq * samplefreq
         return long(measured)
 
-    def _adc_frequency(self):
+    def _getAdcFrequency(self):
         """Return the external frequency measured on 'CLOCK' pin. Returned value
            is in Hz"""
         if self.oa is None:
@@ -1295,9 +1483,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         return long(measured)
 
-    def adcSampleRate(self):
+    def _adcSampleRate(self):
         """Return the sample rate, takes account of decimation factor (if set)"""
-        return self._adc_frequency() / self.oa.decimate()
+        return self._getAdcFrequency() / self.oa.decimate()
 
 
 class OpenADCInterface(object):
