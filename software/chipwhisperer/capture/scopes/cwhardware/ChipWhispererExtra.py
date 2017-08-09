@@ -44,8 +44,20 @@ ADDR_I2CSTATUS = 47
 ADDR_I2CDATA = 48
 ADDR_IOROUTE = 55
 
+# API aliases for the TIO settings
+_tio_alias = {
+    'serial-tx': 'Serial TXD',
+    'serial-rx': 'Serial RXD',
+    'serial-tx-rx': 'Serial-TX/RX',
+    'gpio': 'GPIO',
+    'high-z': 'High-Z'
+}
 
-class GPIOMuxSettings(util.DisableNewAttr):
+# Reverse alias lookup
+_tio_api_alias = {_tio_alias[n]: n for n in _tio_alias}
+
+class GPIOSettings(util.DisableNewAttr):
+
     def __init__(self, cwextra):
         self.cwe = cwextra
 
@@ -64,7 +76,6 @@ class GPIOMuxSettings(util.DisableNewAttr):
             {'Serial TXD': self.cwe.IOROUTE_STX, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ}
         ]
 
-
         self.HS2_VALID = {'disabled': 0, 'clkout': 2, 'glitchout': 3}
 
         self.disable_newattr()
@@ -76,9 +87,23 @@ class GPIOMuxSettings(util.DisableNewAttr):
         dict['tio2'] = self.tio2
         dict['tio3'] = self.tio3
         dict['tio4'] = self.tio4
+
+        dict['gpio1'] = self.gpio1
+        dict['gpio2'] = self.gpio2
+        dict['gpio3'] = self.gpio3
+        dict['gpio4'] = self.gpio4
+
         dict['pdid'] = self.pdid
         dict['pdic'] = self.pdic
         dict['nrst'] = self.nrst
+
+        dict['glitch_hp'] = self.glitch_hp
+        dict['glitch_lp'] = self.glitch_lp
+
+        dict['extclk_src'] = self.extclk_src
+        dict['hs2'] = self.hs2
+
+        dict['target_pwr'] = self.target_pwr
 
         return dict
 
@@ -90,54 +115,115 @@ class GPIOMuxSettings(util.DisableNewAttr):
 
     @property
     def tio1(self):
-        return self.tio(1)
+        """The function of the Target IO1 pin.
+
+        TIO1 can be used for the following functions:
+        - "serial-rx": UART input
+        - "serial-tx": UART output
+        - "high-z": High impedance input
+        - "gpio": Driven output
+        Default value is "serial-rx".
+
+        Getter: Return one of the above strings
+
+        Setter: Set the Target IO1 mode.
+            Raises: ValueError if new value is not one of the above modes
+        """
+        return _tio_api_alias[self._getTio(1)]
 
     @tio1.setter
     def tio1(self, state):
-        self.tio_set(1, state)
+        self._setTio(1, state)
 
     @property
     def tio2(self):
-        return self.tio(2)
+        """The function of the Target IO2 pin.
+
+        TIO2 can be used for the following functions:
+        - "serial-rx": UART input
+        - "serial-tx": UART output
+        - "high-z": High impedance input
+        - "gpio": Driven output
+        Default value is "serial-tx".
+
+        Getter: Return one of the above strings
+
+        Setter: Set the Target IO2 mode.
+            Raises: ValueError if new value is not one of the above modes
+        """
+        return _tio_api_alias[self._getTio(2)]
 
     @tio2.setter
     def tio2(self, state):
-        self.tio_set(2, state)
+        self._setTio(2, state)
 
     @property
     def tio3(self):
-        return self.tio(3)
+        """The function of the Target IO3 pin.
+
+        TIO3 can be used for the following functions:
+        - "serial-rx": UART input
+        - "serial-tx": UART output
+        - "serial-tx-rx": UART 1-wire I/O (for smartcards)
+        - "high-z": High impedance input
+        - "gpio": Driven output
+        Default value is "high-z".
+
+        Getter: Return one of the above strings
+
+        Setter: Set the Target IO3 mode.
+            Raises: ValueError if new value is not one of the above modes
+        """
+        return _tio_api_alias[self._getTio(3)]
 
     @tio3.setter
     def tio3(self, state):
-        self.tio_set(3, state)
+        self._setTio(3, state)
 
     @property
     def tio4(self):
-        return self.tio(4)
+        """The function of the Target IO4 pin.
+
+        TIO4 can be used for the following functions:
+        - "serial-tx": UART output
+        - "high-z": High impedance input
+        - "gpio": Driven output
+        Default value is "high-z". Typically, this pin is used as a trigger
+        input.
+
+        Getter: Return one of the above strings
+
+        Setter: Set the Target IO4 mode
+            Raises: ValueError if new value is not one of the above modes
+        """
+        return _tio_api_alias[self._getTio(4)]
 
     @tio4.setter
     def tio4(self, state):
-        self.tio_set(4, state)
+        self._setTio(4, state)
 
-    def tio(self, pinnum):
+    def _getTio(self, pinnum):
         if pinnum < 1 or pinnum > 4:
             raise ValueError("Invalid PIN: %d. Valid range = 1-4." % pinnum, pinnum)
 
         pnum = pinnum - 1
         mode = self.cwe.getTargetIOMode(pnum)
 
+        # Fix: don't include GPIO state in mode check
+        mode &= ~self.cwe.IOROUTE_GPIO
+
         # Find string
-        if mode != self.cwe.IOROUTE_GPIOE:
-            for s, bmask in self.TIO_VALID[pnum].iteritems():
-                if mode == bmask:
-                    return s
-            raise IOError("Invalid IO Mode returned by FPGA", mode)
-        else:
-            self.cwe.getGPIOState(pnum)
+        #if mode != self.cwe.IOROUTE_GPIOE:
+        for s, bmask in self.TIO_VALID[pnum].iteritems():
+            if mode == bmask:
+                return s
+        raise IOError("Invalid IO Mode returned by FPGA", mode)
+        #else:
+        #    self.cwe.getGPIOState(pnum)
 
-    def tio_set(self, pinnum, mode):
-
+    def _setTio(self, pinnum, mode):
+        if mode in _tio_alias:
+            mode = _tio_alias[mode]
         if mode is None:
             mode = "High-Z"
 
@@ -164,51 +250,165 @@ class GPIOMuxSettings(util.DisableNewAttr):
         if gpio_mode:
             self.cwe.setGPIOState(gpio_setting, pinnum - 1)
 
-    def sck(self):
-        pass
+    @property
+    def gpio1(self):
+        """The state of Target IO1, if tio1 is set to "gpio".
 
-    def mosi(self):
-        pass
+        When this pin is in GPIO mode, this setting changes the output level.
+        Allowed values are:
+        - "high" / True: logic 1
+        - "low" / False: logic 0
 
-    def miso(self):
-        pass
+        When this pin is not in GPIO mode, this setting is set to "low".
 
-    def cs(self):
-        pass
+        Getter: Return the current GPIO state (one of the above strings)
+
+        Setter: Set the Target IO1 GPIO level
+            Raises:
+                ValueError if new value is not one of the above levels
+                IOError if the TIO1 pin is not in GPIO mode
+        """
+        return self._getGpio(0)
+
+    @gpio1.setter
+    def gpio1(self, level):
+        self._setGpio(0, level)
+
+    @property
+    def gpio2(self):
+        """The state of Target IO2, if tio2 is set to "gpio".
+
+        See gpio1 for more information.
+        """
+        return self._getGpio(1)
+
+    @gpio2.setter
+    def gpio2(self, level):
+        self._setGpio(1, level)
+
+    @property
+    def gpio3(self):
+        """The state of Target IO3, if tio3 is set to "gpio".
+
+        See gpio1 for more information.
+        """
+        return self._getGpio(2)
+
+    @gpio3.setter
+    def gpio3(self, level):
+        self._setGpio(2, level)
+
+    @property
+    def gpio4(self):
+        """The state of Target IO4, if tio4 is set to "gpio".
+
+        See gpio1 for more information.
+        """
+        return self._getGpio(3)
+
+    @gpio4.setter
+    def gpio4(self, level):
+        self._setGpio(3, level)
 
     @property
     def pdic(self):
+        """The state of the PDIC pin output pin.
+
+        This is a GPIO pin. The following values are allowed:
+        - "high" / True: logic 1
+        - "low" / False: logic 0
+        - "disabled" / "default" / "high-z" / None: undriven
+
+        Getter: Return one of "high", "low", or "high-z"
+
+        Setter: Set the pin's state
+            Raises: ValueError if new state not listed above
+        """
         return self.cwe.getGPIOState(102)
 
     @pdic.setter
     def pdic(self, state):
-        if (state == "Disabled") or (state == "High-Z") or (state == "Default"):
-            state = None
-        self.cwe.setGPIOStatepdic(state)
+        self._setGpio(102, state)
 
     @property
     def pdid(self):
+        """The state of the PDID pin.
+
+        See pdic for more information."""
         return self.cwe.getGPIOState(101)
 
     @pdid.setter
     def pdid(self, state):
-        if (state == "Disabled") or (state == "High-Z") or (state == "Default"):
-            state = None
-        self.cwe.setGPIOStatepdid(state)
+        self._setGpio(101, state)
 
     @property
     def nrst(self):
+        """The state of the NRST pin.
+
+        See pdic for more information."""
         return self.cwe.getGPIOState(100)
 
     @nrst.setter
     def nrst(self, state):
-        if (state == "Disabled") or (state == "High-Z") or (state == "Default"):
-            state = None
-        self.cwe.setGPIOStatenrst(state)
+        self._setGpio(100, state)
+
+    def _getGpio(self, pinnum):
+        """GPIO state getter for GPIO 1-4"""
+        state = self.cwe.getGPIOState(pinnum)
+        if state:
+            return "high"
+        else:
+            return "low"
+
+    def _setGpio(self, pinnum, level):
+        """GPIO state setter for all GPIO pins"""
+        if 0 <= pinnum < 4:
+            if level == "high" or level == True:
+                new_state = True
+            elif level == "low" or level == False:
+                new_state = False
+            else:
+                raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True or 'low'/False)" % (pinnum, level), level)
+
+            self.cwe.setGPIOState(new_state, pinnum)
+
+        elif pinnum >= 100:
+            if level in ("high", True):
+                new_state = True
+            elif level in ("low", False):
+                new_state = False
+            elif level in ("disabled", "default", "high-z", None):
+                new_state = None
+            else:
+                raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True, 'low'/False, or 'disabled'/'default'/'high-z'/None)" % (pinnum, level), level)
+
+            self.cwe.setGPIOState(new_state, pinnum)
+        else:
+            raise ValueError("Invalid PIN: %d." % pinnum, pinnum)
+
+    @property
+    def extclk_src(self):
+        """The clock signal being used as input for EXTCLK.
+
+        Currently, this can only be HS1, which is the clock from the target.
+        As such, this value is read-only.
+        """
+        return "hs1"
 
     @property
     def hs2(self):
-        """Gets the HS2 (High-Speed Output) pin function. Returns a string of 'clkout', 'glitchout', or None """
+        """The clock signal routed to the HS2 high speed output pin.
+
+        Allowed clock signals are:
+        - "clkgen": The output from the CLKGEN module
+        - "glitch": The output from the glitch module
+        - "disabled" / None: No clock; output driven low
+
+        Getter: Return one of "clkgen", "glitch", or "disabled"
+
+        Setter: Set the clock to be output on HS2.
+            Raises: ValueError if new value not listed above
+        """
         mode = self.cwe.targetClkOut()
         for k, v in self.HS2_VALID.iteritems():
             if mode == v:
@@ -217,57 +417,91 @@ class GPIOMuxSettings(util.DisableNewAttr):
                 else:
                     return k
 
-        raise IOError("Hardware returned known HS2 mode: %02x"%mode)
+        raise IOError("Hardware returned unknown HS2 mode: %02x" % mode)
 
     @hs2.setter
     def hs2(self, mode):
-        """Sets the HS2 (High-Speed Output) pin on the ChipWhisperer function ('clkout' or 'glitchout').
-
-        Args:
-            mode: The output mode of the string. Must be one of ['clkout', 'glitchout', None]
-                  'clkout': The output from the internal CLKGEN module.
-                  'glitchout': The output from the GLITCH module. You must configure this module as appropriate.
-                  None: Disable the output, normally drives it low.
-        """
-
         if mode is None:
             mode = 'disabled'
 
         if mode not in self.HS2_VALID:
-            raise ValueError("Unknown mode for HS2 pin: '%s'. Valid modes: [%s]"%(mode, self.HS2_VALID.keys()), mode)
+            raise ValueError(
+                "Unknown mode for HS2 pin: '%s'. Valid modes: [%s]" % (mode, self.HS2_VALID.keys()), mode)
 
         self.cwe.setTargetCLKOut(self.HS2_VALID[mode])
 
+    @property
+    def target_pwr(self):
+        """Whether the target board is powered by the ChipWhisperer.
+
+        If True, the ChipWhisperer is currently supplying power to the target
+        board; if False, it is not. This setting can be used to cycle power to
+        the target or to help program it.
+
+        If the target board is powered through an external supply, this setting
+        may have no effect.
+
+        Getter: Return the current power state of the target (True or False)
+
+        Setter: Turn the target power on or off.
+        """
+        return self.cwe.getTargetPowerState()
+
+    @property
+    def glitch_hp(self):
+        """Whether the high-power crowbar MOSFET is enabled.
+
+        The glitch output is an SMA-connected output line that is normally
+        connected to a target's power rails. If this setting is enabled, a
+        high-powered MOSFET shorts the power-rail to ground when the glitch
+        module's output is active.
+
+        Use with caution - ensure that the glitch module is properly configured
+        before enabling this setting, as it is possible to permanently damage
+        hardware with this output.
+
+        Getter: Return True if enabled or False if disabled
+
+        Setter: Turn the high-power MOSFET on or off
+        """
+        return self.cwe.getTargetGlitchOut('A')
+
+    @glitch_hp.setter
+    def glitch_hp(self, active):
+        self.cwe.setTargetGlitchOut('A', active)
+
+    @property
+    def glitch_lp(self):
+        """Whether the low-power crowbar MOSFET is enabled.
+
+        This is the low-power version of glitch_hp - see that documentation
+        for more details.
+        """
+        return self.cwe.getTargetGlitchOut('B')
+
+    @glitch_lp.setter
+    def glitch_lp(self, active):
+        self.cwe.setTargetGlitchOut('B', active)
+
+    @target_pwr.setter
+    def target_pwr(self, power):
+        self.cwe.setTargetPowerState(power)
+
     def reset_target(self, initial_state=1, reset_state=0, reset_delay=0.01, postreset_delay=0.01):
-        pass
+        raise NotImplementedError()
 
-    @property
-    def extclk_src(self):
-        raise NotImplemented()
+    # TODO: implement SCK/MOSI/MISO/CS?
+    def sck(self):
+        raise NotImplementedError()
 
-    @extclk_src.setter
-    def extclk_src(self, src):
-        raise NotImplemented()
+    def mosi(self):
+        raise NotImplementedError()
 
+    def miso(self):
+        raise NotImplementedError()
 
-class Crowbar(util.DisableNewAttr):
-
-    @property
-    def highpower(self):
-        pass
-
-    @highpower.setter
-    def highpower(self, enabled):
-        pass
-
-    @property
-    def lowpower(self):
-        pass
-
-    @lowpower.setter
-    def lowpower(self, enabled):
-        pass
-
+    def cs(self):
+        raise NotImplementedError()
 
 class TriggerMux(util.DisableNewAttr):
 
@@ -612,7 +846,7 @@ class CWExtraSettings(Parameterized):
         self.params = Parameter(name=self.getName(), type='group' , children=ret).register()
 
         #Add special single-class items used as higher-level API
-        self.gpiomux = GPIOMuxSettings(self)
+        self.gpiomux = GPIOSettings(self)
         self.triggermux = TriggerMux(self)
 
 
@@ -727,7 +961,7 @@ class CWExtraSettings(Parameterized):
         if data[IONumber] & self.IOROUTE_GPIOE == 0:
             return None
 
-        return data[IONumber] == self.IOROUTE_GPIO
+        return data[IONumber] & self.IOROUTE_GPIO
 
     @setupSetParam(['Target IOn Pins', 'Target IO1'])
     def setTargetIOMode1(self, setting):
@@ -762,7 +996,7 @@ class CWExtraSettings(Parameterized):
         elif IONumber == 3:
             self.setTargetIOMode4(setting)
         else:
-            raise ValueError("Invalid IO Number, valide range is 0,1,2,3", IONumber)
+            raise ValueError("Invalid IO Number, valid range is 0,1,2,3", IONumber)
 
 
     def getTargetIOMode(self, IONumber):
