@@ -788,7 +788,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
 class ClockSettings(Parameterized, util.DisableNewAttr):
     _name = 'Clock Setup'
-    readMask = [0x1f, 0xff, 0xff, 0xfd]
+    _readMask = [0x1f, 0xff, 0xff, 0xfd]
 
     def __init__(self, oaiface, hwinfo=None):
         self.oa = oaiface
@@ -799,7 +799,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             {'name':'Refresh Status', 'type':'action', 'linked':[('ADC Clock', 'DCM Locked'), ('ADC Clock', 'ADC Freq'), ('ADC Clock', 'ADC Sample Rate'), ('CLKGEN Settings', 'DCM Locked'), 'Freq Counter'],
                      'help':'%namehdr%' +
                             'Update if the Digital Clock Manager (DCM) are "locked" and their operating frequency.'},
-            {'name':'Reset DCMs', 'type':'action', 'action':self.adc_reset, 'linked':[('CLKGEN Settings', 'Multiply'), ('CLKGEN Settings', 'Divide')],
+            {'name':'Reset DCMs', 'type':'action', 'action':self._reset_dcms, 'linked':[('CLKGEN Settings', 'Multiply'), ('CLKGEN Settings', 'Divide')],
                       'help':'%namehdr%' +
                             'When the input frequency to the DCM blocks changes, it can cause them to become "unlocked". When they are "unlocked" they are NOT ' +
                             'generating a reliable output frequency. You must press the "Reset" button to cause them to re-lock. This is currently not automatically ' +
@@ -832,7 +832,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
                 {'name': 'ADC Freq', 'type': 'int', 'siPrefix':True, 'suffix': 'Hz', 'readonly':True, 'get':self._getAdcFrequency, 'decimals': 5},
                 {'name': 'ADC Sample Rate', 'type': 'int', 'siPrefix': True, 'suffix': 'S/s', 'readonly': True, 'get': self._adcSampleRate, 'decimals': 5},
                 {'name': 'DCM Locked', 'type':'bool', 'get':self._get_adcclk_locked, 'readonly':True},
-                {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self.adc_reset(True, False), 'linked':['Phase Adjust']},
+                {'name':'Reset ADC DCM', 'type':'action', 'action':lambda _ : self._reset_dcms(True, False), 'linked':['Phase Adjust']},
             ]},
             {'name': 'Freq Counter', 'type': 'float', 'readonly':True, 'get':self._get_extfrequency, 'siPrefix':True, 'suffix': 'Hz'},
             {'name': 'Freq Counter Src', 'type':'list', 'values':{'EXTCLK Input':0, 'CLKGEN Output':1}, 'set':self._set_freqcounter_src, 'get':self._get_freqcounter_src},
@@ -840,14 +840,14 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
                 {'name':'Input Source', 'type':'list', 'values':["system", "extclk"], 'set':self._set_clkgen_src, 'get':self._get_clkgen_src, 'linked':['Desired Frequency', 'Current Frequency']},
                 {'name':'Input Frequency', 'type':'float', 'limits':(1E6,105E6), 'default':10E6, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
                     'set':self._set_extclk_freq, 'get':self._get_extclk_freq, 'linked':['Desired Frequency', 'Current Frequency'], 'visible': True},
-                {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self.setClkgenMul, 'get':self._getClkgenMul, 'linked':['Current Frequency']},
-                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self.setClkgenDiv, 'get':self._getClkgenDiv, 'linked':['Current Frequency']},
+                {'name':'Multiply', 'type':'int', 'limits':(2, 256), "default":2, 'set':self._setClkgenMulWrapper, 'get':self._getClkgenMul, 'linked':['Current Frequency']},
+                {'name':'Divide', 'type':'int', 'limits':(1, 256), 'set':self._setClkgenDivWrapper, 'get':self._getClkgenDiv, 'linked':['Current Frequency']},
                 {'name':'Desired Frequency', 'type':'float', 'limits':(3.3E6, 300E6), 'default':0, 'step':1E6, 'siPrefix':True, 'suffix':'Hz',
-                                            'set':self.autoMulDiv, 'get':self._get_clkgen_freq, 'linked':['Multiply', 'Divide']},
+                                            'set':self._autoMulDiv, 'get':self._get_clkgen_freq, 'linked':['Multiply', 'Divide']},
                 {'name':'Current Frequency', 'type':'float', 'default':0, 'readonly':True, 'siPrefix':True, 'suffix':'Hz', 
                                             'get':self._get_clkgen_freq},
                 {'name':'DCM Locked', 'type':'bool', 'default':False, 'get':self._getClkgenLocked, 'readonly':True},
-                {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self.adc_reset(False, True), 'linked':['Multiply', 'Divide']},
+                {'name':'Reset CLKGEN DCM', 'type':'action', 'action':lambda _ : self._reset_dcms(False, True), 'linked':['Multiply', 'Divide']},
             ]}
         ])
         self.params.refreshAllParameters()
@@ -892,25 +892,34 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         Getter: Return the current ADC clock source (one of five strings above)
 
-        Setter: Set the ADC clock source
+        Setter: Set the ADC clock source and reset the ADC DCM to lock it.
             Raises: ValueError if string not in valid settings
         """
-        return self._getAdcSource()
+        (adc_input, dcm_mul, dcm_input) = self._getAdcSource()
+        if adc_input == "extclk":
+            return "extclk_dir"
+        else: # adc_input == "dcm"
+            ret = "%s_x%d" % (dcm_input, dcm_mul)
+            return ret
 
     @adc_src.setter
     def adc_src(self, src):
+        # We need to pass a tuple into _setAdcSource() so the ADC source
+        # parameter recognizes this input
         if src == "clkgen_x4":
-            self._setAdcSource("dcm", 4, "clkgen")
+            self._setAdcSource(("dcm", 4, "clkgen"))
         elif src == "clkgen_x1":
-            self._setAdcSource("dcm", 1, "clkgen")
+            self._setAdcSource(("dcm", 1, "clkgen"))
         elif src == "extclk_x4":
-            self._setAdcSource("dcm", 4, "extclk")
+            self._setAdcSource(("dcm", 4, "extclk"))
         elif src == "extclk_x1":
-            self._setAdcSource("dcm", 1, "extclk")
+            self._setAdcSource(("dcm", 1, "extclk"))
         elif src == "extclk_dir":
-            self._setAdcSource("extclk", 1, "extclk")
+            self._setAdcSource(("extclk", 1, "extclk"))
         else:
             raise ValueError("Invalid ADC source (possible values: 'clkgen_x4', 'clkgen_x1', 'extclk_x4', 'extclk_x1', 'extclk_dir'")
+
+        self.resetAdc()
 
     @property
     def adc_phase(self):
@@ -924,6 +933,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         effect on the phase adjustment.
 
         Getter: Return the current phase setting (integer)
+            NOTE: This getter is currently broken due to an FPGA bug.
 
         Setter: Set a new phase offset
             Raises:
@@ -938,7 +948,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
     @property
     def adc_freq(self):
-        """The current frequency of the ADC clock in MHz. Read-only.
+        """The current frequency of the ADC clock in Hz. Read-only.
 
         This clock frequency is derived from one of the ADC clock sources as
         described in adc_src.
@@ -949,7 +959,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
     @property
     def adc_rate(self):
-        """The current sampling rate of the ADC clock in MS/s. Read-only.
+        """The current sampling rate of the ADC clock in samples/s. Read-only.
 
         Note that the sampling rate may be less than the clock frequency if
         the downsampling factor is greater than 1.
@@ -961,6 +971,8 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
     @property
     def adc_locked(self):
         """The current status of the ADC DCM. Read-only.
+
+        To try re-locking the ADC, see resetAdc().
 
         Getter: Return whether the ADC DCM is locked (True or False)
         """
@@ -1019,7 +1031,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         Getter: Return the current CLKGEN input (either "extclk" or "system")
 
-        Setter: Change the CLKGEN source
+        Setter: Change the CLKGEN source and reset all the DCMs.
             Raises: ValueError if source is not one of three strings above
         """
         return self._get_clkgen_src()
@@ -1033,20 +1045,22 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         else:
             raise ValueError("Invalid setting for CLKGEN source (valid values: 'system', 'extclk')")
 
+        self.resetDcms()
+
     @property
     def extclk_freq(self):
-        """The input frequency from the EXTCLK source in MHz.
+        """The input frequency from the EXTCLK source in Hz.
 
         This value is used to help calculate the correct CLKGEN settings to
         obtain a desired output frequency when using EXTCLK as CLKGEN input.
         It is not a frequency counter - it is only helpful if the EXTCLK
         frequency is already known.
 
-        Getter: Return the last set EXTCLK frequency in MHz (float)
+        Getter: Return the last set EXTCLK frequency in MHz (int)
 
         Setter: Update the EXTCLK frequency
         """
-        return self._get_extclk_freq()
+        return int(self._get_extclk_freq())
 
     @extclk_freq.setter
     def extclk_freq(self, freq):
@@ -1054,25 +1068,29 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
     @property
     def clkgen_freq(self):
-        """The CLKGEN output frequency in MHz.
+        """The CLKGEN output frequency in Hz.
 
         The CLKGEN module takes the input source and multiplies/divides it to
         get a faster or slower clock as desired.
 
-        Getter: Return the current calculated CLKGEN output frequency in MHz
-        (float). Note that this is the theoretical frequency - use the freq
-        counter to determine the actual output.
+        Getter:
+            Return the current calculated CLKGEN output frequency in Hz
+            (float). Note that this is the theoretical frequency - use the
+            freq counter to determine the actual output.
 
-        Setter: Attempt to set a new CLKGEN frequency in MHz. When this value
-        is set, all possible DCM multiply/divide settings are tested to find
-        which is closest to the desired output speed. If EXTCLK is the CLKGEN
-        source, the EXTCLK frequency must be properly set for this to work.
+        Setter:
+            Attempt to set a new CLKGEN frequency in Hz. When this value is
+            set, all possible DCM multiply/divide settings are tested to find
+            which is closest to the desired output speed. If EXTCLK is the
+            CLKGEN source, the EXTCLK frequency must be properly set for this
+            to work. Also, both DCMs are reset.
         """
         return self._get_clkgen_freq()
 
     @clkgen_freq.setter
     def clkgen_freq(self, freq):
-        self.autoMulDiv(freq)
+        self._autoMulDiv(freq)
+        self.resetDcms()
 
     @property
     def clkgen_locked(self):
@@ -1088,7 +1106,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         result[3] &= ~0x08
         result[3] |= src << 3
         #print "%x"%result[3]
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
     def _get_freqcounter_src(self):
         if self.oa is None:
@@ -1107,15 +1125,15 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         return (inpfreq * self._getClkgenMul()) / self._getClkgenDiv()
 
     @setupSetParam(['CLKGEN Settings', 'Desired Frequency'])
-    def autoMulDiv(self, freq):
+    def _autoMulDiv(self, freq):
         if self._get_clkgen_src() == "extclk":
             inpfreq = self._get_extclk_freq()
         else:
             inpfreq = self._hwinfo.sysFrequency()
         sets = self._calculateClkGenMulDiv(freq, inpfreq)
-        self.setClkgenMul(sets[0])
-        self.setClkgenDiv(sets[1])
-        self.adc_reset(False, True)
+        self._setClkgenMulWrapper(sets[0])
+        self._setClkgenDivWrapper(sets[1])
+        self._reset_dcms(False, True)
 
     def _calculateClkGenMulDiv(self, freq, inpfreq=30E6):
         """Calculate Multiply & Divide settings based on input frequency"""
@@ -1167,7 +1185,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             if (result[3] & 0x02):
                 return val
 
-            self.clkgenLoad()
+            self._clkgenLoad()
 
             timeout -= 1
 
@@ -1176,10 +1194,10 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
     @clkgen_mul.setter
     def clkgen_mul(self, mul):
-        self.setClkgenMul(mul)
+        self._setClkgenMulWrapper(mul)
 
     @setupSetParam(['CLKGEN Settings', 'Multiply'])
-    def setClkgenMul(self, mul):
+    def _setClkgenMulWrapper(self, mul):
         # TODO: raise ValueError?
         if mul < 2:
             mul = 2
@@ -1190,15 +1208,12 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         mul -= 1
         result[1] = mul
         result[3] |= 0x01
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
         result[3] &= ~(0x01)
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
     @property
     def clkgen_div(self):
-        return self._getClkgenDiv()
-
-    def _getClkgenDiv(self):
         """The divider in the CLKGEN DCM.
 
         This divider must be in the range [1, 256].
@@ -1207,6 +1222,9 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         Setter: Set a new CLKGEN divider.
         """
+        return self._getClkgenDiv()
+
+    def _getClkgenDiv(self):
         if self.oa is None:
             return 2
         timeout = 2
@@ -1219,7 +1237,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
                 # Done loading value yet
                 return val
 
-            self.clkgenLoad()
+            self._clkgenLoad()
 
             timeout -= 1
 
@@ -1229,10 +1247,10 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
     @clkgen_div.setter
     def clkgen_div(self, div):
-        self.setClkgenDiv(div)
+        self._setClkgenDivWrapper(div)
 
     @setupSetParam(['CLKGEN Settings', 'Divide'])
-    def setClkgenDiv(self, div):
+    def _setClkgenDivWrapper(self, div):
         # TODO: valueerror
         if div < 1:
             div = 1
@@ -1241,16 +1259,47 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         div -= 1
         result[2] = div
         result[3] |= 0x01
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
         result[3] &= ~(0x01)
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
-    def clkgenLoad(self):
+    def resetAdc(self):
+        """Reset the ADC DCM.
+
+        After changing frequencies, the ADC DCM may become unlocked from its
+        input signal. This function resets the DCM to re-lock it.
+
+        If the DCM is still unlocked after calling this function, the clock
+        may be too fast for the ADC.
+        """
+        self._reset_dcms(True, False)
+
+    def resetClkgen(self):
+        """Reset the CLKGEN DCM.
+
+        After changing frequencies or input sources, the CLKGEN DCM may not
+        be locked. This function resets the DCM to re-lock it.
+
+        If the DCM is still unlocked after calling this function, the clock
+        may be too fast for the CLKGEN module.
+        """
+        self._reset_dcms(False, True)
+
+    def resetDcms(self):
+        """Reset the CLKGEN DCM, then the ADC DCM.
+
+        This order is necessary because the ADC may depend on having a locked
+        clock from the CLKGEN output.
+        """
+        self.resetClkgen()
+        self.resetAdc()
+
+    def _clkgenLoad(self):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
         result[3] |= 0x01
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
         result[3] &= ~(0x01)
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
     def _getAdcSource(self):
         if self.oa is None:
@@ -1325,7 +1374,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         else:
             raise ValueError("source must be 'system' or 'extclk'")
 
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self.readMask)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
         
         par = self.findParam(['CLKGEN Settings', 'EXTCLK Frequency'])
         if par is not None:
@@ -1355,11 +1404,15 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         except ValueError:
             raise TypeError("Can't convert %s to int" % phase)
 
+        print phase_int
         if phase_int < -255 or phase_int > 255:
             raise ValueError("Phase %d is outside range [-255, 255]" % phase_int)
 
         LSB = phase_int & 0x00FF
         MSB = (phase_int & 0x0100) >> 8
+
+        print LSB
+        print MSB
 
         cmd = bytearray(2)
         cmd[0] = LSB
@@ -1370,6 +1423,10 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         if self.oa is None:
             return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2)
+        print result
+        print result[0]
+        print result[1]
+        print type(result)
 
         #Current bitstream doesn't set this bit ever?
         #phase_valid = (result[1] & 0x02)
@@ -1391,14 +1448,14 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
             return 0
 
     def _get_adcclk_locked(self):
-        result = self.DCMStatus()
+        result = self._DCMStatus()
         return result[0]
 
     def _getClkgenLocked(self):
-        result = self.DCMStatus()
+        result = self._DCMStatus()
         return result[1]
 
-    def DCMStatus(self):
+    def _DCMStatus(self):
         if self.oa is None:
             return (False, False)
 
@@ -1422,11 +1479,11 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         return (dcmADCLocked, dcmCLKGENLocked)
 
-    def adc_reset(self, resetMain=True, resetClkgen=True):
+    def _reset_dcms(self, resetAdc=True, resetClkgen=True):
         result = self.oa.sendMessage(CODE_READ, ADDR_ADVCLK, maxResp=4)
 
         #Set reset high on requested blocks only
-        if resetMain:
+        if resetAdc:
             result[0] = result[0] | 0x10
             #NB: High-Level system will call 'get' to re-read ADC phase
 
@@ -1443,7 +1500,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
 
         #Load clkgen if required
         if resetClkgen:
-            self.clkgenLoad()
+            self._clkgenLoad()
 
     def _get_extfrequency(self):
         """Return frequency of clock measured on EXTCLOCK pin in Hz"""

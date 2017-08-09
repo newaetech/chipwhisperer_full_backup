@@ -33,9 +33,13 @@ class _QPythonConsoleInterpreter(_InteractiveConsole):
 
     def write(self,data):
         if data:
-            if data[-1] == "\n":
-                data = data[:-1]
-            self.ui.output.appendPlainText(data)
+            # Warning! This function enters C++ land where \0 marks the end of a string!
+            # Make sure strings don't have null chars before they end by decoding them
+            data_sanitized = data.decode('utf-8')
+
+            if data_sanitized[-1] == "\n":
+                data_sanitized = data_sanitized[:-1]
+            self.ui.output.appendPlainText(data_sanitized)
 
     def runsource(self,source,filename="<input>",symbol="single"):
         old_stdout = sys.stdout
@@ -57,18 +61,24 @@ class _QPythonConsoleUI(object):
     def __init__(self,parent):
         if parent.layout() is None:
             parent.setLayout(QtGui.QHBoxLayout())
+
+        # Monospace font
+        font = QtGui.QFont("Courier")
+        font.setStyleHint(QtGui.QFont.Monospace)
+
         layout = QtGui.QVBoxLayout()
         layout.setSpacing(0)
-        # Output console: a fixed-pitch-font text area.
+
+        # Output console: a fixed-pitch-font text area
         self.output = QtGui.QPlainTextEdit(parent)
         self.output.setReadOnly(True)
         self.output.setUndoRedoEnabled(False)
         self.output.setMaximumBlockCount(5000)
-        fmt = QtGui.QTextCharFormat()
-        fmt.setFontFixedPitch(True)
-        self.output.setCurrentCharFormat(fmt)
+        self.output.setFont(font)
+
         layout.addWidget(self.output)
         parent.layout().addLayout(layout)
+
         # Input console, a prompt displated next to a lineedit
         layout2 = QtGui.QHBoxLayout()
         self.prompt = QtGui.QLabel(parent)
@@ -76,6 +86,7 @@ class _QPythonConsoleUI(object):
         layout2.addWidget(self.prompt)
         self.input = QtGui.QLineEdit(parent)
         self.input.setAttribute(QtCore.Qt.WA_MacShowFocusRect, False)
+        self.input.setFont(font)
         layout2.addWidget(self.input)
         layout.addLayout(layout2)
 
