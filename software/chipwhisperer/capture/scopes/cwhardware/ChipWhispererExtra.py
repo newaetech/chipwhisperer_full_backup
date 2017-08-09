@@ -464,7 +464,7 @@ class GPIOSettings(util.DisableNewAttr):
 
         Setter: Turn the high-power MOSFET on or off
         """
-        return self.cwe.getTargetGlitchOut('A')
+        return self.cwe.targetGlitchOut('A')
 
     @glitch_hp.setter
     def glitch_hp(self, active):
@@ -477,7 +477,7 @@ class GPIOSettings(util.DisableNewAttr):
         This is the low-power version of glitch_hp - see that documentation
         for more details.
         """
-        return self.cwe.getTargetGlitchOut('B')
+        return self.cwe.targetGlitchOut('B')
 
     @glitch_lp.setter
     def glitch_lp(self, active):
@@ -503,7 +503,8 @@ class GPIOSettings(util.DisableNewAttr):
     def cs(self):
         raise NotImplementedError()
 
-class TriggerMux(util.DisableNewAttr):
+class TriggerSettings(util.DisableNewAttr):
+    # TODO: this module should include SAD/UART settings for CW1200
 
     def __init__(self, cwextra):
         self.cwe = cwextra
@@ -520,8 +521,55 @@ class TriggerMux(util.DisableNewAttr):
 
         self.disable_newattr()
 
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['triggers'] = self.triggers
+        dict['module'] = self.module
+
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
     @property
     def triggers(self):
+        """The logical input into the trigger module.
+
+        The trigger module uses some combination of the scope's I/O pins to
+        produce a single value, which it uses for edge/level detection or UART
+        triggers. This trigger output can combine 5 pins using one of 3
+        different boolean operations.
+
+        Pins:
+        - tio1-4: Target I/O pins 1-4. Note that these pins can be in any mode.
+        - sma: An auxiliary SMA input, if available (only on CW1200)
+
+        Boolean operations:
+        - OR: True if any inputs are True; False if none are
+        - AND: True if all inputs are True; False if any are not
+        - NAND: False if all inputs are True; True if any are not
+        Note that only one boolean operation can be used over all input pins.
+
+        Examples of acceptable trigger inputs:
+        - "tio1"
+        - "tio3 OR tio4"
+        - "tio1 NAND tio2 NAND sma"
+
+        Examples of unallowed trigger inputs:
+        - "tio1 tio2"
+        - "tio1 AND tio2 OR tio3"
+        - "tio1 OR tio1"
+        - "tio1 XOR tio2"
+        - "serial-tx"
+
+        Getter: Return a string describing the trigger mode (see examples)
+
+        Setter: Set the trigger mode using a string like the ones above
+            Raises: ValueError if string cannot be converted to a legal mode
+        """
         #Get pin logic + combo mode
         pins, mode = self.cwe.getPins()
 
@@ -609,7 +657,24 @@ class TriggerMux(util.DisableNewAttr):
         #Finally set this thing, guess we're looking HOT
         self.cwe.setPins(enablelogic, mode)
 
-    def test(self):
+    @property
+    def module(self):
+        """The trigger module in use.
+
+        The trigger modules available depend on the hardware. On the CWLite,
+        only the basic trigger module can be used; on the CW1200, the serial
+        data and SAD triggers are available too.
+
+        Available trigger modules:
+        - "basic": Trigger on a logic level or edge
+
+        Getter: Return the active trigger module
+
+        TODO: add support for CW1200 trigger modules; read-only for now
+        """
+        return "basic"
+
+    def _test(self):
         #Self-test for development
         self.triggers("tio1 OR tio2 AND tio3")
         self.triggers("tio1 OR tio2")
@@ -847,7 +912,7 @@ class CWExtraSettings(Parameterized):
 
         #Add special single-class items used as higher-level API
         self.gpiomux = GPIOSettings(self)
-        self.triggermux = TriggerMux(self)
+        self.triggermux = TriggerSettings(self)
 
 
     def _setGPIOState(self, state, IONumber):

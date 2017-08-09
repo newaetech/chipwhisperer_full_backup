@@ -58,11 +58,10 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
     For more help about scope settings, try help() on each of the ChipWhisperer
     scope submodules:
         scope.gain
-        scope.trigger
+        scope.adc
         scope.clock
-        scope.triggermux
-        scope.gpiomux
-        scope.crowbar
+        scope.io
+        scope.trigger
         scope.glitch
     """
 
@@ -172,11 +171,11 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
                     self.params.append(self.digitalPattern.getParams())
 
-            self.trigger = self.qtadc.parm_trigger
+            self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
             self.io = self.advancedSettings.cwEXTRA.gpiomux
-            self.trig_mode = self.advancedSettings.cwEXTRA.triggermux
+            self.trigger = self.advancedSettings.cwEXTRA.triggermux
 
             self.disable_newattr()
             return True
@@ -235,12 +234,12 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
-        dict['gain']      = self.gain._dict_repr()
-        dict['trigger']   = self.trigger._dict_repr()
-        dict['clock']     = self.clock._dict_repr()
-        dict['trig_mode'] = self.trig_mode._dict_repr()
-        dict['io']        = self.io._dict_repr()
-        dict['glitch']    = 'todo'
+        dict['gain']    = self.gain._dict_repr()
+        dict['adc']     = self.adc._dict_repr()
+        dict['clock']   = self.clock._dict_repr()
+        dict['trigger'] = self.trigger._dict_repr()
+        dict['io']      = self.io._dict_repr()
+        dict['glitch']  = 'todo'
 
         return dict
 

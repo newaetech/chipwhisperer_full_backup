@@ -1404,15 +1404,11 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         except ValueError:
             raise TypeError("Can't convert %s to int" % phase)
 
-        print phase_int
         if phase_int < -255 or phase_int > 255:
             raise ValueError("Phase %d is outside range [-255, 255]" % phase_int)
 
         LSB = phase_int & 0x00FF
         MSB = (phase_int & 0x0100) >> 8
-
-        print LSB
-        print MSB
 
         cmd = bytearray(2)
         cmd[0] = LSB
@@ -1423,10 +1419,6 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         if self.oa is None:
             return 0
         result = self.oa.sendMessage(CODE_READ, ADDR_PHASE, maxResp=2)
-        print result
-        print result[0]
-        print result[1]
-        print type(result)
 
         #Current bitstream doesn't set this bit ever?
         #phase_valid = (result[1] & 0x02)

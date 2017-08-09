@@ -28,8 +28,10 @@ import logging
 import zipfile
 import StringIO
 import base64
+from collections import OrderedDict
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.utils import util
 
 glitchaddr = 51
 glitchoffsetaddr = 25
@@ -44,6 +46,229 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
+class GlitchSettings(util.DisableNewAttr):
+    def __init__(self, cwglitch):
+        self.cwg = cwglitch
+
+        self.disable_newattr()
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+
+        dict['clk_src'] = self.clk_src
+
+        dict['width'] = self.width
+        dict['width_fine'] = self.width_fine
+        dict['offset'] = self.offset
+        dict['offset_fine'] = self.offset_fine
+        dict['trigger_src'] = self.trigger_src
+        dict['arm_timing'] = self.arm_timing
+        dict['ext_offset'] = self.ext_offset
+        dict['repeat'] = self.repeat
+        dict['output'] = self.output
+
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    @property
+    def clk_src(self):
+        """The clock signal that the glitch DCM is using as input.
+
+        This DCM can be clocked from two different sources:
+        - "target": The HS1 clock from the target device
+        - "clkgen": The CLKGEN DCM output
+
+        Getter: Return the clock signal currently in use
+
+        Setter: Change the glitch clock source
+            Raises: ValueError if new value not one of "target" or "clkgen"
+        """
+        return 'todo'
+
+    @clk_src.setter
+    def clk_src(self, source):
+        pass
+
+    @property
+    def width(self):
+        """The width of a single glitch pulse, as a percentage of one period.
+
+        One pulse can range from 0% to roughly 49.8% of a period. The system
+        may not be reliable at 0%.
+
+        Getter: Return a float with the current glitch width.
+
+        Setter: Update the glitch pulse width. The value will be adjusted to
+        the closest possible glitch width.
+        """
+        return 'todo'
+
+    @width.setter
+    def width(self, value):
+        pass
+        # TODO: raise warning if < 0 or >= 50
+
+    @property
+    def width_fine(self):
+        """The fine adjustment value on the glitch width.
+        """
+        return 'todo'
+
+    @width_fine.setter
+    def width_fine(self, value):
+        pass
+
+    @property
+    def offset(self):
+        """The offset from a rising clock edge to a glitch pulse rising edge,
+        as a percentage of one period.
+
+        A pulse may begin anywhere from -49.8% to 49.8% away from a rising
+        edge, allowing glitches to be swept over the entire clock cycle.
+
+        Getter: Return a float with the current glitch offset.
+        """
+        return 'todo'
+
+    @offset.setter
+    def offset(self, value):
+        pass
+        # TODO: raise warning like width()
+
+    @property
+    def offset_fine(self):
+        """The fine adjustment value on the glitch offset.
+        """
+        return 'todo'
+
+    @offset_fine.setter
+    def offset_fine(self, value):
+        pass
+
+    @property
+    def trigger_src(self):
+        """The trigger signal for the glitch pulses.
+
+        The glitch module can use four different types of triggers:
+        - "continuous": Constantly trigger glitches
+        - "manual": Only trigger glitches through API calls/GUI actions
+        - "ext_single": Use the trigger module. One glitch per scope arm.
+        - "ext_continuous": Use the trigger module. Many glitches per arm.
+
+        Getter: Return the current trigger source.
+
+        Setter: Change the trigger source.
+            Raises: ValueError if value not listed above
+        """
+        return 'todo'
+
+    @trigger_src.setter
+    def trigger_src(self, src):
+        pass
+
+    @property
+    def arm_timing(self):
+        """When to arm the glitch in single-shot mode.
+
+        If the glitch module is in "ext_single" trigger mode, it must be armed
+        when the scope is armed. There are two timings for this event:
+        - "before_scope": The glitch module is armed first.
+        - "after_scope": The scope is armed first. This is the default.
+
+        This setting may be helpful if trigger events are happening very early.
+
+        If the glitch module is not in external trigger single-shot mode, this
+        setting has no effect.
+
+        Getter: Return the current arm timing ("before_scope" or "after_scope")
+
+        Setter: Change the arm timing
+            Raises: ValueError if value not listed above
+        """
+        return 'todo'
+
+    @arm_timing.setter
+    def arm_timing(self, value):
+        pass
+
+    @property
+    def ext_offset(self):
+        """How long the glitch module waits between a trigger and a glitch.
+
+        After the glitch module is triggered, it waits for a number of clock
+        cycles before generating glitch pulses. This delay allows the glitch to
+        be inserted at a precise moment during the target's execution to glitch
+        specific instructions.
+
+        Tip: it is possible to get more precise offsets by clocking the glitch
+        module faster than the target board.
+
+        This offset must be in the range [0, 2**32).
+
+        Getter: Return the current external trigger offset.
+
+        Setter: Set the external trigger offset.
+            Raises: ValueError if offset outside of range [0, 2**32)
+        """
+        return 'todo'
+
+    @ext_offset.setter
+    def ext_offset(self, offset):
+        pass
+
+    @property
+    def repeat(self):
+        """The number of glitch pulses to generate per trigger.
+
+        When the glitch module is triggered, it produces a number of pulses
+        that can be combined with the clock signal. This setting allows for
+        the glitch module to produce stronger glitches (especially during
+        voltage glitching).
+
+        Repeat counter must be in the range [1, 255].
+
+        Getter: Return the current repeat value (integer)
+
+        Setter: Set the repeat counter
+            Raises: ValueError if value outside [1, 255]
+        """
+        return 'todo'
+
+    @repeat.setter
+    def repeat(self, value):
+        pass
+
+    @property
+    def output(self):
+        """The type of output produced by the glitch module.
+
+        There are 5 ways that the glitch module can combine the clock with its
+        glitch pulses:
+        - "clock_only": Output only the original input clock.
+        - "glitch_only": Output only the glitch pulses - do not use the clock.
+        - "clock_or": Output is high if either the clock or glitch are high.
+        - "clock_xor": Output is high if clock and glitch are different.
+        - "enable_only": Output is high for glitch.repeat cycles.
+
+        Some of these settings are only useful in certain scenarios:
+        - Clock glitching: "clock_or" or "clock_xor"
+        - Voltage glitching: "glitch_only" or "enable_only"
+
+        Getter: Return the current glitch output mode (one of above strings)
+
+        Setter: Change the glitch output mode.
+            Raises: ValueError if value not in above strings
+        """
+        return 'todo'
+
+    @output.setter
+    def output(self, value):
+        pass
 
 class ChipWhispererGlitch(Parameterized):
     """
