@@ -176,6 +176,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.clock = self.qtadc.parm_clock
             self.io = self.advancedSettings.cwEXTRA.gpiomux
             self.trigger = self.advancedSettings.cwEXTRA.triggermux
+            self.glitch = self.advancedSettings.glitch.glitchSettings
 
             self.disable_newattr()
             return True
@@ -239,7 +240,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         dict['clock']   = self.clock._dict_repr()
         dict['trigger'] = self.trigger._dict_repr()
         dict['io']      = self.io._dict_repr()
-        dict['glitch']  = 'todo'
+        dict['glitch']  = self.glitch._dict_repr()
 
         return dict
 
