@@ -49,12 +49,22 @@ _tio_alias = {
     'serial-tx': 'Serial TXD',
     'serial-rx': 'Serial RXD',
     'serial-tx-rx': 'Serial-TX/RX',
-    'gpio': 'GPIO',
+    'gpio-low': 'GPIO',
+    'gpio-high': 'GPIO',
+    'gpio-disabled': 'GPIO',
     'high-z': 'High-Z'
+}
+
+# More aliases for GPIO
+_gpio_alias = {
+    'gpio-low': 'low',
+    'gpio-high': 'high',
+    'gpio-disabled': 'disabled',
 }
 
 # Reverse alias lookup
 _tio_api_alias = {_tio_alias[n]: n for n in _tio_alias}
+_gpio_api_alias = {_gpio_alias[n]: n for n in _gpio_alias}
 
 class GPIOSettings(util.DisableNewAttr):
 
@@ -88,11 +98,6 @@ class GPIOSettings(util.DisableNewAttr):
         dict['tio3'] = self.tio3
         dict['tio4'] = self.tio4
 
-        dict['gpio1'] = self.gpio1
-        dict['gpio2'] = self.gpio2
-        dict['gpio3'] = self.gpio3
-        dict['gpio4'] = self.gpio4
-
         dict['pdid'] = self.pdid
         dict['pdic'] = self.pdic
         dict['nrst'] = self.nrst
@@ -113,6 +118,50 @@ class GPIOSettings(util.DisableNewAttr):
     def __str__(self):
         return self.__repr__()
 
+    def _tioApiToInternal(self, tio_setting):
+        """Convert an API TIO string to a (TIO, GPIO) parameter tuple
+
+        Ex:
+        - "serial-tx" -> ("Serial TXD", None)
+        - "gpio-high" -> ("GPIO", "High")
+        """
+
+        # Accept None in place of "high-z"
+        if tio_setting is None:
+            return ("High-Z", None)
+        # Accept True/False in place of "gpio_low"/"gpio_high"
+        if isinstance(tio_setting, int):
+            if tio_setting:
+                gpio_mode = "high"
+            else:
+                gpio_mode = "low"
+            return ("GPIO", gpio_mode)
+
+        if tio_setting not in _tio_alias:
+            raise ValueError("Can't find TIO setting %s; valid values: %s" % (tio_setting, _tio_alias), tio_setting)
+        tio_param = _tio_alias[tio_setting]
+
+        if tio_param == "GPIO":
+            gpio_param = _gpio_alias[tio_setting]
+            return (tio_param, gpio_param)
+        else:
+            return (tio_param, None)
+
+    def _tioInternalToApi(self, tio_setting, gpio_setting):
+        """Convert TIO and GPIO parameter settings to an API string.
+
+        Ex:
+        - ("Serial TXD", None) -> "serial-tx"
+        - ("GPIO", "High") -> "gpio-high"
+        """
+        try:
+            if tio_setting == "GPIO":
+                return _gpio_api_alias[gpio_setting]
+            else:
+                return _tio_api_alias[tio_setting]
+        except KeyError:
+            return "?"
+
     @property
     def tio1(self):
         """The function of the Target IO1 pin.
@@ -120,8 +169,10 @@ class GPIOSettings(util.DisableNewAttr):
         TIO1 can be used for the following functions:
         - "serial-rx": UART input
         - "serial-tx": UART output
-        - "high-z": High impedance input
-        - "gpio": Driven output
+        - "high-z" / None: High impedance input
+        - "gpio-low" / False: Driven output: logic 0
+        - "gpio-high" / True: Driven output: logic 1
+        - "gpio-disabled": Driven output: no effect
         Default value is "serial-rx".
 
         Getter: Return one of the above strings
@@ -129,11 +180,13 @@ class GPIOSettings(util.DisableNewAttr):
         Setter: Set the Target IO1 mode.
             Raises: ValueError if new value is not one of the above modes
         """
-        return _tio_api_alias[self._getTio(1)]
+        return self._tioInternalToApi(self._getTio(0), self._getGpio(0))
 
     @tio1.setter
     def tio1(self, state):
-        self._setTio(1, state)
+        (tio, gpio) = self._tioApiToInternal(state)
+        self._setTio(0, tio)
+        self._setGpio(0, gpio)
 
     @property
     def tio2(self):
@@ -142,8 +195,10 @@ class GPIOSettings(util.DisableNewAttr):
         TIO2 can be used for the following functions:
         - "serial-rx": UART input
         - "serial-tx": UART output
-        - "high-z": High impedance input
-        - "gpio": Driven output
+        - "high-z" / None: High impedance input
+        - "gpio-low" / False: Driven output: logic 0
+        - "gpio-high" / True: Driven output: logic 1
+        - "gpio-disabled": Driven output: no effect
         Default value is "serial-tx".
 
         Getter: Return one of the above strings
@@ -151,11 +206,13 @@ class GPIOSettings(util.DisableNewAttr):
         Setter: Set the Target IO2 mode.
             Raises: ValueError if new value is not one of the above modes
         """
-        return _tio_api_alias[self._getTio(2)]
+        return self._tioInternalToApi(self._getTio(1), self._getGpio(1))
 
     @tio2.setter
     def tio2(self, state):
-        self._setTio(2, state)
+        (tio, gpio) = self._tioApiToInternal(state)
+        self._setTio(1, tio)
+        self._setGpio(1, gpio)
 
     @property
     def tio3(self):
@@ -165,8 +222,10 @@ class GPIOSettings(util.DisableNewAttr):
         - "serial-rx": UART input
         - "serial-tx": UART output
         - "serial-tx-rx": UART 1-wire I/O (for smartcards)
-        - "high-z": High impedance input
-        - "gpio": Driven output
+        - "high-z" / None: High impedance input
+        - "gpio-low" / False: Driven output: logic 0
+        - "gpio-high" / True: Driven output: logic 1
+        - "gpio-disabled": Driven output: no effect
         Default value is "high-z".
 
         Getter: Return one of the above strings
@@ -174,11 +233,13 @@ class GPIOSettings(util.DisableNewAttr):
         Setter: Set the Target IO3 mode.
             Raises: ValueError if new value is not one of the above modes
         """
-        return _tio_api_alias[self._getTio(3)]
+        return self._tioInternalToApi(self._getTio(2), self._getGpio(2))
 
     @tio3.setter
     def tio3(self, state):
-        self._setTio(3, state)
+        (tio, gpio) = self._tioApiToInternal(state)
+        self._setTio(2, tio)
+        self._setGpio(2, gpio)
 
     @property
     def tio4(self):
@@ -186,8 +247,10 @@ class GPIOSettings(util.DisableNewAttr):
 
         TIO4 can be used for the following functions:
         - "serial-tx": UART output
-        - "high-z": High impedance input
-        - "gpio": Driven output
+        - "high-z" / None: High impedance input
+        - "gpio-low" / False: Driven output: logic 0
+        - "gpio-high" / True: Driven output: logic 1
+        - "gpio-disabled": Driven output: no effect
         Default value is "high-z". Typically, this pin is used as a trigger
         input.
 
@@ -196,119 +259,44 @@ class GPIOSettings(util.DisableNewAttr):
         Setter: Set the Target IO4 mode
             Raises: ValueError if new value is not one of the above modes
         """
-        return _tio_api_alias[self._getTio(4)]
+        return self._tioInternalToApi(self._getTio(3), self._getGpio(3))
 
     @tio4.setter
     def tio4(self, state):
-        self._setTio(4, state)
+        (tio, gpio) = self._tioApiToInternal(state)
+        self._setTio(3, tio)
+        self._setGpio(3, gpio)
 
     def _getTio(self, pinnum):
-        if pinnum < 1 or pinnum > 4:
-            raise ValueError("Invalid PIN: %d. Valid range = 1-4." % pinnum, pinnum)
+        if pinnum < 0 or pinnum >= 4:
+            raise ValueError("Invalid PIN: %d. Valid range = 0-3." % pinnum, pinnum)
 
-        pnum = pinnum - 1
-        mode = self.cwe.getTargetIOMode(pnum)
-
-        # Fix: don't include GPIO state in mode check
+        mode = self.cwe.getTargetIOMode(pinnum)
+        # Don't include GPIO state in mode check
         mode &= ~self.cwe.IOROUTE_GPIO
 
         # Find string
-        #if mode != self.cwe.IOROUTE_GPIOE:
-        for s, bmask in self.TIO_VALID[pnum].iteritems():
+        for s, bmask in self.TIO_VALID[pinnum].iteritems():
             if mode == bmask:
                 return s
+
         raise IOError("Invalid IO Mode returned by FPGA", mode)
-        #else:
-        #    self.cwe.getGPIOState(pnum)
 
     def _setTio(self, pinnum, mode):
-        if mode in _tio_alias:
-            mode = _tio_alias[mode]
         if mode is None:
             mode = "High-Z"
 
-        if pinnum < 1 or pinnum > 4:
-            raise ValueError("Invalid PIN: %d. Valid range = 1-4." % pinnum, pinnum)
+        if pinnum < 0 or pinnum >= 4:
+            raise ValueError("Invalid PIN: %d. Valid range = 0-3." % pinnum, pinnum)
 
-        valid_modes = self.TIO_VALID[pinnum-1].keys()
-
-        if isinstance(mode, int):
-            gpio_mode = True
-            gpio_setting = mode
-            mode = "GPIO"
-        else:
-            gpio_mode = False
-            gpio_setting = False
+        valid_modes = self.TIO_VALID[pinnum].keys()
 
         try:
-            iomode = self.TIO_VALID[pinnum - 1][mode]
+            iomode = self.TIO_VALID[pinnum][mode]
         except KeyError:
-            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum, mode, valid_modes))
+            raise ValueError("Invalid IO-Mode for GPIO%d: %s. Valid modes: %s" % (pinnum+1, mode, valid_modes))
 
-        self.cwe.setTargetIOMode(iomode, pinnum - 1)
-
-        if gpio_mode:
-            self.cwe.setGPIOState(gpio_setting, pinnum - 1)
-
-    @property
-    def gpio1(self):
-        """The state of Target IO1, if tio1 is set to "gpio".
-
-        When this pin is in GPIO mode, this setting changes the output level.
-        Allowed values are:
-        - "high" / True: logic 1
-        - "low" / False: logic 0
-
-        When this pin is not in GPIO mode, this setting is set to "low".
-
-        Getter: Return the current GPIO state (one of the above strings)
-
-        Setter: Set the Target IO1 GPIO level
-            Raises:
-                ValueError if new value is not one of the above levels
-                IOError if the TIO1 pin is not in GPIO mode
-        """
-        return self._getGpio(0)
-
-    @gpio1.setter
-    def gpio1(self, level):
-        self._setGpio(0, level)
-
-    @property
-    def gpio2(self):
-        """The state of Target IO2, if tio2 is set to "gpio".
-
-        See gpio1 for more information.
-        """
-        return self._getGpio(1)
-
-    @gpio2.setter
-    def gpio2(self, level):
-        self._setGpio(1, level)
-
-    @property
-    def gpio3(self):
-        """The state of Target IO3, if tio3 is set to "gpio".
-
-        See gpio1 for more information.
-        """
-        return self._getGpio(2)
-
-    @gpio3.setter
-    def gpio3(self, level):
-        self._setGpio(2, level)
-
-    @property
-    def gpio4(self):
-        """The state of Target IO4, if tio4 is set to "gpio".
-
-        See gpio1 for more information.
-        """
-        return self._getGpio(3)
-
-    @gpio4.setter
-    def gpio4(self, level):
-        self._setGpio(3, level)
+        self.cwe.setTargetIOMode(iomode, pinnum)
 
     @property
     def pdic(self):
@@ -324,7 +312,7 @@ class GPIOSettings(util.DisableNewAttr):
         Setter: Set the pin's state
             Raises: ValueError if new state not listed above
         """
-        return self.cwe.getGPIOState(102)
+        return self._getGpio(102)
 
     @pdic.setter
     def pdic(self, state):
@@ -335,7 +323,7 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the PDID pin.
 
         See pdic for more information."""
-        return self.cwe.getGPIOState(101)
+        return self._getGpio(101)
 
     @pdid.setter
     def pdid(self, state):
@@ -346,45 +334,34 @@ class GPIOSettings(util.DisableNewAttr):
         """The state of the NRST pin.
 
         See pdic for more information."""
-        return self.cwe.getGPIOState(100)
+        return self._getGpio(100)
 
     @nrst.setter
     def nrst(self, state):
         self._setGpio(100, state)
 
     def _getGpio(self, pinnum):
-        """GPIO state getter for GPIO 1-4"""
+        """GPIO state getter for GPIO settings on 1-4 and for special pins"""
         state = self.cwe.getGPIOState(pinnum)
-        if state:
+        if state is None:
+            return "disabled"
+        elif state:
             return "high"
         else:
             return "low"
 
     def _setGpio(self, pinnum, level):
         """GPIO state setter for all GPIO pins"""
-        if 0 <= pinnum < 4:
-            if level == "high" or level == True:
-                new_state = True
-            elif level == "low" or level == False:
-                new_state = False
-            else:
-                raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True or 'low'/False)" % (pinnum, level), level)
-
-            self.cwe.setGPIOState(new_state, pinnum)
-
-        elif pinnum >= 100:
-            if level in ("high", True):
-                new_state = True
-            elif level in ("low", False):
-                new_state = False
-            elif level in ("disabled", "default", "high-z", None):
-                new_state = None
-            else:
-                raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True, 'low'/False, or 'disabled'/'default'/'high-z'/None)" % (pinnum, level), level)
-
-            self.cwe.setGPIOState(new_state, pinnum)
+        if level == "high" or level == True:
+            new_state = True
+        elif level == "low" or level == False:
+            new_state = False
+        elif level in ("disabled", "default", "high-z", None):
+            new_state = None
         else:
-            raise ValueError("Invalid PIN: %d." % pinnum, pinnum)
+            raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True or 'low'/False)" % (pinnum, level), level)
+
+        self.cwe.setGPIOState(new_state, pinnum)
 
     @property
     def extclk_src(self):
