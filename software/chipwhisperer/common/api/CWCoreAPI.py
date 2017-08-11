@@ -126,10 +126,16 @@ class CWCoreAPI(Parameterized):
     def setScope(self, driver):
         """Set the current scope module object."""
         if self.getScope():
-            self.getScope().dis()
+            if self.getScope() is driver:
+                return
+            else:
+                self.getScope().dis()
         self._scope = driver
         if self.getScope():
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
+            self.scopeParam.append(self.getScope().params)
+            if self.getScope().getStatus():
+                self.getScope().connectStatus.emit()
 
     def getTarget(self):
         """Return the current target module object."""

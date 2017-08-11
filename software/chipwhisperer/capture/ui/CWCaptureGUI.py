@@ -238,6 +238,10 @@ class CWCaptureGUI(CWMainGUI):
     def scope(self):
         return self.api.getScope()
 
+    @scope.setter
+    def scope(self, new_scope):
+        self.api.setScope(new_scope, addToList=True)
+
     @property
     def target(self):
         return self.api.getTarget()

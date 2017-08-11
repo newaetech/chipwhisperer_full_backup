@@ -77,6 +77,8 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
         self.advancedSAD = None
         self.digitalPattern = None
 
+        self._is_connected = False
+
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
         self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
         self.params.addChildren([
@@ -179,6 +181,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.glitch = self.advancedSettings.glitch.glitchSettings
 
             self.disable_newattr()
+            self._is_connected = True
             return True
         return False
 
@@ -203,6 +206,7 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.qtadc.sc.usbcon = None
 
         self.enable_newattr()
+        self._is_connected = False
         return True
 
     def arm(self):
@@ -246,8 +250,12 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
 
     def __repr__(self):
         # Add some extra information about ChipWhisperer type here
-        ret = "%s Device\n" % self._getCWType()
-        return ret + dict_to_str(self._dict_repr())
+        if self._is_connected:
+            ret = "%s Device\n" % self._getCWType()
+            return ret + dict_to_str(self._dict_repr())
+        else:
+            ret = "ChipWhisperer/OpenADC device (disconnected)"
+            return ret
 
     def __str__(self):
         return self.__repr__()
