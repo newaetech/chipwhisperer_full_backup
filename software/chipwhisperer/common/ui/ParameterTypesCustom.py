@@ -233,7 +233,9 @@ GroupParameterItem.saveBtnClicked = saveBtnClicked
 
 def treeWidgetChanged_fix(self):
     ParameterItem.treeWidgetChanged(self)
-    self.treeWidget().setFirstItemColumnSpanned(self, True)
+    treeWidget = self.treeWidget()
+    if treeWidget is not None:
+        treeWidget.setFirstItemColumnSpanned(self, True)
 
     ## add all widgets for this item into the tree
     if hasattr(self, "widget"):

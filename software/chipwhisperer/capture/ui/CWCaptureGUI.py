@@ -39,7 +39,8 @@ from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 class CWCaptureGUI(CWMainGUI):
     def __init__(self, api):
         super(CWCaptureGUI, self).__init__(api, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
+        # TODO: replace scripts with an info box about the new script system
+        #self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
 
         # Observers (callback methods)
         self.api.sigNewInputData.connect(self.newTargetData)
@@ -246,7 +247,9 @@ class CWCaptureGUI(CWMainGUI):
     def target(self):
         return self.api.getTarget()
 
-
+    @target.setter
+    def target(self, new_target):
+        self.api.setTarget(new_target, addToList=True)
 
 
 def main():

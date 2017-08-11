@@ -126,6 +126,7 @@ class CWCoreAPI(Parameterized):
     def setScope(self, driver):
         """Set the current scope module object."""
         if self.getScope():
+            # Don't do anything if we're not changing scopes
             if self.getScope() is driver:
                 return
             else:
@@ -144,11 +145,18 @@ class CWCoreAPI(Parameterized):
     @setupSetParam("Target Module")
     def setTarget(self, driver):
         """Set the current target module object."""
-        if self.getTarget(): self.getTarget().dis()
+        if self.getTarget():
+            # Don't do anything if we're not changing targets
+            if self.getTarget() is driver:
+                return
+            self.getTarget().dis()
         self._target = driver
         if self.getTarget():
+            self.targetParam.append(self.getTarget().params)
             self.getTarget().newInputData.connect(self.sigNewInputData.emit)
             self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
+            if self.getTarget().getStatus():
+                self.getTarget().connectStatus.emit()
 
     def getAuxModule(self):
         """Return a list with the auxiliary modules."""
