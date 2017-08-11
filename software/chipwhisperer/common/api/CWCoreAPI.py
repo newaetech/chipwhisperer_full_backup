@@ -135,6 +135,11 @@ class CWCoreAPI(Parameterized):
         if self.getScope():
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
             self.scopeParam.append(self.getScope().params)
+            try:
+                ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
+                    TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
+            except KeyError:
+                pass
             if self.getScope().getStatus():
                 self.getScope().connectStatus.emit()
 

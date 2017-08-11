@@ -568,11 +568,26 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         Setter: Set the trigger mode
             Raises: ValueError if value is not one of the allowed strings
         """
-        return self._get_mode()
+        param_alias = {
+            "rising edge": "rising_edge",
+            "falling edge": "falling_edge",
+            "high": "high",
+            "low": "low"
+        }
+        return param_alias[self._get_mode()]
 
     @basic_mode.setter
     def basic_mode(self, mode):
-        self._set_mode(mode)
+        api_alias = {
+            "rising_edge": "rising edge",
+            "falling_edge": "falling edge",
+            "high": "high",
+            "low": "low"
+        }
+        if mode not in api_alias:
+            raise ValueError("Invalid trigger mode %s. Valid modes: %s" % (mode, api_alias.keys()), mode)
+
+        self._set_mode(api_alias[mode])
 
     @property
     def trig_count(self):
@@ -747,10 +762,10 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
     @setupSetParam("Mode")
     def _set_mode(self,  mode):
         """ Input to trigger module options: 'rising edge', 'falling edge', 'high', 'low' """
-        if mode == 'rising_edge':
+        if mode == 'rising edge':
             trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES
 
-        elif mode == 'falling_edge':
+        elif mode == 'falling edge':
             trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_YES
 
         elif mode == 'high':
@@ -760,7 +775,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
             trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_NO
 
         else:
-            raise ValueError,  "%s invalid trigger mode. Valid modes: 'rising_edge', 'falling_edge', 'high', 'low'"%mode
+            raise ValueError,  "%s invalid trigger mode. Valid modes: 'rising edge', 'falling edge', 'high', 'low'"%mode
 
         cur = self.oa.settings() & ~(SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
         self.oa.setSettings(cur | trigmode)
@@ -773,9 +788,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         case = sets & (SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
 
         if case == SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES:
-            mode = "rising_edge"
+            mode = "rising edge"
         elif case == SETTINGS_TRIG_LOW | SETTINGS_WAIT_YES:
-            mode = "falling_edge"
+            mode = "falling edge"
         elif case == SETTINGS_TRIG_HIGH | SETTINGS_WAIT_NO:
             mode = "high"
         else:

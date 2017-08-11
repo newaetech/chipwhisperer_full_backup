@@ -43,11 +43,17 @@ def create_project(filename, overwrite=False):
     return proj
 
 from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
+from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
 
 def scope(type = cwhardware):
     scope = type()
     scope.con()
     return scope
+
+def target(scope, type = cwtarget, *args):
+    target = type()
+    target.con(scope)
+    return target
 
 from chipwhisperer.common.utils.parameter import Parameter
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc
