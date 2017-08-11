@@ -325,6 +325,21 @@ class CWPythonRecentTable(QtGui.QTableWidget):
 
         self._listsUpdated(selected_idx)
 
+    def _removeScript(self, idx):
+        """Remove a script from the list.
+
+        Find the script in one of the lists and remove it. Don't worry that
+        this will leave an empty space at the end of the table.
+        """
+        if idx < len(self.pinned):
+            del self.pinned[idx]
+        else:
+            unpinned_idx = idx - len(self.pinned)
+            if unpinned_idx < len(self.unpinned):
+                del self.unpinned[unpinned_idx]
+
+        self._listsUpdated(None)
+
     def contextMenuEvent(self, event):
         idx = self.rowAt(event.pos().y())
         num_pinned = len(self.pinned)
@@ -344,6 +359,7 @@ class CWPythonRecentTable(QtGui.QTableWidget):
             action_name = "Pin To Top"
 
         modify_pin = menu.addAction(action_name)
+        remove_item = menu.addAction("Remove From List")
         action = menu.exec_(self.mapToGlobal(event.pos()))
 
         if action == modify_pin:
@@ -351,6 +367,8 @@ class CWPythonRecentTable(QtGui.QTableWidget):
                 self._unpinScript(idx)
             else:
                 self._pinScript(idx)
+        elif action == remove_item:
+            self._removeScript(idx)
 
     def getSelectedPath(self):
         idx_list = self.selectedIndexes()
@@ -440,7 +458,9 @@ class QPythonScriptBrowser(QtGui.QWidget):
         self.sigSelectionChanged.emit()
 
     def selectionConfirmed(self):
-        self.sigSelectionConfirmed.emit()
+        path = self.getSelectedPath()
+        if not os.path.isdir(path):
+            self.sigSelectionConfirmed.emit()
 
     def addRecentFile(self, path):
         self.file_view_recent.addScript(path)
