@@ -175,6 +175,16 @@ class GlitchSettings(util.DisableNewAttr):
     @property
     def width_fine(self):
         """The fine adjustment value on the glitch width.
+
+        This is a dimensionless number that makes small adjustments to the
+        glitch pulses' width. Valid range is [-255, 255].
+
+        Getter: Return the current glitch fine width
+
+        Setter: Update the glitch fine width
+            Raises:
+                TypeError if offset not an integer
+                ValueError if offset is outside of [-255, 255]
         """
         return self.cwg.getGlitchWidthFine()
 

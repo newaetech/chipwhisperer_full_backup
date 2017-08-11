@@ -557,8 +557,8 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         There are four possible types of trigger events:
         - "low": triggers when line is low (logic 0)
         - "high": triggers when line is high (logic 1)
-        - "rising edge": triggers when line transitions from low to high
-        - "falling edge:" triggers when line transitions from high to low
+        - "rising_edge": triggers when line transitions from low to high
+        - "falling_edge:" triggers when line transitions from high to low
 
         This setting is only used if the trigger module in use is the "Basic
         Edge/Level" module - UART/SPI/SAD triggers ignore this value.
@@ -747,10 +747,10 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
     @setupSetParam("Mode")
     def _set_mode(self,  mode):
         """ Input to trigger module options: 'rising edge', 'falling edge', 'high', 'low' """
-        if mode == 'rising edge':
+        if mode == 'rising_edge':
             trigmode = SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES
 
-        elif mode == 'falling edge':
+        elif mode == 'falling_edge':
             trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_YES
 
         elif mode == 'high':
@@ -760,7 +760,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
             trigmode = SETTINGS_TRIG_LOW | SETTINGS_WAIT_NO
 
         else:
-            raise ValueError,  "%s invalid trigger mode. Valid modes: 'rising edge', 'falling edge', 'high', 'low'"%mode
+            raise ValueError,  "%s invalid trigger mode. Valid modes: 'rising_edge', 'falling_edge', 'high', 'low'"%mode
 
         cur = self.oa.settings() & ~(SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
         self.oa.setSettings(cur | trigmode)
@@ -773,9 +773,9 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         case = sets & (SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES)
 
         if case == SETTINGS_TRIG_HIGH | SETTINGS_WAIT_YES:
-            mode = "rising edge"
+            mode = "rising_edge"
         elif case == SETTINGS_TRIG_LOW | SETTINGS_WAIT_YES:
-            mode = "falling edge"
+            mode = "falling_edge"
         elif case == SETTINGS_TRIG_HIGH | SETTINGS_WAIT_NO:
             mode = "high"
         else:

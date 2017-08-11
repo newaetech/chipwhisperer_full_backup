@@ -46,20 +46,20 @@ ADDR_IOROUTE = 55
 
 # API aliases for the TIO settings
 _tio_alias = {
-    'serial-tx': 'Serial TXD',
-    'serial-rx': 'Serial RXD',
-    'serial-tx-rx': 'Serial-TX/RX',
-    'gpio-low': 'GPIO',
-    'gpio-high': 'GPIO',
-    'gpio-disabled': 'GPIO',
-    'high-z': 'High-Z'
+    'serial_tx': 'Serial TXD',
+    'serial_rx': 'Serial RXD',
+    'serial_tx_rx': 'Serial-TX/RX',
+    'gpio_low': 'GPIO',
+    'gpio_high': 'GPIO',
+    'gpio_disabled': 'GPIO',
+    'high_z': 'High-Z'
 }
 
 # More aliases for GPIO
 _gpio_alias = {
-    'gpio-low': 'low',
-    'gpio-high': 'high',
-    'gpio-disabled': 'disabled',
+    'gpio_low': 'low',
+    'gpio_high': 'high',
+    'gpio_disabled': 'disabled',
 }
 
 # Reverse alias lookup
@@ -86,7 +86,7 @@ class GPIOSettings(util.DisableNewAttr):
             {'Serial TXD': self.cwe.IOROUTE_STX, 'GPIO': self.cwe.IOROUTE_GPIOE, 'High-Z': self.cwe.IOROUTE_HIGHZ}
         ]
 
-        self.HS2_VALID = {'disabled': 0, 'clkout': 2, 'glitchout': 3}
+        self.HS2_VALID = {'disabled': 0, 'clkgen': 2, 'glitch': 3}
 
         self.disable_newattr()
 
@@ -122,8 +122,8 @@ class GPIOSettings(util.DisableNewAttr):
         """Convert an API TIO string to a (TIO, GPIO) parameter tuple
 
         Ex:
-        - "serial-tx" -> ("Serial TXD", None)
-        - "gpio-high" -> ("GPIO", "High")
+        - "serial_tx" -> ("Serial TXD", None)
+        - "gpio_high" -> ("GPIO", "High")
         """
 
         # Accept None in place of "high-z"
@@ -151,8 +151,8 @@ class GPIOSettings(util.DisableNewAttr):
         """Convert TIO and GPIO parameter settings to an API string.
 
         Ex:
-        - ("Serial TXD", None) -> "serial-tx"
-        - ("GPIO", "High") -> "gpio-high"
+        - ("Serial TXD", None) -> "serial_tx"
+        - ("GPIO", "High") -> "gpio_high"
         """
         try:
             if tio_setting == "GPIO":
@@ -167,13 +167,13 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO1 pin.
 
         TIO1 can be used for the following functions:
-        - "serial-rx": UART input
-        - "serial-tx": UART output
-        - "high-z" / None: High impedance input
-        - "gpio-low" / False: Driven output: logic 0
-        - "gpio-high" / True: Driven output: logic 1
-        - "gpio-disabled": Driven output: no effect
-        Default value is "serial-rx".
+        - "serial_rx": UART input
+        - "serial_tx": UART output
+        - "high_z" / None: High impedance input
+        - "gpio_low" / False: Driven output: logic 0
+        - "gpio_high" / True: Driven output: logic 1
+        - "gpio_disabled": Driven output: no effect
+        Default value is "serial_rx".
 
         Getter: Return one of the above strings
 
@@ -193,13 +193,13 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO2 pin.
 
         TIO2 can be used for the following functions:
-        - "serial-rx": UART input
-        - "serial-tx": UART output
-        - "high-z" / None: High impedance input
-        - "gpio-low" / False: Driven output: logic 0
-        - "gpio-high" / True: Driven output: logic 1
-        - "gpio-disabled": Driven output: no effect
-        Default value is "serial-tx".
+        - "serial_rx": UART input
+        - "serial_tx": UART output
+        - "high_z" / None: High impedance input
+        - "gpio_low" / False: Driven output: logic 0
+        - "gpio_high" / True: Driven output: logic 1
+        - "gpio_disabled": Driven output: no effect
+        Default value is "serial_tx".
 
         Getter: Return one of the above strings
 
@@ -219,14 +219,14 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO3 pin.
 
         TIO3 can be used for the following functions:
-        - "serial-rx": UART input
-        - "serial-tx": UART output
-        - "serial-tx-rx": UART 1-wire I/O (for smartcards)
-        - "high-z" / None: High impedance input
-        - "gpio-low" / False: Driven output: logic 0
-        - "gpio-high" / True: Driven output: logic 1
-        - "gpio-disabled": Driven output: no effect
-        Default value is "high-z".
+        - "serial_rx": UART input
+        - "serial_tx": UART output
+        - "serial_tx_rx": UART 1-wire I/O (for smartcards)
+        - "high_z" / None: High impedance input
+        - "gpio_low" / False: Driven output: logic 0
+        - "gpio_high" / True: Driven output: logic 1
+        - "gpio_disabled": Driven output: no effect
+        Default value is "high_z".
 
         Getter: Return one of the above strings
 
@@ -246,12 +246,12 @@ class GPIOSettings(util.DisableNewAttr):
         """The function of the Target IO4 pin.
 
         TIO4 can be used for the following functions:
-        - "serial-tx": UART output
-        - "high-z" / None: High impedance input
-        - "gpio-low" / False: Driven output: logic 0
-        - "gpio-high" / True: Driven output: logic 1
-        - "gpio-disabled": Driven output: no effect
-        Default value is "high-z". Typically, this pin is used as a trigger
+        - "serial_tx": UART output
+        - "high_z" / None: High impedance input
+        - "gpio_low" / False: Driven output: logic 0
+        - "gpio_high" / True: Driven output: logic 1
+        - "gpio_disabled": Driven output: no effect
+        Default value is "high_z". Typically, this pin is used as a trigger
         input.
 
         Getter: Return one of the above strings
@@ -305,9 +305,9 @@ class GPIOSettings(util.DisableNewAttr):
         This is a GPIO pin. The following values are allowed:
         - "high" / True: logic 1
         - "low" / False: logic 0
-        - "disabled" / "default" / "high-z" / None: undriven
+        - "disabled" / "default" / "high_z" / None: undriven
 
-        Getter: Return one of "high", "low", or "high-z"
+        Getter: Return one of "high", "low", or "high_z"
 
         Setter: Set the pin's state
             Raises: ValueError if new state not listed above
@@ -344,7 +344,7 @@ class GPIOSettings(util.DisableNewAttr):
         """GPIO state getter for GPIO settings on 1-4 and for special pins"""
         state = self.cwe.getGPIOState(pinnum)
         if state is None:
-            return "disabled"
+            return "high_z"
         elif state:
             return "high"
         else:
@@ -356,10 +356,10 @@ class GPIOSettings(util.DisableNewAttr):
             new_state = True
         elif level == "low" or level == False:
             new_state = False
-        elif level in ("disabled", "default", "high-z", None):
+        elif level in ("disabled", "default", "high_z", None):
             new_state = None
         else:
-            raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True or 'low'/False)" % (pinnum, level), level)
+            raise ValueError("Can't set GPIO %d to level %s (expected 'high'/True, 'low'/False, or 'disabled'/'default'/'high_z'/None)" % (pinnum, level), level)
 
         self.cwe.setGPIOState(new_state, pinnum)
 
@@ -660,10 +660,6 @@ class TriggerSettings(util.DisableNewAttr):
         self.triggers("tio1 NAND tio3")
         self.triggers("tio1 NAND tio2 NAND")
         self.triggers("tio1 AND tio1")
-
-
-class GlitchGenerator(util.DisableNewAttr):
-    pass
 
 
 class SADTrigger(util.DisableNewAttr):
