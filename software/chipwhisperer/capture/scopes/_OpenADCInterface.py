@@ -177,7 +177,7 @@ class GainSettings(Parameterized, util.DisableNewAttr):
     def _dict_repr(self):
         dict = OrderedDict()
         dict['mode'] = self.mode
-        dict['level'] = self.gain
+        dict['gain'] = self.gain
         dict['db'] = self.db
         return dict
 
@@ -192,17 +192,10 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         """The gain of the ChipWhisperer's low-noise amplifier in dB. Ranges
         from -6.5 dB to 56 dB, depending on the amplifier settings.
 
-        Getter:
-            Return the current gain as a floating point number.
+        Getter: Return the current gain in dB (float)
 
-        Setter:
-            Attempt to set the gain level.
-
-            Args:
-                val: The new gain level in dB
-
-            Raises:
-                ValueError: If new gain is outside of [-6.5, 56]
+        Setter: Set the gain level in dB
+            Raises: ValueError if new gain is outside of [-6.5, 56]
 
         Examples:
         >>> gain_db = scope.gain.db
@@ -227,12 +220,24 @@ class GainSettings(Parameterized, util.DisableNewAttr):
             raise ValueError, "Invalid Gain Mode, only 'low' or 'high' allowed"
 
     def getMode(self):
-        return "low" #TODO: Read it from hardware!
+        gain_high = self.oa.settings() & SETTINGS_GAIN_HIGH
+        if gain_high:
+            return "high"
+        else:
+            return "low"
 
     @property
     def mode(self):
-        """The current mode of the LNA. This is either "low" or "high". Read-only
-        from command line - use gain.db instead.
+        """The current mode of the LNA.
+
+        The LNA can operate in two modes: low-gain or high-gain. Generally, the
+        high-gain setting is better to use. Note that this value will be
+        automatically updated if the dB gain is set.
+
+        Getter: Return the current gain mode ("low" or "high")
+
+        Setter: Set the gain mode
+            Raises: ValueError if mode not one of "low" or "high"
         """
         return self.getMode()
 
@@ -256,10 +261,24 @@ class GainSettings(Parameterized, util.DisableNewAttr):
 
     @property
     def gain(self):
-        """The current LNA gain setting. This is a dimensionless number from
-        0 to 79. Read-only from command line - use gain.db instead.
+        """The current LNA gain setting.
+
+        This gain is a dimensionless number in the range [0, 78]. Higher value
+        causes higher gain in dB.
+
+        Note that this function is unnecessary - the dB gain can be set
+        directly. This property is only here to help convert old scripts.
+
+        Getter: Return the current gain setting (int)
+
+        Setter: Set the gain
+            Raises: ValueError if gain outside [0, 78]
         """
         return self.getGain()
+
+    @gain.setter
+    def gain(self, value):
+        self.setGain(value)
 
     def _get_gain_db(self):
         #GAIN (dB) = 50 (dB/V) * VGAIN - 6.5 dB, (HILO = LO)
