@@ -253,6 +253,7 @@ class CWPythonRecentTable(QtGui.QTableWidget):
 
             short_path = os.path.basename(path)
             item = QtGui.QTableWidgetItem(short_path)
+            item.setFlags(item.flags() & ~QtCore.Qt.ItemIsEditable)
             item.setToolTip(path)
             item.setBackground(bg_color)
             self.setItem(row, 0, item)
@@ -372,6 +373,7 @@ class QPythonScriptBrowser(QtGui.QWidget):
     # Note that this signal needs to be defined at the class level
     # See https://stackoverflow.com/a/2971426/3817091 for details
     sigSelectionChanged = QtCore.Signal()
+    sigSelectionConfirmed = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(QPythonScriptBrowser,self).__init__(parent)
@@ -406,6 +408,10 @@ class QPythonScriptBrowser(QtGui.QWidget):
         self.connect(self.file_view_recent.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
                  self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
 
+        self.file_view_cw.activated.connect(self.selectionConfirmed)
+        self.file_view_all.activated.connect(self.selectionConfirmed)
+        self.file_view_recent.activated.connect(self.selectionConfirmed)
+
     def tabChanged(self, newTab):
         self.file_view_cw.hide()
         self.file_view_all.hide()
@@ -433,6 +439,9 @@ class QPythonScriptBrowser(QtGui.QWidget):
     def selectionChanged(self, x=None, y=None):
         self.sigSelectionChanged.emit()
 
+    def selectionConfirmed(self):
+        self.sigSelectionConfirmed.emit()
+
     def addRecentFile(self, path):
         self.file_view_recent.addScript(path)
 
@@ -451,6 +460,7 @@ class QPythonScriptRunner(QtGui.QWidget):
 
         self.run_button = QtGui.QPushButton("Run")
         self.run_button.clicked.connect(self.runScript)
+        self.browser.sigSelectionConfirmed.connect(self.runScript)
 
         self.edit_button = QtGui.QPushButton("Edit")
         self.edit_button.clicked.connect(self.editScript)
