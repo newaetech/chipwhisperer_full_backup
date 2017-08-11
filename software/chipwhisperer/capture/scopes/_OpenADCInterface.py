@@ -1393,7 +1393,7 @@ class ClockSettings(Parameterized, util.DisableNewAttr):
         else:
             raise ValueError("source must be 'dcm' or 'extclk'")
 
-        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result)
+        self.oa.sendMessage(CODE_WRITE, ADDR_ADVCLK, result, readMask=self._readMask)
 
     @setupSetParam(['CLKGEN Settings', 'Input Source'])
     def _set_clkgen_src(self, source="system"):
