@@ -32,7 +32,7 @@ def open_project(filename):
 def create_project(filename, overwrite=False):
     """Create a new project with the path <filename>.
 
-    If <overwrite> is True, raise an IOError if this path already exists.
+    If <overwrite> is False, raise an IOError if this path already exists.
     """
     if os.path.isfile(filename) and (overwrite == False):
         raise IOError("File " + filename + " already exists")
@@ -44,16 +44,70 @@ def create_project(filename, overwrite=False):
 
 from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
 from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
+from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 def scope(type = cwhardware):
+    """Create a scope object and connect to it.
+
+    This function allows any type of scope to be created. By default, the scope
+    is a ChipWhisperer OpenADC object, but this can be set to any valid scope
+    class.
+    """
     scope = type()
     scope.con()
     return scope
 
 def target(scope, type = cwtarget, *args):
+    """Create a target object and connect to it.
+    """
     target = type()
     target.con(scope)
     return target
+
+def test_capture(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
+    """Capture a number of traces, but don't save any data to disk.
+    """
+    print "todo"
+
+def capture_many(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
+    """Capture a number of traces, saving power traces and input/output text
+    and keys to disk along the way.
+
+    TODO: support N
+    """
+    api = CWCoreAPI.getInstance()
+    api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, pattern=pattern)
+
+def getLastTrace():
+    """Return the last trace captured by test_capture/capture
+    """
+    print "todo"
+
+def getLastKey():
+    """Return the last key used in test_capture/capture
+    """
+    print "todo"
+
+def getLastTextin():
+    """Return the last input text used in test_capture/capture
+    """
+    print "todo"
+
+def getLastTextout():
+    """Return the last input text used in test_capture/capture
+    """
+    print "todo"
+
+def basic_ac(scope=None, target=None, project=None):
+    # TODO: remove?
+    """Convenience function for creating an acq controller with the basic
+    key-text pattern.
+    """
+    from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
+    from chipwhisperer.capture.api.acquisition_controller import AcquisitionController as AcqCtrl
+    ktp = BasicKtp()
+    ac = AcqCtrl(scope, target, project, None, ktp)
+    return ac
 
 from chipwhisperer.common.utils.parameter import Parameter
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc

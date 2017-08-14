@@ -29,6 +29,7 @@ import sys
 import logging
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
 from chipwhisperer.capture.api.programmers import Programmer
+from chipwhisperer.capture.api.aux_list import AuxList
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
@@ -78,7 +79,7 @@ class CWCoreAPI(Parameterized):
         self._project = self._scope = self._target = self._attack =  self._traceFormat = self._acqPattern = None
         self._attack = self.valid_attacks.get("CPA", None)
         self._acqPattern = self.valid_acqPatterns["Basic"]
-        self._auxList = [None]  # TODO: implement it as a list in the whole class
+        self._auxList = AuxList()
         self._numTraces = 50
         self._numTraceSets = 1
 
@@ -87,7 +88,7 @@ class CWCoreAPI(Parameterized):
             {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
             {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'get':self.getTarget, 'set':self.setTarget},
             {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'get':self.getTraceFormat, 'set':self.setTraceFormat},
-            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':self.getAuxModule, 'set':self.setAux},
+#            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':self.getAuxModule, 'set':self.setAux},
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
                     {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
@@ -107,7 +108,7 @@ class CWCoreAPI(Parameterized):
         self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
 
         self.auxParam = Parameter(name="Aux Settings", type='group', addLoadSave=True).register()
-        self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
+#        self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
 
         # self.attackParam = Parameter(name="Attack Settings", type='group')
         # self.params.getChild('Attack Module').getDynamicParameters(self.attackParam)
@@ -334,9 +335,16 @@ class CWCoreAPI(Parameterized):
             sys.excepthook(*sys.exc_info())
             return False
 
-    def captureM(self, progressBar=None):
+    def captureM(self, progressBar=None, scope=None, target=None, project=None, aux_list=None, pattern=None, N=None):
         """Capture multiple traces and save its result"""
         if not progressBar: progressBar = ProgressBarText()
+
+        # Replace unprovided arguments with internal API ones
+        if scope is None:
+            scope = self.getScope()
+        if target is None:
+            target = self.getTarget()
+        # TODO: support project/aux_list/pattern/N arguments
 
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
