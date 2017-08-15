@@ -23,6 +23,16 @@ try:
 except ImportError:
     from StringIO import StringIO
 
+class QLineEditWithTab(QtGui.QLineEdit):
+    def __init__(self, *args):
+        QtGui.QLineEdit.__init__(self, *args)
+
+    def event(self, event):
+        if (event.type() == QtCore.QEvent.KeyPress) and (event.key() == QtCore.Qt.Key_Tab):
+            self.setText(self.text() + "    ")
+            return True
+
+        return QtGui.QLineEdit.event(self, event)
 
 class _QPythonConsoleInterpreter(_InteractiveConsole):
     """InteractiveConsole subclass that sends all output to the GUI."""
@@ -84,7 +94,7 @@ class _QPythonConsoleUI(object):
         self.prompt = QtGui.QLabel(parent)
         self.prompt.setText(">>> ")
         layout2.addWidget(self.prompt)
-        self.input = QtGui.QLineEdit(parent)
+        self.input = QLineEditWithTab(parent)
         self.input.setAttribute(QtCore.Qt.WA_MacShowFocusRect, False)
         self.input.setFont(font)
         layout2.addWidget(self.input)
