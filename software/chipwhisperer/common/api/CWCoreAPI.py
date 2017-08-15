@@ -164,27 +164,14 @@ class CWCoreAPI(Parameterized):
             if self.getTarget().getStatus():
                 self.getTarget().connectStatus.emit()
 
-    @property
-    def aux(self):
-        return self._auxList
-
-    def getAuxFunction(self, only_enabled):
-        """TODO: doc
-        """
-        return self._auxList.getFunctionDict(only_enabled)
-
-    def getAuxModule(self):
-        """Return a list with the auxiliary modules."""
-        return self._auxList[0]
 
     def getAuxList(self):
-        """Return a list with the auxiliary modules."""
         return self._auxList
 
-    @setupSetParam("Auxiliary Module")
-    def setAux(self, aux):
-        """Set the first aux module. Will be updated to support more modules."""
-        self._auxList = [aux]
+    def getAuxFunctions(self, only_enabled):
+        """TODO: doc
+        """
+        return self._auxList.getFunctions(only_enabled)
 
     def getAcqPattern(self):
         """Return the selected acquisition pattern."""
@@ -335,7 +322,8 @@ class CWCoreAPI(Parameterized):
     def capture1(self):
         """Capture one trace"""
         try:
-            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
+            aux_dict = self.getAuxFunctions(True)
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, aux=aux_dict, keyTextPattern=self.getAcqPattern())
             ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
             if self.getTarget():
                 self.getTarget().init()
@@ -344,7 +332,7 @@ class CWCoreAPI(Parameterized):
             sys.excepthook(*sys.exc_info())
             return False
 
-    def captureM(self, progressBar=None, scope=None, target=None, project=None, aux_list=None, pattern=None, N=None):
+    def captureM(self, progressBar=None, scope=None, target=None, project=None, pattern=None, N=None):
         """Capture multiple traces and save its result"""
         if not progressBar: progressBar = ProgressBarText()
 
@@ -353,7 +341,7 @@ class CWCoreAPI(Parameterized):
             scope = self.getScope()
         if target is None:
             target = self.getTarget()
-        # TODO: support project/aux_list/pattern/N arguments
+        # TODO: support project/pattern/N arguments
 
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
@@ -380,11 +368,12 @@ class CWCoreAPI(Parameterized):
                     currentTrace = None
                     prefix = datetime.now().strftime('%Y.%m.%d-%H.%M.%S')
 
-                for aux in self._auxList:
-                    if aux:
-                        aux.setPrefix(prefix)
+                #for aux in self._auxList:
+                #    if aux:
+                #        aux.setPrefix(prefix)
 
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
+                aux_dict = self.getAuxFunctions(True)
+                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, aux_dict, self.getAcqPattern())
                 ac.setMaxtraces(setSize)
                 ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)

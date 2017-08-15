@@ -66,7 +66,7 @@ def target(scope, type = cwtarget, *args):
 
 def auxList():
     api = CWCoreAPI.getInstance()
-    return api.aux
+    return api.getAuxList()
 
 def test_capture(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
     """Capture a number of traces, but don't save any data to disk.

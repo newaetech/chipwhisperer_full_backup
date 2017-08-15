@@ -43,7 +43,7 @@ class AcquisitionController:
     which can perform any other tasks during a capture, such as resetting
     """
 
-    def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
+    def __init__(self, scope, target=None, writer=None, aux=None, keyTextPattern=None):
         # TODO: use project objects instead of writers?
         self.sigTraceDone = util.Signal()
         self.sigNewTextResponse = util.Signal()
@@ -58,15 +58,14 @@ class AcquisitionController:
         self._target = target
         self._scope = scope
         self._writer = writer
-        self.auxList = auxList
+        self._aux_dict = aux
         self._pattern = keyTextPattern
         self._pattern.setTarget(target)
         self._pattern.initPair(self.maxtraces)
 
-        if self.auxList is not None:
-            for aux in auxList:
-                if aux:
-                    aux.captureInit()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['before_capture']:
+                func(self._scope, self._target, self._writer)
 
     def targetDoTrace(self):
         if self._target is None or self._target.getName() == "None":
@@ -95,22 +94,12 @@ class AcquisitionController:
 
 
     def doSingleReading(self):
-        # Set mode
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceArm()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['before_trace']:
+                func(self._scope, self._target, self._writer)
 
         if self._target:
             self._target.reinit()
-
-        ##if self.scope:
-        ##    self.scope.arm()
-
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceArmPost()
 
         if self._target:
             # Get key / plaintext now
@@ -120,8 +109,16 @@ class AcquisitionController:
             self._target.loadEncryptionKey(self.key)
             self._target.loadInput(self.textin)
 
+        if self._aux_dict is not None:
+            for func in self._aux_dict['before_arm']:
+                func(self._scope, self._target, self._writer)
+
         if self._scope:
             self._scope.arm()
+
+        if self._aux_dict is not None:
+            for func in self._aux_dict['after_arm']:
+                func(self._scope, self._target, self._writer)
 
         if self._target:
             # Load input, start encryption, get output
@@ -139,10 +136,9 @@ class AcquisitionController:
                 logging.error('IOError: %s' % str(e))
                 capture_ok = False
 
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceDone()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['after_trace']:
+                func(self._scope, self._target, self._writer)
 
         return capture_ok
 
@@ -157,11 +153,6 @@ class AcquisitionController:
 
         if self._writer:
             self._writer.prepareDisk()
-
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceArm()
 
         if self._target:
             self._target.init()
@@ -187,10 +178,9 @@ class AcquisitionController:
                 if progressBar.wasAborted():
                     break
 
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.captureComplete(self._writer)
+        if self._aux_dict is not None:
+            for func in self._aux_dict['after_capture']:
+                func(self._scope, self._target, self._writer)
 
         if self._writer and self._writer.numTraces() > 0:
             # Don't clear trace as we re-use the buffer

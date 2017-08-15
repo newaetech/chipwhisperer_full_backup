@@ -36,15 +36,27 @@ class AuxListObject(Parameterized):
         self._parent = parent
         self._id = id
 
-        self._name = "Module %d: %s.%s" % (id, func.__module__, func.__name__)
+        self._name = "Aux Module %d: %s.%s" % (id, func.__module__, func.__name__)
         self._enabled = True
 
         self.getParams().addChildren([
             {'name':'ID', 'type':'str', 'key':'id', 'value':str(id), 'readonly':True},
             {'name':'Enabled', 'type':'bool', 'key':'enabled', 'get':self.getEnabled, 'set':self.setEnabled},
-            {'name':'Preview', 'type':'text', 'key':'code_str', 'value': textwrap.dedent(inspect.getsource(func)), 'readonly':True},
+            {'name':'Preview', 'type':'text', 'key':'code_str', 'get':self._getCodePreview, 'readonly':True},
             {'name':'Remove', 'type':'action', 'action':self.remove}
         ])
+
+    def __str__(self):
+        return self._name
+
+    def __repr__(self):
+        return self.__str__()
+
+    def _getCodePreview(self):
+        try:
+            return textwrap.dedent(inspect.getsource(self._func))
+        except IOError:
+            return "?"
 
     @property
     def enabled(self):
@@ -78,15 +90,17 @@ class AuxList(Parameterized):
 
     Possible timings for auxiliary functions are:
     - "before_capture": At the start of a capture campaign
-    - "before_arm": Before arming the scope
+    - "before_trace": Before each trace, before setting up scope/target
+    - "before_arm": Before arming the scope, but after setting up the target
     - "after_arm": After arming the scope, but before capturing any data
-    - "after_trace": After recording a trace
+    - "after_trace": After recording each trace
     - "after_capture": At the end of a capture campaign
     """
 
     # Dict of "API name": "GUI name"
     _valid_timings = OrderedDict([
         ("before_capture", "Before Capture"),
+        ("before_trace", "Before Trace"),
         ("before_arm", "Before Arm"),
         ("after_arm", "After Arm"),
         ("after_trace", "After Trace"),
@@ -112,9 +126,6 @@ class AuxList(Parameterized):
             {'name':'Help', 'type':'action', 'action':self._showHelp}
         ])
         self.getParams().refreshAllParameters()
-
-        # Test
-        self.register(self.register, "before_arm")
 
     def _findItem(self, id):
         """Attempt to find a function with this ID.

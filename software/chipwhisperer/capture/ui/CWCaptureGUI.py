@@ -251,6 +251,10 @@ class CWCaptureGUI(CWMainGUI):
     def target(self, new_target):
         self.api.setTarget(new_target, addToList=True)
 
+    @property
+    def aux_list(self):
+        return self.api.getAuxList()
+
 
 def main():
     # Create the Qt Application
