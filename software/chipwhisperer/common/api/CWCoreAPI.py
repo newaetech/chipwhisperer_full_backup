@@ -107,8 +107,8 @@ class CWCoreAPI(Parameterized):
         self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
 
-        self.auxParam = Parameter(name="Aux Settings", type='group', addLoadSave=True).register()
-#        self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
+        # Aux settings
+        self.auxParam = self._auxList.getParams().register()
 
         # self.attackParam = Parameter(name="Attack Settings", type='group')
         # self.params.getChild('Attack Module').getDynamicParameters(self.attackParam)
@@ -163,6 +163,15 @@ class CWCoreAPI(Parameterized):
             self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
             if self.getTarget().getStatus():
                 self.getTarget().connectStatus.emit()
+
+    @property
+    def aux(self):
+        return self._auxList
+
+    def getAuxFunction(self, only_enabled):
+        """TODO: doc
+        """
+        return self._auxList.getFunctionDict(only_enabled)
 
     def getAuxModule(self):
         """Return a list with the auxiliary modules."""

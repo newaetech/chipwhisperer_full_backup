@@ -64,12 +64,16 @@ def target(scope, type = cwtarget, *args):
     target.con(scope)
     return target
 
+def auxList():
+    api = CWCoreAPI.getInstance()
+    return api.aux
+
 def test_capture(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
     """Capture a number of traces, but don't save any data to disk.
     """
     print "todo"
 
-def capture_many(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
+def captureN(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
     """Capture a number of traces, saving power traces and input/output text
     and keys to disk along the way.
 
