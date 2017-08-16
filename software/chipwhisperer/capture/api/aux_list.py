@@ -226,7 +226,7 @@ class AuxList(Parameterized):
         """
         self._removeObject(id)
 
-    def getFunctions(self, only_enabled=True):
+    def getDict(self, only_enabled=True):
         """Return a dictionary of lists of all registered functions.
 
         If only_enabled is True, only return functions that are currently

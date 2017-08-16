@@ -25,6 +25,7 @@
 import copy
 import os
 import traceback
+import math
 import sys
 import logging
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
@@ -76,7 +77,7 @@ class CWCoreAPI(Parameterized):
         self.settings = Settings()
 
         # Initialize default values
-        self._project = self._scope = self._target = self._attack =  self._traceFormat = self._acqPattern = None
+        self._project = self._scope = self._target = self._traceFormat = self._acqPattern = None
         self._attack = self.valid_attacks.get("CPA", None)
         self._acqPattern = self.valid_acqPatterns["Basic"]
         self._auxList = AuxList()
@@ -168,16 +169,19 @@ class CWCoreAPI(Parameterized):
     def getAuxList(self):
         return self._auxList
 
+    def setAuxList(self, new_list):
+        self._auxList = new_list
+
     def getAuxFunctions(self, only_enabled):
         """TODO: doc
         """
-        return self._auxList.getFunctions(only_enabled)
+        return self._auxList.getDict(only_enabled)
 
     def getAcqPattern(self):
         """Return the selected acquisition pattern."""
         return self._acqPattern
 
-    @setupSetParam("Key/Text Pattern")
+    @setupSetParam(["Acquisition Settings", "Key/Text Pattern"])
     def setAcqPattern(self, pat):
         """Set the current acquisition pattern."""
         self._acqPattern = pat
@@ -207,17 +211,6 @@ class CWCoreAPI(Parameterized):
         """Set the current trace format for acquisition."""
         self._traceFormat = format
 
-    def getAttack(self):
-        """Return the current attack module. NOT BEING USED AT THE MOMENT"""
-        return self._attack
-
-    def setAttack(self, attack):
-        """Set the current attack module. NOT BEING USED AT THE MOMENT"""
-        self._attack = attack
-        if self.getAttack():
-            self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.sigAttackChanged.emit()
-
     def project(self):
         """Return the current opened project"""
         return self._project
@@ -229,9 +222,7 @@ class CWCoreAPI(Parameterized):
 
     def newProject(self):
         """Create a new project"""
-        self.setProject(ProjectFormat())
-        self.project().setProgramName(self.__name__)
-        self.project().setProgramVersion(self.__version__)
+        self.setProject(ProjectFormat(self.__name__, self.__version__))
 
     def openProject(self, fname):
         """Open project file"""
@@ -301,7 +292,7 @@ class CWCoreAPI(Parameterized):
         """Return the total number or traces for acquisition purposes"""
         return self._numTraces
 
-    @setupSetParam("Number of Traces")
+    @setupSetParam(["Acquisition Settings", "Number of Traces"])
     def setNumTraces(self, n):
         """Set the total number or traces for acquisition purposes"""
         self._numTraces = n
@@ -310,7 +301,7 @@ class CWCoreAPI(Parameterized):
         """Return the number of sets/segments"""
         return self._numTraceSets
 
-    @setupSetParam("Number of Sets")
+    @setupSetParam(["Acquisition Settings", "Number of Sets"])
     def setNumTraceSets(self, s):
         """Set the number of sets/segments"""
         self._numTraceSets = s
@@ -332,35 +323,42 @@ class CWCoreAPI(Parameterized):
             sys.excepthook(*sys.exc_info())
             return False
 
-    def captureM(self, progressBar=None, scope=None, target=None, project=None, pattern=None, N=None):
+    def captureM(self, progressBar=None, scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
         """Capture multiple traces and save its result"""
-        if not progressBar: progressBar = ProgressBarText()
+        if not progressBar:
+            progressBar = ProgressBarText()
 
-        # Replace unprovided arguments with internal API ones
-        if scope is None:
-            scope = self.getScope()
-        if target is None:
-            target = self.getTarget()
-        # TODO: support project/pattern/N arguments
+        if seg_size is None:
+            seg_size = 1000
+        trace_mgr = project.traceManager() if project is not None else None
+        aux_dict = aux_list.getDict(True) if aux_list is not None else None
+        segments = int(math.ceil(N / float(seg_size)))
 
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
-            progressBar.setMaximum(self._numTraces)
+            progressBar.setMaximum(N)
 
             waveBuffer = None
             tcnt = 0
-            setSize = self.tracesPerSet()
-            for i in range(0, self._numTraceSets):
+            for i in range(0, segments):
                 if progressBar.wasAborted(): break
+
+                this_seg_size = min(seg_size, N - i*seg_size)
+                # TODO: replace self.getTraceFormat() with project
                 if self.getTraceFormat() is not None:
                     currentTrace = self.getNewTrace(self.getTraceFormat())
                     # Load trace writer information
                     prefix = currentTrace.config.attr("prefix")[:-1]
-                    currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
+                    currentTrace.config.setAttr("targetHW", target.getName() if target is not None else "None")
                     currentTrace.config.setAttr("targetSW", os.path.split(Programmer.lastFlashedFile)[1])
-                    currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
-                    currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
-                    currentTrace.setTraceHint(setSize)
+                    currentTrace.config.setAttr("scopeName", scope.getName() if scope is not None else "None")
+                    notes_str = "AckPattern: " + str(ktp) + "; "
+                    notes_str += "Aux: "
+                    if aux_dict is not None:
+                        for t in aux_dict.keys():
+                            notes_str += "%s" % t + ", ".join([str(item) for item in aux_dict[t] if item])
+                    currentTrace.config.setAttr("notes", notes_str)
+                    currentTrace.setTraceHint(this_seg_size)
 
                     if waveBuffer is not None:
                         currentTrace.setTraceBuffer(waveBuffer)
@@ -372,21 +370,21 @@ class CWCoreAPI(Parameterized):
                 #    if aux:
                 #        aux.setPrefix(prefix)
 
-                aux_dict = self.getAuxFunctions(True)
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, aux_dict, self.getAcqPattern())
-                ac.setMaxtraces(setSize)
+
+                ac = AcquisitionController(scope, target, currentTrace, aux_dict, ktp)
+                ac.setMaxtraces(this_seg_size)
                 ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)
-                __pb = lambda: progressBar.updateStatus(i*setSize + ac.currentTrace + 1, (i, ac.currentTrace))
+                __pb = lambda: progressBar.updateStatus(i*seg_size + ac.currentTrace + 1, (i, ac.currentTrace))
                 ac.sigTraceDone.connect(__pb)
                 self.sigCampaignStart.emit(prefix)
-                ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
+                ac.doReadings(tracesDestination=trace_mgr, progressBar=progressBar)
 
                 if currentTrace is not None:
-                    self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
+                    project.saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                     waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
                 self.sigCampaignDone.emit()
-                tcnt += setSize
+                tcnt += seg_size
 
                 if progressBar.wasAborted():
                     break

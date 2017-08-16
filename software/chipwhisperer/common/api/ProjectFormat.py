@@ -64,7 +64,7 @@ class ConfigObjProj(ConfigObj):
 class ProjectFormat(object):
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
-    def __init__(self):
+    def __init__(self, prog_name="ChipWhisperer", prog_ver=""):
         self.sigFilenameChanged = util.Signal()
         self.sigStatusChanged = util.Signal()
         self.dirty = util.Observable(True)
@@ -75,7 +75,12 @@ class ProjectFormat(object):
         self._traceManager = TraceManager().register()
         self._traceManager.dirty.connect(self.__dirtyCallback)
         self.setFilename(ProjectFormat.untitledFileName)
-        if __debug__: logging.debug('Created: ' + str(self))
+
+        self.setProgramName(prog_name)
+        self.setProgramVersion(prog_ver)
+
+        if __debug__:
+            logging.debug('Created: ' + str(self))
 
     def __dirtyCallback(self):
         self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())

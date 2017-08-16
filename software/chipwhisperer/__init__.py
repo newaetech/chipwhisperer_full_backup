@@ -19,17 +19,18 @@ import os, os.path
 from chipwhisperer.common.traces import TraceContainerNative as trace_container_native
 from chipwhisperer.common.api import ProjectFormat as project
 
-def open_project(filename):
+def openProject(filename):
     """Load an existing project from disk.
 
     Raise an IOError if no such project exists.
     """
     if not os.path.isfile(filename):
         raise IOError("File " + filename + " does not exist or is not a file")
-    # TODO: open project here, knowing it exists
-    # TODO: catch that annoying "ConfigError" if the file isn't a .cwp
+    proj = project.ProjectFormat()
+    proj.load(filename)
+    return proj
 
-def create_project(filename, overwrite=False):
+def createProject(filename, overwrite=False):
     """Create a new project with the path <filename>.
 
     If <overwrite> is False, raise an IOError if this path already exists.
@@ -45,6 +46,7 @@ def create_project(filename, overwrite=False):
 from chipwhisperer.capture.scopes.OpenADC import OpenADC as cwhardware
 from chipwhisperer.capture.targets.SimpleSerial import SimpleSerial as cwtarget
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
+from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
 
 def scope(type = cwhardware):
     """Create a scope object and connect to it.
@@ -65,22 +67,37 @@ def target(scope, type = cwtarget, *args):
     return target
 
 def auxList():
+    # TODO: this should create a fresh aux list
+    # We can already access API one via self.aux_list
     api = CWCoreAPI.getInstance()
     return api.getAuxList()
 
-def test_capture(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
-    """Capture a number of traces, but don't save any data to disk.
-    """
-    print "todo"
-
-def captureN(scope=None, target=None, project=None, aux_list=None, pattern=None, N=1):
+def captureN(scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
     """Capture a number of traces, saving power traces and input/output text
     and keys to disk along the way.
 
-    TODO: support N
+    Args:
+        scope: A connected scope object. If None, no power trace will be
+            recorded - possibly helpful for testing target setups
+        target: A connected target object. If None, no target commmands will be
+            sent - assumed that aux commands or external boards are controlling
+            target
+        project: A ChipWhisperer project object. If None, no data will be
+            saved - helpful when testing scope settings without saving
+        aux_list: An AuxList object with auxiliary functions registered. If
+            None, no auxiliary functions are run
+        ktp: A key/text input object. Produces pairs of encryption key/input
+            text for each capture. Can't be None as these values are required
+        N: The number of traces to capture.
+        seg_size: The number of traces to record in each segment. The data is
+            saved to disk in a number of segments to avoid making one enormous
+            data file. If None, a sane default is used.
+
+    To emulate GUI capture:
+    >>> cw.captureN(self.scope, self.target, self.project, self.aux_list, self.ktp, 50)
     """
     api = CWCoreAPI.getInstance()
-    api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, pattern=pattern)
+    api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, ktp=ktp, N=N, seg_size=seg_size)
 
 def getLastTrace():
     """Return the last trace captured by test_capture/capture
@@ -101,17 +118,6 @@ def getLastTextout():
     """Return the last input text used in test_capture/capture
     """
     print "todo"
-
-def basic_ac(scope=None, target=None, project=None):
-    # TODO: remove?
-    """Convenience function for creating an acq controller with the basic
-    key-text pattern.
-    """
-    from chipwhisperer.capture.acq_patterns.basic import AcqKeyTextPattern_Basic as BasicKtp
-    from chipwhisperer.capture.api.acquisition_controller import AcquisitionController as AcqCtrl
-    ktp = BasicKtp()
-    ac = AcqCtrl(scope, target, project, None, ktp)
-    return ac
 
 from chipwhisperer.common.utils.parameter import Parameter
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc

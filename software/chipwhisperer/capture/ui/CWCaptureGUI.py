@@ -229,7 +229,7 @@ class CWCaptureGUI(CWMainGUI):
         try:
             self.stopCaptureMAct.setEnabled(True)
             self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
-            ret = self.api.captureM(self.capturingProgressBar)
+            ret = self.api.captureM(self.capturingProgressBar, self.scope, self.target, self.project, self.aux_list, self.ktp, self.api.getNumTraces())
         finally:
             self.stopCaptureMAct.setEnabled(False)
         return ret
@@ -255,6 +255,25 @@ class CWCaptureGUI(CWMainGUI):
     def aux_list(self):
         return self.api.getAuxList()
 
+    @aux_list.setter
+    def aux_list(self, new_list):
+        self.api.setAuxList(new_list)
+
+    @property
+    def project(self):
+        return self.api.project()
+
+    @project.setter
+    def project(self, new_project):
+        self.api.setProject(new_project)
+
+    @property
+    def ktp(self):
+        return self.api.getAcqPattern()
+
+    @ktp.setter
+    def ktp(self, new_ktp):
+        self.api.setAcqPattern(new_ktp, addToList=True)
 
 def main():
     # Create the Qt Application
