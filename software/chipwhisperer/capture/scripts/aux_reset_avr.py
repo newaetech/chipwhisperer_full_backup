@@ -1,13 +1,17 @@
 """aux_reset_avr.py
+
+Sets up AVR reset aux module
 """
 
 import time
 from subprocess import call
-import chipwhisperer.capture.auxiliary.ResetAVR
+from chipwhisperer.capture.auxiliary.ResetAVR import ResetAVR
 
-# GUI-only
-if self is not None:
-    ac = self.ac
+# GUI compatibility
+try:
+    aux_list = self.aux_list
+except NameError:
+    pass
 
 AVRResetter = ResetAVR()
-ac.registerAux(AVRResetter.traceArm, "before_arm")
+aux_list.register(AVRResetter.traceArm, "before_arm")

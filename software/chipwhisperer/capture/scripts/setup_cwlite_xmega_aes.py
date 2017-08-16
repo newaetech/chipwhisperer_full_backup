@@ -1,8 +1,13 @@
 """Setup script for CWLite/1200 with XMEGA (CW303/CW308-XMEGA/CWLite target)
+
+Configures scope settings to prepare for capturing SimpleSerial power traces
 """
 
-if self is not None:
+# GUI compatibility
+try:
     scope = self.scope
+except NameError:
+    pass
     
 scope.gain.gain = 45
 scope.adc.samples = 3000
