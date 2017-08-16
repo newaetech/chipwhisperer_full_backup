@@ -83,6 +83,127 @@ class SimpleSerial(TargetTemplate):
 
         self.setConnection(self.ser, blockSignal=True)
 
+    @property
+    def init_cmd(self):
+        """The command sent to the target before starting a capture.
+
+        This value is a string that is sent to the target via the serial port.
+        It can contain 3 special strings that are replaced during each capture:
+        - "$KEY$": The encryption key
+        - "$TEXT$": The text input
+        - "$EXPECTED$": The expected result of the target's operation
+        These strings are replaced with ASCII values
+        ex: k$KEY$ -> k0011223344556677
+
+        Getter: Return the current init command
+
+        Setter: Set a new init command
+        """
+        return self.findParam("Init Command").getValue()
+
+    @init_cmd.setter
+    def init_cmd(self, cmd):
+        self.findParam("Init Command").setValue(cmd)
+
+    @property
+    def key_cmd(self):
+        """The command used to send the key to the target.
+
+        See init_cmd for details about special strings.
+
+        Getter: Return the current key command
+
+        Setter: Set a new key command
+        """
+        return self.findParam("Load Key Command").getValue()
+
+    @key_cmd.setter
+    def key_cmd(self, cmd):
+        self.findParam("Load Key Command").setValue(cmd)
+
+    @property
+    def input_cmd(self):
+        """The command used to send the text input to the target.
+
+        See init_cmd for details about special strings.
+
+        Getter: Return the current text input command
+
+        Setter: Set a new text input command
+        """
+        return self.findParam("Load Input Command").getValue()
+
+    @input_cmd.setter
+    def input_cmd(self, cmd):
+        self.findParam("Load Input Command").setValue(cmd)
+
+    @property
+    def go_cmd(self):
+        """The command used to tell the target to start the operation.
+
+        See init_cmd for details about special strings.
+
+        Getter: Return the current text input command
+
+        Setter: Set a new text input command
+        """
+        return self.findParam("Go Command").getValue()
+
+    @go_cmd.setter
+    def go_cmd(self, cmd):
+        self.findParam("Go Command").setValue(cmd)
+
+    @property
+    def output_cmd(self):
+        """The expected format of the output string.
+
+        The output received from the target is compared to this string after
+        capturing a trace. If the format doesn't match, an error is logged.
+
+        This format string can contain two special strings:
+        - "$RESPONSE$": If the format contains $RESPONSE$, then this part of
+          the received text is converted to the output text (ciphertext or
+          similar). The length of this response string is given in outputLen()
+          and set by setOutputLen().
+        - "$GLITCH$": If the format starts with $GLITCH$, then all output is
+          redirected to the glitch explorer.
+
+        Getter: Return the current output format
+
+        Setter: Set a new output format
+        """
+        return self.findParam("Output Format").getValue()
+
+    @output_cmd.setter
+    def output_cmd(self, cmd):
+        self.findParam("Output Format").setValue(cmd)
+
+    @property
+    def baud(self):
+        """The current baud rate of the serial connection.
+
+        This property is only compatible with the ChipWhisperer-Lite serial
+        connection - using it with a different connection raises an
+        AttributeError.
+
+        Getter: Return the current baud rate.
+
+        Setter: Set a new baud rate. Valid baud rates are any integer in the
+                range [500, 2000000].
+        """
+        if isinstance(self.ser, SimpleSerial_ChipWhispererLite):
+            return self.ser.baud()
+        else:
+            raise AttributeError("Can't access baud rate unless using CW-Lite serial port")
+
+    @baud.setter
+    def baud(self, new_baud):
+        if isinstance(self.ser, SimpleSerial_ChipWhispererLite):
+            self.ser.setBaud(new_baud)
+        else:
+            raise AttributeError("Can't access baud rate unless using CW-Lite serial port")
+
+
     @setupSetParam("Key Length")
     def setKeyLen(self, klen):
         """ Set key length in bytes """

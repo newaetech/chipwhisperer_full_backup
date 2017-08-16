@@ -209,8 +209,6 @@ class AuxList(Parameterized):
         if new_timing not in self._valid_timings:
             raise ValueError("Invalid timing provided: expected one of %s" % self._valid_timings.keys(), new_timing)
 
-        # This is kind of slow (_findItem then _removeObject, which finds it
-        # again) but it's probably not going to matter with so few aux objects
         (timing, idx) = self._findItem(id)
 
         item = self._aux_items[timing][idx]

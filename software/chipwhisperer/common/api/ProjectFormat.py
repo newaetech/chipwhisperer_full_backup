@@ -65,6 +65,10 @@ class ConfigObjProj(ConfigObj):
 
 
 class ProjectFormat(Parameterized):
+    """Class describing an open ChipWhisperer project.
+
+
+    """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
     def __init__(self, prog_name="ChipWhisperer", prog_ver=""):
