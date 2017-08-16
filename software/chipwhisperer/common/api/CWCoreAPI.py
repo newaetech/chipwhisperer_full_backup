@@ -68,7 +68,6 @@ class CWCoreAPI(Parameterized):
 
         self.valid_scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes", True, True)
         self.valid_targets =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.targets", True, True)
-        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
         self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
         self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False)
         self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
@@ -88,8 +87,6 @@ class CWCoreAPI(Parameterized):
         self.params.addChildren([
             {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
             {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'get':self.getTarget, 'set':self.setTarget},
-            {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'get':self.getTraceFormat, 'set':self.setTraceFormat},
-#            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':self.getAuxModule, 'set':self.setAux},
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
                     {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
@@ -105,14 +102,10 @@ class CWCoreAPI(Parameterized):
         self.targetParam = Parameter(name="Target Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Target Module').stealDynamicParameters(self.targetParam)
 
-        self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
-        self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
-
         # Aux settings
         self.auxParam = self._auxList.getParams().register()
 
-        # self.attackParam = Parameter(name="Attack Settings", type='group')
-        # self.params.getChild('Attack Module').getDynamicParameters(self.attackParam)
+        # Note: Project settings are set up in setProject()
 
         self.newProject()
 
@@ -204,12 +197,15 @@ class CWCoreAPI(Parameterized):
 
     def getTraceFormat(self):
         """Return the selected trace format."""
-        return self._traceFormat
+        if self._project is not None:
+            return self._project.getTraceFormat()
+        else:
+            return None
 
-    @setupSetParam("Trace Format")
     def setTraceFormat(self, format):
         """Set the current trace format for acquisition."""
-        self._traceFormat = format
+        if self._project is not None:
+            self._project.setTraceFormat(format)
 
     def project(self):
         """Return the current opened project"""
@@ -218,6 +214,7 @@ class CWCoreAPI(Parameterized):
     def setProject(self, proj):
         """Set the current opened project"""
         self._project = proj
+        self.params.append(proj.getParams())
         self.sigNewProject.emit()
 
     def newProject(self):
@@ -331,6 +328,7 @@ class CWCoreAPI(Parameterized):
         if seg_size is None:
             seg_size = 1000
         trace_mgr = project.traceManager() if project is not None else None
+        trace_fmt = project.getTraceFormat() if project is not None else None
         aux_dict = aux_list.getDict(True) if aux_list is not None else None
         segments = int(math.ceil(N / float(seg_size)))
 
@@ -344,9 +342,8 @@ class CWCoreAPI(Parameterized):
                 if progressBar.wasAborted(): break
 
                 this_seg_size = min(seg_size, N - i*seg_size)
-                # TODO: replace self.getTraceFormat() with project
-                if self.getTraceFormat() is not None:
-                    currentTrace = self.getNewTrace(self.getTraceFormat())
+                if trace_fmt is not None:
+                    currentTrace = self.getNewTrace(trace_fmt)
                     # Load trace writer information
                     prefix = currentTrace.config.attr("prefix")[:-1]
                     currentTrace.config.setAttr("targetHW", target.getName() if target is not None else "None")
@@ -391,7 +388,7 @@ class CWCoreAPI(Parameterized):
 
             if currentTrace is not None:
                 currentTrace.unloadAllTraces()  # Required in order to make the GC work properly :(
-                self._traceFormat.unloadAllTraces()
+                trace_fmt.unloadAllTraces()
         return True
 
     def runScriptModule(self, mod, funcName="run"):
