@@ -20,6 +20,6 @@ Resetter = ResetCW1173(xmega=True, delay_ms=delay_ms)
 #Resetter = ResetCW1173(xmega=False, delay_ms=delay_ms)
 
 # Reset before arming - more stable
-aux_list.register(Resetter.resetThenDelay, "before_arm")
+aux_list.register(Resetter.resetThenDelay, "before_trace")
 # Reset after arming - scope can catch entire reset
 #aux_list.register(Resetter.delayThenReset, "after_arm")

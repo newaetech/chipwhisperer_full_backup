@@ -100,24 +100,32 @@ def captureN(scope=None, target=None, project=None, aux_list=None, ktp=None, N=1
     api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, ktp=ktp, N=N, seg_size=seg_size)
 
 def getLastTrace():
-    """Return the last trace captured by test_capture/capture
+    """Return the last trace captured by captureN
     """
-    print "todo"
 
 def getLastKey():
-    """Return the last key used in test_capture/capture
+    """Return the last key used in captureN
     """
-    print "todo"
+    api = CWCoreAPI.getInstance()
+    return api.getLastKey()
 
 def getLastTextin():
-    """Return the last input text used in test_capture/capture
+    """Return the last input text used in captureN
     """
-    print "todo"
+    api = CWCoreAPI.getInstance()
+    return api.getLastTextin()
 
 def getLastTextout():
-    """Return the last input text used in test_capture/capture
+    """Return the last input text used in captureN
     """
-    print "todo"
+    api = CWCoreAPI.getInstance()
+    return api.getLastTextout()
+
+def getLastExpected():
+    """Return the last input text used in captureN
+    """
+    api = CWCoreAPI.getInstance()
+    return api.getLastExpected()
 
 from chipwhisperer.common.utils.parameter import Parameter
 import chipwhisperer.capture.ui.CWCaptureGUI as cwc

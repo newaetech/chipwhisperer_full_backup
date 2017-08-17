@@ -23,8 +23,6 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-from chipwhisperer.capture.auxiliary._base import AuxiliaryTemplate
-from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.common.utils.timer import nonBlockingDelay
 
 class ResetCW1173(object):
@@ -55,10 +53,10 @@ class ResetCW1173(object):
         else:
             scope.scopetype.dev.getCwliteAVR().readSignature()
         
-    def resetThenDelay(scope, target, project):
+    def resetThenDelay(self, scope, target, project):
         self.reset(scope)
         nonBlockingDelay(self._delay_ms)
         
-    def delayThenReset(scope, target, project):
+    def delayThenReset(self, scope, target, project):
         nonBlockingDelay(self._delay_ms)
         self.reset(scope)

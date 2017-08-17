@@ -237,6 +237,12 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
         return ret
 
+    def getLastTrace(self):
+        """Return the last trace captured with this scope.
+        """
+        return self.qtadc.datapoints
+
+
     def _dict_repr(self):
         dict = OrderedDict()
         dict['gain']    = self.gain._dict_repr()

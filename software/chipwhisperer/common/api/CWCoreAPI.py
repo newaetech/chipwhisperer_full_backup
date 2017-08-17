@@ -83,6 +83,12 @@ class CWCoreAPI(Parameterized):
         self._numTraces = 50
         self._numTraceSets = 1
 
+        # Storage for last key/plaintext/ciphertext
+        self._lastKey = None
+        self._lastTextin = None
+        self._lastTextout = None
+        self._lastExpected = None
+
         self.params = Parameter(name='Generic Settings', type='group', addLoadSave=True).register()
         self.params.addChildren([
             {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
@@ -108,6 +114,16 @@ class CWCoreAPI(Parameterized):
         # Note: Project settings are set up in setProject()
 
         self.newProject()
+
+    def updateLastKeyText(self, key, textin, textout, exp):
+        """Callback for acq controller signal - update key/textin/textout
+        """
+        self._lastKey = key
+        self._lastTextin = textin
+        self._lastTextout = textout
+        self._lastExpected = exp
+
+        self.sigNewTextResponse.emit(key, textin, textout, exp)
 
     def getResults(self, name):
         """Return the requested result widget. It should be registered."""
@@ -363,8 +379,8 @@ class CWCoreAPI(Parameterized):
                     currentTrace = None
                     prefix = datetime.now().strftime('%Y.%m.%d-%H.%M.%S')
 
-                if self._aux_dict is not None:
-                    for func in self._aux_dict['set_prefix']:
+                if aux_dict is not None:
+                    for func in aux_dict['set_prefix']:
                         func(prefix)
 
                 ac = AcquisitionController(scope, target, currentTrace, aux_dict, ktp)
@@ -433,3 +449,15 @@ class CWCoreAPI(Parameterized):
     def getInstance():
         """Implements the singleton pattern/anti-pattern. Returns a reference to the API instance."""
         return CWCoreAPI.instance
+
+    def getLastKey(self):
+        return self._lastKey
+
+    def getLastTextin(self):
+        return self._lastTextin
+
+    def getLastTextout(self):
+        return self._lastTextout
+
+    def getLastExpected(self):
+        return self._lastExpected

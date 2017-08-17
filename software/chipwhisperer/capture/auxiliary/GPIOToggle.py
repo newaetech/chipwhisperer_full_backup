@@ -27,7 +27,7 @@
 import logging
 import time
 from _base import AuxiliaryTemplate
-from chipwhisperer.common.utils.timer import nonBlockingSleep
+from chipwhisperer.common.utils.timer import nonBlockingDelay
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 
 
@@ -53,8 +53,8 @@ class GPIOToggle(object):
         """Call like self.setPin(scope, "tio1", True)"""
         setattr(scope.io, pin, state)
         
-    def togglePin(self, scope):
+    def togglePin(self, scope, target, project):
         self.setPin(scope, self._pin, not self._default_state)
-        nonBlockingSleep(self._active_ms)
+        nonBlockingDelay(self._active_ms)
         self.setPin(scope, self._pin, self._default_state)
-        nonBlockingSleep(self._delay_ms)
+        nonBlockingDelay(self._delay_ms)
