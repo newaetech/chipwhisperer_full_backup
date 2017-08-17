@@ -27,122 +27,34 @@
 import logging
 import time
 from _base import AuxiliaryTemplate
-from chipwhisperer.common.utils import timer
+from chipwhisperer.common.utils.timer import nonBlockingSleep
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.utils import util
 
 
-class GPIOToggle(AuxiliaryTemplate):
-    _name = 'GPIO Toggle'
+class GPIOToggle(object):
+    """The GPIOToggle class switches one GPIO pin's state from low to high (or
+    vice versa) for a short amount of time.
+    
+    Arguments to __init__():
+    - pin: The pin to toggle. Can be one of the strings "tio1"-"tio4", "nrst",
+        "pdid", "pdic"
+    - default_state: The standby state of the pin. Can be True (high, toggle
+        low) or False (low, toggle high)
+    - active_ms: Length of toggle in ms
+    - delay_ms: Length of delay after returning to default state in ms
+    """
+    def __init__(self, pin, default_state, active_ms, delay_ms):
+        self._pin = pin
+        self._default_state = default_state
+        self._active_ms = active_ms
+        self._delay_ms = delay_ms
 
-    def __init__(self):
-        AuxiliaryTemplate.__init__(self)
-        self.pin = None
-        self.lastPin = None
-        self.getParams().addChildren([
-                 {'name':'GPIO Pin', 'type':'list', 'key':'gpiopin', 'values':{'TargetIO1':0, 'TargetIO2':1, 'TargetIO3':2, 'TargetIO4':3, 'nRST':100, 'PDID':101, 'PDIC':102}, 'value':2, 'action':self.settingsChanged},
-                 {'name':'Standby State', 'type':'list', 'key':'inactive', 'values':{'High':True, 'Low':False}, 'value':False, 'action':self.settingsChanged},
-                 {'name':'Toggle Length', 'type':'int', 'key':'togglelength', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
-                 {'name':'Post-Toggle Delay', 'type':'int', 'key':'toggledelay', 'limits':(0, 10E3), 'value':250, 'suffix':'mS', 'action':self.settingsChanged},
-                 {'name':'Trigger', 'type':'list', 'key':'triggerloc', 'values':{'Campaign Init':0, 'Trace Arm':1, 'Trace Done':2, 'Campaign Done':3}, 'value':2, 'action':self.settingsChanged},
-                 {'name':'Toggle Now', 'type':'action', 'action':self.trigger}
-        ])
-        self.settingsChanged()
-
-    def settingsChanged(self, ignored=None):
-        self.pin = self.findParam('gpiopin').getValue()
-        self.standby = self.findParam('inactive').getValue()
-        self.triglength = self.findParam('togglelength').getValue() / 1000.0
-        self.postdelay = self.findParam('toggledelay').getValue() / 1000.0
-        self.triglocation = self.findParam('triggerloc').getValue()
-
-    def checkMode(self):
-
-        cwa = CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA
-
-        if self.pin != self.lastPin:
-            # Turn off last used pin
-            if self.lastPin:
-                if self.lastPin < 4:
-                    cwa.setTargetIOMode(IONumber=self.lastPin, setting=0)
-                else:
-                    self.setPin(self.lastPin, None)
-
-            # Setup new pin (GPIO1-4 only need this)
-            if self.pin < 4:
-                cwa.setTargetIOMode(IONumber=self.pin, setting=cwa.IOROUTE_GPIOE)
-
-            # Don't do this again
-            self.lastPin = self.pin
-
-    def nonblockingSleep_done(self):
-        self._sleeping = False
-
-    def nonblockingSleep(self, stime):
-        """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        timer.Timer().singleShot(stime * 1000, self.nonblockingSleep_done)
-        self._sleeping = True
-        while(self._sleeping):
-            time.sleep(0.01)
-            util.updateUI()
-
-    def setPin(self, state, pin=None):
-
-        if pin is None:
-            pin = self.pin
-
-        if state != True and state != False and state != None:
-            raise ValueError("Invalid State %s"%str(state))
-
-        if pin < 4:
-            CWCoreAPI.getInstance().getScope().advancedSettings.cwEXTRA.setGPIOState(state=state, IONumber=pin)
-        elif pin == 100 or pin == 101 or pin == 102:
-            if state == True:
-                strstate = "High"
-            elif state == False:
-                strstate = "Low"
-            else:
-                strstate = "Disabled"
-
-            if pin == 100:
-                pinname = 'nRST'
-            elif pin == 101:
-                pinname = 'PDID'
-            elif pin == 102:
-                pinname = 'PDIC'
-
-            CWCoreAPI.getInstance().setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', '%s: GPIO'%pinname, strstate])
-        else:
-            raise ValueError("Invalid Pin %d" % pin)
-
-    def trigger(self, _=None):
-
-        logging.info('AUXIO: Trigger pin %d' % self.pin)
-        self.checkMode()
-
-        self.setPin(state=(not self.standby))
-        self.nonblockingSleep(self.triglength)
-        self.setPin(state=self.standby)
-        self.nonblockingSleep(self.postdelay)
-
-    def captureInit(self):
-        self.checkMode()
-        self.setPin(self.standby)
-
-        if self.triglocation == 0:
-            self.trigger()
-
-    def captureComplete(self, writer):
-        if self.triglocation == 3:
-            self.trigger()
-
-    def traceArm(self):
-        if self.triglocation == 1:
-            self.trigger()
-
-    def traceDone(self):
-        if self.triglocation == 2:
-            self.trigger()
-
-    def testToggle(self):
-        pass
+    def setPin(self, scope, pin, state):
+        """Call like self.setPin(scope, "tio1", True)"""
+        setattr(scope.io, pin, state)
+        
+    def togglePin(self, scope):
+        self.setPin(scope, self._pin, not self._default_state)
+        nonBlockingSleep(self._active_ms)
+        self.setPin(scope, self._pin, self._default_state)
+        nonBlockingSleep(self._delay_ms)

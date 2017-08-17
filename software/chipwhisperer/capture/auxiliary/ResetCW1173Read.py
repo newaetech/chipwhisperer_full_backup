@@ -23,87 +23,42 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import time
 from chipwhisperer.capture.auxiliary._base import AuxiliaryTemplate
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
-from chipwhisperer.common.utils import util, timer
+from chipwhisperer.common.utils.timer import nonBlockingDelay
 
-
-class ResetCW1173Read(AuxiliaryTemplate):
-    '''
-    This auxiliary module can do two things:
-      1. Reset the target before arming the scope:
-             ^ reset     ^ arm       ^ trigger
-             |<-- d_1 -->|<-- d_2 -->|
-             |           |           |
-      -----------------------------------------------> (time)
-      
-      2. Reset the target after arming the scope:
-                         ^ arm       ^ reset ^ trigger
-              <-- d_1 -->|<-- d_2 -->|       |
-                         |           |       |
-      -----------------------------------------------> (time)
-      
-    Method 1 is more consistent (resetting the device can accidentally cause
-    a trigger event) but method 2 allows for a shorter delay between the reset
-    and the scope measurement. 
+class ResetCW1173(object):
+    """Reset an AVR/XMEGA via the PDI/ISP interface.
     
-    In the ChipWhisperer software, method 1 is called "pre-arm reset" and 
-    method 2 is called "post-arm reset".
-    '''
-    _name = "Reset AVR/XMEGA via CW-Lite"
-
-    def __init__(self):
-        AuxiliaryTemplate.__init__(self)
-        self.getParams().addChildren([
-            {'name':'Interface', 'type':'list', 'key':'target', 'values':['xmega (PDI)', 'avr (ISP)'], 'value':'xmega (PDI)'},
-            {'name':'Delay (Pre-Arm)' , 'type':'int',  'key':'predelay',  'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
-			{'name':'Delay (Post-Arm)', 'type':'int',  'key':'postdelay', 'limits':(0, 10E3), 'value':0, 'suffix':' ms'},
-            {'name':'Reset Timing'  , 'type':'list', 'key':'resettiming', 'values':['Pre-Arm', 'Post-Arm'], 'value':'Pre-Arm'},
-            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-        ])
-
-    def traceArm(self):
-        # Before we arm the scope, possibly reset the device and wait for a bit
-        resettiming = self.findParam('resettiming').getValue()
-        if resettiming == 'Pre-Arm':
-            self.resetDevice()
-
-        dly = self.findParam('predelay').getValue()
-        if dly > 0:
-            self.nonblockingSleep(dly / 1000.0)
-			
-    def traceArmPost(self):
-        # After we arm the scope, wait for a bit, then possibly reset the target            
-        dly = self.findParam('postdelay').getValue()
-        if dly > 0:
-            self.nonblockingSleep(dly / 1000.0)
-            
-        resettiming = self.findParam('resettiming').getValue()
-        if resettiming == 'Post-Arm':
-            self.resetDevice()
-			
-    def traceDone(self):
-        pass
-
-    def resetDevice(self):
-        # Reset the target by reading its signature
-        target = self.findParam('target').getValue()
-        if target == 'xmega (PDI)':
-            CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteXMEGA().readSignature()
-        else:
-            CWCoreAPI.getInstance().getScope().scopetype.dev.getCwliteAVR().readSignature()
+    This class must be initialized with 2 values:
+    - XMEGA/AVR: True if reseting XMEGA; False for AVR
+    - Delay: How long to wait between device reset and scope arm
+    
+    Then, there are three self-explanatory functions that can be registered:
+    - reset(): no delay. Useful for testing
+    - resetThenDelay(): Useful for before_arm
+    - delayThenReset(): Useful for after_arm
+    
+    Note that resetThenDelay() before arming is more consistent (resetting the 
+    device can accidentally cause a trigger event) but delayThenReset() after 
+    arming allows for a shorter delay between the reset and the scope
+    measurement. 
+    """
+    
+    def __init__(self, xmega, delay_ms):
+        self._xmega = xmega
+        self._delay_ms = delay_ms
         
-    def testReset(self, _=None):
-        self.resetDevice()
-
-    def nonblockingSleep_done(self):
-        self._sleeping = False
-
-    def nonblockingSleep(self, stime):
-        """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        timer.Timer().singleShot(stime * 1000, self.nonblockingSleep_done)
-        self._sleeping = True
-        while(self._sleeping):
-            time.sleep(0.01)
-            util.updateUI()
+    def reset(self, scope):
+        if self._xmega:
+            scope.scopetype.dev.getCwliteXMEGA().readSignature()
+        else:
+            scope.scopetype.dev.getCwliteAVR().readSignature()
+        
+    def resetThenDelay(scope, target, project):
+        self.reset(scope)
+        nonBlockingDelay(self._delay_ms)
+        
+    def delayThenReset(scope, target, project):
+        nonBlockingDelay(self._delay_ms)
+        self.reset(scope)

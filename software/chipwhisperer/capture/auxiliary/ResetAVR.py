@@ -28,32 +28,15 @@ from subprocess import call
 from _base import AuxiliaryTemplate
 
 
-class ResetAVR(AuxiliaryTemplate):
-    _name = 'Reset AVR via STK500'
-
-    def __init__(self):
-        AuxiliaryTemplate.__init__(self)
-        self.getParams().addChildren([
-            {'name':'STK500.exe Path', 'type':'file', 'key':'stk500path', 'value':r'C:\Program Files (x86)\Atmel\AVR Tools\STK500\Stk500.exe'},
-            {'name':'AVR Part', 'type':'list', 'key':'part', 'values':['atmega328p'], 'value':'atmega328p'},
-            {'name':'Test Reset', 'type':'action', 'action':self.testReset}
-        ])
-
-    def traceArm(self):
-        # If using STK500
-        stk500 = self.findParam('stk500path').getValue()
-        ret = call([stk500, "-d%s" % self.findParam('part').getValue(), "-s", "-cUSB"])
+class ResetAVR(object):
+    def __init__(self, path):
+        self._stk_path = path
+        self._part = "atmega328p"
+        
+    def reset(scope, target, project):
+        ret = call([self._stk_path, "-d%s" % self._part, "-s", "-cUSB"])
 
         if int(ret) != 0:
             raise IOError("Error Calling Stk500.exe")
 
         time.sleep(1)
-
-        # If using AVRDude
-        # call(["avrdude"])
-
-    def traceDone(self):
-        pass
-
-    def testReset(self, _=None):
-        self.traceArm()

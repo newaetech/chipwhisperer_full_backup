@@ -89,16 +89,26 @@ class AuxList(Parameterized):
     """Class for controlling aux modules within an acquisition controller.
 
     Possible timings for auxiliary functions are:
+    - "set_prefix": At the very start of a Capture Many run
     - "before_capture": At the start of a capture campaign
     - "before_trace": Before each trace, before setting up scope/target
     - "before_arm": Before arming the scope, but after setting up the target
     - "after_arm": After arming the scope, but before capturing any data
     - "after_trace": After recording each trace
     - "after_capture": At the end of a capture campaign
+
+    Most aux functions must accept 3 arguments: the scope object in use, the
+    currently connected target, and the project storing the results. Feel free
+    to use any features of these 3 objects.
+
+    The one special case is aux functions under the "set_prefix" timing - these
+    are only provided with a timestamp describing the start of the capture.
+    This function slot is helpful for recording timestamps on auxiliary files.
     """
 
     # Dict of "API name": "GUI name"
     _valid_timings = OrderedDict([
+        ("set_prefix", "Set Prefix"),
         ("before_capture", "Before Capture"),
         ("before_trace", "Before Trace"),
         ("before_arm", "Before Arm"),

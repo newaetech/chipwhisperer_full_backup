@@ -363,10 +363,9 @@ class CWCoreAPI(Parameterized):
                     currentTrace = None
                     prefix = datetime.now().strftime('%Y.%m.%d-%H.%M.%S')
 
-                #for aux in self._auxList:
-                #    if aux:
-                #        aux.setPrefix(prefix)
-
+                if self._aux_dict is not None:
+                    for func in self._aux_dict['set_prefix']:
+                        func(prefix)
 
                 ac = AcquisitionController(scope, target, currentTrace, aux_dict, ktp)
                 ac.setMaxtraces(this_seg_size)
