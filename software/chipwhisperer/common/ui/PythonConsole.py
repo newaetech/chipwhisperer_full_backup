@@ -17,12 +17,21 @@ import subprocess
 import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
-from chipwhisperer.common.utils.util import requestConsoleBreak, ConsoleBreakException
+from chipwhisperer.common.utils.util import requestConsoleBreak, updateUI
 
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
+# Note: we'd like to use cStringIO (it's faster) but we can't subclass it
+from StringIO import StringIO
+
+class MyStringIO(StringIO):
+    """Custom StringIO class - prints everything to console"""
+    def __init__(self, console):
+        StringIO.__init__(self)
+        self._output = console
+
+    def write(self, s):
+        self._output.write(s)
+        updateUI()
+
 
 class QInteractiveLineEdit(QtGui.QLineEdit):
     """Improved QLineEdit for Python console
@@ -58,24 +67,21 @@ class _QPythonConsoleInterpreter(_InteractiveConsole):
             # Make sure strings don't have null chars before they end by decoding them
             data_sanitized = data.decode('utf-8')
 
-            if data_sanitized[-1] == "\n":
-                data_sanitized = data_sanitized[:-1]
-            self.ui.output.appendPlainText(data_sanitized)
+            self.ui.output.moveCursor(QtGui.QTextCursor.End)
+            self.ui.output.insertPlainText(data_sanitized)
+            self.ui.output.moveCursor(QtGui.QTextCursor.End)
 
     def runsource(self,source,filename="<input>",symbol="single"):
         old_stdout = sys.stdout
         old_stderr = sys.stderr
-        sys.stdout = sys.stderr = collector = StringIO()
+        sys.stdout = sys.stderr = collector = MyStringIO(self)
         try:
             more = _InteractiveConsole.runsource(self,source,filename,symbol)
-        except ConsoleBreakException:
-            more = False
         finally:
             if sys.stdout is collector:
                 sys.stdout = old_stdout
             if sys.stderr is collector:
                 sys.stderr = old_stderr
-        self.write(collector.getvalue())
         return more
 
 
@@ -132,12 +138,11 @@ class QPythonConsole(QtGui.QWidget):
         self.interpreter = _QPythonConsoleInterpreter(self.ui,locals)
         self.ui.input.returnPressed.connect(self._on_enter_line)
         self.ui.input.installEventFilter(self)
-        self.ui.input.sigCtrlCPressed.connect(self.catchCtrlC)
         self.history = []
         self.history_pos = 0
 
     def runLine(self, line):
-        self.interpreter.write(self.ui.prompt.text() + line)
+        self.interpreter.write(self.ui.prompt.text() + line + '\n')
         more = self.interpreter.push(line)
         if line:
             self.history.append(line)
@@ -149,10 +154,6 @@ class QPythonConsole(QtGui.QWidget):
             self.ui.prompt.setText("... ")
         else:
             self.ui.prompt.setText(">>> ")
-
-    def catchCtrlC(self):
-        print "HELP"
-        raise KeyboardInterrupt
 
     def _on_enter_line(self):
         line = self.ui.input.text()
