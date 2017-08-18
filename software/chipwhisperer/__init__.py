@@ -99,10 +99,6 @@ def captureN(scope=None, target=None, project=None, aux_list=None, ktp=None, N=1
     api = CWCoreAPI.getInstance()
     api.captureM(scope=scope, target=target, project=project, aux_list=aux_list, ktp=ktp, N=N, seg_size=seg_size)
 
-def getLastTrace():
-    """Return the last trace captured by captureN
-    """
-
 def getLastKey():
     """Return the last key used in captureN
     """
