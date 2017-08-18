@@ -17,20 +17,31 @@ import subprocess
 import sys
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
+from chipwhisperer.common.utils.util import requestConsoleBreak, ConsoleBreakException
 
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
 
-class QLineEditWithTab(QtGui.QLineEdit):
+class QInteractiveLineEdit(QtGui.QLineEdit):
+    """Improved QLineEdit for Python console
+
+    Handles tab keys and emits signal for Ctrl-C
+    """
+
+    sigCtrlCPressed = QtCore.Signal()
+
     def __init__(self, *args):
         QtGui.QLineEdit.__init__(self, *args)
 
     def event(self, event):
-        if (event.type() == QtCore.QEvent.KeyPress) and (event.key() == QtCore.Qt.Key_Tab):
-            self.setText(self.text() + "    ")
-            return True
+        if (event.type() == QtCore.QEvent.KeyPress):
+            if event.key() == QtCore.Qt.Key_Tab:
+                self.setText(self.text() + "    ")
+                return True
+            elif event.key() == QtCore.Qt.Key_C and (event.modifiers() & QtCore.Qt.ControlModifier):
+                requestConsoleBreak()
 
         return QtGui.QLineEdit.event(self, event)
 
@@ -57,6 +68,8 @@ class _QPythonConsoleInterpreter(_InteractiveConsole):
         sys.stdout = sys.stderr = collector = StringIO()
         try:
             more = _InteractiveConsole.runsource(self,source,filename,symbol)
+        except ConsoleBreakException:
+            more = False
         finally:
             if sys.stdout is collector:
                 sys.stdout = old_stdout
@@ -94,7 +107,7 @@ class _QPythonConsoleUI(object):
         self.prompt = QtGui.QLabel(parent)
         self.prompt.setText(">>> ")
         layout2.addWidget(self.prompt)
-        self.input = QLineEditWithTab(parent)
+        self.input = QInteractiveLineEdit(parent)
         self.input.setAttribute(QtCore.Qt.WA_MacShowFocusRect, False)
         self.input.setFont(font)
         layout2.addWidget(self.input)
@@ -119,6 +132,7 @@ class QPythonConsole(QtGui.QWidget):
         self.interpreter = _QPythonConsoleInterpreter(self.ui,locals)
         self.ui.input.returnPressed.connect(self._on_enter_line)
         self.ui.input.installEventFilter(self)
+        self.ui.input.sigCtrlCPressed.connect(self.catchCtrlC)
         self.history = []
         self.history_pos = 0
 
@@ -135,6 +149,10 @@ class QPythonConsole(QtGui.QWidget):
             self.ui.prompt.setText("... ")
         else:
             self.ui.prompt.setText(">>> ")
+
+    def catchCtrlC(self):
+        print "HELP"
+        raise KeyboardInterrupt
 
     def _on_enter_line(self):
         line = self.ui.input.text()

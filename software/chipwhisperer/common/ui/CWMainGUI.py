@@ -532,7 +532,6 @@ class CWMainGUI(QMainWindow):
 
     def exceptionHandlerDialog(self, etype, value, trace):
         """ Handler for uncaught exceptions (for unknown Errors only - fix when you find one)."""
-
         if issubclass(etype, KeyboardInterrupt): # So program can exit with Ctrl + C.
             self.close()
             return

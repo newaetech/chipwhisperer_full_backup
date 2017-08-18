@@ -247,6 +247,19 @@ class Observable(Signal):
         return self.data
 
 
+_consoleBreakRequested = False
+class ConsoleBreakException(BaseException):
+    """Custom exception class. Raised when pressing ctrl-C in console.
+
+    This inherits from BaseException so that the generic "Save project?" window
+    doesn't catch it.
+    """
+    pass
+
+def requestConsoleBreak():
+    global _consoleBreakRequested
+    _consoleBreakRequested = True
+
 _uiupdateFunction = None
 
 def setUIupdateFunction(func):
@@ -257,6 +270,11 @@ def updateUI():
     if _uiupdateFunction:
         _uiupdateFunction()
 
+    # If an event handler has asked for a console break, raise an exception now
+    global _consoleBreakRequested
+    if _consoleBreakRequested:
+        _consoleBreakRequested = False
+        raise ConsoleBreakException()
 
 class WeakMethod(object):
     """A callable object. Takes one argument to init: 'object.method'.
