@@ -31,37 +31,113 @@ from chipwhisperer.common.ui.KeyScheduleDialog import AesKeyScheduleDialog, DesK
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
 from chipwhisperer.common.results.base import ResultsBase
-from chipwhisperer.analyzer.utils.attackscriptgen import AttackScriptGen
 from chipwhisperer.common.utils import pluginmanager
-from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
 from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.analyzer.attacks._base import AttackObserver
+from chipwhisperer.analyzer.preprocessing.pass_through import PassThrough
+from functools import partial
+
+class AttackSettings(Parameterized):
+    def __init__(self):
+        self._attack = None
+        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, True)
+
+        self.params = Parameter(name="Attack Settings", type="group")
+        self.params.addChildren([
+            {'name': 'Attack', 'type':'list', 'values':self.valid_attacks, 'get':self.getAttack, 'set':self.setAttack}
+        ])
+
+    @setupSetParam("Attack")
+    def setAttack(self, atk):
+        self._attack = atk
+        if self._attack is not None:
+            self.params.append(self._attack.params)
+
+    def getAttack(self):
+        return self._attack
+
+class PreprocessingSettings(Parameterized):
+    def __init__(self, api):
+        self._api = api
+        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, False)
+        self.params = Parameter(name="Preprocessing Settings", type='group')
+        self._modules = self._initModules()
+
+        self._moduleParams = [
+            Parameter(name='Module #%d' % i, type='group') for i in range(len(self._modules))
+        ]
+
+        self.params.addChildren([
+            {'name':'Selected Modules', 'type':'group', 'children':[
+                {'name':'Module #%d' % step, 'type':'list', 'values':self.valid_preprocessingModules,
+                 'get':partial(self.getModule, step), 'set':partial(self.setModule, step)} for step in range(0, len(self._modules))
+            ]},
+        ])
+        for m in self._moduleParams:
+            self.params.append(m)
+
+    def _initModules(self):
+        trace_source = self._api.project().traceManager()
+        num_modules = 4
+
+        ret = []
+        for i in range(num_modules):
+            ret.append(PassThrough(trace_source))
+            trace_source = ret[i]
+        return ret
+
+    def getModule(self, num):
+        return self._modules[num]
+
+    @setupSetParam("")
+    def setModule(self, num, module):
+        """Insert the preprocessing module selected from the GUI into the list of active modules.
+
+        This ensures that the options for that module are then displayed in the GUI, along with
+        writing the auto-generated script.
+        """
+
+        if module is None:
+            raise ValueError("Received None as module in setModule()" % module)
+
+        trace_src = self._modules[num].getTraceSource()
+
+        self._modules[num].deregister()
+        self._moduleParams[num].clearChildren()
+
+        self._modules[num] = module
+        self._modules[num].setTraceSource(trace_src)
+        self._moduleParams[num].append(self._modules[num].getParams())
+
+        if (num+1) < len(self._modules):
+            self._modules[num+1].setTraceSource(module)
 
 
 class CWAnalyzerGUI(CWMainGUI):
     """This is the main API for the ChipWhisperer Analyzer. From CWAnalyzer,
     the Python console has a "self" object that refers to one of these.
-
     """
 
     def __init__(self, api):
+        self._attackSettings = AttackSettings()
+        self._preprocessSettings = PreprocessingSettings(api)
+
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
         self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
         CWAnalyzerGUI.instance = self
 
+#        self.api.setAttack(self.api.valid_attacks.get("CPA", None))
+
+
     def projectChanged(self):
         CWMainGUI.projectChanged(self)
-        self.attackScriptGen.projectChanged()
 
     def loadExtraModules(self):
         self.aesKeyScheduleDialog = AesKeyScheduleDialog(self)
         self.desKeyScheduleDialog = DesKeyScheduleDialog(self)
-        self.attackScriptGen = AttackScriptGen(self)
 
         self.traceExplorerDialog = TraceExplorerDialog(self)
-        self.traceExplorerDialog.scriptsUpdated.connect(self.attackScriptGen.reloadScripts)
-        self.traceExplorerDialog.runScriptFunction.connect(self.attackScriptGen.runScriptFunction)
-        self.attackScriptGen.utilList = [self.traceExplorerDialog]
 
     def addToolbarItems(self, toolbar):
         toolbar.addAction(QAction(QIcon(':/images/attack.png'), 'Start Attack', self, triggered=self.doAnalysis))
@@ -73,6 +149,7 @@ class CWAnalyzerGUI(CWMainGUI):
                                       triggered=self.desKeyScheduleDialog.show))
 
     def doAnalysis(self):
+        # TODO: remove
         """Called when the 'Do Analysis' button is pressed"""
         self.clearFocus()
         if self.api.project().traceManager().numTraces() == 0:
@@ -81,15 +158,12 @@ class CWAnalyzerGUI(CWMainGUI):
                 self.traceManagerDialog.show()
             return
 
-        self.attackScriptGen.flushTimer()
         logging.info("Executing analysis...")
-        self.api.runScriptModule(self.attackScriptGen.setupScriptModule())
         logging.info("Analysis completed")
 
     def addSettingsDocks(self):
-        self.settingsScriptDock = self.addSettings(self.attackScriptGen.params)
-        self.settingsPreprocessingDock = self.addSettings(self.attackScriptGen.preprocessingParams)
-        self.settingsAttackDock = self.addSettings(self.attackScriptGen.attackParams)
+        self.settingsAttackDock = self.addSettings(self._attackSettings.params)
+        self.settingsPreprocessingDock = self.addSettings(self._preprocessSettings.params)
         self.settingsTraceExplorer = self.addSettings(self.traceExplorerDialog.params)
         self.settingsResultsDock = self.addSettings(ResultsBase.getClassParameter())
 
@@ -100,9 +174,8 @@ class CWAnalyzerGUI(CWMainGUI):
                 ResultsBase.createNew(k)
         self.tabifyDocks(self.resultDocks)
 
-        self.tabifyDocks([self.settingsScriptDock, self.settingsPreprocessingDock, self.settingsAttackDock,
+        self.tabifyDocks([self.settingsPreprocessingDock, self.settingsAttackDock,
                           self.settingsTraceExplorer, self.settingsResultsDock])
-        self.attackScriptGen.editorDocks()
 
     @staticmethod
     def getInstance():
@@ -122,7 +195,11 @@ class CWAnalyzerGUI(CWMainGUI):
         """The attack module in use. This should be a subclass of the base class
         AttackBaseClass.
         """
-        return self.api.attack()
+        return self._attackSettings.getAttack()
+
+    @attack.setter
+    def attack(self, new_attack):
+        self._attackSettings.setAttack(new_attack)
 
     @property
     def correlation_plot(self):

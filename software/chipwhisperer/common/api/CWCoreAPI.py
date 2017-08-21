@@ -71,18 +71,16 @@ class CWCoreAPI(Parameterized):
         self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
         self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
         self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False)
-        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True)
 
         self.settings = Settings()
 
         # Initialize default values
-        self._project = self._scope = self._target = self._traceFormat = self._acqPattern = None
-        self._attack = self.valid_attacks.get("CPA", None)
+        self._project = self._scope = self._target = self._traceFormat = self._acqPattern = self._attack = None
         self._acqPattern = self.valid_acqPatterns["Basic"]
         self._auxList = AuxList()
         self._numTraces = 50
         self._numTraceSets = 1
+
 
         # Storage for last key/plaintext/ciphertext
         self._lastKey = None
@@ -190,6 +188,15 @@ class CWCoreAPI(Parameterized):
     def getAcqPattern(self):
         """Return the selected acquisition pattern."""
         return self._acqPattern
+
+    def getAttack(self):
+        return self._attack
+
+    @setupSetParam(["Attack Settings", "Attack"])
+    def setAttack(self, atk):
+        self._attack = atk
+        #if self._attack is not None:
+        #    self.attackParam.append(self._attack.params)
 
     @setupSetParam(["Acquisition Settings", "Key/Text Pattern"])
     def setAcqPattern(self, pat):
