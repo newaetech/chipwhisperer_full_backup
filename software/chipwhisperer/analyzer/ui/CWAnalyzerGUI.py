@@ -39,8 +39,9 @@ from chipwhisperer.analyzer.attacks._base import AttackObserver
 
 
 class CWAnalyzerGUI(CWMainGUI):
-    """ Main ChipWhisperer Analyzer GUI Window Class.
-    This is a front-end to the CWCoreAPI.
+    """This is the main API for the ChipWhisperer Analyzer. From CWAnalyzer,
+    the Python console has a "self" object that refers to one of these.
+
     """
 
     def __init__(self, api):
@@ -106,6 +107,61 @@ class CWAnalyzerGUI(CWMainGUI):
     @staticmethod
     def getInstance():
         return CWAnalyzerGUI.instance
+
+    @property
+    def project(self):
+        """The current project loaded in the analyzer."""
+        return self.api.project()
+
+    @project.setter
+    def project(self, new_project):
+        self.api.setProject(new_project)
+
+    @property
+    def attack(self):
+        """The attack module in use. This should be a subclass of the base class
+        AttackBaseClass.
+        """
+        return self.api.attack()
+
+    @property
+    def correlation_plot(self):
+        """The "Correlations vs Traces in Attack" tab. Shows the output
+        statistic for each subkey as traces are added to the attack. Useful for
+        checking the progress or success rate of an attack. Read-only.
+        """
+        return self.api.getResults("Correlation vs Traces in Attack")
+
+    @property
+    def output_plot(self):
+        """The "Output vs Point Plot" tab. Shows the output statistics at each
+        point in the traces. Useful for checking which points provided the
+        attackable leakage. Read-only."""
+        return self.api.getResults("Output vs Point Plot")
+
+    @property
+    def pge_plot(self):
+        """The "PGE vs Trace Plot" tab. Shows the PGE (the rank of the correct
+        guess) versus the number of traces used in the attack. Useful for
+        showing the success rate of an attack. Read-only.
+        """
+        return self.api.getResults("PGE vs Trace Plot")
+
+    @property
+    def trace_plot(self):
+        """The "Trace Output Plot" tab. Useful for checking the output of the
+        preprocessing modules. Read-only.
+        """
+        return self.api.getResults("Trace Output Plot")
+
+    @property
+    def results_table(self):
+        """The "Results Table" tab. Shows ranked correlations (or any statistic)
+        for each subkey. Read-only.
+        """
+        return self.api.getResults("Results Table")
+
+
 
 def main():
     # Create the Qt Application
