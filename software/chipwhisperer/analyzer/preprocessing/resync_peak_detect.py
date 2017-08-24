@@ -29,6 +29,7 @@ import numpy as np
 
 from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ResyncPeakDetect(PreprocessingBase):
@@ -43,22 +44,120 @@ class ResyncPeakDetect(PreprocessingBase):
 
     def __init__(self, traceSource=None, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self.rtrace = 0
-        self.debugReturnCorr = False
-        self.ccStart = 0
-        self.ccEnd = 0
-        self.limit = 0
-        self.type = max
+        self._rtrace = 0
+        self._ccStart = 0
+        self._ccEnd = 0
+        self._limit = 0
+        self._type = "max"
 
         self.params.addChildren([
-            {'name':'Ref Trace #', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
-            {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'value':'Max', 'values':['Max', 'Min'], 'action':self.updateScript},
-            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateScript, 'value':(0, 0)},
-            {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'value':0, 'step':0.1, 'limits':(-10, 10), 'action':self.updateScript},
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
+            {'name':'Peak Type', 'key':'peaktype', 'type':'list', 'values':['max', 'min'], 'get':self._getType, 'set':self._setType},
+            {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'get':self._getWindow, 'set':self._setWindow},
+            {'name':'Valid Limit', 'key':'vlimit', 'type':'float', 'step':0.1, 'limits':(0, 10), 'set':self._setLimit, 'get':self._getLimit},
         ])
-        self.updateScript()
-        self.updateLimits()
-        self.sigTracesChanged.connect(self.updateLimits)
+        self._calculateRef()
+
+    @setupSetParam("Ref Trace")
+    def _setRefTrace(self, num):
+        self._rtrace = num
+        self._calculateRef()
+
+    def _getRefTrace(self):
+        return self._rtrace
+
+    @property
+    def ref_trace(self):
+        """The trace being used as a reference.
+
+        Setter raises TypeError unless value is an integer."""
+        return self._getRefTrace()
+
+    @ref_trace.setter
+    def ref_trace(self, num):
+        if not isinstance(num, (int, long)):
+            raise TypeError("Expected int; got %s" % type(num), num)
+        self._setRefTrace(num)
+
+    @setupSetParam("Peak Type")
+    def _setType(self, type):
+        self._type = type
+        self._calculateRef()
+
+    def _getType(self):
+        return self._type
+
+    @property
+    def type(self):
+        """Which type of peak to look for.
+
+        Valid values are "max" and "min".
+
+        Setter raises ValueError if value isn't recognized.
+        """
+        return self._getType()
+
+    @type.setter
+    def type(self, type):
+        valid = ["min", "max"]
+        if type not in valid:
+            raise ValueError("Unrecognized peak type; expected 'min' or 'max'", type)
+
+    @setupSetParam("Point Range")
+    def _setWindow(self, window):
+        self._ccStart, self._ccEnd = window
+        self._calculateRef()
+
+    def _getWindow(self):
+        return (self._ccStart, self._ccEnd)
+
+    @property
+    def range(self):
+        """The section of the reference trace used for comparison.
+
+        This must be a tuple of (first point, last point).
+
+        Setter raises TypeError if value is not a tuple or if points are not
+        integers.
+        """
+        return self._getWindow()
+
+    @range.setter
+    def range(self, win):
+        if not isinstance(win, tuple):
+            raise TypeError("Expected tuple; got %s" % type(win), win)
+        if not isinstance(win[0], (int, long)):
+            raise TypeError("Expected int; got %s" % type(win[0]), win[0])
+        if not isinstance(win[1], (int, long)):
+            raise TypeError("Expected int; got %s" % type(win[1]), win[1])
+        self._setWindow(win)
+
+    @setupSetParam("Valid Limit")
+    def _setLimit(self, lim):
+        self._limit = lim
+        self._calculateRef()
+
+    def _getLimit(self):
+        return self._limit
+
+    @property
+    def valid_limit(self):
+        """The tolerance level on the peak-matching search.
+
+        A lower valid limit means that the peaks have to be closer in value for
+        a trace to be accepted.
+
+        A valid limit of 0 indicates that all traces should be kept.
+
+        Setter raises TypeError if value isn't a float.
+        """
+        return self._getLimit()
+
+    @valid_limit.setter
+    def valid_limit(self, lim):
+        if not isinstance(lim, float):
+            raise TypeError("Expected float; got %s" % type(lim), lim)
+        self._setLimit(lim)
 
     def updateLimits(self):
         if self._traceSource:
@@ -78,31 +177,30 @@ class ResyncPeakDetect(PreprocessingBase):
         self.updateLimits()
 
     def setReference(self, rtraceno=0, peaktype='max', refrange=(0, 0), validlimit=0):
-        self.rtrace = rtraceno
-        self.limit = validlimit
-        self.type = peaktype
-        self.ccStart = refrange[0]
-        self.ccEnd = refrange[1]
+        self._rtrace = rtraceno
+        self._limit = validlimit
+        self._type = peaktype
+        self._ccStart = refrange[0]
+        self._ccEnd = refrange[1]
         self.init()
 
     def getTrace(self, n):
         if self.enabled:
-            #TODO: fftconvolve
             trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
-            if str.lower(self.type) == 'max':
-                newmaxloc = np.argmax(trace[self.ccStart:self.ccEnd])
-                maxval = max(trace[self.ccStart:self.ccEnd])
+            if str.lower(self._type) == 'max':
+                newmaxloc = np.argmax(trace[self._ccStart:self._ccEnd])
+                maxval = max(trace[self._ccStart:self._ccEnd])
             else:
-                newmaxloc = np.argmin(trace[self.ccStart:self.ccEnd])
-                maxval = min(trace[self.ccStart:self.ccEnd])
+                newmaxloc = np.argmin(trace[self._ccStart:self._ccEnd])
+                maxval = min(trace[self._ccStart:self._ccEnd])
 
-            if self.limit:
-                if (maxval > self.refmaxsize * (1.0 + self.limit)) | (maxval < self.refmaxsize * (1.0 - self.limit)):
+            if self._limit:
+                if (maxval > self._refmaxsize * (1.0 + self._limit)) | (maxval < self._refmaxsize * (1.0 - self._limit)):
                     return None
 
-            diff = newmaxloc-self.refmaxloc
+            diff = newmaxloc-self._refmaxloc
             if diff < 0:
                 trace = np.append(np.zeros(-diff), trace[:diff])
             elif diff > 0:
@@ -111,17 +209,21 @@ class ResyncPeakDetect(PreprocessingBase):
         else:
             return self._traceSource.getTrace(n)
 
-    def init(self):
+    def _calculateRef(self):
         try:
-            self.calcRefTrace(self.rtrace)
+            self.calcRefTrace(self._rtrace)
         except ValueError:
             self.findParam('enabled').setValue(False)
 
     def calcRefTrace(self, tnum):
-        reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
-        if self.type == 'Max':
-            self.refmaxloc = np.argmax(reftrace)
-            self.refmaxsize = max(reftrace)
+        # If not enabled stop
+        if self.enabled == False:
+            return
+
+        reftrace = self._traceSource.getTrace(tnum)[self._ccStart:self._ccEnd]
+        if self._type == 'max':
+            self._refmaxloc = np.argmax(reftrace)
+            self._refmaxsize = max(reftrace)
         else:
-            self.refmaxloc = np.argmin(reftrace)
-            self.refmaxsize = min(reftrace)
+            self._refmaxloc = np.argmin(reftrace)
+            self._refmaxsize = min(reftrace)

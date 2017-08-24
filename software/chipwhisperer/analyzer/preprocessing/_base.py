@@ -42,7 +42,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
     _name = "None"
 
     def __init__(self, traceSource=None, name=None):
-        self.enabled = False
+        self._enabled = False
         ActiveTraceObserver.__init__(self)
         if name is None:
             TraceSource.__init__(self, self.getName())
@@ -53,7 +53,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         if traceSource:
             traceSource.sigTracesChanged.connect(self.sigTracesChanged.emit)  # Forwards the traceChanged signal to the next observer in the chain
         self.getParams().addChildren([
-                 {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self.getEnabled(), 'get':self.getEnabled, 'set':self.setEnabled}
+                 {'name':'Enabled', 'key':'enabled', 'type':'bool', 'default':self._getEnabled(), 'get':self._getEnabled, 'set':self._setEnabled}
         ])
         self.findParam('input').hide()
 
@@ -63,18 +63,31 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         #Old attribute dict
         self._attrdict = None
 
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-
-    def getEnabled(self):
+    def _getEnabled(self):
         """Return if it is enable or not"""
-        return self.enabled
+        return self._enabled
 
     @setupSetParam("Enabled")
-    def setEnabled(self, enabled):
+    def _setEnabled(self, enabled):
         """Turn on/off this preprocessing module"""
-        self.enabled = enabled
-        self.updateScript()
+        self._enabled = enabled
+
+    @property
+    def enabled(self):
+        """Whether this module is active.
+
+        If False, the module will have no effect on the traces - it will just
+        pass through the traces from the previous source.
+
+        Setter raises TypeError if value isn't bool.
+        """
+        return self._getEnabled()
+
+    @enabled.setter
+    def enabled(self, en):
+        if not isinstance(en, bool):
+            raise TypeError("Expected bool; got %s" % type(en), en)
+        self._setEnabled(en)
 
     def getTrace(self, n):
         """Get trace number n"""

@@ -27,26 +27,45 @@
 
 import numpy as np
 from ._base import PreprocessingBase
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class AddNoiseRandom(PreprocessingBase):
+    """Add Gaussian white noise to each of the traces.
+    """
     _name = "Add Noise: Amplitude"
     _description = "Add random noise."
 
     def __init__(self, traceSource=None, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self._maxNoise = 0
+        self._noise_std_dev = 0.005
         self.params.addChildren([
-            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'action':self.updateScript}
+            {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'limits':(0, 1.0), 'get':self._getNoise, 'set':self._setNoise}
         ])
-        self.updateScript()
 
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        self.addFunction("init", "setMaxNoise", '%f' % self.findParam('noisestddev').getValue())
+    @setupSetParam("Noise Std-Dev")
+    def _setNoise(self, std_dev):
+        self._noise_std_dev = std_dev
 
-    def setMaxNoise(self, maxNoise):
-        self._maxNoise = maxNoise
+    def _getNoise(self):
+        return self._noise_std_dev
+
+    @property
+    def noise(self):
+        """The standard deviation of the noise.
+
+        If 0, the traces are passed through without being modified. Otherwise,
+        random values from N(0, noise) are added to each of the points.
+
+        Setter raises TypeError if noise level isn't a number
+        """
+        return self._getNoise()
+
+    @noise.setter
+    def noise(self, std_dev):
+        if not isinstance(std_dev, (int, long, float)):
+            raise TypeError("Expected number; got %s" % type(std_dev), std_dev)
+        self._setNoise(std_dev)
 
     def getTrace(self, n):
         if self.enabled:
@@ -54,9 +73,9 @@ class AddNoiseRandom(PreprocessingBase):
             if trace is None:
                 return None
 
-            if self._maxNoise == 0:
+            if self._noise_std_dev == 0:
                 return trace
             else:
-                return trace + np.random.normal(scale=self._maxNoise, size=len(trace))
+                return trace + np.random.normal(scale=self._noise_std_dev, size=len(trace))
         else:
             return self._traceSource.getTrace(n)

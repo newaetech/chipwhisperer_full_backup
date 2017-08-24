@@ -29,6 +29,7 @@ import numpy as np
 from ._base import PreprocessingBase
 from matplotlib.mlab import find
 import scipy.signal as sig
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ResyncResampleZC(PreprocessingBase):
@@ -40,32 +41,83 @@ class ResyncResampleZC(PreprocessingBase):
 
     def __init__(self, traceSource=None, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self.rtrace = 0
-        self.debugReturnSad = False
+        self._rtrace = 0
+        self._zcoffset = 0.0
+        self._binlen = 0
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
-            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'value':0.0, 'action':self.updateScript},
-            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'value':0, 'limits':(0, 10000), 'action':self.updateScript},
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
+            {'name':'Zero-Crossing Level', 'key':'zclevel', 'type':'float', 'get':self._getZcLevel, 'set':self._setZcLevel},
+            {'name':'Bin Sample Length', 'key':'binlen', 'type':'int', 'limits':(0, 10000), 'get':self._getBinLength, 'set':self._setBinLength},
         ])
-        self.updateScript()
 
-    def updateScript(self, ignored=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
+    @setupSetParam("Ref Trace")
+    def _setRefTrace(self, num):
+        self._rtrace = num
+        self._calculateRef()
 
-        zclevel = self.findParam('zclevel').getValue()
-        binlength = self.findParam('binlen').getValue()
+    def _getRefTrace(self):
+        return self._rtrace
 
-        self.addFunction("init", "setReference", "rtraceno=%d, zcoffset=%f, binlength=%d" % (
-                            self.findParam('reftrace').getValue(),
-                            zclevel,
-                            binlength))
+    @property
+    def ref_trace(self):
+        """The trace being used as a reference.
 
-    def setReference(self, rtraceno=0, zcoffset=0.0, binlength=0):
-        self.rtrace = rtraceno
-        self.zcoffset = zcoffset
-        self.binlen = binlength
-        self.init()
+        Setter raises TypeError unless value is an integer."""
+        return self._getRefTrace()
+
+    @ref_trace.setter
+    def ref_trace(self, num):
+        if not isinstance(num, (int, long)):
+            raise TypeError("Expected int; got %s" % type(num), num)
+        self._setRefTrace(num)
+
+    @setupSetParam("Zero-Crossing Level")
+    def _setZcLevel(self, offset):
+        self._zcoffset = offset
+        self._calculateRef()
+
+    def _getZcLevel(self):
+        return self._zcoffset
+
+    @property
+    def zc_offset(self):
+        """The level to use as the zero-crossing point.
+
+        Setter raises TypeError if value isn't a float.
+        """
+        return self._getZcLevel()
+
+    @zc_offset.setter
+    def zc_offset(self, offset):
+        if not isinstance(offset, float):
+            raise TypeError("Expected float; got %s" % type(offset), offset)
+        self._setZcLevel(offset)
+
+    @setupSetParam("Bin Sample Length")
+    def _setBinLength(self, offset):
+        self._zcoffset = offset
+        self._calculateRef()
+
+    def _getBinLength(self):
+        return self._zcoffset
+
+    @property
+    def bin_length(self):
+        """The number of samples to be resampled at once. This should be close
+        to the number of samples between two zero-crossings.
+
+        If 0, a bin length is automatically calculated.
+
+        Setter raises TypeError if value isn't an int.
+        """
+        return self._getBinLength()
+
+    @bin_length.setter
+    def bin_length(self, len):
+        if not isinstance(len, (int, long)):
+            raise TypeError("Expected float; got %s" % type(len), len)
+        self._setBinLength(len)
 
     def getTrace(self, n):
         if self.enabled:
@@ -73,16 +125,16 @@ class ResyncResampleZC(PreprocessingBase):
             if trace is None:
                 return None
             
-            trace = trace - self.zcoffset
+            trace = trace - self._zcoffset
     
-            ind = self.findZerocrossing(trace)
-            return self.resampleResize(trace, ind, self.binlen)
+            ind = self._findZerocrossing(trace)
+            return self._resampleResize(trace, ind, self._binlen)
         else:
             return self._traceSource.getTrace(n)
    
-    def init(self):
+    def _calculateRef(self):
         try:
-            self.calcRefTrace(self.rtrace)
+            self.calcRefTrace(self._rtrace)
         #Probably shouldn't do this, but deals with user enabling preprocessing
         #before trace management setup
         except ValueError:
@@ -93,16 +145,16 @@ class ResyncResampleZC(PreprocessingBase):
         if self.enabled == False:
             return
         
-        if self.binlen == 0:
-            self.reftrace = self._traceSource.getTrace(tnum) - self.zcoffset
-            ind = self.findZerocrossing(self.reftrace)
-            self.binlen = self.findAvgLength(ind)
+        if self._binlen == 0:
+            self._reftrace = self._traceSource.getTrace(tnum) - self._zcoffset
+            ind = self._findZerocrossing(self._reftrace)
+            self._binlen = self._findAvgLength(ind)
 
-    def findZerocrossing(self, a):
+    def _findZerocrossing(self, a):
         indices = find((a[1:] >= 0) & (a[:-1] < 0))
         return indices
 
-    def findAvgLength(self, indices):
+    def _findAvgLength(self, indices):
         diff = 0
         num = 0
 
@@ -112,7 +164,7 @@ class ResyncResampleZC(PreprocessingBase):
 
         return diff / num
 
-    def resampleResize(self, data, indices, targlen):
+    def _resampleResize(self, data, indices, targlen):
         targdata = np.zeros(targlen * len(indices))
 
         # Shift each segment to fit this size, let it ride

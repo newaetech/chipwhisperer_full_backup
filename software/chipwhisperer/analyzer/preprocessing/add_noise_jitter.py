@@ -28,11 +28,11 @@
 import random
 import numpy as np
 from ._base import PreprocessingBase
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class AddNoiseJitter(PreprocessingBase):
-    """
-    Generic filter, pulls in from SciPy for doing the actual filtering of things
+    """Add random time jitter to each of the traces.
     """
     _name = "Add Noise: Time Jitter"
     _description = "Add random jitter. This module is used for testing resyncronization modules, and has no use " \
@@ -40,19 +40,36 @@ class AddNoiseJitter(PreprocessingBase):
 
     def __init__(self, traceSource=None, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self.maxJitter = 0
-        self.params.addChildren([
-            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'value':self.maxJitter, 'limits':(0, 1000), 'action':self.updateScript}
+        self._maxJitter = 0
+        self.getParams().addChildren([
+            {'name':'Max Jitter (+/- cycles)', 'key':'jitter', 'type':'int', 'set':self._setJitter, 'get':self._getJitter, 'limits':(0, 1000)}
         ])
-        self.updateScript()
 
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        jit = self.findParam('jitter').getValue()
-        self.addFunction("init", "setMaxJitter", "%d" % jit)
-   
-    def setMaxJitter(self, jit):
-        self.maxJitter = jit
+    def _getJitter(self):
+        return self._maxJitter
+
+    @setupSetParam("Max Jitter (+/- cycles)")
+    def _setJitter(self, jit):
+        """Change the maximum amount of jitter in cycles.
+
+        Equivalent to
+        >>> ppmod.jitter = jit
+        """
+        self._maxJitter = jit
+
+    @property
+    def jitter(self):
+        """The maximum amount of jitter added to each trace, in cycles
+
+        Setter raises TypeError if jitter isn't integer
+        """
+        return self._maxJitter
+
+    @jitter.setter
+    def jitter(self, jit):
+        if not isinstance(jit, (int, long)):
+            raise TypeError("Expected int; got %s" % type(jit), jit)
+        self._setJitter(jit)
    
     def getTrace(self, n):
         if self.enabled:
@@ -60,7 +77,7 @@ class AddNoiseJitter(PreprocessingBase):
             if trace is None:
                 return None
             
-            jit = random.randint(-self.maxJitter, self.maxJitter)
+            jit = random.randint(-self._maxJitter, self._maxJitter)
 
             return roll_zeropad(trace, jit)
         else:

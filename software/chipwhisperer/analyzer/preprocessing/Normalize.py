@@ -27,6 +27,7 @@
 
 from ._base import PreprocessingBase
 import numpy as np
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class NormBase(object):
@@ -60,60 +61,6 @@ class NormMeanStd(NormBase):
         return (t - np.mean(t)) / np.std(t)
 
 
-try:
-    from PySide.QtGui import *
-
-    class NormLinFunc(NormBase):
-        """Normalize by two polynomial functions based on additional information"""
-        UseF1Coeff = True
-        UseF2Coeff = True
-        UseZSource = True
-
-        def loadF1File(self, f):
-            if f is 0:
-                self.f1coeff = 0
-            elif f is None:
-                f, _ = QFileDialog.getOpenFileName(None, 'F1 Coefficients', '.', '*.npy')
-                if f:
-                    self.f1coeff = np.load(f)
-            else:
-                self.f1coeff = np.load(f)
-
-        def loadF2File(self, f):
-            if f is 1:
-                self.f2coeff = 1
-            elif f is None:
-                f, _ = QFileDialog.getOpenFileName(None, 'F2 Coefficients', '.', '*.npy')
-                if f:
-                    self.f2coeff = np.load(f)
-            else:
-                self.f2coeff = np.load(f)
-
-        def loadZFile(self, f):
-            if f is None:
-                f, _ = QFileDialog.getOpenFileName(None, 'Z Data File', '.', '*.npy')
-                if f:
-                    self.zdata = np.load(f)
-            else:
-                self.zdata = np.load(f)
-
-        def processTrace(self, t, tindex):
-            if isinstance(self.f1coeff, (int, long)) and self.f1coeff == 0:
-                f1 = 0
-            else:
-                f1 = np.polyval(self.f1coeff, self.zdata[tindex])
-
-            if isinstance(self.f2coeff, (int, long)) and self.f2coeff == 1:
-                f2 = 1
-            else:
-                f2 = np.polyval(self.f2coeff, self.zdata[tindex])
-
-            return (t - f1) / f2
-except:
-    class NormLinFunc(NormBase):
-        pass
-
-
 class Normalize(PreprocessingBase):
     """
     Normalize traces by a variety of methods
@@ -123,99 +70,45 @@ class Normalize(PreprocessingBase):
 
     def __init__(self, traceSource=None, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self.ptStart = 0
-        self.ptEnd = 0
-        self.importsAppend("from chipwhisperer.analyzer.preprocessing.Normalize import NormMean, NormMeanStd, NormLinFunc")
+        self._norm = NormMean()
 
         self.params.addChildren([
-            {'name':'Type', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd, "y=(x-f1(z))/f2(z)":NormLinFunc}, 'value':NormMean, 'action':self.updateNormClass},
-            {'name':'F1 Coefficients', 'key':'f1coeff', 'type':'list', 'values':{"N/A":None, "Zero":0, "Load from file":5}, 'value':None, 'action':self.updateScript},
-            {'name':'F2 Coefficients', 'key':'f2coeff', 'type':'list', 'values':{"N/A":None, "Unity":1, "Load from file":5}, 'value':None, 'action':self.updateScript},
-            {'name':'Z Source', 'key':'zsource', 'type':'list', 'values':{"N/A":None, "Load from file":5}, 'action':self.updateScript},
-            # {'name':'Point Range', 'key':'ptrange', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateScript},
+            {'name':'Mode', 'key':'type', 'type':'list', 'values':{"y=x-mean(x)":NormMean, "y=(x-mean(x))/stddev(x)":NormMeanStd}, 'get':self._getNormMode, 'set':self._setNormMode}
         ])
-        self.updateScript()
 
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        self.addFunction("init", "setNormFunc", "%s" % self.findParam('type').getValue().__name__)
-        
-        f1src = self.findParam('f1coeff').getValue()
-        if f1src is not None:
-            if f1src == 5: f1src = None
-            self.addFunction("init", "norm.loadF1File", "%s" % str(f1src))
+    @setupSetParam("Mode")
+    def _setNormMode(self, cls):
+        self._norm = cls()
 
-        f2src = self.findParam('f2coeff').getValue()
-        if f2src is not None:
-            if f2src == 5: f2src = None
-            self.addFunction("init", "norm.loadF2File", "%s" % str(f2src))
+    def _getNormMode(self):
+        return self._norm.__class__
 
-        zsrc = self.findParam('zsource').getValue()
-        if zsrc is not None:
-            if zsrc == 5: zsrc = None
-            self.addFunction("init", "norm.loadZFile", "%s" % str(zsrc))
+    @property
+    def mode(self):
+        """The current normalization method. Options are:
+        - "mean": Subtract the mean from the traces (ie: change to 0-mean)
+        - "mean_stddev": Subtract the mean and divide by the standard deviation
+          (ie: change to mean=0, stddev=1)
 
-    #    rng = self.findParam('ptrange').getValue()
-    #    if rng:
-    #        self.addFunction("init", "setPointRange", " (%d, %d) " % (rng[0], rng[1]))
-
-
-    # def setPointRange(self, r):
-    #    self.ptStart = r[0]
-    #    self.ptEnd = r[1]
-
-    # def updateF1Coeffs(self, f):
-    #    if f is not None:
-    #        if f is 5:
-    #            self.norm.loadF1File(None)
-    #        else:
-    #            self.norm.loadF1File(f)
-
-    # def updateF2Coeffs(self, f):
-    #    if f is not None:
-    #        if f is 5:
-    #            self.norm.loadF2File(None)
-    #        else:
-    #            self.norm.loadF2File(f)
-
-    # def updateZFile(self, f):
-    #    if f is not None:
-    #        if f is 5:
-    #            self.norm.loadZFile(None)
-    #        else:
-    #            self.norm.loadZFile(f)
-
-    def setNormFunc(self, cl):
-        self.norm = cl()
-
-    def updateNormClass(self, p):
-        self.norm = p.getValue()()
-
-        if self.norm.UseF1Coeff:
-            self.findParam('f1coeff').setValue(0)
-            self.findParam('f1coeff').setReadonly(False)
+        Setter raises ValueError if mode isn't one of these
+        """
+        mode = self._getNormMode()
+        if mode == NormMean:
+            return "mean"
+        elif mode == NormMeanStd:
+            return "mean_stddev"
         else:
-            self.findParam('f1coeff').setValue(None)
-            self.findParam('f1coeff').setReadonly(True)
-            self.delFunction('init', 'norm.loadF1File')
+            return "?"
 
-        if self.norm.UseF2Coeff:
-            self.findParam('f2coeff').setValue(1)
-            self.findParam('f2coeff').setReadonly(False)
+    @mode.setter
+    def mode(self, mode):
+        if mode == "mean":
+            self._setNormMode(NormMean)
+        elif mode == "mean_stddev":
+            self._setNormMode(NormMeanStd)
         else:
-            self.findParam('f2coeff').setValue(None)
-            self.findParam('f2coeff').setReadonly(True)
-            self.delFunction('init', 'norm.loadF2File')
+            raise ValueError("Unrecognized mode; expected one of 'mean', 'mean_stddev'", mode)
 
-        if self.norm.UseZSource:
-            self.findParam('zsource').setValue(None)
-            self.findParam('zsource').setReadonly(False)
-        else:
-            self.findParam('zsource').setValue(None)
-            self.findParam('zsource').setReadonly(True)
-            self.delFunction('init', 'norm.loadZFile')
-
-        self.updateScript()
 
     def getTrace(self, n):
         if self.enabled:
@@ -223,16 +116,8 @@ class Normalize(PreprocessingBase):
 
             if trace is None:
                 return None
-            proc = self.norm.processTrace(trace, n)
+            proc = self._norm.processTrace(trace, n)
 
             return proc
         else:
             return self._traceSource.getTrace(n)
-
-    # def init(self):
-    #    if self.ptEnd == 0:
-    #        points = np.shape(self.trace().getTrace(0))[0]
-    #        self.findParam('ptrange').setLimits((0, points))
-    #        self.findParam('ptrange').setValue((0, points))
-    #        self.ptStart = 0
-    #        self.ptEnd = points

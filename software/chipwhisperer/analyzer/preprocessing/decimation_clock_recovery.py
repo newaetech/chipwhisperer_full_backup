@@ -47,7 +47,7 @@ def fft(signal, freq=None):
 
 class DecimationClockRecovery(PreprocessingBase):
     """
-    Attempts Clock recovery & then decimates based on that
+    Attempts Clock recovery & then decimates based on that. Currently broken.
     """
     _name = "Decimation: Clock Recovery"
     _description = "Attempts to 'recover' the clock by band-pass filtering, and then uses that to "\
@@ -59,29 +59,14 @@ class DecimationClockRecovery(PreprocessingBase):
         self.getParams().addChildren([
             {'name':'Filter Design', 'type':'group', 'children':[
                 # {'name':'Form', 'key':'form', 'type':'list', 'values':{"Butterworth":sp.signal.butter}, 'set':self.updateScript},
-                {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'default':'bandpass', 'value':'bandpass', 'action':self.updateScript},
-                {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'default':20, 'value':20, 'action':self.updateScript},
-                {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'default':False, 'value':False, 'action':self.updateScript},
-                {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'default':3, 'value':3, 'action':self.updateScript},
+                {'name':'Type', 'key':'type', 'type':'list', 'values':["bandpass"], 'default':'bandpass', 'value':'bandpass'},
+                {'name':'Critical Freq BW (%)', 'key':'freqbw', 'type':'float', 'limits':(0, 200), 'step':1, 'default':20, 'value':20},
+                {'name':'Recalc Passband/Trace', 'key':'recalcpertrace', 'type':'bool', 'default':False, 'value':False},
+                {'name':'Order', 'key':'order', 'type':'int', 'limits':(1, 32), 'default':3, 'value':3},
              ]},
-            {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'default':True, 'value':True, 'action':self.updateScript},
-            {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'default':True, 'value':True, 'action':self.updateScript},
+            {'name':'Enable Zero-Crossing', 'key':'enableZero', 'type':'bool', 'default':True, 'value':True},
+            {'name':'Enable Decimation by ZC', 'key':'decimate', 'type':'bool', 'default':True, 'value':True},
         ])
-        self.updateScript()
-
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        self.addFunction("init", "setFilterParams", "form='%s', freqbw=%.2f / 100.0, order=%d" % (
-                                self.findParam(['Filter Design','type']).getValue(),
-                                self.findParam(['Filter Design','freqbw']).getValue(),
-                                self.findParam(['Filter Design','order']).getValue()
-                            ))
-
-        self.addFunction("init", "setFilterOptions", "recalcPerTrace=%s, enableZC=%s, enableDecimation=%s" % (
-                                self.findParam(['Filter Design','recalcpertrace']).getValue(),
-                                self.findParam('enableZero').getValue(),
-                                self.findParam('decimate').getValue()
-                            ))
    
     def setFilterOptions(self, recalcPerTrace=False, enableZC=True, enableDecimation=True):
         self._recalcPerTrace = recalcPerTrace
