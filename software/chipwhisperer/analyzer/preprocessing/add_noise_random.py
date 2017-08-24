@@ -33,8 +33,8 @@ class AddNoiseRandom(PreprocessingBase):
     _name = "Add Noise: Amplitude"
     _description = "Add random noise."
 
-    def __init__(self, traceSource=None):
-        PreprocessingBase.__init__(self, traceSource)
+    def __init__(self, traceSource=None, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
         self._maxNoise = 0
         self.params.addChildren([
             {'name':'Noise Std-Dev', 'key':'noisestddev', 'type':'float', 'step':0.001, 'value':0.005, 'limits':(0, 1.0), 'action':self.updateScript}

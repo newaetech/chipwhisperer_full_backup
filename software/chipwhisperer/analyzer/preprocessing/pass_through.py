@@ -34,8 +34,8 @@ class PassThrough(PreprocessingBase):
     """
     _name = "Pass Through"
 
-    def __init__(self, traceSource=None):
-        PreprocessingBase.__init__(self, traceSource)
+    def __init__(self, traceSource=None, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
         self.findParam('Enabled').hide()
 
     def getTrace(self, n):

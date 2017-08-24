@@ -32,8 +32,8 @@ class ResyncDTW(PreprocessingBase):
     _name = "Resync: Dynamic Time Warp"
     _description = "Aligns traces to match a reference trace using the Fast Dynamic Time Warp algorithm."
 
-    def __init__(self, traceSource=None):
-        PreprocessingBase.__init__(self, traceSource)
+    def __init__(self, traceSource=None, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
         self.rtrace = 0
         self.debugReturnSad = False
         self.ccStart = 0

@@ -38,8 +38,8 @@ class ResyncSAD(PreprocessingBase):
                   "window' for each trace, and the amount of shift resulting in the minimum SAD criteria is selected "\
                   "as the shift amount for that trace."
 
-    def __init__(self, traceSource=None, connectTracePlot=True):
-        PreprocessingBase.__init__(self, traceSource)
+    def __init__(self, traceSource=None, connectTracePlot=True, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
         self.rtrace = 0
         self.debugReturnSad = False
         self.ccStart = 0

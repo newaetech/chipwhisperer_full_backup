@@ -37,6 +37,7 @@ from chipwhisperer.common.utils.tracesource import PassiveTraceObserver
 from chipwhisperer.analyzer.attacks._base import AttackObserver
 from chipwhisperer.analyzer.preprocessing.pass_through import PassThrough
 from functools import partial
+import inspect
 
 class AttackSettings(Parameterized):
     def __init__(self):
@@ -58,19 +59,20 @@ class AttackSettings(Parameterized):
         return self._attack
 
 class PreprocessingSettings(Parameterized):
+    _num_modules = 4
     def __init__(self, api):
         self._api = api
         self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, False)
         self.params = Parameter(name="Preprocessing Settings", type='group')
-        self._modules = self._initModules()
 
         self._moduleParams = [
-            Parameter(name='Module #%d' % i, type='group') for i in range(len(self._modules))
+            Parameter(name='Module #%d' % (i+1), type='group') for i in range(self._num_modules)
         ]
+        self._initModules()
 
         self.params.addChildren([
             {'name':'Selected Modules', 'type':'group', 'children':[
-                {'name':'Module #%d' % step, 'type':'list', 'values':self.valid_preprocessingModules,
+                {'name':'Module #%d' % (step+1), 'type':'list', 'values':self.valid_preprocessingModules,
                  'get':partial(self.getModule, step), 'set':partial(self.setModule, step)} for step in range(0, len(self._modules))
             ]},
         ])
@@ -78,17 +80,13 @@ class PreprocessingSettings(Parameterized):
             self.params.append(m)
 
     def _initModules(self):
-        trace_source = self._api.project().traceManager()
-        num_modules = 4
-
-        ret = []
-        for i in range(num_modules):
-            ret.append(PassThrough(trace_source))
-            trace_source = ret[i]
-        return ret
+        self._modules = [None]*self._num_modules
+        for i in range(self._num_modules):
+            mod = PassThrough(name="Preprocessing Module #%d" % (i+1))
+            self.setModule(i, mod)
 
     def getModule(self, num):
-        return self._modules[num]
+        return self._modules[num].__class__
 
     @setupSetParam("")
     def setModule(self, num, module):
@@ -101,16 +99,23 @@ class PreprocessingSettings(Parameterized):
         if module is None:
             raise ValueError("Received None as module in setModule()" % module)
 
-        trace_src = self._modules[num].getTraceSource()
+        if num == 0:
+            trace_source = self._api.project().traceManager()
+        else:
+            trace_source = self._modules[num-1]
 
-        self._modules[num].deregister()
-        self._moduleParams[num].clearChildren()
+        if self._modules[num] is not None:
+            self._modules[num].deregister()
+            self._moduleParams[num].clearChildren()
+
+        if inspect.isclass(module):
+            module = module(name="Preprocessing Module #%d" % (num+1))
 
         self._modules[num] = module
-        self._modules[num].setTraceSource(trace_src)
+        self._modules[num].setTraceSource(trace_source)
         self._moduleParams[num].append(self._modules[num].getParams())
 
-        if (num+1) < len(self._modules):
+        if (num+1) < len(self._modules) and self._modules[num+1] is not None:
             self._modules[num+1].setTraceSource(module)
 
 
@@ -200,6 +205,11 @@ class CWAnalyzerGUI(CWMainGUI):
     @attack.setter
     def attack(self, new_attack):
         self._attackSettings.setAttack(new_attack)
+
+    @property
+    def ppmod(self):
+        """The preprocessing modules in use. Read-only."""
+        return self._preprocessSettings._modules
 
     @property
     def correlation_plot(self):
