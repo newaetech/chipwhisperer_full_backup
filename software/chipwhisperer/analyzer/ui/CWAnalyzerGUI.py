@@ -88,6 +88,7 @@ class PreprocessingSettings(Parameterized):
     def getModule(self, num):
         return self._modules[num].__class__
 
+    # TODO: calling this from the command line causes a cosmetic bug
     @setupSetParam("")
     def setModule(self, num, module):
         """Insert the preprocessing module selected from the GUI into the list of active modules.
@@ -118,6 +119,19 @@ class PreprocessingSettings(Parameterized):
         if (num+1) < len(self._modules) and self._modules[num+1] is not None:
             self._modules[num+1].setTraceSource(module)
 
+    def __getitem__(self, idx):
+        return self._modules[idx]
+
+    def __setitem__(self, idx, module):
+        self.setModule(idx, module)
+        logging.warning("Selected Modules parameter list didn't update during setModule call in PreprocessingSettings")
+
+    def __str__(self):
+        return str(self._modules)
+
+    def __repr__(self):
+        return str(self)
+
 
 class CWAnalyzerGUI(CWMainGUI):
     """This is the main API for the ChipWhisperer Analyzer. From CWAnalyzer,
@@ -129,7 +143,7 @@ class CWAnalyzerGUI(CWMainGUI):
         self._preprocessSettings = PreprocessingSettings(api)
 
         super(CWAnalyzerGUI, self).__init__(api, name="ChipWhisperer" + u"\u2122" + " Analyzer " + CWCoreAPI.__version__, icon="cwiconA")
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
+        #self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.scripts", False, False, self))
         CWAnalyzerGUI.instance = self
 
 #        self.api.setAttack(self.api.valid_attacks.get("CPA", None))
@@ -208,8 +222,10 @@ class CWAnalyzerGUI(CWMainGUI):
 
     @property
     def ppmod(self):
-        """The preprocessing modules in use. Read-only."""
-        return self._preprocessSettings._modules
+        """The preprocessing modules in use. Access like
+        >>> self.ppmod[0]
+        """
+        return self._preprocessSettings
 
     @property
     def correlation_plot(self):
