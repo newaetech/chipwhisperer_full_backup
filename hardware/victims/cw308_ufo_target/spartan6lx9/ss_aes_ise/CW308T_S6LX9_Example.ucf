@@ -9,9 +9,9 @@ NET clk2           LOC="P85"  | IOSTANDARD=LVTTL | PERIOD=136.75ns;             
 
 ##UART and GPIO
 NET TxD            LOC="P92"  | IOSTANDARD=LVTTL | DRIVE=8 | SLEW=FAST;          # TX/GPIO1
-NET RxD            LOC="P93"  | IOSTANDARD=LVTTL | DRIVE=8 | SLEW=FAST| PULLUP;  # RX/GPIO2
+NET RxD            LOC="P93"  | IOSTANDARD=LVTTL | DRIVE=8 | SLEW=FAST | PULLUP; # RX/GPIO2
 NET IO3            LOC="P94"  | IOSTANDARD=LVTTL;                                # TX/GPIO3
-NET IO4            LOC="P95"  | IOSTANDARD=LVTTL;                                # TX/GPIO3
+NET IO4            LOC="P95"  | IOSTANDARD=LVTTL | DRIVE=16 | SLEW=FAST;         # TX/GPIO4 (Trigger, so fast slew)
 
 ##On board LEDs
 NET LED1           LOC="P43"  | IOSTANDARD=LVTTL;                                # LED1

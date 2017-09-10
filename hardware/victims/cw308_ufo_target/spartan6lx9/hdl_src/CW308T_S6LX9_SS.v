@@ -66,12 +66,11 @@ module CW308T_S6LX9_Example(
    
 	
 	wire enc_busy;
-	assign IO4 = ~enc_busy;
+	assign IO4 = enc_busy;
 	
 	/* To use this example AES core:
 		 - We need to generate our own flag indicating when output data is valid
 	*/
-	
 	aes_core AESGoogleVault(
 		.clk(clk),
 		.load_i(load_input),
