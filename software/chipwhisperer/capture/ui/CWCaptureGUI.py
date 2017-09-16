@@ -39,7 +39,8 @@ from chipwhisperer.common.utils.tracesource import ActiveTraceObserver
 class CWCaptureGUI(CWMainGUI):
     def __init__(self, api):
         super(CWCaptureGUI, self).__init__(api, name=("ChipWhisperer" + u"\u2122" + " Capture " + CWCoreAPI.__version__), icon="cwiconC")
-        self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
+        # TODO: replace scripts with an info box about the new script system
+        #self.addExampleScripts(pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scripts", False, False, self))
 
         # Observers (callback methods)
         self.api.sigNewInputData.connect(self.newTargetData)
@@ -228,11 +229,51 @@ class CWCaptureGUI(CWMainGUI):
         try:
             self.stopCaptureMAct.setEnabled(True)
             self.capturingProgressBar = ProgressBar("Capture in Progress", "Capturing:")
-            ret = self.api.captureM(self.capturingProgressBar)
+            ret = self.api.captureM(self.capturingProgressBar, self.scope, self.target, self.project, self.aux_list, self.ktp, self.api.getNumTraces())
         finally:
             self.stopCaptureMAct.setEnabled(False)
         return ret
 
+    # Helpful properties for the Python console
+    @property
+    def scope(self):
+        return self.api.getScope()
+
+    @scope.setter
+    def scope(self, new_scope):
+        self.api.setScope(new_scope, addToList=True)
+
+    @property
+    def target(self):
+        return self.api.getTarget()
+
+    @target.setter
+    def target(self, new_target):
+        self.api.setTarget(new_target, addToList=True)
+
+    @property
+    def aux_list(self):
+        return self.api.getAuxList()
+
+    @aux_list.setter
+    def aux_list(self, new_list):
+        self.api.setAuxList(new_list)
+
+    @property
+    def project(self):
+        return self.api.project()
+
+    @project.setter
+    def project(self, new_project):
+        self.api.setProject(new_project)
+
+    @property
+    def ktp(self):
+        return self.api.getAcqPattern()
+
+    @ktp.setter
+    def ktp(self, new_ktp):
+        self.api.setAcqPattern(new_ktp, addToList=True)
 
 def main():
     # Create the Qt Application

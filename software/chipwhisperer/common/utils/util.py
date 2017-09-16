@@ -247,6 +247,19 @@ class Observable(Signal):
         return self.data
 
 
+_consoleBreakRequested = False
+class ConsoleBreakException(BaseException):
+    """Custom exception class. Raised when pressing ctrl-C in console.
+
+    This inherits from BaseException so that the generic "Save project?" window
+    doesn't catch it.
+    """
+    pass
+
+def requestConsoleBreak():
+    global _consoleBreakRequested
+    _consoleBreakRequested = True
+
 _uiupdateFunction = None
 
 def setUIupdateFunction(func):
@@ -257,6 +270,11 @@ def updateUI():
     if _uiupdateFunction:
         _uiupdateFunction()
 
+    # If an event handler has asked for a console break, raise an exception now
+    global _consoleBreakRequested
+    if _consoleBreakRequested:
+        _consoleBreakRequested = False
+        raise ConsoleBreakException()
 
 class WeakMethod(object):
     """A callable object. Takes one argument to init: 'object.method'.
@@ -312,3 +330,61 @@ if __name__ == '__main__':
     y = x.m
     x = None
     y()
+
+class DisableNewAttr(object):
+    """Provides an ability to disable setting new attributes in a class, useful to prevent typos.
+
+    Usage:
+    1. Make a class that inherits this class:
+    >>> class MyClass(DisableNewAttr):
+    >>>     # Your class definition here
+
+    2. After setting up all attributes that your object needs, call disable_newattr():
+    >>>     def __init__(self):
+    >>>         self.my_attr = 123
+    >>>         self.disable_newattr()
+
+    3. Subclasses raise an AttributeError when trying to make a new attribute:
+    >>> obj = MyClass()
+    >>> #obj.my_new_attr = 456   <-- Raises AttributeError
+    """
+
+    def __init__(self):
+        self.disable_newattr()
+
+    def disable_newattr(self):
+        self._new_attributes_disabled = True
+
+    def enable_newattr(self):
+        self._new_attributes_disabled = False
+
+    def __setattr__(self, name, value):
+        if hasattr(self, '_new_attributes_disabled') and self._new_attributes_disabled and not hasattr(self, name):  # would this create a new attribute?
+            raise AttributeError("Attempt to set unknown attribute in %s"%self.__class__, name)
+        super(DisableNewAttr, self).__setattr__(name, value)
+
+
+def dict_to_str(input_dict, indent=""):
+    """Turn a dictionary of attributes/status values into a pretty-printed
+    string for use on the command line. Recursively pretty-prints dictionaries.
+
+    This function is most useful with OrderedDicts as it keeps the same
+    printing order.
+    """
+
+    # Find minimum width that fits all names
+    min_width = 0
+    for n in input_dict:
+        min_width = max(min_width, len(str(n)))
+
+    # Build string
+    ret = ""
+    for n in input_dict:
+        if type(input_dict[n]) in (dict, OrderedDict):
+            ret += indent + str(n) + ' = '
+            ret += '\n' + dict_to_str(input_dict[n], indent+"    ")
+        else:
+            ret += indent + str(n).ljust(min_width) + ' = '
+            ret += str(input_dict[n]) + '\n'
+
+    return ret

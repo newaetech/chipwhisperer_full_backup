@@ -25,10 +25,12 @@
 import copy
 import os
 import traceback
+import math
 import sys
 import logging
 from chipwhisperer.capture.api.acquisition_controller import AcquisitionController
 from chipwhisperer.capture.api.programmers import Programmer
+from chipwhisperer.capture.api.aux_list import AuxList
 from chipwhisperer.common.api.ProjectFormat import ProjectFormat
 from chipwhisperer.common.results.base import ResultsBase
 from chipwhisperer.common.ui.ProgressBar import *
@@ -69,25 +71,27 @@ class CWCoreAPI(Parameterized):
         self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
         self.valid_aux = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.auxiliary", True, True)
         self.valid_acqPatterns =  pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.acq_patterns", True, False)
-        self.valid_attacks = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.attacks", True, False)
-        self.valid_preprocessingModules = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.analyzer.preprocessing", False, True)
 
         self.settings = Settings()
 
         # Initialize default values
-        self._project = self._scope = self._target = self._attack =  self._traceFormat = self._acqPattern = None
-        self._attack = self.valid_attacks.get("CPA", None)
+        self._project = self._scope = self._target = self._traceFormat = self._acqPattern = self._attack = None
         self._acqPattern = self.valid_acqPatterns["Basic"]
-        self._auxList = [None]  # TODO: implement it as a list in the whole class
+        self._auxList = AuxList()
         self._numTraces = 50
         self._numTraceSets = 1
+
+
+        # Storage for last key/plaintext/ciphertext
+        self._lastKey = None
+        self._lastTextin = None
+        self._lastTextout = None
+        self._lastExpected = None
 
         self.params = Parameter(name='Generic Settings', type='group', addLoadSave=True).register()
         self.params.addChildren([
             {'name':'Scope Module', 'key':'scopeMod', 'type':'list', 'values':self.valid_scopes, 'get':self.getScope, 'set':self.setScope},
             {'name':'Target Module', 'key':'targetMod', 'type':'list', 'values':self.valid_targets, 'get':self.getTarget, 'set':self.setTarget},
-            {'name':'Trace Format', 'type':'list', 'values':self.valid_traces, 'get':self.getTraceFormat, 'set':self.setTraceFormat},
-            {'name':'Auxiliary Module', 'type':'list', 'values':self.valid_aux, 'get':self.getAuxModule, 'set':self.setAux},
             {'name':'Acquisition Settings', 'type':'group', 'children':[
                     {'name':'Number of Traces', 'type':'int', 'limits':(1, 1E9), 'get':self.getNumTraces, 'set':self.setNumTraces, 'linked':['Traces per Set']},
                     {'name':'Number of Sets', 'type':'int', 'limits':(1, 1E6), 'get':self.getNumTraceSets, 'set':self.setNumTraceSets, 'linked':['Traces per Set'], 'tip': 'Break acquisition into N sets, '
@@ -103,16 +107,22 @@ class CWCoreAPI(Parameterized):
         self.targetParam = Parameter(name="Target Settings", type='group', addLoadSave=True).register()
         self.params.getChild('Target Module').stealDynamicParameters(self.targetParam)
 
-        self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
-        self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
+        # Aux settings
+        self.auxParam = self._auxList.getParams().register()
 
-        self.auxParam = Parameter(name="Aux Settings", type='group', addLoadSave=True).register()
-        self.params.getChild('Auxiliary Module').stealDynamicParameters(self.auxParam)
-
-        # self.attackParam = Parameter(name="Attack Settings", type='group')
-        # self.params.getChild('Attack Module').getDynamicParameters(self.attackParam)
+        # Note: Project settings are set up in setProject()
 
         self.newProject()
+
+    def updateLastKeyText(self, key, textin, textout, exp):
+        """Callback for acq controller signal - update key/textin/textout
+        """
+        self._lastKey = key
+        self._lastTextin = textin
+        self._lastTextout = textout
+        self._lastExpected = exp
+
+        self.sigNewTextResponse.emit(key, textin, textout, exp)
 
     def getResults(self, name):
         """Return the requested result widget. It should be registered."""
@@ -126,10 +136,22 @@ class CWCoreAPI(Parameterized):
     def setScope(self, driver):
         """Set the current scope module object."""
         if self.getScope():
-            self.getScope().dis()
+            # Don't do anything if we're not changing scopes
+            if self.getScope() is driver:
+                return
+            else:
+                self.getScope().dis()
         self._scope = driver
         if self.getScope():
             self.getScope().connectStatus.connect(self.sigConnectStatus.emit)
+            self.scopeParam.append(self.getScope().params)
+            try:
+                ResultsBase.registeredObjects["Trace Output Plot"].setTraceSource(
+                    TraceSource.registeredObjects[next(reversed(TraceSource.registeredObjects))])
+            except KeyError:
+                pass
+            if self.getScope().getStatus():
+                self.getScope().connectStatus.emit()
 
     def getTarget(self):
         """Return the current target module object."""
@@ -138,30 +160,45 @@ class CWCoreAPI(Parameterized):
     @setupSetParam("Target Module")
     def setTarget(self, driver):
         """Set the current target module object."""
-        if self.getTarget(): self.getTarget().dis()
+        if self.getTarget():
+            # Don't do anything if we're not changing targets
+            if self.getTarget() is driver:
+                return
+            self.getTarget().dis()
         self._target = driver
         if self.getTarget():
+            self.targetParam.append(self.getTarget().params)
             self.getTarget().newInputData.connect(self.sigNewInputData.emit)
             self.getTarget().connectStatus.connect(self.sigConnectStatus.emit)
+            if self.getTarget().getStatus():
+                self.getTarget().connectStatus.emit()
 
-    def getAuxModule(self):
-        """Return a list with the auxiliary modules."""
-        return self._auxList[0]
 
     def getAuxList(self):
-        """Return a list with the auxiliary modules."""
         return self._auxList
 
-    @setupSetParam("Auxiliary Module")
-    def setAux(self, aux):
-        """Set the first aux module. Will be updated to support more modules."""
-        self._auxList = [aux]
+    def setAuxList(self, new_list):
+        self._auxList = new_list
+
+    def getAuxFunctions(self, only_enabled):
+        """TODO: doc
+        """
+        return self._auxList.getDict(only_enabled)
 
     def getAcqPattern(self):
         """Return the selected acquisition pattern."""
         return self._acqPattern
 
-    @setupSetParam("Key/Text Pattern")
+    def getAttack(self):
+        return self._attack
+
+    @setupSetParam(["Attack Settings", "Attack"])
+    def setAttack(self, atk):
+        self._attack = atk
+        #if self._attack is not None:
+        #    self.attackParam.append(self._attack.params)
+
+    @setupSetParam(["Acquisition Settings", "Key/Text Pattern"])
     def setAcqPattern(self, pat):
         """Set the current acquisition pattern."""
         self._acqPattern = pat
@@ -184,23 +221,15 @@ class CWCoreAPI(Parameterized):
 
     def getTraceFormat(self):
         """Return the selected trace format."""
-        return self._traceFormat
+        if self._project is not None:
+            return self._project.getTraceFormat()
+        else:
+            return None
 
-    @setupSetParam("Trace Format")
     def setTraceFormat(self, format):
         """Set the current trace format for acquisition."""
-        self._traceFormat = format
-
-    def getAttack(self):
-        """Return the current attack module. NOT BEING USED AT THE MOMENT"""
-        return self._attack
-
-    def setAttack(self, attack):
-        """Set the current attack module. NOT BEING USED AT THE MOMENT"""
-        self._attack = attack
-        if self.getAttack():
-            self.getAttack().setTraceLimits(self.project().traceManager().numTraces(), self.project().traceManager().numPoints())
-        self.sigAttackChanged.emit()
+        if self._project is not None:
+            self._project.setTraceFormat(format)
 
     def project(self):
         """Return the current opened project"""
@@ -209,13 +238,12 @@ class CWCoreAPI(Parameterized):
     def setProject(self, proj):
         """Set the current opened project"""
         self._project = proj
+        self.params.append(proj.getParams())
         self.sigNewProject.emit()
 
     def newProject(self):
         """Create a new project"""
-        self.setProject(ProjectFormat())
-        self.project().setProgramName(self.__name__)
-        self.project().setProgramVersion(self.__version__)
+        self.setProject(ProjectFormat(self.__name__, self.__version__))
 
     def openProject(self, fname):
         """Open project file"""
@@ -285,7 +313,7 @@ class CWCoreAPI(Parameterized):
         """Return the total number or traces for acquisition purposes"""
         return self._numTraces
 
-    @setupSetParam("Number of Traces")
+    @setupSetParam(["Acquisition Settings", "Number of Traces"])
     def setNumTraces(self, n):
         """Set the total number or traces for acquisition purposes"""
         self._numTraces = n
@@ -294,7 +322,7 @@ class CWCoreAPI(Parameterized):
         """Return the number of sets/segments"""
         return self._numTraceSets
 
-    @setupSetParam("Number of Sets")
+    @setupSetParam(["Acquisition Settings", "Number of Sets"])
     def setNumTraceSets(self, s):
         """Set the number of sets/segments"""
         self._numTraceSets = s
@@ -306,7 +334,8 @@ class CWCoreAPI(Parameterized):
     def capture1(self):
         """Capture one trace"""
         try:
-            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, auxList=self._auxList, keyTextPattern=self.getAcqPattern())
+            aux_dict = self.getAuxFunctions(True)
+            ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, aux=aux_dict, keyTextPattern=self.getAcqPattern())
             ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
             if self.getTarget():
                 self.getTarget().init()
@@ -315,28 +344,42 @@ class CWCoreAPI(Parameterized):
             sys.excepthook(*sys.exc_info())
             return False
 
-    def captureM(self, progressBar=None):
+    def captureM(self, progressBar=None, scope=None, target=None, project=None, aux_list=None, ktp=None, N=1, seg_size=None):
         """Capture multiple traces and save its result"""
-        if not progressBar: progressBar = ProgressBarText()
+        if not progressBar:
+            progressBar = ProgressBarText()
+
+        if seg_size is None:
+            seg_size = 1000
+        trace_mgr = project.traceManager() if project is not None else None
+        trace_fmt = project.getTraceFormat() if project is not None else None
+        aux_dict = aux_list.getDict(True) if aux_list is not None else None
+        segments = int(math.ceil(N / float(seg_size)))
 
         with progressBar:
             progressBar.setStatusMask("Current Segment = %d Current Trace = %d", (0,0))
-            progressBar.setMaximum(self._numTraces)
+            progressBar.setMaximum(N)
 
             waveBuffer = None
             tcnt = 0
-            setSize = self.tracesPerSet()
-            for i in range(0, self._numTraceSets):
+            for i in range(0, segments):
                 if progressBar.wasAborted(): break
-                if self.getTraceFormat() is not None:
-                    currentTrace = self.getNewTrace(self.getTraceFormat())
+
+                this_seg_size = min(seg_size, N - i*seg_size)
+                if trace_fmt is not None:
+                    currentTrace = self.getNewTrace(trace_fmt)
                     # Load trace writer information
                     prefix = currentTrace.config.attr("prefix")[:-1]
-                    currentTrace.config.setAttr("targetHW", self.getTarget().getName() if self.getTarget() is not None else "None")
+                    currentTrace.config.setAttr("targetHW", target.getName() if target is not None else "None")
                     currentTrace.config.setAttr("targetSW", os.path.split(Programmer.lastFlashedFile)[1])
-                    currentTrace.config.setAttr("scopeName", self.getScope().getName() if self.getScope() is not None else "None")
-                    currentTrace.config.setAttr("notes", "AckPattern: " + str(self.getAcqPattern()) + "; Aux: " + ', '.join(item.getName() for item in self._auxList if item))
-                    currentTrace.setTraceHint(setSize)
+                    currentTrace.config.setAttr("scopeName", scope.getName() if scope is not None else "None")
+                    notes_str = "AckPattern: " + str(ktp) + "; "
+                    notes_str += "Aux: "
+                    if aux_dict is not None:
+                        for t in aux_dict.keys():
+                            notes_str += "%s" % t + ", ".join([str(item) for item in aux_dict[t] if item])
+                    currentTrace.config.setAttr("notes", notes_str)
+                    currentTrace.setTraceHint(this_seg_size)
 
                     if waveBuffer is not None:
                         currentTrace.setTraceBuffer(waveBuffer)
@@ -344,31 +387,31 @@ class CWCoreAPI(Parameterized):
                     currentTrace = None
                     prefix = datetime.now().strftime('%Y.%m.%d-%H.%M.%S')
 
-                for aux in self._auxList:
-                    if aux:
-                        aux.setPrefix(prefix)
+                if aux_dict is not None:
+                    for func in aux_dict['set_prefix']:
+                        func(prefix)
 
-                ac = AcquisitionController(self.getScope(), self.getTarget(), currentTrace, self._auxList, self.getAcqPattern())
-                ac.setMaxtraces(setSize)
+                ac = AcquisitionController(scope, target, currentTrace, aux_dict, ktp)
+                ac.setMaxtraces(this_seg_size)
                 ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)
-                __pb = lambda: progressBar.updateStatus(i*setSize + ac.currentTrace + 1, (i, ac.currentTrace))
+                __pb = lambda: progressBar.updateStatus(i*seg_size + ac.currentTrace + 1, (i, ac.currentTrace))
                 ac.sigTraceDone.connect(__pb)
                 self.sigCampaignStart.emit(prefix)
-                ac.doReadings(tracesDestination=self.project().traceManager(), progressBar=progressBar)
+                ac.doReadings(tracesDestination=trace_mgr, progressBar=progressBar)
 
                 if currentTrace is not None:
-                    self.project().saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
+                    project.saveAllSettings(os.path.dirname(currentTrace.config.configFilename()) + "/%s_settings.cwset" % prefix, onlyVisibles=True)
                     waveBuffer = currentTrace.traces  # Re-use the wave buffer to avoid memory reallocation
                 self.sigCampaignDone.emit()
-                tcnt += setSize
+                tcnt += seg_size
 
                 if progressBar.wasAborted():
                     break
 
             if currentTrace is not None:
                 currentTrace.unloadAllTraces()  # Required in order to make the GC work properly :(
-                self._traceFormat.unloadAllTraces()
+                trace_fmt.unloadAllTraces()
         return True
 
     def runScriptModule(self, mod, funcName="run"):
@@ -414,3 +457,15 @@ class CWCoreAPI(Parameterized):
     def getInstance():
         """Implements the singleton pattern/anti-pattern. Returns a reference to the API instance."""
         return CWCoreAPI.instance
+
+    def getLastKey(self):
+        return self._lastKey
+
+    def getLastTextin(self):
+        return self._lastTextin
+
+    def getLastTextout(self):
+        return self._lastTextout
+
+    def getLastExpected(self):
+        return self._lastExpected

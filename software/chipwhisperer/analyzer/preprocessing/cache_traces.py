@@ -36,13 +36,13 @@ class CacheTraces(PreprocessingBase):
     _name = "Trace Cache"
     _description = "Caches traces into giant file."
 
-    def __init__(self, traceSource=None):
+    def __init__(self, traceSource=None, name=None):
         #TODO: Where is project file?
         self.trace_cache_file = CWCoreAPI.CWCoreAPI.getInstance().project().getDataFilepath("tempcache.npy")['abs']
         self.tracehash_cache_file = CWCoreAPI.CWCoreAPI.getInstance().project().getDataFilepath("tempcachehash.npy")['abs']
         self.cache_shape = (-1, -1)
 
-        PreprocessingBase.__init__(self, traceSource)
+        PreprocessingBase.__init__(self, traceSource, name=name)
         self.updateScript()
 
     def recalculateHash(self):

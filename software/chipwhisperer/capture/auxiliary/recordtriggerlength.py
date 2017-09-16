@@ -26,9 +26,7 @@ import copy
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from _base import AuxiliaryTemplate
 
-class RecordTriggerLength(AuxiliaryTemplate):
-    _name = "Record Length of Trigger/Trace"
-
+class RecordTriggerLength(object):
     attrDictTriggerLength = {
         "sectionName":"Trigger Length",
         "moduleName":"TriggerLength",
@@ -39,18 +37,16 @@ class RecordTriggerLength(AuxiliaryTemplate):
     }
 
     def __init__(self):
-        AuxiliaryTemplate.__init__(self)
-        self.api = CWCoreAPI.getInstance()
-
-    def captureInit(self):
         self.trig_list = []
 
-    def traceDone(self):
-        trig_length = self.api.getParameter(['OpenADC', 'Trigger Setup', 'Trigger Active Count'])
+    def traceDone(self, scope, target, project):
+        trig_length = scope.adc.trig_count
         self.trig_list.append(trig_length)
 
         print trig_length
 
-    def captureComplete(self, writer):
-        updatedDict = writer.addAuxDataConfig(copy.deepcopy(self.attrDictTriggerLength))
-        writer.saveAuxData(self.trig_list, updatedDict)
+    def captureComplete(self, scope, target, project):
+        updatedDict = project.addAuxDataConfig(copy.deepcopy(self.attrDictTriggerLength))
+        project.saveAuxData(self.trig_list, updatedDict)
+        self.trig_list = []
+        

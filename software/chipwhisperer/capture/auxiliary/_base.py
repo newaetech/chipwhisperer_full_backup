@@ -48,23 +48,33 @@ class AuxiliaryTemplate(Parameterized, Plugin):
         pass
 
     def captureInit(self):
-        """Called once before each api grouping, do connect etc"""
+        """Called once before each api grouping, do connect etc
+        APIv4: before_capture
+        """
         pass
 
     def captureComplete(self, trace_writer):
-        """Called once complete api is complete"""
+        """Called once complete api is complete
+        APIv4: after_capture
+        """
         pass
 
     def traceArm(self):
-        """Called before arming scope, use to arm aux system"""
+        """Called before arming scope, use to arm aux system
+        APIv4: before_arm
+        """
         pass
 
     def traceArmPost(self):
-        """Called after arming scope, before sending trigger to target"""
+        """Called after arming scope, before sending trigger to target
+        APIv4: after_arm
+        """
         pass
 
     def traceDone(self):
-        """Called once api is complete for a single trace"""
+        """Called once api is complete for a single trace
+        APIv4: after_trace
+        """
         pass
 
     def setPrefix(self, prefix):

@@ -28,8 +28,23 @@ from chipwhisperer.common.utils import util
 
 
 class AcquisitionController:
+    """High level class for controlling captures.
 
-    def __init__(self, scope, target=None, writer=None, auxList=None, keyTextPattern=None):
+    An acquisition controller coordinates all of the smaller pieces to allow
+    power traces to be recorded. The sequence in a typical capture is:
+    - Key and input text are calculated using a key-text pattern
+    - Scope is armed
+    - Target is sent key and input text
+    - Output text is recorded from target
+    - Power trace is read from scope
+    - Input and output data are saved into project
+
+    Also, an acquisition controller tracks a number of auxiliary functions
+    which can perform any other tasks during a capture, such as resetting
+    """
+
+    def __init__(self, scope, target=None, writer=None, aux=None, keyTextPattern=None):
+        # TODO: use project objects instead of writers?
         self.sigTraceDone = util.Signal()
         self.sigNewTextResponse = util.Signal()
 
@@ -40,33 +55,32 @@ class AcquisitionController:
         self.textin = [0]
         self.textout = [0]
 
-        self.target = target
-        self.scope = scope
-        self.writer = writer
-        self.auxList = auxList
-        self.keyTextPattern = keyTextPattern
-        self.keyTextPattern.setTarget(target)
-        self.keyTextPattern.initPair(self.maxtraces)
+        self._target = target
+        self._scope = scope
+        self._writer = writer
+        self._aux_dict = aux
+        self._pattern = keyTextPattern
+        self._pattern.setTarget(target)
+        self._pattern.initPair(self.maxtraces)
 
-        if self.auxList is not None:
-            for aux in auxList:
-                if aux:
-                    aux.captureInit()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['before_capture']:
+                func(self._scope, self._target, self._writer)
 
     def targetDoTrace(self):
-        if self.target is None or self.target.getName() == "None":
+        if self._target is None or self._target.getName() == "None":
             return []
 
-        self.target.go()
+        self._target.go()
         timeout = 50
-        while self.target.isDone() is False and timeout:
+        while self._target.isDone() is False and timeout:
             timeout -= 1
             time.sleep(0.01)
 
         if timeout == 0:
             logging.warning('Target timeout')
 
-        self.textout = self.target.readOutput()
+        self.textout = self._target.readOutput()
         try:
             logging.debug("PlainText: " + ''.join(format(x, '02x') for x in self.textin))
         except:
@@ -80,43 +94,41 @@ class AcquisitionController:
 
 
     def doSingleReading(self):
-        # Set mode
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceArm()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['before_trace']:
+                func(self._scope, self._target, self._writer)
 
-        if self.target:
-            self.target.reinit()
+        if self._target:
+            self._target.reinit()
 
-        ##if self.scope:
-        ##    self.scope.arm()
-
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceArmPost()
-
-        if self.target:
+        if self._target:
             # Get key / plaintext now
-            self.key, self.textin = self.keyTextPattern.newPair()
+            self.key, self.textin = self._pattern.newPair()
 
-            self.target.setModeEncrypt()
-            self.target.loadEncryptionKey(self.key)
-            self.target.loadInput(self.textin)
+            self._target.setModeEncrypt()
+            self._target.loadEncryptionKey(self.key)
+            self._target.loadInput(self.textin)
 
-        if self.scope:
-            self.scope.arm()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['before_arm']:
+                func(self._scope, self._target, self._writer)
 
-        if self.target:
+        if self._scope:
+            self._scope.arm()
+
+        if self._aux_dict is not None:
+            for func in self._aux_dict['after_arm']:
+                func(self._scope, self._target, self._writer)
+
+        if self._target:
             # Load input, start encryption, get output
             self.targetDoTrace()
-            self.sigNewTextResponse.emit(self.key, self.textin, self.textout, self.target.getExpected())
+            self.sigNewTextResponse.emit(self.key, self.textin, self.textout, self._target.getExpected())
 
         # Get ADC reading
-        if self.scope:
+        if self._scope:
             try:
-                ret = self.scope.capture()
+                ret = self._scope.capture()
                 if ret:
                     logging.debug('Timeout happened during acquisition.')
                 capture_ok = not ret
@@ -124,10 +136,9 @@ class AcquisitionController:
                 logging.error('IOError: %s' % str(e))
                 capture_ok = False
 
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceDone()
+        if self._aux_dict is not None:
+            for func in self._aux_dict['after_trace']:
+                func(self._scope, self._target, self._writer)
 
         return capture_ok
 
@@ -138,28 +149,23 @@ class AcquisitionController:
         if channelNumbers is None:
             channelNumbers = [0]
 
-        self.keyTextPattern.initPair(self.maxtraces)
+        self._pattern.initPair(self.maxtraces)
 
-        if self.writer:
-            self.writer.prepareDisk()
+        if self._writer:
+            self._writer.prepareDisk()
 
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.traceArm()
-
-        if self.target:
-            self.target.init()
+        if self._target:
+            self._target.init()
 
         self.currentTrace = 0
         while self.currentTrace < self.maxtraces:
             if self.doSingleReading():
                 try:
-                    if self.writer:
-                        self.writer.setKnownKey(self.key)
+                    if self._writer:
+                        self._writer.setKnownKey(self.key)
                         for channelNum in channelNumbers:
-                            self.writer.addTrace(self.scope.channels[channelNum].getTrace(), self.textin, self.textout,
-                                                 self.key, channelNum=channelNum)
+                            self._writer.addTrace(self._scope.channels[channelNum].getTrace(), self.textin, self.textout,
+                                                  self.key, channelNum=channelNum)
                 except ValueError as e:
                     logging.warning('Exception caught in adding trace %d, trace skipped.' % self.currentTrace)
                     logging.debug(str(e))
@@ -172,14 +178,31 @@ class AcquisitionController:
                 if progressBar.wasAborted():
                     break
 
-        if self.auxList:
-            for aux in self.auxList:
-                if aux:
-                    aux.captureComplete(self.writer)
+        if self._aux_dict is not None:
+            for func in self._aux_dict['after_capture']:
+                func(self._scope, self._target, self._writer)
 
-        if self.writer and self.writer.numTraces() > 0:
+        if self._writer and self._writer.numTraces() > 0:
             # Don't clear trace as we re-use the buffer
-            self.writer.config.setAttr("scopeSampleRate", self.scope.channels[channelNumbers[0]].getSampleRate())
-            self.writer.closeAll(clearTrace=False)
+            self._writer.config.setAttr("scopeSampleRate", self._scope.channels[channelNumbers[0]].getSampleRate())
+            self._writer.closeAll(clearTrace=False)
             if tracesDestination:
-                tracesDestination.appendSegment(self.writer)
+                tracesDestination.appendSegment(self._writer)
+
+    @property
+    def last_key(self):
+        """The last key sent to the target. Read-only.
+        """
+        return "todo"
+
+    @property
+    def last_textin(self):
+        """The last input text sent to the target. Read-only.
+        """
+        return "todo"
+
+    @property
+    def last_textout(self):
+        """The last output text received from the target. Read-only.
+        """
+        return "todo"

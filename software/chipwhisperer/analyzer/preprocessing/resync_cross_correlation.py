@@ -30,6 +30,7 @@ import scipy as sp
 
 from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 
 class ResyncCrossCorrelation(PreprocessingBase):
@@ -40,38 +41,69 @@ class ResyncCrossCorrelation(PreprocessingBase):
     _description = "Use cross-correlation to detect shift between a 'reference trace' and every input trace. "\
                   "In practice the other resync methods seem to work better."
 
-    def __init__(self, traceSource=None):
-        PreprocessingBase.__init__(self, traceSource)
-        self.rtrace = 0
-        self.debugReturnCorr = False
-        self.ccStart = 0
-        self.ccEnd = 0
+    def __init__(self, traceSource=None, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
+        self._rtrace = 0
+        self._debugReturnCorr = False
+        self._ccStart = 0
+        self._ccEnd = 0
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
-            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'action':self.updateScript, 'default':(0, 0)},
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
+            {'name':'Window', 'key':'rwindow', 'type':'rangegraph', 'graphwidget':ResultsBase.registeredObjects["Trace Output Plot"], 'get':self._getWindow, 'set':self._setWindow},
             # {'name':'Output Correlation (DEBUG)', 'type':'bool', 'value':False, 'set':self.setOutputCorr}
         ])
-        self.updateScript()
+        self._calculateRef()
 
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        rtrace = self.findParam('reftrace').getValue()
-        rrange = self.findParam('rwindow').getValue()
+    @setupSetParam("Ref Trace")
+    def _setRefTrace(self, num):
+        self._rtrace = num
+        self._calculateRef()
 
-        if rrange is None:
-            rrange = (0, 0)
+    def _getRefTrace(self):
+        return self._rtrace
 
-        self.addFunction("init", "setReference", "refno=%d, refWindow=(%d, %d)" % (rtrace, rrange[0], rrange[1]))
+    @property
+    def ref_trace(self):
+        """The trace being used as a reference.
 
-    def setReference(self, refno=0, refWindow=(0, 0)):
-        self.ccStart = refWindow[0]
-        self.ccEnd = refWindow[1]
-        self.rtrace = refno
-        self.init()
+        Setter raises TypeError unless value is an integer."""
+        return self._getRefTrace()
 
-    # def setOutputCorr(self, enabled):
-    #    self.debugReturnCorr = enabled
+    @ref_trace.setter
+    def ref_trace(self, num):
+        if not isinstance(num, (int, long)):
+            raise TypeError("Expected int; got %s" % type(num), num)
+        self._setRefTrace(num)
+
+    @setupSetParam("Window")
+    def _setWindow(self, window):
+        self._ccStart, self._ccEnd = window
+        self._calculateRef()
+
+    def _getWindow(self):
+        return (self._ccStart, self._ccEnd)
+
+    @property
+    def window(self):
+        """The section of the reference trace used for comparison.
+
+        This must be a tuple of (first point, last point).
+
+        Setter raises TypeError if value is not a tuple or if points are not
+        integers.
+        """
+        return self._getWindow()
+
+    @window.setter
+    def window(self, win):
+        if not isinstance(win, tuple):
+            raise TypeError("Expected tuple; got %s" % type(win), win)
+        if not isinstance(win[0], (int, long)):
+            raise TypeError("Expected int; got %s" % type(win[0]), win[0])
+        if not isinstance(win[1], (int, long)):
+            raise TypeError("Expected int; got %s" % type(win[1]), win[1])
+        self._setWindow(win)
    
     def getTrace(self, n):
         if self.enabled:
@@ -79,15 +111,15 @@ class ResyncCrossCorrelation(PreprocessingBase):
             trace = self._traceSource.getTrace(n)
             if trace is None:
                 return None
-            cross = sp.signal.fftconvolve(trace, self.reftrace, mode='valid')
-            if self.debugReturnCorr:
+            cross = sp.signal.fftconvolve(trace, self._reftrace, mode='valid')
+            if self._debugReturnCorr:
                 return cross
-            newmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
+            newmaxloc = np.argmax(cross[self._ccStart:self._ccEnd])
             # maxval = max(cross[self.ccStart:self.ccEnd])
             # if (maxval > self.refmaxsize * 1.01) | (maxval < self.refmaxsize * 0.99):
             #    return None
             
-            diff = newmaxloc-self.refmaxloc
+            diff = newmaxloc-self._refmaxloc
             if diff < 0:
                 trace = np.append(np.zeros(-diff), trace[:diff])
             elif diff > 0:
@@ -97,9 +129,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         else:
             return self._traceSource.getTrace(n)
    
-    def init(self):
+    def _calculateRef(self):
         try:
-            self.calcRefTrace(self.rtrace)
+            self.calcRefTrace(self._rtrace)
         except ValueError:
             self.findParam('enabled').setValue(False)
         
@@ -108,9 +140,9 @@ class ResyncCrossCorrelation(PreprocessingBase):
         if self.enabled == False:
             return
 
-        self.reftrace = self._traceSource.getTrace(tnum)[self.ccStart:self.ccEnd]
-        self.reftrace = self.reftrace[::-1]
+        self._reftrace = self._traceSource.getTrace(tnum)[self._ccStart:self._ccEnd]
+        self._reftrace = self._reftrace[::-1]
         #TODO: fftconvolve
-        cross = sp.signal.fftconvolve(self._traceSource.getTrace(tnum), self.reftrace, mode='valid')
-        self.refmaxloc = np.argmax(cross[self.ccStart:self.ccEnd])
-        self.refmaxsize = max(cross[self.ccStart:self.ccEnd])
+        cross = sp.signal.fftconvolve(self._traceSource.getTrace(tnum), self._reftrace, mode='valid')
+        self._refmaxloc = np.argmax(cross[self._ccStart:self._ccEnd])
+        self._refmaxsize = max(cross[self._ccStart:self._ccEnd])

@@ -30,7 +30,9 @@ from chipwhisperer.common.utils import util
 from chipwhisperer.common.api.dictdiffer import DictDiffer
 from chipwhisperer.common.api.TraceManager import TraceManager
 from chipwhisperer.common.api.settings import Settings
-from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils.parameter import Parameter, Parameterized, setupSetParam
+from chipwhisperer.common.utils import util, pluginmanager
+from chipwhisperer.common.traces.TraceContainerNative import TraceContainerNative
 
 try:
     from configobj import ConfigObj  # import the module
@@ -39,6 +41,7 @@ except ImportError:
     sys.exit()
 
 __author__ = "Colin O'Flynn"
+
 
 
 class ConfigObjProj(ConfigObj):
@@ -61,10 +64,27 @@ class ConfigObjProj(ConfigObj):
             self._callback(key)
 
 
-class ProjectFormat(object):
+class ProjectFormat(Parameterized):
+    """Class describing an open ChipWhisperer project.
+
+
+    """
     untitledFileName = os.path.normpath(os.path.join(Settings().value("project-home-dir"), "tmp/default.cwp"))
 
-    def __init__(self):
+    def __init__(self, prog_name="ChipWhisperer", prog_ver=""):
+        self.valid_traces = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.common.traces", True, True)
+        self._trace_format = None
+
+        self.params = Parameter(name="Project Settings", type="group")
+        self.params.addChildren([
+            {'name': 'Trace Format', 'type': 'list', 'values': self.valid_traces, 'get': self.getTraceFormat, 'set': self.setTraceFormat},
+        ])
+
+        self.findParam("Trace Format").setValue(TraceContainerNative(), addToList=True)
+
+        #self.traceParam = Parameter(name="Trace Settings", type='group', addLoadSave=True).register()
+        #self.params.getChild('Trace Format').stealDynamicParameters(self.traceParam)
+
         self.sigFilenameChanged = util.Signal()
         self.sigStatusChanged = util.Signal()
         self.dirty = util.Observable(True)
@@ -75,7 +95,19 @@ class ProjectFormat(object):
         self._traceManager = TraceManager().register()
         self._traceManager.dirty.connect(self.__dirtyCallback)
         self.setFilename(ProjectFormat.untitledFileName)
-        if __debug__: logging.debug('Created: ' + str(self))
+
+        self.setProgramName(prog_name)
+        self.setProgramVersion(prog_ver)
+
+        if __debug__:
+            logging.debug('Created: ' + str(self))
+
+    def getTraceFormat(self):
+        return self._trace_format
+
+    @setupSetParam("Trace Format")
+    def setTraceFormat(self, trace_format):
+        self._trace_format = trace_format
 
     def __dirtyCallback(self):
         self.dirty.setValue(self._traceManager.dirty.value() or self.dirty.value())

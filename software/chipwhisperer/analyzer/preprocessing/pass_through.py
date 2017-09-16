@@ -1,8 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2014, Colin O'Flynn <coflynn@newae.com>
+# Copyright (c) 2013-2014, NewAE Technology Inc
 # All rights reserved.
+#
+# Author: Colin O'Flynn
 #
 # Find this and more at newae.com - this file is part of the chipwhisperer
 # project, http://www.assembla.com/spaces/chipwhisperer
@@ -23,20 +25,18 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 
-import time
-from subprocess import call
-from _base import AuxiliaryTemplate
+from ._base import PreprocessingBase
 
+class PassThrough(PreprocessingBase):
+    """
+    To-do list:
+    [x] Nothing
+    """
+    _name = "Pass Through"
 
-class ResetAVR(object):
-    def __init__(self, path):
-        self._stk_path = path
-        self._part = "atmega328p"
-        
-    def reset(scope, target, project):
-        ret = call([self._stk_path, "-d%s" % self._part, "-s", "-cUSB"])
+    def __init__(self, traceSource=None, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
+        self.findParam('Enabled').hide()
 
-        if int(ret) != 0:
-            raise IOError("Error Calling Stk500.exe")
-
-        time.sleep(1)
+    def getTrace(self, n):
+        return self._traceSource.getTrace(n)

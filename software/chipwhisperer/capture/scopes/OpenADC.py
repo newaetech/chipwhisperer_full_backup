@@ -37,10 +37,33 @@ from chipwhisperer.capture.scopes.openadc_interface.naeusbchip import OpenADCInt
 from chipwhisperer.common.utils import util, timer, pluginmanager
 from chipwhisperer.common.utils.parameter import Parameter, setupSetParam
 from chipwhisperer.common.utils.pluginmanager import Plugin
+from chipwhisperer.common.utils.util import dict_to_str
+from collections import OrderedDict
 
+class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
+    """OpenADC scope object.
 
-class OpenADC(ScopeTemplate, Plugin):
-    """ Common API to OpenADC Hardware"""
+    This class contains the public API for the OpenADC hardware, including the
+    ChipWhisperer Lite/CW1200/Rev 2 boards. It includes specific settings for
+    each of these devices.
+
+    To connect to one of these devices, the easiest method is
+
+    >>> import chipwhisperer as cw
+    >>> scope = cw.scope()
+
+    This code will automatically detect an attached ChipWhisperer device and
+    connect to it.
+
+    For more help about scope settings, try help() on each of the ChipWhisperer
+    scope submodules:
+        scope.gain
+        scope.adc
+        scope.clock
+        scope.io
+        scope.trigger
+        scope.glitch
+    """
 
     _name = "ChipWhisperer/OpenADC"
 
@@ -53,6 +76,8 @@ class OpenADC(ScopeTemplate, Plugin):
         self.advancedSettings = None
         self.advancedSAD = None
         self.digitalPattern = None
+
+        self._is_connected = False
 
         scopes = pluginmanager.getPluginsInDictFromPackage("chipwhisperer.capture.scopes.openadc_interface", True, False, self.qtadc)
         self.scopetype = scopes[OpenADCInterface_NAEUSBChip._name]
@@ -94,6 +119,26 @@ class OpenADC(ScopeTemplate, Plugin):
     def setCurrentScope(self, scope):
         self.scopetype = scope
 
+    def _getCWType(self):
+        """Find out which type of ChipWhisperer this device is.
+
+        Returns:
+            One of the following:
+            - ""
+            - "cwlite"
+            - "cw1200"
+            - "cwrev2"
+        """
+        hwInfoVer = self.qtadc.sc.hwInfo.versions()[2]
+        if "ChipWhisperer" in hwInfoVer:
+            if "Lite" in hwInfoVer:
+                return "cwlite"
+            elif "CW1200" in hwInfoVer:
+                return "cw1200"
+            else:
+                return "cwrev2"
+        return ""
+
     def _con(self):
         if self.scopetype is not None:
             self.scopetype.con()
@@ -102,14 +147,8 @@ class OpenADC(ScopeTemplate, Plugin):
             if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
                 self.qtadc.sc.usbcon = self.scopetype.ser._usbdev
 
-            if "ChipWhisperer" in self.qtadc.sc.hwInfo.versions()[2]:
-
-                if "Lite" in self.qtadc.sc.hwInfo.versions()[2]:
-                    cwtype = "cwlite"
-                elif "CW1200" in self.qtadc.sc.hwInfo.versions()[2]:
-                    cwtype = "cw1200"
-                else:
-                    cwtype = "cwrev2"
+            cwtype = self._getCWType()
+            if cwtype != "":
 
                 #For OpenADC: If we have CW Stuff, add that now
                 #TODO FIXME - this shouldn't be needed, but if you connect/disconnect you can no longer
@@ -134,6 +173,15 @@ class OpenADC(ScopeTemplate, Plugin):
                     self.digitalPattern = ChipWhispererDigitalPattern.ChipWhispererDigitalPattern(self.qtadc.sc)
                     self.params.append(self.digitalPattern.getParams())
 
+            self.adc = self.qtadc.parm_trigger
+            self.gain = self.qtadc.parm_gain
+            self.clock = self.qtadc.parm_clock
+            self.io = self.advancedSettings.cwEXTRA.gpiomux
+            self.trigger = self.advancedSettings.cwEXTRA.triggermux
+            self.glitch = self.advancedSettings.glitch.glitchSettings
+
+            self.disable_newattr()
+            self._is_connected = True
             return True
         return False
 
@@ -156,6 +204,9 @@ class OpenADC(ScopeTemplate, Plugin):
         # TODO Fix this hack
         if hasattr(self.scopetype, "ser") and hasattr(self.scopetype.ser, "_usbdev"):
             self.qtadc.sc.usbcon = None
+
+        self.enable_newattr()
+        self._is_connected = False
         return True
 
     def arm(self):
@@ -185,3 +236,32 @@ class OpenADC(ScopeTemplate, Plugin):
         finally:
             self.setAutorefreshDCM(self.findParam('Auto-Refresh DCM Status'))
         return ret
+
+    def getLastTrace(self):
+        """Return the last trace captured with this scope.
+        """
+        return self.qtadc.datapoints
+
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['gain']    = self.gain._dict_repr()
+        dict['adc']     = self.adc._dict_repr()
+        dict['clock']   = self.clock._dict_repr()
+        dict['trigger'] = self.trigger._dict_repr()
+        dict['io']      = self.io._dict_repr()
+        dict['glitch']  = self.glitch._dict_repr()
+
+        return dict
+
+    def __repr__(self):
+        # Add some extra information about ChipWhisperer type here
+        if self._is_connected:
+            ret = "%s Device\n" % self._getCWType()
+            return ret + dict_to_str(self._dict_repr())
+        else:
+            ret = "ChipWhisperer/OpenADC device (disconnected)"
+            return ret
+
+    def __str__(self):
+        return self.__repr__()

@@ -97,25 +97,11 @@ class FrequencyMeasure(AuxiliaryTemplate):
     _name = "Frequency Counter"
 
     def __init__(self):
-        AuxiliaryTemplate.__init__(self)
-        scopes = {"None":None}
-        self.fm = None
         if ps5000a is not None:
-            scopes["PicoScope 5000A"] = ps5000a.PS5000a(connect=False)
-
-        self.getParams().addChildren([
-            {'name':'Device', 'type':'list', 'key':'device', 'values':scopes, 'get':self.getConnection, 'set':self.setConnection}
-        ])
-
-    def getConnection(self):
-        return self.fm
-
-    @setupSetParam("Device")
-    def setConnection(self, con):
-        if con == None:
-            self.fm == None
+            scope = ps5000a.PS5000a(connect=False)
+            self.fm = FreqMeasure(scope)
         else:
-            self.fm = FreqMeasure(con)
+            raise Warning("Could not connect to PicoScope 5000A - can't measure frequency in aux module!")
 
     def captureInit(self):
         self.fm.openScope()

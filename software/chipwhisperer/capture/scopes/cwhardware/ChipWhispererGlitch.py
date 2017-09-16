@@ -28,8 +28,10 @@ import logging
 import zipfile
 import StringIO
 import base64
+from collections import OrderedDict
 import chipwhisperer.capture.scopes.cwhardware.PartialReconfiguration as pr
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter, setupSetParam
+from chipwhisperer.common.utils import util
 
 glitchaddr = 51
 glitchoffsetaddr = 25
@@ -44,6 +46,373 @@ def SIGNEXT(x, b):
     x = x & ((1 << b) - 1)
     return (x ^ m) - m
 
+class GlitchSettings(util.DisableNewAttr):
+
+    # Output modes, sorted by ID (FPGA value)
+    _output_modes = [
+        "clock_xor",
+        "clock_or",
+        "glitch_only",
+        "clock_only",
+        "enable_only"
+    ]
+
+    # Trigger types
+    _glitch_triggers = [
+        "manual",
+        "ext_continuous",
+        "continuous",
+        "ext_single"
+    ]
+
+    def __init__(self, cwglitch):
+        self.cwg = cwglitch
+        self.disable_newattr()
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+
+        dict['clk_src'] = self.clk_src
+
+        dict['width'] = self.width
+        dict['width_fine'] = self.width_fine
+        dict['offset'] = self.offset
+        dict['offset_fine'] = self.offset_fine
+        dict['trigger_src'] = self.trigger_src
+        dict['arm_timing'] = self.arm_timing
+        dict['ext_offset'] = self.ext_offset
+        dict['repeat'] = self.repeat
+        dict['output'] = self.output
+
+        return dict
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
+
+    def manualTrigger(self):
+        """Manually trigger the glitch output.
+
+        This trigger is most useful in Manual trigger mode, where this is the
+        only way to cause a glitch.
+        """
+        self.cwg.glitchManual()
+
+    def readStatus(self):
+        """Read the status of the two glitch DCMs.
+
+        Return a tuple with 4 elements:
+        - phase1: The phase shift of DCM1
+        - phase2: The phase shift of DCM2
+        - lock1: Whether DCM1 is locked
+        - lock2: Whether DCM2 is locked
+        """
+        return self.cwg.getDCMStatus()
+
+    def resetDcms(self):
+        """Reset the two glitch DCMs.
+
+        This is automatically run after changing the glitch width or offset,
+        so this function is typically not necessary.
+        """
+        self.cwg.resetDCMs()
+
+    @property
+    def clk_src(self):
+        """The clock signal that the glitch DCM is using as input.
+
+        This DCM can be clocked from two different sources:
+        - "target": The HS1 clock from the target device
+        - "clkgen": The CLKGEN DCM output
+
+        Getter: Return the clock signal currently in use
+
+        Setter: Change the glitch clock source
+            Raises: ValueError if new value not one of "target" or "clkgen"
+        """
+        clk_val = self.cwg.glitchClkSource()
+        if clk_val == self.cwg.CLKSOURCE0_BIT:
+            return "target"
+        elif clk_val == self.cwg.CLKSOURCE1_BIT:
+            return "clkgen"
+        else:
+            raise ValueError("Received unexpected glitch module clock source %s" % (clk_val), clk_val)
+
+    @clk_src.setter
+    def clk_src(self, source):
+        if source == "target":
+            clk_val = self.cwg.CLKSOURCE0_BIT
+        elif source == "clkgen":
+            clk_val = self.cwg.CLKSOURCE1_BIT
+        else:
+            raise ValueError("Can't set glitch arm timing to %s; valid values: ('target', 'clkgen')" % source, source)
+        self.cwg.setGlitchClkSource(clk_val)
+
+    @property
+    def width(self):
+        """The width of a single glitch pulse, as a percentage of one period.
+
+        One pulse can range from -49.8% to roughly 49.8% of a period. The
+        system may not be reliable at 0%. Note that negative widths are allowed
+         - these act as if they are positive widths on the other half of the
+        clock cycle.
+
+        Getter: Return a float with the current glitch width.
+
+        Setter: Update the glitch pulse width. The value will be adjusted to
+        the closest possible glitch width.
+        """
+        return self.cwg.getGlitchWidth()
+
+    @width.setter
+    def width(self, value):
+        if value < self.cwg._min_width or value > self.cwg._max_width:
+            raise UserWarning("Can't use glitch width %s - rounding into [%s, %s]" % (value, self.cwg._min_width, self.cwg._max_width))
+        self.cwg.setGlitchWidth(value)
+
+    @property
+    def width_fine(self):
+        """The fine adjustment value on the glitch width.
+
+        This is a dimensionless number that makes small adjustments to the
+        glitch pulses' width. Valid range is [-255, 255].
+
+        Getter: Return the current glitch fine width
+
+        Setter: Update the glitch fine width
+            Raises:
+                TypeError if offset not an integer
+                ValueError if offset is outside of [-255, 255]
+        """
+        return self.cwg.getGlitchWidthFine()
+
+    @width_fine.setter
+    def width_fine(self, value):
+        try:
+            int_val = int(value)
+        except ValueError:
+            raise TypeError("Can't convert %s to integer" % value, value)
+
+        if int_val < -255 or int_val > 255:
+            raise ValueError("New fine width is outside range [-255, 255]")
+        self.cwg.setGlitchWidthFine(int_val)
+
+    @property
+    def offset(self):
+        """The offset from a rising clock edge to a glitch pulse rising edge,
+        as a percentage of one period.
+
+        A pulse may begin anywhere from -49.8% to 49.8% away from a rising
+        edge, allowing glitches to be swept over the entire clock cycle.
+
+        Getter: Return a float with the current glitch offset.
+
+        Setter: Set the glitch offset. The new value is rounded to the nearest
+        possible offset.
+            Raises:
+                TypeError if offset not an integer
+                UserWarning if value outside range [-50, 50] (value is rounded)
+        """
+        return self.cwg.getGlitchOffset()
+
+    @offset.setter
+    def offset(self, value):
+        if value < self.cwg._min_offset or value > self.cwg._max_offset:
+            raise UserWarning("Can't use glitch offset %s - rounding into [%s, %s]" % (value, self.cwg._min_offset, self.cwg._max_offset))
+        self.cwg.setGlitchOffset(value)
+
+    @property
+    def offset_fine(self):
+        """The fine adjustment value on the glitch offset.
+
+        This is a dimensionless number that makes small adjustments to the
+        glitch pulses' offset. Valid range is [-255, 255].
+
+        Getter: Return the current glitch fine offset
+
+        Setter: Update the glitch fine offset
+            Raises:
+                TypeError if offset not an integer
+                ValueError if offset is outside of [-255, 255]
+        """
+        return self.cwg.getGlitchOffsetFine()
+
+    @offset_fine.setter
+    def offset_fine(self, value):
+        try:
+            int_val = int(value)
+        except ValueError:
+            raise TypeError("Can't convert %s to integer" % value, value)
+
+        if int_val < -255 or int_val > 255:
+            raise ValueError("New fine offset is outside range [-255, 255]")
+        self.cwg.setGlitchOffsetFine(int_val)
+
+    @property
+    def trigger_src(self):
+        """The trigger signal for the glitch pulses.
+
+        The glitch module can use four different types of triggers:
+        - "continuous": Constantly trigger glitches
+        - "manual": Only trigger glitches through API calls/GUI actions
+        - "ext_single": Use the trigger module. One glitch per scope arm.
+        - "ext_continuous": Use the trigger module. Many glitches per arm.
+
+        Getter: Return the current trigger source.
+
+        Setter: Change the trigger source.
+            Raises: ValueError if value not listed above
+        """
+        trig_src = self.cwg.glitchTrigger()
+        return self._glitch_triggers[trig_src]
+
+    @trigger_src.setter
+    def trigger_src(self, src):
+        try:
+            trig_idx = self._glitch_triggers.index(src)
+        except ValueError:
+            raise ValueError("Can't set glitch trigger to %s; valid values: %s" % (src, self._glitch_triggers), src)
+
+        self.cwg.setGlitchTrigger(trig_idx)
+
+    @property
+    def arm_timing(self):
+        """When to arm the glitch in single-shot mode.
+
+        If the glitch module is in "ext_single" trigger mode, it must be armed
+        when the scope is armed. There are two timings for this event:
+        - "before_scope": The glitch module is armed first.
+        - "after_scope": The scope is armed first. This is the default.
+
+        This setting may be helpful if trigger events are happening very early.
+
+        If the glitch module is not in external trigger single-shot mode, this
+        setting has no effect.
+
+        Getter: Return the current arm timing ("before_scope" or "after_scope")
+
+        Setter: Change the arm timing
+            Raises: ValueError if value not listed above
+        """
+        timing = self.cwg.getArmTiming()
+        if timing == 1:
+            return "before_scope"
+        elif timing == 2:
+            return "after_scope"
+        else:
+            raise ValueError("Received unexpected glitch arm timing %s" % (timing), timing)
+
+    @arm_timing.setter
+    def arm_timing(self, value):
+        if value == "before_scope":
+            int_val = 1
+        elif value == "after_scope":
+            int_val = 2
+        else:
+            raise ValueError("Can't set glitch arm timing to %s; valid values: ('before_scope', 'after_scope')" % value, value)
+
+        self.cwg.setArmTiming(int_val)
+
+    @property
+    def ext_offset(self):
+        """How long the glitch module waits between a trigger and a glitch.
+
+        After the glitch module is triggered, it waits for a number of clock
+        cycles before generating glitch pulses. This delay allows the glitch to
+        be inserted at a precise moment during the target's execution to glitch
+        specific instructions.
+
+        Tip: it is possible to get more precise offsets by clocking the glitch
+        module faster than the target board.
+
+        This offset must be in the range [0, 2**32).
+
+        Getter: Return the current external trigger offset.
+
+        Setter: Set the external trigger offset.
+            Raises:
+                TypeError if offset not an integer
+                ValueError if offset outside of range [0, 2**32)
+        """
+        return self.cwg.triggerOffset()
+
+    @ext_offset.setter
+    def ext_offset(self, offset):
+        try:
+            int_val = int(offset)
+        except ValueError:
+            raise TypeError("Can't convert %s to integer" % offset, offset)
+
+        if int_val < 0 or int_val >= 2**32:
+            raise ValueError("New trigger offset %d is outside range [0, 2**32)" % int_val)
+
+        self.cwg.setTriggerOffset(offset)
+
+    @property
+    def repeat(self):
+        """The number of glitch pulses to generate per trigger.
+
+        When the glitch module is triggered, it produces a number of pulses
+        that can be combined with the clock signal. This setting allows for
+        the glitch module to produce stronger glitches (especially during
+        voltage glitching).
+
+        Repeat counter must be in the range [1, 255].
+
+        Getter: Return the current repeat value (integer)
+
+        Setter: Set the repeat counter
+            Raises:
+                TypeError if value not an integer
+                ValueError if value outside [1, 255]
+        """
+        return self.cwg.numGlitches()
+
+    @repeat.setter
+    def repeat(self, value):
+        try:
+            int_val = int(value)
+        except ValueError:
+            raise TypeError("Can't convert %s to integer" % value, value)
+
+        if int_val < 1 or int_val > 255:
+            raise ValueError("New repeat value %d is outside range [1, 255]", int_val)
+
+        self.cwg.setNumGlitches(int_val)
+
+    @property
+    def output(self):
+        """The type of output produced by the glitch module.
+
+        There are 5 ways that the glitch module can combine the clock with its
+        glitch pulses:
+        - "clock_only": Output only the original input clock.
+        - "glitch_only": Output only the glitch pulses - do not use the clock.
+        - "clock_or": Output is high if either the clock or glitch are high.
+        - "clock_xor": Output is high if clock and glitch are different.
+        - "enable_only": Output is high for glitch.repeat cycles.
+
+        Some of these settings are only useful in certain scenarios:
+        - Clock glitching: "clock_or" or "clock_xor"
+        - Voltage glitching: "glitch_only" or "enable_only"
+
+        Getter: Return the current glitch output mode (one of above strings)
+
+        Setter: Change the glitch output mode.
+            Raises: ValueError if value not in above strings
+        """
+        output_mode = self.cwg.glitchType()
+        return self._output_modes[output_mode]
+
+    @output.setter
+    def output(self, value):
+        try:
+            output_idx = self._output_modes.index(value)
+        except ValueError:
+            raise ValueError("Can't set glitch mode to %s; valid values: %s" % (value, self._output_modes), value)
+        self.cwg.setGlitchType(output_idx)
 
 class ChipWhispererGlitch(Parameterized):
     """
@@ -59,17 +428,33 @@ class ChipWhispererGlitch(Parameterized):
 
         # Setup FPGA partial configuration dataZ
         self.prCon = pr.PartialReconfigConnection()
+        self.prEnabled = False
         self.oa = oa
+
+        # Glitch width/offset
+        # Note that these are ints scaled by 256/100
+        self._width = 26
+        self._offset = 26
+
+        # These ranges are updated during __init__: see below
+        self._min_width = 0
+        self._max_width = 100
+
+        self._min_offset = 0
+        self._max_offset = 100
+
+        # Single-shot arm timing
+        self._ssarm = 2
 
         self.params = Parameter(name=self.getName(), type='group').register()
         self.params.addChildren([
             {'name':'Clock Source', 'type':'list', 'values':{'Target IO-IN':self.CLKSOURCE0_BIT, 'CLKGEN':self.CLKSOURCE1_BIT},'set':self.setGlitchClkSource, 'get':self.glitchClkSource},
-            {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'action':self.updatePartialReconfig},
+            {'name':'Glitch Width (as % of period)', 'key':'width', 'type':'float', 'limits':(self._min_width, self._max_width), 'step':0.39062, 'readonly':True, 'set':self.setGlitchWidth, 'get':self.getGlitchWidth},
             {'name':'Glitch Width (fine adjust)', 'key':'widthfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchWidthFine, 'get':self.getGlitchWidthFine},
-            {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(0, 100), 'step':0.39062, 'readonly':True, 'value':10, 'action':self.updatePartialReconfig},
+            {'name':'Glitch Offset (as % of period)', 'key':'offset', 'type':'float', 'limits':(self._min_offset, self._max_offset), 'step':0.39062, 'readonly':True, 'set':self.setGlitchOffset, 'get':self.getGlitchOffset},
             {'name':'Glitch Offset (fine adjust)', 'key':'offsetfine', 'type':'int', 'limits':(-255, 255), 'set':self.setGlitchOffsetFine, 'get':self.getGlitchOffsetFine},
             {'name':'Glitch Trigger', 'type':'list', 'values':{'Ext Trigger:Continous':1, 'Manual':0, 'Continuous':2, 'Ext Trigger:Single-Shot':3}, 'set':self.setGlitchTrigger, 'get':self.glitchTrigger},
-            {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'value':2},
+            {'name':'Single-Shot Arm', 'type':'list', 'key':'ssarm', 'values':{'Before Scope Arm':1, 'After Scope Arm':2}, 'set':self.setArmTiming, 'get':self.getArmTiming},
             {'name':'Ext Trigger Offset', 'type':'int', 'range':(0, 50000000), 'set':self.setTriggerOffset, 'get':self.triggerOffset},
             {'name':'Repeat', 'type':'int', 'limits':(1,255), 'set':self.setNumGlitches, 'get':self.numGlitches},
             {'name':'Manual Trigger / Single-Shot Arm', 'type':'action', 'action': self.glitchManual},
@@ -135,14 +520,17 @@ class ChipWhispererGlitch(Parameterized):
         if self.prEnabled:
             # Enable glitch width, check what we've got access to
             self.findParam('width').setReadonly(False)
-            lim = (self.glitchPR.limitList[0][0] / 2.55, self.glitchPR.limitList[0][1] / 2.55)
-            self.findParam('width').setLimits(lim)
+            self._min_width = self.glitchPR.limitList[0][0] / 2.55
+            self._max_width = self.glitchPR.limitList[0][1] / 2.55
+            self.findParam('width').setLimits((self._min_width, self._max_width))
 
             self.findParam('offset').setReadonly(False)
-            lim = (self.glitchPR.limitList[1][0] / 2.55, self.glitchPR.limitList[1][1] / 2.55)
-            self.findParam('offset').setLimits(lim)
+            self._min_offset = self.glitchPR.limitList[1][0] / 2.55
+            self._max_offset = self.glitchPR.limitList[1][1] / 2.55
+            self.findParam('offset').setLimits((self._min_offset, self._max_offset))
 
         self.setOpenADC(oa)
+        self.glitchSettings = GlitchSettings(self)
 
     def setOpenADC(self, oa):
         self.oa = None
@@ -170,19 +558,16 @@ class ChipWhispererGlitch(Parameterized):
         is enabled with self.prEnabled.
         """
 
-        width = float(self.findParam('width').getValue())
-        offset = float(self.findParam('offset').getValue())
+        if not self.prEnabled:
+            return
 
-        widthint = round((width / 100) * 256)
-        offsetint = round((offset / 100) * 256)
-
-        if widthint == 0:
+        if self._width == 0:
             logging.warning('Partial reconfiguration for width = 0 may not work')
 
-        if offsetint == 0:
+        if self._offset == 0:
             logging.warning('Partial reconfiguration for offset = 0 may not work')
 
-        bs = self.glitchPR.getPartialBitstream([widthint, offsetint])
+        bs = self.glitchPR.getPartialBitstream([self._width, self._offset])
 
         if self.prEnabled:
             self.prCon.program(bs)
@@ -195,23 +580,20 @@ class ChipWhispererGlitch(Parameterized):
     def updateGlitchReadBack(self, test=False):
         """Updates the readback register in the FPGA with glitch information, used for LCD update on CW1200 hardware."""
 
-        width = float(self.findParam('width').getValue())
-        offset = float(self.findParam('offset').getValue())
-
         #Don't write if PR disable by accident
         if self.oa is None:
             return
 
-        widthint = int(round((width / 100) * 256))
-        offsetint = int(round((offset / 100) * 256))
+        width = self.getGlitchWidth()
+        offset = self.getGlitchOffset()
 
         cmd = bytearray(8)
 
         #Integer downloads
-        cmd[0] = offsetint & 0xff
-        cmd[1] = (offsetint >> 8) & 0xff
-        cmd[2] = widthint & 0xff
-        cmd[3] = (widthint >> 8) & 0xff
+        cmd[0] = self._offset & 0xff
+        cmd[1] = (self._offset >> 8) & 0xff
+        cmd[2] = self._width & 0xff
+        cmd[3] = (self._width >> 8) & 0xff
 
         #Floating point info
         cmd[4] = int(offset) & 0xff
@@ -221,6 +603,32 @@ class ChipWhispererGlitch(Parameterized):
         cmd[7] = int(("%f"%width).split(".")[1][0:2]) & 0xff
 
         self.oa.sendMessage(CODE_WRITE, glitchreadbackaddr, cmd, Validate=False)
+
+    @setupSetParam("Glitch Width (as % of period)")
+    def setGlitchWidth(self, width):
+        if width > self._max_width:
+            width = self._max_width
+        if width < self._min_width:
+            width = self._min_width
+        self._width = int(round((width/100.) * 256.))
+
+        self.updatePartialReconfig()
+
+    def getGlitchWidth(self):
+        return self._width * 100. / 256.
+
+    @setupSetParam("Glitch Offset (as % of period)")
+    def setGlitchOffset(self, offset):
+        if offset > self._max_offset:
+            offset = self._max_offset
+        if offset < self._min_offset:
+            offset = self._min_offset
+        self._offset = int(round((offset / 100.) * 256.))
+
+        self.updatePartialReconfig()
+
+    def getGlitchOffset(self):
+        return self._offset * 100. / 256.
 
     @setupSetParam("Ext Trigger Offset")
     def setTriggerOffset(self, offset):
@@ -410,12 +818,19 @@ class ChipWhispererGlitch(Parameterized):
         resp = self.oa.sendMessage(CODE_READ, glitchaddr, Validate=False, maxResp=8)
         return (resp[7] & self.CLKSOURCE_MASK)
 
+    def getArmTiming(self):
+        return self._ssarm
+
+    @setupSetParam("Single-Shot Arm")
+    def setArmTiming(self, val):
+        self._ssarm = val
+
     def armPreScope(self):
         """Called before scope trigger is armed"""
-        if self.findParam('ssarm').getValue() == 1:
+        if self.getArmTiming() == 1:
             self.glitchArm()
 
     def armPostScope(self):
         """Called after scope trigger is armed"""
-        if self.findParam('ssarm').getValue() == 2:
+        if self.getArmTiming() == 2:
             self.glitchArm()

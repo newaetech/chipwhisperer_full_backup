@@ -23,7 +23,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
+import time
 from chipwhisperer.common.utils.parameter import Parameter
+from chipwhisperer.common.utils import util
 
 class FakeQTimer(object):
     """ Replicates basic QTimer() API but does nothing """
@@ -82,3 +84,18 @@ def runTask(task, timeout_in_s, single_shot = False, start_timer = False):
     if start_timer:
         timer.start()
     return timer
+
+class _DelayCallback(object):
+    """Class used to help nonBlockingDelay work"""
+    def __init__(self):
+        self.running = True
+
+    def done(self):
+        self.running = False
+
+def nonBlockingDelay(delay_ms):
+    DC = _DelayCallback()
+    Timer().singleShot(delay_ms, DC.done)
+    while DC.running:
+        time.sleep(0.01)
+        util.updateUI()

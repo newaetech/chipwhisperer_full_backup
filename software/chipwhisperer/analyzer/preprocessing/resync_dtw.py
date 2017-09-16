@@ -27,48 +27,84 @@
 
 from ._base import PreprocessingBase
 from chipwhisperer.analyzer.utils.fasterdtw import fastdtw
+from chipwhisperer.common.utils.parameter import setupSetParam
 
 class ResyncDTW(PreprocessingBase):
+    """Align traces using the Dynamic Time Warp algorithm. Doesn't play well
+    with noisy traces, but can remove random per-trace delays and synchronize
+    entire trace.
+    """
     _name = "Resync: Dynamic Time Warp"
     _description = "Aligns traces to match a reference trace using the Fast Dynamic Time Warp algorithm."
 
-    def __init__(self, traceSource=None):
-        PreprocessingBase.__init__(self, traceSource)
-        self.rtrace = 0
-        self.debugReturnSad = False
-        self.ccStart = 0
-        self.ccEnd = 1
-        self.wdStart = 0
-        self.wdEnd = 1
+    def __init__(self, traceSource=None, name=None):
+        PreprocessingBase.__init__(self, traceSource, name=name)
+        self._rtrace = 0
+        self._radius = 3
 
         self.params.addChildren([
-            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'value':0, 'action':self.updateScript},
-            {'name':'Radius', 'key':'radius', 'type':'int', 'value':3}
+            {'name':'Ref Trace', 'key':'reftrace', 'type':'int', 'get':self._getRefTrace, 'set':self._setRefTrace},
+            {'name':'Radius', 'key':'radius', 'type':'int', 'get':self._getRadius, 'set':self._setRadius}
         ])
-        self.updateScript()
 
-    def updateScript(self, _=None):
-        self.addFunction("init", "setEnabled", "%s" % self.findParam('enabled').getValue())
-        self.addFunction("init", "setReference", "rtraceno=%d" % (self.findParam('reftrace').getValue()))
+    @setupSetParam("Ref Trace")
+    def _setRefTrace(self, num):
+        self._rtrace = num
 
-    def setReference(self, rtraceno=0):
-        self.rtrace = rtraceno
+    def _getRefTrace(self):
+        return self._rtrace
+
+    @property
+    def ref_trace(self):
+        """The trace being used as a reference.
+
+        Setter raises TypeError unless value is an integer."""
+        return self._getRefTrace()
+
+    @ref_trace.setter
+    def ref_trace(self, num):
+        if not isinstance(num, (int, long)):
+            raise TypeError("Expected int; got %s" % type(num), num)
+        self._setRefTrace(num)
+
+    @setupSetParam("Radius")
+    def _setRadius(self, radius):
+        self._radius = radius
+
+    def _getRadius(self):
+        return self._radius
+
+    @property
+    def radius(self):
+        """The radius used in the DTW calculation.
+
+        This is an integer value that roughly describes how much the DTW
+        algorithm is allowed to backtrack in its search. High values take
+        longer but are better at dealing with many smaller delays.
+        """
+        return self._getRadius()
+
+    @radius.setter
+    def radius(self, radius):
+        if not isinstance(radius, (int, long)):
+            raise TypeError("Expected int; got %s" % type(radius), radius)
+        self._setRadius(radius)
    
     def getTrace(self, n):
         if not self.enabled:
             return self._traceSource.getTrace(n)
 
         trace = self._traceSource.getTrace(n)
-        ref_trace = self._traceSource.getTrace(self.rtrace)
+        ref_trace = self._traceSource.getTrace(self._rtrace)
         if trace is None or ref_trace is None:
             return None
 
-        aligned = self.alignTraces(ref_trace, trace)
+        aligned = self._alignTraces(ref_trace, trace)
         return aligned
         
-    def alignTraces(self, ref, trace):
+    def _alignTraces(self, ref, trace):
         N = self._traceSource.numPoints()
-        r = self.findParam('radius').getValue()
+        r = self._radius
         #try:
         dist, path = fastdtw(ref, trace, radius=r, dist=None)
         #except:
