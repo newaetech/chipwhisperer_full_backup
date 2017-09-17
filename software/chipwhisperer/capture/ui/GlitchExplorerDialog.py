@@ -85,6 +85,9 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         # self.mainSplitter.setHandleWidth(100)
 
         self.mainLayout.addWidget(self.mainSplitter)
+
+        self.mainLayout.addWidget(QLabel("Glitch Explorer Changed in V4.0 - see wiki.newae.com/cw3to4."))
+
         self.setLayout(self.mainLayout)
         self.hide()
 

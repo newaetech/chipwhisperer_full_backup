@@ -16,11 +16,12 @@ class IterateGlitchWidthOffset(object):
 
     def change_glitch_parameters(self, scope, target, project):
         """ Example of simple glitch parameter modification function. """
-        self.offset += 0.1
+        # This value is minimum clock offset/width increment
+        self.offset += 0.390625
 
         if self.offset > 40:
             self.offset = self._starting_offset
-            self.width += 0.2
+            self.width += 0.390625
 
         if self.width > 40:
             self.width = self._starting_width
