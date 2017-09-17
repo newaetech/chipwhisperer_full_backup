@@ -167,8 +167,9 @@ class AuxList(Parameterized):
                           "New aux modules can't be added directly from the GUI - see chipwhisperer/capture/scripts for "
                           "examples of aux module setup.")
 
-    def register(self, func, timing):
+    def register(self, func, timing, override_class=True):
         """Register a function call with the aux module list.
+           By default overrides an existing one with same preview.
 
         Returns the ID of the registered function.
 
@@ -181,11 +182,27 @@ class AuxList(Parameterized):
         if timing not in self._valid_timings.keys():
             raise ValueError("Invalid timing provided: expected one of %s" % self._valid_timings, keys(), timing)
 
-        new_item = AuxListObject(func, self, self._next_id)
-        self._next_id += 1
+        existing_item = None
+        if override_class:
+            for groups in self._aux_items:
+                for item in self._aux_items[groups]:
+                    if item:
+                        new_funct_string = func.im_class.__name__ + '.' + func.__name__
+                        found_item_string = item.function.im_class.__name__ + '.' + item.function.__name__
 
-        self._aux_items[timing].append(new_item)
-        self._param_groups[timing].append(new_item.getParams())
+                        if new_funct_string == found_item_string and timing == groups:
+                            existing_item = item
+
+        if existing_item is None:
+            new_item = AuxListObject(func, self, self._next_id)
+            self._next_id += 1
+
+            self._aux_items[timing].append(new_item)
+            self._param_groups[timing].append(new_item.getParams())
+        else:
+            new_item = existing_item
+            existing_item._func = func
+            self.getParams().refreshAllParameters()
 
         return new_item.id
 

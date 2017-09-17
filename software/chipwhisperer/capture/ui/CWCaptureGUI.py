@@ -45,13 +45,13 @@ class CWCaptureGUI(CWMainGUI):
         # Observers (callback methods)
         self.api.sigNewInputData.connect(self.newTargetData)
         self.api.sigConnectStatus.connect(self.connectStatusChanged)
-        self.api.sigTraceDone.connect(self.glitchMonitor.traceDone)
-        self.api.sigCampaignStart.connect(self.glitchMonitor.campaignStart)
-        self.api.sigCampaignDone.connect(self.glitchMonitor.campaignDone)
+        self.api.sigTraceDone.connect(self.glitch_explorer.traceDone)
+        self.api.sigCampaignStart.connect(self.glitch_explorer.campaignStart)
+        self.api.sigCampaignDone.connect(self.glitch_explorer.campaignDone)
 
     def loadExtraModules(self):
         self.serialTerminal = SerialTerminalDialog(self, self.api)
-        self.glitchMonitor = GlitchExplorerDialog(self)
+        self.glitch_explorer = GlitchExplorerDialog(self)
 
     def addSettingsDocks(self):
         self.settingsGeneralDock = self.addSettings(self.api.params)
@@ -91,7 +91,7 @@ class CWCaptureGUI(CWMainGUI):
             self.captureStatus.setDefaultAction(self.captureStatusActionDis)
 
     def newTargetData(self, data):
-        self.glitchMonitor.addResponse(data)
+        self.glitch_explorer.addResponse(data)
 
     def addToolMenuItems(self):
         self.terminalAct = QAction('Terminal', self, statusTip='Open Simple Serial Terminal',
@@ -99,7 +99,7 @@ class CWCaptureGUI(CWMainGUI):
 
         self.toolMenu.addAction(self.terminalAct)
         self.glitchMonitorAct = QAction('Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
-                                        triggered=self.glitchMonitor.show)
+                                        triggered=self.glitch_explorer.show)
         self.toolMenu.addAction(self.glitchMonitorAct)
 
         self.encryptionStatusMonitor = EncryptionStatusMonitor(self)

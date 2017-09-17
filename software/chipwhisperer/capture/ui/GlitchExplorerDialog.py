@@ -28,6 +28,7 @@ import logging
 import math
 import pickle
 import sys
+from collections import OrderedDict
 from datetime import datetime
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -36,93 +37,6 @@ import chipwhisperer.common.utils.qt_tweaks as QtFixes
 from chipwhisperer.common.utils.parameter import Parameterized, Parameter
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.results.base import ResultsBase
-
-
-class TuningParameter(Parameterized):
-    def __init__(self, num):
-        super(TuningParameter, self).__init__()
-        self._name = 'Tuning Parameter %d' % num
-        self.paramNum = num
-        self.rangeComplete = util.Signal()
-        self.nameChanged = util.Signal()
-        self.tracesreqChanged = util.Signal()
-
-        self.getParams().addChildren([
-            {'name':'Name', 'type':'str', 'key':'humanname', 'value':'Param #%d' % num, 'action':lambda p:self.nameChange(p.getValue())},
-            {'name':'Parameter Path', 'type':'str', 'key':'parampath', 'value':'[]', 'action':self.updateParams},
-            {'name':'Data Format', 'type':'list', 'key':'datatype', 'values':{'Int':int, 'Float':float}, 'value':int, 'action':self.updateParams},
-            {'name':'Range', 'type':'range', 'key':'range', 'value':(0, 10), 'default':(0, 10), 'action':self.updateParams},
-            {'name':'Value', 'type':'float', 'key':'curval', 'value':1.0},
-            {'name':'Step', 'type':'float', 'key':'step', 'value':1.0, 'action':self.updateParams},
-            {'name':'Repeat', 'type':'int', 'key':'repeat', 'value':1, 'action':self.updateParams},
-            {'name':'Mode', 'type':'list', 'key':'mode', 'values':["Linear"], 'value':"Linear", 'action':self.updateParams},
-        ])
-        self.cnt = 0
-        self.updateParams()
-
-    def nameChange(self, newname):
-        self.nameChanged.emit(self.paramNum, newname)
-
-    def name(self):
-        return self.findParam('humanname').getValue()
-
-    def reset(self):
-        self.findParam('curval').setValue(self.findParam('range').getValue()[0])
-        self.updateParams()
-
-    def updateParams(self, _=None):
-        rng = self.findParam('range').getValue()
-
-        # Force to be valid values
-        curval = self.findParam('curval').getValue()
-        curval = max(curval, rng[0])
-        curval = min(curval, rng[1])
-        self.findParam('curval').setLimits(rng)
-        self.findParam('curval').setValue(curval)
-
-        self.paramRange = rng
-        self.paramValueItem = self.findParam('curval')
-        self.paramStep = self.findParam('step').getValue()
-        self.paramRepeat = self.findParam('repeat').getValue()
-        self.paramType = self.findParam('datatype').getValue()
-        try:
-            self.paramScript = eval(self.findParam('parampath').getValue())
-        except SyntaxError as e:
-            logging.error('Syntax Error: %s' % str(e))
-
-        try:
-            Parameter.setParameter(self.paramScript+[curval])
-        except:
-            pass
-        self.tracesrequired = math.ceil(((self.paramRange[1] - self.paramRange[0]) / self.paramStep) * self.paramRepeat)+1
-        self.tracesreqChanged.emit(self.paramNum, self.tracesrequired)
-
-    def findNewValue(self, mode="linear"):
-        """ Find new value for this parameter """
-
-        if str.lower(mode) == "linear":
-            self.cnt += 1
-            if self.cnt == self.paramRepeat:
-                # Done this one, next step
-                self.cnt = 0
-                newval = self.paramValueItem.getValue() + self.paramStep
-
-                if newval > self.paramRange[1]:
-                    newval = self.paramRange[0]
-                    self.rangeComplete.emit(self.paramNum)
-
-                # Cast type to required value
-                newval = self.paramType(newval)
-
-                self.paramValueItem.setValue(newval)
-
-                parameter = self.paramScript+[newval]
-                try:
-                    Parameter.setParameter(parameter)
-                except:
-                    raise StopIteration("Choose a valid Parameter Path/Value combination. Got: " + str(parameter))
-        else:
-            raise ValueError("Unknown Increment Type %s" % mode)
 
 
 class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
@@ -138,7 +52,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.mainSplitter.setOrientation(Qt.Vertical)
 
         self.tableList = []
-        self.tuneParamList = []
+        self.tune_parameter_list = OrderedDict()
 
         #Add default table
         self.table = QTableWidget(1,1)
@@ -149,11 +63,6 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.getParams().addChildren([
             {'name':'Clear Output Table', 'type':'action', 'action':self.clearTable},
             {'name':'Plot Widget', 'type':'action', 'action':self.openPlotWidget},
-            {'name':'Reset', 'type':'action', 'action':self.reset, 'tip':"Resets all Tuning Parameters to its minimum value."},
-            {'name':'Tuning Parameters', 'key':'numtune', 'type':'int', 'value':0, 'limits':(0, 4), 'action':self.updateParameters, 'readonly':False},
-            {'name':'Traces Required', 'key':'tracesreq', 'type':'int', 'value':1, 'limits':(1, 1E99), 'readonly':True, 'children':[
-                {'name':'Use this value', 'type':'action', 'action':lambda _: Parameter.setParameter(['Generic Settings', 'Acquisition Settings', 'Number of Traces',self.findParam('tracesreq').getValue()])},
-             ]},
             {'name':'Normal Response', 'type':'str', 'key':'normalresp', 'value':'s.startswith("Bad")'},
             {'name':'Successful Response', 'type':'str', 'key':'successresp', 'value':'s.startswith("Welcome")'},
 
@@ -185,6 +94,17 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.clearTable()
         self._campaignRunning = False
 
+    def add_data(self, name, value):
+        doupdate = False
+
+        if name not in self.tune_parameter_list.keys():
+            doupdate = True
+
+        self.tune_parameter_list[name] = value
+
+        if doupdate:
+            self.updateTableHeaders()
+
     def openPlotWidget(self, _):
         if "Glitch Explorer" not in ResultsBase.registeredObjects:
             ResultsBase.createNew("Scatter Plot", "Glitch Explorer")
@@ -197,23 +117,18 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         widget = ResultsBase.registeredObjects.get("Glitch Explorer", None)
         if widget is not None:
             widget.clearPushed()
-            widget.setLabels(top="Glitch Map", xaxis=self.tuneParamList[0].name() if len(self.tuneParamList)>0 else "",
-                             yaxis=self.tuneParamList[1].name() if len(self.tuneParamList)>1 else "")
-
-    def tuneEnabled(self, status):
-        self.findParam('numtune').setReadonly(not status)
+            widget.setLabels(top="Glitch Map", xaxis=self.tune_parameter_list.keys()[0] if len(self.tune_parameter_list)>0 else "",
+                             yaxis=self.tune_parameter_list.keys()[1] if len(self.tune_parameter_list)>1 else "")
 
     def campaignStart(self, prefixname):
         """Called when acqusition campaign (multi-api) starts, generates filename"""
         self._autosavefname = self.parent().api.project().getDataFilepath(prefixname + "_glitchresults.p", subdirectory="glitchresults")["abs"]
         self._autosavef = None
         self._campaignRunning = True
-        self.tuneEnabled(False)
         self.clearPlotWidget()
 
     def campaignDone(self):
         self._campaignRunning = False
-        self.tuneEnabled(True)
 
         if self._autosavef:
             self._autosavef.close()
@@ -230,8 +145,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.statusLabel.setText(lbl)
 
     def reset(self, ignored=None):
-        for t in self.tuneParamList:
-            t.reset()
+        self.tune_parameter_list = OrderedDict()
 
     def clearTable(self, ignored=None):
         self.tableList = []
@@ -246,36 +160,6 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         self.table.setColumnWidth(3, 80)
         self.table.sortByColumn(3, Qt.DescendingOrder)
 
-    def updateParameters(self, ignored=None):
-        numparams = self.findParam('numtune').getValue()
-
-        # Did number change? Adjust if needed
-        while numparams < len(self.tuneParamList):
-            #Shed parameters
-            self.tuneParamList[-1].getParams().delete()
-            self.tuneParamList.pop()
-
-        while numparams > len(self.tuneParamList):
-            #Add parameters
-            #p = Parameter.create(name='Tuning Parameter %d' % len(self.tuneParamList), type='group', children=self.glitchTuneParamTemplate)
-            p = TuningParameter(len(self.tuneParamList))
-            self.tuneParamList.append(p)
-            self.getParams().append(p.getParams())
-
-            # Do stuff
-            p.nameChanged.connect(self.updateTableHeaders)
-            p.rangeComplete.connect(self.rangeDone)
-            p.tracesreqChanged.connect(self.tracesreqChanged)
-
-        self.updateTableHeaders()
-        self.tracesreqChanged()
-        
-    def tracesreqChanged(self, pnum=None, newnum=None):
-        treq = 1
-        for t in self.tuneParamList:
-                treq *= t.tracesrequired
-        self.findParam('tracesreq').setValue(treq, ignoreReadonly=True)
-
     def updateTableHeaders(self, ignored=None, ignoredmore=None, override=None):
         headerlist = ["Status", "Sent", "Received", "Date"]
 
@@ -283,26 +167,16 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
             for c in override:
                 headerlist.append(c)
         else:
-            for t in self.tuneParamList:
-                headerlist.append(t.name())
+            for t in self.tune_parameter_list.keys():
+                headerlist.append(t)
 
         self.table.setColumnCount(len(headerlist))
         self.table.setHorizontalHeaderLabels(headerlist)
 
-    def rangeDone(self, pnum):
-        if (pnum + 1) < len(self.tuneParamList):
-            self.tuneParamList[pnum + 1].findNewValue()
-
     def traceDone(self):
         """ Single api done """
 
-        # TODO: Improve how looping is done
-        if len(self.tuneParamList) > 0:
-            # Always increment lowest, triggers upper values
-            # try:
-                self.tuneParamList[0].findNewValue()
-            # except Exception as e:
-            #     raise StopIteration(e)
+        #Trace is done - write values to table as was done OK
 
     def appendToTable(self, newdata):
         """ Append a result to the display table """
@@ -377,12 +251,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
         respstr = str(bytearray(resp))
         # respstr = ' '.join(["%02x" % t for t in bytearray(resp)])
 
-        settingsList = []
-        for i in range(0, len(self.tuneParamList)):
-            try:
-                settingsList.append(Parameter.getParameter(self.tuneParamList[i].paramScript))
-            except:
-                raise StopIteration("Choose a valid Parameter Path for Tuning Parameter \"%s\" . Got: %s" % (self.tuneParamList[i].name(), self.tuneParamList[i].paramScript))
+        settingsList = self.tune_parameter_list.values()
         newdata = {"input":"", "output":respstr, "normal":normresult, "success":succresult, "settings":settingsList, "date":starttime}
 
         self.tableList.append(newdata)
@@ -403,7 +272,7 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
                 pickle.dump({"notes":self.findParam(["Recordings",'savenotes']).getValue()}, self._autosavef)
 
                 # Add headers
-                cmds = [self.tuneParamList[i].findParam('parampath').getValue() for i in range(0, len(self.tuneParamList))]
+                cmds = self.tune_parameter_list.keys()
                 pickle.dump({"commands":cmds}, self._autosavef)
 
             # Add data
