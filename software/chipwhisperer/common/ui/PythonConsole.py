@@ -422,7 +422,7 @@ class QPythonScriptBrowser(QtGui.QWidget):
     sigSelectionChanged = QtCore.Signal()
     sigSelectionConfirmed = QtCore.Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, default="capture"):
         super(QPythonScriptBrowser,self).__init__(parent)
 
         self.tab_bar = QtGui.QTabBar()
@@ -431,8 +431,15 @@ class QPythonScriptBrowser(QtGui.QWidget):
         self.tab_bar.addTab("Recent")
         self.tab_bar.currentChanged.connect(self.tabChanged)
 
-        scripts_folder = os.path.dirname(chipwhisperer.__file__)
-#        scripts_folder = r'C:/chipwhisperer/software/chipwhisperer'
+        cwroot = os.path.dirname(os.path.dirname(chipwhisperer.__file__))
+
+        if default == "capture":
+            scripts_folder = os.path.join(cwroot, 'chipwhisperer', 'capture', 'scripts')
+        elif default == "analyzer":
+            scripts_folder = os.path.join(cwroot, 'chipwhisperer', 'analyzer', 'scripts')
+        else:
+            scripts_folder = cwroot
+
         self.file_view_cw = CWPythonFileTree(scripts_folder)
         self.file_view_all = CWPythonFileTree()
         self.file_view_recent = CWPythonRecentTable()

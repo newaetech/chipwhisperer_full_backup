@@ -239,8 +239,8 @@ class CWMainGUI(QMainWindow):
         QMessageBox.about(self, 'About',
             '<h3>ChipWhisperer' + u'\u2122' + '</h3>'
             '<h4>Copyright Information</h4>'
-            'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2016. <br>'
-            'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2016.'
+            'Copyright ' + u'\u00A9' + ' NewAE Technology Inc., 2013-2017. <br>'
+            'Copyright ' + u'\u00A9' + ' Colin O\'Flynn, 2012-2017.'
             '<h4>License Information</h4>'
             'Released under the GPLv3 License, see <a href="http://www.gnu.org/copyleft/gpl.html">License Details</a>.<br>'
             'Various parts of this project may be released under additional open-source licenses such as the BSD License '
@@ -263,7 +263,7 @@ class CWMainGUI(QMainWindow):
             '</ul>'
             'Some projects may be missing from the above list - please let us know, any omission is a mistake!'
             '<h4>Trademark Information</h4>'
-            'ChipWhisperer is a Trademark of NewAE Technology Inc.'
+            'ChipWhisperer is a Trademark of NewAE Technology Inc., registered in the United States of America and Europe.'
         )
 
     def pluginDialog(self):
@@ -314,6 +314,9 @@ class CWMainGUI(QMainWindow):
         self.projectMenu.addAction(self.consolidateAct)
         self.showProjFileAct = QAction('&Project File Editor (Text)', self, statusTip='Edit project file.', triggered=self.projEditDock.show)
         self.projectMenu.addAction(self.showProjFileAct)
+        self.projectMenu.addSeparator()
+        self.showScriptHelp = QAction('Where did "Example Scripts" go?', self, statusTip='Explain Example Scripts', triggered=self.helpExampleScriptsDialog.show)
+        self.projectMenu.addAction(self.showScriptHelp)
 
         self.toolMenu = self.menuBar().addMenu("&Tools")
 
@@ -362,6 +365,14 @@ class CWMainGUI(QMainWindow):
         """Setup the UI, creating statusbar, setting title, menus, etc"""
         self.statusBar()
         self.setWindowIcon(QIcon(":/images/%s.png" % icon))
+        #TEMP: Tell users where example scripts went
+        self.helpExampleScriptsDialog = QMessageBox()
+        self.helpExampleScriptsDialog.setWindowTitle('What happened to "Example Scripts"?')
+        self.helpExampleScriptsDialog.setText('Example Scripts was removed in ChipWhisperer v4. Instead scripting is now more ' +
+                                    'strongly integrated into all aspects of the tool. The existing scripts have been ' +
+                                    'migrated to the new system, see <a href="http://wiki.newae.com/cw3to4">http://wiki.newae.com/cw3to4</a> for details.')
+        self.helpExampleScriptsDialog.setTextFormat(Qt.RichText);
+
         self.projEditDock = self.addDock(self.projEditWidget, name="Project Text Editor", area=Qt.BottomDockWidgetArea, visible=False, addToWindows=False)
         self.createMenus()
         self.updateRecentFileActions()
