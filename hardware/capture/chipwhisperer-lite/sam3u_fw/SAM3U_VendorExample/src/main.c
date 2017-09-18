@@ -21,11 +21,11 @@
 #include "ui.h"
 #include "genclk.h"
 #include "fpga_program.h"
-#include "pdi\XPROGNewAE.h"
-#include "pdi\XPROGTimeout.h"
-#include "pdi\XPROGTarget.h"
-#include "isp\V2Protocol.h"
-#include "ccdebug\chipcon.h"
+#include "pdi/XPROGNewAE.h"
+#include "pdi/XPROGTimeout.h"
+#include "pdi/XPROGTarget.h"
+#include "isp/V2Protocol.h"
+#include "ccdebug/chipcon.h"
 #include "usart_driver.h"
 #include <string.h>
 
