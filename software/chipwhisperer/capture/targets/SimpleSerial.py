@@ -30,9 +30,10 @@ from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
 from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.common.utils import util
 
 
-class SimpleSerial(TargetTemplate):
+class SimpleSerial(TargetTemplate, util.DisableNewAttr):
     _name = "Simple Serial"
 
     def __init__(self):
@@ -82,6 +83,7 @@ class SimpleSerial(TargetTemplate):
         ])
 
         self.setConnection(self.ser, blockSignal=True)
+        self.disable_newattr()
 
     @property
     def init_cmd(self):
