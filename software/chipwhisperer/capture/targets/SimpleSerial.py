@@ -31,6 +31,7 @@ from chipwhisperer.common.utils import pluginmanager
 from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
 from chipwhisperer.common.utils.parameter import setupSetParam
 from chipwhisperer.common.utils import util
+from collections import OrderedDict
 
 
 class SimpleSerial(TargetTemplate, util.DisableNewAttr):
@@ -82,8 +83,23 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             #                                                                 'DE-AD-BE-EF':'-'}, 'value':''},
         ])
 
+        self.key = None
+        self.outstanding_ack = False
+
         self.setConnection(self.ser, blockSignal=True)
         self.disable_newattr()
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['init_cmd']    = self.init_cmd
+        dict['key_cmd']  = self.key_cmd
+        dict['input_cmd']   = self.input_cmd
+        dict['go_cmd']   = self.go_cmd
+        dict['output_cmd'] = self.output_cmd
+
+        dict['baud']     = self.baud
+        dict['protver'] = self.protver
+        return dict
 
     @property
     def init_cmd(self):

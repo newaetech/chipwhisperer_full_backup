@@ -146,3 +146,12 @@ class TargetTemplate(Parameterized, Plugin):
     def validateSettings(self):
         # return [("warn", "Target Module", "You can't use module \"" + self.getName() + "\"", "Specify other module", "57a3924d-3794-4ca6-9693-46a7b5243727")]
         return []
+
+    def _dict_repr(self):
+        raise NotImplementedError("Must define target-specific properties.")
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()
