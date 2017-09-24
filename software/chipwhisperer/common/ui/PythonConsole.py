@@ -507,7 +507,14 @@ class QPythonScriptRunner(QtGui.QWidget):
         self.console = console
         self.api = parent.api
 
-        self.browser = QPythonScriptBrowser()
+        parenttype = str(parent)
+        if 'Capture' in parenttype:
+            sccmdtype = "capture"
+        elif 'Analyzer' in parenttype:
+            sccmdtype = "analyzer"
+        else:
+            sccmdtype = None
+        self.browser = QPythonScriptBrowser(default=sccmdtype)
 
         self.file_preview = QtGui.QTextEdit()
         self.file_preview.setReadOnly(True)
