@@ -91,6 +91,10 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
     def _dict_repr(self):
         dict = OrderedDict()
+        dict['key_len'] = self.key_len
+        dict['input_len'] = self.input_len
+        dict['output_len'] = self.output_len
+
         dict['init_cmd']    = self.init_cmd
         dict['key_cmd']  = self.key_cmd
         dict['input_cmd']   = self.input_cmd
@@ -100,6 +104,33 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         dict['baud']     = self.baud
         dict['protver'] = self.protver
         return dict
+
+    @property
+    def key_len(self):
+        """The length of the key (in bytes)"""
+        return self.keyLen()
+
+    @key_len.setter
+    def key_len(self, length):
+        self.setKeyLen(length)
+
+    @property
+    def input_len(self):
+        """The length of the input to the crypto algorithm (in bytes)"""
+        return self.textLen()
+
+    @input_len.setter
+    def input_len(self, length):
+        self.setTextLen(length)
+
+    @property
+    def output_len(self):
+        """The length of the output expected from the crypto algorithm (in bytes)"""
+        return self.textLen()
+
+    @output_len.setter
+    def output_len(self, length):
+        return self.setOutputLen(length)
 
     @property
     def init_cmd(self):
@@ -222,7 +253,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             raise AttributeError("Can't access baud rate unless using CW-Lite serial port")
 
 
-    @setupSetParam("Key Length")
+    @setupSetParam("Key Length (Bytes)")
     def setKeyLen(self, klen):
         """ Set key length in bytes """
         self.keylength = klen
@@ -231,7 +262,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return key length in bytes """
         return self.keylength
 
-    @setupSetParam("Input Length")
+    @setupSetParam("Input Length (Bytes)")
     def setTextLen(self, tlen):
         """ Set plaintext length. tlen given in bytes """
         self.textlength = tlen
@@ -240,7 +271,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return plaintext length in bytes """
         return self.textlength
 
-    @setupSetParam("Output Length")
+    @setupSetParam("Output Length (Bytes)")
     def setOutputLen(self, tlen):
         """ Set plaintext length in bytes """
         self.outputlength = tlen

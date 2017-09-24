@@ -27,6 +27,7 @@ import logging
 import sys
 from chipwhisperer.common.ui.CWMainGUI import CWMainGUI, makeApplication
 from PySide.QtGui import *  # DO NOT REMOVE PYSIDE IMPORTS - Required for pyqtgraph to select correct version on some platforms
+from PySide.QtCore import Qt
 from chipwhisperer.common.ui.KeyScheduleDialog import AesKeyScheduleDialog, DesKeyScheduleDialog
 from chipwhisperer.common.api.CWCoreAPI import CWCoreAPI
 from chipwhisperer.analyzer.utils.TraceExplorerDialog import TraceExplorerDialog
@@ -179,6 +180,14 @@ class CWAnalyzerGUI(CWMainGUI):
 
         logging.info("Executing analysis...")
         logging.info("Analysis completed")
+
+        helpExampleScriptsDialog = QMessageBox()
+        helpExampleScriptsDialog.setWindowTitle('What happened to the "Attack Button"?')
+        helpExampleScriptsDialog.setText('ChipWhisperer v4 uses scripting instead of the attack button. '+
+                                         'The attack button may be added back in a later release, for now it does not function. ' +
+                                         'See <a href="http://wiki.newae.com/cw3to4">http://wiki.newae.com/cw3to4</a> for details.')
+        helpExampleScriptsDialog.setTextFormat(Qt.RichText);
+        helpExampleScriptsDialog.exec_()
 
     def addSettingsDocks(self):
         self.settingsAttackDock = self.addSettings(self._attackSettings.params)

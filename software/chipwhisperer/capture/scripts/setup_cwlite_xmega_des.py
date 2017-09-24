@@ -19,3 +19,11 @@ scope.trigger.triggers = "tio4"
 scope.io.tio1 = "serial_rx"
 scope.io.tio2 = "serial_tx"
 scope.io.hs2 = "clkgen"
+
+target.key_len = 8
+target.input_len = 8
+target.output_len = 8
+
+#The following shows the "old" method of accessing elements where the new API
+#is not yet ready.
+self.api.setParameter(['Generic Settings', 'Basic', 'Fixed Encryption Key', u'2B 7E 15 16 28 AE D2 A6'])
