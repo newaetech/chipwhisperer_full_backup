@@ -7,9 +7,8 @@ import chipwhisperer as cw
 from chipwhisperer.analyzer.attacks.cpa import CPA
 from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgressive
 from chipwhisperer.analyzer.attacks.models.DES import DES, SBox_output
-from chipwhisperer.analyzer.preprocessing.add_noise_random import AddNoiseRandom
 
-#self.project = cw.openProject("2017-mar23-xmega-aes.cwp")
+#self.project = cw.openProject("2017-mar23-xmega-des.cwp")
 traces = self.project.traceManager()
 
 attack = CPA()

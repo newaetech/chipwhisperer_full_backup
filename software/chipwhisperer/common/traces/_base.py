@@ -128,7 +128,7 @@ class TraceContainer(Parameterized, Plugin):
                 if pad > 0:
                     logging.warning('Trace too short (length=%d)' % len(trace) + " *This MAY SUGGEST DATA CORRUPTION*")
                     logging.warning('Padding with %d zero points' % pad)
-                    trace.extend([0]*pad)
+                    trace = np.concatenate((trace, [0]*pad))
 
                 self.traces[self._numTraces][:] = trace
         except MemoryError:
