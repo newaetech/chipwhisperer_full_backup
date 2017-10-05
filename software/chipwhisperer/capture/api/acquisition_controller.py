@@ -80,6 +80,9 @@ class AcquisitionController:
 
 
     def doSingleReading(self):
+
+        capture_ok = True
+
         # Set mode
         if self.auxList:
             for aux in self.auxList:
