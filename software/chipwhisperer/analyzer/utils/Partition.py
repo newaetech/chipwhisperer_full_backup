@@ -34,6 +34,7 @@ from chipwhisperer.analyzer.attacks.models.aes.funcs import sbox, inv_sbox
 from chipwhisperer.analyzer.attacks.models.AES128_8bit import AES128_8bit
 from chipwhisperer.analyzer.attacks.models.aes.key_schedule import keyScheduleRounds
 from chipwhisperer.common.utils.parameter import Parameterized
+from chipwhisperer.common.utils import util
 
 
 class PartitionHDLastRound(object):
@@ -97,6 +98,13 @@ class PartitionEncKey(object):
 
 
 class PartitionRandvsFixed(object):
+    """The Rand vs Fixed partition works with the TVLA test to randomly interleave random and fixed plaintexts.
+
+    In this capture mode, half of the plaintexts are random and half have a fixed value (specified in TVLA papers).
+    Different fixed plaintexts are used for AES-128, -192, and -256.
+    To check which partition a trace is in, we just need to check if the plaintext matches the standard fixed plaintext
+    for a given key length.
+    """
 
     sectionName = "Partition Based on Rand vs Fixed "
     partitionType = "Rand vs Fixed"
@@ -105,7 +113,20 @@ class PartitionRandvsFixed(object):
         return 2
 
     def getPartitionNum(self, trace, tnum):
-        return [tnum % 2]
+        """Checks if plaintext is the fixed TVLA plaintext for this key length or a random value.
+
+        Returns [1] if fixed and [0] if random.
+        """
+        klen = len(trace.getKnownKey(tnum))
+
+        pt = trace.getTextin(tnum)
+        if klen == 16 and (pt == util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 90")).all():
+            return [1]
+        elif klen == 24 and (pt == util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 88")).all():
+            return [1]
+        elif klen == 32 and (pt == util.hexStrToByteArray("da 39 a3 ee 5e 6b 4b 0d 32 55 bf ef 95 60 18 95")).all():
+            return [1]
+        return [0]
 
 
 class PartitionRandDebug(object):

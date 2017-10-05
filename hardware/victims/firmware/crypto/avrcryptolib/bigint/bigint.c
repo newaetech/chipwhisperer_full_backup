@@ -33,6 +33,15 @@
 #include "bigint.h"
 #include <string.h>
 
+#ifndef PRINT_STATUS
+#define PRINT_STATUS 0
+#endif
+
+#if PRINT_STATUS
+#include <avr/io.h>
+#include "hal.h"
+#endif
+
 #define DEBUG 0
 
 #if DEBUG
@@ -835,28 +844,39 @@ void bigint_expmod_u(bigint_t* dest, const bigint_t* a, const bigint_t* exp, con
 		bigint_copy(dest, &res);
 		return;
 	}
+#if PRINT_STATUS
+    putch('+');
+#endif
 	uint8_t flag = 0;
 	t=exp->wordv[exp->length_B - 1];
 	for(i=exp->length_B; i > 0; --i){
 		t = exp->wordv[i - 1];
 		for(j=BIGINT_WORD_SIZE; j > 0; --j){
+#if PRINT_STATUS
+            putch('.');
+#endif
 			if(!flag){
 				if(t & (1<<(BIGINT_WORD_SIZE-1))){
 					flag = 1;
 				}
 			}
-			if(flag){
+			if(flag){            
 				bigint_square(&res, &res);
 				bigint_reduce(&res, r);
 				if(t & (1<<(BIGINT_WORD_SIZE-1))){
+                    //PORTA.OUTSET = PIN0_bm;
 					bigint_mul_u(&res, &res, &base);
 					bigint_reduce(&res, r);
+                    //PORTA.OUTCLR = PIN0_bm;
 				}
 			}
 			t<<=1;
 		}
 	}
 
+#if PRINT_STATUS
+    putch('\n');
+#endif
 //	cli_putc('+');
 	SET_POS(&res);
 	bigint_copy(dest, &res);

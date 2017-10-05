@@ -39,12 +39,6 @@ class ResetAVR(AuxiliaryTemplate):
             {'name':'Test Reset', 'type':'action', 'action':self.testReset}
         ])
 
-    def captureInit(self):
-        pass
-
-    def captureComplete(self):
-        pass
-
     def traceArm(self):
         # If using STK500
         stk500 = self.findParam('stk500path').getValue()

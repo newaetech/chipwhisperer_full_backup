@@ -267,6 +267,10 @@ class CWMainGUI(QMainWindow):
     def createMenus(self):
         """Create all menus (File, Window, etc)"""
 
+        # workaround for menubar not being visible on Mac. Not Mac-like, but better than no menubar
+        if sys.platform == "darwin":
+            self.menuBar().setNativeMenuBar(False)
+
         self.fileMenu= self.menuBar().addMenu("&File")
         self.newAct = QAction(QIcon('new.png'), '&New', self, shortcut=QKeySequence.New,
                                statusTip='Create new Project', triggered=self.newProject)

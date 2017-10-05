@@ -1,7 +1,6 @@
 # Date Auto-Generated: 2016.06.09-16.47.02
 import os
 import shutil
-
 import time
 
 from chipwhisperer.common.scripts.base import UserScriptBase
@@ -13,6 +12,7 @@ from chipwhisperer.analyzer.attacks.cpa_algorithms.progressive import CPAProgres
 import chipwhisperer.analyzer.attacks.models.AES128_8bit
 # Imports from utilList
 from chipwhisperer.capture.api.programmers import XMEGAProgrammer
+import chipwhisperer.tests
 
 
 class Capture(UserScriptBase):
@@ -34,13 +34,9 @@ class Capture(UserScriptBase):
         self.api.connect()
 
         # Flash the firmware
-        xmega = XMEGAProgrammer()
-        xmega.setUSBInterface(self.api.getScope().scopetype.dev.xmega)
-        xmega._logging = None
-        xmega.find()
-        xmega.erase()
-        xmega.program(r"simpleserial-aes-xmega.hex", memtype="flash", verify=True)
-        xmega.close()
+        xmega_firmware_file = os.path.join(os.path.dirname(chipwhisperer.tests.__file__), r"simpleserial-aes-xmega.hex")
+        programmer = self.api.getScope().scopetype.dev.xmega
+        programmer.autoProgram(xmega_firmware_file)
 
         # Setup the capture parameters
         lstexample = [['CW Extra Settings', 'Trigger Pins', 'Target IO4 (Trigger Line)', True],

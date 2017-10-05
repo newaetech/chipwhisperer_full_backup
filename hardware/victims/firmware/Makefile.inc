@@ -348,6 +348,8 @@ end:
 # Display size of file.
 HEXSIZE = $(SIZE) --target=ihex $(TARGET-PLAT).hex
 
+# Note: custom ELFSIZE command can be specified in Makefile.platform
+# See avr/Makefile.avr for example
 ifeq ($(ELFSIZE),)
   ELFSIZE = $(SIZE) $(TARGET-PLAT).elf
 endif

@@ -80,6 +80,9 @@ class AcquisitionController:
 
 
     def doSingleReading(self):
+
+        capture_ok = True
+
         # Set mode
         if self.auxList:
             for aux in self.auxList:
@@ -175,7 +178,7 @@ class AcquisitionController:
         if self.auxList:
             for aux in self.auxList:
                 if aux:
-                    aux.captureComplete()
+                    aux.captureComplete(self.writer)
 
         if self.writer and self.writer.numTraces() > 0:
             # Don't clear trace as we re-use the buffer

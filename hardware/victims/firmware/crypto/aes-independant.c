@@ -133,6 +133,27 @@ void aes_indep_enc(uint8_t * pt)
 	AES128_ECB_indp_crypto(pt);
 }
 
+#elif defined(MBEDTLS)
+#include "mbedtls/aes.h"
+
+mbedtls_aes_context ctx;
+
+void aes_indep_init(void)
+{
+	mbedtls_aes_init(&ctx);
+}
+
+void aes_indep_key(uint8_t * key)
+{
+	mbedtls_aes_setkey_enc(&ctx, key, 128);
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+	mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, pt, pt); /* encrypting the data block */
+}
+
+
 #else
 
 #error "No Crypto Lib Defined?"

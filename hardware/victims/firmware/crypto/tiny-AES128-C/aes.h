@@ -6,8 +6,8 @@
 #include <stdint.h>
 
 #ifndef AES_CONST_VAR
-#define AES_CONST_VAR static const
-//#define AES_CONST_VAR
+//#define AES_CONST_VAR static const
+#define AES_CONST_VAR
 #endif
 
 

@@ -63,12 +63,6 @@ class ResetCW1173Read(AuxiliaryTemplate):
             {'name':'Test Reset', 'type':'action', 'action':self.testReset}
         ])
 
-    def captureInit(self):
-        pass
-
-    def captureComplete(self):
-        pass
-
     def traceArm(self):
         # Before we arm the scope, possibly reset the device and wait for a bit
         resettiming = self.findParam('resettiming').getValue()
@@ -108,7 +102,7 @@ class ResetCW1173Read(AuxiliaryTemplate):
 
     def nonblockingSleep(self, stime):
         """Sleep for given number of seconds (~50mS resolution), but don't block GUI while we do it"""
-        timer.Timer.singleShot(stime * 1000, self.nonblockingSleep_done)
+        timer.Timer().singleShot(stime * 1000, self.nonblockingSleep_done)
         self._sleeping = True
         while(self._sleeping):
             time.sleep(0.01)

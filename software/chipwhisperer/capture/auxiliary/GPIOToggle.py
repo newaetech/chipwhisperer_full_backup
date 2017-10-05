@@ -132,7 +132,7 @@ class GPIOToggle(AuxiliaryTemplate):
         if self.triglocation == 0:
             self.trigger()
 
-    def captureComplete(self):
+    def captureComplete(self, writer):
         if self.triglocation == 3:
             self.trigger()
 

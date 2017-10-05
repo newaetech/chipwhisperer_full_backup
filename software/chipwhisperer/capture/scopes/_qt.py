@@ -98,6 +98,10 @@ class OpenADCQt(Parameterized):
 
         self.dataUpdated.emit(channelNr, self.datapoints, -self.parm_trigger.presamples(True), self.parm_clock.adcSampleRate())
 
+
+    def trigger_duration(self):
+        return self.parm_trigger.duration()
+
     def capture(self):
         timeout = self.sc.capture()
         self.read()

@@ -17,9 +17,9 @@
 
 #include <asf.h>
 #include "scard_usb.h"
-#include "scard\at88sc102_lowlevel.h"
-#include "scard\at88sc102_highlevel.h"
-#include "scard\iso7816.h"
+#include "scard/at88sc102_lowlevel.h"
+#include "scard/at88sc102_highlevel.h"
+#include "scard/iso7816.h"
 
 #define DATA_BUFFER_SIZE	256
 

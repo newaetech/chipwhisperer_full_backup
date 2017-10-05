@@ -34,8 +34,8 @@ except ImportError:
     AES = None
 
 
-class AcqKeyTextPattern_CRITTest(AcqKeyTextPattern_Base):
-    _name = "CRI T-Test"
+class AcqKeyTextPattern_TVLATTest(AcqKeyTextPattern_Base):
+    _name = "TVLA Rand vs Fixed"
     _description = "Welsh T-Test with random/fixed plaintext."
 
     def __init__(self, target=None):
