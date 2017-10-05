@@ -1,20 +1,24 @@
 CRYPTO_LIB = mbedtls/
 
+VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/library
+EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/include
+
 ifeq ($(CRYPTO_OPTIONS),AES128C)
  SRC += aes-independant.c
 
  #######
  #*This is the recommended first version to test* 
  SRC += aes.c
- CDEFS += -DMBEDTLS -DMBEDTLS_AES_C
+ CDEFS += -DMBEDTLS -DMBEDTLS_SHA1_C
  
  ifeq ($(MBEDTLS_AES_ROM_TABLES),)
  else
  CDEFS += -DMBEDTLS_AES_ROM_TABLES=$(MBEDTLS_AES_ROM_TABLES)
  endif
-  
- VPATH += :$(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/library
- EXTRAINCDIRS += $(FIRMWAREPATH)/crypto/$(CRYPTO_LIB)/include
+    
+else ifeq ($(CRYPTO_OPTIONS),SHA1)
+ SRC += sha1.c
+ CDEFS += -DMBEDTLS -DMBEDtlS_SHA
     
 else
 

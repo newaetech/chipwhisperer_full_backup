@@ -91,7 +91,8 @@ names to the generals defines used in this program.
 //if chip is AtMega128
 #elif 	defined(__AVR_ATmega128__) || \
 		defined(__AVR_ATmega64__) || \
-        defined(__AVR_ATmega128RFA1__)
+        defined(__AVR_ATmega128RFA1__) || \
+        defined(__AVR_AT90CAN128__)
 	#define NUM_OF_BAUDREGS	2
 	#define BAUD0H_REG		UBRR0H
 	#define BAUD0L_REG		UBRR0L

@@ -61,6 +61,10 @@ else ifeq ($(PLATFORM),CW301_XMEGA)
  MCU = atxmega16a4
  HAL = xmega
  PLTNAME = Multi-Target Board, XMEGA Target
+else ifeq ($(PLATFORM),CWAVRCAN)
+ MCU = at90can128
+ HAL = avr
+ PLTNAME = AT90CAN128 Target
 else ifeq ($(PLATFORM),CW303)
 #d4 not officially supported, by has same reg map
  MCU = atxmega128d3
