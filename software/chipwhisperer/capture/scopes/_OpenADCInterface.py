@@ -241,6 +241,10 @@ class GainSettings(Parameterized, util.DisableNewAttr):
         """
         return self.getMode()
 
+    @mode.setter
+    def mode(self, val):
+        return self.setMode(val)
+
     @setupSetParam("Setting")
     def setGain(self, gain):
         '''Set the Gain range 0-78'''
