@@ -211,6 +211,7 @@ class STM32FSerial(object):
                 if logfunc: logfunc("Exiting programming mode")
                 self.close_port()
                 if waitfunc: waitfunc()
+                self.releaseChip()
 
                 status = "SUCCEEDED"
 
@@ -228,6 +229,7 @@ class STM32FSerial(object):
 
         return status == "SUCCEEDED"
 
+
     def setChip(self, chiptype):
         self._chip = chiptype
 
@@ -238,6 +240,10 @@ class STM32FSerial(object):
         time.sleep(0.25)
 
     def set_boot(self, enter_bootloader):
+        if enter_bootloader:
+            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'High'])
+        else:
+            self._cwapi.setParameter(['CW Extra Settings', 'Target IOn GPIO Mode', 'PDIC: GPIO', 'Default'])
         logging.info("Assuming appropriate BOOT pins set HIGH on STM32F Hardware now")
 
 
@@ -296,6 +302,8 @@ class STM32FSerial(object):
             dat = map(hex, self.sp.read(len))
             if '0x44' in dat:
                 self.extended_erase = 1
+            else:
+                self.extended_erase = 0
             logging.info("    Available commands: " + ", ".join(dat))
             self._wait_for_ask("0x00 end")
             return version
