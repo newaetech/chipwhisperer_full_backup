@@ -114,21 +114,21 @@ LINKER_SCRIPT_DEP+=  \
 
 ./%.o: ../../../../../../hal/sam4l/%.c
 	@echo Building file: $<
-	@echo Invoking: ARM/GNU C Compiler : 4.9.3
+	@echo Invoking: ARM/GNU C Compiler : 6.2.1
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAM4LC2A__ -DDEBUG -DHAL_TYPE=HAL_sam4l -DPLATFORM=CW308_SAM4L  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM4L_DFP\1.0.27\sam4l4\include" -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\arm\cmsis\4.2.0\CMSIS\Include" -I"../../../../.." -I"../../../../../../hal" -I"../../../../../../hal/sam4l" -I"../../../../../../crypto" -I"../../../../../../simpleserial"  -O1 -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m4 -c -std=gnu99 -D__ATSAM4LC2A__ -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
 	@echo Finished building: $<
 	
 
 ./%.o: ../../../../../../simpleserial/%.c
 	@echo Building file: $<
-	@echo Invoking: ARM/GNU C Compiler : 4.9.3
+	@echo Invoking: ARM/GNU C Compiler : 6.2.1
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAM4LC2A__ -DDEBUG -DHAL_TYPE=HAL_sam4l -DPLATFORM=CW308_SAM4L  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM4L_DFP\1.0.27\sam4l4\include" -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\arm\cmsis\4.2.0\CMSIS\Include" -I"../../../../.." -I"../../../../../../hal" -I"../../../../../../hal/sam4l" -I"../../../../../../crypto" -I"../../../../../../simpleserial"  -O1 -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m4 -c -std=gnu99 -D__ATSAM4LC2A__ -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
 	@echo Finished building: $<
 	
 
 ./%.o: ../../../../../%.c
 	@echo Building file: $<
-	@echo Invoking: ARM/GNU C Compiler : 4.9.3
+	@echo Invoking: ARM/GNU C Compiler : 6.2.1
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE)  -x c -mthumb -D__SAM4LC2A__ -DDEBUG -DHAL_TYPE=HAL_sam4l -DPLATFORM=CW308_SAM4L  -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\atmel\SAM4L_DFP\1.0.27\sam4l4\include" -I"C:\Program Files (x86)\Atmel\Studio\7.0\Packs\arm\cmsis\4.2.0\CMSIS\Include" -I"../../../../.." -I"../../../../../../hal" -I"../../../../../../hal/sam4l" -I"../../../../../../crypto" -I"../../../../../../simpleserial"  -O1 -ffunction-sections -mlong-calls -g3 -Wall -mcpu=cortex-m4 -c -std=gnu99 -D__ATSAM4LC2A__ -MD -MP -MF "$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -MT"$(@:%.o=%.o)"   -o "$@" "$<" 
 	@echo Finished building: $<
 	
@@ -157,7 +157,7 @@ all: $(OUTPUT_FILE_PATH) $(ADDITIONAL_DEPENDENCIES)
 
 $(OUTPUT_FILE_PATH): $(OBJS) $(USER_OBJS) $(OUTPUT_FILE_DEP) $(LIB_DEP) $(LINKER_SCRIPT_DEP)
 	@echo Building target: $@
-	@echo Invoking: ARM/GNU Linker : 4.9.3
+	@echo Invoking: ARM/GNU Linker : 6.2.1
 	$(QUOTE)C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-gcc.exe$(QUOTE) -o$(OUTPUT_FILE_PATH_AS_ARGS) $(OBJS_AS_ARGS) $(USER_OBJS) $(LIBS) -mthumb -Wl,-Map="sam4l-simpleserial-aes.map" -Wl,--start-group -lm  -Wl,--end-group -L"../../../../../../hal/sam4l"  -Wl,--gc-sections -mcpu=cortex-m4 -Tsam4lc2a_flash.ld  
 	@echo Finished building target: $@
 	"C:\Program Files (x86)\Atmel\Studio\7.0\toolchain\arm\arm-gnu-toolchain\bin\arm-none-eabi-objcopy.exe" -O binary "sam4l-simpleserial-aes.elf" "sam4l-simpleserial-aes.bin"

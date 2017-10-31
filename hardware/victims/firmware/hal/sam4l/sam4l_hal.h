@@ -31,12 +31,12 @@
 #define trigger_high()  {GPIO->GPIO_PORT[0].GPIO_OVRS = GPIO_PA06;}
 #define trigger_low()   {GPIO->GPIO_PORT[0].GPIO_OVRC = GPIO_PA06;}
 
-void periclk_usart1_init(void);
+void periclk_usart0_init(void);
 void periclk_aesa_init(void);
 
-#define init_uart uart1_init
-#define putch uart1_putch
-#define getch uart1_getch
+#define init_uart uart0_init
+#define putch uart0_putch
+#define getch uart0_getch
 
 #define aes_indep_init aes_init
 #define aes_indep_key  aes_set_key

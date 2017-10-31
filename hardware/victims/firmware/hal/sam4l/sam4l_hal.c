@@ -96,16 +96,16 @@ static inline void sysclk_enable_pba_divmask(uint32_t mask)
 #define SYSCLK_AESA_HSB         9
 
 #define PBA_DIVMASK_CLK_USART        (1u << 2)
-#define SYSCLK_USART1           9
+#define SYSCLK_USART0           8
 
-void periclk_usart1_init(void)
+void periclk_usart0_init(void)
 {
     if (PM->PM_PBAMASK == 0) {
 		sysclk_priv_enable_module(PM_CLK_GRP_HSB, SYSCLK_PBA_BRIDGE);
 	}
 
 	/* Enable the module */
-	sysclk_priv_enable_module(PM_CLK_GRP_PBA, SYSCLK_USART1);
+	sysclk_priv_enable_module(PM_CLK_GRP_PBA, SYSCLK_USART0);
 	sysclk_enable_pba_divmask(PBA_DIVMASK_CLK_USART);
 }
 
