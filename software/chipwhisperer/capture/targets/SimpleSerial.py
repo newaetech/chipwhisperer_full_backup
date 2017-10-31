@@ -26,6 +26,7 @@ import logging
 
 from usb import USBError
 
+import binascii
 from ._base import TargetTemplate
 from chipwhisperer.common.utils import pluginmanager
 from simpleserial_readers.cwlite import SimpleSerial_ChipWhispererLite
@@ -48,6 +49,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         self.outputlength = 16
         self.input = ""
         self.protver = ''
+        self.protformat = 'hex'
 
         # Preset lists are in the form
         # {'Dropdown Name':['Init Command', 'Load Key Command', 'Load Input Command', 'Go Command', 'Output Format']}
@@ -77,6 +79,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             {'name':'Load Input Command', 'key':'cmdinput', 'type':'str', 'value':''},
             {'name':'Go Command','key':'cmdgo', 'type':'str', 'value':'p$TEXT$\\n'},
             {'name':'Output Format', 'key':'cmdout', 'type':'str', 'value':'r$RESPONSE$\\n'},
+            {'name':'Protocol format', 'type':'list', 'values':['bin','hex'], 'get':self.protFormat, 'set':self.setProtFormat, 'help':"Assume the protocol to be in the given format. The original SimpleSerial module assumed that the keys where to be sent in hex format but in some situations it is needed to conver the contents to a binary string representation"}
             #{'name':'Data Format', 'key':'datafmt', 'type':'list', 'values':{'DEADBEEF':'',
             #                                                                 'DE AD BE EF':' ',
             #                                                                 'DE:AD:BE:EF':':',
@@ -280,6 +283,15 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         """ Return output length in bytes """
         return self.outputlength
 
+    @setupSetParam("Protocol format")
+    def setProtFormat(self, protformat):
+        """ Set the protocol format used 'bin' or 'hex' """
+        self.protformat = protformat
+
+    def protFormat(self):
+        """ Return the protocol format used 'bin' or 'hex' """
+        return self.protformat
+
     @setupSetParam("Preset")
     def setPreset(self, mode):
         self._preset = mode
@@ -404,6 +416,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
         try:
             if flushInputBefore:
                 self.ser.flushInput()
+            if self.protformat == "bin":
+                newstr = binascii.unhexlify(newstr)
             self.ser.write(newstr)
         except USBError:
             self.dis()
@@ -453,6 +467,10 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
 
         #Read data from serial port
         response = self.ser.read(dataLen, timeout=500)
+
+        # If the protocol format is bin convert is back to hex for handling by CW
+        if self.protformat == "bin":
+            response = binascii.hexlify(response)
 
         if len(response) < dataLen:
             logging.warning('Response length from target shorter than expected (%d<%d): "%s".' % (len(response), dataLen, response))
