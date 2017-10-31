@@ -25,10 +25,9 @@
 #    along with chipwhisperer.  If not, see <http://www.gnu.org/licenses/>.
 #=================================================
 import logging
-
+import uuid
 from chipwhisperer.common.utils import util
 from chipwhisperer.common.utils.parameter import Parameterized, setupSetParam
-
 
 class TraceSource(object):
     """
@@ -42,6 +41,7 @@ class TraceSource(object):
     def __init__(self, name="Unknown"):
         self.sigTracesChanged = util.Signal()
         self.name = name
+        self.uuid = str(uuid.uuid4())
 
     def getTrace(self, n):
         """Return the trace with number n in the current TraceSource object"""
@@ -92,15 +92,23 @@ class TraceSource(object):
 
     def deregister(self):
         """Deregister the current TraceSource and emit a signal to inform this event"""
-        if TraceSource.registeredObjects.pop(self.name, None):
-            TraceSource.sigRegisteredObjectsChanged.emit()
+        try:
+            #Only deregister if UUID matches (NB: don't use direct comparison in case later we adjust repr() )
+            if TraceSource.registeredObjects[self.name].uuid == self.uuid:
+                if TraceSource.registeredObjects.pop(self.name, None):
+                    TraceSource.sigRegisteredObjectsChanged.emit()
+        except KeyError:
+            pass
 
     @classmethod
-    def deregisterObject(cls, name):
+    def deregisterObject(cls, name, uuid = None):
         """Deregister the TraceSource and emit a signal to inform this event"""
-        if cls.registeredObjects.pop(name, None):
-            cls.sigRegisteredObjectsChanged.emit()
-
+        try:
+            if (uuid is None) or (cls.registeredObjects[name].uuid == uuid):
+                if cls.registeredObjects.pop(name, None):
+                    cls.sigRegisteredObjectsChanged.emit()
+        except KeyError:
+            pass
 
 class PassiveTraceObserver(Parameterized):
     """Processes data from a TraceSource when requested """
