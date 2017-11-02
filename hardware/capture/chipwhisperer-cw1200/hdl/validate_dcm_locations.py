@@ -16,7 +16,7 @@ import sys
 #DESIGN_BASE = "cwlite_ise\\cwlite_interface"
 
 #Linux Path
-XILINX_DIR = "/opt/Xilinx/14.6/ISE_DS/ISE/bin/lin64/"
+XILINX_DIR = "/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin64/"
 DESIGN_BASE = "cw1200_ise/cw1200_interface"
 
 def decodeFARMIN(data, indx):
