@@ -97,6 +97,8 @@ class AcquisitionController:
         if self._aux_dict is not None:
             for func in self._aux_dict['before_trace']:
                 func(self._scope, self._target, self._writer)
+                
+        capture_ok = True
 
         if self._target:
             self._target.reinit()
