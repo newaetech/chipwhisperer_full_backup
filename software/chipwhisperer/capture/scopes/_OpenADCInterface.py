@@ -336,6 +336,7 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
         self.presampleTempMargin = 24
         self._timeout = 2
         self._stream_mode = False
+        self._support_get_duration = True
 
         self.params = Parameter(name=self.getName(), type='group')
         child_list = [
@@ -815,14 +816,25 @@ class TriggerSettings(Parameterized,util.DisableNewAttr):
 
         samples = 0x00000000
 
-        temp = self.oa.sendMessage(CODE_READ, ADDR_TRIGGERDUR, maxResp=4)
-        samples = samples | (temp[0] << 0)
-        samples = samples | (temp[1] << 8)
-        samples = samples | (temp[2] << 16)
-        samples = samples | (temp[3] << 24)
+        if self._support_get_duration:
 
-        return samples
+            temp = self.oa.sendMessage(CODE_READ, ADDR_TRIGGERDUR, maxResp=4)
 
+            #Old versions don't support this feature
+            if temp is None:
+                self._support_get_duration = False
+                return -1
+
+            samples = samples | (temp[0] << 0)
+            samples = samples | (temp[1] << 8)
+            samples = samples | (temp[2] << 16)
+            samples = samples | (temp[3] << 24)
+
+            return samples
+
+        else:
+
+            return -1
 
 class ClockSettings(Parameterized, util.DisableNewAttr):
     _name = 'Clock Setup'

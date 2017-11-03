@@ -176,9 +176,11 @@ class OpenADC(ScopeTemplate, Plugin, util.DisableNewAttr):
             self.adc = self.qtadc.parm_trigger
             self.gain = self.qtadc.parm_gain
             self.clock = self.qtadc.parm_clock
-            self.io = self.advancedSettings.cwEXTRA.gpiomux
-            self.trigger = self.advancedSettings.cwEXTRA.triggermux
-            self.glitch = self.advancedSettings.glitch.glitchSettings
+
+            if self.advancedSettings:
+                self.io = self.advancedSettings.cwEXTRA.gpiomux
+                self.trigger = self.advancedSettings.cwEXTRA.triggermux
+                self.glitch = self.advancedSettings.glitch.glitchSettings
 
             self.disable_newattr()
             self._is_connected = True
