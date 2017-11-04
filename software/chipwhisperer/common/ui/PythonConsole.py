@@ -13,6 +13,7 @@ embedded in your GUI.
 import chipwhisperer
 import logging
 import os
+import shutil
 import subprocess
 import sys
 from code import InteractiveConsole as _InteractiveConsole
@@ -220,6 +221,10 @@ class CWPythonFileTree(QtGui.QTreeView):
             return None
         return self.model().filePath(file_index)
 
+    def setSelectedPath(self, path):
+        self.setCurrentIndex(self.model().index(path))
+
+
 class CWPythonRecentTable(QtGui.QTableWidget):
     """A table view that stores a list of recently run files
 
@@ -410,6 +415,7 @@ class CWPythonRecentTable(QtGui.QTableWidget):
             return self.unpinned[row - len(self.pinned)]
         return None
 
+
 class QPythonScriptBrowser(QtGui.QWidget):
     """A script browser with 3 tabs to help find Python files:
     1. ChipWhisperer directory
@@ -490,6 +496,18 @@ class QPythonScriptBrowser(QtGui.QWidget):
         else:
             return None
 
+    def setSelectedPath(self, basename):
+        active_tab = self.tab_bar.currentIndex()
+        if active_tab == 0: # ChipWhisperer
+            return self.file_view_cw.setSelectedPath(basename)
+        elif active_tab == 1: # File system
+            return self.file_view_all.setSelectedPath(basename)
+        #Recent tab works differently - not sure it should be selected automatically in this case anyway
+        #elif active_tab == 2: # Recent
+        #    return self.file_view_recent.setSelectedPath(basename)
+        else:
+            return None
+
     def selectionChanged(self, x=None, y=None):
         self.sigSelectionChanged.emit()
 
@@ -528,6 +546,9 @@ class QPythonScriptRunner(QtGui.QWidget):
         self.edit_button = QtGui.QPushButton("Edit")
         self.edit_button.clicked.connect(self.editScript)
 
+        self.editcopy_button = QtGui.QPushButton("Edit Copy")
+        self.editcopy_button.clicked.connect(self.editCopyScript)
+
         self.hide_button = QtGui.QPushButton("<")
         self.hide_button.setFixedWidth(20)
         self.hide_button.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Expanding)
@@ -537,6 +558,8 @@ class QPythonScriptRunner(QtGui.QWidget):
         button_layout.addWidget(self.run_button)
         button_layout.addSpacing(20)
         button_layout.addWidget(self.edit_button)
+        button_layout.addSpacing(20)
+        button_layout.addWidget(self.editcopy_button)
         button_layout.addStretch()
 
         preview_layout = QtGui.QVBoxLayout()
@@ -568,20 +591,55 @@ class QPythonScriptRunner(QtGui.QWidget):
             self.console.runLine("execfile('%s')" % path)
             self.browser.addRecentFile(path)
 
+    def editCopyScript(self):
+        """Make a copy of the script, then edit that script"""
+        path = self.browser.getSelectedPath()
+        if path is None:
+            return
+        if os.path.isfile(path):
+            # Ask user for new filename
+            base = os.path.basename(path)
+            result = QtGui.QInputDialog.getText(self, "Copy Script " + base,
+                                       "Enter new script name:", text = ("COPY_" + base))
+            if result[1]:
+                #User hit OK
+
+                #Make new filename, check if exists
+                basename = result[0]
+                rpath = os.path.dirname(path)
+                newfname = os.path.join(rpath, basename)
+
+                #Check if file exists already
+                if os.path.exists(newfname):
+                    raise Warning("New filename (%s) exists, copy aborted" % basename)
+
+                shutil.copy(path, newfname)
+
+                #Make active, then edit
+                self.browser.setSelectedPath(newfname)
+                self.openEditor(newfname)
+
+
     def editScript(self):
         """Edit the currently selected script"""
         path = self.browser.getSelectedPath()
         if path is None:
             return
+
+        self.openEditor(path)
+
+    def openEditor(self, path):
+        """Open selected text editor"""
         if os.path.isfile(path):
             text_editor = self.api.settings.value('text-editor')
             open_with_default = False
 
             if len(text_editor) == 0:
                 open_with_default = True
-            else: # len > 0\
+            else:  # len > 0\
                 if not os.path.isfile(text_editor):
-                    logging.warning("Python Console: Can't open text files with %s - using system default instead" % text_editor)
+                    logging.warning(
+                        "Python Console: Can't open text files with %s - using system default instead" % text_editor)
                     open_with_default = True
                 else:
                     try:
@@ -590,7 +648,8 @@ class QPythonScriptRunner(QtGui.QWidget):
                     # On Windows, WindowsError works.
                     # Need to test on Linux/Mac
                     except BaseException as e:
-                        logging.warning("Python Console: Failed to open text file with %s - using system default instead" % text_editor)
+                        logging.warning(
+                            "Python Console: Failed to open text file with %s - using system default instead" % text_editor)
                         open_with_default = True
 
             if open_with_default:
