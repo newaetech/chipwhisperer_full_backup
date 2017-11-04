@@ -12,10 +12,7 @@ embedded in your GUI.
 
 import chipwhisperer
 import logging
-import os
-import shutil
-import subprocess
-import sys
+import os, sys, subprocess, shutil
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
 from chipwhisperer.common.utils.util import requestConsoleBreak, updateUI
@@ -519,6 +516,22 @@ class QPythonScriptBrowser(QtGui.QWidget):
     def addRecentFile(self, path):
         self.file_view_recent.addScript(path)
 
+class DialogWithCheckBox(QtGui.QMessageBox):
+
+    def __init__(self, parent= None):
+        super(DialogWithCheckBox, self).__init__()
+
+        self.checkbox = QtGui.QCheckBox("Don't show me this crap")
+        #Access the Layout of the MessageBox to add the Checkbox
+        layout = self.layout()
+        layout.addWidget(self.checkbox, 3,1)
+
+    def exec_(self, *args, **kwargs):
+        """
+        Override the exec_ method so you can return the value of the checkbox
+        """
+        return QtGui.QMessageBox.exec_(self, *args, **kwargs), self.checkbox.isChecked()
+
 class QPythonScriptRunner(QtGui.QWidget):
     def __init__(self, console, parent=None):
         super(QPythonScriptRunner,self).__init__(parent)
@@ -653,7 +666,38 @@ class QPythonScriptRunner(QtGui.QWidget):
                         open_with_default = True
 
             if open_with_default:
-                os.startfile(path)
+                self.editWithDefault(path)
+
+    def editWithDefault(self, path):
+        """Edit file with OS default, checking with user first time this happens"""
+
+        text_editor_dontcheck = bool(self.api.settings.value('text-editor-dont-check'))
+        if text_editor_dontcheck != True:
+            # QDialog for user
+            msgbox = DialogWithCheckBox()
+            msgbox.setWindowTitle("System Editor Not Configured")
+            msgbox.setText("Using default system editor for file " + os.path.basename(path))
+            msgbox.setInformativeText("If your system defaults are to run these files (and not edit), please "
+                                      "goto 'Help-->Preferences' and configure your preferred text "
+                                      "editor for script files instead. If you hit 'OK' here I will attempt "
+                                      "to open the named script file now.")
+            msgbox.setIcon(QtGui.QMessageBox.Question)
+            msgbox.addButton(QtGui.QMessageBox.Ok)
+            msgbox.addButton(QtGui.QMessageBox.Cancel)
+            msgbox.setDefaultButton(QtGui.QMessageBox.Ok)
+            user_resp = msgbox.exec_()
+
+            if user_resp[1] == True:
+                self.api.settings.setValue('text-editor-dont-check', True)
+
+            if user_resp[0] == QtGui.QMessageBox.Cancel:
+                return
+
+        if sys.platform == "win32":
+            os.startfile(path)
+        else:
+            opener = "open" if sys.platform == "darwin" else "xdg-open"
+            subprocess.call([opener, path])
 
     def viewScript(self):
         """Edit the currently selected script"""
