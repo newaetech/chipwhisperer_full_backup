@@ -332,7 +332,7 @@ class CWMainGUI(QMainWindow):
 
     def checkForUpdates(self):
         try:
-            source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/software/chipwhisperer/common/api/CWCoreAPI.py?_format=raw")
+            source = urllib.urlopen("https://raw.githubusercontent.com/newaetech/chipwhisperer/master/software/chipwhisperer/common/api/CWCoreAPI.py")
             content = source.read()
 
             version = None
@@ -346,7 +346,7 @@ class CWMainGUI(QMainWindow):
                     message = "Your current version is already the most recent one."
                 else:
                     message = "There is an updated version available:\n"
-                    source = urllib.urlopen("https://www.assembla.com/spaces/chipwhisperer/git/source/master/CHANGES.txt?_format=raw")
+                    source = urllib.urlopen("https://raw.githubusercontent.com/newaetech/chipwhisperer/master/CHANGES.txt")
                     content = source.read()
                     for line in content.split("\n"):
                         if self.api.__version__+":" in line:
@@ -559,7 +559,7 @@ class CWMainGUI(QMainWindow):
         logging.error(details)
         dialog = QMessageBox(QMessageBox.Critical, "Error",
                     "An error has occurred:<br>%s<br><br>It is usually safe to continue, but save your work just in case.<br>"
-                    "If it persists, try reseting the settings first before creating a <a href='https://www.assembla.com/spaces/chipwhisperer/tickets'>new ticket</a> informing the details bellow." % value, QMessageBox.Close, self)
+                    "If it persists, try reseting the settings first before creating a <a href='https://github.com/newaetech/chipwhisperer/issues/'>new ticket</a> informing the details bellow." % value, QMessageBox.Close, self)
         dialog.setTextFormat(Qt.RichText)  # this is what makes the links clickable
         dialog.setDetailedText(details)
         dialog.exec_()

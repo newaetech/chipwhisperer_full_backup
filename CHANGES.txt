@@ -1,3 +1,32 @@
+V4.0.0:
+-Rewritten script interface, now almost all work is done via preconfigured scripts
+-New API allows direct access to configuration (useful with new script architecture)
+-New firmware examples (ESP32, Spartan 6 cheap FPGA board)
+
+
+V3.5.3:
+-FW: Add RSA firmware example (see https://wiki.newae.com/Tutorial_B11_Breaking_RSA)
+-FW: Add MBED TLS crypto library for ARM targets (see https://wiki.newae.com/Tutorial_A8_32bit_AES)
+-SW: Add utility to copy traces to new project
+-Capture: Add ability to measure "Trigger High" length in number of samples
+-FW: Fix trigger GPIO pin in STM32F4 HAL
+-FW: Fix AVR "sizeafter" target in makefile
+-SW: Update testing scripts to use os.path and auto-program for XMEGA programming
+-Capture: Fix timer bug in CW1173 Reset aux module
+
+V3.5.0:
+-SW: Allow each module to set a default error message severity
+-Capture: Support connecting multiple CW-Lite/Pro scopes
+-Capture: Add SPI flash programmer target
+-Capture: Add STM32F programmer
+-Capture: Add setup script for 87C51 target
+-FW: Fix bug in SAM4L HAL that disabled crypto countermeasures
+-FW: Improve Makefile output on Windows
+-SW: Return script results when running Capture/Analyzer scripts via API
+-Analyzer: Fix off-by-one error in C-accelerated CPA attack
+-Capture: Properly randomize fixed/random plaintexts in CRI T-Test mode
+-Capture: Fix float/int conversion bug in glitch explorer
+
 V3.4.0:
 -Addition of trace-cache in preprocessing module, useful with slow preprocessing module.
 -Dynamic Time Warp (DTW) based trace resync preprocessing, based on the "Elastic Alignment" paper by Jasper
