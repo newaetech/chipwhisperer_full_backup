@@ -30,7 +30,7 @@ import numpy as np
 from chipwhisperer.common.results.base import ResultsBase
 from ._base import PreprocessingBase
 from chipwhisperer.common.utils.parameter import setupSetParam
-
+from collections import OrderedDict
 
 class ResyncSAD(PreprocessingBase):
     """Resynchronize traces by shifting them to match in a certain window.
@@ -43,7 +43,7 @@ class ResyncSAD(PreprocessingBase):
 
     def __init__(self, traceSource=None, connectTracePlot=True, name=None):
         PreprocessingBase.__init__(self, traceSource, name=name)
-        self._rtrace = 0
+        self._rtrace = None
         self._debugReturnSad = False
         self._ccStart = 0
         self._ccEnd = 1
@@ -148,6 +148,7 @@ class ResyncSAD(PreprocessingBase):
         if self._traceSource:
             self.findParam('refpts').setLimits((0, self._traceSource.numPoints()-1))
             self.findParam('windowpt').setLimits((0, self._traceSource.numPoints()-1))
+            self._calculateRef()
 
     def setOutputSad(self, enabled):
         self._debugReturnSad = enabled
@@ -210,3 +211,12 @@ class ResyncSAD(PreprocessingBase):
         self.refmaxloc = np.argmin(sad)
         self.refmaxsize = min(sad)
         self.maxthreshold = np.mean(sad)
+
+
+    def _dict_repr(self):
+        dict = OrderedDict()
+        dict['enabled'] = self.enabled
+        dict['ref_trace'] = self.ref_trace
+        dict['ref_points'] = self.ref_points
+        dict['input_window']    = self.input_window
+        return dict

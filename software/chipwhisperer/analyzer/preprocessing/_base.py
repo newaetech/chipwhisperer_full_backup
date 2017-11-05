@@ -30,6 +30,7 @@ from chipwhisperer.common.api.autoscript import AutoScript
 from chipwhisperer.common.utils.pluginmanager import Plugin
 from chipwhisperer.common.utils.tracesource import TraceSource, ActiveTraceObserver
 from chipwhisperer.common.utils.parameter import setupSetParam
+from chipwhisperer.common.utils import util
 
 
 class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
@@ -58,7 +59,7 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
         self.findParam('input').hide()
 
         self.register()
-        if __debug__: logging.debug('Created: ' + str(self))
+        if __debug__: logging.debug('Created: ' + self._name)
 
         #Old attribute dict
         self._attrdict = None
@@ -157,3 +158,13 @@ class PreprocessingBase(TraceSource, ActiveTraceObserver, AutoScript, Plugin):
 
     def __del__(self):
         if __debug__: logging.debug('Deleted: ' + str(self))
+
+    def _dict_repr(self):
+        #raise NotImplementedError("Must define target-specific properties.")
+        return {}
+
+    def __repr__(self):
+        return util.dict_to_str(self._dict_repr())
+
+    def __str__(self):
+        return self.__repr__()

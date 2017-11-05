@@ -67,13 +67,13 @@ class PreprocessingSettings(Parameterized):
         self.params = Parameter(name="Preprocessing Settings", type='group')
 
         self._moduleParams = [
-            Parameter(name='Module #%d' % (i+1), type='group') for i in range(self._num_modules)
+            Parameter(name='self.ppmod[%d]' % (i), type='group') for i in range(self._num_modules)
         ]
         self._initModules()
 
         self.params.addChildren([
             {'name':'Selected Modules', 'type':'group', 'children':[
-                {'name':'Module #%d' % (step+1), 'type':'list', 'values':self.valid_preprocessingModules,
+                {'name':'self.ppmod[%d]' % (step), 'type':'list', 'values':self.valid_preprocessingModules,
                  'get':partial(self.getModule, step), 'set':partial(self.setModule, step)} for step in range(0, len(self._modules))
             ]},
         ])
@@ -83,7 +83,7 @@ class PreprocessingSettings(Parameterized):
     def _initModules(self):
         self._modules = [None]*self._num_modules
         for i in range(self._num_modules):
-            mod = PassThrough(name="Preprocessing Module #%d" % (i+1))
+            mod = PassThrough(name="Preprocessing Module ppmod[%d]" % (i))
             self.setModule(i, mod)
 
     def getModule(self, num):
