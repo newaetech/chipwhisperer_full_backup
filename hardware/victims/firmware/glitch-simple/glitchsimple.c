@@ -176,7 +176,11 @@ int main(void){
 	putch('l');
 	putch('o');
 	putch('\n');
-    //_delay_ms(20);
+    
+    //This is needed on XMEGA examples, but not normally on ARM. ARM doesn't have this macro normally anyway.
+    #ifdef __AVR__
+    _delay_ms(20);
+    #endif
 		
         
     while(1){
