@@ -25,4 +25,4 @@ scope.io.hs2 = "glitch"
 
 target.go_cmd = ""
 target.key_cmd = ""
-target.output_cmd = ""
+target.output_cmd = "$GLITCH$"
