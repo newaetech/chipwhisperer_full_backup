@@ -164,6 +164,12 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
     @setupSetParam("Traces per Attack")
     def setTracesPerAttack(self, trace):
+        if trace < 0:
+            #Get maximum traces from source
+            ts = self.getTraceSource()
+            if ts is None:
+                raise ValueError("traceSource not yet set in attack - set TraceSource first to use automatic getTracesPerAttack")
+            trace = self.getTraceSource().numTraces()
         self._tracePerAttack = trace
 
     def getReportingInterval(self):
@@ -178,6 +184,11 @@ class AttackBaseClass(PassiveTraceObserver, AnalysisSource, Parameterized, AutoS
 
     @setupSetParam("Points Range")
     def setPointRange(self, rng):
+        if rng[1] < 0:
+            ts = self.getTraceSource()
+            if ts is None:
+                raise ValueError("traceSource not yet set in attack - set TraceSource first to use automatic setPointRange")
+            rng = (rng[0], ts.numPoints())
         self._pointRange = rng
 
     def knownKey(self):
