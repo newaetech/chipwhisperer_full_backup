@@ -227,11 +227,9 @@ class CWMainGUI(QMainWindow):
     def helpdialog(self):
         """Helps the User"""
         QMessageBox.about(self, 'Link to Documentation',
-            'See <a href="http://www.newae.com/sidechannel/cwdocs">newae.com/sidechannel/cwdocs</a> for Tutorials and '
-            'Documentation. If you are using an official release, this documentation should have also been present with'
-            ' your release.<br><br>'
-            'See <a href="http://www.chipwhisperer.com">chipwhisperer.com</a> for Wiki, GIT Code, community information.'
-            '<br><br>See the About dialog for Copyright, Trademark, and Authorship information'
+            'See <a href="http://www.chipwhisperer.com">chipwhisperer.com</a> for Wiki, GIT Code, community information.<br>'
+            'See <a href="http://github.com/newaetech/chipwhisperer">github.com/newaetech/chipwhisperer</a> for source code + issue tracker.<br>'
+            '<br>See the About dialog for Copyright, Trademark, and Authorship information'
         )
 
     def aboutdialog(self):

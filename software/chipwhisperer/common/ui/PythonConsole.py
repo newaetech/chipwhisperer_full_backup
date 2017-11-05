@@ -517,6 +517,7 @@ class QPythonScriptBrowser(QtGui.QWidget):
         self.file_view_recent.addScript(path)
 
 class DialogWithCheckBox(QtGui.QMessageBox):
+    """Reimplementation of QMessageBox that adds checkbox"""
 
     def __init__(self, parent= None):
         super(DialogWithCheckBox, self).__init__()
