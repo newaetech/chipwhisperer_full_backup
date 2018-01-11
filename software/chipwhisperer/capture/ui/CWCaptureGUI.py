@@ -98,9 +98,9 @@ class CWCaptureGUI(CWMainGUI):
                                    triggered=self.serialTerminal.show)
 
         self.toolMenu.addAction(self.terminalAct)
-        self.glitchMonitorAct = QAction('Glitch Monitor', self, statusTip='Open Glitch Monitor Table',
+        self.glitchExplorerAct = QAction('Glitch Explorer', self, statusTip='Open Glitch Explorer Table',
                                         triggered=self.glitch_explorer.show)
-        self.toolMenu.addAction(self.glitchMonitorAct)
+        self.toolMenu.addAction(self.glitchExplorerAct)
 
         self.encryptionStatusMonitor = EncryptionStatusMonitor(self)
         self.api.sigNewTextResponse.connect(self.encryptionStatusMonitor.newData)
