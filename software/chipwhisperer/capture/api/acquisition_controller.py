@@ -94,6 +94,23 @@ class AcquisitionController:
 
 
     def doSingleReading(self):
+        """This function is called as a result of pressing the Capture button.
+        The order of events is as follows and is reflected in the source code:
+            - the auxiliary functions that need to be executed before the
+              trace is recorded are executed
+            - the target is reinitialized
+            - the target is given the plain text and the encryption key
+            - the auxiliary functions that need to be executed before the scope
+              is armed are executed
+            - the scope is armed
+            - the auxiliary functions that need to be executed after arming the
+              scope are executed
+            - the targetDoTrace function is executed, loading text input, starting encryption
+              and reading text output
+            - get the ADC reading
+            - the auxiliary functions that need to be executed after the trace are
+             executed
+        """
         if self._aux_dict is not None:
             for func in self._aux_dict['before_trace']:
                 func(self._scope, self._target, self._writer)
