@@ -37,10 +37,12 @@ class CWPreferencesDialog(QtFixes.QDialog):
 
         self._generalTab = GeneralTab(self, settings)
         self._windowsTab = WindowTab(self)
+        self._clearSettingsTab = ClearSettingsTab(self)
 
         tabWidget = QTabWidget()
         tabWidget.addTab(self._generalTab, "General")
         tabWidget.addTab(self._windowsTab, "Window Layout")
+        tabWidget.addTab(self._clearSettingsTab, "Clear Settings")
 
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok)
         buttonBox.accepted.connect(self.accept)
@@ -98,6 +100,21 @@ class WindowTab(QWidget):
         resetButton = QPushButton("Reset Settings and &Exit", clicked=parent.parent().reset)
         resetButton.setToolTip('Clear all settings and exit. Useful to not save the window geometry when exiting.')
         layout.addWidget(resetButton)
+
+        layout.addStretch(1)
+        self.setLayout(layout)
+
+
+class ClearSettingsTab(QWidget):
+    def __init__(self, parent):
+        super(ClearSettingsTab, self).__init__(parent)
+
+        layout = QVBoxLayout()
+
+        clearAllSettingsButton = QPushButton("Clear All Settings and Exit", clicked=parent.parent().resetAllSettings)
+        clearAllSettingsButton.setToolTip('Clear all settings and exit')
+
+        layout.addWidget(clearAllSettingsButton)
 
         layout.addStretch(1)
         self.setLayout(layout)

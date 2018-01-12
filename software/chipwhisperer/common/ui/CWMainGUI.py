@@ -198,8 +198,17 @@ class CWMainGUI(QMainWindow):
             self.toolMenu.addAction(act)
 
     def reset(self):
-        """Clear all saved QSettings(), such as window location etc and exit"""
+        """Clear saved QSettings() such as window location etc and exit"""
         QSettings().clear()
+        self.dontSaveGeometry = True
+        self.close()
+
+    def resetAllSettings(self):
+        """Clear all saved QSettings(), such as window location but also other settings, should be all of them
+        and exit.
+        """
+        QSettings().clear()
+        self.api.settings._backend.clear()
         self.dontSaveGeometry = True
         self.close()
 
