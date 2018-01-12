@@ -391,7 +391,7 @@ class CWMainGUI(QMainWindow):
         self.loggingDock = self.addLoggingDock()
         self.pythonConsoleDock = self.addPythonConsole()
         self.pythonScriptDock = self.addPythonScriptRunner()
-        self.tabifyDocks([self.projEditDock, self.paramScriptingDock, self.pythonConsoleDock, self.loggingDock])
+        self.tabifyDocks([self.pythonConsoleDock, self.projEditDock, self.paramScriptingDock, self.loggingDock])
         self.setBaseSize(800,600)
 
     def setupToolBar(self):

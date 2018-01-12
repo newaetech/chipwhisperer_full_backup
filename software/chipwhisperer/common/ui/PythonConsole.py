@@ -647,14 +647,15 @@ class QPythonScriptRunner(QtGui.QWidget):
         if os.path.isfile(path):
             text_editor = self.api.settings.value('text-editor')
             open_with_default = False
+            open_editor_error = False
 
             if len(text_editor) == 0:
                 open_with_default = True
             else:  # len > 0\
                 if not os.path.isfile(text_editor):
                     logging.warning(
-                        "Python Console: Can't open text files with %s - using system default instead" % text_editor)
-                    open_with_default = True
+                        "Python Console: Can't open text files with %s" % text_editor)
+                    open_editor_error = True
                 else:
                     try:
                         subprocess.Popen([text_editor, path])
@@ -663,8 +664,27 @@ class QPythonScriptRunner(QtGui.QWidget):
                     # Need to test on Linux/Mac
                     except BaseException as e:
                         logging.warning(
-                            "Python Console: Failed to open text file with %s - using system default instead" % text_editor)
-                        open_with_default = True
+                            "Python Console: Failed to open text file with %s" % text_editor)
+                        open_editor_error = True
+
+            # this message box is presented to the user because the debug logging screen is not
+            # in view when user is using the python console with the default view. This makes
+            # the error more clear and the details can be found in the debug logging to
+            # differentiate between file not existing and the text editor file failing to open the
+            # file for editing
+            if open_editor_error:
+                errorMsgBox = QtGui.QMessageBox()
+                errorMsgBox.setWindowTitle("Requested Editor Not Valid")
+                errorMsgBox.setText("The editor requested is not valid")
+                errorMsgBox.setInformativeText("The path to your preferred text editor is invalid, please set "
+                                               "a valid text editor path using 'Help-->Preferences' and "
+                                               "changing the path value for the 'External Text Editor' field.")
+                errorMsgBox.setIcon(QtGui.QMessageBox.Warning)
+                errorMsgBox.addButton(QtGui.QMessageBox.Ok)
+                errorMsgBox.setDefaultButton(QtGui.QMessageBox.Ok)
+                user_response = errorMsgBox.exec_()
+                if user_response == QtGui.QMessageBox.Ok:
+                    return
 
             if open_with_default:
                 self.editWithDefault(path)
