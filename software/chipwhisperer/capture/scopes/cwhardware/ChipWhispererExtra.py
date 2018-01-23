@@ -1086,7 +1086,7 @@ class CWExtraSettings(Parameterized):
             bn = 1
         else:
             raise ValueError("Invalid glitch output: %s" % str(out))
-        return resp[4] & (1 << bn)
+        return bool(resp[4] & (1 << bn))
 
     def setAVRISPMode(self, enabled):
         data = self.oa.sendMessage(CODE_READ, ADDR_IOROUTE, Validate=False, maxResp=8)
