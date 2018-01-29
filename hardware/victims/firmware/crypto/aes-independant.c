@@ -37,6 +37,10 @@ void aes_indep_enc(uint8_t * pt)
     HW_AES128_Enc(pt);
 }
 
+void aes_indep_mask(uint8_t * m)
+{
+}
+
 #elif defined(AVRCRYPTOLIB)
 #include "aes128_enc.h"
 #include "aes_keyschedule.h"
@@ -56,6 +60,10 @@ void aes_indep_key(uint8_t * key)
 void aes_indep_enc(uint8_t * pt)
 {
 	aes128_enc(pt, &ctx); /* encrypting the data block */
+}
+
+void aes_indep_mask(uint8_t * m)
+{
 }
 
 #elif defined(SIMPLEAES)
@@ -80,6 +88,10 @@ void aes_indep_enc(uint8_t * pt)
 	for(uint8_t i=0; i < 16; i++){
 		pt[i] = result[i];
 	}
+}
+
+void aes_indep_mask(uint8_t * m)
+{
 }
 
 #elif defined(DPAV4)
@@ -112,6 +124,10 @@ void aes_indep_enc(uint8_t * pt)
 	aes256_enc(j, pt, &ctx, 1);
 }
 
+void aes_indep_mask(uint8_t * m)
+{
+}
+
 #elif defined(TINYAES128C)
 
 #include "aes.h"
@@ -133,6 +149,10 @@ void aes_indep_enc(uint8_t * pt)
 	AES128_ECB_indp_crypto(pt);
 }
 
+void aes_indep_mask(uint8_t * m)
+{
+}
+
 #elif defined(MBEDTLS)
 #include "mbedtls/aes.h"
 
@@ -152,6 +172,44 @@ void aes_indep_enc(uint8_t * pt)
 {
 	mbedtls_aes_crypt_ecb(&ctx, MBEDTLS_AES_ENCRYPT, pt, pt); /* encrypting the data block */
 }
+
+void aes_indep_mask(uint8_t * m)
+{
+}
+
+#elif defined(MASKEDAES)
+
+#include "aesTables.h"
+#include "maskedAES128enc.h"
+
+void aes_indep_init(void)
+{
+}
+
+void aes_indep_key(uint8_t * key)
+{
+  int i;
+  for (i = 0; i < AESKeySize; i++)
+    secret[i] = key[i];
+}
+
+void aes_indep_enc(uint8_t * pt)
+{
+  int i;
+  for (i = 0; i < AESInputSize; i++)
+    input[i] = pt[i];
+  asm_maskedAES128enc();
+  for (i = 0; i < AESOutputSize; i++)
+    pt[i] = input[i];
+}
+
+void aes_indep_mask(uint8_t * m)
+{
+  int i;
+  for (i = 0; i < AESMaskSize; i++)
+    mask[i] = m[i];
+}
+
 
 
 #else

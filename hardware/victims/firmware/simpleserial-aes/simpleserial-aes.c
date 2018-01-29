@@ -22,6 +22,12 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+uint8_t get_mask(uint8_t* m)
+{
+  aes_indep_mask(m);
+  return 0x00;
+}
+
 uint8_t get_key(uint8_t* k)
 {
 	aes_indep_key(k);
@@ -67,6 +73,7 @@ int main(void)
     simpleserial_addcmd('k', 16, get_key);
     simpleserial_addcmd('p', 16,  get_pt);
     simpleserial_addcmd('x',  0,   reset);
+    simpleserial_addcmd('m', 18, get_mask);
     while(1)
         simpleserial_get();
 }
