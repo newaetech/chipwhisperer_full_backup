@@ -25,6 +25,7 @@
 
 from ._base import SimpleSerialTemplate
 import serial
+from collections import OrderedDict
 from chipwhisperer.common.utils import serialport
 
 
@@ -34,8 +35,9 @@ class SimpleSerial_serial(SimpleSerialTemplate):
     def __init__(self):
         SimpleSerialTemplate.__init__(self)
         self.ser = None
+        baud_values = OrderedDict(zip([str(X) for X in serial.Serial.BAUDRATES], serial.Serial.BAUDRATES))
         self.params.addChildren([
-            {'name':'Baud', 'key':'baud', 'type':'list', 'values':{'38400':38400, '19200':19200}, 'value':38400},
+            {'name':'Baud', 'key':'baud', 'type':'list', 'values':baud_values, 'value':38400},
             {'name':'Port', 'key':'port', 'type':'list', 'values':['Hit Refresh'], 'value':'Hit Refresh'},
             {'name':'Refresh', 'type':'action', 'action':self.updateSerial}
         ])
