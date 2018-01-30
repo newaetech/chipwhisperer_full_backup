@@ -92,7 +92,7 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
                 {'name':'Mask Supported', 'key':'maskenabled', 'type':'bool', 'get':self.getMaskEnabled, 'set':self.setMaskEnabled, 'linked':self._linkedmaskgroup, 'action':self.changeMaskEnabled},
                 {'name':'Mask Length (Bytes)', 'key':'masklen', 'type':'list', 'values':[18], 'default':18, 'get':self.maskLen, 'set':self.setMaskLen, 'visible':self.getMaskEnabled()},
                 {'name':'Load Mask Command', 'key':'cmdmask', 'type':'str', 'value':'m$MASK$\\n', 'visible':self.getMaskEnabled()},
-                {'name':'Mask', 'key':'masktype', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getMaskType, 'set':self.setMaskType, 'visible':self.getMaskEnabled(), 'action':self.changeMaskType},
+                {'name':'Mask Type', 'key':'masktype', 'type':'list', 'values':{'Random': False, 'Fixed': True}, 'get':self.getMaskType, 'set':self.setMaskType, 'visible':self.getMaskEnabled(), 'action':self.changeMaskType},
                 {'name':'Fixed Mask', 'key':'initmask', 'type':'str', 'get':self.getInitialMask, 'set':self.setInitialMask, 'visible':self.getMaskEnabled() and self.getMaskType()},
                 {'name':'New Random Mask', 'key':'newmask', 'type':'action', 'action':self.newRandMask, 'visible':self.getMaskEnabled() and self.getMaskType()},
             ]},
@@ -499,8 +499,8 @@ class SimpleSerial(TargetTemplate, util.DisableNewAttr):
             self.runCommand(cmdmask)
 
     def newRandMask(self, _=None):
-        new_mask = ["%02X" % random.randint(0, 255) for _ in range(0, self.maskLen())]
-        self.setInitialMask(" ".join(new_mask))
+        new_mask = [random.randint(0, 255) for _ in range(self.maskLen())]
+        self._mask = bytearray(new_mask)
 
     def reinit(self):
         cmdmask = self.findParam(('maskgroup', 'cmdmask')).getValue()
