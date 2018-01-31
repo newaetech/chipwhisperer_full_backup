@@ -57,6 +57,7 @@ class SaveProjectDialog(QDialog):
         self.buttonBox.button(QDialogButtonBox.Yes).clicked.connect(partial(self.done, QDialogButtonBox.YesRole))
         self.buttonBox.button(QDialogButtonBox.No).clicked.connect(partial(self.done, QDialogButtonBox.NoRole))
         self.buttonBox.button(QDialogButtonBox.Cancel).clicked.connect(partial(self.done, QDialogButtonBox.RejectRole))
+        self.rejected.connect(partial(self.done, QDialogButtonBox.RejectRole))
 
     @staticmethod
     def getSaveProjectDialog(parent, project):
