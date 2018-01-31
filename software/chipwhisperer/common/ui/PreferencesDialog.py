@@ -34,6 +34,8 @@ class CWPreferencesDialog(QtFixes.QDialog):
         super(CWPreferencesDialog, self).__init__(parent)
 
         self.setWindowTitle("ChipWhisperer Preferences")
+        self.setMinimumWidth((400 * self.logicalDpiX())//100)
+        self.setMinimumHeight((350 * self.logicalDpiY())//100)
 
         self._generalTab = GeneralTab(self, settings)
         self._windowsTab = WindowTab(self)
