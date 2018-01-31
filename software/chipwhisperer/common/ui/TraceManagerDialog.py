@@ -74,7 +74,7 @@ class TraceManagerDialog(QtFixes.QDialog):
 
         # Set dialog layout
         self.setLayout(vlayout)
-        self.resize(950, 400)
+        self.resize( (1150 * self.logicalDpiX()) // 100, (400 * self.logicalDpiY()) // 100)
         self.table.resizeColumnsToContents()
         self.table.resizeRowsToContents()
 

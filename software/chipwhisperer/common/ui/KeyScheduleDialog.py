@@ -99,7 +99,7 @@ class AesKeyScheduleDialog(QtFixes.QDialog):
         self.setWindowTitle("AES-128/AES-256 Key Schedule Calculator")
         self.setObjectName("AES Key Schedule")
         self.setWindowIcon(QIcon(":/images/cwiconA.png"))
-        self.setMinimumSize(800,400)
+        self.setMinimumSize((800 * self.logicalDpiX()) // 100, (800 * self.logicalDpiY()) // 100)
 
     def aesmodeChanged(self, indx):
         self.setKeyLength(self.aesmode.itemData(indx))
@@ -217,7 +217,7 @@ class DesKeyScheduleDialog(QtFixes.QDialog):
         self.setWindowTitle("DES Key Schedule Calculator")
         self.setObjectName("DES Key Schedule")
         self.refreshRoundKeysLength()
-        self.setMinimumSize(800,400)
+        self.setMinimumSize((800 * self.logicalDpiX()) // 100, (800 * self.logicalDpiY()) // 100)
 
     def refreshRoundKeysLength(self):
         self.inprnd.blockSignals(True)

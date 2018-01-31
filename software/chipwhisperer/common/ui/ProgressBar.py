@@ -130,7 +130,7 @@ try:
             self.setModal(False)
             self.setWindowFlags(Qt.WindowStaysOnTopHint)
             self.setWindowTitle(title)
-            self.resize(200,100)
+            self.resize((200 * self.logicalDpiX()) // 100, (100 * self.logicalDpiY()) // 100)
             clayout = QHBoxLayout()
             clayout.addStretch()
             cancel = QPushButton("Abort")
