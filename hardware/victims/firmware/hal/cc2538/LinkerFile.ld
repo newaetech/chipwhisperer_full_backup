@@ -44,28 +44,18 @@ SECTIONS
 	 . = ALIGN(4);
 	} > FLASH
 
-	.binit :
-	{
-	 . = ALIGN(4);
-	 *(.binit)
-	 *(.binit*)
-	 . = ALIGN(4);
-	} > FLASH
-
-	.cinit : 
-	{
-	 . = ALIGN(4);
-	 *(.cinit)
-	 *(.cinit*)
-	 . = ALIGN(4);
-	} > FLASH
-
 	.rodata :
 	{
 	 . = ALIGN(4);
 	 *(.rodata)
 	 *(.rodata*)
 	 . = ALIGN(4);
+	} > FLASH
+
+	.ARM.extab	: {
+		. = ALIGN(4);
+		*(.ARM.extab* .gnu.linkonce.armextab.*)
+		. = ALIGN(4);
 	} > FLASH
 
 	.ARM : {
