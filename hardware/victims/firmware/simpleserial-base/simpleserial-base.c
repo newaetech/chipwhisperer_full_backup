@@ -58,7 +58,6 @@ int main(void)
     platform_init();
 	init_uart();	
 	trigger_setup();
-	HW_AES128_Init();
 	
  	/* Uncomment this to get a HELLO message for debug */
 	/*
