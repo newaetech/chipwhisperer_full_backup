@@ -5,12 +5,13 @@
 #include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_dma.h"
 #include "stm32f4xx_hal_uart.h"
+#include "stm32f4xx_hal_usart.h"
 #include "stm32f4xx_hal_cryp.h"
 
 UART_HandleTypeDef UartHandle;
 
-uint8_t hw_key[16];
-
+//uint8_t hw_key[16];
+CRYP_HandleTypeDef cryp;
 
 void platform_init(void)
 {
@@ -68,12 +69,12 @@ void trigger_setup(void)
 
 void trigger_high(void)
 {
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, SET);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, SET);
 }
 
 void trigger_low(void)
 {
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, RESET);
+	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, RESET);
 }   
 
 char getch(void)
@@ -89,19 +90,32 @@ void putch(char c)
 	HAL_UART_Transmit(&UartHandle,  &d, 1, 5000);
 }
 
-void HW_AES128_Init()
+void HW_AES128_Init(void)
 {
+	cryp.Instance = CRYP;
+	cryp.Init.DataType = CRYP_DATATYPE_8B;
+	cryp.Init.KeySize = CRYP_KEYSIZE_128B;
+	for (unsigned int i = 0; i < 16; i++)
+		cryp.Init.pKey[i] = 0;//hw_key[i];
+	HAL_CRYP_Init(&cryp);
 }
 
 void HW_AES128_LoadKey(uint8_t* key)
 {
+	HAL_CRYP_DeInit(&cryp);
 	for(int i = 0; i < 16; i++)
 	{
-		hw_key[i] = key[i];
+		cryp.Init.pKey[i] = key[i];
 	}
+	HAL_CRYP_Init(&cryp);
 }
 
 void HW_AES128_Enc(uint8_t* pt)
 {
-	uint8_t ret = CRYP_AES_ECB(MODE_ENCRYPT, hw_key, 128, pt, 16, pt);
+	uint8_t store[16];
+	HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, store, 1000);
+	for (int i = 0; i < 16; i++) {
+		pt[i] = store[i];
+	}
+	//uint8_t ret = CRYP_AES_ECB(MODE_ENCRYPT, hw_key, 128, pt, 16, store);
 }
