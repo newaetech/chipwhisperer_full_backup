@@ -1,0 +1,11 @@
+configobj==5.0.6
+future==0.16.0
+iso8601==0.1.12
+numpy==1.14.0
+pyqtgraph==0.10.0
+PySide==1.2.2
+pyusb==1.0.2
+PyYAML==3.12
+scipy==1.0.0
+serial==0.0.38
+six==1.11.0
