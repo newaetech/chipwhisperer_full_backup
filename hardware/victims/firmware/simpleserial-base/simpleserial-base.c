@@ -21,10 +21,20 @@
 #include <stdlib.h>
 
 #include "simpleserial.h"
+uint8_t def_key[] = {0x2B, 0x7E, 0x15, 0x16, 0x28, 0xAE, 0xD2, 0xA6, 0xAB, 0xF7, 0x15, 0x88, 0x09, 0xCF, 0x4F, 0x3C};
+
+void put_str(char *c)
+{
+	do {
+		putch(*c);
+	} while (*++c);
+}
 
 uint8_t get_key(uint8_t* k)
 {
 	// Load key here
+	HW_AES128_LoadKey(k);
+	//put_str("get_key");
 	return 0x00;
 }
 
@@ -33,6 +43,9 @@ uint8_t get_pt(uint8_t* pt)
 	/**********************************
 	* Start user-specific code here. */
 	trigger_high();
+	//HW_AES128_LoadKey(def_key);
+	HW_AES128_Enc(pt);
+	//HW_AES128_Dec(pt);
 	
 	//16 hex bytes held in 'pt' were sent
 	//from the computer. Store your response
@@ -58,6 +71,7 @@ int main(void)
     platform_init();
 	init_uart();	
 	trigger_setup();
+	HW_AES128_Init();
 	
  	/* Uncomment this to get a HELLO message for debug */
 	/*

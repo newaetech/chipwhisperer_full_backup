@@ -1509,6 +1509,65 @@ HAL_StatusTypeDef HAL_UART_Receive(UART_HandleTypeDef *huart, uint8_t *pData, ui
   //return status; 
 //}
 
+/**
+  * @brief  Writes the Key in Key registers. 
+  * @param  hcryp pointer to a CRYP_HandleTypeDef structure that contains
+  *         the configuration information for CRYP module
+  * @param  Key Pointer to Key buffer
+  * @param  KeySize Size of Key
+  * @retval None
+  */
+static void CRYP_SetKey(CRYP_HandleTypeDef *hcryp, uint8_t *Key, uint32_t KeySize)
+{
+  uint32_t keyaddr = (uint32_t)Key;
+  
+  switch(KeySize)
+  {
+  case CRYP_KEYSIZE_256B:
+    /* Key Initialisation */
+    hcryp->Instance->K0LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K0RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K1LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K1RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3RR = __REV(*(uint32_t*)(keyaddr));
+    break;
+  case CRYP_KEYSIZE_192B:
+    hcryp->Instance->K1LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K1RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3RR = __REV(*(uint32_t*)(keyaddr));
+    break;
+  case CRYP_KEYSIZE_128B:       
+    hcryp->Instance->K2LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K2RR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3LR = __REV(*(uint32_t*)(keyaddr));
+    keyaddr+=4U;
+    hcryp->Instance->K3RR = __REV(*(uint32_t*)(keyaddr));
+    break;
+  default:
+    break;
+  }
+}
+
 static HAL_StatusTypeDef CRYP_ProcessData(CRYP_HandleTypeDef *hcryp, uint8_t* Input, uint16_t Ilength, uint8_t* Output, uint32_t Timeout);
 
 /**
@@ -1684,6 +1743,94 @@ HAL_StatusTypeDef HAL_CRYP_AESECB_Encrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pP
   
     /* Write Plain Data and Get Cypher Data */
     if(CRYP_ProcessData(hcryp, pPlainData, Size, pCypherData, Timeout) != HAL_OK)
+    {
+      return HAL_TIMEOUT;
+    }
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_READY;
+  
+  /* Process Unlocked */
+  __HAL_UNLOCK(hcryp);
+  
+  /* Return function status */
+  return HAL_OK;
+}
+
+/**
+  * @brief  Initializes the CRYP peripheral in AES ECB decryption mode
+  *         then decrypted pCypherData. The cypher data are available in pPlainData
+  * @param  hcryp pointer to a CRYP_HandleTypeDef structure that contains
+  *         the configuration information for CRYP module
+  * @param  pCypherData Pointer to the cyphertext buffer
+  * @param  Size Length of the plaintext buffer, must be a multiple of 16.
+  * @param  pPlainData Pointer to the plaintext buffer
+  * @param  Timeout Specify Timeout value  
+  * @retval HAL status
+  */
+HAL_StatusTypeDef HAL_CRYP_AESECB_Decrypt(CRYP_HandleTypeDef *hcryp, uint8_t *pCypherData, uint16_t Size, uint8_t *pPlainData, uint32_t Timeout)
+{
+   uint32_t tickstart = 0U;
+  
+  /* Process Locked */
+  __HAL_LOCK(hcryp);
+  
+  /* Change the CRYP state */
+  hcryp->State = HAL_CRYP_STATE_BUSY;
+  
+  /* Check if initialization phase has already been performed */
+  if(hcryp->Phase == HAL_CRYP_PHASE_READY)
+  {
+    /* Set the key */
+    CRYP_SetKey(hcryp, hcryp->Init.pKey, hcryp->Init.KeySize);
+    
+    /* Set the CRYP peripheral in AES Key mode */
+    __HAL_CRYP_SET_MODE(hcryp, CRYP_CR_ALGOMODE_AES_KEY | CRYP_CR_ALGODIR);
+    
+    /* Enable CRYP */
+    __HAL_CRYP_ENABLE(hcryp);
+    
+    /* Get tick */ 
+    tickstart = HAL_GetTick();
+
+    while(HAL_IS_BIT_SET(hcryp->Instance->SR, CRYP_FLAG_BUSY))
+    {
+      /* Check for the Timeout */
+      if(Timeout != HAL_MAX_DELAY)
+      {
+        if((Timeout == 0U)||((HAL_GetTick() - tickstart ) > Timeout))
+        {
+          /* Change state */
+          hcryp->State = HAL_CRYP_STATE_TIMEOUT;
+          
+          /* Process Unlocked */          
+          __HAL_UNLOCK(hcryp);
+        
+          return HAL_TIMEOUT;
+        }
+      }
+    }
+    
+    /* Disable CRYP */
+    __HAL_CRYP_DISABLE(hcryp);
+    
+    /* Reset the ALGOMODE bits*/
+    CRYP->CR &= (uint32_t)(~CRYP_CR_ALGOMODE);
+    
+    /* Set the CRYP peripheral in AES ECB decryption mode */
+    __HAL_CRYP_SET_MODE(hcryp, CRYP_CR_ALGOMODE_AES_ECB | CRYP_CR_ALGODIR);
+    /* Flush FIFO */
+    __HAL_CRYP_FIFO_FLUSH(hcryp);
+    
+    /* Enable CRYP */
+    __HAL_CRYP_ENABLE(hcryp);
+    
+    /* Set the phase */
+    hcryp->Phase = HAL_CRYP_PHASE_PROCESS;
+  }
+    
+    /* Write Plain Data and Get Cypher Data */
+    if(CRYP_ProcessData(hcryp, pCypherData, Size, pPlainData, Timeout) != HAL_OK)
     {
       return HAL_TIMEOUT;
     }

@@ -11,7 +11,9 @@
 UART_HandleTypeDef UartHandle;
 
 //uint8_t hw_key[16];
-CRYP_HandleTypeDef cryp;
+static CRYP_HandleTypeDef cryp;
+static uint8_t inbuf[128];
+static uint8_t outbuf[128];
 
 void platform_init(void)
 {
@@ -69,12 +71,12 @@ void trigger_setup(void)
 
 void trigger_high(void)
 {
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, SET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, SET);
 }
 
 void trigger_low(void)
 {
-	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_12, RESET);
 }   
 
 char getch(void)
@@ -102,20 +104,42 @@ void HW_AES128_Init(void)
 
 void HW_AES128_LoadKey(uint8_t* key)
 {
-	HAL_CRYP_DeInit(&cryp);
+	//HAL_CRYP_DeInit(&cryp);
 	for(int i = 0; i < 16; i++)
 	{
 		cryp.Init.pKey[i] = key[i];
 	}
-	HAL_CRYP_Init(&cryp);
+	//HAL_CRYP_Init(&cryp);
 }
 
 void HW_AES128_Enc(uint8_t* pt)
 {
+	HAL_CRYP_DeInit(&cryp);
+	HAL_CRYP_Init(&cryp);
 	uint8_t store[16];
-	HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, store, 1000);
-	for (int i = 0; i < 16; i++) {
-		pt[i] = store[i];
+	if (HAL_CRYP_AESECB_Encrypt(&cryp, pt, 16, store, 1000) != HAL_OK) {
+		for (int i = 0; i < 16; i++) {
+			pt[i] = 0;
+		}
+	} else {
+		for (int i = 0; i < 16; i++) {
+			pt[i] = store[i];
+		}
 	}
+	
 	//uint8_t ret = CRYP_AES_ECB(MODE_ENCRYPT, hw_key, 128, pt, 16, store);
+}
+
+void HW_AES128_Dec(uint8_t *pt)
+{
+	uint8_t store[16];
+	if (HAL_CRYP_AESECB_Decrypt(&cryp, pt, 16, store, 1000) != HAL_OK) {
+		for (int i = 0; i < 16; i++) {
+			pt[i] = 0;
+		}
+	} else {
+		for (int i = 0; i < 16; i++) {
+			pt[i] = store[i];
+		}
+	}
 }
