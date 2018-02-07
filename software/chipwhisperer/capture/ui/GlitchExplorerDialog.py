@@ -45,7 +45,8 @@ class GlitchExplorerDialog(Parameterized, QtFixes.QDialog):
     def __init__(self, parent):
         super(GlitchExplorerDialog, self).__init__(parent)
         self.setWindowTitle("Glitch Explorer")
-        self.setMinimumWidth(500)
+        self.setMinimumWidth((500 * self.logicalDpiX())//100)
+        self.setMinimumHeight((650 * self.logicalDpiY())//100)
 
         self.mainLayout = QVBoxLayout()
         self.mainSplitter = QSplitter(self)

@@ -180,7 +180,7 @@ class AcquisitionController:
         while self.currentTrace < self.maxtraces:
             if self.doSingleReading():
                 try:
-                    if self._writer:
+                    if self._scope and self._writer:
                         self._writer.setKnownKey(self.key)
                         for channelNum in channelNumbers:
                             self._writer.addTrace(self._scope.channels[channelNum].getTrace(), self.textin, self.textout,

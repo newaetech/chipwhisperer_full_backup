@@ -34,6 +34,7 @@ class SaveProjectDialog(QDialog):
         super(SaveProjectDialog, self).__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)  # Close and delete all windows/QObj that has it as a parent when closing
         self.setWindowTitle("Unsaved Changes Detected")
+        self.setMinimumWidth( (600 * self.logicalDpiX()) // 100)
         layout = QVBoxLayout()
         layout.addWidget(QLabel("Save unsaved changes?"))
         self.buttonBox = QDialogButtonBox(QDialogButtonBox.Yes | QDialogButtonBox.No | QDialogButtonBox.Cancel)
@@ -41,7 +42,7 @@ class SaveProjectDialog(QDialog):
 
         detailedHidableWidget = ProjectDiffWidget(self, project)
         detailedHidableWidget.setContentsMargins(0, 0, 0, 0)
-        detailedHidableWidget.setFixedSize(600,200)
+        detailedHidableWidget.setFixedSize( (600 * self.logicalDpiX()) // 100, (200 * self.logicalDpiY()) // 100)
         detailedHidableWidget.hide()
 
         pbShowDetails = QPushButton("Show Details")
@@ -57,6 +58,7 @@ class SaveProjectDialog(QDialog):
         self.buttonBox.button(QDialogButtonBox.Yes).clicked.connect(partial(self.done, QDialogButtonBox.YesRole))
         self.buttonBox.button(QDialogButtonBox.No).clicked.connect(partial(self.done, QDialogButtonBox.NoRole))
         self.buttonBox.button(QDialogButtonBox.Cancel).clicked.connect(partial(self.done, QDialogButtonBox.RejectRole))
+        self.rejected.connect(partial(self.done, QDialogButtonBox.RejectRole))
 
     @staticmethod
     def getSaveProjectDialog(parent, project):

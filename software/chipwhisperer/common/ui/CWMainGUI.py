@@ -145,7 +145,7 @@ class CWMainGUI(QMainWindow):
         parameterTree = ParameterTree()
         parameterTree.addParameters(param._PyQtGraphParameter)
         dock = self.addDock(parameterTree, name=param.getName(), area=Qt.TopDockWidgetArea)
-        dock.setMaximumWidth(560)
+        dock.setMaximumWidth((560 * self.logicalDpiX()) // 100)
         return dock
 
     def tabifyDocks(self, docks):
