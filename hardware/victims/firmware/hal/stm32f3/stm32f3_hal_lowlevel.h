@@ -105,7 +105,7 @@
 #define  DATA_CACHE_ENABLE            1U
 
 
-#define STM32F303x8
+#define STM32F303xC
 #include "stm32f3xx.h"
 
 #endif

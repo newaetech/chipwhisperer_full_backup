@@ -42,14 +42,61 @@
 #include "stm32f3xx_hal_dma.h"
 #include "stm32f3xx_hal_uart.h"
 #include "stm32f3xx_hal_flash.h"
+#include "stm32f3xx_hal_cortex.h"
 
 #define assert_param(expr) ((void)0U)
+uint32_t hal_sys_tick = 0;
+uint32_t uwTick = 0;
+uint32_t SystemCoreClock = 8000000U;
 
+void HAL_NVIC_SetPriority(IRQn_Type IRQn, uint32_t PreemptPriority, uint32_t SubPriority)
+{
+  uint32_t prioritygroup = 0x00U;
+  
+  /* Check the parameters */
+  assert_param(IS_NVIC_SUB_PRIORITY(SubPriority));
+  assert_param(IS_NVIC_PREEMPTION_PRIORITY(PreemptPriority));
+  
+  prioritygroup = NVIC_GetPriorityGrouping();
+  
+  NVIC_SetPriority(IRQn, NVIC_EncodePriority(prioritygroup, PreemptPriority, SubPriority));
+}
+
+#ifndef ENABLE_TICK_TIMING
+HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
+{
+	hal_sys_tick = 0;
+	return HAL_OK;
+}
 uint32_t HAL_GetTick(void)
 {
-	static uint32_t tick;
-	return tick++;;
+	return hal_sys_tick++;
 }
+void HAL_IncTick(void)
+{
+}
+#else
+__weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
+{
+  /*Configure the SysTick to have interrupt in 1ms time basis*/
+  HAL_SYSTICK_Config(SystemCoreClock / 1000U);
+
+  /*Configure the SysTick IRQ priority */
+  HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority ,0U);
+
+   /* Return function status */
+  return HAL_OK;
+}
+__weak uint32_t HAL_GetTick(void)
+{
+  return uwTick;
+}
+
+__weak void HAL_IncTick(void)
+{
+  uwTick++;
+}
+#endif
 
 #define RCC_CFGR_HPRE_BITNUMBER           POSITION_VAL(RCC_CFGR_HPRE)
 

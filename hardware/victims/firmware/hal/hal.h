@@ -71,6 +71,9 @@ void platform_init(void);
 	#include "stm32f2/stm32f2_hal.h"
 #elif HAL_TYPE == HAL_stm32f3
 	#include "stm32f3/stm32f3_hal.h"
+	#ifdef SECCAN
+		#include "stm32f3/stm32f3_hal_seccan.h"
+	#endif
 #elif HAL_TYPE == HAL_stm32f4
 	#include "stm32f4/stm32f4_hal.h"
 #else

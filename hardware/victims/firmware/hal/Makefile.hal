@@ -53,6 +53,10 @@ endef
 
 PLTNAME = Unknown Platform
 
+ifeq ($(DEMO),SECCAN)
+	CFLAGS += -DSECCAN
+endif
+
 ifeq ($(PLATFORM),CW301_AVR)
  MCU = atmega328
  HAL = avr
