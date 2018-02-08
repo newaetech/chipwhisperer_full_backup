@@ -438,21 +438,18 @@ class QPythonScriptBrowser(QtGui.QWidget):
 
         cwroot = os.path.dirname(os.path.dirname(chipwhisperer.__file__))
         home_user_dir = expanduser("~")
-        project_dir = os.path.join(home_user_dir, 'chipwhisperer', 'projects')
+        user_chipwhisperer = os.path.join(home_user_dir, 'chipwhisperer')
         
         
         if default == "capture":
             scripts_folder = os.path.join(cwroot, 'chipwhisperer', 'capture', 'scripts')
-            project_scripts_folder = os.path.join(project_dir, 'chipwhisperer', 'capture', 'scripts')
         elif default == "analyzer":
             scripts_folder = os.path.join(cwroot, 'chipwhisperer', 'analyzer', 'scripts')
-            project_scripts_folder = os.path.join(project_dir, 'chipwhisperer', 'analyzer', 'scripts')
         else:
             scripts_folder = cwroot
-            project_scripts_folder = project_dir
 
         self.file_view_cw = CWPythonFileTree(scripts_folder)
-        self.file_view_project = CWPythonFileTree(project_scripts_folder)
+        self.file_view_project = CWPythonFileTree(user_chipwhisperer)
         self.file_view_all = CWPythonFileTree()
         self.file_view_recent = CWPythonRecentTable()
 
