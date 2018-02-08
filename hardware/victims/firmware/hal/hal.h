@@ -36,6 +36,7 @@ void platform_init(void);
 #define CW308_STM32F2  16
 #define CW308_STM32F3  17
 #define CW308_STM32F4  18
+#define CW308_CC2538   19
 
 //HAL_TYPE Define Types
 #define HAL_avr     1
@@ -47,6 +48,7 @@ void platform_init(void);
 #define HAL_stm32f2 7
 #define HAL_stm32f3 8
 #define HAL_stm32f4 9
+#define HAL_cc2538  10
 
 #if HAL_TYPE == HAL_avr
     #include <avr/io.h>
@@ -76,6 +78,8 @@ void platform_init(void);
 	#endif
 #elif HAL_TYPE == HAL_stm32f4
 	#include "stm32f4/stm32f4_hal.h"
+#elif HAL_TYPE == HAL_cc2538
+	#include "cc2538/cc2538_hal.h"
 #else
     #error "Unsupported HAL Type"
 #endif
