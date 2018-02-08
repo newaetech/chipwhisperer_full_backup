@@ -16,6 +16,7 @@ import os, sys, subprocess, shutil
 from code import InteractiveConsole as _InteractiveConsole
 from PySide import QtCore, QtGui
 from chipwhisperer.common.utils.util import requestConsoleBreak, updateUI
+from os.path import expanduser
 
 # Note: we'd like to use cStringIO (it's faster) but we can't subclass it
 from StringIO import StringIO
@@ -430,26 +431,35 @@ class QPythonScriptBrowser(QtGui.QWidget):
 
         self.tab_bar = QtGui.QTabBar()
         self.tab_bar.addTab("ChipWhisperer")
+        self.tab_bar.addTab("Project")
         self.tab_bar.addTab("File System")
         self.tab_bar.addTab("Recent")
         self.tab_bar.currentChanged.connect(self.tabChanged)
 
         cwroot = os.path.dirname(os.path.dirname(chipwhisperer.__file__))
-
+        home_user_dir = expanduser("~")
+        project_dir = os.path.join(home_user_dir, 'chipwhisperer', 'projects')
+        
+        
         if default == "capture":
             scripts_folder = os.path.join(cwroot, 'chipwhisperer', 'capture', 'scripts')
+            project_scripts_folder = os.path.join(project_dir, 'chipwhisperer', 'capture', 'scripts')
         elif default == "analyzer":
             scripts_folder = os.path.join(cwroot, 'chipwhisperer', 'analyzer', 'scripts')
+            project_scripts_folder = os.path.join(project_dir, 'chipwhisperer', 'analyzer', 'scripts')
         else:
             scripts_folder = cwroot
+            project_scripts_folder = project_dir
 
         self.file_view_cw = CWPythonFileTree(scripts_folder)
+        self.file_view_project = CWPythonFileTree(project_scripts_folder)
         self.file_view_all = CWPythonFileTree()
         self.file_view_recent = CWPythonRecentTable()
 
         layout = QtGui.QVBoxLayout()
         layout.addWidget(self.tab_bar)
         layout.addWidget(self.file_view_cw)
+        layout.addWidget(self.file_view_project)
         layout.addWidget(self.file_view_all)
         layout.addWidget(self.file_view_recent)
 
@@ -459,6 +469,8 @@ class QPythonScriptBrowser(QtGui.QWidget):
 
         # New style signals causes crashes on at least some platforms, so need to use old style
         self.connect(self.file_view_cw.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
+                 self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
+        self.connect(self.file_view_project.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
                  self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
         self.connect(self.file_view_all.selectionModel(), QtCore.SIGNAL("selectionChanged(QItemSelection , QItemSelection )"),
                  self, QtCore.SLOT("selectionChanged(QItemSelection, QItemSelection)"))
@@ -471,11 +483,14 @@ class QPythonScriptBrowser(QtGui.QWidget):
 
     def tabChanged(self, newTab):
         self.file_view_cw.hide()
+        self.file_view_project.hide()
         self.file_view_all.hide()
         self.file_view_recent.hide()
         if newTab == 0: # ChipWhisperer
             self.file_view_cw.show()
-        elif newTab == 1: # File system
+        elif newTab == 1: # Project
+            self.file_view_project.show()
+        elif newTab == 2: # File system
             self.file_view_all.show()
         else: # Recent
             self.file_view_recent.show()
@@ -486,9 +501,11 @@ class QPythonScriptBrowser(QtGui.QWidget):
         active_tab = self.tab_bar.currentIndex()
         if active_tab == 0: # ChipWhisperer
             return self.file_view_cw.getSelectedPath()
-        elif active_tab == 1: # File system
+        elif active_tab == 1: # Project
+            return self.file_view_project.getSelectedPath()
+        elif active_tab == 2: # File system
             return self.file_view_all.getSelectedPath()
-        elif active_tab == 2: # Recent
+        elif active_tab == 3: # Recent
             return self.file_view_recent.getSelectedPath()
         else:
             return None
@@ -497,7 +514,9 @@ class QPythonScriptBrowser(QtGui.QWidget):
         active_tab = self.tab_bar.currentIndex()
         if active_tab == 0: # ChipWhisperer
             return self.file_view_cw.setSelectedPath(basename)
-        elif active_tab == 1: # File system
+        elif active_tab == 1: # Project
+            return self.file_view_project.setSelectedPath(basename)
+        elif active_tab == 2: # File system
             return self.file_view_all.setSelectedPath(basename)
         #Recent tab works differently - not sure it should be selected automatically in this case anyway
         #elif active_tab == 2: # Recent
