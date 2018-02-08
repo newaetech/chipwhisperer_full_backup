@@ -204,6 +204,7 @@ class STM32FSerial(object):
 
                 if erase:
                     self.cmdEraseMemory()
+                    logfunc("Erasing memory")
 
                 if waitfunc: waitfunc()
                 self.program(hexfile, memtype="flash", verify=verify, logfunc=logfunc, waitfunc=waitfunc)
