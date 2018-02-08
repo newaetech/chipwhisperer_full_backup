@@ -9,10 +9,8 @@
 
 UART_HandleTypeDef UartHandle;
 
-//uint8_t hw_key[16];
+uint8_t hw_key[16];
 static CRYP_HandleTypeDef cryp;
-static uint8_t inbuf[128];
-static uint8_t outbuf[128];
 
 void platform_init(void)
 {
@@ -96,19 +94,16 @@ void HW_AES128_Init(void)
 	cryp.Instance = CRYP;
 	cryp.Init.DataType = CRYP_DATATYPE_8B;
 	cryp.Init.KeySize = CRYP_KEYSIZE_128B;
-	for (unsigned int i = 0; i < 16; i++)
-		cryp.Init.pKey[i] = 0;//hw_key[i];
+	cryp.Init.pKey = hw_key;
 	HAL_CRYP_Init(&cryp);
 }
 
 void HW_AES128_LoadKey(uint8_t* key)
 {
-	//HAL_CRYP_DeInit(&cryp);
 	for(int i = 0; i < 16; i++)
 	{
 		cryp.Init.pKey[i] = key[i];
 	}
-	//HAL_CRYP_Init(&cryp);
 }
 
 void HW_AES128_Enc(uint8_t* pt)
@@ -126,7 +121,6 @@ void HW_AES128_Enc(uint8_t* pt)
 		}
 	}
 	
-	//uint8_t ret = CRYP_AES_ECB(MODE_ENCRYPT, hw_key, 128, pt, 16, store);
 }
 
 void HW_AES128_Dec(uint8_t *pt)
