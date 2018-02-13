@@ -25,6 +25,7 @@
 import logging
 import time
 from chipwhisperer.common.utils import util
+from chipwhisperer.common.utils.util import cw_bytearray
 
 
 class AcquisitionController:
@@ -212,16 +213,16 @@ class AcquisitionController:
     def last_key(self):
         """The last key sent to the target. Read-only.
         """
-        return "todo"
+        return cw_bytearray(self.key)
 
     @property
     def last_textin(self):
         """The last input text sent to the target. Read-only.
         """
-        return "todo"
+        return cw_bytearray(self.textin)
 
     @property
     def last_textout(self):
         """The last output text received from the target. Read-only.
         """
-        return "todo"
+        return cw_bytearray(self.textout)

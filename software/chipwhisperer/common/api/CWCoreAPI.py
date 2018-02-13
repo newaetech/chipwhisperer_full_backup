@@ -336,7 +336,7 @@ class CWCoreAPI(Parameterized):
         try:
             aux_dict = self.getAuxFunctions(True)
             ac = AcquisitionController(self.getScope(), self.getTarget(), writer=None, aux=aux_dict, keyTextPattern=self.getAcqPattern())
-            ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
+            ac.sigNewTextResponse.connect(self.updateLastKeyText)
             if self.getTarget():
                 self.getTarget().init()
             return ac.doSingleReading()
@@ -393,7 +393,7 @@ class CWCoreAPI(Parameterized):
 
                 ac = AcquisitionController(scope, target, currentTrace, aux_dict, ktp)
                 ac.setMaxtraces(this_seg_size)
-                ac.sigNewTextResponse.connect(self.sigNewTextResponse.emit)
+                ac.sigNewTextResponse.connect(self.updateLastKeyText)
                 ac.sigTraceDone.connect(self.sigTraceDone.emit)
                 __pb = lambda: progressBar.updateStatus(i*seg_size + ac.currentTrace + 1, (i, ac.currentTrace))
                 ac.sigTraceDone.connect(__pb)
