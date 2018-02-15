@@ -107,20 +107,3 @@ class FakeAnalyzerSoftware(object):
         self.gui.show()
 
         self.gui.execute = ExecWithParentAsSelf(parent=self.gui)
-
-        self.results_table = ResultsTableInterface(api)
-
-
-class ResultsTableInterface(object):
-
-    def __init__(self, api):
-        self.results_table = api.getResults('Results Table')
-
-    def text_at_index(self, row, col):
-        return self.results_table.item(row, col).text()
-
-    def sub_keys(self, row):
-        subkeys = []
-        for col in range(16):
-            subkeys.append(self.text_at_index(1, col).split('\n')[0])
-        return subkeys

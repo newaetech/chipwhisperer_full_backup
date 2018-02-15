@@ -147,7 +147,7 @@ class TestTutorialB1SimpleSerialProject(unittest.TestCase):
         logging.info('Finished executing attack script')
 
         # check if the key is the expected key
-        result_subkeys = self.auto_ui.analyzer.results_table.sub_keys(1)
+        result_subkeys = self.auto_ui.analyzer.gui.results_table.sub_key_row(1)
         result_key = u' '.join(result_subkeys)
         actual_key = ktp.initkey
 
