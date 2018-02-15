@@ -91,7 +91,7 @@ class STM32FSerial(object):
     Class for programming an STM32F device using a serial port or ChipWhisperer-Serial
     """
 
-    def __init__(self, cwserial=None, cwapi=None, spname=None, timeout=200):
+    def __init__(self, cwserial=None, cwapi=None, spname=None, timeout=200, slow_speed=False):
         """
         Set the communications instance.
         """
@@ -102,6 +102,7 @@ class STM32FSerial(object):
         self._chip = STM32FDummy()
         self.lastFlashedFile = "unknown"
         self.extended_erase = 0
+        self.slow_speed = slow_speed
 
         self._old_baud = None
 
@@ -145,19 +146,30 @@ class STM32FSerial(object):
         if hasattr(self.sp, "close"):
             self.sp.close()
 
-    def find(self):
+    def find(self, logfunc=print_fun):
         #setup serial port (or CW-serial port?)
 
-        self.initChip()
+        if logfunc is None:
+            logfunc = print_fun
+
+        try:
+            self.initChip()
+        except IOError:
+            logfunc("Failed to detect chip. Check following: ")
+            logfunc("   1. Connections and device power. ")
+            logfunc("   2. Device has valid clock (or remove clock entirely for internal osc).")
+            logfunc("   3. On Rev -02 CW308T-STM32Fx boards, BOOT0 is routed to PDIC.")
+            raise
+
         boot_version = self.cmdGet()
         chip_id = self.cmdGetID()
 
         for t in supported_stm32f:
             if chip_id == t.signature:
-                logging.info("Detected known STMF32: %s" % t.name)
+                logfunc("Detected known STMF32: %s" % t.name)
                 self.setChip(t)
                 return chip_id, t
-        logging.warning("Detected unknown STM32F ID: 0x%03x" % chip_id)
+        logfunc("Detected unknown STM32F ID: 0x%03x" % chip_id)
         return chip_id, None
 
     def program(self, filename, memtype="flash", verify=True, logfunc=print_fun, waitfunc=None):
@@ -170,7 +182,7 @@ class STM32FSerial(object):
         fdata = f.tobinarray(start=f.minaddr())
         startaddr = f.minaddr()
 
-        logging.info("Programming %d bytes at 0x%x", fsize, startaddr)
+        logfunc("Attempting to programming %d bytes at 0x%x"% (fsize, startaddr))
 
         logfunc("STM32F Programming %s..." % memtype)
         if waitfunc: waitfunc()
@@ -204,7 +216,7 @@ class STM32FSerial(object):
                 if logfunc: logfunc("Entering Programming Mode")
                 if waitfunc: waitfunc()
                 self.open_port()
-                self.find()
+                self.find(logfunc)
 
                 if erase:
                     self.cmdEraseMemory()
@@ -285,7 +297,9 @@ class STM32FSerial(object):
             except CmdException:
                 logging.info("Sync failed with error %s, retrying..." % traceback.format_exc())
                 fails += 1
-        raise
+
+        self.releaseChip()
+        raise IOError("Could not detect STM32F, check connections, BOOT MODE entry setup")
 
     def releaseChip(self):
         self.set_boot(False)
@@ -380,7 +394,8 @@ class STM32FSerial(object):
             for c in data:
                 crc ^= c
                 self.sp.write(chr(c))
-                nonBlockingDelay(5)
+                if self.slow_speed:
+                    nonBlockingDelay(5)
             self.sp.write(chr(crc))
             self._wait_for_ask("0x31 programming failed")
             logging.debug("    Write memory done")
@@ -476,7 +491,8 @@ class STM32FSerial(object):
         while lng > 256:
             logging.debug("Read %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
             data += self.cmdReadMemory(addr, 256)
-            nonBlockingDelay(1)
+            if self.slow_speed:
+                nonBlockingDelay(1)
             addr += 256
             lng -= 256
 
@@ -493,7 +509,8 @@ class STM32FSerial(object):
         while lng > 256:
             logging.debug("Write %(len)d bytes at 0x%(addr)X" % {'addr': addr, 'len': 256})
             self.cmdWriteMemory(addr, data[offs:offs + 256])
-            nonBlockingDelay(1)
+            if self.slow_speed:
+                nonBlockingDelay(1)
             offs += 256
             addr += 256
             lng -= 256
