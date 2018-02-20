@@ -97,6 +97,7 @@ class FrequencyMeasure(AuxiliaryTemplate):
     _name = "Frequency Counter"
 
     def __init__(self):
+        self.fm = None
         if ps5000a is not None:
             scope = ps5000a.PS5000a(connect=False)
             self.fm = FreqMeasure(scope)
